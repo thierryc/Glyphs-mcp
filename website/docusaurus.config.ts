@@ -4,28 +4,11 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import fs from 'fs';
 import path from 'path';
 
-function readGlyphsMcpVersion(): string {
-  try {
-    const infoPlistPath = path.join(
-      __dirname,
-      '..',
-      'src',
-      'glyphs-mcp',
-      'Glyphs MCP.glyphsPlugin',
-      'Contents',
-      'Info.plist'
-    );
-    const contents = fs.readFileSync(infoPlistPath, 'utf8');
-    const match = contents.match(
-      /<key>CFBundleShortVersionString<\/key>\s*<string>([^<]+)<\/string>/
-    );
-    return match?.[1]?.trim() || 'dev';
-  } catch {
-    return 'dev';
-  }
-}
-
-const gmcpVersion = readGlyphsMcpVersion();
+const plugin = JSON.parse(fs.readFileSync(
+  path.join(__dirname, '../plugins/glyphs-mcp/.codex-plugin/plugin.json'), 'utf8'
+));
+const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../release.json'), 'utf8'));
+const gmcpVersion: string = plugin.version + (release.channel === 'beta' ? ` Beta ${release.betaNumber}` : '');
 
 const config: Config = {
   title: 'Glyphs MCP',
@@ -41,12 +24,13 @@ const config: Config = {
   onBrokenLinks: 'throw',
   markdown: {
     hooks: {
-      onBrokenMarkdownLinks: 'warn'
+      onBrokenMarkdownLinks: 'throw'
     }
   },
 
   customFields: {
-    gmcpVersion
+    gmcpVersion,
+    legacyVersion: '1.11.0'
   },
 
   i18n: {
@@ -62,7 +46,12 @@ const config: Config = {
           path: '../content',
           routeBasePath: 'docs',
           sidebarPath: require.resolve('./sidebars.ts'),
-          editUrl: 'https://github.com/thierryc/Glyphs-mcp/tree/main/'
+          // Keep existing released v1 URLs; v2 has its own explicit route.
+          lastVersion: 'current',
+          versions: {
+            current: {label: `v2 · ${gmcpVersion}`, path: 'v2', banner: 'none'},
+            '1.11.0': {label: 'v1 · 1.11.0', path: '', banner: 'none'}
+          }
         },
         blog: false,
         theme: {
@@ -81,9 +70,10 @@ const config: Config = {
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
+        {type: 'docsVersionDropdown', position: 'left'},
         {
           href: 'https://github.com/thierryc/Glyphs-mcp/releases',
-          label: `v${gmcpVersion}`,
+          label: 'Releases',
           position: 'right'
         },
         {
@@ -99,9 +89,9 @@ const config: Config = {
         {
           title: 'Docs',
           items: [
-            {label: 'Getting Started', to: '/docs/getting-started/installation'},
-            {label: 'First Session', to: '/docs/tutorial/first-session'},
-            {label: 'Workflows', to: '/docs/kerning-workflow'}
+            {label: 'v2 · Glyphs 4', to: '/docs/v2/'},
+            {label: 'v1 · 1.11.0', to: '/docs/'},
+            {label: 'Moving from v1 to v2', to: '/docs/v2/getting-started/migrate-from-v1'}
           ]
         },
         {

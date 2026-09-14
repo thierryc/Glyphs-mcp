@@ -15,6 +15,7 @@ EOF
 }
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+python_bin="${PYTHON_BIN:-python3}"
 tag=""
 write_checksum_file="0"
 
@@ -39,19 +40,24 @@ ditto_bin="${DITTO_BIN:-/usr/bin/ditto}"
 expected_identity="${EXPECTED_CODESIGN_IDENTITY:-${CODESIGN_IDENTITY:-Developer ID Application: Thierry Charbonnel (N9U29A4T8J)}}"
 expected_team="${EXPECTED_TEAM_ID:-N9U29A4T8J}"
 
-app="$repo_root/dist/installer-app/GlyphsMCPInstaller.app"
+product="${GLYPHS_MCP_APP_NAME:-Glyphs MCP}"
+app="$repo_root/dist/installer-app/$product.app"
 app_plist="$app/Contents/Info.plist"
 payload_archive="$app/Contents/Resources/Payload.gmcparchive"
 core_framework="$app/Contents/Frameworks/GlyphsMCPInstallerCore.framework"
 updater_helper="$app/Contents/Resources/GlyphsMCPUpdater"
-zip="$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
+zip="$repo_root/dist/installer-app/$product.zip"
 
-version="$(python3 "$repo_root/scripts/release_security.py" metadata --repo-root "$repo_root" --tag "$tag" --app-plist "$app_plist")"
-dmg_versioned="$repo_root/dist/GlyphsMCPInstaller-$version.dmg"
-dmg_latest="$repo_root/dist/GlyphsMCPInstaller.dmg"
+version="$("$python_bin" "$repo_root/scripts/release_security.py" metadata --repo-root "$repo_root" --tag "$tag" --app-plist "$app_plist")"
+release_version="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field releaseVersion)"
+release_channel="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field channel)"
+dmg_versioned="$repo_root/dist/Glyphs-MCP-$release_version.dmg"
+dmg_latest="$repo_root/dist/Glyphs-MCP-latest.dmg"
 checksum_file="$repo_root/dist/SHA256SUMS"
 
-for path in "$app" "$payload_archive" "$core_framework" "$updater_helper" "$zip" "$dmg_versioned" "$dmg_latest"; do
+required_paths=("$app" "$payload_archive" "$core_framework" "$updater_helper" "$zip" "$dmg_versioned")
+if [[ "$release_channel" == "stable" ]]; then required_paths+=("$dmg_latest"); fi
+for path in "${required_paths[@]}"; do
   if [[ ! -e "$path" ]]; then
     echo "error: missing release artifact: $path" >&2
     exit 1
@@ -94,41 +100,7 @@ verify_runtime_signature() {
 }
 
 verify_payload_executables() {
-  local root="$1"
-  local verified_count=0
-  local verified_bundle_count=0
-
-  if [[ ! -d "$root" ]]; then
-    echo "error: installer payload is missing: $root" >&2
-    exit 1
-  fi
-
-  while IFS= read -r -d '' candidate; do
-    if /usr/bin/file -b "$candidate" | /usr/bin/grep -q 'Mach-O'; then
-      verify_runtime_signature "$candidate" 0
-      verified_count=$((verified_count + 1))
-    fi
-  done < <(/usr/bin/find "$root" -type f -path '*/Contents/MacOS/*' -print0)
-
-  if [[ "$verified_count" -eq 0 ]]; then
-    echo "error: no Mach-O payload executables were found under $root" >&2
-    exit 1
-  fi
-  while IFS= read -r -d '' bundle; do
-    verify_runtime_signature "$bundle" 1
-    verified_bundle_count=$((verified_bundle_count + 1))
-  done < <(
-    /usr/bin/find "$root" -depth -type d \
-      \( -name '*.glyphsPlugin' -o -name '*.glyphsReporter' -o \
-         -name '*.glyphsTool' -o -name '*.glyphsFilter' -o \
-         -name '*.glyphsFileFormat' -o -name '*.glyphsPalette' \) \
-      -print0
-  )
-  if [[ "$verified_bundle_count" -eq 0 ]]; then
-    echo "error: no signed Glyphs code bundles were found under $root" >&2
-    exit 1
-  fi
-  echo "Verified $verified_count payload executable(s) and $verified_bundle_count Glyphs code bundle(s) under $root."
+  "$python_bin" "$repo_root/scripts/release_payload.py" verify "$1" --identity "$expected_identity" --installed
 }
 
 verify_runtime_signature "$app" 1
@@ -141,7 +113,7 @@ verify_developer_id "$dmg_versioned" 0
 "$spctl_bin" -a -vv -t exec "$app"
 "$spctl_bin" -a -vv -t open --context context:primary-signature "$dmg_versioned"
 
-if ! cmp -s "$dmg_versioned" "$dmg_latest"; then
+if [[ "$release_channel" == "stable" ]] && ! cmp -s "$dmg_versioned" "$dmg_latest"; then
   echo "error: latest DMG is not byte-identical to the versioned DMG" >&2
   exit 1
 fi
@@ -150,9 +122,9 @@ tmp_root="$(mktemp -d /tmp/gmcp-release-verify.XXXXXX)"
 cleanup() { rm -rf "$tmp_root"; }
 trap cleanup EXIT
 "$ditto_bin" -x -k "$zip" "$tmp_root"
-zipped_app="$tmp_root/GlyphsMCPInstaller.app"
+zipped_app="$tmp_root/$product.app"
 if [[ ! -d "$zipped_app" ]]; then
-  echo "error: installer ZIP does not contain GlyphsMCPInstaller.app" >&2
+  echo "error: release ZIP does not contain $product.app" >&2
   exit 1
 fi
 verify_runtime_signature "$zipped_app" 1
@@ -165,6 +137,9 @@ zipped_payload_extract="$tmp_root/extracted-signed-payload"
 mkdir -p "$zipped_payload_extract"
 /usr/bin/tar -xzf "$zipped_payload_archive" -C "$zipped_payload_extract"
 zipped_payload_root="$zipped_payload_extract/Payload"
+"$python_bin" "$repo_root/scripts/build_installer_payload.py" \
+  --verify-root "$zipped_payload_root" \
+  --release-version "$version"
 verify_payload_executables "$zipped_payload_root"
 zipped_core_framework="$zipped_app/Contents/Frameworks/GlyphsMCPInstallerCore.framework"
 if [[ ! -d "$zipped_core_framework" ]]; then
@@ -183,42 +158,20 @@ if ! cmp -s "$updater_helper" "$zipped_updater_helper"; then
   exit 1
 fi
 "$xcrun_bin" stapler validate "$zipped_app"
-python3 "$repo_root/scripts/release_security.py" metadata \
+"$python_bin" "$repo_root/scripts/release_security.py" metadata \
   --repo-root "$repo_root" \
   --tag "$tag" \
   --app-plist "$zipped_app/Contents/Info.plist" >/dev/null
 
-# Simulate the installer copy into an isolated Glyphs plug-in directory. The
-# trusted nested executable must remain byte-identical and keep the same
-# Developer ID CDHash after installation; no ad-hoc re-signing is permitted.
-simulated_plugins="$tmp_root/simulated-install/Plugins"
-mkdir -p "$simulated_plugins"
-zipped_plugin="$zipped_payload_root/Glyphs MCP.glyphsPlugin"
-installed_plugin="$simulated_plugins/Glyphs MCP.glyphsPlugin"
-"$ditto_bin" "$zipped_plugin" "$installed_plugin"
-installed_plugin_bin="$installed_plugin/Contents/MacOS/plugin"
-verify_runtime_signature "$zipped_plugin" 1
-verify_runtime_signature "$installed_plugin" 1
-verify_runtime_signature "$installed_plugin_bin" 0
-"$xcrun_bin" stapler validate "$zipped_plugin"
-"$xcrun_bin" stapler validate "$installed_plugin"
-if [[ ! -f "$zipped_plugin/Contents/CodeResources" || ! -f "$installed_plugin/Contents/CodeResources" ]]; then
-  echo "error: the stapled plug-in notarization ticket did not survive installation" >&2
-  exit 1
-fi
-if ! cmp -s "$zipped_plugin/Contents/MacOS/plugin" "$installed_plugin_bin"; then
-  echo "error: installed plug-in executable changed during copy" >&2
-  exit 1
-fi
-source_cdhash="$("$codesign_bin" -d --verbose=4 "$zipped_plugin/Contents/MacOS/plugin" 2>&1 | awk -F= '/^CDHash=/{value=$2} END{print value}')"
-installed_cdhash="$("$codesign_bin" -d --verbose=4 "$installed_plugin_bin" 2>&1 | awk -F= '/^CDHash=/{value=$2} END{print value}')"
-if [[ -z "$source_cdhash" || "$source_cdhash" != "$installed_cdhash" ]]; then
-  echo "error: installed plug-in CDHash does not match the trusted payload" >&2
-  exit 1
-fi
-echo "Verified signature-preserving simulated plug-in installation."
+# release_payload.py verifies signature-preserving installed copies of Glyphs 3,
+# the lean bridge, both companions and both complete private runtimes.
 
-checksum_assets=("$dmg_versioned" "$dmg_latest" "$zip")
+checksum_assets=("$dmg_versioned" "$zip")
+if [[ "$release_channel" == "stable" ]]; then
+  checksum_assets+=("$dmg_latest")
+else
+  checksum_assets=("$dmg_versioned" "$repo_root/dist/desktop-update/Glyphs-MCP-$release_version.zip" "$repo_root/dist/desktop-update/appcast.xml")
+fi
 checksum_stage="$tmp_root/release-assets"
 mkdir -p "$checksum_stage"
 flat_checksum_assets=()
@@ -234,7 +187,7 @@ done
 staged_checksum_file="$checksum_stage/SHA256SUMS"
 
 if [[ "$write_checksum_file" == "1" ]]; then
-  python3 "$repo_root/scripts/release_security.py" checksums \
+  "$python_bin" "$repo_root/scripts/release_security.py" checksums \
     --base-dir "$checksum_stage" \
     --output "$staged_checksum_file" \
     "${flat_checksum_assets[@]}" >/dev/null
@@ -253,7 +206,7 @@ verify_checksum_args=()
 for artifact in "${flat_checksum_assets[@]}"; do
   verify_checksum_args+=(--expect "$artifact")
 done
-python3 "$repo_root/scripts/release_security.py" verify-checksums \
+"$python_bin" "$repo_root/scripts/release_security.py" verify-checksums \
   --base-dir "$checksum_stage" \
   "${verify_checksum_args[@]}" \
   "$staged_checksum_file" >/dev/null

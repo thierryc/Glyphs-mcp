@@ -1217,6 +1217,7 @@ def verify_runtime(
     extra_site_packages: Optional[Path] = None,
     *,
     allow_user_site: bool = False,
+    expected_path_plan: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """Verify the complete installed runtime with the shared probe."""
     site_packages = extra_site_packages or glyphs_scripts_site_packages()
@@ -1232,9 +1233,6 @@ def verify_runtime(
             python,
             site_packages,
             "postinstall",
-            allowed_origins=[site_packages],
-            allow_user_site=allow_user_site,
-            allow_runtime_paths=True,
         )
     except RuntimeProbeError as exc:
         console.print(f"[red]Runtime verification failed:[/red] {exc}")
@@ -1242,6 +1240,9 @@ def verify_runtime(
     _print_runtime_probe_log(result)
     if result.blocking:
         console.print(f"[red]{_runtime_probe_failure_message(result)}[/red]")
+        return False
+    if expected_path_plan is not None and result.payload.get("pathPlan") != expected_path_plan:
+        console.print("[red]Runtime path plan changed between preflight and post-install verification.[/red]")
         return False
     console.print("[green]Python runtime verification passed.[/green]")
     return True
@@ -1513,7 +1514,7 @@ def install_plugin(
 
 
 def managed_skill_directories(skills_root: Optional[Path] = None) -> List[Path]:
-    root = skills_root or (repo_root() / "skills")
+    root = skills_root or (repo_root() / "legacy" / "glyphs3" / "skills")
     if not root.is_dir():
         return []
 
@@ -1628,7 +1629,7 @@ def install_skill_bundle_for_targets(
     non_interactive: bool,
 ) -> bool:
     installed_any = False
-    source_root = repo_root() / "skills"
+    source_root = repo_root() / "legacy" / "glyphs3" / "skills"
 
     for client_name, dest_root in targets:
         overwrite_for_target = overwrite_existing

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "templates": [
+    {
+      "id": "googlefonts-project-template",
+      "name": "Google Fonts project",
+      "description": "A project layout with font sources and build scripts.",
+      "author": "Google Fonts contributors",
+      "license": "OFL-1.1 (font sources); see included attribution files",
+      "repository": "https://github.com/googlefonts/googlefonts-project-template",
+      "templateDirectory": ".",
+      "revision": "d52f47ca69c2d9e16a925501e6af0afc8df1fd51",
+      "archiveSHA256": "94e6a598d6e59158508f4b815deffb6c99f5f4eea287045d3a7fca162091a553"
+    }
+  ]
+}

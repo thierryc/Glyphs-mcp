@@ -4,20 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE="$ROOT/skills"
 DESTINATION="$ROOT/plugins/glyphs-mcp/skills"
+MANIFEST="$SOURCE/manifest.json"
 MODE="sync"
-SKILLS=(
-  glyphs
-  glyphs-mcp-development
-  glyphs-mcp-features
-  glyphs-mcp-icon-font
-  glyphs-mcp-italic-first-pass
-  glyphs-mcp-kerning
-  glyphs-mcp-litsquare-metadata
-  glyphs-mcp-outlines-docs
-  glyphs-mcp-release
-  glyphs-mcp-scripting
-  glyphs-mcp-spacing
-)
+SKILLS=()
 
 if [[ $# -gt 1 || ( $# -eq 1 && "$1" != "--check" ) ]]; then
   echo "Usage: $0 [--check]" >&2
@@ -27,8 +16,17 @@ if [[ ${1:-} == "--check" ]]; then
   MODE="check"
 fi
 
-if [[ ! -f "$ROOT/README.md" || ! -d "$SOURCE" ]]; then
+if [[ ! -f "$ROOT/README.md" || ! -d "$SOURCE" || ! -f "$MANIFEST" ]]; then
   echo "Refusing to synchronize outside the Glyphs MCP repository." >&2
+  exit 1
+fi
+
+while IFS= read -r skill; do
+  SKILLS+=("$skill")
+done < <(python3 -c 'import json,sys; data=json.load(open(sys.argv[1], encoding="utf-8")); print("\n".join(item["name"] for item in data["managedSkills"]))' "$MANIFEST")
+
+if [[ ${#SKILLS[@]} -eq 0 ]]; then
+  echo "The managed skill manifest is empty." >&2
   exit 1
 fi
 
@@ -42,6 +40,11 @@ done
 if [[ "$MODE" == "check" ]]; then
   if [[ ! -d "$DESTINATION" ]]; then
     echo "Missing packaged skill directory: $DESTINATION" >&2
+    exit 1
+  fi
+  if ! cmp -s "$MANIFEST" "$DESTINATION/manifest.json"; then
+    echo "The packaged managed skill manifest is out of sync." >&2
+    echo "Run $0 to regenerate packaged skills from skills/." >&2
     exit 1
   fi
   for skill in "${SKILLS[@]}"; do
@@ -75,6 +78,7 @@ STAGING_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/glyphs-mcp-skills.XXXXXX")"
 trap 'rm -rf "$STAGING_ROOT"' EXIT
 STAGED_SKILLS="$STAGING_ROOT/skills"
 mkdir -p "$STAGED_SKILLS"
+cp "$MANIFEST" "$STAGED_SKILLS/manifest.json"
 
 for skill in "${SKILLS[@]}"; do
   cp -R "$SOURCE/$skill" "$STAGED_SKILLS/$skill"

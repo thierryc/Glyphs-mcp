@@ -87,7 +87,7 @@ class LLMToolRoutingTests(unittest.TestCase):
         fixtures = json.loads(path.read_text(encoding="utf-8"))
         skill_names = {
             item.parent.name
-            for item in (REPO_ROOT / "skills").glob("*/SKILL.md")
+            for item in (REPO_ROOT / "legacy/glyphs3/skills").glob("*/SKILL.md")
         }
         ids = [fixture["id"] for fixture in fixtures]
         prompts = [fixture["prompt"] for fixture in fixtures]
@@ -107,7 +107,7 @@ class LLMToolRoutingTests(unittest.TestCase):
                     self.assertIn(expected_skill, skill_names)
                     self.assertNotIn(expected_skill, fixture["forbidden_skills"])
                     skill_text = (
-                        REPO_ROOT / "skills" / expected_skill / "SKILL.md"
+                        REPO_ROOT / "legacy/glyphs3/skills" / expected_skill / "SKILL.md"
                     ).read_text(encoding="utf-8")
                     for name in fixture["expected_tools"]:
                         self.assertIn(f"`{name}`", skill_text)
@@ -192,9 +192,9 @@ class LLMToolRoutingTests(unittest.TestCase):
                     self.assertEqual(fixture["expected_tools"], [])
                     self.assertIsNone(fixture["snippet_only"])
 
-        router = (REPO_ROOT / "skills/glyphs/SKILL.md").read_text(encoding="utf-8")
+        router = (REPO_ROOT / "legacy/glyphs3/skills/glyphs/SKILL.md").read_text(encoding="utf-8")
         scripting = (
-            REPO_ROOT / "skills/glyphs-mcp-scripting/SKILL.md"
+            REPO_ROOT / "legacy/glyphs3/skills/glyphs-mcp-scripting/SKILL.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Generic Python with no Glyphs app or font target", router)
         self.assertIn("snippet_only=true", scripting)
@@ -202,7 +202,7 @@ class LLMToolRoutingTests(unittest.TestCase):
         self.assertIn("execute only that unchanged reviewed request", scripting)
 
     def test_canonical_and_packaged_skills_route_only_to_model_tools(self) -> None:
-        roots = [REPO_ROOT / "skills", REPO_ROOT / "plugins/glyphs-mcp/skills"]
+        roots = [REPO_ROOT / "legacy/glyphs3/skills", REPO_ROOT / "legacy/glyphs3/plugins/glyphs-mcp/skills"]
         violations = []
         checked = 0
         for root in roots:
@@ -225,7 +225,7 @@ class LLMToolRoutingTests(unittest.TestCase):
             if entry.state != ACTIVE or entry.visibility == APP_ONLY
         }
         violations = []
-        for root in (REPO_ROOT / "skills", REPO_ROOT / "plugins/glyphs-mcp/skills"):
+        for root in (REPO_ROOT / "legacy/glyphs3/skills", REPO_ROOT / "legacy/glyphs3/plugins/glyphs-mcp/skills"):
             for path in sorted(root.glob("*/SKILL.md")):
                 names = set(BACKTICK_IDENTIFIER.findall(path.read_text(encoding="utf-8")))
                 for name in sorted(names & forbidden):

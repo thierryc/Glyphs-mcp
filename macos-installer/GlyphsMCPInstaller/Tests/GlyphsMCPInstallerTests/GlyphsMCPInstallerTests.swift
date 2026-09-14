@@ -44,6 +44,33 @@ private final class UpdateOptInBox: @unchecked Sendable {
 	}
 }
 
+private final class BooleanPreferencesBox: @unchecked Sendable {
+	private let lock = NSLock()
+	private var values: [String: Bool]
+
+	init(_ values: [String: Bool] = [:]) {
+		self.values = values
+	}
+
+	func read(_ key: String) -> Bool? {
+		lock.lock()
+		defer { lock.unlock() }
+		return values[key]
+	}
+
+	func write(_ key: String, _ value: Bool) {
+		lock.lock()
+		values[key] = value
+		lock.unlock()
+	}
+
+	func remove(_ key: String) {
+		lock.lock()
+		values.removeValue(forKey: key)
+		lock.unlock()
+	}
+}
+
 private struct ThrowingUpdateHTTPClient: UpdateHTTPClienting {
 	let error: Error
 
@@ -66,6 +93,21 @@ private struct CancellableUpdateHTTPClient: UpdateHTTPClienting {
 }
 
 final class GlyphsMCPInstallerTests: XCTestCase {
+	private func runtimeIdentity(
+		for bundle: URL,
+		version: String
+	) throws -> [String: String] {
+		let codeHash = try InstallerPayloadManifestResolver.runtimeCodeHash(
+			bundleURL: bundle
+		)
+		return [
+			"version": version,
+			"runtimeId": "\(version)+\(codeHash.prefix(12))",
+			"codeHash": codeHash,
+			"hashScope": "Resources/**/*.py and Contents/Info.plist",
+		]
+	}
+
 	private struct FakeHTTPClient: HTTPClienting {
 		let dataToReturn: Data
 		var onRequest: (() -> Void)?
@@ -742,6 +784,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-development", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-development","surface":"workspace"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.write(to: skillsDir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: codexSkill, withIntermediateDirectories: true, attributes: nil)
 
@@ -946,6 +989,65 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertEqual(PluginVersionReader.readPluginVersion(pluginBundle: dest)?.displayString, "1.0.0")
 	}
 
+	func testPluginInstallerReplacementIsIsolatedByGlyphsTarget() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-target-isolation-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let glyphs3Directory = root.appendingPathComponent("Glyphs 3/Plugins", isDirectory: true)
+		let glyphs4Directory = root.appendingPathComponent("Glyphs 4/Plugins", isDirectory: true)
+		let glyphs3 = glyphs3Directory.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let glyphs4 = glyphs4Directory.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let source = root.appendingPathComponent("Source/Glyphs MCP.glyphsPlugin", isDirectory: true)
+		try makePluginBundle(at: glyphs3, version: "1.11.0")
+		try makePluginBundle(at: glyphs4, version: "1.0.0")
+		try makePluginBundle(at: source, version: "2.0.0")
+
+		let trusted = PluginExecutableSignature(
+			cdHash: "trusted",
+			teamIdentifier: PluginExecutableVerifier.expectedTeamIdentifier,
+			authority: PluginExecutableVerifier.expectedDeveloperIDAuthority,
+			hardenedRuntime: true,
+			timestamped: true
+		)
+		let installer = PluginInstaller(
+			log: { _ in },
+			verifier: PluginExecutableVerifier { _ in trusted }
+		)
+		_ = try installer.installPluginBundle(
+			from: source,
+			toPluginsDir: glyphs4Directory,
+			allowReplace: true
+		)
+		XCTAssertEqual(PluginVersionReader.readPluginVersion(pluginBundle: glyphs3)?.displayString, "1.11.0")
+		XCTAssertEqual(PluginVersionReader.readPluginVersion(pluginBundle: glyphs4)?.displayString, "2.0.0")
+
+		try makePluginBundle(at: source, version: "2.1.0")
+		let failing = PluginInstaller(
+			log: { _ in },
+			verifier: PluginExecutableVerifier { bundle in
+				if bundle.lastPathComponent.contains(".installing-") {
+					return PluginExecutableSignature(
+						cdHash: "changed",
+						teamIdentifier: trusted.teamIdentifier,
+						authority: trusted.authority,
+						hardenedRuntime: true,
+						timestamped: true
+					)
+				}
+				return trusted
+			}
+		)
+		XCTAssertThrowsError(
+			try failing.installPluginBundle(
+				from: source,
+				toPluginsDir: glyphs4Directory,
+				allowReplace: true
+			)
+		)
+		XCTAssertEqual(PluginVersionReader.readPluginVersion(pluginBundle: glyphs3)?.displayString, "1.11.0")
+		XCTAssertEqual(PluginVersionReader.readPluginVersion(pluginBundle: glyphs4)?.displayString, "2.0.0")
+	}
+
 	func testPluginInstallerInspectionDetectsSymlinkedBundle() throws {
 		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let realPlugin = tmp.appendingPathComponent("Dev/Glyphs MCP.glyphsPlugin", isDirectory: true)
@@ -1109,9 +1211,14 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertTrue(content.contains("My Fonts"), content)
 		XCTAssertTrue(content.contains(InstallerConstants.codexServerName), content)
 		XCTAssertTrue(content.contains(InstallerConstants.endpointURL.absoluteString), content)
-		XCTAssertTrue(content.contains("tools/list"), content)
-		XCTAssertTrue(content.contains("Mcp-Session-Id"), content)
-		XCTAssertTrue(content.contains("catalog titles, descriptions, and safety annotations"), content)
+		XCTAssertTrue(content.contains("Verify its catalog and get_status"), content)
+		XCTAssertTrue(content.contains("once with list_documents"), content)
+		XCTAssertTrue(content.contains("Save accepts changes"), content)
+		XCTAssertTrue(content.contains("Reconcile uncertain writes with the existing job ID"), content)
+		XCTAssertTrue(content.contains("$glyphs-mcp-development"), content)
+		XCTAssertTrue(content.contains("Offline creation and validation need no connection"), content)
+		XCTAssertTrue(content.contains("document_not_found"), content)
+		XCTAssertFalse(content.contains("list_open_fonts"), content)
 		XCTAssertFalse(content.localizedCaseInsensitiveContains("Tool Profile"), content)
 	}
 
@@ -1173,9 +1280,10 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try plist.write(to: infoPlist, atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
+		try "# policy\n".write(to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"), atomically: true, encoding: .utf8)
 
 		let b = try XCTUnwrap(Bundle(url: bundleURL))
-		let resolved = try InstallerPayload.resolve(bundle: b)
+		let resolved = try InstallerPayload.resolve(bundle: b, allowVerifiedLegacyRelease: true)
 		XCTAssertEqual(resolved.pluginBundle.lastPathComponent, "Glyphs MCP.glyphsPlugin")
 		XCTAssertEqual(resolved.payloadDir.lastPathComponent, "Payload")
 		XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.requirementsTxt.path))
@@ -1198,6 +1306,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
+		try "# policy\n".write(to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"), atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true, attributes: nil)
 
 		let infoPlist = contents.appendingPathComponent("Info.plist")
@@ -1224,10 +1333,194 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertEqual(process.terminationStatus, 0)
 
 		let bundle = try XCTUnwrap(Bundle(url: bundleURL))
-		let resolved = try InstallerPayload.resolve(bundle: bundle)
+		let resolved = try InstallerPayload.resolve(bundle: bundle, allowVerifiedLegacyRelease: true)
 		XCTAssertEqual(resolved.pluginBundle.lastPathComponent, "Glyphs MCP.glyphsPlugin")
 		XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.requirementsTxt.path))
 		XCTAssertNotEqual(resolved.payloadDir.path, payload.path)
+	}
+
+	func testInstallerPayloadResolvesSchemaV2BundlesByGlyphsTarget() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-target-payload-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let payload = root.appendingPathComponent("Payload", isDirectory: true)
+		let requirements = payload.appendingPathComponent("requirements.txt")
+		let skills = payload.appendingPathComponent("skills", isDirectory: true)
+		try FileManager.default.createDirectory(at: skills, withIntermediateDirectories: true)
+		try Data("mcp\n".utf8).write(to: requirements)
+
+		var targetJSON: [String: Any] = [:]
+		for (major, directory, version, track, policy) in [
+			(3, "Glyphs3", "1.11.0", "1.x", "pinned"),
+			(4, "Glyphs4", "2.0.0", "2.x", "release"),
+		] {
+			let relative = "Plugins/\(directory)/Glyphs MCP.glyphsPlugin"
+			let plugin = payload.appendingPathComponent(relative, isDirectory: true)
+			let resources = plugin.appendingPathComponent("Contents/Resources", isDirectory: true)
+			try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+			try Data("# probe\n".utf8).write(to: resources.appendingPathComponent("runtime_probe.py"))
+			try Data("# policy\n".utf8).write(to: resources.appendingPathComponent("runtime_path_policy.py"))
+			let info: [String: Any] = [
+				"CFBundleShortVersionString": version,
+				"CFBundleVersion": version,
+			]
+			try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+				.write(to: plugin.appendingPathComponent("Contents/Info.plist"))
+			var target: [String: Any] = [
+				"pluginPath": relative,
+				"pluginVersion": version,
+				"runtimeTrack": track,
+				"updatePolicy": policy,
+				"baseline": ["tag": major == 3 ? "v1.11.0" : "working", "commit": major == 3 ? "13ca805" : "working"],
+			]
+			if major == 4 {
+				target["runtimeIdentity"] = try runtimeIdentity(for: plugin, version: version)
+			}
+			targetJSON[String(major)] = target
+		}
+		let manifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"skillsPath": "skills",
+			"targets": targetJSON,
+		]
+		try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+			.write(to: payload.appendingPathComponent("payload.json"))
+
+		let resolved = try InstallerPayload.resolve(payloadDir: payload)
+		XCTAssertEqual(resolved.plugin(for: .v3).version.displayString, "1.11.0")
+		XCTAssertEqual(resolved.plugin(for: .v3).runtimeTrack, "1.x")
+		XCTAssertEqual(resolved.plugin(for: .v3).updatePolicy, .pinned)
+		XCTAssertEqual(resolved.plugin(for: .v4).version.displayString, "2.0.0")
+		XCTAssertEqual(resolved.plugin(for: .v4).runtimeTrack, "2.x")
+		XCTAssertEqual(resolved.plugin(for: .v4).updatePolicy, .release)
+		XCTAssertNotEqual(resolved.plugin(for: .v3).bundleURL, resolved.plugin(for: .v4).bundleURL)
+		XCTAssertNotNil(
+			try InstallerPayloadManifestResolver.resolve(payload).targets[4]?.runtimeIdentity
+		)
+
+		var missingTargets = targetJSON
+		var missingIdentity = try XCTUnwrap(missingTargets["4"] as? [String: Any])
+		missingIdentity.removeValue(forKey: "runtimeIdentity")
+		missingTargets["4"] = missingIdentity
+		let missingManifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"skillsPath": "skills",
+			"targets": missingTargets,
+		]
+		try JSONSerialization.data(withJSONObject: missingManifest, options: [.sortedKeys])
+			.write(to: payload.appendingPathComponent("payload.json"))
+		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: payload))
+
+		var malformedTargets = targetJSON
+		var malformedIdentity = try XCTUnwrap(malformedTargets["4"] as? [String: Any])
+		malformedIdentity["runtimeIdentity"] = [
+			"version": "2.0.0",
+			"runtimeId": "2.0.0+invalid",
+			"codeHash": "invalid",
+			"hashScope": "Resources/**/*.py and Contents/Info.plist",
+		]
+		malformedTargets["4"] = malformedIdentity
+		let malformedManifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"skillsPath": "skills",
+			"targets": malformedTargets,
+		]
+		try JSONSerialization.data(withJSONObject: malformedManifest, options: [.sortedKeys])
+			.write(to: payload.appendingPathComponent("payload.json"))
+		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: payload))
+
+		try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+			.write(to: payload.appendingPathComponent("payload.json"))
+
+		let runtime = payload.appendingPathComponent(
+			"Plugins/Glyphs4/Glyphs MCP.glyphsPlugin/Contents/Resources/runtime_probe.py"
+		)
+		try Data("# tampered\n".utf8).write(to: runtime)
+		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: payload))
+	}
+
+	func testGeneratedBuildPayloadMatchesSwiftRuntimeIdentity() throws {
+		let products = Bundle(for: type(of: self)).bundleURL.deletingLastPathComponent()
+		let payload = products.appendingPathComponent(
+			"Glyphs MCP.app/Contents/Resources/Payload",
+			isDirectory: true
+		)
+		let resolved = try InstallerPayloadManifestResolver.resolve(payload)
+		let glyphs4 = try XCTUnwrap(resolved.targets[4])
+        XCTAssertEqual(resolved.schemaVersion, 3)
+        let app = try XCTUnwrap(Bundle(url: products.appendingPathComponent("Glyphs MCP.app")))
+        let appVersion = try XCTUnwrap(app.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+        XCTAssertEqual(glyphs4.pluginVersion, appVersion)
+        XCTAssertNil(glyphs4.runtimeIdentity)
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: payload.appendingPathComponent("payload.json"))) as? [String: Any])
+        XCTAssertEqual(manifest["leanIdentity"] as? String, try InstallerPayloadManifestResolver.treeIdentity(payload.appendingPathComponent("Lean")))
+        XCTAssertEqual(manifest["installerIdentity"] as? String, try InstallerPayloadManifestResolver.treeIdentity(payload.appendingPathComponent("Installer")))
+        XCTAssertEqual(resolved.targets[3]?.pluginVersion, "1.11.0")
+        let lean = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: payload.appendingPathComponent("Lean/manifest.json"))) as? [String: Any])
+        XCTAssertEqual((lean["tools"] as? [String])?.count, 7)
+        XCTAssertEqual(Set((lean["runtimes"] as? [String: Any] ?? [:]).keys), ["arm64", "x86_64"])
+
+	}
+
+	func testInstallerPayloadRejectsUnverifiedLegacyLayout() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-unverified-legacy-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let runtimeProbe = root
+			.appendingPathComponent("Glyphs MCP.glyphsPlugin/Contents/Resources/runtime_probe.py")
+		try FileManager.default.createDirectory(
+			at: runtimeProbe.deletingLastPathComponent(),
+			withIntermediateDirectories: true
+		)
+		try Data("# probe\n".utf8).write(to: runtimeProbe)
+		try Data("# policy\n".utf8).write(to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"))
+		try Data("mcp\n".utf8).write(to: root.appendingPathComponent("requirements.txt"))
+
+		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: root))
+		XCTAssertNoThrow(
+			try InstallerPayload.resolve(payloadDir: root, allowVerifiedLegacyRelease: true)
+		)
+	}
+
+	func testSchemaV2PayloadRejectsTraversalAndVersionMismatch() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-invalid-target-payload-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let manifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"targets": [
+				"3": ["pluginPath": "../escape", "pluginVersion": "1.11.0", "runtimeTrack": "1.x", "updatePolicy": "pinned"],
+				"4": ["pluginPath": "Plugins/Glyphs4/Glyphs MCP.glyphsPlugin", "pluginVersion": "9.9.9", "runtimeTrack": "2.x", "updatePolicy": "release"],
+			],
+		]
+		try Data("mcp\n".utf8).write(to: root.appendingPathComponent("requirements.txt"))
+		try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+			.write(to: root.appendingPathComponent("payload.json"))
+		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: root))
+	}
+
+	func testSchemaV2PayloadArchiveListingRequiresBothTargets() throws {
+		let valid = [
+			"Payload/",
+			"Payload/payload.json",
+			"Payload/requirements.txt",
+			"Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+			"Payload/Plugins/Glyphs4/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+		].joined(separator: "\n")
+		XCTAssertNoThrow(try InstallerPayloadArchiveValidator.validateListing(valid))
+		XCTAssertThrowsError(
+			try InstallerPayloadArchiveValidator.validateListing(
+				valid.replacingOccurrences(of: "Glyphs4", with: "Glyphs3")
+			)
+		)
+		XCTAssertThrowsError(
+			try InstallerPayloadArchiveValidator.validateListing(valid + "\nPayload/../escape")
+		)
 	}
 
 	func testPayloadManagedSkillDirectoriesFiltersGlyphsSkills() throws {
@@ -1243,6 +1536,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("other-skill", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-development","surface":"workspace"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.write(to: skillsDir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 
 		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
@@ -1268,6 +1562,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: glyphs, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: scripting, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: spacing, withIntermediateDirectories: true, attributes: nil)
+		try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.write(to: skillsDir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: legacyConnect, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
@@ -1368,7 +1663,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let probe = root.appendingPathComponent("runtime_probe.py")
 		let target = root.appendingPathComponent("Glyphs 4/Scripts/site-packages")
 		let json = """
-{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"sitePackages":"\(target.path)","checks":[],"issues":[]}
+{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"pathPlan":{"schemaVersion":1,"runtimeKind":"external","installMode":"user","executable":"\(python.path)","primaryRoot":"/tmp/user-site","fallbackRoots":["\(target.path)"],"orderedRoots":["/tmp/user-site","\(target.path)"]},"sitePackages":"\(target.path)","checks":[],"issues":[]}
 """
 		let script = """
 #!/bin/sh
@@ -1396,6 +1691,7 @@ exit 0
 			.split(separator: "\n")
 			.map(String.init)
 		XCTAssertEqual(document.runtime.executable, python.path)
+		XCTAssertEqual(document.pathPlan?.orderedRoots, ["/tmp/user-site", target.path])
 		XCTAssertEqual(
 			arguments,
 			[
@@ -1450,7 +1746,17 @@ exit 0
 		let installer = DepsInstaller(runner: ProcessRunner(), log: { _ in })
 		let requirements = URL(fileURLWithPath: "/tmp/requirements.txt")
 		let target = URL(fileURLWithPath: "/tmp/glyphs-mcp-site-packages")
-		let args = installer.pipInstallArgs(requirementsTxt: requirements, target: target)
+		let fallback = "/tmp/Glyphs 4/Scripts/site-packages"
+		let plan = RuntimeProbeDocument.PathPlan(
+			schemaVersion: 1,
+			runtimeKind: "embedded",
+			installMode: "target",
+			executable: "/tmp/python",
+			primaryRoot: target.path,
+			fallbackRoots: [fallback],
+			orderedRoots: [target.path, fallback]
+		)
+		let args = installer.pipInstallArgs(requirementsTxt: requirements, pathPlan: plan)
 
 		XCTAssertFalse(args.contains("--force-reinstall"), "\(args)")
 		XCTAssertTrue(args.contains("--upgrade"), "\(args)")
@@ -1458,7 +1764,30 @@ exit 0
 		XCTAssertTrue(args.contains("--disable-pip-version-check"), "\(args)")
 		XCTAssertTrue(args.contains("--timeout"), "\(args)")
 		XCTAssertTrue(args.contains("--retries"), "\(args)")
-		XCTAssertEqual(installer.pipEnvironment(target: target)["PYTHONPATH"]?.split(separator: ":").first, Substring(target.path))
+		XCTAssertEqual(installer.pipEnvironment(pathPlan: plan)["PYTHONPATH"], target.path + ":" + fallback)
+		XCTAssertTrue(args.contains("--target"))
+		XCTAssertTrue(args.contains(target.path))
+	}
+
+	func testExternalRuntimePlanGeneratesUserInstallCommand() {
+		let installer = DepsInstaller(runner: ProcessRunner(), log: { _ in })
+		let requirements = URL(fileURLWithPath: "/tmp/requirements.txt")
+		let plan = RuntimeProbeDocument.PathPlan(
+			schemaVersion: 1,
+			runtimeKind: "external",
+			installMode: "user",
+			executable: "/opt/homebrew/bin/python3",
+			primaryRoot: "/tmp/user-site",
+			fallbackRoots: ["/tmp/Glyphs 3/Scripts/site-packages"],
+			orderedRoots: ["/tmp/user-site", "/tmp/Glyphs 3/Scripts/site-packages"]
+		)
+		let args = installer.pipInstallArgs(requirementsTxt: requirements, pathPlan: plan)
+		XCTAssertTrue(args.contains("--user"))
+		XCTAssertFalse(args.contains("--target"))
+		XCTAssertEqual(
+			installer.pipEnvironment(pathPlan: plan)["PYTHONPATH"],
+			"/tmp/user-site:/tmp/Glyphs 3/Scripts/site-packages"
+		)
 	}
 
 	func testDependencyPreflightRecognizesSatisfiedAndMismatchedRequirements() throws {
@@ -1528,6 +1857,28 @@ exit 0
 """
 		let data = try XCTUnwrap(json.data(using: .utf8))
 		XCTAssertThrowsError(try GitHubReleaseResolver.parsePublishedRelease(data))
+	}
+
+	func testExplicitUpdateCheckUsesStableReleaseAndNeverDowngrades() async throws {
+		for (version, newer) in [("1.11.0", false), ("2.0.0", false), ("2.0.1", true)] {
+			let data = Data("{\"tag_name\":\"v\(version)\",\"draft\":false,\"prerelease\":false,\"assets\":[]}".utf8)
+			let result = try await GitHubReleaseResolver.checkForUpdate(currentVersion: "2.0.0", client: FakeHTTPClient(dataToReturn: data, onRequest: nil))
+			if newer {
+				guard case .updateAvailable = result else { return XCTFail("New version was not discoverable") }
+			} else {
+				guard case .upToDate = result else { return XCTFail("Must not offer a downgrade or reinstall") }
+			}
+		}
+		XCTAssertFalse(PluginVersionKey("2.0") < PluginVersionKey("2.0.0"))
+	}
+
+	func testUpdateDiscoveryRejectsDraftAndMalformedStableTags() throws {
+		for tag in ["garbage", "v2.0.1-beta", "v2", "prefix2.0.1"] {
+			let data = Data("{\"tag_name\":\"\(tag)\",\"draft\":false,\"prerelease\":false,\"assets\":[]}".utf8)
+			XCTAssertThrowsError(try GitHubReleaseResolver.parsePublishedRelease(data))
+		}
+		let draft = Data("{\"tag_name\":\"v2.0.1\",\"draft\":true,\"prerelease\":false,\"assets\":[]}".utf8)
+		XCTAssertThrowsError(try GitHubReleaseResolver.parsePublishedRelease(draft))
 	}
 
 	func testPublishedReleaseRequiresOneTrustedAssetURL() throws {
@@ -2039,7 +2390,7 @@ exit 0
 		let identifier = UUID()
 		let request = try UpdatePrepareRequest.parse(arguments: [
 			"prepare",
-			"--protocol", "1",
+			"--protocol", "2",
 			"--version", "1.6.0",
 			"--glyphs-major", "4",
 			"--request-id", identifier.uuidString.lowercased(),
@@ -2049,11 +2400,11 @@ exit 0
 		XCTAssertEqual(request.requestID, identifier)
 
 		for arguments in [
-			["prepare", "--protocol", "2", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
-			["prepare", "--protocol", "1", "--version", "v1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
-			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "5", "--request-id", identifier.uuidString],
-			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--destination", "/tmp"],
-			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", "not-a-uuid"],
+			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "2", "--version", "v1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "2", "--version", "1.6.0", "--glyphs-major", "5", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "2", "--version", "1.6.0", "--glyphs-major", "4", "--destination", "/tmp"],
+			["prepare", "--protocol", "2", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", "not-a-uuid"],
 		] {
 			XCTAssertThrowsError(try UpdatePrepareRequest.parse(arguments: arguments))
 		}
@@ -2137,7 +2488,8 @@ exit 0
 		])
 		let verifiedPlugin = root.appendingPathComponent("extracted/Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let verifier = UpdateTrustVerifier(
-			verifyArchive: { _extractedRoot, version in
+			verifyArchive: { _extractedRoot, version, glyphsMajor in
+				XCTAssertEqual(glyphsMajor, 4)
 				try FileManager.default.createDirectory(at: verifiedPlugin, withIntermediateDirectories: true)
 				try Data("signed fixture \(version)".utf8).write(
 					to: verifiedPlugin.appendingPathComponent("fixture.txt"),
@@ -2148,7 +2500,8 @@ exit 0
 					version: version,
 					cdHash: "fixture-cdhash",
 					teamIdentifier: UpdateHelperProtocol.expectedTeamIdentifier,
-					authority: "Apple Development: Fixture"
+					authority: "Apple Development: Fixture",
+					payloadSchemaVersion: 2
 				)
 			},
 			verifyPlugin: { plugin, version in
@@ -2174,7 +2527,7 @@ exit 0
 			validateArchive: { _ in }
 		)
 		let first = try UpdatePrepareRequest(
-			protocolVersion: 1,
+			protocolVersion: UpdateHelperProtocol.currentVersion,
 			version: "1.6.0",
 			glyphsMajor: 4,
 			requestID: UUID()
@@ -2182,21 +2535,29 @@ exit 0
 		let receipt = try await service.prepare(first)
 		XCTAssertEqual(receipt.assetSHA256, digest)
 		XCTAssertEqual(receipt.pluginCDHash, "fixture-cdhash")
-		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.stagedPlugin("1.6.0").path))
+		XCTAssertEqual(receipt.releaseVersion, "1.6.0")
+		XCTAssertEqual(receipt.pluginVersion, "1.6.0")
+		XCTAssertEqual(receipt.payloadSchemaVersion, 2)
+		XCTAssertEqual(receipt.glyphsMajor, 4)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.stagedPlugin("1.6.0", glyphsMajor: 4).path))
 		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.authorization(version: "1.6.0", glyphsMajor: 4).path))
 		XCTAssertEqual(try Data(contentsOf: installedMarker), before)
 		XCTAssertEqual(client.requestedURLs.count, 3)
 
 		let second = try UpdatePrepareRequest(
-			protocolVersion: 1,
+			protocolVersion: UpdateHelperProtocol.currentVersion,
 			version: "1.6.0",
 			glyphsMajor: 3,
 			requestID: UUID()
 		)
-		let reused = try await service.prepare(second)
-		XCTAssertEqual(reused, receipt)
+		do {
+			_ = try await service.prepare(second)
+			XCTFail("Expected the pinned Glyphs 3 target to reject release staging.")
+		} catch let error as UpdateStagingError {
+			XCTAssertEqual(error.code, "pinned_target")
+		}
 		XCTAssertEqual(client.requestedURLs.count, 3)
-		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.authorization(version: "1.6.0", glyphsMajor: 3).path))
+		XCTAssertFalse(FileManager.default.fileExists(atPath: paths.authorization(version: "1.6.0", glyphsMajor: 3).path))
 		XCTAssertEqual(try Data(contentsOf: installedMarker), before)
 	}
 
@@ -2218,13 +2579,13 @@ exit 0
 			client: client,
 			runner: UpdateCommandRunner { _, _ in "" },
 			verifier: UpdateTrustVerifier(
-				verifyArchive: { _, _ in throw UpdateStagingError("unexpected", "Verifier should not run.") },
+				verifyArchive: { _, _, _ in throw UpdateStagingError("unexpected", "Verifier should not run.") },
 				verifyPlugin: { _, _ in throw UpdateStagingError("unexpected", "Verifier should not run.") }
 			),
 			environment: ["GLYPHS_MCP_UPDATE_API_URL": endpoint]
 		)
 		let request = try UpdatePrepareRequest(
-			protocolVersion: 1,
+			protocolVersion: UpdateHelperProtocol.currentVersion,
 			version: "1.6.0",
 			glyphsMajor: 4,
 			requestID: UUID()
@@ -2284,8 +2645,13 @@ exit 0
 			.appendingPathComponent("glyphs-mcp-trust-\(UUID().uuidString)", isDirectory: true)
 		defer { try? FileManager.default.removeItem(at: root) }
 		let app = root.appendingPathComponent("GlyphsMCPInstaller.app", isDirectory: true)
-		let plugin = app.appendingPathComponent(
-			"Contents/Resources/Payload/Glyphs MCP.glyphsPlugin",
+		let payload = app.appendingPathComponent("Contents/Resources/Payload", isDirectory: true)
+		let plugin3 = payload.appendingPathComponent(
+			"Plugins/Glyphs3/Glyphs MCP.glyphsPlugin",
+			isDirectory: true
+		)
+		let plugin = payload.appendingPathComponent(
+			"Plugins/Glyphs4/Glyphs MCP.glyphsPlugin",
 			isDirectory: true
 		)
 		let pluginExecutable = plugin.appendingPathComponent("Contents/MacOS/plugin")
@@ -2294,14 +2660,15 @@ exit 0
 			withIntermediateDirectories: true
 		)
 		try Data("signed fixture".utf8).write(to: pluginExecutable)
-		for (url, identifier) in [
-			(app, "cx.ap.GlyphsMCPInstaller"),
-			(plugin, "cx.ap.GlyphsMCP"),
+		for (url, identifier, version) in [
+			(app, "cx.ap.GlyphsMCPInstaller", "1.6.0"),
+			(plugin3, "cx.ap.GlyphsMCP.glyphs3", "1.11.0"),
+			(plugin, "cx.ap.GlyphsMCP.glyphs4", "1.6.0"),
 		] {
 			let info: [String: Any] = [
 				"CFBundleIdentifier": identifier,
-				"CFBundleShortVersionString": "1.6.0",
-				"CFBundleVersion": "1.6.0",
+				"CFBundleShortVersionString": version,
+				"CFBundleVersion": version,
 			]
 			let data = try PropertyListSerialization.data(
 				fromPropertyList: info,
@@ -2314,7 +2681,46 @@ exit 0
 				withIntermediateDirectories: true
 			)
 			try data.write(to: destination)
+			if url != app {
+				let resources = url.appendingPathComponent("Contents/Resources", isDirectory: true)
+				try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+				try Data("# probe\n".utf8).write(
+					to: resources.appendingPathComponent("runtime_probe.py")
+				)
+				try Data("# policy\n".utf8).write(
+					to: resources.appendingPathComponent("runtime_path_policy.py")
+				)
+			}
 		}
+		try Data("mcp\n".utf8).write(to: payload.appendingPathComponent("requirements.txt"))
+		try FileManager.default.createDirectory(
+			at: payload.appendingPathComponent("skills", isDirectory: true),
+			withIntermediateDirectories: true
+		)
+		let manifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"skillsPath": "skills",
+			"targets": [
+				"3": [
+					"pluginPath": "Plugins/Glyphs3/Glyphs MCP.glyphsPlugin",
+					"pluginVersion": "1.11.0",
+					"runtimeTrack": "1.x",
+					"updatePolicy": "pinned",
+					"baseline": ["tag": "v1.11.0", "commit": "13ca805"],
+				],
+				"4": [
+					"pluginPath": "Plugins/Glyphs4/Glyphs MCP.glyphsPlugin",
+					"pluginVersion": "1.6.0",
+					"runtimeTrack": "2.x",
+					"updatePolicy": "release",
+					"runtimeIdentity": try runtimeIdentity(for: plugin, version: "1.6.0"),
+					"baseline": ["tag": "working-tree", "commit": "fixture"],
+				],
+			],
+		]
+		try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+			.write(to: payload.appendingPathComponent("payload.json"))
 
 		func verifier(
 			team: String = UpdateHelperProtocol.expectedTeamIdentifier,
@@ -2342,17 +2748,19 @@ exit 0
 			return UpdateTrustVerifier.live(runner: runner)
 		}
 
-		let verified = try verifier().verifyArchive(root, "1.6.0")
+		let verified = try verifier().verifyArchive(root, "1.6.0", 4)
 		XCTAssertEqual(verified.bundleURL, plugin)
 		XCTAssertEqual(verified.cdHash, "fixture-cdhash")
-		XCTAssertThrowsError(try verifier().verifyArchive(root, "1.6.1"))
+		XCTAssertEqual(verified.payloadSchemaVersion, 2)
+		XCTAssertThrowsError(try verifier().verifyArchive(root, "1.6.1", 4))
+		XCTAssertThrowsError(try verifier().verifyArchive(root, "1.6.0", 3))
 		for rejected in [
 			verifier(team: "ATTACKER"),
 			verifier(runtime: false),
 			verifier(timestamp: false),
 			verifier(notarized: false),
 		] {
-			XCTAssertThrowsError(try rejected.verifyArchive(root, "1.6.0"))
+			XCTAssertThrowsError(try rejected.verifyArchive(root, "1.6.0", 4))
 		}
 	}
 
@@ -2369,7 +2777,7 @@ exit 0
 			environment: [:]
 		)
 		let request = try UpdatePrepareRequest(
-			protocolVersion: 1,
+			protocolVersion: UpdateHelperProtocol.currentVersion,
 			version: "1.6.0",
 			glyphsMajor: 4,
 			requestID: UUID()
@@ -2402,9 +2810,9 @@ exit 0
 			environment: [:]
 		)
 		let request = try UpdatePrepareRequest(
-			protocolVersion: 1,
+			protocolVersion: UpdateHelperProtocol.currentVersion,
 			version: "1.6.0",
-			glyphsMajor: 3,
+			glyphsMajor: 4,
 			requestID: UUID()
 		)
 		let task = Task { try await service.prepare(request) }
@@ -2428,7 +2836,7 @@ exit 0
 		))
 	}
 
-	func testUpdateHelperManagerPersistsPerTargetOptInAndRemovesOnlyAfterLastTarget() throws {
+	func testUpdateHelperManagerPinsGlyphs3AndRemovesOnlyAfterGlyphs4OptOut() throws {
 		let root = FileManager.default.temporaryDirectory
 			.appendingPathComponent("glyphs-mcp-helper-\(UUID().uuidString)", isDirectory: true)
 		defer { try? FileManager.default.removeItem(at: root) }
@@ -2457,7 +2865,7 @@ exit 0
 			verifier: verifier
 		)
 		try manager.configure(embeddedExecutable: source, selections: [.v3: true, .v4: true])
-		XCTAssertTrue(box.get(.v3))
+		XCTAssertFalse(box.get(.v3))
 		XCTAssertTrue(box.get(.v4))
 		XCTAssertTrue(FileManager.default.fileExists(atPath: manager.paths.helperExecutable.path))
 		XCTAssertTrue(FileManager.default.fileExists(atPath: manager.paths.installReceipt.path))
@@ -2478,6 +2886,63 @@ exit 0
 		try manager.configure(embeddedExecutable: source, selections: [.v4: false])
 		XCTAssertFalse(box.get(.v4))
 		XCTAssertFalse(GlyphsUninstallScanner.itemExists(at: manager.paths.root))
+	}
+
+	func testGlyphs3UpdatePinRestoresOnlyInstallerOwnedValues() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-g3-pin-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let receipt = root.appendingPathComponent("Glyphs3UpdatePin.json")
+		let box = BooleanPreferencesBox([
+			Glyphs3UpdatePinManager.notificationKey: true,
+		])
+		let manager = Glyphs3UpdatePinManager(
+			receiptURL: receipt,
+			store: Glyphs3UpdatePinStore(
+				read: { box.read($0) },
+				write: { box.write($0, $1) },
+				remove: { box.remove($0) }
+			)
+		)
+
+		try manager.pin()
+		XCTAssertEqual(box.read(Glyphs3UpdatePinManager.notificationKey), false)
+		XCTAssertEqual(box.read(Glyphs3UpdatePinManager.preparationKey), false)
+		let attributes = try FileManager.default.attributesOfItem(atPath: receipt.path)
+		XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
+
+		box.write(Glyphs3UpdatePinManager.notificationKey, true)
+		try manager.restoreIfOwned()
+		XCTAssertEqual(box.read(Glyphs3UpdatePinManager.notificationKey), true)
+		XCTAssertNil(box.read(Glyphs3UpdatePinManager.preparationKey))
+		XCTAssertFalse(FileManager.default.fileExists(atPath: receipt.path))
+	}
+
+	func testGlyphs3UpdatePinPreservesUnrecognizedReceiptBeforeChangingPreferences() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-g3-pin-unsafe-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let receipt = root.appendingPathComponent("Glyphs3UpdatePin.json")
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let original = Data(#"{"schemaVersion":999}"#.utf8)
+		try original.write(to: receipt)
+		let box = BooleanPreferencesBox(Dictionary(
+			uniqueKeysWithValues: Glyphs3UpdatePinManager.managedKeys.map { ($0, true) }
+		))
+		let manager = Glyphs3UpdatePinManager(
+			receiptURL: receipt,
+			store: Glyphs3UpdatePinStore(
+				read: { box.read($0) },
+				write: { box.write($0, $1) },
+				remove: { box.remove($0) }
+			)
+		)
+
+		XCTAssertThrowsError(try manager.pin())
+		XCTAssertEqual(try Data(contentsOf: receipt), original)
+		for key in Glyphs3UpdatePinManager.managedKeys {
+			XCTAssertEqual(box.read(key), true)
+		}
 	}
 
 	func testUpdateHelperManagerDoesNotRecordOptInWhenVerificationFails() throws {
@@ -2503,6 +2968,48 @@ exit 0
 		)
 		XCTAssertFalse(box.get(.v4))
 		XCTAssertFalse(FileManager.default.fileExists(atPath: manager.paths.helperExecutable.path))
+	}
+
+	func testUpdateHelperManagerMigratesKnownProtocolV1OwnershipWithoutReusingItsStages() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-helper-migration-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let paths = UpdateStagingPaths(home: root.appendingPathComponent("home"))
+		try FileManager.default.createDirectory(at: paths.root, withIntermediateDirectories: true)
+		try Data(UpdateHelperProtocol.previousManagedMarker.utf8).write(to: paths.managedMarker)
+		let oldStage = paths.stagedVersion("1.6.0").appendingPathComponent("receipt.json")
+		try FileManager.default.createDirectory(at: oldStage.deletingLastPathComponent(), withIntermediateDirectories: true)
+		try Data(#"{"protocolVersion":1}"#.utf8).write(to: oldStage)
+		let source = root.appendingPathComponent("GlyphsMCPUpdater")
+		try Data("protocol v2 helper".utf8).write(to: source)
+		let box = UpdateOptInBox()
+		let manager = UpdateHelperManager(
+			paths: paths,
+			store: UpdateOptInStore(
+				isEnabled: { box.get($0) },
+				setEnabled: { box.set($0, $1) }
+			),
+			verifier: UpdateHelperVerifier { url in
+				VerifiedUpdateHelper(
+					executableURL: url,
+					probe: UpdateHelperProbe(build: "test"),
+					cdHash: "v2-cdhash",
+					teamIdentifier: UpdateHelperProtocol.expectedTeamIdentifier,
+					authority: "Apple Development: Fixture"
+				)
+			}
+		)
+
+		try manager.configure(embeddedExecutable: source, selections: [.v4: true])
+
+		XCTAssertEqual(
+			try String(contentsOf: paths.managedMarker, encoding: .utf8),
+			UpdateHelperProtocol.managedMarker
+		)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: oldStage.path))
+		XCTAssertFalse(FileManager.default.fileExists(
+			atPath: paths.stageReceipt("1.6.0", glyphsMajor: 4).path
+		))
 	}
 
 	func testUpdateHelperManagerRollsBackHelperAndReceiptWhenFinalVerificationFails() throws {
@@ -2673,6 +3180,191 @@ exit 0
 	}
 }
 
+
+extension GlyphsMCPInstallerTests {
+    func testComponentTreeIdentityIsDeterministicAndRejectsSymlinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("data")
+        try Data("first".utf8).write(to: file)
+        let identity = try InstallerPayloadManifestResolver.treeIdentity(root)
+        XCTAssertEqual(identity, try InstallerPayloadManifestResolver.treeIdentity(root))
+        try Data("changed".utf8).write(to: file)
+        XCTAssertNotEqual(identity, try InstallerPayloadManifestResolver.treeIdentity(root))
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("alias"), withDestinationURL: file)
+        XCTAssertThrowsError(try InstallerPayloadManifestResolver.treeIdentity(root))
+    }
+
+    func testManagedSkillUpgradeKeepsUserEditsAndUpdatesUnchangedFiles() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("skills"), destination = root.appendingPathComponent("installed")
+        let file = source.appendingPathComponent("glyphs/SKILL.md")
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(#"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"}]}"#.utf8).write(to: source.appendingPathComponent("manifest.json"))
+        let payload = InstallerPayload(payloadDir: root, pluginBundle: root, requirementsTxt: root, skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        try Data("v1".utf8).write(to: file)
+        _ = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        try Data("v2".utf8).write(to: file)
+        _ = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        let installed = destination.appendingPathComponent("glyphs/SKILL.md")
+        XCTAssertEqual(try String(contentsOf: installed), "v2")
+        try Data("user edit".utf8).write(to: installed)
+        try Data("v3".utf8).write(to: file)
+        _ = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(try String(contentsOf: installed), "user edit")
+    }
+
+    func testClaudeDesktopUsesBundledProxyWithExplicitPort() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.json")
+        let endpoint = URL(string: "http://127.0.0.1:9790/mcp")!
+        let command = ["/managed/runtime/bin/python3", "-B", "/managed/sidecar/proxy.py"]
+        try ClaudeDesktopConfigurator(endpointURL: endpoint, proxyCommand: command, log: { _ in }).patchClaudeDesktopConfig(at: config)
+        let json = try String(contentsOf: config)
+        XCTAssertFalse(json.contains("npx"))
+        XCTAssertTrue(json.contains("python3"))
+        XCTAssertEqual(ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeDesktopServerName)?.url, endpoint.absoluteString)
+    }
+}
+
+extension GlyphsMCPInstallerTests {
+    func testDevelopmentCorpusInstallsOfflineAndPreservesNestedUserChanges() throws {
+        var repo = URL(fileURLWithPath: #filePath)
+        for _ in 0..<5 { repo.deleteLastPathComponent() }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("payload/skills")
+        let destination = root.appendingPathComponent("isolated/skills")
+        let name = "glyphs-mcp-development"
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: repo.appendingPathComponent("skills/" + name), to: source.appendingPathComponent(name))
+        try Data(#"{"schemaVersion":1,"managedSkills":[{"name":"glyphs-mcp-development","surface":"glyphs-mcp-v2"}]}"#.utf8).write(to: source.appendingPathComponent("manifest.json"))
+        let payload = InstallerPayload(payloadDir: root, pluginBundle: root, requirementsTxt: root, skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        func install(_ replace: Bool = false) throws -> SkillInstallationResult {
+            try installer.installManagedSkills(from: payload, to: destination, clientName: "Offline test", overwriteExisting: replace)
+        }
+        XCTAssertEqual(try install().entries.first?.outcome, .installed)
+        XCTAssertEqual(try install().entries.first?.outcome, .current)
+        let installed = destination.appendingPathComponent(name)
+        let identity = try InstallerPayloadManifestResolver.treeIdentity(installed)
+        XCTAssertEqual(identity, try InstallerPayloadManifestResolver.treeIdentity(source.appendingPathComponent(name)))
+        // The public local helper runs from the installed tree in isolated Python.
+        let process = Process(), output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        process.arguments = ["-I", installed.appendingPathComponent("scripts/docs.py").path, "search", "GSLayer.selection", "--limit", "1"]
+        process.currentDirectoryURL = destination
+        process.environment = ["PATH": "/usr/bin:/bin"]
+        process.standardOutput = output
+        try process.run()
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0)
+        let result = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(result["returnedCount"] as? Int, 1)
+        let rows = try XCTUnwrap(result["results"] as? [[String: Any]])
+        XCTAssertEqual(rows.first?["symbol"] as? String, "GSLayer.selection")
+        XCTAssertEqual(identity, try InstallerPayloadManifestResolver.treeIdentity(installed))
+        let edited = installed.appendingPathComponent("assets/knowledge/docs/api/section_340.rst")
+        try Data("user annotation".utf8).write(to: edited)
+        let editedIdentity = try InstallerPayloadManifestResolver.treeIdentity(installed)
+        XCTAssertEqual(try install().entries.first?.outcome, .preservedConflict)
+        XCTAssertEqual(try String(contentsOf: edited), "user annotation")
+        XCTAssertEqual(try install(true).entries.first?.outcome, .installed)
+        XCTAssertEqual(identity, try InstallerPayloadManifestResolver.treeIdentity(installed))
+        let backups = FileManager.default.enumerator(at: AgentSkillBundleInstaller.skillBackupRoot(for: destination), includingPropertiesForKeys: nil)!.allObjects as! [URL]
+        let backup = try XCTUnwrap(backups.first { $0.lastPathComponent == name })
+        XCTAssertEqual(editedIdentity, try InstallerPayloadManifestResolver.treeIdentity(backup))
+    }
+
+    func testSkillOutcomesAndExplicitConflictBackup() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("skills"), destination = root.appendingPathComponent("installed")
+        try FileManager.default.createDirectory(at: source.appendingPathComponent("glyphs"), withIntermediateDirectories: true)
+        try Data(#"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"}]}"#.utf8).write(to: source.appendingPathComponent("manifest.json"))
+        let file = source.appendingPathComponent("glyphs/SKILL.md")
+        try Data("first".utf8).write(to: file)
+        let payload = InstallerPayload(payloadDir: root, pluginBundle: root, requirementsTxt: root, skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        func install(_ replace: Bool = false) throws -> SkillInstallationResult {
+            try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: replace)
+        }
+        XCTAssertEqual(try install().entries.first?.outcome, .installed)
+        XCTAssertEqual(try install().entries.first?.outcome, .current)
+        try Data("upgrade".utf8).write(to: file)
+        XCTAssertEqual(try install().entries.first?.outcome, .installed)
+        let installed = destination.appendingPathComponent("glyphs/SKILL.md")
+        try Data("user work".utf8).write(to: installed)
+        let conflict = try install()
+        XCTAssertEqual(conflict.entries.first?.outcome, .preservedConflict)
+        XCTAssertEqual(conflict.conflicts.first?.path, installed.deletingLastPathComponent().path)
+        XCTAssertTrue(conflict.summary.contains("Replace preserved skills (backup)"))
+        XCTAssertEqual(try String(contentsOf: installed), "user work")
+        // Remove ownership: unowned conflicting files must also be preserved.
+        try FileManager.default.removeItem(at: destination.appendingPathComponent(".glyphs-mcp-skills.json"))
+        XCTAssertEqual(try install().entries.first?.outcome, .preservedConflict)
+        XCTAssertEqual(try install(true).entries.first?.outcome, .installed)
+        XCTAssertEqual(try String(contentsOf: installed), "upgrade")
+        let copies = FileManager.default.enumerator(at: AgentSkillBundleInstaller.skillBackupRoot(for: destination), includingPropertiesForKeys: nil)!.allObjects as! [URL]
+        let preserved = try XCTUnwrap(copies.first { $0.lastPathComponent == "SKILL.md" && (try? String(contentsOf: $0)) == "user work" })
+        XCTAssertFalse(preserved.path.hasPrefix(destination.path + "/"))
+        let restore = root.appendingPathComponent("restored")
+        try FileManager.default.copyItem(at: preserved.deletingLastPathComponent(), to: restore)
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(restore), try InstallerPayloadManifestResolver.treeIdentity(preserved.deletingLastPathComponent()))
+        let active = try FileManager.default.contentsOfDirectory(at: destination, includingPropertiesForKeys: nil)
+        XCTAssertFalse(active.contains { $0.lastPathComponent.contains(".bak-") })
+        // An identical unowned copy is current, but must not be silently adopted.
+        try FileManager.default.removeItem(at: destination.appendingPathComponent(".glyphs-mcp-skills.json"))
+        XCTAssertEqual(try install().entries.first?.outcome, .current)
+        try Data("next release".utf8).write(to: file)
+        XCTAssertEqual(try install().entries.first?.outcome, .preservedConflict)
+        XCTAssertEqual(try String(contentsOf: installed), "upgrade")
+    }
+
+    func testRetiredFocusedSkillConflictExplainsInterfaceAndPreservesBackup() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("skills"), destination = root.appendingPathComponent("installed")
+        let name = "glyphs-mcp-spacing"
+        for path in [source.appendingPathComponent(name), destination.appendingPathComponent(name)] {
+            try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
+        }
+        try Data(#"{"schemaVersion":1,"managedSkills":[{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.utf8).write(to: source.appendingPathComponent("manifest.json"))
+        let current = "Call `get_status` and `read_entities`."
+        let retired = "Require data.apiMajor == 2; use `read_document` and `execute_python(mode=read_only)`."
+        let installed = destination.appendingPathComponent(name + "/SKILL.md")
+        try Data(current.utf8).write(to: source.appendingPathComponent(name + "/SKILL.md"))
+        try Data(retired.utf8).write(to: installed)
+        let payload = InstallerPayload(payloadDir: root, pluginBundle: root, requirementsTxt: root, skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        let result = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(result.entries.first?.outcome, .preservedConflict)
+        XCTAssertTrue(result.entries.first?.compatibilityIssue?.contains("retired typed-interface") == true)
+        XCTAssertTrue(result.entries.first?.repairAction?.contains(installed.deletingLastPathComponent().path) == true)
+        XCTAssertTrue(result.summary.contains("Replace preserved skills (backup)"))
+        XCTAssertEqual(try String(contentsOf: installed), retired)
+        let replaced = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: true)
+        XCTAssertEqual(replaced.entries.first?.outcome, .installed)
+        XCTAssertEqual(try String(contentsOf: installed), current)
+        let backups = FileManager.default.enumerator(at: AgentSkillBundleInstaller.skillBackupRoot(for: destination), includingPropertiesForKeys: nil)!.allObjects as! [URL]
+        XCTAssertTrue(backups.contains { $0.lastPathComponent == "SKILL.md" && (try? String(contentsOf: $0)) == retired })
+        let unchanged = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(unchanged.entries.first?.outcome, .current)
+        XCTAssertNil(unchanged.entries.first?.compatibilityIssue)
+        let editedLean = current + " Never use `execute_python`; preserve my local instructions."
+        try Data(editedLean.utf8).write(to: installed)
+        let preservedLean = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(preservedLean.entries.first?.outcome, .preservedConflict)
+        XCTAssertNil(preservedLean.entries.first?.compatibilityIssue)
+        XCTAssertEqual(try String(contentsOf: installed), editedLean)
+    }
+}
+
 extension GlyphsMCPInstallerTests {
     func testLegacyOpenTypeMarkerNeedsExplicitReplacementThenManagedUpgrade() throws {
         let fm = FileManager.default
@@ -2718,5 +3410,151 @@ extension GlyphsMCPInstallerTests {
         try Data("User modification.".utf8).write(to: installed.appendingPathComponent("SKILL.md"))
         XCTAssertEqual(try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false).entries.first?.outcome, .preservedConflict)
         XCTAssertEqual(try String(contentsOf: installed.appendingPathComponent("SKILL.md")), "User modification.")
+    }
+}
+
+
+private struct H1SkillsFixture {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    var source: URL { root.appendingPathComponent("payload/skills") }
+    var destination: URL { root.appendingPathComponent("client/skills") }
+    var ledger: URL { destination.appendingPathComponent(".glyphs-mcp-skills.json") }
+    let names = ["glyphs-mcp-icon-font", "glyphs-mcp-litsquare-metadata", "glyphs-mcp-color-font",
+                 "glyphs-mcp-variable-font", "glyphs-mcp-production-audit",
+                 "glyphs-mcp-unicode-semantics", "glyphs-mcp-export-validation"]
+    let installer = AgentSkillBundleInstaller(log: { _ in })
+    var payload: InstallerPayload {
+        InstallerPayload(payloadDir: root, pluginBundle: root, requirementsTxt: root, skillsDir: source)
+    }
+    init() throws {
+        try write(source.appendingPathComponent("glyphs/SKILL.md"), "---\nname: glyphs\nmetadata:\n  surface: glyphs-mcp-v2\n---\nUse `get_status` and `read_entities`.")
+        try write(source.appendingPathComponent("manifest.json"), #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"}]}"#)
+    }
+    func write(_ file: URL, _ text: String) throws {
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(text.utf8).write(to: file)
+    }
+    func add(_ name: String, owned: Bool = false, suffix: String = "") throws -> String {
+        let target = destination.appendingPathComponent(name)
+        try write(target.appendingPathComponent("SKILL.md"), "---\nname: \(name)\nmetadata:\n  surface: glyphs-mcp-v2\n---\nCall `get_server_info`; require `data.apiMajor == 2`. Use `read_document`." + suffix)
+        try write(target.appendingPathComponent("references/proof.md"), "nested evidence")
+        try write(target.appendingPathComponent(".glyphs-mcp-owner.json"), #"{"repository":"thierryc/Glyphs-mcp"}"#)
+        let hash = try InstallerPayloadManifestResolver.treeIdentity(target)
+        if owned {
+            var values = (try? Data(contentsOf: ledger)).flatMap { try? JSONDecoder().decode([String:String].self, from: $0) } ?? [:]
+            values[name] = hash
+            try JSONEncoder().encode(values).write(to: ledger)
+        }
+        return hash
+    }
+    func install(_ replace: Bool = false) throws -> SkillInstallationResult {
+        try installer.installManagedSkills(from: payload, to: destination, clientName: "H1", overwriteExisting: replace)
+    }
+    func cleanup() { try? FileManager.default.removeItem(at: root) }
+}
+
+extension GlyphsMCPInstallerTests {
+    func testH1OwnedRetirementExactBackupsAndSecondNoOp() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        var hashes: [String:String] = [:]
+        for name in f.names { hashes[name] = try f.add(name, owned: true) }
+        let result = try f.install()
+        XCTAssertTrue(result.conflicts.isEmpty)
+        let retired = result.entries.filter { $0.outcome == .retired }
+        XCTAssertEqual(Set(retired.map(\.name)), Set(f.names))
+        for entry in retired {
+            XCTAssertFalse(FileManager.default.fileExists(atPath: entry.path))
+            let backup = URL(fileURLWithPath: try XCTUnwrap(entry.backupPath))
+            XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(backup), hashes[entry.name])
+            XCTAssertFalse(backup.path.hasPrefix(f.destination.path + "/"))
+            let record = try JSONDecoder().decode([String:String].self, from: Data(contentsOf: backup.deletingLastPathComponent().appendingPathComponent("backup.json")))
+            XCTAssertEqual(record["source"], entry.path)
+            XCTAssertEqual(record["identity"], hashes[entry.name])
+        }
+        let ledger = try JSONDecoder().decode([String:String].self, from: Data(contentsOf: f.ledger))
+        XCTAssertEqual(Set(ledger.keys), ["glyphs"])
+        let backupRoot = AgentSkillBundleInstaller.skillBackupRoot(for: f.destination)
+        let before = try InstallerPayloadManifestResolver.treeIdentity(backupRoot)
+        XCTAssertEqual(try f.install().entries.map(\.outcome), [.current])
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(backupRoot), before)
+    }
+
+    func testH1UnownedMarkersAndUserEditsRemainConflictsUntilExplicitReplacement() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        let unowned = f.names[0], edited = f.names[1]
+        let unownedHash = try f.add(unowned)
+        _ = try f.add(edited, owned: true)
+        try f.write(f.destination.appendingPathComponent(edited + "/notes.txt"), "user work")
+        let editedHash = try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(edited))
+        let result = try f.install()
+        XCTAssertEqual(Set(result.conflicts.map(\.name)), [unowned, edited])
+        for entry in result.conflicts {
+            XCTAssertTrue(entry.repairAction!.contains(entry.path))
+            XCTAssertTrue(entry.repairAction!.contains("Replace preserved skills (backup)"))
+            XCTAssertTrue(entry.compatibilityIssue!.contains("does not add feature support"))
+        }
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(unowned)), unownedHash)
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(edited)), editedHash)
+        let replaced = try f.install(true)
+        XCTAssertTrue(replaced.conflicts.isEmpty)
+        for entry in replaced.entries where entry.outcome == .retired {
+            let expected = entry.name == unowned ? unownedHash : editedHash
+            XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(URL(fileURLWithPath: entry.backupPath!)), expected)
+        }
+        XCTAssertEqual(try f.install().entries.map(\.outcome), [.current])
+    }
+
+    func testH1PreservesSameNamedV1LeanAndUnrelatedSkillsEvenOnReplace() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        _ = try f.add(f.names[0])
+        let v1 = f.destination.appendingPathComponent(f.names[0] + "/SKILL.md")
+        try f.write(v1, "---\nmetadata:\n  surface: glyphs-mcp-v1\n---\nUse `get_server_info` and `list_open_fonts`.")
+        _ = try f.add(f.names[1], suffix: "\nUse `get_status` and `read_entities`; reject the obsolete gate.")
+        try f.write(f.destination.appendingPathComponent("unrelated/SKILL.md"), "user instructions")
+        let paths = [f.names[0], f.names[1], "unrelated"]
+        let before = try paths.map { try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent($0)) }
+        XCTAssertFalse(try f.install(true).entries.contains { $0.outcome == .retired })
+        XCTAssertEqual(before, try paths.map { try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent($0)) })
+    }
+
+    func testH1NoRetirementForV1PayloadOrFamilyStillShipped() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        let name = f.names[0]; let hash = try f.add(name, owned: true)
+        try f.write(f.source.appendingPathComponent("glyphs/SKILL.md"), "Use `get_server_info` and `list_open_fonts`.")
+        XCTAssertFalse(try f.install(true).entries.contains { $0.outcome == .retired })
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(name)), hash)
+        try f.write(f.source.appendingPathComponent("glyphs/SKILL.md"), "Use `get_status` and `read_entities`.")
+        try FileManager.default.copyItem(at: f.destination.appendingPathComponent(name), to: f.source.appendingPathComponent(name))
+        try f.write(f.source.appendingPathComponent("manifest.json"), "{\"schemaVersion\":1,\"managedSkills\":[{\"name\":\"glyphs\",\"surface\":\"glyphs-mcp-v2\"},{\"name\":\"" + name + "\",\"surface\":\"glyphs-mcp-v2\"}]}")
+        XCTAssertFalse(try f.install(true).entries.contains { $0.outcome == .retired })
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(name)), hash)
+    }
+
+    func testH1PreflightFindsOnlyMatchingRetiredFamilies() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        _ = try f.add(f.names[0])
+        try f.write(f.destination.appendingPathComponent(f.names[1] + "/SKILL.md"), "v1 skill")
+        XCTAssertEqual(f.installer.existingManagedSkillDestinations(from: f.payload, under: f.destination).map(\.lastPathComponent), [f.names[0]])
+    }
+
+    func testH1RetirementRestoredWhenLedgerWriteFails() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        _ = try f.install()
+        let name = f.names[0]; let hash = try f.add(name, owned: true)
+        let before = try Data(contentsOf: f.ledger)
+        // An immutable ledger deterministically prevents atomic replacement.
+        try FileManager.default.setAttributes([.immutable: true], ofItemAtPath: f.ledger.path)
+        defer { try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: f.ledger.path) }
+        XCTAssertThrowsError(try f.install())
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(name)), hash)
+        XCTAssertEqual(try Data(contentsOf: f.ledger), before)
+    }
+
+    func testH1BackupFailureDoesNotRemoveOriginal() throws {
+        let f = try H1SkillsFixture(); defer { f.cleanup() }
+        let name = f.names[0]; let hash = try f.add(name, owned: true)
+        try f.write(AgentSkillBundleInstaller.skillBackupRoot(for: f.destination), "not a directory")
+        XCTAssertThrowsError(try f.install())
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(name)), hash)
     }
 }

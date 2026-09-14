@@ -1,0 +1,757 @@
+{
+  "startedAt": "2026-09-10T14:06:04.996059+00:00",
+  "hostLoadBefore": [
+    13.09033203125,
+    12.54345703125,
+    10.94580078125
+  ],
+  "logicalCPUs": 10,
+  "instrumented": true,
+  "errors": [],
+  "application": "/Applications/Glyphs 4.app",
+  "sidecarRoot": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/sidecar",
+  "bridgeRoot": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin",
+  "host": {
+    "CFBundleIdentifier": "com.GeorgSeifert.Glyphs4",
+    "CFBundleShortVersionString": "4.1",
+    "CFBundleVersion": "4107"
+  },
+  "endpoint": "http://127.0.0.1:65097/mcp/",
+  "trials": [
+    {
+      "phase": "first",
+      "initializeMs": 102.41,
+      "catalogMs": 8.984041,
+      "statusMs": 25.174333,
+      "connectionMs": 136.651375
+    },
+    {
+      "phase": "warmup",
+      "initializeMs": 9.551,
+      "catalogMs": 6.684625,
+      "statusMs": 9.453125,
+      "connectionMs": 25.775291
+    },
+    {
+      "phase": "trial-1",
+      "initializeMs": 10.160166,
+      "catalogMs": 7.554166,
+      "statusMs": 9.848667,
+      "connectionMs": 27.642708
+    },
+    {
+      "phase": "trial-2",
+      "initializeMs": 10.266542,
+      "catalogMs": 7.858916,
+      "statusMs": 9.4545,
+      "connectionMs": 27.663167
+    },
+    {
+      "phase": "trial-3",
+      "initializeMs": 9.320958,
+      "catalogMs": 6.861292,
+      "statusMs": 10.309917,
+      "connectionMs": 26.594208
+    },
+    {
+      "phase": "trial-4",
+      "initializeMs": 8.828917,
+      "catalogMs": 7.294916,
+      "statusMs": 9.2955,
+      "connectionMs": 25.5035
+    },
+    {
+      "phase": "trial-5",
+      "initializeMs": 9.312958,
+      "catalogMs": 6.897,
+      "statusMs": 10.318875,
+      "connectionMs": 26.61025
+    }
+  ],
+  "calls": [
+    {
+      "at": "2026-09-10T14:06:08.905817+00:00",
+      "phase": "first",
+      "method": "initialize",
+      "latencyMs": 102.41,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.008246+00:00",
+      "phase": "first",
+      "method": "tools/list",
+      "latencyMs": 8.984041,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.017268+00:00",
+      "phase": "first",
+      "method": "get_status",
+      "latencyMs": 25.174333,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.043117+00:00",
+      "phase": "warmup",
+      "method": "initialize",
+      "latencyMs": 9.551,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.052694+00:00",
+      "phase": "warmup",
+      "method": "tools/list",
+      "latencyMs": 6.684625,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.059417+00:00",
+      "phase": "warmup",
+      "method": "get_status",
+      "latencyMs": 9.453125,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.069327+00:00",
+      "phase": "trial-1",
+      "method": "initialize",
+      "latencyMs": 10.160166,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.079507+00:00",
+      "phase": "trial-1",
+      "method": "tools/list",
+      "latencyMs": 7.554166,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.087100+00:00",
+      "phase": "trial-1",
+      "method": "get_status",
+      "latencyMs": 9.848667,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.097365+00:00",
+      "phase": "trial-2",
+      "method": "initialize",
+      "latencyMs": 10.266542,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.107656+00:00",
+      "phase": "trial-2",
+      "method": "tools/list",
+      "latencyMs": 7.858916,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.115554+00:00",
+      "phase": "trial-2",
+      "method": "get_status",
+      "latencyMs": 9.4545,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.125388+00:00",
+      "phase": "trial-3",
+      "method": "initialize",
+      "latencyMs": 9.320958,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.134725+00:00",
+      "phase": "trial-3",
+      "method": "tools/list",
+      "latencyMs": 6.861292,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.141630+00:00",
+      "phase": "trial-3",
+      "method": "get_status",
+      "latencyMs": 10.309917,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.152321+00:00",
+      "phase": "trial-4",
+      "method": "initialize",
+      "latencyMs": 8.828917,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.161167+00:00",
+      "phase": "trial-4",
+      "method": "tools/list",
+      "latencyMs": 7.294916,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.168508+00:00",
+      "phase": "trial-4",
+      "method": "get_status",
+      "latencyMs": 9.2955,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.178146+00:00",
+      "phase": "trial-5",
+      "method": "initialize",
+      "latencyMs": 9.312958,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.187476+00:00",
+      "phase": "trial-5",
+      "method": "tools/list",
+      "latencyMs": 6.897,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.194414+00:00",
+      "phase": "trial-5",
+      "method": "get_status",
+      "latencyMs": 10.318875,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.205227+00:00",
+      "phase": "idle-probe",
+      "method": "initialize",
+      "latencyMs": 9.579541,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.214809+00:00",
+      "phase": "preservation-before",
+      "method": "list_documents",
+      "latencyMs": 18.486542,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.233306+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.165208,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.293636+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.242292,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.354912+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.420625,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.416433+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.093167,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.477640+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.475375,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.538184+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.43025,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.599704+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.451459,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.661267+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.846042,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.723262+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.774416,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.784194+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.594042,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.844883+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 11.45975,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.907089+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.117875,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:09.967710+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.978208,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.028591+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 11.667583,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.091708+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.931667,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.153118+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 13.36125,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.218091+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.650541,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.279475+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 12.43725,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.343066+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 11.941834,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.405396+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 16.045333,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:06:10.473549+00:00",
+      "phase": "preservation-after",
+      "method": "list_documents",
+      "latencyMs": 13.523917,
+      "ok": true
+    }
+  ],
+  "initialize": {
+    "meta": null,
+    "protocolVersion": "2025-11-25",
+    "capabilities": {
+      "experimental": {},
+      "logging": null,
+      "prompts": {
+        "listChanged": true
+      },
+      "resources": {
+        "subscribe": false,
+        "listChanged": true
+      },
+      "tools": {
+        "listChanged": true
+      },
+      "completions": null,
+      "tasks": null
+    },
+    "serverInfo": {
+      "name": "Glyphs MCP Sidecar",
+      "title": null,
+      "version": "0.1.0",
+      "websiteUrl": null,
+      "icons": null
+    },
+    "instructions": null
+  },
+  "catalog": [
+    {
+      "name": "get_status",
+      "title": null,
+      "description": "Return sidecar, external worker, and live bridge availability.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "list_documents",
+      "title": null,
+      "description": "List open Glyphs documents using a bounded bridge call.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "read_entities",
+      "title": null,
+      "description": "Read up to 100 explicit glyph, layer, master, or selection targets.",
+      "inputSchema": {
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "entities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Entities",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "entities",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "start_job",
+      "title": null,
+      "description": "Prepare width_delta, spacing, kerning_collision, start_nodes or slant outside Glyphs. Options select references, contours, explicit pairs, masters and optional straight-stem preservation; get_job reports evidence.",
+      "inputSchema": {
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Delta"
+          },
+          "glyphs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Glyphs"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Options"
+          }
+        },
+        "required": [
+          "document_id",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "get_job",
+      "title": null,
+      "description": "Return compact job progress, counts, warnings, and a small sample.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "apply_job",
+      "title": null,
+      "description": "Show the prepared result as a reversible live change; this is not acceptance.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "discard_job",
+      "title": null,
+      "description": "Cancel an unapplied job or reverse its still-current live targets.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    }
+  ],
+  "status": {
+    "protocol": 1,
+    "sidecarVersion": "0.1.0",
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "0.1.0",
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": []
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  },
+  "connection": {
+    "n": 5,
+    "medianMs": 26.61025,
+    "minMs": 25.5035,
+    "maxMs": 27.663167,
+    "p95Ms": 27.663167
+  },
+  "statusHttpRoundTrip": {
+    "n": 20,
+    "medianMs": 10.4408545,
+    "minMs": 9.165208,
+    "maxMs": 16.045333,
+    "p95Ms": 13.36125
+  },
+  "documentsBefore": [],
+  "documentsAfter": [],
+  "bridgeTiming": {
+    "dispatchWaitMs": {
+      "n": 29,
+      "medianMs": 2.704417,
+      "minMs": 2.272917,
+      "maxMs": 2.969875,
+      "p95Ms": 2.883625
+    },
+    "callbackMs": {
+      "n": 29,
+      "medianMs": 0.023709,
+      "minMs": 0.018958,
+      "maxMs": 0.052,
+      "p95Ms": 0.045375
+    }
+  },
+  "sidecarTiming": {
+    "bridgeHttpMs": {
+      "n": 27,
+      "medianMs": 3.713375,
+      "minMs": 3.256208,
+      "maxMs": 18.832167,
+      "p95Ms": 3.937375
+    },
+    "sidecarAssemblyMs": {
+      "n": 27,
+      "medianMs": 0.1421260000000002,
+      "minMs": 0.10608300000000037,
+      "maxMs": 0.30125,
+      "p95Ms": 0.16762600000000027
+    },
+    "statusTotalMs": {
+      "n": 27,
+      "medianMs": 3.86375,
+      "minMs": 3.41975,
+      "maxMs": 18.999791,
+      "p95Ms": 4.066083
+    }
+  },
+  "finishedAt": "2026-09-10T14:06:10.856746+00:00",
+  "hostLoadAfter": [
+    13.0029296875,
+    12.5341796875,
+    10.95166015625
+  ]
+}

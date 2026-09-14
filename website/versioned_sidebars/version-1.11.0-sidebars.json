@@ -1,0 +1,72 @@
+{
+  "docs": [
+    {
+      "type": "category",
+      "label": "Overview",
+      "items": [
+        "glyphs-mcp"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/installation",
+        "tutorial/first-session",
+        "getting-started/start-server",
+        "getting-started/connect-client",
+        "getting-started/codex-chatgpt-plugin-ui",
+        "getting-started/use-agent-skills",
+        "getting-started/troubleshooting"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Concepts",
+      "items": [
+        "concepts/how-glyphs-mcp-works",
+        "concepts/agent-skills",
+        "concepts/safety-model"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Workflows",
+      "items": [
+        "kerning-workflow",
+        "kerning-tools",
+        "spacing-tools",
+        "italic-first-pass",
+        "compensated-tuning-tools",
+        "workflows/ai-font-proofreading",
+        "workflows/style-set-inspection",
+        "workflows/outlines-selected-nodes",
+        "workflows/visual-review",
+        "workflows/export-designspace-ufo"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Reference",
+      "items": [
+        "reference/command-set",
+        "reference/glyphs3-compatibility",
+        "reference/settings",
+        "reference/resources"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contributor Notes",
+      "items": [
+        "contributor/local-docs-development",
+        "contributor/unicode-assignment-tools",
+        "contributor/ai-font-proofreading-plan",
+        "contributor/italic-balanced-broad-latin-benchmark",
+        "contributor/italic-deterministic-balanced-forum-draft",
+        "contributor/release-qa-protocol",
+        "contributor/release-build-notes"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "noRuntimeErrors": true,
+  "sidecarHashMatches": true,
+  "bridgeHashMatches": true,
+  "releaseMatches": true,
+  "sameSevenTools": true,
+  "isolatedScope": true,
+  "regressionCounts": true,
+  "linksExist": true
+}

@@ -1,0 +1,21 @@
+{
+  "glyph": "litsquare.logo.glyphsMCP",
+  "master": "Regular-S",
+  "masterId": "74EE9863-DD0D-47A4-B98B-F1098734EDA9",
+  "source": "litsquare-symbols/sf-symbols/litsquare-icons.glyphspackage",
+  "author": "Thierry Charbonnel / LitSquare",
+  "license": "SIL Open Font License 1.1",
+  "repository": "https://github.com/thierryc/litsquare-symbols",
+  "glyphSHA256": "572b30bd5fd722edc9ff5c5085b9bdec618e8c002c7e3e55e215d6e8b8694e13",
+  "fontInfoSHA256": "cde18d91da8f3cc4c2fc52fa667c9a9acd4e31f9c70c2caff616b835732dc200",
+  "layerSHA256": "48cfb9fcb757f80db224ef704d8b5cd5c402258082858a32f5125434a8f724ca",
+  "assetSHA256": "ffe496e82bbaee6c498b9469e7dd1088ceb29395b8b414b2672ee0fbed37c7a4",
+  "positiveContours": 3,
+  "maskContours": 1,
+  "bounds": [
+    239,
+    20.74388876036309,
+    1144,
+    894
+  ]
+}

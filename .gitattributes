@@ -1,0 +1,7 @@
+# Keep binary assets out of text diff and whitespace checks.
+*.pdf binary
+
+# Pinned source/license text and the frozen v1 documentation retain exact bytes.
+macos-installer/GlyphsMCPInstaller/Resources/Notices/Sparkle-LICENSE.txt -whitespace
+third_party/glyphs-file-format-v4/GlyphsFileFormatv4.md -whitespace
+website/versioned_docs/version-1.11.0/** -whitespace

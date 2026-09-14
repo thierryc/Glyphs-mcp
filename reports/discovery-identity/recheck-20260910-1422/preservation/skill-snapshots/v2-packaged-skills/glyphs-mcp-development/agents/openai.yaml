@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-development"
+  short_description: "Create and review workspace-first native Glyphs scripts and "
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

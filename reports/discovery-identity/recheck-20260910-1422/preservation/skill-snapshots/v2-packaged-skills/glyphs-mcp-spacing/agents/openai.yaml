@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-spacing"
+  short_description: "Prepare and review reference-based spacing suggestions with "
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

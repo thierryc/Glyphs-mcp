@@ -1,77 +1,43 @@
-# CODEX.md
+# Glyphs MCP lean v2
 
-This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP.
+Glyphs 4 uses the external sidecar, bounded native bridge, and independent
+Curve Inspector and Reference Inspector. Glyphs 3 stays pinned to 1.11.0.
+The seven MCP tools are get_status, list_documents, read_entities, start_job,
+get_job, apply_job and discard_job. Native Save is acceptance; Undo and Redo
+are per glyph, and discard restores a whole job. No remote arbitrary Python
+execution or experimental canonical runtime is shipped.
 
-## Mission Brief
-- Glyphs MCP is a Python-based MCP server packaged as a Glyphs 3 plugin.
-- The server exposes GlyphsApp functionality as JSON-RPC tools via Streamable HTTP at `http://127.0.0.1:9680/mcp/`.
-- A plain browser `GET` to `/mcp/` returns JSON discovery; MCP clients connect using SSE (`Accept: text/event-stream`).
-- Dependencies are installed into the user Scripts `site-packages` directory,
-  not vendored inside the plugin.
-- Resources are helper reference material (guide + docs) to improve tool calls and generated code.
+Production source lives in src/sidecar, src/bridge, src/protocol and
+src/companions. Workflows belong outside the bridge. Keep the existing source
+protection, exact history/recovery, target-level concurrency and cancellation.
+Proposal/display tolerance is 0.001 font units, with zero relative tolerance;
+it never weakens exact restoration or topology checks.
 
-## Repository Map
-- `src/glyphs-mcp/` — Core plugin code, MCP tool implementations, and build scripts.
-- `Documentations/` — Generated docs copied into the plugin by `copy_documentation.py`.
-- `glyphs-build-env/` — Optional local virtual environment for development tooling.
-- `skills/` — Repo-owned Codex skills for repeatable Glyphs MCP workflows.
-- `.agents/skills` — Discovery bridge that exposes the repo-owned skills to Codex.
-- `README.md` — Current tool catalog, build steps, and IDE connection examples.
+Build with scripts/build_simple_v2.py and scripts/build_installer_payload.py.
+Build the desktop app with `python scripts/build_local_app.py`; it uses fresh
+DerivedData and verifies the compiled asset catalog. Install only
+`dist/local/Glyphs MCP.app` after `scripts/verify_desktop_app.py` passes with
+`--receipt dist/local/build-receipt.json`. Never reuse or copy DerivedData
+between worktrees. Use `scripts/clean_desktop_builds.py --apply` for obsolete
+generated outputs; never remove `build/` wholesale or create worktrees in it.
+Private runtimes are built from third_party/lean-runtime*.json and hash locks
+using scripts/build_private_runtime.py. Downloads are a maintainer preparation
+step, never an end-user installation step. The installer copies selected
+components transactionally, preserving unrelated files and preferences.
 
-## Everyday Commands
-- Activate tooling env: `source glyphs-build-env/bin/activate`.
-- Install dependencies:
-  - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`)
-  - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
-- Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
-- Start the server from Glyphs: restart the app, then **Edit → Start Glyphs MCP Server** (or enable auto-start in **Edit → Glyphs MCP Server Status…**).
+Core budgets: protocol 350 lines, bridge 1600, sidecar 3500, total 6000, each
+module at most 500. Share mechanisms and remove duplication rather than
+adding scenario-specific handlers. Companion drawing callbacks only draw.
 
-## MCP Tool Surface (selected)
-- Metadata: `list_open_fonts`, `get_font_glyphs`, `get_font_masters`, `get_font_instances`.
-- Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`, `get_selected_nodes`, `list_style_sets`.
-- Curve geometry: `review_tunni_geometry`, `review_curve_quality`, grid-safe `apply_tunni_balance`, and the native curvature Reporter.
-- Candidate review: typed `preview_*_candidate` tools, a difference-only golden-yellow Candidate Reporter with separate curvature review, optional materialization, exact re-review tokens, guarded acceptance, and owned-layer discard.
-- Editing: `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph`, `update_glyph_node_positions`, `set_glyph_paths`.
-- Metrics & persistence: `update_glyph_metrics`, `update_glyph_properties`, `set_kerning_pair`, `save_font`.
-- Automation: `execute_code`, `execute_code_with_context`, `get_selected_font_and_master`.
-- Docs helpers: `docs_search`, `docs_get`.
+Run focused pytest checks, then scripts/run_python_tests.sh --pytest, native
+installer tests, deterministic builds, docs/skills checks and git diff --check.
+Use an authorized disposable font for native acceptance, verify the original
+source hash, and report baseline and loaded responsiveness separately. A
+200 ms HTTP sample is diagnostic, not an automatic release rejection.
 
-## Clickable Glyphs Links
-- Glyph/layer read responses can include `showUrl`, `showHttpUrl`, and `showMarkdown`.
-- Use `showMarkdown` in user-facing answers when a direct jump into Glyphs would help. It points at the local HTTP bridge (`http://127.0.0.1:9680/glyphs-show/`) so clients that block `glyphsapp://` can still render a clickable link.
-- Unsaved fonts return `showUrlUnavailableReason` because `glyphsapp://show/` requires an absolute file path.
-- The URL scheme opens containing glyphs/layers only; it does not select nodes, anchors, components, or paths.
-- For "style set", "stylistic set", or `ssXX` listing questions, call `list_style_sets` first and use each style set's group-level `showMarkdown` link. Do not render linked glyph names as inline code.
-
-## Helper Resources
-- Guide: `glyphs://glyphs-mcp/guide`
-- Docs index: `glyphs://glyphs-mcp/docs/index.json`
-- Deferred beztrace integration gate: [`content/contributor/beztrace-integration-gate.mdx`](content/contributor/beztrace-integration-gate.mdx). Do not add the tool, binary, dependency manifest, or release integration until that standalone-product gate passes.
-
-Refer to `README.md` for the full command table and usage notes.
-
-## Agent Execution Contract (Guide-Aligned)
-- Read current state before mutation (`get_selected_font_and_master`, `get_selected_glyphs`, `get_glyph_details`/`get_glyph_paths` as needed).
-- Prefer dedicated mutation tools first; use `execute_code_with_context` or `execute_code` for multi-step workflows where one script is more reliable.
-- For `execute_code*`, keep scripts minimal, validate targets first, and bound output with `max_output_chars` / `max_error_chars` when needed.
-- For node mutations, snapshot and compare position, type, connection,
-  smoothness, orientation, and name; only explicitly targeted fields may change.
-  Never assign Python `None` to a Glyphs string property such as `GSNode.name`;
-  use `""` for an intentionally empty value.
-- After each mutation, re-read affected entities, stop on any non-target change,
-  and report changed/skipped counts.
-- For explicit coordinate-only micro-edits, use `update_glyph_node_positions`
-  with the default font grid policy. Its complete transaction read-back
-  satisfies the re-read requirement; reserve `set_glyph_paths` for whole-path
-  or topology replacement.
-
-## Agent Guidelines
-- Prefer `rg`/`fd` style tools for repo searches; avoid altering the plugin
-  bundle directly unless necessary.
-- Keep documentation ASCII-only unless the file already uses other characters.
-- When adding tooling, update both the README table and relevant agent guides (Claude/Codex).
-- When tool workflows, catalog metadata, visibility, or safety rules change, update the matching skill in `skills/` and keep `.agents/skills` pointing at the same source of truth.
-- After changes that touch the plugin bundle, remind users to reinstall or resymlink it into the Glyphs plugins directory.
+The canonical lean agent skills are in skills/; synchronize packaged copies
+with scripts/sync_codex_plugin_skills.sh. Pinned Glyphs 3 skills are preserved
+in legacy/glyphs3. Keep local preparation separate from public release.
 
 Use [the qualification index](reports/README.md) for the latest tested state and
 remaining limits. Preserve historical reports and evidence; add a dated follow-up

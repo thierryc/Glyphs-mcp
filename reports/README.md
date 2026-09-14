@@ -98,6 +98,7 @@ update; the runtime was unchanged during that update.
 
 | Record | Scope and later status |
 |---|---|
+| [Repository consolidation](repository-cleanup-20260914/report.md) | Remaining Beta 1 desktop/docs/release work validated for commit: 1,914 Python and 179 macOS tests passed, two optional skips. Test isolation corrected; installed runtimes unchanged. |
 | [M7](beta1-m7-master-properties-20260914/report.md) | Native master metrics, angle and axes; installed and qualified, step 8 paused. |
 | [Gaps 7–14 plan](beta1-medium-gap-fixes-plan-20260914/plan.md) | Accepted read extensions and native recipes; step 7 is delivered in M7. |
 | [H6](beta1-h6-kerning-discovery-20260914/report.md) | Stored kerning discovery; installed and qualified, next step paused. |

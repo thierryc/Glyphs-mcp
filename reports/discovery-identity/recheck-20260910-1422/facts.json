@@ -1,0 +1,292 @@
+{
+  "decision": "progress sufficient; continue Report 02 with unchanged installed baselines and explicitly matched skill controls",
+  "tests": {
+    "pythonPassed": 387,
+    "pythonSkipped": 1,
+    "swiftPassed": 169
+  },
+  "candidateIdentity": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+9000d1765aaf",
+    "codeHash": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+15e6419bc81e",
+      "codeHash": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": []
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  },
+  "freshManifest": {
+    "bridge": {
+      "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+      "codeHash": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+      "identity": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+      "release": {
+        "betaNumber": 1,
+        "channel": "beta",
+        "installerBuild": 43,
+        "releaseVersion": "2.0.0-beta.1",
+        "version": "2.0.0"
+      }
+    },
+    "companions": [
+      {
+        "bundle": "Glyphs Curve Inspector.glyphsReporter",
+        "id": "curve-inspector",
+        "identity": "sha256:7e0887a7b26dd6f6c3474c31969aa00078d2e2dd234cf99bd1b715291217b576"
+      },
+      {
+        "bundle": "Glyphs Reference Inspector.glyphsReporter",
+        "id": "reference-inspector",
+        "identity": "sha256:f802002202c61cdba55030bbab9ee3848990391dd2ccc1b8cc2b2947970d7e13"
+      }
+    ],
+    "components": {
+      "curve-inspector": {
+        "requires": []
+      },
+      "mcp": {
+        "requires": [
+          "runtime",
+          "sidecar",
+          "bridge"
+        ]
+      },
+      "reference-inspector": {
+        "requires": [
+          "runtime"
+        ]
+      }
+    },
+    "installerBuild": 43,
+    "projectVersion": "2.0.0",
+    "protocol": 1,
+    "release": {
+      "betaNumber": 1,
+      "channel": "beta",
+      "installerBuild": 43,
+      "releaseVersion": "2.0.0-beta.1",
+      "version": "2.0.0"
+    },
+    "releaseChannel": "beta",
+    "releaseVersion": "2.0.0-beta.1",
+    "schemaVersion": 2,
+    "sidecar": {
+      "codeHash": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+      "identity": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+      "release": {
+        "betaNumber": 1,
+        "channel": "beta",
+        "installerBuild": 43,
+        "releaseVersion": "2.0.0-beta.1",
+        "version": "2.0.0"
+      }
+    },
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "version": "2.0.0"
+  },
+  "baselineTiming": {
+    "connection": {
+      "n": 5,
+      "medianMs": 25.911209,
+      "minMs": 24.41025,
+      "maxMs": 27.089708,
+      "p95Ms": 27.089708
+    },
+    "statusHttpRoundTrip": {
+      "n": 20,
+      "medianMs": 10.381562500000001,
+      "minMs": 8.99725,
+      "maxMs": 13.885541,
+      "p95Ms": 13.778542
+    },
+    "bridgeTiming": {
+      "dispatchWaitMs": {
+        "n": 30,
+        "medianMs": 2.7040414999999998,
+        "minMs": 2.316416,
+        "maxMs": 2.880292,
+        "p95Ms": 2.83325
+      },
+      "callbackMs": {
+        "n": 30,
+        "medianMs": 0.0221875,
+        "minMs": 0.016209,
+        "maxMs": 0.072792,
+        "p95Ms": 0.05575
+      }
+    },
+    "sidecarTiming": {
+      "bridgeHttpMs": {
+        "n": 28,
+        "medianMs": 3.7362085,
+        "minMs": 3.29775,
+        "maxMs": 19.451459,
+        "p95Ms": 4.166417
+      },
+      "sidecarAssemblyMs": {
+        "n": 28,
+        "medianMs": 0.13785400000000014,
+        "minMs": 0.10829099999999992,
+        "maxMs": 0.6225409999999996,
+        "p95Ms": 0.33166699999999993
+      },
+      "statusTotalMs": {
+        "n": 28,
+        "medianMs": 3.8775209999999998,
+        "minMs": 3.461083,
+        "maxMs": 19.5945,
+        "p95Ms": 4.472583
+      }
+    }
+  },
+  "candidateTiming": {
+    "connection": {
+      "n": 5,
+      "medianMs": 25.450792,
+      "minMs": 24.469709,
+      "maxMs": 26.1505,
+      "p95Ms": 26.1505
+    },
+    "statusHttpRoundTrip": {
+      "n": 20,
+      "medianMs": 10.5502915,
+      "minMs": 9.109208,
+      "maxMs": 14.111958,
+      "p95Ms": 13.154375
+    },
+    "bridgeTiming": {
+      "dispatchWaitMs": {
+        "n": 30,
+        "medianMs": 2.6924375,
+        "minMs": 2.206083,
+        "maxMs": 4.940625,
+        "p95Ms": 2.913625
+      },
+      "callbackMs": {
+        "n": 30,
+        "medianMs": 0.0244165,
+        "minMs": 0.014542,
+        "maxMs": 0.055458,
+        "p95Ms": 0.049334
+      }
+    },
+    "sidecarTiming": {
+      "bridgeHttpMs": {
+        "n": 28,
+        "medianMs": 3.7165,
+        "minMs": 3.161084,
+        "maxMs": 18.16,
+        "p95Ms": 5.981375
+      },
+      "sidecarAssemblyMs": {
+        "n": 28,
+        "medianMs": 0.14468749999999986,
+        "minMs": 0.11766699999999997,
+        "maxMs": 0.3218749999999999,
+        "p95Ms": 0.19274999999999975
+      },
+      "statusTotalMs": {
+        "n": 28,
+        "medianMs": 3.907,
+        "minMs": 3.3305,
+        "maxMs": 18.317875,
+        "p95Ms": 6.116375
+      }
+    }
+  },
+  "liveStatusLatency": {
+    "samples": 20,
+    "medianMs": 42.53770800005441,
+    "minMs": 23.06825000050594,
+    "maxMs": 52.15287500050181,
+    "p95Ms": 48.6750829995799
+  },
+  "preservation": {
+    "runtimeReceiptApplicationsGlobalSkillUnchanged": true,
+    "allFilesUnchanged": false,
+    "externalChanges": {
+      "v1-plugin-skills": {
+        "beforeCount": 52,
+        "afterCount": 0
+      }
+    },
+    "cause": "unestablished; no cache mutation performed in this task"
+  },
+  "configuredSkill": "incompatible typed-prototype entry unchanged",
+  "matchedCandidateEntry": "successful real seven-tool connection control; legacy 0.1.0 accepted",
+  "limitations": [
+    "Candidate not installed or run in foreground editor",
+    "Installer replacement UI not exercised",
+    "Actual foreground native timing unavailable",
+    "Cached v1 skill disappeared between snapshots; use preserved version-matched copy",
+    "MCP SDK negotiation differs from original Report 01"
+  ]
+}

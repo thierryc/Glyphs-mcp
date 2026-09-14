@@ -1,0 +1,805 @@
+{
+  "startedAt": "2026-09-10T14:25:26.726086+00:00",
+  "hostLoadBefore": [
+    14.48828125,
+    12.59912109375,
+    12.02294921875
+  ],
+  "logicalCPUs": 10,
+  "instrumented": true,
+  "errors": [],
+  "application": "/Applications/Glyphs 4.app",
+  "sidecarRoot": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/discovery-identity-recheck/sidecar",
+  "bridgeRoot": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/discovery-identity-recheck/Glyphs MCP Bridge.glyphsPlugin",
+  "host": {
+    "CFBundleIdentifier": "com.GeorgSeifert.Glyphs4",
+    "CFBundleShortVersionString": "4.1",
+    "CFBundleVersion": "4107"
+  },
+  "endpoint": "http://127.0.0.1:51361/mcp/",
+  "trials": [
+    {
+      "phase": "first",
+      "initializeMs": 92.03125,
+      "catalogMs": 7.861792,
+      "statusMs": 24.402917,
+      "connectionMs": 124.385291
+    },
+    {
+      "phase": "warmup",
+      "initializeMs": 9.420375,
+      "catalogMs": 6.73175,
+      "statusMs": 9.537791,
+      "connectionMs": 25.78
+    },
+    {
+      "phase": "trial-1",
+      "initializeMs": 9.133166,
+      "catalogMs": 6.912292,
+      "statusMs": 8.944292,
+      "connectionMs": 25.0825
+    },
+    {
+      "phase": "trial-2",
+      "initializeMs": 10.401833,
+      "catalogMs": 6.258334,
+      "statusMs": 8.704042,
+      "connectionMs": 25.450792
+    },
+    {
+      "phase": "trial-3",
+      "initializeMs": 9.587709,
+      "catalogMs": 6.815458,
+      "statusMs": 9.42225,
+      "connectionMs": 25.922334
+    },
+    {
+      "phase": "trial-4",
+      "initializeMs": 8.788,
+      "catalogMs": 7.099041,
+      "statusMs": 10.176917,
+      "connectionMs": 26.1505
+    },
+    {
+      "phase": "trial-5",
+      "initializeMs": 9.066334,
+      "catalogMs": 6.6625,
+      "statusMs": 8.649708,
+      "connectionMs": 24.469709
+    }
+  ],
+  "calls": [
+    {
+      "at": "2026-09-10T14:25:30.413132+00:00",
+      "phase": "first",
+      "method": "initialize",
+      "latencyMs": 92.03125,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.505186+00:00",
+      "phase": "first",
+      "method": "tools/list",
+      "latencyMs": 7.861792,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.513085+00:00",
+      "phase": "first",
+      "method": "get_status",
+      "latencyMs": 24.402917,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.537856+00:00",
+      "phase": "warmup",
+      "method": "initialize",
+      "latencyMs": 9.420375,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.547298+00:00",
+      "phase": "warmup",
+      "method": "tools/list",
+      "latencyMs": 6.73175,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.554068+00:00",
+      "phase": "warmup",
+      "method": "get_status",
+      "latencyMs": 9.537791,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.563982+00:00",
+      "phase": "trial-1",
+      "method": "initialize",
+      "latencyMs": 9.133166,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.573141+00:00",
+      "phase": "trial-1",
+      "method": "tools/list",
+      "latencyMs": 6.912292,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.580091+00:00",
+      "phase": "trial-1",
+      "method": "get_status",
+      "latencyMs": 8.944292,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.589434+00:00",
+      "phase": "trial-2",
+      "method": "initialize",
+      "latencyMs": 10.401833,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.599855+00:00",
+      "phase": "trial-2",
+      "method": "tools/list",
+      "latencyMs": 6.258334,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.606149+00:00",
+      "phase": "trial-2",
+      "method": "get_status",
+      "latencyMs": 8.704042,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.615393+00:00",
+      "phase": "trial-3",
+      "method": "initialize",
+      "latencyMs": 9.587709,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.625002+00:00",
+      "phase": "trial-3",
+      "method": "tools/list",
+      "latencyMs": 6.815458,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.631863+00:00",
+      "phase": "trial-3",
+      "method": "get_status",
+      "latencyMs": 9.42225,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.641773+00:00",
+      "phase": "trial-4",
+      "method": "initialize",
+      "latencyMs": 8.788,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.650579+00:00",
+      "phase": "trial-4",
+      "method": "tools/list",
+      "latencyMs": 7.099041,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.657718+00:00",
+      "phase": "trial-4",
+      "method": "get_status",
+      "latencyMs": 10.176917,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.668406+00:00",
+      "phase": "trial-5",
+      "method": "initialize",
+      "latencyMs": 9.066334,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.677490+00:00",
+      "phase": "trial-5",
+      "method": "tools/list",
+      "latencyMs": 6.6625,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.684194+00:00",
+      "phase": "trial-5",
+      "method": "get_status",
+      "latencyMs": 8.649708,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.693272+00:00",
+      "phase": "idle-probe",
+      "method": "initialize",
+      "latencyMs": 9.479458,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.702753+00:00",
+      "phase": "probe-preflight",
+      "method": "tools/list",
+      "latencyMs": 9.783458,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.712545+00:00",
+      "phase": "probe-preflight",
+      "method": "get_status",
+      "latencyMs": 9.525458,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.722097+00:00",
+      "phase": "preservation-before",
+      "method": "list_documents",
+      "latencyMs": 9.600166,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.731713+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.59675,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.791696+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.071625,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.852039+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.338292,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.913513+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.524333,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:30.973599+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.479166,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.035213+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.62975,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.096964+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.152042,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.157385+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 13.154375,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.221041+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.084958,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.281885+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 12.054542,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.345170+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 12.958084,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.409226+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 14.111958,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.474328+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.600083,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.535035+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.852625,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.597011+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 9.109208,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.656932+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 12.868916,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.722486+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 11.78425,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.784650+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.989542,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.849214+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.621417,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.915890+00:00",
+      "phase": "idle-probe",
+      "method": "get_status",
+      "latencyMs": 10.102208,
+      "ok": true
+    },
+    {
+      "at": "2026-09-10T14:25:31.977105+00:00",
+      "phase": "preservation-after",
+      "method": "list_documents",
+      "latencyMs": 12.015583,
+      "ok": true
+    }
+  ],
+  "initialize": {
+    "meta": null,
+    "protocolVersion": "2025-11-25",
+    "capabilities": {
+      "experimental": {},
+      "logging": null,
+      "prompts": {
+        "listChanged": true
+      },
+      "resources": {
+        "subscribe": false,
+        "listChanged": true
+      },
+      "tools": {
+        "listChanged": true
+      },
+      "completions": null,
+      "tasks": null
+    },
+    "serverInfo": {
+      "name": "Glyphs MCP Sidecar",
+      "title": null,
+      "version": "2.0.0-beta.1",
+      "websiteUrl": null,
+      "icons": null
+    },
+    "instructions": null
+  },
+  "catalog": [
+    {
+      "name": "get_status",
+      "title": null,
+      "description": "Return sidecar, external worker, and live bridge availability.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "list_documents",
+      "title": null,
+      "description": "List open Glyphs documents using a bounded bridge call.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "read_entities",
+      "title": null,
+      "description": "Read up to 100 explicit glyph, layer, master, or selection targets.",
+      "inputSchema": {
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "entities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Entities",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "entities",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "start_job",
+      "title": null,
+      "description": "Prepare width_delta, spacing, kerning_collision, start_nodes or slant outside Glyphs. Options select references, contours, explicit pairs, masters and optional straight-stem preservation; get_job reports evidence.",
+      "inputSchema": {
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Delta"
+          },
+          "glyphs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Glyphs"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Options"
+          }
+        },
+        "required": [
+          "document_id",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "get_job",
+      "title": null,
+      "description": "Return compact job progress, counts, warnings, and a small sample.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "apply_job",
+      "title": null,
+      "description": "Show the prepared result as a reversible live change; this is not acceptance.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "discard_job",
+      "title": null,
+      "description": "Cancel an unapplied job or reverse its still-current live targets.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": null,
+      "meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    }
+  ],
+  "status": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+9000d1765aaf",
+    "codeHash": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+15e6419bc81e",
+      "codeHash": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": []
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  },
+  "connection": {
+    "n": 5,
+    "medianMs": 25.450792,
+    "minMs": 24.469709,
+    "maxMs": 26.1505,
+    "p95Ms": 26.1505
+  },
+  "statusHttpRoundTrip": {
+    "n": 20,
+    "medianMs": 10.5502915,
+    "minMs": 9.109208,
+    "maxMs": 14.111958,
+    "p95Ms": 13.154375
+  },
+  "documentsBefore": [],
+  "documentsAfter": [],
+  "bridgeTiming": {
+    "dispatchWaitMs": {
+      "n": 30,
+      "medianMs": 2.6924375,
+      "minMs": 2.206083,
+      "maxMs": 4.940625,
+      "p95Ms": 2.913625
+    },
+    "callbackMs": {
+      "n": 30,
+      "medianMs": 0.0244165,
+      "minMs": 0.014542,
+      "maxMs": 0.055458,
+      "p95Ms": 0.049334
+    }
+  },
+  "sidecarTiming": {
+    "bridgeHttpMs": {
+      "n": 28,
+      "medianMs": 3.7165,
+      "minMs": 3.161084,
+      "maxMs": 18.16,
+      "p95Ms": 5.981375
+    },
+    "sidecarAssemblyMs": {
+      "n": 28,
+      "medianMs": 0.14468749999999986,
+      "minMs": 0.11766699999999997,
+      "maxMs": 0.3218749999999999,
+      "p95Ms": 0.19274999999999975
+    },
+    "statusTotalMs": {
+      "n": 28,
+      "medianMs": 3.907,
+      "minMs": 3.3305,
+      "maxMs": 18.317875,
+      "p95Ms": 6.116375
+    }
+  },
+  "finishedAt": "2026-09-10T14:25:32.299806+00:00",
+  "hostLoadAfter": [
+    15.08935546875,
+    12.7548828125,
+    12.0810546875
+  ]
+}

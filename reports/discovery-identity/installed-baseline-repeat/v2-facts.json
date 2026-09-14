@@ -1,0 +1,114 @@
+{
+  "label": "v2",
+  "endpoint": "http://127.0.0.1:9680/mcp/",
+  "startedAt": "2026-09-10T14:00:04.386785+00:00",
+  "trials": [
+    {
+      "phase": "first",
+      "initializeMs": 107.31412499990256,
+      "catalogMs": 14.23670799977117,
+      "identityMs": 33.13004200026626,
+      "verifiedConnectionMs": 155.60095799992268
+    },
+    {
+      "phase": "warmup",
+      "initializeMs": 19.98349999939819,
+      "catalogMs": 16.8712909999158,
+      "identityMs": 32.87820799960173,
+      "verifiedConnectionMs": 70.37949999994453
+    },
+    {
+      "phase": "trial-1",
+      "initializeMs": 9.253041000192752,
+      "catalogMs": 7.728540999778488,
+      "identityMs": 20.63091699983488,
+      "verifiedConnectionMs": 38.59904100045242
+    },
+    {
+      "phase": "trial-2",
+      "initializeMs": 10.28729200061207,
+      "catalogMs": 6.856542000605259,
+      "identityMs": 19.365332999768725,
+      "verifiedConnectionMs": 37.159250000513566
+    },
+    {
+      "phase": "trial-3",
+      "initializeMs": 9.418208000170125,
+      "catalogMs": 7.151291999434761,
+      "identityMs": 21.445917000164627,
+      "verifiedConnectionMs": 38.868290999744204
+    },
+    {
+      "phase": "trial-4",
+      "initializeMs": 9.282791999794426,
+      "catalogMs": 7.006374999946274,
+      "identityMs": 20.748832999743172,
+      "verifiedConnectionMs": 38.01508400010789
+    },
+    {
+      "phase": "trial-5",
+      "initializeMs": 9.340541999335983,
+      "catalogMs": 6.454332999965118,
+      "identityMs": 21.18466600040847,
+      "verifiedConnectionMs": 37.681416999475914
+    }
+  ],
+  "hostLoadBefore": [
+    9.24462890625,
+    9.84619140625,
+    9.4970703125
+  ],
+  "errors": [],
+  "documentsBefore": {
+    "ok": true,
+    "data": []
+  },
+  "idleStatusRequestLatency": {
+    "samples": 20,
+    "medianMs": 45.3621460001159,
+    "minMs": 14.729124999576015,
+    "maxMs": 65.67095900027198,
+    "p95Ms": 57.53941700004361
+  },
+  "documentsAfter": {
+    "ok": true,
+    "data": []
+  },
+  "documentListingUnchanged": true,
+  "timing": {
+    "initializeMs": {
+      "samples": 5,
+      "medianMs": 9.340541999335983,
+      "minMs": 9.253041000192752,
+      "maxMs": 10.28729200061207,
+      "p95Ms": 10.28729200061207
+    },
+    "catalogMs": {
+      "samples": 5,
+      "medianMs": 7.006374999946274,
+      "minMs": 6.454332999965118,
+      "maxMs": 7.728540999778488,
+      "p95Ms": 7.728540999778488
+    },
+    "identityMs": {
+      "samples": 5,
+      "medianMs": 20.748832999743172,
+      "minMs": 19.365332999768725,
+      "maxMs": 21.445917000164627,
+      "p95Ms": 21.445917000164627
+    },
+    "verifiedConnectionMs": {
+      "samples": 5,
+      "medianMs": 38.01508400010789,
+      "minMs": 37.159250000513566,
+      "maxMs": 38.868290999744204,
+      "p95Ms": 38.868290999744204
+    }
+  },
+  "finishedAt": "2026-09-10T14:00:06.866078+00:00",
+  "hostLoadAfter": [
+    9.24462890625,
+    9.84619140625,
+    9.4970703125
+  ]
+}

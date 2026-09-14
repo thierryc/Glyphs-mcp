@@ -1,0 +1,47 @@
+---
+title: Start the server
+description: Start Glyphs MCP inside Glyphs and confirm the local Streamable HTTP endpoint.
+---
+
+Glyphs MCP runs inside Glyphs. Start it from the app before connecting your AI client.
+
+## Start in Glyphs
+
+1. Launch Glyphs 4 beta.
+2. Choose **Edit -> Glyphs MCP Server**.
+3. Click **Start** if the server is stopped.
+4. Confirm the status dot is green.
+
+## Endpoint
+
+The default local MCP endpoint is:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+MCP clients connect with Streamable HTTP. If you open the endpoint in a browser, you may only see a small discovery response; that does not replace client setup.
+
+## Startup order
+
+If a client cannot connect, use this order:
+
+1. Quit or reload the client.
+2. Relaunch Glyphs.
+3. Start Glyphs MCP from the Edit menu.
+4. Reopen or reconnect the client.
+
+## Tool discovery
+
+The server registers one catalog-driven surface. MCP Apps-aware clients route
+66 substantive tools to the model and keep 11 embedded-app or host-UI wrappers
+app-only. Safety is declared per tool. Restart and reconnect only after
+installing a build whose catalog changed.
+
+## Auto-start
+
+The status panel can enable auto-start on Glyphs launch. Auto-start is useful after your setup is stable. During troubleshooting, start manually so you can see errors clearly.
+
+## Next step
+
+Continue to [Connect a client](./connect-client.mdx).

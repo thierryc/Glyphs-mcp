@@ -1,0 +1,6 @@
+{
+  "component": "agent-skill",
+  "repository": "thierryc/Glyphs-mcp",
+  "schemaVersion": 1,
+  "skillName": "glyphs"
+}

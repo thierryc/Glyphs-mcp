@@ -24,11 +24,29 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+try:
+    from runtime_path_policy import (
+        apply_runtime_path_plan,
+        build_runtime_path_plan,
+        classify_origin,
+    )
+except ModuleNotFoundError:
+    resources_directory = str(Path(__file__).resolve().parent)
+    if resources_directory not in sys.path:
+        sys.path.insert(0, resources_directory)
+    from runtime_path_policy import (  # type: ignore[no-redef]
+        apply_runtime_path_plan,
+        build_runtime_path_plan,
+        classify_origin,
+    )
+
 
 SCHEMA_VERSION = 1
 DEFAULT_MODULES = [
     "mcp",
     "fastmcp",
+    "dulwich",
+    "urllib3",
     "pydantic_core",
     "starlette",
     "uvicorn",
@@ -44,7 +62,6 @@ DEFAULT_MODULES = [
     "_cffi_backend",
     "rpds",
 ]
-NATIVE_MODULES = {"pydantic_core", "objc", "_cffi_backend", "rpds"}
 CPYTHON_TAG = re.compile(r"(?:^|[._-])cpython-(\d{2,3})(?:[._-]|$)")
 NATIVE_SUFFIXES = (".so", ".dylib")
 
@@ -176,8 +193,9 @@ def _issue(
     expected: Optional[str] = None,
     detected: Optional[str] = None,
     blocking: bool = True,
+    **details: Any,
 ) -> Dict[str, Any]:
-    return {
+    issue = {
         "code": code,
         "module": module,
         "file": str(path) if path else None,
@@ -186,18 +204,12 @@ def _issue(
         "message": message,
         "blocking": blocking,
     }
+    issue.update(details)
+    return issue
 
 
-def _prepare_paths(site_packages: Path, additional_paths: Sequence[Path]) -> None:
-    ordered = [site_packages, *additional_paths]
-    for root in reversed(ordered):
-        value = str(root)
-        if not root.exists():
-            continue
-        site.addsitedir(value)
-        while value in sys.path:
-            sys.path.remove(value)
-        sys.path.insert(0, value)
+def _prepare_paths(plan: Dict[str, Any]) -> None:
+    apply_runtime_path_plan(plan)
     importlib.invalidate_caches()
 
 
@@ -221,37 +233,42 @@ def _check_module(
     module: str,
     *,
     mode: str,
-    inspected_roots: Sequence[Path],
-    allowed_origins: Sequence[Path],
+    plan: Dict[str, Any],
     expected_tag: str,
     expected_architecture: str,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    module_paths: List[Path] = []
-    for root in inspected_roots:
-        module_paths.extend(_module_paths(root, module))
-    native_files = _native_files(module_paths)
-    native_details: List[Dict[str, Any]] = []
-    incompatible_abi: List[Tuple[Path, str]] = []
-    incompatible_arch: List[Tuple[Path, List[str]]] = []
-    for path in native_files:
-        abi_ok, abi = _is_abi_compatible(path, expected_tag)
-        architectures = _macho_architectures(path)
-        arch_ok = _is_architecture_compatible(architectures, expected_architecture)
-        native_details.append(
+    inspected_roots = [Path(value) for value in plan["orderedRoots"]]
+    candidates: List[Dict[str, Any]] = []
+    for index, root in enumerate(inspected_roots):
+        module_paths = _module_paths(root, module)
+        if not module_paths:
+            continue
+        native_details: List[Dict[str, Any]] = []
+        for path in _native_files(module_paths):
+            abi_ok, abi = _is_abi_compatible(path, expected_tag)
+            architectures = _macho_architectures(path)
+            arch_ok = _is_architecture_compatible(architectures, expected_architecture)
+            native_details.append(
+                {
+                    "file": str(path),
+                    "abi": abi,
+                    "abiCompatible": abi_ok,
+                    "architectures": architectures,
+                    "architectureCompatible": arch_ok,
+                }
+            )
+        candidates.append(
             {
-                "file": str(path),
-                "abi": abi,
-                "abiCompatible": abi_ok,
-                "architectures": architectures,
-                "architectureCompatible": arch_ok,
+                "root": str(root),
+                "priority": index,
+                "paths": [str(path) for path in module_paths],
+                "nativeFiles": native_details,
             }
         )
-        if not abi_ok:
-            incompatible_abi.append((path, abi))
-        if not arch_ok:
-            incompatible_arch.append((path, architectures))
+    winner = candidates[0] if candidates else None
+    native_details = winner["nativeFiles"] if winner else []
 
-    present = _module_was_found(module, inspected_roots)
+    present = bool(winner) or _module_was_found(module, inspected_roots)
     imported = False
     origin: Optional[str] = None
     error: Optional[str] = None
@@ -284,47 +301,55 @@ def _check_module(
     ]
 
     issues: List[Dict[str, Any]] = []
-    compatible_native = [
-        detail
-        for detail in native_details
-        if detail["abiCompatible"] and detail["architectureCompatible"]
-    ]
-    # A compatible module elsewhere on sys.path must not hide stale native
-    # files in Glyphs' explicitly inspected shared target. For the native
-    # runtime modules, report a target mismatch even when Python falls through
-    # to a same-named user- or system-site package.
-    report_static_native_mismatch = not imported or module in NATIVE_MODULES
-    if report_static_native_mismatch and incompatible_abi and not compatible_native:
-        for path, detected in incompatible_abi:
+    deferred_warnings: List[Dict[str, Any]] = []
+    for candidate_index, candidate in enumerate(candidates):
+        if candidate_index > 0:
             issues.append(
                 _issue(
-                    "incompatible_abi",
+                    "shadowed_duplicate",
                     module,
-                    (
-                        f"{path.name} was built for {detected}, but "
-                        f"this interpreter requires CPython {expected_tag}."
-                    ),
-                    path=path,
-                    expected=f"cpython-{expected_tag} or abi3",
-                    detected=detected,
+                    f"A lower-priority copy of {module} is shadowed by {winner['root']}.",
+                    path=Path(candidate["paths"][0]),
+                    blocking=False,
+                    winningCandidate=winner,
+                    lowerPriorityCandidate=candidate,
                 )
             )
-    if report_static_native_mismatch and incompatible_arch and not compatible_native:
-        for path, architectures in incompatible_arch:
-            detected = ", ".join(architectures)
-            issues.append(
-                _issue(
-                    "incompatible_architecture",
-                    module,
-                    (
-                        f"{path.name} supports {detected}, but this "
-                        f"interpreter is running as {expected_architecture}."
-                    ),
-                    path=path,
-                    expected=expected_architecture,
-                    detected=detected,
-                )
+        for detail in candidate["nativeFiles"]:
+            has_compatible_native = any(
+                item["abiCompatible"] and item["architectureCompatible"]
+                for item in candidate["nativeFiles"]
             )
+            blocking_native = candidate_index == 0 and not has_compatible_native
+            if not detail["abiCompatible"]:
+                path = Path(detail["file"])
+                native_issue = _issue(
+                        "incompatible_abi",
+                        module,
+                        f"{path.name} was built for {detail['abi']}, but this interpreter requires CPython {expected_tag}.",
+                        path=path,
+                        expected=f"cpython-{expected_tag} or abi3",
+                        detected=detail["abi"],
+                        blocking=blocking_native,
+                        selectedRoot=candidate["root"],
+                        winningCandidate=winner,
+                    )
+                (issues if blocking_native else deferred_warnings).append(native_issue)
+            if not detail["architectureCompatible"]:
+                path = Path(detail["file"])
+                detected = ", ".join(detail["architectures"])
+                native_issue = _issue(
+                        "incompatible_architecture",
+                        module,
+                        f"{path.name} supports {detected}, but this interpreter is running as {expected_architecture}.",
+                        path=path,
+                        expected=expected_architecture,
+                        detected=detected,
+                        blocking=blocking_native,
+                        selectedRoot=candidate["root"],
+                        winningCandidate=winner,
+                    )
+                (issues if blocking_native else deferred_warnings).append(native_issue)
     missing = (
         not present
         and exception_name in {module, module.split(".", 1)[0]}
@@ -343,10 +368,18 @@ def _check_module(
             if not any(issue["blocking"] for issue in issues):
                 code = "missing_module" if missing else "import_failure"
                 diagnostic_path: Optional[Path] = None
+                compatible_native = next(
+                    (
+                        detail["file"]
+                        for detail in native_details
+                        if detail["abiCompatible"] and detail["architectureCompatible"]
+                    ),
+                    None,
+                )
                 if compatible_native:
-                    diagnostic_path = Path(compatible_native[0]["file"])
-                elif module_paths:
-                    diagnostic_path = module_paths[0]
+                    diagnostic_path = Path(compatible_native)
+                elif winner and winner["paths"]:
+                    diagnostic_path = Path(winner["paths"][0])
                 issues.append(
                     _issue(
                         code,
@@ -358,19 +391,38 @@ def _check_module(
                         blocking=True,
                     )
                 )
-    elif mode == "postinstall" and allowed_origins and not _is_within(
-        origin or "", allowed_origins
-    ):
+    elif origin and origin not in {"built-in", "frozen", "namespace"}:
+        classification = classify_origin(origin, plan)
+        if not classification["accepted"]:
+            classification_details = {
+                key: value
+                for key, value in classification.items()
+                if key not in {"code", "blocking"}
+            }
+            issues.append(
+                _issue(
+                    classification["code"],
+                    module,
+                    f"{module} imported from a dependency location outside the approved runtime roots.",
+                    path=Path(origin),
+                    expected=", ".join(plan["orderedRoots"]),
+                    detected=classification["resolvedOrigin"],
+                    **classification_details,
+                )
+            )
+    if winner and winner["priority"] > 0:
         issues.append(
             _issue(
-                "unexpected_origin",
+                "fallback_selected",
                 module,
-                f"{module} imported from an unexpected location: {origin or 'unknown'}",
-                path=Path(origin) if origin else None,
-                expected=", ".join(str(path) for path in allowed_origins),
-                detected=origin or "unknown",
+                f"{module} is using fallback root {winner['root']} because no higher-priority copy exists.",
+                path=Path(winner["paths"][0]),
+                blocking=False,
+                selectedRoot=winner["root"],
+                winningCandidate=winner,
             )
         )
+    issues.extend(deferred_warnings)
 
     return (
         {
@@ -378,9 +430,14 @@ def _check_module(
             "present": present,
             "imported": imported,
             "origin": origin,
+            "logicalOrigin": str(Path(origin).absolute()) if origin and origin not in {"built-in", "frozen", "namespace"} else origin,
+            "resolvedOrigin": str(Path(origin).resolve()) if origin and origin not in {"built-in", "frozen", "namespace"} else origin,
             "error": error,
             "warnings": captured_warnings,
             "nativeFiles": native_details,
+            "selectedRoot": winner["root"] if winner else None,
+            "winningCandidate": winner,
+            "lowerPriorityCandidates": candidates[1:],
         },
         issues,
     )
@@ -397,18 +454,18 @@ def run_probe(
     allow_runtime_paths: bool = False,
 ) -> Dict[str, Any]:
     runtime = _runtime()
-    additional = [Path(path) for path in additional_paths]
-    inspected_roots = [site_packages, *additional]
-    allowed = [Path(path) for path in allowed_origins]
-    if allow_user_site:
-        user_site = site.getusersitepackages()
-        if isinstance(user_site, str) and user_site:
-            allowed.append(Path(user_site))
-    if allow_runtime_paths:
-        for value in sys.path:
-            if value and Path(value).is_dir():
-                allowed.append(Path(value))
-    _prepare_paths(site_packages, additional)
+    plan = build_runtime_path_plan(site_packages, executable=sys.executable)
+    # Legacy flags remain parseable. Additional explicitly managed paths are
+    # appended without changing the primary/install-mode decision.
+    legacy_roots = [Path(path) for path in additional_paths]
+    if legacy_roots:
+        existing = list(plan["orderedRoots"])
+        for root in legacy_roots:
+            if str(root) not in existing:
+                existing.append(str(root))
+        plan["orderedRoots"] = existing
+        plan["fallbackRoots"] = existing[1:]
+    _prepare_paths(plan)
 
     checks: List[Dict[str, Any]] = []
     issues: List[Dict[str, Any]] = []
@@ -416,8 +473,7 @@ def run_probe(
         check, module_issues = _check_module(
             module,
             mode=mode,
-            inspected_roots=inspected_roots,
-            allowed_origins=allowed,
+            plan=plan,
             expected_tag=_expected_cpython_tag(),
             expected_architecture=runtime["architecture"],
         )
@@ -433,8 +489,9 @@ def run_probe(
         "status": status,
         "blocking": blocking,
         "runtime": runtime,
+        "pathPlan": plan,
         "sitePackages": str(site_packages),
-        "allowedOrigins": [str(path) for path in allowed],
+        "allowedOrigins": list(plan["orderedRoots"]),
         "checks": checks,
         "issues": issues,
     }

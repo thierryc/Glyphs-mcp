@@ -1,0 +1,4 @@
+interface:
+  display_name: "Glyphs MCP Release"
+  short_description: "Prepare and verify Glyphs MCP releases safely"
+  default_prompt: "Use $glyphs-mcp-release to prepare and verify this Glyphs MCP release, stopping before external publication unless I explicitly authorize it."

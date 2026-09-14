@@ -13,8 +13,8 @@ def _repo_root() -> Path:
 
 class SpacingSkillTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.canonical = _repo_root() / "skills" / "glyphs-mcp-spacing"
-        self.packaged = _repo_root() / "plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-spacing"
+        self.canonical = _repo_root() / "legacy/glyphs3/skills" / "glyphs-mcp-spacing"
+        self.packaged = _repo_root() / "legacy/glyphs3/plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-spacing"
 
     def test_skill_contains_guarded_procedural_workflow(self) -> None:
         text = (self.canonical / "SKILL.md").read_text(encoding="utf-8")

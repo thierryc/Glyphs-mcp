@@ -1,0 +1,32 @@
+---
+title: Resources
+description: Optional MCP resources exposed by the plug-in.
+---
+
+Resources are helper material for agents. They are not the main workflow surface; tools are.
+
+## Registered resources
+
+- Guide: `glyphs://glyphs-mcp/guide`
+- Docs directory listing: `glyphs://glyphs-mcp/docs`
+- Docs index: `glyphs://glyphs-mcp/docs/index.json`
+- Kerning datasets listing: `glyphs://glyphs-mcp/kerning`
+- Andre Fuchs relevant pairs snapshot: `glyphs://glyphs-mcp/kerning/andre-fuchs/relevant_pairs.v1.json`
+
+## Bundled docs access
+
+Use:
+
+- `docs_search` to find relevant bundled Glyphs docs.
+- `docs_get` to fetch only the page you need.
+
+By default, individual docs pages are not registered as separate resources because that can flood `resources/list` in some clients.
+
+Use `docs_search` and `docs_get` for bounded, on-demand access. Per-page
+resource registration is not exposed as a public 1.8 tool.
+
+## Related docs
+
+- [Command set](./command-set.mdx)
+- [Settings and discovery](./settings.mdx)
+- [How Glyphs MCP works](../concepts/how-glyphs-mcp-works.mdx)

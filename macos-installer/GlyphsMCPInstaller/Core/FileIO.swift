@@ -26,7 +26,10 @@ public enum FileIO {
 
 	static func backupIfExists(_ url: URL) throws -> URL? {
 		guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-		let backup = url.appendingPathExtension("bak-\(timestampString())")
+		var backup = url.appendingPathExtension("bak-\(timestampString())")
+        if FileManager.default.fileExists(atPath: backup.path) {
+            backup = url.appendingPathExtension("bak-\(timestampString())-\(UUID().uuidString)")
+        }
 		try FileManager.default.copyItem(at: url, to: backup)
 		return backup
 	}
@@ -53,7 +56,13 @@ public enum FileIO {
 }
 
 public enum InstallerConstants {
-	public static let endpointURL = URL(string: "http://127.0.0.1:9680/mcp/")!
+	public static var endpointURL: URL {
+        let receipt = InstallerPaths.home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2/installation.json")
+        let data = (try? Data(contentsOf: receipt)) ?? Data()
+        let fields = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        let port = fields?["port"] as? Int ?? 9680
+        return URL(string: "http://127.0.0.1:\(port)/mcp/")!
+    }
 	public static let codexServerName = "glyphs-mcp-server"
 	public static let claudeDesktopServerName = "glyphs-mcp-server"
 	public static let claudeCodeServerName = "glyphs-mcp"
@@ -104,12 +113,37 @@ public struct InstallerPayload {
 	public static let legacyManagedSkillNames = ["glyphs-mcp-connect"]
 	private static let extractionLock = NSLock()
 	private static var extractedPayloads: [String: URL] = [:]
+	public static let manifestSchemaVersion = 3
+
+	public typealias UpdatePolicy = InstallerTargetUpdatePolicy
+
+	private struct ManagedSkillManifest: Decodable {
+		struct Entry: Decodable {
+			let name: String
+			let surface: String
+		}
+
+		let schemaVersion: Int
+		let managedSkills: [Entry]
+	}
+
+	public struct TargetPlugin: Equatable, Sendable {
+		public let glyphsVersion: GlyphsMajorVersion
+		public let bundleURL: URL
+		public let version: PluginBundleVersion
+		public let runtimeTrack: String
+		public let updatePolicy: UpdatePolicy
+		public let baselineTag: String?
+		public let baselineCommit: String?
+		public let runtimeProbe: URL
+	}
 
 	public let payloadDir: URL
-	public let pluginBundle: URL
+	public let plugins: [GlyphsMajorVersion: TargetPlugin]
 	public let requirementsTxt: URL
-	public let runtimeProbe: URL
 	public let skillsDir: URL?
+	public var pluginBundle: URL { plugin(for: .installerDefault).bundleURL }
+	public var runtimeProbe: URL { plugin(for: .installerDefault).runtimeProbe }
 
 	public init(
 		payloadDir: URL,
@@ -119,26 +153,79 @@ public struct InstallerPayload {
 		skillsDir: URL?
 	) {
 		self.payloadDir = payloadDir
-		self.pluginBundle = pluginBundle
 		self.requirementsTxt = requirementsTxt
-		self.runtimeProbe = runtimeProbe
-			?? pluginBundle.appendingPathComponent("Contents/Resources/runtime_probe.py")
 		self.skillsDir = skillsDir
+		let version = PluginVersionReader.readPluginVersion(pluginBundle: pluginBundle)
+			?? PluginBundleVersion(shortVersion: "unknown", buildVersion: "unknown")
+		let resolvedRuntimeProbe = runtimeProbe
+			?? pluginBundle.appendingPathComponent("Contents/Resources/runtime_probe.py")
+		self.plugins = Dictionary(uniqueKeysWithValues: GlyphsMajorVersion.allCases.map { glyphsVersion in
+			return (
+				glyphsVersion,
+				TargetPlugin(
+					glyphsVersion: glyphsVersion,
+					bundleURL: pluginBundle,
+					version: version,
+					runtimeTrack: "1.x",
+					updatePolicy: .release,
+					baselineTag: nil,
+					baselineCommit: nil,
+					runtimeProbe: resolvedRuntimeProbe
+				)
+			)
+		})
+	}
+
+	private init(
+		payloadDir: URL,
+		plugins: [GlyphsMajorVersion: TargetPlugin],
+		requirementsTxt: URL,
+		skillsDir: URL?
+	) {
+		self.payloadDir = payloadDir
+		self.plugins = plugins
+		self.requirementsTxt = requirementsTxt
+		self.skillsDir = skillsDir
+	}
+
+    public func forGlyphsVersion(_ version: GlyphsMajorVersion) -> InstallerPayload {
+        guard version == .v3 else { return self }
+        let legacy = payloadDir.appendingPathComponent("skills-v1")
+        guard FileManager.default.fileExists(atPath: legacy.path) else { return self }
+        return InstallerPayload(payloadDir: payloadDir, plugins: plugins, requirementsTxt: requirementsTxt, skillsDir: legacy)
+    }
+
+	public func plugin(for version: GlyphsMajorVersion) -> TargetPlugin {
+		guard let plugin = plugins[version] else {
+			preconditionFailure("Installer payload has no plug-in for \(version.displayName)")
+		}
+		return plugin
 	}
 
 	public func managedSkillDirectories() -> [URL] {
 		guard let skillsDir else { return [] }
-		let prefix = "glyphs-mcp-"
+		let manifestURL = skillsDir.appendingPathComponent("manifest.json")
+		guard
+			let data = try? Data(contentsOf: manifestURL),
+			let manifest = try? JSONDecoder().decode(ManagedSkillManifest.self, from: data),
+			manifest.schemaVersion == 1,
+			!manifest.managedSkills.isEmpty
+		else { return [] }
+		let managedNames = Set(manifest.managedSkills.map(\.name))
+		guard managedNames.count == manifest.managedSkills.count else { return [] }
 		guard let entries = try? FileManager.default.contentsOfDirectory(at: skillsDir, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
 			return []
 		}
 		return entries
-			.filter { $0.lastPathComponent == "glyphs" || $0.lastPathComponent.hasPrefix(prefix) }
+			.filter { managedNames.contains($0.lastPathComponent) }
 			.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false }
 			.sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}
 
-	public static func resolve(bundle: Bundle = .main) throws -> InstallerPayload {
+	public static func resolve(
+		bundle: Bundle = .main,
+		allowVerifiedLegacyRelease: Bool = false
+	) throws -> InstallerPayload {
 		let fm = FileManager.default
 		let directPayloadDir: URL? = {
 			// Prefer a direct path lookup to avoid any resource indexing weirdness for folder-based payloads.
@@ -162,26 +249,99 @@ public struct InstallerPayload {
 		guard let payloadDir else {
 			throw InstallerError.userFacing("Installer payload is missing. Rebuild the signed installer app.")
 		}
-		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
-		let req = payloadDir.appendingPathComponent("requirements.txt")
-		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
-		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
-		guard FileManager.default.fileExists(atPath: plugin.path) else {
-			throw InstallerError.userFacing("Missing payload plugin bundle: \(plugin.path)")
+		return try resolve(
+			payloadDir: payloadDir,
+			allowVerifiedLegacyRelease: allowVerifiedLegacyRelease
+		)
+	}
+
+	public static func resolve(
+		payloadDir: URL,
+		allowVerifiedLegacyRelease: Bool = false
+	) throws -> InstallerPayload {
+		let manifestURL = payloadDir.appendingPathComponent("payload.json")
+		if FileManager.default.fileExists(atPath: manifestURL.path) {
+			return try resolveManifestPayload(payloadDir: payloadDir)
 		}
-		guard FileManager.default.fileExists(atPath: req.path) else {
-			throw InstallerError.userFacing("Missing payload requirements.txt: \(req.path)")
+		guard allowVerifiedLegacyRelease else {
+			throw InstallerError.userFacing(
+				"Installer payload schema v2 manifest is missing. Legacy payloads are accepted only from a verified pre-v2 release."
+			)
+		}
+		return try resolveLegacyPayload(payloadDir: payloadDir)
+	}
+
+	private static func resolveLegacyPayload(payloadDir: URL) throws -> InstallerPayload {
+		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let requirements = payloadDir.appendingPathComponent("requirements.txt")
+		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
+		let runtimePolicy = plugin.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
+		let skills = payloadDir.appendingPathComponent("skills", isDirectory: true)
+		guard FileManager.default.fileExists(atPath: plugin.path) else {
+			throw InstallerError.userFacing("Missing legacy payload plug-in bundle: \(plugin.path)")
+		}
+		guard FileManager.default.fileExists(atPath: requirements.path) else {
+			throw InstallerError.userFacing("Missing payload requirements.txt: \(requirements.path)")
 		}
 		guard FileManager.default.fileExists(atPath: runtimeProbe.path) else {
 			throw InstallerError.userFacing("Missing payload Python runtime probe: \(runtimeProbe.path)")
 		}
-		let resolvedSkillsDir = FileManager.default.fileExists(atPath: skillsDir.path) ? skillsDir : nil
+		guard FileManager.default.fileExists(atPath: runtimePolicy.path) else {
+			throw InstallerError.userFacing("Missing payload Python runtime path policy: \(runtimePolicy.path)")
+		}
 		return InstallerPayload(
 			payloadDir: payloadDir,
 			pluginBundle: plugin,
-			requirementsTxt: req,
+			requirementsTxt: requirements,
 			runtimeProbe: runtimeProbe,
-			skillsDir: resolvedSkillsDir
+			skillsDir: FileManager.default.fileExists(atPath: skills.path) ? skills : nil
+		)
+	}
+
+	private static func resolveManifestPayload(payloadDir: URL) throws -> InstallerPayload {
+		let manifest: ResolvedInstallerPayloadManifest
+		do {
+			manifest = try InstallerPayloadManifestResolver.resolve(payloadDir)
+		} catch {
+			throw InstallerError.userFacing("Installer payload manifest is malformed: \(error.localizedDescription)")
+		}
+
+		var plugins: [GlyphsMajorVersion: TargetPlugin] = [:]
+		for version in GlyphsMajorVersion.allCases {
+			guard let glyphsMajor = Int(version.rawValue), let target = manifest.targets[glyphsMajor] else {
+				throw InstallerError.userFacing("Installer payload is missing \(version.displayName).")
+			}
+			guard let actualVersion = PluginVersionReader.readPluginVersion(pluginBundle: target.bundleURL),
+				  actualVersion.shortVersion == target.pluginVersion,
+				  actualVersion.buildVersion == target.pluginVersion else {
+				throw InstallerError.userFacing("Installer payload version does not match \(version.displayName).")
+			}
+			let plugin = TargetPlugin(
+				glyphsVersion: version,
+				bundleURL: target.bundleURL,
+				version: actualVersion,
+				runtimeTrack: target.runtimeTrack,
+				updatePolicy: target.updatePolicy,
+				baselineTag: target.baselineTag,
+				baselineCommit: target.baselineCommit,
+				runtimeProbe: target.bundleURL.appendingPathComponent("Contents/Resources/runtime_probe.py")
+			)
+			guard manifest.schemaVersion == 3 && version == .v4 || FileManager.default.fileExists(atPath: plugin.runtimeProbe.path) else {
+				throw InstallerError.userFacing("Installer payload runtime probe is missing for \(version.displayName).")
+			}
+			let runtimePolicy = target.bundleURL.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
+			guard manifest.schemaVersion == 3 && version == .v4 || FileManager.default.fileExists(atPath: runtimePolicy.path) else {
+				throw InstallerError.userFacing("Installer payload runtime path policy is missing for \(version.displayName).")
+			}
+			plugins[version] = plugin
+		}
+		return InstallerPayload(
+			payloadDir: payloadDir,
+			plugins: plugins,
+			requirementsTxt: manifest.requirementsURL,
+			skillsDir: manifest.skillsURL.flatMap {
+				FileManager.default.fileExists(atPath: $0.path) ? $0 : nil
+			}
 		)
 	}
 

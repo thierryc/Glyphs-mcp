@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PluginBundleVersion: Equatable, Comparable, CustomStringConvertible {
+public struct PluginBundleVersion: Equatable, Comparable, CustomStringConvertible, Sendable {
 	public let shortVersion: String?
 	public let buildVersion: String?
 
@@ -57,7 +57,7 @@ public struct PluginVersionKey: Comparable, Equatable {
 	public static func < (lhs: PluginVersionKey, rhs: PluginVersionKey) -> Bool {
 		switch (lhs.tuple, rhs.tuple) {
 		case let (.some(a), .some(b)):
-			if a == b { return lhs.raw < rhs.raw }
+			if a == b { return false }
 			return a < b
 		case (.some, .none):
 			return false
@@ -113,7 +113,10 @@ public struct URLSessionHTTPClient: HTTPClienting {
 	public func data(from url: URL, timeout: TimeInterval) async throws -> Data {
 		var req = URLRequest(url: url)
 		req.timeoutInterval = timeout
-		let (data, _) = try await URLSession.shared.data(for: req)
+		let (data, response) = try await URLSession.shared.data(for: req)
+		guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+			throw InstallerError.userFacing("GitHub could not be reached. Try checking again later.")
+		}
 		return data
 	}
 }
@@ -157,7 +160,7 @@ public struct GitHubPublishedRelease: Decodable, Equatable {
 			  asset.browserDownloadURL.host == "github.com" else {
 			throw InstallerError.userFacing("Published release \(tagName) has an untrusted download URL for \(name).")
 		}
-		guard asset.browserDownloadURL.path.contains("/thierryc/Glyphs-mcp/releases/download/") else {
+		guard asset.browserDownloadURL.path == "/thierryc/Glyphs-mcp/releases/download/\(tagName)/\(name)" else {
 			throw InstallerError.userFacing("Published release \(tagName) has an unexpected download path for \(name).")
 		}
 		guard asset.browserDownloadURL.lastPathComponent == name else {
@@ -168,6 +171,7 @@ public struct GitHubPublishedRelease: Decodable, Equatable {
 }
 
 public enum GitHubReleaseResolver {
+	public static let latestReleasePageURL = URL(string: "https://github.com/thierryc/Glyphs-mcp/releases/latest")!
 	public static let latestReleaseURL = URL(
 		string: "https://api.github.com/repos/thierryc/Glyphs-mcp/releases/latest"
 	)!
@@ -182,10 +186,19 @@ public enum GitHubReleaseResolver {
 		guard !release.draft, !release.prerelease else {
 			throw InstallerError.userFacing("GitHub returned a draft or prerelease instead of a published stable release.")
 		}
-		guard PluginVersionKey(release.version).tuple != nil else {
+		guard release.tagName.range(of: #"^v[0-9]+\.[0-9]+\.[0-9]+$"#, options: .regularExpression) != nil else {
 			throw InstallerError.userFacing("Published release tag is not a valid numeric version.")
 		}
 		return release
+	}
+
+	/// User initiated only: bypass cached metadata when explicitly checking.
+	public static func checkForUpdate(currentVersion: String, client: HTTPClienting = URLSessionHTTPClient()) async throws -> PluginUpdateStatus {
+		let result = try await GitHubPluginVersionFetcher.fetchLatestVersion(client: client, cacheMaxAge: -1)
+		let installed = PluginBundleVersion(shortVersion: currentVersion, buildVersion: nil)
+		return result.version > installed
+			? .updateAvailable(installed: installed, latest: result.version)
+			: .upToDate(latest: result.version)
 	}
 }
 

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-08-22",
+  "dependencies": [
+    {
+      "id": "glyphs-file-format-v4-schema",
+      "source": "https://github.com/schriftgestalt/GlyphsSDK",
+      "branch": "Glyphs3",
+      "commit": "569244a7181e08fc7c5230bcdfad6b9f7e5ea11f",
+      "path": "GlyphsFileFormat/Schemas/glyphs-4.schema.json",
+      "localPath": "glyphs-4.schema.json",
+      "sha256": "3be341e85a574b563a8df2851fe48225e6700c24a827d572c1ad1ec909aa09b0",
+      "license": "Apache-2.0",
+      "role": "machine_authority",
+      "auditedAt": "2026-08-22"
+    },
+    {
+      "id": "glyphs-file-format-v4-specification",
+      "source": "https://github.com/schriftgestalt/GlyphsSDK",
+      "branch": "Glyphs3",
+      "commit": "569244a7181e08fc7c5230bcdfad6b9f7e5ea11f",
+      "path": "GlyphsFileFormat/GlyphsFileFormatv4.md",
+      "localPath": "GlyphsFileFormatv4.md",
+      "sha256": "a36d860f8e34a7e2656265b817ee5d47ccb706aadbd4c60c6b7c78d5f8f1076f",
+      "license": "Apache-2.0",
+      "role": "human_authority",
+      "auditedAt": "2026-08-22"
+    },
+    {
+      "id": "glyphs-object-wrapper",
+      "source": "https://github.com/schriftgestalt/GlyphsSDK",
+      "branch": "Glyphs4",
+      "commit": "0f5422db727b78cb42abfb386f33ae0b382b0c4d",
+      "path": "ObjectWrapper/GlyphsApp/__init__.py",
+      "localPath": "../../GlyphsSDK/ObjectWrapper/GlyphsApp/__init__.py",
+      "sha256": "6ff80ab0e067af99286527d87499e60cb9b5c6954de1a4218eb6a37aaf5e841c",
+      "license": "Apache-2.0",
+      "role": "adapter_documentation",
+      "auditedAt": "2026-08-22"
+    },
+    {
+      "id": "glyphs-python-reporter-template",
+      "source": "https://github.com/schriftgestalt/GlyphsSDK",
+      "branch": "Glyphs4",
+      "commit": "0f5422db727b78cb42abfb386f33ae0b382b0c4d",
+      "path": "Python Templates/Reporter/____PluginName____.glyphsReporter/Contents/Resources/plugin.py",
+      "localPath": "../../GlyphsSDK/Python Templates/Reporter/____PluginName____.glyphsReporter/Contents/Resources/plugin.py",
+      "sha256": "0a75a504d800380dbc2441612844aebe324440d360bdff8fc0eb24852fa87c53",
+      "license": "Apache-2.0",
+      "role": "plugin_template",
+      "auditedAt": "2026-08-22"
+    },
+    {
+      "id": "glyphs-python-palette-template",
+      "source": "https://github.com/schriftgestalt/GlyphsSDK",
+      "branch": "Glyphs4",
+      "commit": "0f5422db727b78cb42abfb386f33ae0b382b0c4d",
+      "path": "Python Templates/Palette/____PluginName____.glyphsPalette/Contents/Resources/plugin.py",
+      "localPath": "../../GlyphsSDK/Python Templates/Palette/____PluginName____.glyphsPalette/Contents/Resources/plugin.py",
+      "sha256": "f658228e8d0aa48e6369c74dbdb626c5915510c1a67c69bdf9b9d656d55f5ddc",
+      "license": "Apache-2.0",
+      "role": "plugin_template",
+      "auditedAt": "2026-08-22"
+    },
+    {
+      "id": "glyphs-4-handbook",
+      "source": "https://handbook.glyphsapp.com/",
+      "role": "explanatory_online",
+      "auditedAt": "2026-08-22"
+    },
+    {
+      "id": "glyphs-custom-parameters",
+      "source": "https://glyphsapp.com/learn/custom-parameters",
+      "role": "explanatory_online",
+      "auditedAt": "2026-08-22"
+    }
+  ]
+}

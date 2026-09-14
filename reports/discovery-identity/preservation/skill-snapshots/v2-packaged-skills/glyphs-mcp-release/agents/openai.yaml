@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-release"
+  short_description: "Prepare and verify a local Glyphs MCP candidate while keepin"
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

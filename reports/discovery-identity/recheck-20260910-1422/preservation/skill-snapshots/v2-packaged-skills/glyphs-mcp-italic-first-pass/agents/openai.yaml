@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-italic-first-pass"
+  short_description: "Prepare a first-pass slant on a disposable or explicitly aut"
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

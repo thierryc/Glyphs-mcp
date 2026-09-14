@@ -1,32 +1,23 @@
 ---
-title: Resources
-description: Optional MCP resources exposed by the plug-in.
+title: Reports and documentation
 ---
 
-Resources are helper material for agents. They are not the main workflow surface; tools are.
+V2 exposes seven tools. It does not carry forward the v1 documentation-search tools or embedded feedback application.
 
-## Registered resources
+## Job reports
 
-- Guide: `glyphs://glyphs-mcp/guide`
-- Docs directory listing: `glyphs://glyphs-mcp/docs`
-- Docs index: `glyphs://glyphs-mcp/docs/index.json`
-- Kerning datasets listing: `glyphs://glyphs-mcp/kerning`
-- Andre Fuchs relevant pairs snapshot: `glyphs://glyphs-mcp/kerning/andre-fuchs/relevant_pairs.v1.json`
+Use `get_job` for progress, a compact change sample and a report path when the workflow produces a full report. Open that local artifact through your client's file tools if supported. Reports record measurements, exclusions and the scope of the result's claims.
 
-## Bundled docs access
+Copy evidence you need before discarding or ending a session. Abandoned bulk artifacts are released after the worker stops using them; terminal job records remain for the session. Reports can contain local font paths and should be reviewed before sharing.
 
-Use:
+## Documentation and support
 
-- `docs_search` to find relevant bundled Glyphs docs.
-- `docs_get` to fetch only the page you need.
+- [Tool reference](command-set.mdx): signatures, selectors and job kinds.
+- [Safety and recovery](../concepts/safety-model.mdx): exact restoration, conflict handling and cancellation.
+- [Troubleshooting](../getting-started/troubleshooting.mdx): connection, installation and native worker problems.
+- [GitHub Issues](https://github.com/thierryc/Glyphs-mcp/issues): submit reproducible issues.
+- [Support the project](https://github.com/sponsors/thierryc): donations to Thierry Charbonnel.
 
-By default, individual docs pages are not registered as separate resources because that can flood `resources/list` in some clients.
+The extension panel's heart button opens these basic links in the welcome placeholder. Final visual design and copy are still in progress.
 
-Use `docs_search` and `docs_get` for bounded, on-demand access. Per-page
-resource registration is not exposed as a public 1.8 tool.
-
-## Related docs
-
-- [Command set](./command-set.mdx)
-- [Settings and discovery](./settings.mdx)
-- [How Glyphs MCP works](../concepts/how-glyphs-mcp-works.mdx)
+For resources exposed by the released compatibility plugin, see the [v1 resource guide](/docs/reference/resources).

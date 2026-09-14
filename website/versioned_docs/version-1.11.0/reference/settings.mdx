@@ -1,0 +1,69 @@
+---
+title: Settings and discovery
+description: Tool discovery, visibility, and environment variables for configuring Glyphs MCP.
+---
+
+Glyphs MCP has two configuration surfaces:
+
+- **Glyphs UI**: **Edit -> Glyphs MCP Server**
+- **Environment variables**: optional security, docs, and debugging behavior
+
+## Tool discovery
+
+Glyphs MCP exposes one catalog-driven registry. The generated
+[command set](./command-set.mdx) is the authoritative count and tool list.
+Clients that honor MCP Apps visibility omit app-only wrappers from model
+routing. Every tool carries four MCP safety hints plus effect and lifecycle
+metadata; there is no profile selector or saved profile state.
+
+## Environment variables
+
+### `GLYPHS_MCP_AUTH_TOKEN`
+
+Require a static token on every request.
+
+Accepted headers:
+
+- `Authorization: Bearer <token>`
+- `mcp-auth-token: <token>`
+
+### `GLYPHS_MCP_ALLOWED_ORIGINS`
+
+Restrict requests by hostname allowlist when an `Origin` header is present, in addition to default local hosts.
+
+### `GLYPHS_MCP_REGISTER_DOC_PAGES`
+
+Controls whether every bundled docs page is registered as its own resource.
+
+- Default: off.
+- Set to `1` only when you need per-page resources.
+
+Prefer `docs_search` and `docs_get` for normal work.
+
+### `GLYPHS_MCP_DOCS_URL`
+
+Override the docs URL shown in the Glyphs MCP status panel.
+
+Current public docs URL:
+
+```text
+https://thierryc.github.io/Glyphs-mcp/
+```
+
+### `GLYPHS_MCP_EXTRA_SITEPACKAGES`
+
+Colon-separated list of additional `site-packages` directories to add to `sys.path`.
+
+Example:
+
+```bash
+export GLYPHS_MCP_EXTRA_SITEPACKAGES="/path/to/site-packages:/another/site-packages"
+```
+
+Use this only for debugging/import fixes.
+
+## Related docs
+
+- [Start the server](../getting-started/start-server.mdx)
+- [Safety model](../concepts/safety-model.mdx)
+- [Resources](./resources.mdx)

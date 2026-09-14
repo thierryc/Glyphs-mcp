@@ -1,0 +1,36 @@
+{
+  "changedFromTurnBaseline": [
+    "macos-installer/GlyphsMCPInstaller/Core/ConfigPatchers.swift",
+    "macos-installer/GlyphsMCPInstaller/Core/DesktopActivity.swift",
+    "macos-installer/GlyphsMCPInstaller/Core/DesktopInstallation.swift",
+    "macos-installer/GlyphsMCPInstaller/Core/FileIO.swift",
+    "macos-installer/GlyphsMCPInstaller/Sources/DesktopModel.swift",
+    "macos-installer/GlyphsMCPInstaller/Sources/InstallationView.swift",
+    "macos-installer/GlyphsMCPInstaller/Sources/InstallerViewModel.swift",
+    "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopActivityTests.swift",
+    "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift",
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs/agents/openai.yaml",
+    "scripts/build_simple_v2.py",
+    "scripts/release_payload.py",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs/agents/openai.yaml",
+    "src/bridge/glyphs_mcp_bridge/core.py",
+    "src/bridge/glyphs_mcp_bridge/lifecycle.py",
+    "src/glyphs-mcp/tests/test_release_payload.py",
+    "src/glyphs-mcp/tests/test_simple_v2_build.py",
+    "src/glyphs-mcp/tests/test_simple_v2_install.py",
+    "src/sidecar/glyphs_mcp_sidecar/server.py",
+    "src/sidecar/glyphs_mcp_sidecar/service.py"
+  ],
+  "addedSourceFiles": [
+    "plugins/glyphs-mcp/skills/glyphs/references/connection-troubleshooting.md",
+    "scripts/qualify_discovery_identity.py",
+    "skills/glyphs/references/connection-troubleshooting.md",
+    "src/bridge/glyphs_mcp_bridge/identity.py",
+    "src/glyphs-mcp/tests/test_simple_v2_identity.py",
+    "src/glyphs-mcp/tests/test_simple_v2_skill_routing.py",
+    "src/protocol/glyphs_mcp_protocol/identity.py",
+    "src/sidecar/glyphs_mcp_sidecar/identity.py"
+  ]
+}

@@ -1,0 +1,238 @@
+---
+title: Troubleshooting
+description: Common setup problems and quick checks when a client cannot connect.
+---
+
+Start with the shortest path that proves where the failure is: Glyphs, local endpoint, or MCP client configuration.
+
+## Quick checks
+
+1. Relaunch Glyphs.
+2. Choose **Edit -> Glyphs MCP Server**.
+3. Click **Start** if the server is stopped, then wait for the status to change
+   from blue **Starting** to green **Running**.
+4. Confirm the endpoint is exactly:
+
+   ```text
+   http://127.0.0.1:9680/mcp/
+   ```
+
+5. Check that port 9680 is listening:
+
+   ```bash
+   lsof -iTCP:9680 -sTCP:LISTEN
+   ```
+
+6. Check the local endpoint:
+
+   ```bash
+   curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/
+   ```
+
+## No Glyphs menu items
+
+Expected menu item under **Edit**:
+
+- **Glyphs MCP Server**
+
+Common causes:
+
+- The plug-in was not installed in the Glyphs plug-ins folder.
+- Glyphs has not been restarted since installation.
+
+Fix:
+
+1. Quit Glyphs.
+2. Confirm `Glyphs MCP.glyphsPlugin` exists in:
+
+   ```text
+   ~/Library/Application Support/Glyphs 4/Plugins/
+   ```
+
+3. Reinstall with the signed macOS installer or terminal Copy mode.
+4. Reopen Glyphs.
+
+## macOS says the plug-in cannot be verified
+
+Do not bypass the warning or remove quarantine while diagnosing it. A normal
+installation from the signed DMG, signed installer ZIP, or terminal Copy mode
+must preserve a valid Developer ID signature on the installed plug-in.
+
+First record:
+
+- the exact installation method: DMG, installer ZIP, terminal Copy, or
+  development Link;
+- the Glyphs and macOS versions;
+- whether Glyphs 3 or Glyphs 4 was targeted;
+- the exact plug-in path and complete warning text.
+
+The supported paths are:
+
+```text
+~/Library/Application Support/Glyphs 3/Plugins/Glyphs MCP.glyphsPlugin
+~/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin
+```
+
+Then verify the installed bundle:
+
+```bash
+codesign --verify --deep --strict --verbose=2 \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+
+codesign -d --verbose=4 \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+
+xcrun stapler validate \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+
+xattr -lr \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+```
+
+For Glyphs 3, replace `Glyphs 4` with `Glyphs 3`. The signature details should
+show Team ID `N9U29A4T8J`, a Developer ID Application authority, hardened
+runtime, and a secure timestamp. The stapler command should report that the
+validate action worked. A `.glyphsPlugin` is a custom code bundle rather than
+an app, so `spctl --type execute` is not a valid direct assessment for it.
+
+Terminal Copy mode downloads and verifies the exact signed release matching
+the checkout. Development Link mode and manually copied raw source are mutable
+developer setups; they do not have a release-signature or notarization
+guarantee. If the warning appears after a signed installation, report the
+details above rather than opening the bundle anyway.
+
+## Client cannot connect
+
+Startup order often matters:
+
+1. Launch Glyphs.
+2. Start the MCP server.
+3. Launch or reload the client.
+
+Then reconnect to:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+After installing a build with a changed tool catalog, restart the server and reload the client so it fetches the current `tools/list`.
+
+## Server shows Error
+
+Starting with 1.5.3, green **Running** means Uvicorn completed startup and
+bound the configured localhost port. A live background thread by itself is not
+reported as ready.
+
+If startup fails or the server exits unexpectedly, the status panel keeps a red
+**Error**, shows the affected port, and asks you to check the Macro Panel and
+retry. Open **Window -> Macro Panel** and look for the full entry beginning
+with:
+
+```text
+[Glyphs MCP][Server]
+```
+
+Correct the reported problem, then click **Start**. Auto-start failures remain
+non-modal so Glyphs can finish launching; a manual Start failure also opens an
+alert. Glyphs MCP does not retry automatically.
+
+## Browser works but client does not
+
+A browser request can return discovery JSON, but MCP clients need a correct Streamable HTTP configuration. Confirm the client is using the endpoint above and not a shortened, redirected, or browser-only URL.
+
+For client-specific setup, see [Connect a client](./connect-client.mdx).
+
+## Python unsupported
+
+The installer supports Python **3.11-3.14**.
+
+Check your Python:
+
+```bash
+python3 --version
+```
+
+If you are on an unsupported version, install Python 3.14 from python.org and rerun the installer.
+
+## Installer stops at Check Python environment
+
+Starting with 1.5.4, both installers check the exact Python selected for each
+Glyphs target before running pip or changing the plug-in. The check prevents a
+false success when shared native packages were built for a different Python
+ABI. A typical example is Glyphs using Python 3.14 while
+`Scripts/site-packages` contains files such as:
+
+```text
+pydantic_core/_pydantic_core.cpython-311-darwin.so
+objc/_objc.cpython-311-darwin.so
+```
+
+Those files were built for CPython 3.11 and cannot be loaded by CPython 3.14.
+The installer stops before changing dependencies, plug-ins, or client settings.
+It does not delete, back up, reinstall, or move any shared package.
+
+Copy these details from the installer error and log:
+
+- the Glyphs target (3 or 4);
+- the exact Python executable and version;
+- `SOABI`, extension suffix, and architecture;
+- the inspected `Scripts/site-packages` path;
+- every issue code, module, and offending file.
+
+If more than one native build exists, the check accepts the environment when a
+compatible candidate imports successfully. `.abi3` extensions and compatible
+universal binaries are also accepted. If the result looks incorrect, attach
+the JSON diagnostic to a GitHub issue rather than deleting shared packages
+blindly.
+
+For now, resolve the Python/package mismatch deliberately—for example by
+selecting the Python version those packages were built for, or by rebuilding
+the environment after reviewing which other Glyphs scripts share it. Automatic
+repair and isolated dependency storage are intentionally deferred pending
+Glyphs team feedback.
+
+## Missing dependencies
+
+If the plug-in starts but tool calls fail with `ImportError` or
+`ModuleNotFoundError`, dependencies may not be installed where Glyphs can load
+them. A normal 1.5.4 installation treats missing modules as non-blocking during
+preflight, installs dependencies, and then requires every runtime import to
+pass before reporting completion.
+
+Common location:
+
+```text
+~/Library/Application Support/Glyphs 4/Scripts/site-packages
+```
+
+Advanced helper scripts from the repo root:
+
+```bash
+src/glyphs-mcp/scripts/install_deps_glyphs_python.sh
+src/glyphs-mcp/scripts/install_deps_external_python.sh
+```
+
+Restart Glyphs after installing dependencies.
+
+## Port in use
+
+If another process is already bound to `127.0.0.1:9680`, the server may fail to start.
+
+```bash
+lsof -iTCP:9680 -sTCP:LISTEN
+```
+
+Quit the other process or restart Glyphs.
+
+## Diagnostic prompt
+
+Paste this into your AI client:
+
+```text
+Help me debug my Glyphs MCP connection.
+
+1. Try to call list_open_fonts.
+2. Tell me which endpoint you used.
+3. If you see an error, quote it verbatim.
+4. Based on the error, tell me the next 2-3 steps to try.
+```

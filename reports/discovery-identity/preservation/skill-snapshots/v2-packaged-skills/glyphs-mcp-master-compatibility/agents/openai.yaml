@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-master-compatibility"
+  short_description: "Review master-layer correspondence and prepare consistent co"
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

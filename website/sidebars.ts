@@ -2,68 +2,28 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {
   docs: [
-    {
-      type: 'category',
-      label: 'Overview',
-      items: ['glyphs-mcp']
-    },
-    {
-      type: 'category',
-      label: 'Getting Started',
-      items: [
-        'getting-started/installation',
-        'tutorial/first-session',
-        'getting-started/start-server',
-        'getting-started/connect-client',
-        'getting-started/codex-chatgpt-plugin-ui',
-        'getting-started/use-agent-skills',
-        'getting-started/troubleshooting'
-      ]
-    },
-    {
-      type: 'category',
-      label: 'Concepts',
-      items: ['concepts/how-glyphs-mcp-works', 'concepts/agent-skills', 'concepts/safety-model']
-    },
-    {
-      type: 'category',
-      label: 'Workflows',
-      items: [
-        'kerning-workflow',
-        'kerning-tools',
-        'spacing-tools',
-        'italic-first-pass',
-        'compensated-tuning-tools',
-        'workflows/ai-font-proofreading',
-        'workflows/style-set-inspection',
-        'workflows/outlines-selected-nodes',
-        'workflows/visual-review',
-        'workflows/export-designspace-ufo'
-      ]
-    },
-    {
-      type: 'category',
-      label: 'Reference',
-      items: [
-        'reference/command-set',
-        'reference/glyphs3-compatibility',
-        'reference/settings',
-        'reference/resources'
-      ]
-    },
-    {
-      type: 'category',
-      label: 'Contributor Notes',
-      items: [
-        'contributor/local-docs-development',
-        'contributor/unicode-assignment-tools',
-        'contributor/ai-font-proofreading-plan',
-        'contributor/italic-balanced-broad-latin-benchmark',
-        'contributor/italic-deterministic-balanced-forum-draft',
-        'contributor/release-qa-protocol',
-        'contributor/release-build-notes'
-      ]
-    }
+    'glyphs-mcp',
+    {type: 'category', label: 'Getting Started', items: [
+      'getting-started/installation', 'getting-started/desktop', 'tutorial/first-session',
+      'getting-started/start-server', 'getting-started/connect-client',
+      'getting-started/use-agent-skills', 'getting-started/migrate-from-v1',
+      'getting-started/troubleshooting'
+    ]},
+    {type: 'category', label: 'How It Works', items: [
+      'concepts/how-glyphs-mcp-works', 'concepts/safety-model', 'concepts/agent-skills'
+    ]},
+    {type: 'category', label: 'Workflows', items: [
+      'workflows/projects', 'spacing-tools', 'kerning-workflow', 'italic-first-pass',
+      'workflows/start-node-correspondence', 'workflows/visual-review'
+    ]},
+    {type: 'category', label: 'Reference', items: [
+      'reference/command-set', 'reference/version-identity', 'reference/settings', 'reference/resources',
+      'reference/glyphs3-compatibility'
+    ]},
+    {type: 'category', label: 'Contributors', items: [
+      'contributor/local-docs-development', 'contributor/release-qa-protocol',
+      'contributor/release-build-notes'
+    ]}
   ]
 };
 

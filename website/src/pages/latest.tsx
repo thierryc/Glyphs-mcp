@@ -4,11 +4,11 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 
-export default function Latest(): JSX.Element {
+export default function Latest(): React.JSX.Element {
   const target = useBaseUrl('/docs/');
   const {siteConfig} = useDocusaurusContext();
-  const version = (siteConfig.customFields as {gmcpVersion?: string} | undefined)
-    ?.gmcpVersion;
+  const version = (siteConfig.customFields as {legacyVersion?: string} | undefined)
+    ?.legacyVersion;
 
   useEffect(() => {
     if (ExecutionEnvironment.canUseDOM) {

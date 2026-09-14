@@ -91,7 +91,7 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         tool_names = _active_tool_names()
         self.assertGreater(len(tool_names), 0, "Expected at least one tool name to be discovered.")
 
-        command_set = _repo_root() / "content" / "reference" / "command-set.mdx"
+        command_set = _repo_root() / "website/versioned_docs/version-1.11.0/reference/command-set.mdx"
         self.assertTrue(command_set.is_file(), f"Missing docs page: {command_set}")
         text = command_set.read_text(encoding="utf-8", errors="replace")
 
@@ -101,7 +101,7 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         self.assertIn("Glyphs MCP {} uses".format(version_series), text)
 
     def test_readme_command_set_mentions_all_tools(self) -> None:
-        readme = _repo_root() / "README.md"
+        readme = _repo_root() / "legacy/glyphs3/README.md"
         self.assertTrue(readme.is_file(), f"Missing README: {readme}")
         readme_text = readme.read_text(encoding="utf-8", errors="replace")
         section = _read_readme_command_set_section(readme_text)
@@ -114,8 +114,20 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         self.assertIn("authoritative list", section)
         self.assertNotIn("| Tool |", section)
 
+    def test_lean_readme_and_reference_describe_exactly_the_shipped_catalog(self):
+        import ast
+        tree = ast.parse((_repo_root()/"src/sidecar/glyphs_mcp_sidecar/server.py").read_text())
+        tools = {decorator.keywords[0].value.value for node in ast.walk(tree)
+                 if isinstance(node, ast.FunctionDef) for decorator in node.decorator_list
+                 if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr == "tool"}
+        self.assertEqual(len(tools), 7)
+        for name in ("README.md", "content/reference/command-set.mdx", "content/reference/command-set-v2.mdx"):
+            text = (_repo_root()/name).read_text()
+            self.assertTrue(all("`" + tool + "`" in text for tool in tools), name)
+            self.assertNotIn("execute_code_with_context", text)
+
     def test_italic_first_pass_docs_cite_primary_symbol_sources(self) -> None:
-        page = _repo_root() / "content" / "italic-first-pass.md"
+        page = _repo_root() / "website/versioned_docs/version-1.11.0/italic-first-pass.md"
         text = page.read_text(encoding="utf-8", errors="replace")
 
         self.assertIn("### Sources and interpretation", text)

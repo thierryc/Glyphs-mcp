@@ -1,0 +1,79 @@
+---
+title: First session
+description: Install, start the server, connect a client, and run list_open_fonts.
+---
+
+This path gets you to a first successful, read-only tool call. Once `list_open_fonts` works, the rest of the docs build on the same connection.
+
+## You will accomplish
+
+- Install Glyphs MCP.
+- Start the local MCP server in Glyphs.
+- Connect an MCP client.
+- Run `list_open_fonts` and choose a `font_index`.
+
+## Before you start
+
+- Install Glyphs MCP with [Installation](../getting-started/installation.mdx).
+- Open Glyphs 4 beta.
+- Open at least one font if you want `list_open_fonts` to return font metadata.
+
+## Step 1: Start the server
+
+In Glyphs:
+
+```text
+Edit -> Glyphs MCP Server
+```
+
+Click **Start** if the server is stopped, then confirm that the endpoint is:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+## Step 2: Connect a client
+
+For Codex:
+
+```bash
+codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list
+```
+
+For Claude CLI or Claude Code:
+
+```bash
+claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+claude mcp list
+```
+
+For Claude App and other client-specific notes, see [Connect a client](../getting-started/connect-client.mdx).
+
+## Step 3: Run the first tool call
+
+Paste this into your client:
+
+```text
+Connect to my Glyphs MCP server and run a quick health check.
+
+1. Call list_open_fonts.
+2. Tell me how many fonts are open.
+3. For each font, report familyName and filePath when available.
+4. Tell me which font_index I should use next.
+
+If you get an error, quote it verbatim and tell me the next step.
+```
+
+## Expected result
+
+The agent should report the open fonts and a `font_index` value, usually `0` for the first open font. If no fonts are open, Glyphs MCP can still be connected successfully, but font-specific workflows need an open font.
+
+## If it fails
+
+Start with [Troubleshooting](../getting-started/troubleshooting.mdx), especially:
+
+- no Glyphs menu items
+- client cannot connect
+- port 9680 in use
+- browser endpoint works but the MCP client does not

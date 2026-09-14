@@ -1,0 +1,5 @@
+GitHub Invertocat logo © GitHub, Inc. Used beside a link to the project on GitHub.
+Source: https://brand.github.com/GitHub_Logos.zip
+Asset: GitHub Logos/SVG/GitHub_Invertocat_Black.svg
+SHA-256: 693d7abe6f899646cc2e96856723b45e95f71885a54910b2749f6decdf7e1ee1
+Usage: https://brand.github.com/foundations/logo

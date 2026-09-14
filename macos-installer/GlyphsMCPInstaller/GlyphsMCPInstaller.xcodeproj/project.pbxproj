@@ -37,6 +37,32 @@
 		AA1111111111111111111136 /* GlyphsMCPUpdater in Resources */ = {isa = PBXBuildFile; fileRef = AA300000000000000000002A /* GlyphsMCPUpdater */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		AA1111111111111111111137 /* UpdateHelperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA300000000000000000002B /* UpdateHelperManager.swift */; };
 		F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = F4C332F72F538E3E00BF5B52 /* AppIcon.icon */; };
+		ED1E0CF9C25CB32B2359DDA6 /* DesktopModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4BD315CE020CA45337A7124 /* DesktopModel.swift */; };
+		C08D77A3A3BD2E7E2D73CE12 /* InstallationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E0CEF38BD5272FB76A0141 /* InstallationView.swift */; };
+		599AF7AF980DDAE940BDB02E /* DesktopActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B0069E64B8166545068655 /* DesktopActivity.swift */; };
+		63A2AB3FB5CDB3256C48DA16 /* DesktopInstallation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6545F2403F0978EBA9F9CD4 /* DesktopInstallation.swift */; };
+		0AC9B1F44B12D38D9172EEA8 /* DesktopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D2D62E1F5AA9456A113CB3 /* DesktopTests.swift */; };
+		70C99485418C6795E9B31071 /* DesktopAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8476B5C5BFB77C8A0DC8560D /* DesktopAppDelegate.swift */; };
+		D049D2DA83A153A23D72BED5 /* DesktopMonitorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6E3B10904D60F7875759D9 /* DesktopMonitorPolicy.swift */; };
+		DE7000000000000000000002 /* Templates in Resources */ = {isa = PBXBuildFile; fileRef = DE7000000000000000000001 /* Templates */; };
+		4BD5801D03F3BFE8C5753241 /* DesktopProjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 799F925C995B370E8C812ADA /* DesktopProjects.swift */; };
+		A64F540FCB1E8FBA46D0471A /* ProjectTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08C4804E908F36018324252F /* ProjectTemplates.swift */; };
+		CCFECA554C6AFEAAE447F59E /* ReadOnlyGit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */; };
+		301CC88B1075FB8C7D68E536 /* TemplateArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */; };
+		3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */; };
+		E3E54D6F7E263E4FE22AB626 /* DesktopProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */; };
+		DE7100000000000000000002 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE7100000000000000000001; };
+		DE7100000000000000000003 /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE7100000000000000000001; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0F0E7AC6B007BE7D6C1B2A6E /* DesktopUpdates.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA980944FF0301D855003051 /* DesktopUpdates.swift */; };
+		DE7000000000000000000004 /* Notices in Resources */ = {isa = PBXBuildFile; fileRef = DE7000000000000000000003 /* Notices */; };
+		E84CC28818E4CC99FCCB10CA /* DesktopJobEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8D0B383F3BAC6C5D8F4640 /* DesktopJobEvents.swift */; };
+		C77B301FEBD51A7A40A91B94 /* DesktopMenuImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60EC656C5A910DCFFD852637 /* DesktopMenuImage.swift */; };
+		3F59FD997BDD3F90653A6CF7 /* DesktopActivityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */; };
+		12B887EC93C336A12F5525CF /* DesktopProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */; };
+		BB8FED442C37149356C19DC9 /* DesktopProjectWizard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */; };
+		0B32DBB6D0B856B5E6F921FE /* DesktopProjectNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */; };
+		F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */; };
+		236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +104,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				AA1111111111111111111123 /* GlyphsMCPInstallerCore.framework in Embed Frameworks */,
+				DE7100000000000000000003 /* Sparkle.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -96,7 +123,7 @@
 		AA3000000000000000000009 /* FileIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileIO.swift; sourceTree = "<group>"; };
 		AA3000000000000000000010 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = AGENTS.md; sourceTree = "<group>"; };
 		AA3000000000000000000011 /* GlyphsMCPInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsMCPInstallerTests.swift; sourceTree = "<group>"; };
-		AA3000000000000000000012 /* GlyphsMCPInstaller.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GlyphsMCPInstaller.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA3000000000000000000012 /* GlyphsMCPInstaller.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Glyphs MCP.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA3000000000000000000013 /* GlyphsMCPInstallerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlyphsMCPInstallerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GlyphsMCPInstallerCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA3000000000000000000015 /* Check.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Check.swift; sourceTree = "<group>"; };
@@ -116,6 +143,31 @@
 		AA300000000000000000002A /* GlyphsMCPUpdater */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GlyphsMCPUpdater; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA300000000000000000002B /* UpdateHelperManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateHelperManager.swift; sourceTree = "<group>"; };
 		F4C332F72F538E3E00BF5B52 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Resources/AppIcon.icon; sourceTree = SOURCE_ROOT; };
+		A4BD315CE020CA45337A7124 /* DesktopModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopModel.swift"; sourceTree = "<group>"; };
+		81E0CEF38BD5272FB76A0141 /* InstallationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InstallationView.swift"; sourceTree = "<group>"; };
+		58B0069E64B8166545068655 /* DesktopActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopActivity.swift"; sourceTree = "<group>"; };
+		F6545F2403F0978EBA9F9CD4 /* DesktopInstallation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopInstallation.swift"; sourceTree = "<group>"; };
+		07D2D62E1F5AA9456A113CB3 /* DesktopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopTests.swift"; sourceTree = "<group>"; };
+		8476B5C5BFB77C8A0DC8560D /* DesktopAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopAppDelegate.swift"; sourceTree = "<group>"; };
+		6E6E3B10904D60F7875759D9 /* DesktopMonitorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopMonitorPolicy.swift"; sourceTree = "<group>"; };
+		DE7000000000000000000001 /* Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Templates; sourceTree = "<group>"; };
+		799F925C995B370E8C812ADA /* DesktopProjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjects.swift"; sourceTree = "<group>"; };
+		08C4804E908F36018324252F /* ProjectTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectTemplates.swift"; sourceTree = "<group>"; };
+		4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadOnlyGit.swift"; sourceTree = "<group>"; };
+		2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemplateArchive.swift"; sourceTree = "<group>"; };
+		95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemplateStore.swift"; sourceTree = "<group>"; };
+		C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectTests.swift"; sourceTree = "<group>"; };
+		DE7100000000000000000001 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = "../../build/desktop-dependencies/Sparkle.framework"; sourceTree = SOURCE_ROOT; };
+		AA980944FF0301D855003051 /* DesktopUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopUpdates.swift"; sourceTree = "<group>"; };
+		DE7000000000000000000003 /* Notices */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Notices; sourceTree = "<group>"; };
+		AA8D0B383F3BAC6C5D8F4640 /* DesktopJobEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopJobEvents.swift"; sourceTree = "<group>"; };
+		60EC656C5A910DCFFD852637 /* DesktopMenuImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopMenuImage.swift"; sourceTree = "<group>"; };
+		B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopActivityTests.swift"; sourceTree = "<group>"; };
+		79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectCatalog.swift"; sourceTree = "<group>"; };
+		51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectWizard.swift"; sourceTree = "<group>"; };
+		611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectNavigation.swift"; sourceTree = "<group>"; };
+		742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectNavigationTests.swift"; sourceTree = "<group>"; };
+		0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectSettings.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +176,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA1111111111111111111122 /* GlyphsMCPInstallerCore.framework in Frameworks */,
+				DE7100000000000000000002 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -167,6 +220,14 @@
 		AA0000000000000000000003 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */,
+				51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */,
+				79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */,
+				AA980944FF0301D855003051 /* DesktopUpdates.swift */,
+				799F925C995B370E8C812ADA /* DesktopProjects.swift */,
+				8476B5C5BFB77C8A0DC8560D /* DesktopAppDelegate.swift */,
+				81E0CEF38BD5272FB76A0141 /* InstallationView.swift */,
+				A4BD315CE020CA45337A7124 /* DesktopModel.swift */,
 				AA3000000000000000000001 /* GlyphsMCPInstallerApp.swift */,
 				AA3000000000000000000002 /* ContentView.swift */,
 				AA3000000000000000000003 /* InstallerViewModel.swift */,
@@ -181,6 +242,8 @@
 			children = (
 				F4C332F72F538E3E00BF5B52 /* AppIcon.icon */,
 				AA3000000000000000000021 /* Assets.xcassets */,
+				DE7000000000000000000001 /* Templates */,
+				DE7000000000000000000003 /* Notices */,
 				AA3000000000000000000025 /* Localizable.strings */,
 				AA0000000000000000000007 /* Starter */,
 			);
@@ -217,6 +280,10 @@
 		AA0000000000000000000008 /* GlyphsMCPInstallerTests */ = {
 			isa = PBXGroup;
 			children = (
+				742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */,
+				B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */,
+				C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */,
+				07D2D62E1F5AA9456A113CB3 /* DesktopTests.swift */,
 				AA3000000000000000000011 /* GlyphsMCPInstallerTests.swift */,
 			);
 			path = GlyphsMCPInstallerTests;
@@ -225,6 +292,16 @@
 		AA00000000000000000000C7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */,
+				60EC656C5A910DCFFD852637 /* DesktopMenuImage.swift */,
+				AA8D0B383F3BAC6C5D8F4640 /* DesktopJobEvents.swift */,
+				95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */,
+				2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */,
+				4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */,
+				08C4804E908F36018324252F /* ProjectTemplates.swift */,
+				6E6E3B10904D60F7875759D9 /* DesktopMonitorPolicy.swift */,
+				F6545F2403F0978EBA9F9CD4 /* DesktopInstallation.swift */,
+				58B0069E64B8166545068655 /* DesktopActivity.swift */,
 				AA3000000000000000000009 /* FileIO.swift */,
 				AA3000000000000000000004 /* ProcessRunner.swift */,
 				AA3000000000000000000005 /* Preflight.swift */,
@@ -381,6 +458,8 @@
 			files = (
 				AA1111111111111111111120 /* AGENTS.md in Resources */,
 				AA1111111111111111111129 /* Assets.xcassets in Resources */,
+				DE7000000000000000000002 /* Templates in Resources */,
+				DE7000000000000000000004 /* Notices in Resources */,
 				AA1111111111111111111130 /* Localizable.strings in Resources */,
 				AA1111111111111111111136 /* GlyphsMCPUpdater in Resources */,
 				F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */,
@@ -392,6 +471,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		AA0000000000000000000015 /* Copy Payload */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -406,8 +486,8 @@
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Payload/.payload-stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nmkdir -p \"$PAYLOAD_DIR\"\n\nREPO_ROOT=\"$PROJECT_DIR/../..\"\n\nPLUGIN_SRC=\"$REPO_ROOT/src/glyphs-mcp/Glyphs MCP.glyphsPlugin\"\nPLUGIN_DST=\"$PAYLOAD_DIR/Glyphs MCP.glyphsPlugin\"\nREQ_SRC=\"$REPO_ROOT/requirements.txt\"\nSKILLS_SRC=\"$REPO_ROOT/skills\"\nSKILLS_DST=\"$PAYLOAD_DIR/skills\"\n\nif [ ! -d \"$PLUGIN_SRC\" ]; then\n  echo \"error: plugin bundle not found: $PLUGIN_SRC\" >&2\n  exit 1\nfi\nif [ ! -f \"$REQ_SRC\" ]; then\n  echo \"error: requirements.txt not found: $REQ_SRC\" >&2\n  exit 1\nfi\nif [ ! -d \"$SKILLS_SRC\" ]; then\n  echo \"error: skills directory not found: $SKILLS_SRC\" >&2\n  exit 1\nfi\n\n# Copy plugin bundle (exclude dev-only artifacts; keep payload deterministic)\nmkdir -p \"$PLUGIN_DST\"\nrsync -a --delete \\\n  --exclude '.DS_Store' \\\n  --exclude '__pycache__' \\\n  --exclude '*.pyc' \\\n  --exclude '.venv' \\\n  \"$PLUGIN_SRC/\" \"$PLUGIN_DST/\"\n\n# Sign the embedded executable so notarization accepts the payload.\n# Do not sign the .glyphsPlugin wrapper bundle here: archive/export may update the\n# nested executable signature later, which would stale the wrapper CodeResources.\nPLUGIN_BIN=\"$PLUGIN_DST/Contents/MacOS/plugin\"\nif [ -f \"$PLUGIN_BIN\" ]; then\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  if [ -n \"${SIGN_ID:-}\" ]; then\n    echo \"Signing payload plug-in executable with: $SIGN_ID\"\n    /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n    /usr/bin/codesign --verify --verbose=2 \"$PLUGIN_BIN\"\n  else\n    echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n  fi\nelse\n  echo \"WARN: payload plug-in binary not found at $PLUGIN_BIN\" >&2\nfi\n\n# Copy requirements\ncp -f \"$REQ_SRC\" \"$PAYLOAD_DIR/requirements.txt\"\n\n# Copy the managed Glyphs MCP skill bundle for Codex / Claude Code global install.\nmkdir -p \"$SKILLS_DST\"\nfind \"$SKILLS_DST\" -mindepth 1 -maxdepth 1 -type d -name 'glyphs-mcp-*' -exec rm -rf {} +\nfind \"$SKILLS_DST\" -mindepth 1 -maxdepth 1 -type d -name 'glyphs' -exec rm -rf {} +\nfor skill_dir in \"$SKILLS_SRC\"/glyphs \"$SKILLS_SRC\"/glyphs-mcp-*; do\n  [ -d \"$skill_dir\" ] || continue\n  skill_name=\"$(basename \"$skill_dir\")\"\n  rsync -a --delete \\\n    --exclude '.DS_Store' \\\n    --exclude '__pycache__' \\\n    --exclude '*.pyc' \\\n    \"$skill_dir/\" \"$SKILLS_DST/$skill_name/\"\ndone\n\n# Output marker for dependency analysis\n: > \"$PAYLOAD_DIR/.payload-stamp\"\n\necho \"Payload staged at: $PAYLOAD_DIR\"\n";
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nREPO_ROOT=\"$PROJECT_DIR/../..\"\nPYTHON_BIN=\"${PYTHON_BIN:-python3}\"\n\n\"$PYTHON_BIN\" \"$REPO_ROOT/scripts/build_installer_payload.py\" \\\n  --output-root \"$PAYLOAD_DIR\" \\\n  --allow-outside-worktree\n\n# Sign every generated plug-in loader only in signing-enabled builds. The\n# Release exporter later signs and seals all nested bundles from the deepest\n# bundle outward. Local closure builds pass CODE_SIGNING_ALLOWED=NO and must\n# remain genuinely unsigned.\nif [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then\n  echo \"Code signing disabled; leaving payload plug-in executables unsigned.\"\nelse\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  while IFS= read -r -d '' PLUGIN_BIN; do\n    if [ -n \"${SIGN_ID:-}\" ]; then\n      echo \"Signing payload plug-in executable with: $SIGN_ID\"\n      /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n      /usr/bin/codesign --verify --verbose=2 \"$PLUGIN_BIN\"\n    else\n      echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n    fi\n  done < <(/usr/bin/find \"$PAYLOAD_DIR/Plugins\" -type f -path '*/Contents/MacOS/plugin' -print0)\nfi\n\n: > \"$PAYLOAD_DIR/.payload-stamp\"\necho \"Target-aware payload staged at: $PAYLOAD_DIR\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -416,6 +496,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */,
+				BB8FED442C37149356C19DC9 /* DesktopProjectWizard.swift in Sources */,
+				12B887EC93C336A12F5525CF /* DesktopProjectCatalog.swift in Sources */,
+				0F0E7AC6B007BE7D6C1B2A6E /* DesktopUpdates.swift in Sources */,
+				4BD5801D03F3BFE8C5753241 /* DesktopProjects.swift in Sources */,
+				70C99485418C6795E9B31071 /* DesktopAppDelegate.swift in Sources */,
+				C08D77A3A3BD2E7E2D73CE12 /* InstallationView.swift in Sources */,
+				ED1E0CF9C25CB32B2359DDA6 /* DesktopModel.swift in Sources */,
 				AA1111111111111111111111 /* GlyphsMCPInstallerApp.swift in Sources */,
 				AA1111111111111111111112 /* ContentView.swift in Sources */,
 				AA1111111111111111111113 /* InstallerViewModel.swift in Sources */,
@@ -428,6 +516,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */,
+				3F59FD997BDD3F90653A6CF7 /* DesktopActivityTests.swift in Sources */,
+				E3E54D6F7E263E4FE22AB626 /* DesktopProjectTests.swift in Sources */,
+				0AC9B1F44B12D38D9172EEA8 /* DesktopTests.swift in Sources */,
 				AA1111111111111111111121 /* GlyphsMCPInstallerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -436,6 +528,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B32DBB6D0B856B5E6F921FE /* DesktopProjectNavigation.swift in Sources */,
+				C77B301FEBD51A7A40A91B94 /* DesktopMenuImage.swift in Sources */,
+				E84CC28818E4CC99FCCB10CA /* DesktopJobEvents.swift in Sources */,
+				3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */,
+				301CC88B1075FB8C7D68E536 /* TemplateArchive.swift in Sources */,
+				CCFECA554C6AFEAAE447F59E /* ReadOnlyGit.swift in Sources */,
+				A64F540FCB1E8FBA46D0471A /* ProjectTemplates.swift in Sources */,
+				D049D2DA83A153A23D72BED5 /* DesktopMonitorPolicy.swift in Sources */,
+				63A2AB3FB5CDB3256C48DA16 /* DesktopInstallation.swift in Sources */,
+				599AF7AF980DDAE940BDB02E /* DesktopActivity.swift in Sources */,
 				AA1111111111111111111114 /* ProcessRunner.swift in Sources */,
 				AA1111111111111111111115 /* Preflight.swift in Sources */,
 				AA1111111111111111111126 /* GlyphsPreferences.swift in Sources */,
@@ -541,10 +643,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Glyphs MCP Installer";
 				INFOPLIST_KEY_CFBundleName = "Glyphs MCP Installer";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_VERSION = 5.9;
@@ -590,9 +691,8 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Glyphs MCP Installer";
 				INFOPLIST_KEY_CFBundleName = "Glyphs MCP Installer";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -626,8 +726,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 2.0.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
-				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
+				PRODUCT_NAME = "Glyphs MCP";
+				FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/../../build/desktop-dependencies");
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
@@ -661,8 +762,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 2.0.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
-				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
+				PRODUCT_NAME = "Glyphs MCP";
+				FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/../../build/desktop-dependencies");
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;

@@ -1,75 +1,27 @@
 ---
-title: Kerning workflow
-description: A typographer-first kerning sequence for Glyphs MCP.
+title: Collision kerning
 ---
 
-Use this workflow when you want an agent to help you proof kerning, generate worklists, audit collisions, and apply approved bumper fixes without replacing typographic judgement.
+The `kerning_collision` job checks **explicit left-to-right glyph pairs** against a requested sampled clearance. It loosens collisions by creating or updating pair exceptions while leaving shared group values intact.
 
-Kerning should stay human-led: spacing first, groups/classes first, exceptions only when there is proof.
-
-## When to use it
-
-- You want a structured kerning pass in Glyphs.
-- You need a worklist proof tab for missing or suspicious pairs.
-- You want a collision or near-miss guardrail.
-- You want an agent to summarize kerning outliers before you edit.
-
-## What changes
-
-Nothing changes during `generate_kerning_tab` or `review_kerning_bumper`.
-
-Only explicit mutating tools change kerning:
-
-- `apply_kerning_bumper` can add or update glyph-glyph kerning exceptions.
-- `set_kerning_pair` can set or remove a specific kerning pair.
-
-Use dry runs and explicit approval before any mutation.
-
-## What does not change
-
-- Outlines
-- Components
-- Anchors
-- Spacing and sidebearings
-- Kerning groups/classes, unless you explicitly edit glyph properties
-- Files on disk, unless you call `save_font`
-
-## Recommended sequence
-
-1. Pick the font and master with `list_open_fonts` and `get_font_masters`.
-2. Run a spacing sanity pass first if sidebearings look inconsistent.
-3. Audit kerning groups before adding exceptions.
-4. Generate a proof tab with `generate_kerning_tab`.
-5. Review collisions or near-misses with `review_kerning_bumper`.
-6. Run `apply_kerning_bumper` with `dry_run=true`.
-7. Apply only after approval with `confirm=true`.
-8. Proof visually in Glyphs.
-9. Save only when you decide to call `save_font`.
-
-## Safe prompt template
-
-```text
-Use the glyphs-mcp-kerning skill.
-
-Task: Review kerning for my current font and master.
-
-Rules:
-- Read current font and master first.
-- Do not mutate during review.
-- Prefer group/class kerning. Treat glyph-glyph exceptions as last-mile fixes.
-- Run review_kerning_bumper before any apply step.
-- Run apply_kerning_bumper with dry_run=true before mutation.
-- Wait for me to reply exactly "apply" before using confirm=true.
-- Never auto-save.
-
-1. Call list_open_fonts and get_font_masters.
-2. Call generate_kerning_tab for a review proof.
-3. Call review_kerning_bumper and summarize the 20 worst findings.
-4. If useful, dry-run apply_kerning_bumper and stop for approval.
+```json
+{
+  "document_id": "<document ID>",
+  "kind": "kerning_collision",
+  "options": {"pairs": [["A", "V"], ["T", "o"]], "targetGap": 5, "denseStep": 10}
+}
 ```
 
-## Related reference
+Pass pairs in `options.pairs`; do not pass `glyphs` or `delta`. `options.masters` limits the master IDs, otherwise all masters are considered. The default target gap is 5 font units and dense step is 10.
 
-- [Kerning tools](./kerning-tools.md)
-- [Command set](./reference/command-set.mdx)
-- [Safety model](./concepts/safety-model.mdx)
+## Review before applying
+
+The worker resolves native groups and exceptions, performs a coarse scan and refines near the target. `get_job` reports native effective values, stored exceptions, class keys, sampling density, minima and unavailable pairs. Inspect the full report when the compact sample is insufficient.
+
+The result only loosens a pair toward the sampled target. It does not generate an optimal optical-kerning system or guarantee clearance between sample heights. RTL and vertical kerning storage can be read, but this collision geometry workflow accepts LTR only.
+
+## Verify the result
+
+After `apply_job` completes, review the chosen pairs in Glyphs across the affected masters. Read the exact exception using `read_entities` with a `kind="kerning"` selector and `fields=["value"]`. An absent value is `null`; zero is a stored value and is not interchangeable with absence.
+
+Native Undo/Redo retains exact values and exception presence. `discard_job` restores the job's current targets; native Save accepts the reviewed changes. See [Safety and recovery](concepts/safety-model.mdx).

@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Glyphs MCP Installer</string>
+	<string>Glyphs MCP Beta</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleName</key>
-	<string>Glyphs MCP Installer</string>
+	<string>Glyphs MCP</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -22,5 +22,27 @@
 	<string>public.app-category.developer-tools</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>K5EkYQQZFhOWgsw2dtO2dPnCry+8VKhG0eHYeUd2iP8=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>GMCPReleaseChannel</key>
+	<string>beta</string>
+	<key>GMCPBetaNumber</key>
+	<integer>1</integer>
+	<key>GMCPTemplateRegistryURL</key>
+	<string>https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/templates/registry.json</string>
 </dict>
 </plist>

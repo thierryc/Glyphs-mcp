@@ -1,0 +1,919 @@
+---
+title: Release and build notes
+description: Contributor notes for future release/build documentation cleanup.
+---
+
+This page is a placeholder for Phase 2 README cleanup. Keep operational release details here or in a focused contributor page instead of expanding the public README.
+
+## Current rule
+
+Do not duplicate release flow, command reference, or long installer notes across public pages. The canonical docs site should own user-facing documentation; the README should remain a gateway to docs, releases, and source.
+
+Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
+
+## Prepared 1.11.0 candidate
+
+Version `1.11.0` (installer build `26`) preserves the 87-tool MCP runtime and
+adds `glyphs-mcp-scripting` as the eleventh canonical and packaged skill. The
+new workflow covers documentation-grounded read-only probes, Macro Panel
+snippets, and iterative live debugging while requiring an exact
+`snippet_only=true` preview and explicit approval before any mutation or
+external side effect.
+
+Existing coding ownership remains stable: `glyphs-mcp-development` creates
+reusable workspace scripts and all six plug-in types;
+`glyphs-mcp-outlines-docs` and `glyphs-mcp-italic-first-pass` keep their narrow
+fallback code. The `glyphs` launcher routes live runs separately from reusable
+artifacts and excludes generic non-Glyphs Python.
+
+The same 11-skill directory is synchronized into the Codex/ChatGPT, Claude
+Code, Cursor, and GitHub Copilot CLI package. The terminal installer managed
+set and the macOS install/update/uninstall payload tests include the new skill.
+Signing, notarization, tagging, pushing, and publication remain separate release
+actions.
+
+The complete local release gate passes 874 Python tests with 2 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully. The documentation production
+build, release metadata and version checks, synchronization check, and all 22
+canonical and packaged skill validations also pass.
+
+The machine-readable skill-routing matrix contains 13 realistic prompts with
+an expected owning skill, action, tool family, approval state, `snippet_only`
+state, human-readable result, and forbidden routes. Deterministic contracts
+validate the matrix against active model-visible tools and canonical skill
+instructions. A prompt-only Codex self-evaluation matched all 13 expected
+routes and safety boundaries. This is model-as-judge evidence, not an
+independent cross-model evaluation; the release QA protocol retains a fresh
+real-client pass for every supported host.
+
+Forward testing against Glyphs 4.0.1 confirmed a bounded read-only script could
+report the active `Gee gee` font and selected `Regular` layer with zero saves.
+A width-change prompt returned `executed:false`, preserved the live width at
+`1084`, and stopped on an exact `1084 -> 600` snippet for approval. A reusable
+Script-menu request routed to `glyphs-mcp-development`, produced a temporary
+`Report Selection.py`, and passed static Glyphs 3.5/4 validation; the disposable
+workspace was then removed. No live mutation QA was performed.
+
+## Prepared 1.10.0 candidate
+
+Version `1.10.0` (installer build `25`) expands the active catalog to 87
+tools: 76 `model+app` and 11 `app-only`. It adds four guarded LitSquare
+metadata tools and three IconGrid tools, together with the native Metadata
+Inspector and the tenth canonical and packaged skill,
+`glyphs-mcp-litsquare-metadata`.
+
+Two semantic start-node tools now review and apply compatible cyclic path
+rotations across masters. Their confirmation contract requires literal JSON
+booleans, binds writes to a review fingerprint, changes only the selected path
+start nodes with `makeNodeFirst`, verifies read-back, restores snapshots after
+failure, and never saves automatically. Candidate review also reports the first
+topology difference more precisely and aligns anchors by name before promotion.
+
+The release includes stricter development-skill scaffold validation and keeps
+canonical and Plugin Manager runtime and skill copies synchronized. The public
+command catalog generator now derives its release version from the canonical
+plug-in Info.plist instead of embedding a release number.
+
+The complete local release gate passes 870 Python tests with 2 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully with normal Xcode system access.
+The documentation production build and all 20 canonical and packaged skill
+validations also pass. Catalog/schema checks, runtime mirror parity, and
+release metadata checks are included in the final candidate audit.
+
+Live Glyphs 4.0 build 4004 / Python 3.14.6 loaded final runtime
+`1.10.0+95a3a1b3fea2`, code hash
+`95a3a1b3fea261b9e94e7d8c564aea6dc83380e4b8d3282e81e099e5aedfd0b8`.
+On a fresh five-master disposable Gee gee package copy, review and
+exact-fingerprint dry run planned four rotations and one no-op. Confirmed
+application returned `appliedCount=4`, completed post-batch verification,
+required no rollback, and reported `fontSaved:false`. Independent read-back
+proved complete semantic node state, direction, path/shape order, components,
+anchors, layer metadata, and compatibility stayed exact. Glyphs changed native
+node identities on every rotated path while retaining the strict path,
+component, and anchor objects; the no-op master retained its original nodes.
+
+The final-hash Glyphs 4 pass also injected a semantically identical native node
+replacement into the no-op master during a real rotation. The replacement had
+no semantic-signature difference and a distinct PyObjC identity. Verification
+failed specifically at `layer.paths[0].nodes[0].identity`, rollback succeeded,
+and strict read-back proved that every original node, path, component, and
+anchor object was restored. Startup and representative LitSquare metadata and
+IconGrid reads matched their contracts on the same runtime without saving.
+Closing with changes discarded left the 412-file owned package copy
+byte-identical at tree hash
+`7d70f2f1f4404741306f9b3b1cd98f18cbd0fa08974ed1113fb7805b2de5e4fc`;
+its `fontinfo.plist` remained 27,820 bytes with mtime `1786641437`. The owned
+temporary directory was removed, and the older restored disposable source was
+left untouched.
+
+The exhaustive Glyphs 4 pass before the final no-op identity tightening loaded
+runtime `1.10.0+4a60225291ad`, code hash
+`4a60225291ade3cb9b3f86d2efde68241c2fbc837c0669c44c6ac633d82567a7`,
+and rejected unselected and off-curve references, open
+paths, incompatible topology, ambiguous landmarks, nonliteral booleans, and a
+stale fingerprint before mutation. Injected `makeNodeFirst()`, semantic
+read-back, and `endChanges()` failures returned the documented error or
+explicit rollback-failure state. The first two restored and strictly verified
+the original native node objects; the `endChanges()` case reported its injected
+close failure while independent strict read-back still matched after closing
+the real batch. Startup, selection, LitSquare metadata, path-role, and IconGrid
+reads then passed on that runtime without saving. Closing with changes
+discarded left the 413-file disposable package byte-identical at tree hash
+`3618adfea1d3a82c3b11377b3df61447edd3102709e8e7646514d7bbcf0def88`;
+its `fontinfo.plist` remained 27,820 bytes, the production font was never
+targeted, and the owned temporary directory was removed.
+
+Live Glyphs 3.5 build 3531 / Python 3.12.3 loaded the same runtime and code
+hash. A fresh five-master in-memory fixture on a serialized copy of the pinned
+Glyphs 3 file passed SN1-SN7: four rotations and one no-op were reviewed,
+dry-run, confirmed with `appliedCount=4`, and independently verified with no
+save or rollback. Glyphs 3.5 also recreated native nodes on the rotated paths;
+semantic node state and strict path/component/anchor identities stayed exact,
+while the no-op node objects remained unchanged. Validation, stale-plan,
+literal-boolean, injected mutation/read-back/change-batch failures, and
+representative LitSquare/IconGrid reads matched the Glyphs 4 contracts.
+After the final runtime restart, the five-master `appliedCount=4` success case
+was repeated with complete semantic read-back and strict path, component,
+anchor, and no-op node identities. A semantic-only replacement of one no-op
+node then failed specifically at `.identity`, rolled back successfully, and
+restored every original native object. Both final-hash calls reported
+`fontSaved:false`.
+Closing with changes discarded left both the source and disposable file at
+SHA-256 `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`,
+mtime/size `1757966394`/19,425 for the source and
+`1786640639`/19,425 for the final-hash copy. The owned temporary directory was removed;
+an older restored disposable fixture was closed without saving and left
+untouched.
+
+Both required hosts now pass the applicable 1.10 start-node and
+LitSquare/IconGrid acceptance matrix. No signed artifact, tag, push,
+notarization, upload, or GitHub release has been performed by this preparation.
+
+## Prepared 1.9.0 candidate
+
+Version `1.9.0` (installer build `24`) adds one guarded coordinate-only edit
+tool, `update_glyph_node_positions`, plus the memory-only one-document MCP
+change overview and its native **Edit → Glyphs MCP Changes…** panel. The active
+catalog contains 78 tools: 67 `model+app` and 11 `app-only`.
+
+The node-position tool accepts explicit guarded targets across paths, follows
+the font grid by default, preserves continuous coordinates only when requested,
+verifies the complete protected outline state, and restores the full snapshot
+after write, read-back, or change-batch failure. Tunni application now uses the
+same transaction core. The outline skill routes coordinate micro-edits to this
+tool and reserves `set_glyph_paths` for topology or whole-path replacement.
+
+The document-change ledger records bounded attributable edit, save, and opaque
+code outcomes for one live document without saving or semantically diffing the
+font. Open-font indices are collected on Glyphs' main thread, and native PyObjC
+object identity keeps the tracked document stable when Python wrappers or font
+indices change.
+
+The complete local feature suite passes 798 Python tests with 4 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully with normal Xcode system access.
+The documentation production build, all 18 canonical and packaged skill
+validations, catalog/schema checks, canonical/Plugin Manager parity, and release
+metadata checks also pass.
+
+Live Glyphs 3.5 build 3531 / Python 3.12.3 loaded final runtime
+`1.9.0+094cca52cbe5`. Whole-unit half ties snapped deterministically, a
+continuous fractional request that Glyphs 3.5 could not preserve rolled back
+completely, and read-back restored the original node with `fontSaved:false`.
+The same disposable-font pass applied and restored two explicit nodes across
+two paths in one verified batch, retained JSON `null` node names, omitted a
+stale precondition failure from the audit, retained the started rollback
+failure, and followed the tracked font after a second document changed the
+indices. Closing without saving left both fixtures byte-identical at SHA-256
+`86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
+
+Live Glyphs 4.0.1 build 4004 / Python 3.14.6 loaded the same final runtime,
+`1.9.0+094cca52cbe5`. Its disposable-font pass covered whole-unit half ties,
+subdivision-aware `0.1` snapping with exact decimal read-back, and disabled-grid
+`0` behavior with continuous coordinates under the default font policy. It
+also applied and restored two nodes across two paths in one verified batch. An
+explicit continuous coordinate that Glyphs normalized was detected and rolled
+back completely; a stale precondition was omitted from the audit while the
+started rollback failure remained visible. The native change-overview panel
+reported the bounded records and **Open Target** navigated to the correct glyph
+and master. No font was saved, original grid metadata and outline state were
+restored, and closing with changes discarded left the fixture byte-identical at
+SHA-256
+`048ffb6f690b52ff1e4d1c8288bafef8aeeec53b28f47a815cb87c6e73c99610`.
+
+Both required Glyphs hosts now pass the applicable 1.9 live acceptance matrix.
+
+No commit, tag, push, signing, notarization, upload, or publication is
+authorized by this preparation.
+
+## Prepared 1.8.0 candidate
+
+Version `1.8.0` (installer build `23`) introduces the production
+`TOOL_CATALOG`, one unfiltered registry with MCP Apps visibility metadata,
+additive structured results for candidate/curve/spacing/kerning workflows,
+adaptive curve-quality version 2, compatible cross-master comparison, and
+native curve-event markers.
+
+The active catalog contains 76 tools: 65 `model+app` and 11 `app-only`. Eight
+removed commands remain catalog tombstones only. The profile selector,
+preference, filtering path, aliases, and `tool_profiles.py` are absent. Public
+command tables and category summaries are generated from the catalog; skills
+are validated against active model-visible names and deterministic routing
+sequences.
+
+The complete local feature suite passes 737 Python tests with 4 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully with normal Xcode system access.
+The documentation production build, all 18 canonical and packaged skill
+validations, catalog/schema checks, canonical/Plugin Manager parity, and
+release metadata checks also pass.
+
+Live Glyphs 4.0 / Python 3.14.6 validation loaded runtime
+`1.8.0+7f57743bdc57`. Protocol discovery returned exactly 76 active tools: 65
+model-visible and 11 app-only, with all four safety annotations present, no
+removed command registered, and a 78,927-byte model-visible `tools/list`
+payload. Undefined master metrics returned JSON `null`. Adaptive and
+`sampled_v1` curve review, compatible cross-master review, the native
+curvature/event Reporter, detached candidate preview, and structured success
+and validation-error envelopes all passed without changing their source
+layers.
+
+A serialized disposable copy of the pinned Glyphs 3 fixture then completed the
+full Tunni candidate lifecycle: preview, materialization dry run and confirm,
+review-token issuance, acceptance dry run and confirm, exact read-back, and
+automatic candidate cleanup. Acceptance changed only the four selected
+off-curve handles in glyph `A`; no other node changed, rollback was not needed,
+and the tool reported `fontSaved:false`. After closing with changes discarded,
+the fixture retained its original SHA-256
+`86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`,
+mtime `1786410218`, and size `19425` bytes. The disposable directory was then
+removed.
+
+Live Glyphs 3.5 build 3531 / Python 3.12.3 then loaded the final corrected
+runtime `1.8.0+9f3835226979`. It exposed the same 76 active, 65 model-visible,
+and 11 app-only tools with complete annotations and a 79,702-byte model payload.
+Adaptive and sampled-v1 curve review, compatible two-master comparison, 102
+bounded curvature strokes, three curve-event markers, candidate preview,
+materialization, token review, dry-run/confirmed acceptance, spacing review and
+dry run, and kerning review/dry run all returned their expected structured
+contracts. Candidate acceptance again changed only nodes `1`, `2`, `4`, and `5`
+and cleaned its owned layer/session without saving.
+
+The adversarial kerning confirmation initially exposed a Glyphs 3.5 storage
+bug: public glyph names created shadow name-key pairs instead of updating native
+glyph-ID exceptions. The shared writer now resolves glyph names to IDs while
+preserving `@MMK_*` class keys, with canonical/Plugin Manager parity and a new
+regression fixture. After restart, live confirmation updated the existing
+`A/B` ID pair from `30` to `126` without changing pair count or creating a name
+key, restored it exactly, then created and removed a new `A.ss01/B` ID-based
+exception. A fresh MCP client reconnected to the same runtime. Closing with
+changes discarded left the disposable file byte-identical at SHA-256
+`86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`,
+mtime `1786413454`, and size `19425` bytes; the disposable directory was
+removed. Both required live hosts now pass the applicable 1.8 acceptance
+matrix. No commit, tag, push, signing, notarization, upload, or publication is
+authorized by this preparation.
+
+## Historical 1.7.0 candidate
+
+Version `1.7.0` (installer build `22`) adds independent cubic Bezier geometry
+review, grid-safe explicit-segment Tunni balancing, curvature diagnostics, the
+native bounded curvature Reporter, and a hybrid detached Candidate Reporter
+with optional editable layers and token-bound promotion. It preserves 1.6.0's verified update staging,
+class-aware spacing safeguards, shared optional agent package, unified Glyphs
+3.5/4 bundle, hardened plug-in delivery, and existing design workflows.
+
+The feature is a measurement and narrowly scoped handle-adjustment assistant.
+It does not decide whether an outline is artistically correct. Optical form,
+rhythm, spacing, kerning, and proofing remain the designer's responsibility.
+
+Release highlights:
+
+- Ship a pure-Python geometry engine that accepts plain node records and has no
+  GlyphsApp, AppKit/PyObjC, model, network, native binary, or new dependency.
+- Review Tunni intersections, ratios, imbalance, eligibility, and proposed
+  handle deltas for one explicit glyph/master/path target.
+- Apply only explicit eligible segment end-node indices after dry run, with
+  main-thread layer batching, topology/read-back verification, rollback, and
+  no automatic save.
+- Keep the continuous construction as `idealProposed`, then select the
+  authoritative proposal with a deterministic bounded `font.gridLength`
+  search. Continuous coordinates remain an explicit opt-in.
+- Preview Tunni, collinear smoothing, italic-first-pass, and compensated-tuning
+  candidates in **View > Show Glyphs MCP Candidate** without dirtying the font.
+  The Reporter adds only a warm-yellow source/candidate symmetric difference
+  over the normal Glyphs outline; stale differences turn coral red, identical
+  geometry draws nothing over the glyph, and curvature remains separate.
+  The current compositor uses AppKit-native, topology-paired contour ribbons:
+  it traces the source geometry and the candidate geometry in reverse into one
+  `NSBezierPath`, then fills it with the documented Glyphs Reporter drawing
+  pattern and no destination blend mode. It replaces Quartz XOR, nested-clear
+  groups, and a direct CoreGraphics fill after live Glyphs 4 frames reported
+  completed difference groups but screenshots contained no golden pixels. The
+  paired ribbons retain `0.82` alpha and fail closed before drawing on
+  incompatible display topology.
+  Optionally materialize full native layers for manual editing, re-review exact
+  bounded diffs, and promote only a short-lived fingerprint-bound state through
+  operation-approved fields.
+- Report signed and normalized curvature, inflections, degenerate tangents,
+  spikes, and smooth-join discontinuities as measurements and conservative
+  warnings rather than an artistic pass/fail verdict.
+- Add **View > Show Glyphs MCP Curvature**, a native signed curvature Reporter
+  with live comb teeth, connected sign-split envelopes, deterministic uniform
+  sample reduction, `0.65` alpha, cache invalidation on node movement or path
+  direction, and a hard frame cap. Its tuned defaults are 51 samples per cubic,
+  a `0.010` scale, and a `0.12em` normal clamp. Curvature magnitude follows the
+  path right normal, placing correctly wound counter combs inside counters;
+  signed values still control teal/pink colors. The PNG curvature path retains
+  its original density and length tuning but shares the placement correction as
+  a deprecated fallback.
+  Adaptive curve analysis remains deferred to 1.8.
+- Record the independent formulas, source boundary, rejection thresholds, and
+  deferred harmonization/callipers/simplification/coverage scope in a public
+  contributor provenance page.
+- Check for stable GitHub releases in a bounded background task and derive the
+  release page from the validated exact tag instead of trusting remote URLs.
+- Keep release discovery notification-only. Download and verification require
+  a separate **Prepare Update** click, a per-Glyphs-major opt-in, and a verified
+  fixed helper installed by the signed installer.
+- Present the opt-in as **Make future updates easier** and show available
+  versions in a compact positive banner; keep signing and verification detail
+  in the release and security documentation.
+- Keep expected stale-session reconnect and cleanup responses in the debug log
+  without leaving a false red HTTP 404 in the server window. Genuine MCP HTTP
+  failures remain visible.
+- Stage exact-tag installer assets only after checksum, archive, version,
+  Developer ID, notarization, permission, ownership, protocol, and receipt
+  checks. Never replace the running or installed plug-in during preparation.
+- Require 1.5.4 users to install 1.6.0 manually. After that bootstrap, 1.6.0 can
+  prepare later stable releases and keep **View Release** available for their
+  separately run signed installer.
+- Resolve automatic spacing references by glyph class and report full reference
+  provenance, classifications, normalized metrics, confidence, and structured
+  warnings or blocks.
+- Gate extreme negative bearings and low-confidence punctuation before mutation
+  while preserving geometry-supported overhangs, marks, italics, explicit allow
+  lists, and separately disclosed user overrides.
+- Preserve shared figure advances only from fixed-pitch, metrics-linking,
+  equal-width figure, suffix, or explicit evidence.
+- Ship one shared agent package with native host manifests and repository
+  marketplace catalogs for Codex/ChatGPT, Claude Code, Cursor, and GitHub
+  Copilot CLI. All four manifests identify version `1.7.0` and reference the
+  same nine skills and localhost MCP configuration.
+- Keep agent plugins optional and host-owned. Preserve repo-local and global
+  standalone skills plus manual MCP setup, and do not add automatic Copilot
+  enablement through `.github/copilot/settings.json`.
+- Extend the coordinated version helper to cover all four agent manifests and
+  provide a non-mutating dry run. Keep the historical skill-sync filename while
+  adding a cross-host synchronization check.
+- Synchronize the canonical and packaged spacing skill with its linked
+  negative-sidebearing reference, and refresh the italic skill with
+  Unicode-aware upright-symbol review tiers that remain advisory.
+- Add the project-hosted `glyphs-mcp-release` skill with a concise preparation,
+  validation, signing, upload, and publication workflow plus a linked release
+  gate reference. Package it with the shared agent plug-in and managed
+  standalone-skill installers.
+- Fall back to ranked individual documentation-search terms only when an exact
+  phrase has no result, preserving exact-query behavior while making canonical
+  class-and-member prompts such as `GSLayer bounds` useful.
+- Run one shared pure-standard-library probe with the exact Python selected for
+  each Glyphs target and explicitly prioritize that target's shared
+  `Scripts/site-packages`.
+- Stop all selected targets before persistent changes when an existing native
+  package has an incompatible CPython ABI, incompatible Mach-O architecture, or
+  broken import.
+- Keep missing packages non-blocking before pip and make all post-install
+  missing imports, unexpected origins, malformed results, nonzero exits,
+  timeouts, and stderr-only failures fatal.
+- Preserve existing shared packages. Version 1.5.4 diagnoses only; isolated
+  dependency storage and automatic repair remain later work pending Glyphs
+  team feedback.
+- Write and verify a Glyphs MCP ownership marker for every globally installed
+  Codex and Claude Code skill.
+- Preserve same-named unmarked skills during overwrite and uninstall instead of
+  inferring ownership from a directory name.
+- Snapshot, verify, and roll back complete confirmed custom-parameter batches
+  when an assignment, deletion, read-back, or redraw fails.
+- Keep the panel in **Starting** until pinned Uvicorn 0.35 reports readiness,
+  then emit the server-started notification and Macro Panel success output
+  exactly once.
+- Persist startup failures and unexpected server exits as a red **Error** with
+  port-specific retry guidance, log full diagnostics through
+  `GeneralPlugin.logError`, and keep auto-start failures non-modal.
+- Publish from a GPG-signed annotated tag while keeping Git signing independent
+  from Apple Developer ID signing and notarization.
+- Correct the installed-bundle failure confirmed in 1.4.1: the supported
+  installers preserve the notarized Developer ID payload rather than
+  ad-hoc-signing the copied plug-in.
+- Replace Balanced's host-filter intermediate with the deterministic
+  `pure_python_balanced` backend.
+- Preserve Raw and Cursivy behavior and keep omitted `slant_mode` calls on
+  Cursivy for backward compatibility.
+- Keep `curve_strength=0.75` and `stem_compensation=1.0` as independent,
+  opt-in experimental controls.
+- Make review and apply dry runs operate on detached layers and return matching
+  topology, anchor, component, bounds, metrics, and stem-pair diagnostics.
+- Recursively block reflected, rotated, non-uniformly scaled, cyclic,
+  unreadable, or master-mismatched component constructions when their transforms
+  do not commute with the requested shear. Unsafe glyphs are never silently
+  omitted; users must rerun with explicit `skip_glyphs`.
+- Publish clean-room, OFL-compatible benchmark evidence for pinned Inter, Noto
+  Sans, and IBM Plex Sans sources without committing those font sources.
+- Synchronize the canonical plug-in, Plugin Manager bundle, MCP descriptions,
+  documentation, and packaged italic skill.
+- Preserve the Developer ID signature from the embedded release payload through
+  both macOS-app and terminal Copy installations. Source, staged, and installed
+  bundles must match or the previous plug-in is restored.
+- Resolve macOS updates and terminal Copy mode from an exact published release,
+  verify checksums, notarization, Gatekeeper, version, and the embedded
+  plug-in's signature, and stop using mutable `main` archives.
+- Publish no standalone source plug-in ZIP. Development Link mode remains
+  available but is explicitly outside the release signature guarantee.
+- Notarize the exact signed plug-in code hash independently from the outer app,
+  staple Apple's ticket into the custom bundle, and require both installers to
+  validate it before copying.
+
+Local verification for this prep:
+
+```bash
+PYTHON_BIN=.cache/release-venv/bin/python ./scripts/run_local_release_tests.sh
+cd website && npm run build
+```
+
+Feature verification on July 28, 2026:
+
+- `439` Python tests passed; `1` intentional skip.
+- `82` macOS installer tests passed.
+- The unsigned Debug installer build completed successfully.
+- The Docusaurus production build completed successfully.
+- The 26- and 66-glyph deterministic regressions passed.
+- The Broad-Latin rerun passed for `543` Inter, `543` Noto Sans, and
+  `391` IBM Plex Sans glyphs, with zero generation failures, topology changes,
+  review mutations, anchor errors, or unsafe component applications.
+- Balanced retained `135`, `102`, and `102` accepted stem pairs respectively
+  and remained the deterministic geometry winner in every family.
+- A registered Glyphs 4 MCP smoke test passed review, dry-run immutability,
+  explicit component blocking and skipping, confirmed apply, backup creation,
+  topology preservation, and no-save cleanup on a disposable Inter copy.
+
+Release-integrity verification on July 29, 2026:
+
+- `448` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer build and Docusaurus production build completed.
+- The signed plug-in payload and installer app were accepted as independent
+  Apple notarization submissions.
+- The plug-in, app, and DMG tickets stapled and validated successfully.
+- Gatekeeper accepted the installer app and DMG as Notarized Developer ID.
+- The isolated GUI/Python Copy simulation preserved the plug-in bytes, CDHash,
+  Developer ID seal, and stapled ticket.
+- Final local artifact verification passed for `v1.5.0` and generated the exact
+  SHA-256 manifest.
+
+Version 1.5.1 pre-publication verification on July 29, 2026:
+
+- `448` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer and Docusaurus production builds completed.
+- The source and Plugin Manager bundles report version `1.5.1`; the installer
+  reports marketing version `1.5.1` and build `16`.
+- The Plugin Manager bundle was regenerated in vendor mode and passed its
+  per-target dependency import and bundle-hygiene checks.
+- Tracked patch whitespace and release metadata alignment passed.
+
+Version 1.5.2 pre-publication verification on July 29, 2026:
+
+- `452` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer and Docusaurus production builds completed.
+- The source and Plugin Manager bundles report version `1.5.2`; the installer
+  reports marketing version `1.5.2` and build `17`.
+- Release metadata alignment, canonical/Plugin Manager bundle synchronization,
+  and tracked patch whitespace passed.
+
+Version 1.5.3 pre-publication verification on July 29, 2026:
+
+- `457` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer and Docusaurus production builds completed.
+- The source and Plugin Manager bundles report version `1.5.3`; the installer
+  reports marketing version `1.5.3` and build `18`.
+- Release metadata alignment, canonical/Plugin Manager bundle synchronization,
+  verified server-lifecycle coverage, and tracked patch whitespace passed.
+
+Version 1.5.4 release-candidate verification on July 31, 2026:
+
+- `473` Python tests passed; `1` intentional skip.
+- `90` macOS installer tests passed, including JSON decoding, exact
+  interpreter/path, stderr-only failure, and capture-timeout coverage.
+- Shell syntax, tracked patch whitespace, and the unsigned Debug installer
+  build passed through `scripts/run_local_release_tests.sh`.
+- The Docusaurus production build completed successfully.
+- A pre-tag candidate built from the final implementation passed Developer ID
+  signing and Apple notarization for the exact plug-in payload, installer app,
+  and DMG. Stapler and Gatekeeper accepted the app and DMG.
+- `verify_release_artifacts.sh` passed the extracted payload signatures,
+  signature-preserving simulated installation, release metadata, byte-identical
+  latest/versioned DMGs, and SHA-256 checksum gates.
+- Read-only live probes passed Glyphs 3.5 with its selected Python 3.12 and
+  Glyphs 4 with its selected Python 3.14. Running Python 3.14 against the
+  older Glyphs 3 shared packages deterministically blocked their CPython 3.11
+  and 3.12 files, including when a compatible user-site fallback could import.
+- The ABI fixture matrix passed at the shared-probe, terminal-installer, and
+  Swift-executor levels. Live checks were deliberately read-only; no shared
+  Glyphs packages or installed plug-ins were changed during this diagnostic
+  release check.
+- The source and Plugin Manager bundles report version `1.5.4`; the installer
+  reports marketing version `1.5.4` and build `19`.
+
+Publication of 1.5.4 was explicitly authorized on July 31, 2026 and completed
+from the signed `v1.5.4` tag.
+
+Version 1.6.0 release-candidate preparation on August 3, 2026:
+
+- `555` Python tests passed; `2` intentional skips (the opt-in full Python
+  dependency matrix and the unavailable GitHub Copilot CLI smoke test).
+- `104` macOS installer tests passed, including verified-update discovery,
+  helper, staging, cancellation, receipt, trust, and no-install coverage.
+- Shell syntax, tracked patch whitespace, and the unsigned Debug installer
+  build passed through `scripts/run_local_release_tests.sh`.
+- The Docusaurus production build completed successfully.
+- All `9` canonical and `9` packaged Glyphs MCP skills passed
+  `quick_validate.py`; canonical and packaged copies are synchronized.
+- Codex and Claude Code passed isolated marketplace installation tests. Claude
+  also strict-validated both the shared package and repository marketplace;
+  Cursor passed its manifest and disposable local-install smoke tests. Copilot
+  manifest and marketplace discovery-path checks passed, while its isolated CLI
+  installation test skipped because `copilot` was unavailable.
+- All four host manifests resolve the same `glyphs-mcp` package at `1.6.0`, the
+  same nine skills, and the same localhost MCP endpoint. All four repository
+  marketplaces resolve `plugins/glyphs-mcp` without duplicating version data,
+  and no `.github/copilot/settings.json` file exists.
+- The cross-host skill synchronization check, coordinated version-bump dry run,
+  plugin package validator, and strict host schema checks passed.
+- Source and Plugin Manager runtime mirrors match, release metadata validates as
+  `1.6.0`, both plug-in bundles report `1.6.0`, and the installer reports
+  marketing version `1.6.0` with build `20`.
+- Read-only GEEGEE Regular and CGPRO Regular spacing acceptance confirmed `H`
+  and `one` class references, removed the old `V`, `W`, `Y`, and `seven`
+  negative outliers, preserved tabular widths only for CGPRO's equal-width
+  figures, and left both open fonts and their files unchanged.
+- A fresh read-only Glyphs 4.0 build 4000 smoke used Python 3.14.6 and MCP
+  `1.6.0` on the open Gee gee source. Server identity, font/master/instance
+  inspection, style-set links, `H`/`one` spacing review, and spacing dry-run
+  passed; the document was unedited before and after. This smoke found the
+  canonical `GSLayer bounds` documentation query returning no exact phrase,
+  so token fallback and a regression test were added before the full gate was
+  rerun. The smoke does not replace the required disposable large-font matrix.
+- No signed Release artifact, notarization submission, tag, draft release, or
+  upload was created during preparation.
+
+Version 1.6.0 final QA resumption on August 6, 2026:
+
+- `559` Python tests passed; `2` intentional skips (the opt-in full Python
+  dependency matrix and the unavailable GitHub Copilot CLI smoke test).
+- All `104` macOS installer tests passed. Shell syntax, tracked patch
+  whitespace, and the unsigned Debug installer build also passed through
+  `scripts/run_local_release_tests.sh` with normal Xcode system access.
+- The Docusaurus production build completed successfully.
+- A fresh disposable Playfair pass in Glyphs 4 covered `1,208` glyphs, `8`
+  masters, `7` instances, bounded glyph/path/component/style-set inspection,
+  spacing review and dry run, kerning review and dry run, the complete `16,306`
+  pair kerning read, and visual rendering. The document stayed unedited and
+  its file remained byte-identical.
+- Restart diagnostics showed an MCP client automatically retrying an expired
+  `mcp-session-id`, initializing a fresh session successfully, and cleaning up
+  the expired session. The correct transport-level `404` responses had been
+  overwriting the status window as a red error even though no user tool call
+  failed. Activity tracking now treats that sequence as a neutral reconnect,
+  hides discovery and cleanup traffic from the status field, preserves it in
+  debug logging, and continues to surface genuine MCP HTTP errors. Focused
+  middleware and source/Plugin Manager synchronization tests passed.
+- A full Glyphs 4 restart loaded the final middleware and reproduced the stale
+  session path as a neutral **Client reconnecting** status while the panel
+  remained **Running**. `get_server_info` then returned MCP `1.6.0`, runtime
+  `1.6.0+9b7e2e97a7b9`, Glyphs 4.0, and Python 3.14.6 without a red HTTP error.
+
+Version 1.7.0 build-21 clean-room geometry preparation was hardened and
+live-tested in Glyphs 3.5 and Glyphs 4 on August 8, 2026. Installer build 22
+supersedes it with grid-safe Tunni and hybrid candidate sessions. The build-22
+automated local gate passes `723` Python tests with `4` intentional
+environment-dependent skips, all `104` installer tests, the unsigned Debug
+installer build, documentation and skill validation, canonical/Plugin Manager
+parity, schema/profile coverage, and release-security metadata checks. The
+build-21 live-host evidence below remains historical. Current build-22
+candidate-session records for both hosts follow. The corrected module has a
+complete adversarial HCR1-HCR8 record in both Glyphs 4 and Glyphs 3.5:
+
+- The final surface audit freezes `83` decorated tools (`81` protocol-visible,
+  `2` app-only), requires unique bounded descriptions, and verifies that the
+  Read-only allowlist contains no font-mutating, execution, save, or
+  file-writing classification. The three compensated-tuning commands now have
+  explicit discovery descriptions. All nine canonical skills and all nine
+  packaged copies use the current Read-only/Edit vocabulary and remain
+  byte-for-byte synchronized.
+- After restart, Glyphs 4.0 / Python 3.14.6 loaded runtime
+  `1.7.0+70b5bcb204b1`. Read-only inspection of FastMCP's authoritative live
+  registry found all `83` registered entries and zero blank descriptions. The
+  three compensated-tuning descriptions matched the source contract. The
+  already-open Codex task still showed its pre-reconnect catalog strings,
+  confirming that clients must reconnect after a plug-in restart when they
+  need refreshed `tools/list` metadata.
+
+- A later curvature placement refinement adopts right-normal magnitude for
+  outside-ink display, increases the native start density to 51 samples per
+  cubic, and preserves `0.65` alpha. This supersedes earlier curvature
+  appearance evidence; the final-runtime restart and visual confirmation for
+  both supported hosts is recorded below.
+
+- A later Candidate Reporter refinement removes the complete cyan proposal,
+  source comparison outline, node vectors, and embedded candidate curvature.
+  It replaces them with a fail-closed AppKit-native topology-paired ribbon fill
+  in golden yellow or stale coral. This supersedes all earlier live Candidate
+  Reporter appearance evidence. The final passes below confirm localized
+  difference pixels in both Glyphs 4 and Glyphs 3.5.
+
+- After a full restart, Glyphs 4.0 / Python 3.14.6 loaded final runtime
+  `1.7.0+dc567a3732de` and exercised Gee gee `G`, Regular. The detached Tunni
+  proposal contained one changed path and 12 changed off-curve nodes, with
+  `8.27806` units maximum sampled outline displacement and no Reporter error.
+  A controlled overlay-off/on comparison at the same 650-point viewport found
+  2,450 changed canvas pixels, 250 materially changed pixels, and 511
+  yellow-shifted pixels within the glyph region. This is direct evidence that
+  the AppKit-native compositor renders localized golden difference regions
+  rather than merely incrementing a draw counter.
+- The user explicitly approved the visible proposal. A fresh fingerprint-bound
+  review token, acceptance dry-run, and confirmed acceptance all passed.
+  Confirmation changed exactly the 12 reported handles, verified every
+  read-back, removed the ephemeral session, and returned `fontSaved:false`.
+  Post-review found all six targeted cubic segments below the requested Tunni
+  imbalance threshold; the worst remaining relative imbalance was `0.036210`.
+  Five curvature-discontinuity measurements remained as review warnings, with
+  no segment spike or degenerate-tangent warning. This was an authorized edit
+  to the user's open source document, not a disposable-copy persistence test;
+  the document remains changed in memory and was not saved by Glyphs MCP.
+
+- A build-22 Glyphs 4.0 / Python 3.14.6 pass loaded runtime
+  `1.7.0+531bbc42f912` from the canonical checkout and exercised a five-master
+  Tunni session on glyph `c` in a serialized `/private/tmp` copy of Gee gee.
+  Preview activated the Candidate Reporter; materialization created five
+  uniquely identified source-associated layers; re-review accepted four
+  untouched proposals plus one cosmetically renamed Regular candidate with
+  one permitted on-grid manual handle delta.
+- The original dry-run failed closed with
+  `generated_candidate_recompute_mismatch`. Diagnosis proved that the engine's
+  intentional JSON integers (`523`) and Glyphs' `NSPoint` float read-back
+  (`523.0`) were the only differences. The acceptance guard now preserves
+  type-sensitive review-token fingerprints while using complete semantic
+  snapshot comparison for recomputation and write-back. Focused and adjacent
+  coverage passed before the restarted live retest.
+- On the fixed runtime, materialized dry-run and confirmed promotion passed for
+  all five masters. An additional unmaterialized Reporter-only session passed
+  dry-run and confirmed promotion, proving the same integer/float read-back
+  boundary without a candidate layer. A consumed token was rejected with
+  `review_token_invalid_or_expired`.
+- Complete post-acceptance snapshots matched the original font plus only the
+  approved coordinates. Five candidate layers and their manifest were removed;
+  no Tunni backup was created. A second materialized session remained
+  discoverable and reviewable from font/layer metadata after the process-local
+  store was cleared, then dry-run and confirmed discard removed only its owned
+  layer.
+- The disposable font was closed with changes discarded. Its 412-file package
+  signature remained
+  `a4fe531545c7ffb75fd686e94d23dbc687d1e7cd93ebc740904869ee1cbc76b2`,
+  the temporary directory was deleted, the user's original Gee gee font was
+  never targeted, and no font was saved.
+- On August 10, the corrected candidate module was reloaded from the canonical
+  checkout into Glyphs 4.0 / Python 3.14.6 and exercised on a fresh serialized
+  `/private/tmp` Gee gee copy. HCR2 blocked a one-unit source edit with
+  `stale_source` and no token. HCR5 blocked topology and unrelated-node edits;
+  a permitted on-grid handle edit produced one bounded delta. A changed
+  candidate invalidated and consumed its review token, and reuse returned
+  `review_token_invalid_or_expired`.
+- Live one-shot injection covered write, read-back, `endChanges`, and manifest
+  cleanup failures. Every call reported attempted, successful rollback and the
+  session re-reviewed as ready. The cleanup case reproduced Glyphs 4 assigning
+  a new layer ID when reattaching the candidate. The corrected rollback remapped
+  layer metadata, the in-memory session, and the persisted manifest to the new
+  ID; this closes the release-blocking stale-manifest defect found during the
+  adversarial pass.
+- Reloading the candidate state/module boundary cleared all ephemeral sessions
+  while the materialized session remained discoverable and reviewable from
+  namespaced font/layer metadata. Dry-run and confirmed discard removed only
+  the recovered candidate. The disposable 412-file package closed with changes
+  discarded and retained exact hash
+  `64bb9cdd82049885cb04cf09646d3a94d05e464c867357d0c4a7d93cb1396c11`;
+  no user font was targeted or saved.
+- A build-22 Glyphs 3.5 build 3530 / Python 3.12.3 pass loaded the same fixed
+  runtime `1.7.0+531bbc42f912` and exercised Inter glyph `a`. A detached
+  all-master Reporter session selected the matching entry while switching
+  among eligible masters. Thin, Display Thin, Regular, Black, and Display
+  Black produced grid-safe candidates; Display was correctly omitted because
+  its measured imbalance was already below the configured threshold.
+- On a serialized `/private/tmp` copy, the Thin-master proposal materialized
+  as one source-associated layer, re-reviewed as `generated_unchanged`, passed
+  acceptance dry-run, and promoted successfully. Complete layer comparison
+  proved that only the two explicitly targeted handles changed to `(282, 22)`
+  and `(156, 141)`; the candidate layer and manifest were removed, no backup
+  was created, and `fontSaved:false` was reported. This live path specifically
+  revalidated the integer-grid/float-read-back fix under Glyphs 3.5.
+- The disposable package was closed with changes discarded and its 3022-file
+  tree hash remained
+  `8da828278bf638edb0e47dfd8e6bb0ca399e30aa51f3649dffd8b3e6ba60ef58`.
+  Its exact temporary directory was deleted. The original Inter document was
+  used only for detached Reporter previews: its source fingerprint, target
+  handles, manifest state, and disk hash remained exact. Because that document
+  was already edited before QA, it was deliberately left open and unsaved.
+- On August 10, Glyphs 3.5 build 3530 / Python 3.12.3 loaded corrected runtime
+  `1.7.0+ef4b95f03e4d` and exercised the remaining adversarial matrix on a
+  serialized 37-file SDK v3 fixture, glyph `A`, master `m01`. HCR2 rejected a
+  one-unit source edit as `stale_source`; HCR5 rejected topology and
+  unrelated-node edits; HCR4 accepted one permitted on-grid handle edit and
+  reported exactly one bounded delta while allowing a cosmetic layer rename.
+  Changing the candidate after review invalidated and consumed its token, and
+  token reuse failed closed.
+- One-shot live injection covered write, read-back, `endChanges`, and manifest
+  cleanup failures. Each restored complete source/candidate/manifest state and
+  immediately re-reviewed as ready. Cleanup rollback reproduced Glyphs 3.5
+  assigning a new candidate-layer ID on reattachment; the corrected code
+  remapped layer metadata, process-local state, and the persisted manifest from
+  `0A16CF95-28A0-4F5C-90A6-3C54A2FEC703` to
+  `C1A668C5-CD99-4E8E-AC0F-4B830C82469C` before reporting success.
+- Reloading the candidate state/module boundary cleared the ephemeral-only
+  session while the materialized session recovered from namespaced font/layer
+  metadata and re-reviewed as ready. Dry-run and confirmed discard removed
+  only the recovered candidate. The document then closed without save; its
+  37-file tree retained exact hash
+  `b98c3e2aaa7f916a4c7fc7cc467a75a9ba1ad154f631da6ea85cc966a2284fd9`
+  and its font retained exact hash
+  `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
+  Together with the earlier HCR1/HCR3/HCR6 pass, this completes Glyphs 3.5
+  HCR1-HCR8 for build 22.
+
+- A later full Glyphs 3.5 restart loaded final runtime
+  `1.7.0+dc567a3732de` under Python 3.12.3 and exercised Inter `G`, Regular.
+  Four explicit grid-safe Tunni targets (`13`, `16`, `19`, and `26`) produced
+  one detached candidate entry with eight changed off-curve nodes,
+  `30.016662` units maximum node movement, and `14.126624` units maximum
+  sampled outline displacement. The Reporter used
+  `appkit_topology_paired_contour_ribbons`, reported one compatible difference
+  group, and returned no error.
+- A controlled overlay-off/on capture at the same 650-point viewport found
+  19,171 changed pixels inside the glyph crop, including 2,277 material pixels
+  and 1,350 clearly yellow-shifted pixels. This is final-runtime Glyphs 3.5
+  evidence that the candidate Reporter emits localized golden pixels rather
+  than only recording a draw call.
+- The independent curvature Reporter then drew 408 teeth for eight cubics at
+  51 samples per curve, with the `0.12em` normal clamp, no clamped or degenerate
+  samples, no cap, and no warning. Visual inspection confirmed the teal outer
+  comb outside the shape and the pink inner comb inside the white counter.
+  Candidate re-review returned `generated_unchanged`; acceptance dry-run
+  planned the exact entry and returned `fontChanged:false` and
+  `fontSaved:false`. No confirmation was performed. The source document was
+  already marked edited before QA and remained unsaved; the ephemeral session
+  was left active for human inspection.
+
+- `669` Python tests passed; `3` intentional environment-dependent skips,
+  including the standalone-Python AppKit render smoke that is exercised again
+  in live Glyphs.
+- Curve-geometry accuracy coverage includes an exact oblique Tunni
+  construction, analytic cubic-parabola derivatives and curvature,
+  coordinate/UPM scale invariance, rotation, reversal, reflection sign
+  behavior, closed path-start rotation, de Casteljau subdivision invariance,
+  exact spike boundaries, zero-median JSON behavior,
+  continuous/discontinuous joins, and an MCP balance/review round trip.
+- Confirmed balancing now resolves, snapshots, recomputes, checks eligibility,
+  writes, reads back, and rolls back inside one main-thread transaction. Tests
+  cover stale dispatch, literal-boolean safety flags, strict indices, finite
+  guards, required batch methods, multiple and conflicting selected segments,
+  fresh PyObjC proxy wrappers, actual applied coordinates, and complete or
+  explicitly failed rollback after write, read-back, and `endChanges()`
+  failures.
+- Curvature drawing tests cover actual normal direction, both documented
+  colors, proportional UPM scaling, the `0.25em` clamp, deterministic sampling,
+  the real stroke cap, metadata/default compatibility, and omitted components.
+- All `104` macOS installer tests passed, and the unsigned Debug installer
+  build completed through `scripts/run_local_release_tests.sh` with normal
+  Xcode system access.
+- The Docusaurus production build completed successfully.
+- All `9` canonical and `9` packaged Glyphs MCP skills passed
+  `quick_validate.py`; the cross-host skill synchronization check passed.
+- Focused pure-engine, MCP-wrapper, visual-overlay, registration, profile,
+  release-gate, documentation, and bundle synchronization tests passed as part
+  of the complete suite.
+- Release metadata validates as `1.7.0`; both plug-in bundles report `1.7.0`,
+  the installer previously reported marketing version `1.7.0` with build `21`, and the
+  shared agent manifests report `1.7.0`.
+- The source and Plugin Manager runtime mirrors include the same clean-room
+  geometry engine, wrappers, profiles, curvature overlay, and profile-startup
+  hardening.
+- The native Reporter was added after the recorded PNG-based Glyphs 3.5/4
+  acceptance passes. Its automated coverage does not replace a post-install
+  live menu toggle, redraw, node-edit, performance, and clean-document check in
+  both hosts.
+- Live Glyphs 4.0 with Python 3.14.6 passed CG1-CG6 on an unsaved disposable
+  mixed-shape font. Reviews, signed curvature, real AppKit PNG rendering,
+  dry-run immutability, two-handle confirmed balancing, stale-state
+  recomputation, strict validation, and controlled write/read-back/change-batch
+  rollback paths behaved as specified. The disposable font was closed without
+  saving, and the user's original font was not mutated.
+- Live Glyphs 3.5 build 3530 with Python 3.12.3 and runtime
+  `1.7.0+dc6234a3dc21` passed CG1-CG6 on an untitled path-only disposable font.
+  It contained two open cubic paths and no components at `font_index=0`, glyph
+  `GMCP_curve_qa`, master `m01`, path indices `0` and `1`, and corresponding
+  shape indices `0` and `1`.
+- CG1 returned endpoint ratios `0.2` and `0.4`, relative imbalance `0.5`, and
+  proposed handles `(30, 0)` and `(100, 70)`. Explicit unsuitable segment index
+  `2` returned `eligible:false` with stable reason `open_path_boundary`.
+- CG2 measured signed ranges from `+0.00387353758` through `+0.1` and from
+  `-0.1` through `-0.00387353758`, with spike ratio `13.8954483341`. CG3
+  returned a real `626665`-byte PNG whose recorded abbreviated SHA-256 is
+  `6757bd...30514`, with `102` comb strokes, the teal/pink sign legend, and no
+  sampling-cap reduction.
+- CG4 preserved the exact path and document signatures. CG5 made exactly two
+  verified handle writes, returned actual before/after records, and paired the
+  layer change batch. Its stale-state case recomputed handles from
+  `(10, 300)` / `(100, 230)` to `(20, 300)` / `(100, 220)` instead of applying
+  a caller-side proposal.
+- CG6 injected controlled write, read-back, and `endChanges()` failures inside
+  the live Glyphs interpreter. Every original position was restored and every
+  begin/end change call was attempted as a pair. Boolean, string, and
+  fractional segment indices, plus `min_handle_length=0.5`, were rejected live
+  before mutation.
+- Raw live profile discovery exposed and then verified a FastMCP 2.12 registry
+  compatibility fix. Restricted startup now finds the authoritative
+  ToolManager registry, verifies the exact enabled key set, and fails before
+  HTTP/server-thread construction if that cannot be proven. The Glyphs 4-tested
+  runtime `1.7.0+1ad668310261` exposed both curve reviews and the renderer in
+  Read-only, rejected direct `apply_tunni_balance` and `execute_code` calls as
+  unknown, restored the complete Edit surface, and preserved an exact
+  serialized path snapshot across reviews and dry run.
+- The Glyphs 3.5 Read-only restart exposed exactly `29` tools: both curve
+  reviews and the renderer were present, while direct `apply_tunni_balance`
+  and `execute_code` calls were unknown. Its Edit restart restored exactly `71`
+  tools. The active-thread guard produced the expected wait path before fresh
+  initialization, and a subsequent restart after the prior server was fully
+  stopped initialized successfully.
+- Server restart hardening now refuses a new start while the prior Uvicorn
+  thread is alive. Between fully stopped server event loops, it clears the
+  guarded `sse-starlette` 2.4.1 `AppStatus.should_exit` flag and its loop-bound
+  `should_exit_event` before constructing the next HTTP app. The compatibility
+  reset tolerates runtimes without that internal layout. Automated coverage
+  exercises the active-thread guard, missing layout, and three consecutive
+  initializations on fresh event-loop threads.
+- The Glyphs 3.5 live fixture was deliberately path-only. Component omission
+  and mixed path/component ordering are covered by automated tests and the live
+  Glyphs 4 pass. Creating a synthetic mixed-component font triggered Glyphs
+  3.5 private `_lastComponentOperation` / `needsAlignment` code, and opening a
+  visible serialized temporary fixture caused an AppKit autosave hang and a
+  separate `CurveQA (Autosaved).glyphs` file. The source-copy hash remained
+  exact; both temporary files and their directory were deleted. The disposable
+  font was closed without saving, `IconGrid Test Fixture` was the only user font
+  left open, and its `documentEdited` state remained false. No repository or
+  user font was saved.
+- No signed artifact, notarization request, commit, tag, push, upload, or
+  publication was performed during this pass.
+
+The `v1.7.0` local-candidate boundary requires:
+
+- Preserve the passing Python, Xcode, docs, skills, mirror, and
+  release-security gates while keeping version `1.7.0` and installer build
+  `22`; rerun them after any subsequent candidate change.
+- After a separate explicit authorization, commit and merge the exact reviewed
+  work, push `main`, and create and push the signed annotated `v1.7.0` tag at
+  that commit. These are separate external-state boundaries.
+- Rebuild the Developer ID-signed assets from the exact tagged commit and
+  repeat the notarization, Gatekeeper, installed-copy, and checksum gates.
+- Stop after the locally verified app, DMGs, ZIP, and exact SHA-256 manifest.
+  Do not create a GitHub release, upload assets, or publish without a later
+  separate request.
+
+## Separate known packaging task
+
+Release builders must continue excluding `__pycache__`, `.pyc`, and `.pyo`
+files from tracked and signed payloads. Any future change to where runtime
+bytecode caches are written must be reviewed and released as its own packaging
+fix rather than folded into dependency diagnosis or update staging.
+
+## Future cleanup targets
+
+- Move long release-package instructions out of README when Phase 2 starts.
+- Keep version-sensitive release steps close to the scripts they describe.
+- Link public users to the latest GitHub release instead of copying release asset URLs in multiple places.
+
+## Verification
+
+Before publishing documentation updates:
+
+```bash
+cd website
+npm run build
+```
+
+Then check that public docs links still point to:
+
+```text
+https://thierryc.github.io/Glyphs-mcp/
+```

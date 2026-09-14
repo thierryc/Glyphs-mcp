@@ -7,12 +7,13 @@ Build and upload Glyphs MCP release assets to an existing GitHub release.
 
 Usage:
   ./scripts/publish_release_assets.sh --tag vX.Y.Z [--skip-build]
-      [--dry-run] [--confirm-publish vX.Y.Z] [--allow-unsigned-tag]
+      [--dry-run] [--publish] [--confirm-publish vX.Y.Z] [--allow-unsigned-tag]
 
 Options:
   --tag vX.Y.Z          Exact signed release tag. Must match all source and app versions.
   --skip-build          Reuse existing artifacts, but still run every verification gate.
   --dry-run             Build and verify locally without uploading anything.
+  --publish             Publish the verified draft (beta stays a prerelease, never Latest).
   --confirm-publish TAG Non-interactive confirmation; value must exactly equal --tag.
   --allow-unsigned-tag  Explicitly allow an annotated but unsigned tag (not recommended).
   -h, --help            Show this help
@@ -28,6 +29,8 @@ skip_build="0"
 dry_run="0"
 confirm_publish=""
 allow_unsigned_tag="0"
+publish="0"
+python_bin="${PYTHON_BIN:-python3}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       dry_run="1"
+      shift
+      ;;
+    --publish)
+      publish="1"
       shift
       ;;
     --confirm-publish)
@@ -73,9 +80,12 @@ if [[ "${SKIP_NOTARIZATION:-0}" == "1" ]]; then
   exit 1
 fi
 
-version="$(python3 "$repo_root/scripts/release_security.py" metadata --repo-root "$repo_root" --tag "$tag")"
+version="$("$python_bin" "$repo_root/scripts/release_security.py" metadata --repo-root "$repo_root" --tag "$tag")"
 
-expected_branch="${EXPECTED_RELEASE_BRANCH:-main}"
+release_version="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field releaseVersion)"
+release_channel="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field channel)"
+expected_branch="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field branch)"
+product="${GLYPHS_MCP_APP_NAME:-Glyphs MCP}"
 branch="$(git branch --show-current)"
 if [[ "$branch" != "$expected_branch" ]]; then
   echo "error: releases must be published from '$expected_branch' (current: '$branch')" >&2
@@ -123,7 +133,7 @@ if [[ -z "$remote_tag_commit" || "$remote_tag_commit" != "$head_commit" ]]; then
   exit 1
 fi
 
-./scripts/run_local_release_tests.sh
+GLYPHS_MCP_FULL_NETWORK=1 ./scripts/run_local_release_tests.sh
 
 if [[ "$skip_build" != "1" ]]; then
   ./scripts/build_installer_app.sh
@@ -131,15 +141,19 @@ if [[ "$skip_build" != "1" ]]; then
   ./scripts/make_installer_dmg.sh
 fi
 
+if [[ "$release_channel" == "beta" ]]; then
+  "$python_bin" "$repo_root/scripts/prepare_desktop_update.py" \
+    --app "$repo_root/dist/installer-app/$product.app" --output "$repo_root/dist/desktop-update"
+fi
 verify_args=(--tag "$tag" --write-checksums)
 ./scripts/verify_release_artifacts.sh "${verify_args[@]}"
 
-assets=(
-  "$repo_root/dist/GlyphsMCPInstaller-$version.dmg"
-  "$repo_root/dist/GlyphsMCPInstaller.dmg"
-  "$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
-  "$repo_root/dist/SHA256SUMS"
-)
+assets=("$repo_root/dist/Glyphs-MCP-$release_version.dmg" "$repo_root/dist/SHA256SUMS")
+if [[ "$release_channel" == "beta" ]]; then
+  assets+=("$repo_root/dist/desktop-update/Glyphs-MCP-$release_version.zip" "$repo_root/dist/desktop-update/appcast.xml")
+else
+  assets+=("$repo_root/dist/Glyphs-MCP-latest.dmg" "$repo_root/dist/installer-app/$product.zip")
+fi
 
 for asset in "${assets[@]}"; do
   if [[ ! -f "$asset" ]]; then
@@ -165,7 +179,7 @@ elif [[ "$confirm_publish" != "$tag" ]]; then
   exit 1
 fi
 
-if ! release_json="$(gh release view "$tag" --json tagName,isDraft,assets 2>/dev/null)"; then
+if ! release_json="$(gh release view "$tag" --json tagName,isDraft,isPrerelease,assets 2>/dev/null)"; then
   echo "error: GitHub release $tag does not exist or is not accessible" >&2
   exit 1
 fi
@@ -178,7 +192,7 @@ release_state_args=(release-state --tag "$tag" --release-json "$release_json")
 for asset_name in "${asset_names[@]}"; do
   release_state_args+=(--expect-name "$asset_name")
 done
-if ! python3 "$repo_root/scripts/release_security.py" "${release_state_args[@]}" >/dev/null; then
+if ! "$python_bin" "$repo_root/scripts/release_security.py" "${release_state_args[@]}" >/dev/null; then
   exit 1
 fi
 
@@ -188,4 +202,22 @@ for asset in "${assets[@]}"; do
 done
 
 gh release upload "$tag" "${assets[@]}"
-echo "Done."
+# Fail closed while still a draft if GitHub has different or incomplete bytes.
+gh api "repos/thierryc/Glyphs-mcp/releases/tags/$tag" | \
+  "$python_bin" "$repo_root/scripts/release_discovery.py" --tag "$tag" "${assets[@]}"
+if [[ "$publish" == "1" ]]; then
+  if [[ "$release_channel" == "beta" ]]; then
+    gh release edit "$tag" --draft=false --prerelease=true --latest=false
+    gh api "repos/thierryc/Glyphs-mcp/releases/tags/$tag" | \
+      "$python_bin" "$repo_root/scripts/release_discovery.py" --tag "$tag" --published "${assets[@]}"
+    echo "Published BETA: https://github.com/thierryc/Glyphs-mcp/releases/tag/$tag"
+    echo "Publish the exact signed appcast bytes to lit/v2-beta only after archive verification."
+  else
+    gh release edit "$tag" --draft=false --prerelease=false --latest
+    gh api repos/thierryc/Glyphs-mcp/releases/latest | \
+      "$python_bin" "$repo_root/scripts/release_discovery.py" --tag "$tag" --published "${assets[@]}"
+    echo "Published and discoverable: https://github.com/thierryc/Glyphs-mcp/releases/latest"
+  fi
+else
+  echo "Verified assets uploaded. Release remains a draft; it is not discoverable as Latest."
+fi

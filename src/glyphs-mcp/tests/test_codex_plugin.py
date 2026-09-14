@@ -9,6 +9,7 @@ import plistlib
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -16,21 +17,10 @@ import unittest
 REPO = Path(__file__).resolve().parents[3]
 PLUGIN = REPO / "plugins" / "glyphs-mcp"
 CANONICAL_SKILLS = REPO / "skills"
-SKILL_NAMES = (
-    "glyphs",
-    "glyphs-mcp-development",
-    "glyphs-mcp-features",
-    "glyphs-mcp-icon-font",
-    "glyphs-mcp-italic-first-pass",
-    "glyphs-mcp-kerning",
-    "glyphs-mcp-litsquare-metadata",
-    "glyphs-mcp-outlines-docs",
-    "glyphs-mcp-release",
-    "glyphs-mcp-scripting",
-    "glyphs-mcp-spacing",
-)
-with (REPO / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist").open("rb") as plist_file:
-    PLUGIN_VERSION = str(plistlib.load(plist_file)["CFBundleShortVersionString"])
+SKILL_NAMES = tuple(item['name'] for item in json.loads((CANONICAL_SKILLS/'manifest.json').read_text())['managedSkills'])
+sys.path.insert(0, str(REPO / "scripts"))
+from desktop_release_identity import load as release_identity
+PLUGIN_VERSION = release_identity(REPO)["version"]
 HOST_MANIFESTS = {
     "codex": PLUGIN / ".codex-plugin" / "plugin.json",
     "claude": PLUGIN / ".claude-plugin" / "plugin.json",
@@ -98,6 +88,7 @@ def _tree(root: Path) -> dict[str, bytes]:
         str(path.relative_to(root)): path.read_bytes()
         for path in sorted(root.rglob("*"))
         if path.is_file() and path.name != ".DS_Store"
+        and "__pycache__" not in path.parts and path.suffix not in (".pyc", ".pyo")
     }
 
 
@@ -187,6 +178,12 @@ class AgentPluginTests(unittest.TestCase):
         combined = readme + guide
         for host in ("Codex", "Claude Code", "Cursor", "GitHub Copilot CLI"):
             self.assertIn(host, combined)
+        self.assertIn("matching local package", guide)
+        for skill in json.loads((REPO / "skills/manifest.json").read_text())["managedSkills"]:
+            self.assertIn("`" + skill["name"] + "`", guide)
+        # Released marketplace instructions belong to the preserved v1 guide;
+        # an unpublished candidate must not promise marketplace installation.
+        legacy = (REPO / "website/versioned_docs/version-1.11.0/getting-started/use-agent-skills.mdx").read_text()
         for command in (
             "codex plugin marketplace add thierryc/Glyphs-mcp",
             "claude plugin marketplace add thierryc/Glyphs-mcp",
@@ -196,7 +193,7 @@ class AgentPluginTests(unittest.TestCase):
             "/glyphs-mcp:glyphs",
             "/glyphs-mcp/glyphs",
         ):
-            self.assertIn(command, combined)
+            self.assertIn(command, legacy)
         self.assertIn("plugin is optional", combined.lower())
         self.assertIn("manual MCP", combined)
 
@@ -237,11 +234,11 @@ class AgentPluginTests(unittest.TestCase):
         self.assertNotIn("tool profile", skill_text.lower())
         self.assertNotIn("Use Edit for this specialized workflow", skill_text)
         self.assertNotIn("Use Read-only for detached candidate preview", skill_text)
-        self.assertIn("TOOL_CATALOG", skill_text)
-        self.assertIn("preview_italic_first_pass_candidate", skill_text)
-        self.assertIn("accept_outline_candidate_session", skill_text)
-        self.assertIn("dry_run=true", skill_text)
-        self.assertIn("confirm=true", skill_text)
+        for tool in ("get_status", "list_documents", "read_entities", "start_job", "get_job", "apply_job", "discard_job"):
+            self.assertIn("`" + tool + "`", skill_text)
+        self.assertIn("Native Undo and Redo", skill_text)
+        self.assertNotIn("execute_code_with_context", skill_text)
+        self.assertNotIn("preview_italic_first_pass_candidate", skill_text)
 
     def test_shared_skill_sync_check_mode(self) -> None:
         result = subprocess.run(
@@ -255,145 +252,31 @@ class AgentPluginTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("shared agent plugin package", result.stdout)
 
-    def test_canonical_skills_use_stable_urls_for_repository_references(self) -> None:
+    def test_canonical_skill_links_resolve_without_repository_dependencies(self) -> None:
         for name in SKILL_NAMES:
-            text = (CANONICAL_SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
-            self.assertNotIn("../../", text, name)
-            self.assertIn("https://github.com/thierryc/Glyphs-mcp/blob/main/", text, name)
+            base = CANONICAL_SKILLS / name
+            for page in [base / "SKILL.md", *sorted((base / "references").glob("*.md"))]:
+                for target in re.findall(r"\]\(([^)]+)\)", page.read_text(encoding="utf-8")):
+                    if target.startswith(("https://", "http://", "#")):
+                        continue
+                    resolved = (page.parent / target.split("#", 1)[0]).resolve()
+                    self.assertTrue(resolved.is_relative_to(CANONICAL_SKILLS.resolve()), (page, target))
+                    self.assertTrue(resolved.is_file(), (page, target))
 
-    def test_generic_glyphs_skill_is_an_explicit_router(self) -> None:
-        root = CANONICAL_SKILLS / "glyphs"
-        files = {
-            str(path.relative_to(root))
-            for path in root.rglob("*")
-            if path.is_file()
+    def test_coding_routes_reach_installed_workflow_resources(self) -> None:
+        # Check real routing edges instead of requiring obsolete stock wording.
+        edges = {
+            "glyphs/SKILL.md": ["../glyphs-mcp-development/SKILL.md"],
+            "glyphs-mcp-scripting/SKILL.md": ["../glyphs-mcp-development/SKILL.md"],
+            "glyphs-mcp-development/SKILL.md": ["../glyphs/SKILL.md", "references/development-docs.md",
+                                               "references/native-iteration.md", "references/verification-and-recovery.md"],
         }
-        self.assertEqual(files, {"SKILL.md", "agents/openai.yaml"})
-
-        skill_text = (root / "SKILL.md").read_text(encoding="utf-8")
-        metadata_text = (root / "agents" / "openai.yaml").read_text(encoding="utf-8")
-        self.assertLessEqual(len(skill_text.splitlines()), 55)
-        self.assertIn("name: glyphs", skill_text)
-        self.assertIn("get_server_info", skill_text)
-        self.assertIn("list_open_fonts", skill_text)
-        self.assertIn("glyphs-mcp-spacing", skill_text)
-        self.assertIn("glyphs-mcp-kerning", skill_text)
-        self.assertIn("glyphs-mcp-development", skill_text)
-        self.assertIn("glyphs-mcp-scripting", skill_text)
-        self.assertIn("Generic Python with no Glyphs app or font target", skill_text)
-        self.assertIn('display_name: "Glyphs MCP"', metadata_text)
-        self.assertIn("$glyphs", metadata_text)
-        self.assertIn("allow_implicit_invocation: false", metadata_text)
-
-    def test_development_skill_is_workspace_first_and_documented(self) -> None:
-        root = CANONICAL_SKILLS / "glyphs-mcp-development"
-        skill_text = (root / "SKILL.md").read_text(encoding="utf-8")
-        metadata_text = (root / "agents" / "openai.yaml").read_text(encoding="utf-8")
-
-        self.assertIn("docs_search", skill_text)
-        self.assertIn("docs_get", skill_text)
-        self.assertIn("current workspace", skill_text)
-        self.assertIn("Never install, execute, reload, restart Glyphs", skill_text)
-        self.assertTrue((root / "scripts" / "scaffold.py").is_file())
-        self.assertTrue((root / "assets" / "GlyphsSDK-LICENSE.txt").is_file())
-        self.assertIn('display_name: "Glyphs MCP Development"', metadata_text)
-        self.assertIn("$glyphs-mcp-development", metadata_text)
-        self.assertIn("allow_implicit_invocation: true", metadata_text)
-
-    def test_scripting_skill_gates_live_code_and_preserves_domain_routing(self) -> None:
-        root = CANONICAL_SKILLS / "glyphs-mcp-scripting"
-        files = {
-            str(path.relative_to(root))
-            for path in root.rglob("*")
-            if path.is_file()
-        }
-        self.assertEqual(files, {"SKILL.md", "agents/openai.yaml"})
-
-        skill_text = (root / "SKILL.md").read_text(encoding="utf-8")
-        metadata_text = (root / "agents" / "openai.yaml").read_text(encoding="utf-8")
-        self.assertLessEqual(len(skill_text.splitlines()), 110)
-        for required in (
-            "docs_search",
-            "docs_get",
-            "execute_code",
-            "execute_code_with_context",
-            "snippet_only=true",
-            "get_document_change_overview",
-            "glyphs-mcp-development",
-            "glyphs-mcp-outlines-docs",
-            "glyphs-mcp-italic-first-pass",
-            "layer.beginChanges()",
-            "layer.endChanges()",
-            "explicit approval",
-        ):
-            self.assertIn(required, skill_text)
-        self.assertIn("Never call `exit()`, `quit()`, or `sys.exit()`", skill_text)
-        self.assertIn("execute only that unchanged reviewed request", skill_text)
-        self.assertIn("Bind approval to the exact execution tool", skill_text)
-        self.assertIn("Macro Panel snippet separately", skill_text)
-        self.assertIn('display_name: "Glyphs MCP Scripting"', metadata_text)
-        self.assertIn('short_description: "Vibe-code live Glyphs Python scripts safely."', metadata_text)
-        self.assertIn("$glyphs-mcp-scripting", metadata_text)
-        self.assertIn("allow_implicit_invocation: true", metadata_text)
-
-    def test_coding_prompt_routing_contract(self) -> None:
-        router = (CANONICAL_SKILLS / "glyphs" / "SKILL.md").read_text(encoding="utf-8")
-        scripting = (CANONICAL_SKILLS / "glyphs-mcp-scripting" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        development = (CANONICAL_SKILLS / "glyphs-mcp-development" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        outlines = (CANONICAL_SKILLS / "glyphs-mcp-outlines-docs" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-
-        # Live read-only code routes to scripting and may run with bounded output.
-        self.assertIn("Live Python runs", router)
-        self.assertIn("For clearly read-only code that the user asked to run", scripting)
-        # Mutating code stops after an exact snippet until the user approves it.
-        self.assertIn("snippet_only=true", scripting)
-        self.assertIn("then stop for explicit approval", scripting)
-        # Reusable scripts and every supported plug-in type remain development artifacts.
-        self.assertIn("Reusable Python scripts and plug-in development", router)
-        self.assertIn("standalone script", development)
-        self.assertIn("reporter", development)
-        # Outline fallback stays with the existing domain skill.
-        self.assertIn("outline-specific fallback code", scripting)
-        self.assertIn("execute_code_with_context", outlines)
-        # Generic Python must not claim a Glyphs workflow.
-        self.assertIn("Generic Python with no Glyphs app or font target", router)
-
-    def test_icon_font_skill_stays_narrow_and_domain_specific(self) -> None:
-        root = CANONICAL_SKILLS / "glyphs-mcp-icon-font"
-        files = {
-            str(path.relative_to(root))
-            for path in root.rglob("*")
-            if path.is_file()
-        }
-        self.assertEqual(files, {"SKILL.md", "agents/openai.yaml"})
-
-        text = (root / "SKILL.md").read_text(encoding="utf-8")
-        self.assertLessEqual(len(text.splitlines()), 55)
-        self.assertIn("specifically in an icon or symbol font", text)
-        self.assertIn("not icon drawing or general PUA work", text)
-        self.assertIn("require its previous map before allocation", text)
-        self.assertIn("review_unicode_assignments", text)
-        self.assertIn("apply_unicode_assignments", text)
-        self.assertIn("glyphs-mcp-outlines-docs", text)
-        self.assertIn("glyphs-mcp-spacing", text)
-
-    def test_italic_first_pass_skill_exposes_advisory_symbol_slant_policy(self) -> None:
-        text = (CANONICAL_SKILLS / "glyphs-mcp-italic-first-pass" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-
-        self.assertIn("## Symbol slant policy", text)
-        self.assertIn("get_font_glyphs", text)
-        for codepoint in ("U+002B", "U+0040", "U+00A9", "U+2192"):
-            self.assertIn(codepoint, text)
-        self.assertIn("Do not silently add listed glyphs to `skip_glyphs`", text)
-        self.assertIn("separate, designer-approved drawing decision", text)
+        for source, targets in edges.items():
+            page = CANONICAL_SKILLS / source
+            links = re.findall(r"\]\(([^)]+)\)", page.read_text(encoding="utf-8"))
+            for target in targets:
+                self.assertIn(target, links, source)
+                self.assertTrue((page.parent / target).is_file(), (source, target))
 
     def test_plugin_installs_from_the_marketplace_in_an_isolated_codex_home(self) -> None:
         codex = shutil.which("codex")

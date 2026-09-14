@@ -1,79 +1,48 @@
 ---
-title: First session
-description: Install, start the server, connect a client, and run list_open_fonts.
+title: Your first v2 session
 ---
 
-This path gets you to a first successful, read-only tool call. Once `list_open_fonts` works, the rest of the docs build on the same connection.
+Use a **disposable copy** of a font for this first session. Open it in Glyphs and save it. Preparation and application both require the same saved, clean baseline.
 
-## You will accomplish
+## Connect and identify the font
 
-- Install Glyphs MCP.
-- Start the local MCP server in Glyphs.
-- Connect an MCP client.
-- Run `list_open_fonts` and choose a `font_index`.
+Ask your connected client:
 
-## Before you start
+> Check Glyphs MCP status, list the open documents and identify my disposable font. Do not change it yet.
 
-- Install Glyphs MCP with [Installation](../getting-started/installation.mdx).
-- Open Glyphs 4 beta.
-- Open at least one font if you want `list_open_fonts` to return font metadata.
+The client should use `get_status` and `list_documents`. Check the font path, document ID and dirty state. Do not infer the target from whichever window happens to be in front.
 
-## Step 1: Start the server
+## Prepare a small change
 
-In Glyphs:
+Choose a glyph that exists in the test font. For example, ask:
 
-```text
-Edit -> Glyphs MCP Server
+> Prepare a width increase of 8.125 font units for H only. Show me the report before applying it.
+
+The client calls `start_job` with the selected document ID, `kind="width_delta"`, `glyphs=["H"]` and `delta=8.125`. Preparation changes nothing in the open font. It targets the glyph's layers; omit the glyph list only when you intend a full-font operation.
+
+Keep the returned job ID. Call `get_job` until it reaches `ready`, or a terminal error or cancellation state. Review `changeCount`, `sample`, warnings and any full report provided. Counts refer to changes, not necessarily distinct glyphs.
+
+## Apply and review
+
+Ask the client to apply that job ID. `apply_job` starts a reversible live operation; use `get_job` to follow it to completion. Inspect H in Glyphs, read its width through `read_entities` and try native Undo and Redo on the affected glyph.
+
+The example tool arguments are:
+
+```json
+{
+  "document_id": "<document ID from list_documents>",
+  "kind": "width_delta",
+  "delta": 8.125,
+  "glyphs": ["H"]
+}
 ```
 
-Click **Start** if the server is stopped, then confirm that the endpoint is:
+For `get_job`, `apply_job` and `discard_job`, use `{ "job_id": "<returned job ID>" }`.
 
-```text
-http://127.0.0.1:9680/mcp/
-```
+## Finish the experiment
 
-## Step 2: Connect a client
+To restore the complete job, use `discard_job` and wait for its terminal result. It checks that affected targets have not been changed independently. To keep the result, review it and use **Save in Glyphs**. Application itself does not save or accept changes.
 
-For Codex:
+Do not submit the same idea as a new job to recover from a timeout. Retain the original ID and reconcile it with `get_job`; see [Safety and recovery](../concepts/safety-model.mdx).
 
-```bash
-codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
-codex mcp list
-```
-
-For Claude CLI or Claude Code:
-
-```bash
-claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
-claude mcp list
-```
-
-For Claude App and other client-specific notes, see [Connect a client](../getting-started/connect-client.mdx).
-
-## Step 3: Run the first tool call
-
-Paste this into your client:
-
-```text
-Connect to my Glyphs MCP server and run a quick health check.
-
-1. Call list_open_fonts.
-2. Tell me how many fonts are open.
-3. For each font, report familyName and filePath when available.
-4. Tell me which font_index I should use next.
-
-If you get an error, quote it verbatim and tell me the next step.
-```
-
-## Expected result
-
-The agent should report the open fonts and a `font_index` value, usually `0` for the first open font. If no fonts are open, Glyphs MCP can still be connected successfully, but font-specific workflows need an open font.
-
-## If it fails
-
-Start with [Troubleshooting](../getting-started/troubleshooting.mdx), especially:
-
-- no Glyphs menu items
-- client cannot connect
-- port 9680 in use
-- browser endpoint works but the MCP client does not
+Next, try a scoped [spacing proposal](../spacing-tools.md) or enable the [inspectors](../workflows/visual-review.mdx).

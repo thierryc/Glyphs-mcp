@@ -1,0 +1,172 @@
+{
+  "scope": "Report 01 candidate follow-up; Report 02 paused",
+  "release": {
+    "betaNumber": 1,
+    "channel": "beta",
+    "installerBuild": 43,
+    "releaseVersion": "2.0.0-beta.1",
+    "version": "2.0.0"
+  },
+  "candidateInstalled": false,
+  "published": false,
+  "assertions": [
+    {
+      "name": "initialization release",
+      "status": "pass",
+      "expected": "2.0.0-beta.1",
+      "observed": "2.0.0-beta.1"
+    },
+    {
+      "name": "seven tools",
+      "status": "pass",
+      "expected": 7,
+      "observed": 7
+    },
+    {
+      "name": "bridge protocol",
+      "status": "pass",
+      "expected": 1,
+      "observed": 1
+    },
+    {
+      "name": "interface revision",
+      "status": "pass",
+      "expected": 1,
+      "observed": 1
+    },
+    {
+      "name": "supported jobs",
+      "status": "pass",
+      "expected": [
+        "width_delta",
+        "spacing",
+        "kerning_collision",
+        "start_nodes",
+        "slant"
+      ],
+      "observed": [
+        "width_delta",
+        "spacing",
+        "kerning_collision",
+        "start_nodes",
+        "slant"
+      ]
+    },
+    {
+      "name": "sidecar expected fingerprint",
+      "status": "pass",
+      "expected": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+      "observed": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443"
+    },
+    {
+      "name": "bridge expected fingerprint",
+      "status": "pass",
+      "expected": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+      "observed": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a"
+    },
+    {
+      "name": "native host",
+      "status": "pass",
+      "expected": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "observed": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      }
+    },
+    {
+      "name": "installed preservation",
+      "status": "pass",
+      "expected": true,
+      "observed": true
+    },
+    {
+      "name": "configured entry compatible",
+      "status": "fail",
+      "expected": true,
+      "observed": false
+    },
+    {
+      "name": "candidate installer click-through",
+      "status": "unverified",
+      "expected": "visible conflict and explicit replacement in actual UI",
+      "observed": null
+    },
+    {
+      "name": "live installed native callback duration",
+      "status": "unverified",
+      "expected": "direct native timing in foreground host",
+      "observed": null
+    },
+    {
+      "name": "new mutation or Undo qualification",
+      "status": "not-applicable",
+      "expected": "no changes to editing mechanisms",
+      "observed": null
+    },
+    {
+      "name": "Copilot CLI metadata validation",
+      "status": "skipped",
+      "expected": "installed Copilot CLI",
+      "observed": null
+    }
+  ],
+  "tests": {
+    "python": {
+      "passed": 387,
+      "skipped": 1,
+      "skipReason": "GitHub Copilot CLI unavailable"
+    },
+    "swift": {
+      "passed": 169,
+      "failed": 0
+    }
+  },
+  "instrumentedBaseline": {
+    "n": 5,
+    "medianMs": 26.85375,
+    "minMs": 26.045458,
+    "maxMs": 27.174542,
+    "p95Ms": 27.174542
+  },
+  "instrumentedCandidate": {
+    "n": 5,
+    "medianMs": 25.234542,
+    "minMs": 24.086542,
+    "maxMs": 27.720791,
+    "p95Ms": 27.720791
+  },
+  "liveBaselineStatus": {
+    "samples": 20,
+    "medianMs": 45.3621460001159,
+    "minMs": 14.729124999576015,
+    "maxMs": 65.67095900027198,
+    "p95Ms": 57.53941700004361
+  },
+  "runtime": {
+    "python": "3.14.7",
+    "fastmcp": "2.12.0",
+    "mcp": "1.29.1",
+    "glyphsCLI": "0.6.1"
+  },
+  "originalComparisonClient": {
+    "python": "3.14.6",
+    "fastmcp": "2.12.0",
+    "mcp": "1.12.4"
+  },
+  "scores": {
+    "discovery": 4,
+    "instructionAccuracy": 4,
+    "evidenceClarity": 5,
+    "recoveryGuidance": 4,
+    "workflowEffort": 4
+  },
+  "readOnly": true,
+  "fontMutations": 0,
+  "UIActions": 0,
+  "nativeGateScope": "isolated Cocoa callbacks for status/document discovery only"
+}

@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[3]
-CANONICAL = REPO / "skills" / "glyphs-mcp-release"
-PACKAGED = REPO / "plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-release"
+CANONICAL = REPO / "legacy/glyphs3/skills" / "glyphs-mcp-release"
+PACKAGED = REPO / "legacy/glyphs3/plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-release"
 
 
 def _tree(root: Path) -> dict[str, bytes]:

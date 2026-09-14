@@ -109,14 +109,11 @@ class RuntimeProbeTests(unittest.TestCase):
             (fallback / f"{module}.py").write_text("VALUE = 1\n", encoding="utf-8")
             sys.path.append(str(fallback))
             try:
-                with mock.patch.object(
-                    probe, "NATIVE_MODULES", probe.NATIVE_MODULES | {module}
-                ):
-                    result = probe.run_probe(
-                        mode="preinstall",
-                        site_packages=target,
-                        modules=[module],
-                    )
+                result = probe.run_probe(
+                    mode="preinstall",
+                    site_packages=target,
+                    modules=[module],
+                )
             finally:
                 sys.path.remove(str(fallback))
                 probe._clear_module(module)
@@ -246,12 +243,16 @@ class RuntimeProbeTests(unittest.TestCase):
             (module_root / "fixture_origin.py").write_text(
                 "VALUE = 1\n", encoding="utf-8"
             )
-            result = probe.run_probe(
-                mode="postinstall",
-                site_packages=module_root,
-                allowed_origins=[Path(allowed_directory)],
-                modules=["fixture_origin"],
-            )
+            sys.path.insert(0, str(module_root))
+            try:
+                result = probe.run_probe(
+                    mode="postinstall",
+                    site_packages=Path(allowed_directory),
+                    modules=["fixture_origin"],
+                )
+            finally:
+                sys.path.remove(str(module_root))
+                probe._clear_module("fixture_origin")
         self.assertTrue(result["blocking"])
         self.assertEqual(result["issues"][0]["code"], "unexpected_origin")
 
@@ -332,15 +333,50 @@ class PythonInstallerProbeProtocolTests(unittest.TestCase):
                     timeout=1,
                 )
 
+    def test_postinstall_path_plan_drift_blocks_completion(self):
+        expected = {
+            "schemaVersion": 1,
+            "runtimeKind": "external",
+            "installMode": "user",
+            "executable": "/tmp/python",
+            "primaryRoot": "/tmp/user-site",
+            "fallbackRoots": ["/tmp/glyphs-site"],
+            "orderedRoots": ["/tmp/user-site", "/tmp/glyphs-site"],
+        }
+        drifted = {**expected, "orderedRoots": list(reversed(expected["orderedRoots"]))}
+        result = installer.RuntimeProbeResult(
+            payload={**self.valid_payload(mode="postinstall"), "pathPlan": drifted},
+            stdout="{}",
+        )
+        with mock.patch.object(installer, "run_runtime_probe", return_value=result):
+            self.assertFalse(
+                installer.verify_runtime(
+                    Path("/tmp/python"),
+                    Path("/tmp/glyphs-site"),
+                    expected_path_plan=expected,
+                )
+            )
+
     def test_custom_install_orders_preflight_before_pip_and_postinstall(self):
         events = []
         python = Path("/tmp/python3.14")
         requirements = REPO_ROOT / "requirements.txt"
+        expected_target = installer.glyphs_scripts_site_packages("3")
+        plan = {
+            "schemaVersion": 1,
+            "runtimeKind": "external",
+            "installMode": "user",
+            "executable": str(python),
+            "primaryRoot": "/tmp/user-site",
+            "fallbackRoots": [str(expected_target)],
+            "orderedRoots": ["/tmp/user-site", str(expected_target)],
+        }
         with mock.patch.object(
             installer,
             "check_runtime_preinstall",
-            side_effect=lambda selected, target: events.append(
-                ("preflight", selected, target)
+            side_effect=lambda selected, target: (
+                events.append(("preflight", selected, target))
+                or installer.RuntimeProbeResult(payload={"pathPlan": plan}, stdout="")
             ),
         ), mock.patch.object(
             installer,
@@ -370,7 +406,6 @@ class PythonInstallerProbeProtocolTests(unittest.TestCase):
             [event[0] for event in events],
             ["preflight", "pip", "postinstall"],
         )
-        expected_target = installer.glyphs_scripts_site_packages("3")
         self.assertEqual(events[0][1:], (python, expected_target))
         self.assertEqual(events[2][1:3], (python, expected_target))
 

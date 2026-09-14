@@ -9,61 +9,9 @@ type FeatureItem = {
 };
 
 const FEATURES: FeatureItem[] = [
-  {
-    title: 'Start from a health check',
-    description: (
-      <>
-        Install the plug-in, start the local server, connect a client, then verify with
-        list_open_fonts before doing font work.
-      </>
-    )
-  },
-  {
-    title: 'Use tools before code',
-    description: (
-      <>
-        Work through named tools for fonts, masters, glyphs, kerning, spacing, outlines, exports,
-        and bundled docs lookup.
-      </>
-    )
-  },
-  {
-    title: 'Keep edits controlled',
-    description: (
-      <>
-        Read current state first, dry-run where possible, use confirm-gated mutations, and save only
-        when you ask.
-      </>
-    )
-  },
-  {
-    title: 'Run typographic workflows',
-    description: (
-      <>
-        Follow focused docs for kerning, spacing,{' '}
-        <Link to="/docs/italic-first-pass">italic construction and upright-symbol review</Link>,
-        compensated tuning, style sets, outlines, and UFO/designspace export.
-      </>
-    )
-  },
-  {
-    title: 'Route through one lean catalog',
-    description: (
-      <>
-        Discover concise, annotated tools from one catalog, with focused skills for safe kerning,
-        spacing, outline, and editing workflows.
-      </>
-    )
-  },
-  {
-    title: 'Search bundled Glyphs docs',
-    description: (
-      <>
-        Use docs_search and docs_get for targeted Glyphs API lookup without flooding the MCP client
-        with page resources.
-      </>
-    )
-  }
+  {title: 'Install and connect', description: <>Follow the setup for <Link to="/docs/getting-started/installation">v1</Link> or <Link to="/docs/v2/getting-started/installation">v2</Link>, then check the connection from your AI client.</>},
+  {title: 'Use the matching tools', description: <>Browse the <Link to="/docs/reference/command-set">v1 catalog</Link> or the <Link to="/docs/v2/reference/command-set">seven v2 tools</Link>. Each guide describes its own supported workflows.</>},
+  {title: 'Review in Glyphs', description: <>Learn the <Link to="/docs/v2/concepts/safety-model">v2 Save, Undo and recovery workflow</Link> and use the <Link to="/docs/v2/workflows/visual-review">optional inspectors</Link> to examine changes.</>}
 ];
 
 export default function HomepageFeatures(): React.ReactElement {
@@ -71,8 +19,8 @@ export default function HomepageFeatures(): React.ReactElement {
     <section className={styles.features}>
       <div className="container">
         <div className={styles.header}>
-          <h2>Documentation paths</h2>
-          <p>Start with setup, then move into the workflow or reference page for the task.</p>
+          <h2>Find your next step</h2>
+          <p>Setup, tools and review are documented separately for each version.</p>
         </div>
         <div className={clsx('row', styles.grid)}>
           {FEATURES.map((feature, index) => (

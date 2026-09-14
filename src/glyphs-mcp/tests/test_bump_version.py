@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
 MODULE_PATH = REPO_ROOT / "scripts" / "bump_version.py"
 SPEC = importlib.util.spec_from_file_location("bump_version_test_module", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None

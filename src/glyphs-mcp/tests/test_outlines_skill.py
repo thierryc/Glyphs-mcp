@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[3]
-CANONICAL = REPO / "skills" / "glyphs-mcp-outlines-docs" / "SKILL.md"
-PACKAGED = REPO / "plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-outlines-docs" / "SKILL.md"
+CANONICAL = REPO / "legacy/glyphs3/skills" / "glyphs-mcp-outlines-docs" / "SKILL.md"
+PACKAGED = REPO / "legacy/glyphs3/plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-outlines-docs" / "SKILL.md"
 
 
 class OutlinesSkillTests(unittest.TestCase):

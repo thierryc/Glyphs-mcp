@@ -1,0 +1,84 @@
+---
+title: Safety model
+description: Read-before-write, dry-run/confirm-gated mutations, no auto-save, and optional local access controls.
+---
+
+Glyphs MCP is designed for human-controlled font editing. The server gives agents useful tools, but the workflow should keep you in charge of target selection, mutation, review, and saving.
+
+## Core rules
+
+- **Read before write**: inspect current state before changing it.
+- **Confirm targets**: name the font, master, glyph, layer, path, or selected nodes before mutation.
+- **Dry run before apply**: preview changes when the tool supports `dry_run`.
+- **Confirm-gated mutations**: use `confirm=true` only after approval.
+- **No auto-save**: the plug-in does not save fonts unless `save_font` is called.
+- **Prefer dedicated tools**: use specific tools before free-form code.
+
+For Tunni balancing, review the exact glyph/master/path first, then pass only
+the approved curve end-node indices to `apply_tunni_balance`. The apply tool
+resolves the target, snapshots and recomputes current geometry in the same
+main-thread transaction, changes only eligible explicit handles, verifies the
+complete path signature plus actual coordinate read-back, and restores every
+original coordinate on failure. It refuses to write unless the layer exposes
+both callable change-batch methods. Curvature review is read-only and provides
+warnings rather than artistic approval. The native curvature Reporter changes
+only global Glyphs display state: activation/deactivation runs on the main
+thread, is verified through `Glyphs.activeReporters`, and requests a redraw.
+Its drawing callback reads detached coordinate snapshots, is bounded by a
+2,000-stroke frame cap, and never edits, dirties, or saves a font.
+Path-targeted curvature diagnostics measure raw editable paths and explicitly
+report components omitted from those segment measurements.
+
+For outline changes, the normal workflow is a detached candidate session.
+Preview tools automatically enable **View > Show Glyphs MCP Candidate** and do
+not dirty the font. The Reporter draws only the source/candidate symmetric
+difference in warm golden yellow, turns it coral red when stale, and never
+paints a complete outline over the live layer. Curvature remains a separate
+Reporter. Multi-master and multi-glyph batches must use sessions.
+Materialize only when standard Glyphs editing is needed; the copied layer is
+owned by a namespaced manifest and never uses a background. Re-review after any
+manual edit. Acceptance requires a short-lived one-time token bound to both the
+source and candidate fingerprints, rechecks them on the main thread, writes
+only operation-approved fields, verifies every read-back, and removes candidate
+layers only after complete success. Clearing the Reporter is UI-only; deleting
+materialized candidates requires the explicit discard tool. None of these tools
+saves a font.
+
+## Safe prompt template
+
+Use this when you want the agent to review first and mutate only after approval:
+
+```text
+You are my Glyphs MCP assistant.
+
+Rules:
+- Read current state before any mutation.
+- Confirm exact targets before changing anything.
+- Never auto-save.
+- Never mutate without a dry run first when the tool supports dry_run.
+- Show me a short summary of proposed changes: counts, biggest deltas, and skipped items.
+- Wait for me to reply exactly "apply" before calling any tool with confirm=true.
+
+Task: <describe the goal>
+
+1. Inspect current state with read-only tools.
+2. Run the appropriate apply tool with dry_run=true.
+3. Stop and wait for approval.
+4. If I reply "apply", run the same call again with confirm=true.
+5. If I reply "save", call save_font.
+```
+
+## Local access
+
+By default, Glyphs MCP binds to localhost and does not require authentication. Keep it local unless you understand the security implications of exposing it elsewhere.
+
+Optional controls:
+
+- `GLYPHS_MCP_AUTH_TOKEN`: require a static token on requests.
+- `GLYPHS_MCP_ALLOWED_ORIGINS`: restrict request origins by hostname allowlist.
+
+See [Settings](../reference/settings.mdx) for the exact environment variables.
+
+## What safety does not replace
+
+Glyphs MCP can make repeatable tool calls, but it does not replace type-design judgement. Always proof kerning, spacing, feature behavior, and outline edits visually in Glyphs before saving or shipping.

@@ -1,0 +1,48 @@
+{
+  "at": "2026-09-14T21:40:42.596586+00:00",
+  "branch": "lit/v2-beta",
+  "baselineCommit": "e572d5df",
+  "localReleaseGatePassed": true,
+  "firstPython": {
+    "passed": 1911,
+    "failed": 3,
+    "skipped": 2
+  },
+  "finalPython": {
+    "passed": 1914,
+    "failed": 0,
+    "skipped": 2,
+    "seconds": 94.78
+  },
+  "macOS": {
+    "passed": 179,
+    "failed": 0,
+    "seconds": 13.946
+  },
+  "focused": {
+    "passed": 20
+  },
+  "optionalSkips": [
+    "GitHub Copilot CLI unavailable",
+    "Real AppKit drawing requires opted-in application context"
+  ],
+  "runtimeIdentities": {
+    "bridge": {
+      "codeHash": "sha256:77bec730360ce043f184dcdc958fbad5519c7858fc06994bad292abf4ea01138",
+      "matchesInstalledM7": true
+    },
+    "sidecar": {
+      "codeHash": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+      "matchesInstalledM7": true
+    }
+  },
+  "legacyPayloadSourceUnchanged": true,
+  "logContentSHA256": {
+    "local-release-tests.log": "4ec512883605d6ca70288760fb4056ef6b12d46b1e96a9b8dedf8f87515dcb6a",
+    "local-release-tests-first.log": "b8c3be89a3e6675ea95d08f8bb790588647d0ba61376600fc8e8de0bc1bdf168"
+  },
+  "command": "PYTHON_BIN=<parent checkout>/.venv-v2/bin/python scripts/run_local_release_tests.sh",
+  "installed": false,
+  "published": false,
+  "olderCheckoutModified": false
+}

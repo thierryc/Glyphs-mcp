@@ -15,6 +15,40 @@ See the [qualification index](reports/README.md) for measured evidence, historic
 comparisons and remaining limits. This entry records private qualification,
 not a new product version or a fresh v1 benchmark.
 
+## 2.0.0 Beta 1 — local preparation, build 43
+
+This is the current desktop candidate. The unpublished 2.1.0 designation is
+retired; its local development changes are included in this beta.
+
+- Add the permanent desktop workspace with Overview, Components, Projects,
+  project templates and menu-bar controls.
+- Add project-row menus and shared settings for display names and moved
+  folders; removing a recent-project entry preserves the project files.
+- Show component cards with descriptions and documentation. Installation
+  choices express the desired component state, with reviewable changes.
+- Align desktop and companion wording for component removal, server controls
+  and app quit. Place Quit Glyphs in the Components step row and clear completed
+  quit notices while preserving errors.
+- Refresh About and Welcome & Support, including the project introduction,
+  support links and centered application icon.
+- Use the native square menu-bar button and an exact standard-sRGB #00BBD0
+  activity dot.
+- Show Beta in the desktop title and version label; use numeric bundle version
+  2.0.0 and build 43.
+- Isolate the beta template registry, template cache and update feed on
+  `lit/v2-beta`.
+- Prepare versioned beta downloads, prerelease checks, a tester guide, release
+  notes and communication drafts. No public release has been made.
+
+## 2.0.0 — Milestone 6 local candidate, build 29
+
+- Package the lean seven-tool sidecar and bridge with private, locked Python runtimes.
+- Simplify installation to Choose, Install and Ready with optional companions and explicit removal.
+- Restore all managed installation files on replacement failure; retain recovery journals.
+- Add 0.001 font-unit proposal/display tolerance while preserving exact native history.
+- Add an event-driven first-launch welcome placeholder and a compact heart button.
+- Keep Glyphs 3 pinned to 1.11.0 with separate agent skills.
+
 ## 1.11.0 — Safe live Glyphs scripting
 
 _August 16, 2026_

@@ -1,84 +1,35 @@
 ---
-title: Safety model
-description: Read-before-write, dry-run/confirm-gated mutations, no auto-save, and optional local access controls.
+title: Safety and recovery
 ---
 
-Glyphs MCP is designed for human-controlled font editing. The server gives agents useful tools, but the workflow should keep you in charge of target selection, mutation, review, and saving.
+A prepared job is a proposal. Applying it changes the open font but does not save it. The designer reviews the result in Glyphs and uses native Save to accept it.
 
-## Core rules
+## Baseline and ownership
 
-- **Read before write**: inspect current state before changing it.
-- **Confirm targets**: name the font, master, glyph, layer, path, or selected nodes before mutation.
-- **Dry run before apply**: preview changes when the tool supports `dry_run`.
-- **Confirm-gated mutations**: use `confirm=true` only after approval.
-- **No auto-save**: the plug-in does not save fonts unless `save_font` is called.
-- **Prefer dedicated tools**: use specific tools before free-form code.
+Preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. An external edit or a stale source rejects the operation instead of silently overwriting it.
 
-For Tunni balancing, review the exact glyph/master/path first, then pass only
-the approved curve end-node indices to `apply_tunni_balance`. The apply tool
-resolves the target, snapshots and recomputes current geometry in the same
-main-thread transaction, changes only eligible explicit handles, verifies the
-complete path signature plus actual coordinate read-back, and restores every
-original coordinate on failure. It refuses to write unless the layer exposes
-both callable change-batch methods. Curvature review is read-only and provides
-warnings rather than artistic approval. The native curvature Reporter changes
-only global Glyphs display state: activation/deactivation runs on the main
-thread, is verified through `Glyphs.activeReporters`, and requests a redraw.
-Its drawing callback reads detached coordinate snapshots, is bounded by a
-2,000-stroke frame cap, and never edits, dirties, or saves a font.
-Path-targeted curvature diagnostics measure raw editable paths and explicitly
-report components omitted from those segment measurements.
+Apply, discard and rollback share one per-document exclusion mechanism. Ownership is reserved before opening native Undo scopes and released on terminal or failed-start paths. Use a disposable copy for broad experiments.
 
-For outline changes, the normal workflow is a detached candidate session.
-Preview tools automatically enable **View > Show Glyphs MCP Candidate** and do
-not dirty the font. The Reporter draws only the source/candidate symmetric
-difference in warm golden yellow, turns it coral red when stale, and never
-paints a complete outline over the live layer. Curvature remains a separate
-Reporter. Multi-master and multi-glyph batches must use sessions.
-Materialize only when standard Glyphs editing is needed; the copied layer is
-owned by a namespaced manifest and never uses a background. Re-review after any
-manual edit. Acceptance requires a short-lived one-time token bound to both the
-source and candidate fingerprints, rechecks them on the main thread, writes
-only operation-approved fields, verifies every read-back, and removes candidate
-layers only after complete success. Clearing the Reporter is UI-only; deleting
-materialized candidates requires the explicit discard tool. None of these tools
-saves a font.
+## Native Undo, Redo and discard
 
-## Safe prompt template
+Native Undo and Redo operate in each affected glyph's history, including fractional widths and grouped coordinates. Native rounding flags and Undo registration are restored after each exact operation. `discard_job` restores the entire job's still-current affected targets, subject to conflict checks.
 
-Use this when you want the agent to review first and mutate only after approval:
+A conflict means a target has changed outside the operation. Discard does not overwrite that target to force a clean-looking result. Review the error, preserve subsequent edits and decide whether native history or Revert is appropriate.
 
-```text
-You are my Glyphs MCP assistant.
+## Partial failures and timeouts
 
-Rules:
-- Read current state before any mutation.
-- Confirm exact targets before changing anything.
-- Never auto-save.
-- Never mutate without a dry run first when the tool supports dry_run.
-- Show me a short summary of proposed changes: counts, biggest deltas, and skipped items.
-- Wait for me to reply exactly "apply" before calling any tool with confirm=true.
+Before a native write, the bridge records the target's exact starting state. If a setter partially fails, it restores that current target before yielding, then reverses earlier writes through chunked rollback. Recovery is verified. An incomplete restoration is reported explicitly inside the existing error details.
 
-Task: <describe the goal>
+A main-thread callback can be pending, running, completed or cancelled. A timeout cancels a pending callback so it cannot run later. If execution has started, the outcome is **uncertain** until reconciled. Keep the job ID and call `get_job`; do not automatically submit a replacement or claim no changes occurred.
 
-1. Inspect current state with read-only tools.
-2. Run the appropriate apply tool with dry_run=true.
-3. Stop and wait for approval.
-4. If I reply "apply", run the same call again with confirm=true.
-5. If I reply "save", call save_font.
-```
+## Cancellation
 
-## Local access
+`discard_job` requests cancellation during preparation or reversal during live application. Cancellation and publication share the service lock: cancellation that wins prevents a later `ready` result; if publication wins first, discard handles the ready proposal normally. Temporary artifacts are released only after the worker stops using them; the terminal job record is retained for the session.
 
-By default, Glyphs MCP binds to localhost and does not require authentication. Keep it local unless you understand the security implications of exposing it elsewhere.
+Do not restart the sidecar to cancel or reconcile an operation. Job sessions do not continue across server restarts.
 
-Optional controls:
+## Precision policy
 
-- `GLYPHS_MCP_AUTH_TOKEN`: require a static token on requests.
-- `GLYPHS_MCP_ALLOWED_ORIGINS`: restrict request origins by hostname allowlist.
+Spacing preparation and reference comparison treat absolute differences **at or below 0.001 font units** as insignificant. A skipped translation does not suppress an independently meaningful width change.
 
-See [Settings](../reference/settings.mdx) for the exact environment variables.
-
-## What safety does not replace
-
-Glyphs MCP can make repeatable tool calls, but it does not replace type-design judgement. Always proof kerning, spacing, feature behavior, and outline edits visually in Glyphs before saving or shipping.
+This tolerance does not apply to native write verification, source hashes, topology, restoration or Undo/Redo. Those checks remain exact. Meaningful changes that a native setter cannot store exactly are reported as unavailable or failed rather than rounded into a different result.

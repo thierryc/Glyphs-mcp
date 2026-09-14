@@ -1,0 +1,162 @@
+{
+  "samples": [
+    {
+      "queuedAtNs": 8091397181625,
+      "dispatchWaitMs": 2.83325,
+      "callbackMs": 0.037375
+    },
+    {
+      "queuedAtNs": 8091424266916,
+      "dispatchWaitMs": 2.745792,
+      "callbackMs": 0.0235
+    },
+    {
+      "queuedAtNs": 8091450397666,
+      "dispatchWaitMs": 2.728875,
+      "callbackMs": 0.021375
+    },
+    {
+      "queuedAtNs": 8091478074875,
+      "dispatchWaitMs": 2.705333,
+      "callbackMs": 0.016417
+    },
+    {
+      "queuedAtNs": 8091504068125,
+      "dispatchWaitMs": 2.709791,
+      "callbackMs": 0.021917
+    },
+    {
+      "queuedAtNs": 8091531294041,
+      "dispatchWaitMs": 2.675125,
+      "callbackMs": 0.024167
+    },
+    {
+      "queuedAtNs": 8091556369875,
+      "dispatchWaitMs": 2.583583,
+      "callbackMs": 0.022167
+    },
+    {
+      "queuedAtNs": 8091583933708,
+      "dispatchWaitMs": 2.703958,
+      "callbackMs": 0.0225
+    },
+    {
+      "queuedAtNs": 8091594345875,
+      "dispatchWaitMs": 2.620458,
+      "callbackMs": 0.053583
+    },
+    {
+      "queuedAtNs": 8091603801625,
+      "dispatchWaitMs": 2.772583,
+      "callbackMs": 0.022
+    },
+    {
+      "queuedAtNs": 8091663757125,
+      "dispatchWaitMs": 2.71625,
+      "callbackMs": 0.022208
+    },
+    {
+      "queuedAtNs": 8091724626666,
+      "dispatchWaitMs": 2.586459,
+      "callbackMs": 0.016458
+    },
+    {
+      "queuedAtNs": 8091785668291,
+      "dispatchWaitMs": 2.463125,
+      "callbackMs": 0.016209
+    },
+    {
+      "queuedAtNs": 8091846275041,
+      "dispatchWaitMs": 2.770209,
+      "callbackMs": 0.017875
+    },
+    {
+      "queuedAtNs": 8091906918333,
+      "dispatchWaitMs": 2.329958,
+      "callbackMs": 0.072792
+    },
+    {
+      "queuedAtNs": 8091967157250,
+      "dispatchWaitMs": 2.784666,
+      "callbackMs": 0.020167
+    },
+    {
+      "queuedAtNs": 8092029326625,
+      "dispatchWaitMs": 2.704125,
+      "callbackMs": 0.022
+    },
+    {
+      "queuedAtNs": 8092094741375,
+      "dispatchWaitMs": 2.744958,
+      "callbackMs": 0.02225
+    },
+    {
+      "queuedAtNs": 8092155589041,
+      "dispatchWaitMs": 2.355875,
+      "callbackMs": 0.019
+    },
+    {
+      "queuedAtNs": 8092221022750,
+      "dispatchWaitMs": 2.691083,
+      "callbackMs": 0.019708
+    },
+    {
+      "queuedAtNs": 8092285418583,
+      "dispatchWaitMs": 2.7295,
+      "callbackMs": 0.022417
+    },
+    {
+      "queuedAtNs": 8092350023833,
+      "dispatchWaitMs": 2.622708,
+      "callbackMs": 0.021542
+    },
+    {
+      "queuedAtNs": 8092412072875,
+      "dispatchWaitMs": 2.780125,
+      "callbackMs": 0.050166
+    },
+    {
+      "queuedAtNs": 8092475854541,
+      "dispatchWaitMs": 2.77375,
+      "callbackMs": 0.0175
+    },
+    {
+      "queuedAtNs": 8092537561958,
+      "dispatchWaitMs": 2.880292,
+      "callbackMs": 0.021875
+    },
+    {
+      "queuedAtNs": 8092601467375,
+      "dispatchWaitMs": 2.429333,
+      "callbackMs": 0.040958
+    },
+    {
+      "queuedAtNs": 8092665253166,
+      "dispatchWaitMs": 2.361459,
+      "callbackMs": 0.024666
+    },
+    {
+      "queuedAtNs": 8092726589791,
+      "dispatchWaitMs": 2.331417,
+      "callbackMs": 0.025708
+    },
+    {
+      "queuedAtNs": 8092787480208,
+      "dispatchWaitMs": 2.650583,
+      "callbackMs": 0.05575
+    },
+    {
+      "queuedAtNs": 8092852982875,
+      "dispatchWaitMs": 2.316416,
+      "callbackMs": 0.052
+    }
+  ],
+  "documentsBefore": [],
+  "documentsAfter": [],
+  "host": {
+    "CFBundleIdentifier": "com.GeorgSeifert.Glyphs4",
+    "CFBundleShortVersionString": "4.1",
+    "CFBundleVersion": "4107"
+  },
+  "stoppedAt": "2026-09-10T14:25:22.118506+00:00"
+}

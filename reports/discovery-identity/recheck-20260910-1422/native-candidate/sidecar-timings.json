@@ -1,0 +1,170 @@
+[
+  {
+    "at": "2026-09-10T14:25:30.535025+00:00",
+    "statusTotalMs": 18.317875,
+    "bridgeHttpMs": 18.16,
+    "sidecarAssemblyMs": 0.15787500000000065
+  },
+  {
+    "at": "2026-09-10T14:25:30.561270+00:00",
+    "statusTotalMs": 3.842333,
+    "bridgeHttpMs": 3.714083,
+    "sidecarAssemblyMs": 0.12824999999999998
+  },
+  {
+    "at": "2026-09-10T14:25:30.587102+00:00",
+    "statusTotalMs": 3.823541,
+    "bridgeHttpMs": 3.703833,
+    "sidecarAssemblyMs": 0.11970800000000015
+  },
+  {
+    "at": "2026-09-10T14:25:30.613071+00:00",
+    "statusTotalMs": 3.907334,
+    "bridgeHttpMs": 3.718917,
+    "sidecarAssemblyMs": 0.18841700000000028
+  },
+  {
+    "at": "2026-09-10T14:25:30.639525+00:00",
+    "statusTotalMs": 3.906666,
+    "bridgeHttpMs": 3.760291,
+    "sidecarAssemblyMs": 0.14637499999999992
+  },
+  {
+    "at": "2026-09-10T14:25:30.665974+00:00",
+    "statusTotalMs": 3.780125,
+    "bridgeHttpMs": 3.634875,
+    "sidecarAssemblyMs": 0.14524999999999988
+  },
+  {
+    "at": "2026-09-10T14:25:30.690999+00:00",
+    "statusTotalMs": 3.3305,
+    "bridgeHttpMs": 3.161084,
+    "sidecarAssemblyMs": 0.169416
+  },
+  {
+    "at": "2026-09-10T14:25:30.719923+00:00",
+    "statusTotalMs": 3.777125,
+    "bridgeHttpMs": 3.584375,
+    "sidecarAssemblyMs": 0.19274999999999975
+  },
+  {
+    "at": "2026-09-10T14:25:30.739454+00:00",
+    "statusTotalMs": 4.026208,
+    "bridgeHttpMs": 3.89675,
+    "sidecarAssemblyMs": 0.12945799999999963
+  },
+  {
+    "at": "2026-09-10T14:25:30.799859+00:00",
+    "statusTotalMs": 4.065333,
+    "bridgeHttpMs": 3.919166,
+    "sidecarAssemblyMs": 0.1461669999999997
+  },
+  {
+    "at": "2026-09-10T14:25:30.860239+00:00",
+    "statusTotalMs": 4.013,
+    "bridgeHttpMs": 3.864417,
+    "sidecarAssemblyMs": 0.1485829999999999
+  },
+  {
+    "at": "2026-09-10T14:25:30.921374+00:00",
+    "statusTotalMs": 3.982791,
+    "bridgeHttpMs": 3.846959,
+    "sidecarAssemblyMs": 0.13583200000000017
+  },
+  {
+    "at": "2026-09-10T14:25:30.982124+00:00",
+    "statusTotalMs": 4.134916,
+    "bridgeHttpMs": 3.988583,
+    "sidecarAssemblyMs": 0.14633299999999938
+  },
+  {
+    "at": "2026-09-10T14:25:31.043507+00:00",
+    "statusTotalMs": 3.760833,
+    "bridgeHttpMs": 3.64,
+    "sidecarAssemblyMs": 0.12083299999999975
+  },
+  {
+    "at": "2026-09-10T14:25:31.105377+00:00",
+    "statusTotalMs": 4.011834,
+    "bridgeHttpMs": 3.874,
+    "sidecarAssemblyMs": 0.13783400000000023
+  },
+  {
+    "at": "2026-09-10T14:25:31.168030+00:00",
+    "statusTotalMs": 4.089458,
+    "bridgeHttpMs": 3.948333,
+    "sidecarAssemblyMs": 0.14112499999999972
+  },
+  {
+    "at": "2026-09-10T14:25:31.229279+00:00",
+    "statusTotalMs": 4.256125,
+    "bridgeHttpMs": 4.103541,
+    "sidecarAssemblyMs": 0.15258400000000005
+  },
+  {
+    "at": "2026-09-10T14:25:31.291985+00:00",
+    "statusTotalMs": 3.938083,
+    "bridgeHttpMs": 3.794958,
+    "sidecarAssemblyMs": 0.14312499999999995
+  },
+  {
+    "at": "2026-09-10T14:25:31.356003+00:00",
+    "statusTotalMs": 6.116375,
+    "bridgeHttpMs": 5.981375,
+    "sidecarAssemblyMs": 0.1349999999999998
+  },
+  {
+    "at": "2026-09-10T14:25:31.421273+00:00",
+    "statusTotalMs": 3.909125,
+    "bridgeHttpMs": 3.58725,
+    "sidecarAssemblyMs": 0.3218749999999999
+  },
+  {
+    "at": "2026-09-10T14:25:31.482176+00:00",
+    "statusTotalMs": 3.453292,
+    "bridgeHttpMs": 3.309916,
+    "sidecarAssemblyMs": 0.14337599999999995
+  },
+  {
+    "at": "2026-09-10T14:25:31.543431+00:00",
+    "statusTotalMs": 4.209666,
+    "bridgeHttpMs": 4.051167,
+    "sidecarAssemblyMs": 0.15849899999999995
+  },
+  {
+    "at": "2026-09-10T14:25:31.604469+00:00",
+    "statusTotalMs": 3.773541,
+    "bridgeHttpMs": 3.629416,
+    "sidecarAssemblyMs": 0.14412499999999984
+  },
+  {
+    "at": "2026-09-10T14:25:31.667999+00:00",
+    "statusTotalMs": 3.37925,
+    "bridgeHttpMs": 3.261583,
+    "sidecarAssemblyMs": 0.11766699999999997
+  },
+  {
+    "at": "2026-09-10T14:25:31.732538+00:00",
+    "statusTotalMs": 3.560375,
+    "bridgeHttpMs": 3.432834,
+    "sidecarAssemblyMs": 0.1275409999999999
+  },
+  {
+    "at": "2026-09-10T14:25:31.792973+00:00",
+    "statusTotalMs": 3.76575,
+    "bridgeHttpMs": 3.624333,
+    "sidecarAssemblyMs": 0.14141700000000013
+  },
+  {
+    "at": "2026-09-10T14:25:31.858005+00:00",
+    "statusTotalMs": 3.599833,
+    "bridgeHttpMs": 3.450583,
+    "sidecarAssemblyMs": 0.14924999999999988
+  },
+  {
+    "at": "2026-09-10T14:25:31.924247+00:00",
+    "statusTotalMs": 3.576666,
+    "bridgeHttpMs": 3.429292,
+    "sidecarAssemblyMs": 0.14737400000000012
+  }
+]

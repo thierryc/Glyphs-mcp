@@ -1,0 +1,9 @@
+{
+  "version": "2.0.0",
+  "build": "43",
+  "assets": [
+    "GitHubMark",
+    "GlyphsMCPMenu"
+  ],
+  "appSHA256": "be152ff90c0b1234ef9b92d647bfcbc63881d52dda923e6e3dca2c5d4a4f684e"
+}

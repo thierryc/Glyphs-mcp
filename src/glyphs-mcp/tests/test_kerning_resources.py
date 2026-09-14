@@ -9,6 +9,7 @@ from types import ModuleType
 import sys
 import types
 import unittest
+from unittest import mock
 
 
 def _ensure_fake_fastmcp() -> None:
@@ -59,6 +60,12 @@ def _load_module(name: str, path: Path) -> ModuleType:
 
 
 class KerningResourcesTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Resource doubles must not replace FastMCP for later real transport tests.
+        self.enterContext(mock.patch.dict(sys.modules))
+        self.enterContext(mock.patch.dict(os.environ))
+        self.enterContext(mock.patch.object(sys, "path", list(sys.path)))
+
     def test_register_kerning_resources_registers_expected_uris(self) -> None:
         os.environ["GLYPHS_MCP_SKIP_AUTO_REGISTER"] = "1"
         _ensure_fake_fastmcp()

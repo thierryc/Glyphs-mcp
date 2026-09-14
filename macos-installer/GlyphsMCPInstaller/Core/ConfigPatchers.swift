@@ -5,48 +5,20 @@ import Foundation
 public struct CodexConfigurator {
 	let runner: ProcessRunner
 	let log: (String) -> Void
+	let endpointURL: URL
 
-	public init(runner: ProcessRunner, log: @escaping (String) -> Void) {
+	public init(runner: ProcessRunner, endpointURL: URL = InstallerConstants.endpointURL, log: @escaping (String) -> Void) {
 		self.runner = runner
+		self.endpointURL = endpointURL
 		self.log = log
 	}
 
 	public func configure() async throws {
 		log("Configuring Codex…")
-		let codex = ToolLocator.findTool(named: "codex", extraCandidates: ["/opt/homebrew/bin/codex", "/usr/local/bin/codex"])
-
-		if let codexPath = codex {
-			let exe = URL(fileURLWithPath: codexPath)
-			let environment = ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: codexPath)
-			do {
-				// Attempt 1 (older docs)
-				try await runner.runStreaming(
-					executable: exe,
-					args: ["mcp", "add", InstallerConstants.codexServerName, "--url", InstallerConstants.endpointURL.absoluteString],
-					environment: environment,
-					onLine: log
-				)
-			} catch {
-				// Attempt 2 (per codex help in current CLI)
-				do {
-					try await runner.runStreaming(
-						executable: exe,
-						args: ["mcp", "add", "--url", InstallerConstants.endpointURL.absoluteString, InstallerConstants.codexServerName],
-						environment: environment,
-						onLine: log
-					)
-				} catch {
-					log("Codex CLI add failed; falling back to ~/.codex/config.toml.")
-				}
-			}
-		} else {
-			log("Codex CLI not found; patching ~/.codex/config.toml.")
-		}
-
-		if hasDesiredCodexConfig(at: InstallerPaths.codexConfig) {
-			log("Codex configured.")
-			return
-		}
+        if let text = try? String(contentsOf: InstallerPaths.codexConfig, encoding: .utf8),
+           CodexTomlInspector.readServerConfig(toml: text, serverName: InstallerConstants.codexServerName) != nil {
+            log("Keeping the existing Codex connection and authentication settings."); return
+        }
 
 		try patchCodexToml(at: InstallerPaths.codexConfig)
 		log("Codex configured.")
@@ -58,14 +30,14 @@ public struct CodexConfigurator {
 		      let server = CodexTomlInspector.readServerConfig(toml: toml, serverName: InstallerConstants.codexServerName) else {
 			return false
 		}
-		return server.url == InstallerConstants.endpointURL.absoluteString
+		return server.url == endpointURL.absoluteString
 	}
 
 	private func patchCodexToml(at url: URL) throws {
 		let desired = CodexTomlBlock(
 			header: "[mcp_servers.\(InstallerConstants.codexServerName)]",
 			entries: [
-				("url", "\"\(InstallerConstants.endpointURL.absoluteString)\""),
+				("url", "\"\(endpointURL.absoluteString)\""),
 				("enabled", "true"),
 				("startup_timeout_sec", "30"),
 				("tool_timeout_sec", "120"),
@@ -138,43 +110,19 @@ public enum CodexTomlPatcher {
 public struct ClaudeCodeConfigurator {
 	let runner: ProcessRunner
 	let log: (String) -> Void
+	let endpointURL: URL
 
-	public init(runner: ProcessRunner, log: @escaping (String) -> Void) {
+	public init(runner: ProcessRunner, endpointURL: URL = InstallerConstants.endpointURL, log: @escaping (String) -> Void) {
 		self.runner = runner
+		self.endpointURL = endpointURL
 		self.log = log
 	}
 
 	public func configureIfAvailable() async throws {
-		let claude = ToolLocator.findTool(named: "claude", extraCandidates: ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"])
-		if let claude {
-			log("Configuring Claude Code via CLI…")
-			let environment = ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: claude)
-			let result = runner.runSyncWithStderr(
-				executable: URL(fileURLWithPath: claude),
-				args: ["mcp", "add", "--scope", "user", "--transport", "http", InstallerConstants.claudeCodeServerName, InstallerConstants.endpointURL.absoluteString],
-				environment: environment
-			)
-			let output = (result.stdout + "\n" + result.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
-			if !output.isEmpty {
-				for line in output.split(separator: "\n", omittingEmptySubsequences: true) {
-					log(String(line))
-				}
-			}
-			if result.exitCode == 0 || ClaudeCliAddInspector.wasAlreadyConfigured(output: output) {
-				if ClaudeCliAddInspector.wasAlreadyConfigured(output: output) {
-					log("Claude Code was already linked. Keeping the existing configuration.")
-				}
-			} else {
-				log("Claude CLI add failed; falling back to ~/.claude.json.")
-			}
-		} else {
-			log("Claude CLI not found; patching ~/.claude.json.")
-		}
-
-		if hasDesiredClaudeConfig(at: InstallerPaths.claudeCodeConfig) {
-			log("Claude Code configured.")
-			return
-		}
+        let (root, _) = try JsonConfig.loadJSON(at: InstallerPaths.claudeCodeConfig)
+        if (root["mcpServers"] as? [String: Any])?[InstallerConstants.claudeCodeServerName] != nil {
+            log("Keeping the existing Claude Code connection and authentication settings."); return
+        }
 
 		try patchClaudeCodeConfig(at: InstallerPaths.claudeCodeConfig)
 		log("Claude Code configured.")
@@ -186,21 +134,18 @@ public struct ClaudeCodeConfigurator {
 		      let server = ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeCodeServerName) else {
 			return false
 		}
-		return server.url == InstallerConstants.endpointURL.absoluteString
+		return server.url == endpointURL.absoluteString
 	}
 
 	private func patchClaudeCodeConfig(at url: URL) throws {
-		var root: [String: Any] = [:]
-		if FileManager.default.fileExists(atPath: url.path),
-		   let data = try? Data(contentsOf: url),
-		   let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-			root = object
-		}
+        let (existing, _) = try JsonConfig.loadJSON(at: url)
+        var root = existing
+        _ = try FileIO.backupIfExists(url)
 
 		var mcpServers = root["mcpServers"] as? [String: Any] ?? [:]
 		var server = mcpServers[InstallerConstants.claudeCodeServerName] as? [String: Any] ?? [:]
 		server["type"] = "http"
-		server["url"] = InstallerConstants.endpointURL.absoluteString
+		server["url"] = endpointURL.absoluteString
 		mcpServers[InstallerConstants.claudeCodeServerName] = server
 		root["mcpServers"] = mcpServers
 
@@ -212,18 +157,20 @@ public struct ClaudeCodeConfigurator {
 
 public struct ClaudeDesktopConfigurator {
 	let log: (String) -> Void
+	let endpointURL: URL
 
-	public init(log: @escaping (String) -> Void) {
-		self.log = log
-	}
+	let proxyCommand: [String]?
+    public init(endpointURL: URL = InstallerConstants.endpointURL, proxyCommand: [String]? = nil, log: @escaping (String) -> Void) {
+        self.endpointURL = endpointURL; self.proxyCommand = proxyCommand; self.log = log
+    }
 
-	public func configure() throws {
+    public func configure() throws {
 		log("Configuring Claude Desktop…")
 
-		if hasDesiredClaudeDesktopConfig(at: InstallerPaths.claudeDesktopConfig) {
-			log("Claude Desktop configured.")
-			return
-		}
+        let (root, _) = try JsonConfig.loadJSON(at: InstallerPaths.claudeDesktopConfig)
+        if (root["mcpServers"] as? [String: Any])?[InstallerConstants.claudeDesktopServerName] != nil {
+            log("Keeping the existing Claude Desktop connection and authentication settings."); return
+        }
 
 		try patchClaudeDesktopConfig(at: InstallerPaths.claudeDesktopConfig)
 		log("Claude Desktop configured.")
@@ -235,7 +182,7 @@ public struct ClaudeDesktopConfigurator {
 		      let server = ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeDesktopServerName) else {
 			return false
 		}
-		return server.url == InstallerConstants.endpointURL.absoluteString
+		return server.url == endpointURL.absoluteString
 	}
 
 	func patchClaudeDesktopConfig(at url: URL) throws {
@@ -249,8 +196,14 @@ public struct ClaudeDesktopConfigurator {
 		var server = mcpServers[InstallerConstants.claudeDesktopServerName] as? [String: Any] ?? [:]
 		var env = server["env"] as? [String: Any] ?? [:]
 		env["PATH"] = ToolRuntimeEnvironment.mergedPath()
-		server["command"] = "npx"
-		server["args"] = ["mcp-remote", InstallerConstants.endpointURL.absoluteString]
+		if let proxyCommand, let command = proxyCommand.first {
+            server["command"] = command
+            server["args"] = Array(proxyCommand.dropFirst()) + [endpointURL.absoluteString]
+            env["PYTHONDONTWRITEBYTECODE"] = "1"; env["PYTHONNOUSERSITE"] = "1"
+        } else {
+            server["command"] = "npx"
+            server["args"] = ["mcp-remote", endpointURL.absoluteString]
+        }
 		server["env"] = env
 		mcpServers[InstallerConstants.claudeDesktopServerName] = server
 		root["mcpServers"] = mcpServers
@@ -262,6 +215,27 @@ public struct ClaudeDesktopConfigurator {
 
 // MARK: - Agent skills
 
+public struct SkillInstallationResult: Equatable {
+    public enum Outcome: String { case installed, current, retired, preservedConflict = "preserved-conflict" }
+    public struct Entry: Equatable {
+        public let name: String
+        public let path: String
+        public let outcome: Outcome
+        public var compatibilityIssue: String? = nil
+        public var backupPath: String? = nil
+        public var repairAction: String? {
+            guard outcome == .preservedConflict else { return nil }
+            return (compatibilityIssue.map { $0 + " " } ?? "")
+                + "Review \(path), then use Replace preserved skills (backup)."
+        }
+    }
+    public var entries: [Entry] = []
+    public var conflicts: [Entry] { entries.filter { $0.outcome == .preservedConflict } }
+    public var summary: String {
+        entries.map { "\($0.outcome.rawValue): \($0.path)\($0.backupPath.map { " — backup: " + $0 } ?? "")\($0.repairAction.map { " — " + $0 } ?? "")" }.joined(separator: "\n")
+    }
+}
+
 public struct AgentSkillBundleInstaller {
 	let log: (String) -> Void
 
@@ -270,12 +244,12 @@ public struct AgentSkillBundleInstaller {
 	}
 
 	@discardableResult
-	public func installCodexSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> Bool {
+	public func installCodexSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> SkillInstallationResult {
 		try installManagedSkills(from: payload, to: InstallerPaths.codexSkillsDir, clientName: "Codex", overwriteExisting: overwriteExisting)
 	}
 
 	@discardableResult
-	public func installClaudeCodeSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> Bool {
+	public func installClaudeCodeSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> SkillInstallationResult {
 		try installManagedSkills(from: payload, to: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code", overwriteExisting: overwriteExisting)
 	}
 
@@ -285,7 +259,7 @@ public struct AgentSkillBundleInstaller {
 		to destRoot: URL,
 		clientName: String,
 		overwriteExisting: Bool
-	) throws -> Bool {
+	) throws -> SkillInstallationResult {
 		let managedSkills = payload.managedSkillDirectories()
 		guard !managedSkills.isEmpty else {
 			throw InstallerError.userFacing("Installer payload does not contain Glyphs MCP skills.")
@@ -294,13 +268,16 @@ public struct AgentSkillBundleInstaller {
 		let fm = FileManager.default
 		try fm.createDirectory(at: destRoot, withIntermediateDirectories: true)
 
-		var installedNames: [String] = []
-		var skippedNames: [String] = []
+        let ownershipURL = destRoot.appendingPathComponent(".glyphs-mcp-skills.json")
+        let previous = (try? Data(contentsOf: ownershipURL)).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
+        var ownership = previous
+        var result = SkillInstallationResult()
 
 		if overwriteExisting {
 			for legacyName in InstallerPayload.legacyManagedSkillNames {
 				let legacyDest = destRoot.appendingPathComponent(legacyName, isDirectory: true)
 				if itemExists(at: legacyDest) {
+                    _ = try backupSkill(legacyDest)
 					try fm.removeItem(at: legacyDest)
 				}
 			}
@@ -308,28 +285,94 @@ public struct AgentSkillBundleInstaller {
 
 		for skillDir in managedSkills {
 			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
-			if itemExists(at: dest) {
-				if overwriteExisting {
+            let name = skillDir.lastPathComponent
+            let sourceIdentity = try InstallerPayloadManifestResolver.treeIdentity(skillDir)
+            let currentIdentity = try? InstallerPayloadManifestResolver.treeIdentity(dest)
+            if itemExists(at: dest) {
+                if currentIdentity == sourceIdentity {
+                    // Identical contents do not grant ownership of an unowned skill.
+                    if overwriteExisting || previous[name] == currentIdentity { ownership[name] = sourceIdentity }
+                    result.entries.append(.init(name: name, path: dest.path, outcome: .current))
+                    continue
+                }
+                if overwriteExisting || currentIdentity != nil && previous[name] == currentIdentity {
+					_ = try backupSkill(dest)
 					try fm.removeItem(at: dest)
 				} else {
-					skippedNames.append(skillDir.lastPathComponent)
+					result.entries.append(.init(name: name, path: dest.path, outcome: .preservedConflict,
+                        compatibilityIssue: retiredInterfaceIssue(source: skillDir, destination: dest)))
 					continue
 				}
 			}
 
 			try fm.copyItem(at: skillDir, to: dest)
-			installedNames.append(skillDir.lastPathComponent)
+			ownership[name] = sourceIdentity
+			result.entries.append(.init(name: name, path: dest.path, outcome: .installed))
 		}
 
-		if !installedNames.isEmpty {
-			log("Installed Glyphs MCP skills for \(clientName): \(installedNames.joined(separator: ", "))")
-			log("Destination: \(destRoot.path)")
-		}
-		if !skippedNames.isEmpty {
-			log("Kept existing Glyphs MCP skills for \(clientName): \(skippedNames.joined(separator: ", "))")
-		}
-		return !installedNames.isEmpty
+        // Retirement uses the existing hash ledger and explicit replacement action.
+        // Legacy markers alone cannot establish that a skill was not user-modified.
+        var retiredBackups: [(destination: URL, backup: URL)] = []
+        do {
+            for dest in retiredPrivateSkillDestinations(from: payload, under: destRoot) {
+                let name = dest.lastPathComponent
+                let identity = try? InstallerPayloadManifestResolver.treeIdentity(dest)
+                guard overwriteExisting || identity != nil && previous[name] == identity else {
+                    result.entries.append(.init(name: name, path: dest.path, outcome: .preservedConflict,
+                        compatibilityIssue: "Retired private typed-v2 instructions; this family is absent from the lean payload. Replacement archives this folder outside skill discovery; it does not add feature support."))
+                    continue
+                }
+                let backup = try backupSkill(dest)
+                retiredBackups.append((dest, backup))
+                try fm.removeItem(at: dest)
+                ownership.removeValue(forKey: name)
+                result.entries.append(.init(name: name, path: dest.path, outcome: .retired, backupPath: backup.path))
+            }
+            try FileIO.writeAtomically(try JSONEncoder().encode(ownership), to: ownershipURL)
+        } catch {
+            // Restore only the folders just retired if removal/ledger writing fails.
+            // Never overwrite a surviving folder. Exact backups remain available.
+            for item in retiredBackups.reversed() {
+                do {
+                    if !itemExists(at: item.destination) {
+                        try fm.copyItem(at: item.backup, to: item.destination)
+                    }
+                    guard try InstallerPayloadManifestResolver.treeIdentity(item.destination)
+                        == InstallerPayloadManifestResolver.treeIdentity(item.backup) else {
+                        throw InstallerError.userFacing("Retired skill restoration differs from its backup.")
+                    }
+                } catch let restoreError {
+                    throw InstallerError.userFacing("Skill retirement failed: \(error.localizedDescription). Restore \(item.destination.path) from \(item.backup.path): \(restoreError.localizedDescription)")
+                }
+            }
+            throw error
+        }
+        log("Glyphs MCP skills for \(clientName):\n" + result.summary)
+        return result
 	}
+
+    /// A sibling of the discovery root, never a selectable skill directory.
+    static func skillBackupRoot(for discoveryRoot: URL) -> URL {
+        discoveryRoot.deletingLastPathComponent().appendingPathComponent("glyphs-mcp-skill-backups")
+    }
+
+    @discardableResult
+    func backupSkill(_ source: URL) throws -> URL {
+        let identity = try InstallerPayloadManifestResolver.treeIdentity(source)
+        let root = Self.skillBackupRoot(for: source.deletingLastPathComponent())
+            .appendingPathComponent(UUID().uuidString.lowercased())
+        let destination = root.appendingPathComponent(source.lastPathComponent)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        // Write restoration coordinates before copying. Never remove the source here.
+        let record = ["source": source.path, "backup": destination.path, "identity": identity]
+        try FileIO.writeAtomically(try JSONEncoder().encode(record), to: root.appendingPathComponent("backup.json"))
+        try FileManager.default.copyItem(at: source, to: destination)
+        guard try InstallerPayloadManifestResolver.treeIdentity(destination) == identity else {
+            throw InstallerError.userFacing("Skill backup verification failed: \(destination.path)")
+        }
+        log("Skill backup: \(source.path) → \(destination.path)")
+        return destination
+    }
 
 	public func existingManagedSkillDestinations(from payload: InstallerPayload, under destRoot: URL) -> [URL] {
 		let current = payload.managedSkillDirectories().compactMap { skillDir in
@@ -340,8 +383,47 @@ public struct AgentSkillBundleInstaller {
 			let dest = destRoot.appendingPathComponent(skillName, isDirectory: true)
 			return itemExists(at: dest) ? dest : nil
 		}
-		return (current + legacy).sorted { $0.lastPathComponent < $1.lastPathComponent }
+		return (current + legacy + retiredPrivateSkillDestinations(from: payload, under: destRoot)).sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}
+
+    // Known removed private families only; names or owner markers alone do not
+    // select a folder. In particular, separate v1 instructions are preserved.
+    private func retiredPrivateSkillDestinations(from payload: InstallerPayload, under root: URL) -> [URL] {
+        let managed = payload.managedSkillDirectories()
+        guard let entry = managed.first(where: { $0.lastPathComponent == "glyphs" }),
+              let lean = try? String(contentsOf: entry.appendingPathComponent("SKILL.md"), encoding: .utf8),
+              lean.contains("`get_status`"), lean.contains("`read_entities`") else { return [] }
+        let names = ["glyphs-mcp-icon-font", "glyphs-mcp-litsquare-metadata", "glyphs-mcp-color-font",
+                     "glyphs-mcp-variable-font", "glyphs-mcp-production-audit",
+                     "glyphs-mcp-unicode-semantics", "glyphs-mcp-export-validation"]
+        let managedNames = Set(managed.map(\.lastPathComponent))
+        return names.filter { !managedNames.contains($0) }.compactMap { name in
+            let dest = root.appendingPathComponent(name, isDirectory: true)
+            guard let text = try? String(contentsOf: dest.appendingPathComponent("SKILL.md"), encoding: .utf8),
+                  text.hasPrefix("---\n"),
+                  let end = text.dropFirst(4).range(of: "\n---"),
+                  text[ text.index(text.startIndex, offsetBy: 4)..<end.lowerBound ]
+                    .split(separator: "\n").contains(where: { $0.trimmingCharacters(in: .whitespaces) == "surface: glyphs-mcp-v2" }),
+                  text.contains("get_server_info"), text.contains("apiMajor == 2"),
+                  !(text.contains("`get_status`") && text.contains("`read_entities`")) else { return nil }
+            return dest
+        }
+    }
+
+    private func retiredInterfaceIssue(source: URL, destination: URL) -> String? {
+        guard let shipped = try? String(contentsOf: source.appendingPathComponent("SKILL.md"), encoding: .utf8),
+              shipped.contains("`get_status`"), shipped.contains("`read_entities`"),
+              let current = try? String(contentsOf: destination.appendingPathComponent("SKILL.md"), encoding: .utf8)
+        else { return nil }
+        // A lean routing skill may mention retired tools only to reject them.
+        // Preserve such edits with the generic conflict action, without guessing.
+        guard !(current.contains("`get_status`") && current.contains("`read_entities`")) else { return nil }
+        let retired = ["read_document", "execute_python", "preview_change"].filter {
+            current.contains("`" + $0 + "`") || current.contains("`" + $0 + "(")
+        }
+        guard !retired.isEmpty else { return nil }
+        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean seven-tool interface."
+    }
 
 	private func itemExists(at url: URL) -> Bool {
 		FileManager.default.fileExists(atPath: url.path) || ((try? url.checkResourceIsReachable()) ?? false)

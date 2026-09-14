@@ -1,134 +1,26 @@
 ---
-title: Connect a client
-description: Connect Codex, ChatGPT, Claude, Cursor, or another MCP client to Glyphs MCP.
+title: Connect an AI application
 ---
 
-import CodeBlock from '@theme/CodeBlock';
+The installer can optionally connect detected AI applications. The native components and the AI connection are separate choices: install the components first, then connect a client to the server.
 
-All clients connect to the same local endpoint:
+## HTTP connection
 
-```text
-http://127.0.0.1:9680/mcp/
-```
+1. Start the server through **Edit → Glyphs MCP Server…**.
+2. Copy its MCP URL. The default is `http://127.0.0.1:9680/mcp/`.
+3. Add that URL to a local client that supports **Streamable HTTP MCP**, or use the installer's supported connection option.
+4. Refresh the client's tools and call `get_status`, then `list_documents`.
 
-Start Glyphs MCP before connecting the client. If connection fails, restart Glyphs, start the server, then reload the client.
+A correct v2 connection exposes exactly these seven tools: `get_status`, `list_documents`, `read_entities`, `start_job`, `get_job`, `apply_job`, and `discard_job`. If you see the older v1 catalog, check which server and port the client is using.
 
-## Supported automatic links
+The bridge port 9681 is internal and is not an MCP endpoint. The loopback URL refers to this Mac: a remote cloud client cannot reach it directly. This guide does not configure a public tunnel.
 
-The installer can link Glyphs MCP into:
+## Optional agent plugin
 
-- Codex App
-- Codex CLI
-- Claude App
-- Claude CLI
+The matching 2.0.0 agent package adds workflow skills and connection metadata. It does not install the Glyphs components. For the local candidate, use the matching supplied package, not an older marketplace package. See [Skills and optional plugins](use-agent-skills.mdx).
 
-Any MCP-compatible client can use the server if it supports a local Streamable HTTP endpoint or a bridge to one.
+The v2 tools return structured results and reports. A v1 embedded feedback interface is not part of the seven-tool contract; review results in Glyphs and use native Save to accept them.
 
-## Codex App and Codex CLI
+## After a change
 
-Use the Codex MCP command:
-
-<CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
-codex mcp list`}</CodeBlock>
-
-Codex can also read the server from `~/.codex/config.toml`:
-
-<CodeBlock language="toml">{`[mcp_servers.glyphs-mcp-server]
-url = "http://127.0.0.1:9680/mcp/"
-enabled = true
-startup_timeout_sec = 30
-tool_timeout_sec = 120`}</CodeBlock>
-
-Reload Codex after changing MCP configuration.
-
-For the repository plugin, embedded feedback panel, and bundled skills, see
-[Codex and ChatGPT plugin UI](./codex-chatgpt-plugin-ui.mdx).
-
-## Claude CLI and Claude Code
-
-Use the Claude CLI:
-
-<CodeBlock language="bash">{`claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
-claude mcp list`}</CodeBlock>
-
-In Claude Code, run `/mcp` after reload to confirm the server is listed.
-
-## Claude App
-
-Claude App configuration uses `~/Library/Application Support/Claude/claude_desktop_config.json`. In this config format, Claude App usually needs a local bridge command for a localhost HTTP MCP endpoint.
-
-One option is `npx mcp-remote`:
-
-<CodeBlock language="json">{`{
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "http://127.0.0.1:9680/mcp/"
-      ]
-    }
-  }
-}`}</CodeBlock>
-
-If you edit the file manually, preserve unrelated top-level settings and other MCP servers.
-
-### Python bridge alternative
-
-Some users prefer a Python bridge such as `mcp-proxy`:
-
-<CodeBlock language="bash">{`pip install mcp-proxy`}</CodeBlock>
-
-<CodeBlock language="json">{`{
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "command": "mcp-proxy",
-      "args": [
-        "http://127.0.0.1:9680/mcp/",
-        "--transport=streamablehttp"
-      ],
-      "env": {
-        "PATH": "/Users/thierryc/.local/bin:/Users/thierryc/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-      }
-    }
-  }
-}`}</CodeBlock>
-
-Set `env.PATH` when the app cannot find commands that work in Terminal. Common command locations include `~/.local/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`.
-
-## Cursor
-
-Cursor supports Streamable HTTP MCP servers through project or global
-`mcp.json` files. Add a project connection at `.cursor/mcp.json`:
-
-<CodeBlock language="json">{`{
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "url": "http://127.0.0.1:9680/mcp/"
-    }
-  }
-}`}</CodeBlock>
-
-Use `~/.cursor/mcp.json` instead when the connection should be available across
-projects. Reload Cursor, open its MCP settings or **Available Tools**, and
-confirm that `glyphs-mcp-server` is enabled.
-
-The Glyphs MCP installers do not currently write Cursor configuration. Preserve
-other servers if you edit either file manually. See
-[Cursor's MCP documentation](https://docs.cursor.com/context/model-context-protocol)
-for current configuration locations and client behavior.
-
-## Verify
-
-After connecting, paste this prompt into the client:
-
-<CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
-If you see an error, quote it verbatim.`}</CodeBlock>
-
-## If it still fails
-
-- Confirm Glyphs is open.
-- Confirm **Edit -> Glyphs MCP Server** shows a running server.
-- Confirm the endpoint is exactly `http://127.0.0.1:9680/mcp/`.
-- Reload the client so it fetches the current `tools/list`.
-- Continue to [Troubleshooting](./troubleshooting.mdx).
+If you change the MCP port, update the client's connection. After installing new native bundles, restart Glyphs. After changing an agent package, refresh the client according to its own settings. Keep one intended server per MCP port and avoid duplicate connections to the same server.

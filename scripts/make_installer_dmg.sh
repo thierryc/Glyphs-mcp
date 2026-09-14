@@ -2,8 +2,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-scheme="GlyphsMCPInstaller"
+scheme="${GLYPHS_MCP_APP_NAME:-Glyphs MCP}"
 
+python_bin="${PYTHON_BIN:-python3}"
 profile="${NOTARY_PROFILE:-gmcp-notary}"
 identity="${CODESIGN_IDENTITY:-Developer ID Application: Thierry Charbonnel (N9U29A4T8J)}"
 skip="${SKIP_NOTARIZATION:-0}"
@@ -23,10 +24,13 @@ if [[ -z "${version:-}" ]]; then
   exit 1
 fi
 
-dmg_versioned="$out_dir/$scheme-$version.dmg"
-dmg_latest="$out_dir/$scheme.dmg"
+release_version="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field releaseVersion)"
+release_channel="$("$python_bin" "$repo_root/scripts/desktop_release_identity.py" --field channel)"
+version="$release_version"
+dmg_versioned="$out_dir/Glyphs-MCP-$version.dmg"
+dmg_latest="$out_dir/Glyphs-MCP-latest.dmg"
 if [[ "$skip" == "1" ]]; then
-  dmg_versioned="$out_dir/$scheme-$version-UNNOTARIZED.dmg"
+  dmg_versioned="$out_dir/Glyphs-MCP-$version-UNNOTARIZED.dmg"
 fi
 
 if [[ "$skip" != "1" ]]; then
@@ -40,7 +44,8 @@ mkdir -p "$stage"
 cp -R "$app" "$stage/$scheme.app"
 ln -s /Applications "$stage/Applications"
 
-rm -f "$dmg_versioned" "$dmg_latest"
+rm -f "$dmg_versioned"
+if [[ "$release_channel" == "stable" ]]; then rm -f "$dmg_latest"; fi
 
 echo "Creating DMG: $dmg_versioned"
 # Using `hdiutil create -srcfolder` mounts the staging image under /Volumes/<volname>
@@ -123,6 +128,8 @@ echo "Stapling DMG…"
 xcrun stapler staple "$dmg_versioned"
 xcrun stapler validate "$dmg_versioned"
 
-cp -f "$dmg_versioned" "$dmg_latest"
+if [[ "$release_channel" == "stable" ]]; then
+  cp -f "$dmg_versioned" "$dmg_latest"
+  echo "Also wrote: $dmg_latest"
+fi
 echo "Done: $dmg_versioned"
-echo "Also wrote: $dmg_latest"

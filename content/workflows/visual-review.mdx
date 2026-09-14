@@ -1,67 +1,42 @@
 ---
-title: Visual glyph review
-description: Review adaptive curvature and curve events natively in Glyphs Edit View.
+title: Curve and Reference Inspectors
 ---
 
-Use this workflow when an agent needs visual evidence for cubic curvature,
-events, continuity, or a candidate outline difference.
+The two optional companions work independently of an MCP client. Install either or both using the installer, then restart Glyphs to load them.
 
-## Native curvature overlay
+## Curve Inspector
 
-Curvature review now uses the Reporter built into the Glyphs MCP plug-in. Enable
-it with `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` or choose **View > Show Glyphs
-MCP Curvature**. It draws directly over the active Edit View glyph, updates when
-nodes move, and remains available while the MCP server is stopped.
+Enable **View → Curve Inspector** and select an editable layer. The reporter draws a curvature comb and endpoint envelopes from cached geometry. Activation schedules an initial refresh without requiring a canvas click.
 
-- Teal (`#009E9E`) teeth and envelope runs show positive signed curvature;
-  pink (`#DB2E8C`) shows negative signed curvature. Both use `0.65` alpha so the
-  outline remains visible beneath the review drawing.
-- Placement uses curvature magnitude along the path right normal. With correct
-  Glyphs winding, outer-contour combs point outside the black shape and counter
-  combs point into the white counter. Reversing a path reverses the placement
-  side and signed color; magnitudes are unchanged.
-- The editor renderer starts with 51 samples per cubic, reduces sampling
-  deterministically, and enforces a 2,000-stroke frame cap.
-- Display length uses a `0.010` linear scale, normally clamps to `0.12em`, and
-  cannot exceed the `0.25em` hard guard.
-- Raw editable paths are analyzed. Components are not expanded.
-- Curve-event markers identify extrema, inflections, cusps, and continuity
-  warnings. Pass only `curvature` or only `curve_events` when a quieter view is
-  preferable.
+Same-layer edits retain the last completed overlay while a replacement is calculated. Results for an obsolete context are discarded. The reporter reads a bounded set of curves and computes the display outside the draw callback.
 
-Call `get_curve_review_overlay_state` to confirm whether the Reporter is loaded
-and active and to inspect its bounded last-draw record: glyph/layer, cubic and
-stroke counts, clamp/cap state, cache status, and omitted components. Both MCP
-controls change only global UI display state; they never dirty or save a font.
+## Changes Against Reference
 
-```json
-{
-  "enabled": true,
-  "overlays": ["curvature", "curve_events"]
-}
-```
+Enable **View → Changes Against Reference**. Choose **Edit → Comparison Reference** to select a source:
 
-## When to use it
+| Reference | Selection |
+| --- | --- |
+| Last Saved | The active font's saved file; follows native Save. |
+| Font File | Another `.glyphs` or `.glyphspackage` file. |
+| Local Git | A local repository, revision and repository-relative font path. |
+| Public GitHub | A public repository, revision and repository-relative font path. |
 
-- Enable `curvature` while editing handles or comparing curvature magnitude.
-- Enable `curve_events` when locating extrema, inflections, cusps, or continuity warnings.
-- Enable both for a complete curve review, then disable one if the view becomes noisy.
-- Use **View > Show Glyphs MCP Candidate** separately for geometric proposal differences.
+The active reference type has a native checkmark. Its menu entry includes the filename and, for Git, the requested revision. Hover for the full file path or repository, revision and font path. The checked command remains editable.
 
-Call `review_curve_quality` for the numeric evidence behind the Reporter. Use `review_curve_quality_across_masters` only after explicit compatible master targets are available. Neither Reporter changes or saves the font.
+Menu indicators update for the active font when the menu opens, without polling. Commands are disabled and stale details cleared when no font is open or the active font has never been saved.
 
-## Safe prompt template
+File and Git references stay pinned until **Refresh Reference**. Switching glyphs keeps the selected snapshot. Preferences are stored per font path, separately from the font data. Git sources need system Git; ordinary files do not.
 
-```text
-Review curve quality for my current selection.
-Use review_curve_quality for the explicit path, then enable the native overlay with set_curve_review_overlay(enabled=true).
-Tell me to inspect View > Show Glyphs MCP Curvature and verify the last draw with get_curve_review_overlay_state.
-Do not mutate or save the font.
-Report only measurements, conservative warnings, and suggested next checks.
-```
+## Read the overlay
 
-## Related reference
+Reference geometry is mint; current changes are cyan. The reporter compares layer geometry and width. It does not compare kerning tables, metadata or the history of operations. Text such as “Last Saved · No changes” is confined to the edited glyph, so other occurrences and preview glyphs do not acquire that status label.
 
-- [Command set](../reference/command-set.mdx)
-- [Outlines workflow](./outlines-selected-nodes.mdx)
-- [Safety model](../concepts/safety-model.mdx)
+Differences at or below **0.001 font units** are ignored by reference comparison. This display tolerance does not change exact native writes or history.
+
+## Updates without blinking
+
+While you drag a node, the last completed overlay remains visible. A replacement is prepared after mouse release and **150 ms** of quiet interface updates. Repeated keyboard edits use the same delay. Completed geometry replaces the overlay together; switching font, layer or reference clears the obsolete context.
+
+Enabling an inspector or reopening a restored tab schedules its initial refresh. Publication invalidates the native canvas, without a global redraw notification. A reference refresh failure retains the last usable result for that context and shows an error in its label.
+
+Inspect the actual glyph and use native Save to accept edits. The overlays provide comparison and curve evidence, not an automatic design-quality verdict.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs"
+  short_description: "Route Glyphs 4 font work to the lean MCP tools and independe"
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

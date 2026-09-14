@@ -3,1042 +3,264 @@ import Foundation
 import SwiftUI
 import GlyphsMCPInstallerCore
 
-enum InstallerTab: String, CaseIterable, Hashable {
-	case wizard
-	case install
-	case link
-	case skill
-	case status
-	case help
-
-	var isAdvancedOnly: Bool {
-		InstallerAdvancedModePolicy.advancedTabIDs.contains(rawValue)
-	}
-
-	static func visibleTabs(isAdvancedModeEnabled: Bool) -> [InstallerTab] {
-		InstallerAdvancedModePolicy.visibleTabIDs(isAdvancedModeEnabled: isAdvancedModeEnabled).compactMap(Self.init(rawValue:))
-	}
-
-	var systemImage: String {
-		switch self {
-		case .wizard: return "wand.and.stars"
-		case .install: return "square.and.arrow.down"
-		case .link: return "link"
-		case .skill: return "sparkles"
-		case .status: return "checklist"
-		case .help: return "questionmark.circle"
-		}
-	}
-}
-
-enum InstallerActionKind: Equatable {
-	case wizard
-	case install
-	case link
-	case skill
-	case project
-	case uninstall
-}
-
-struct InstallerActionState: Equatable {
-	var activeKind: InstallerActionKind? = nil
-	var logText: String = ""
-	var progressText: String? = nil
-	var installSteps: [InstallStep] = InstallStep.defaultSteps
-	var restartRecommended: Bool = false
-	var clientReloadRecommended: Bool = false
-
-	var isBusy: Bool { activeKind != nil }
-
-	mutating func resetFor(_ kind: InstallerActionKind) {
-		activeKind = kind
-		logText = ""
-		progressText = nil
-		restartRecommended = false
-		clientReloadRecommended = false
-		if kind == .install {
-			installSteps = InstallStep.defaultSteps
-		}
-		if kind == .wizard {
-			installSteps = InstallStep.defaultSteps
-		}
-	}
-}
-
 @MainActor
 final class InstallerViewModel: ObservableObject {
-	@Published var selectedTab: InstallerTab = .wizard
-	@Published var isAdvancedModeEnabled: Bool {
-		didSet {
-			InstallerAdvancedModePreferences.save(isAdvancedModeEnabled)
-			if !isAdvancedModeEnabled, selectedTab.isAdvancedOnly {
-				selectedTab = .wizard
-			}
-		}
-	}
-	@Published private(set) var snapshot = InstallerStatusSnapshotBuilder.build(
-		preflight: .empty,
-		check: .empty,
-		installedPluginVersion: nil,
-		payloadPluginVersion: nil,
-		glyphsRunning: false
-	)
-	@Published var actionState = InstallerActionState()
-
-	@Published var configureCodex: Bool = true
-	@Published var configureClaudeDesktop: Bool = true
-	@Published var configureClaudeCode: Bool = true
-
-	@Published var installCodexSkills: Bool = true
-	@Published var installClaudeCodeSkills: Bool = true
-	@Published var selectedGlyphsVersions: Set<GlyphsMajorVersion> = []
-	@Published var replaceDevSymlinkVersions: Set<GlyphsMajorVersion> = []
-	@Published var verifiedUpdatesEnabledVersions: Set<GlyphsMajorVersion> = Set(
-		GlyphsMajorVersion.allCases.filter { UpdateOptInStore.live.isEnabled($0) }
-	)
-	@Published var isShowingUninstallSheet = false
-	@Published private(set) var uninstallPlan = GlyphsUninstallPlan(candidates: [])
-	@Published var uninstallSelectedCandidateIDs: Set<String> = []
-	@Published var hasAcknowledgedUninstall = false
-	@Published private(set) var uninstallReport: GlyphsUninstallReport?
-
-	@Published var starterParentFolder: URL? = nil
-	@Published var starterProjectName: String = "Glyphs MCP Project"
-	@Published var createdStarterProjectFolder: URL? = nil
-
-	let manualClaudeCommand = "claude mcp add --scope user --transport http \(InstallerConstants.claudeCodeServerName) \(InstallerConstants.endpointURL.absoluteString)"
-
-	private let runner = ProcessRunner()
-	private var lastPreflight = PreflightResult.empty
-	private var lastCheck = CheckResult.empty
-	private var lastLogAt: Date = .distantPast
-	private var installTask: Task<Void, Never>? = nil
-	private var clientsTask: Task<Void, Never>? = nil
-	private var skillsTask: Task<Void, Never>? = nil
-	private var heartbeatTask: Task<Void, Never>? = nil
-	private var glyphsWatcherTask: Task<Void, Never>? = nil
-	private var uninstallTask: Task<Void, Never>? = nil
-	private var lastGlyphsRunningVersions: Set<GlyphsMajorVersion>?
-	private var hasInitializedGlyphsSelection = false
-
-	var selectedTargetStatuses: [GlyphsTargetStatusSnapshot] {
-		snapshot.glyphsTargets
-			.filter { selectedGlyphsVersions.contains($0.version) }
-			.sorted { $0.version < $1.version }
-	}
-
-	var installFailureReason: String? {
-		InstallerTargetSelectionPolicy.installFailureReason(
-			selectedVersions: selectedGlyphsVersions,
-			targets: snapshot.glyphsTargets
-		)
-	}
-
-	var canInstall: Bool { installFailureReason == nil }
-
-	var selectedGlyphsAreRunning: Bool {
-		selectedTargetStatuses.contains(where: \.isRunning)
-	}
-
-	var installButtonTitle: String {
-		InstallerTargetSelectionPolicy.installButtonTitle(
-			selectedVersions: selectedGlyphsVersions,
-			targets: snapshot.glyphsTargets
-		)
-	}
-
-	var wizardButtonTitle: String {
-		let hasInstalledPlugin = selectedTargetStatuses.contains { $0.installedPluginVersion != nil }
-		let hasExistingSkills = snapshot.skills.contains(where: \.hasInstalledSkills)
-		return (hasInstalledPlugin || hasExistingSkills) ? "Update Setup" : "Complete Setup"
-	}
-
-	var selectedUninstallCandidates: [UninstallCandidate] {
-		uninstallPlan.candidates.filter {
-			uninstallSelectedCandidateIDs.contains($0.id) && $0.safetyState.isSelectable
-		}
-	}
-
-	var selectedUninstallGlyphsVersions: Set<GlyphsMajorVersion> {
-		GlyphsUninstallSelectionPolicy.selectedPluginVersions(
-			plan: uninstallPlan.selecting(uninstallSelectedCandidateIDs)
-		)
-	}
-
-	var selectedUninstallGlyphsAreRunning: Bool {
-		GlyphsUninstallSelectionPolicy.selectedGlyphsAreRunning(
-			plan: uninstallPlan.selecting(uninstallSelectedCandidateIDs),
-			runningVersions: Set(snapshot.glyphsTargets.filter(\.isRunning).map(\.version))
-		)
-	}
-
-	var canRunUninstall: Bool {
-		GlyphsUninstallSelectionPolicy.canExecute(
-			plan: uninstallPlan.selecting(uninstallSelectedCandidateIDs),
-			hasAcknowledged: hasAcknowledgedUninstall,
-			runningVersions: Set(snapshot.glyphsTargets.filter(\.isRunning).map(\.version)),
-			isBusy: actionState.isBusy
-		)
-	}
-
-	init() {
-		isAdvancedModeEnabled = InstallerAdvancedModePreferences.load()
-		refreshSnapshot()
-		startGlyphsWatcher()
-	}
-
-	func setAdvancedModeEnabled(_ enabled: Bool) {
-		isAdvancedModeEnabled = enabled
-	}
-
-	deinit {
-		installTask?.cancel()
-		clientsTask?.cancel()
-		skillsTask?.cancel()
-		heartbeatTask?.cancel()
-		glyphsWatcherTask?.cancel()
-		uninstallTask?.cancel()
-	}
-
-	func refreshSnapshot() {
-		let preflight = Preflight.scanGlobal()
-		let check = Check.scanClients()
-		let applications = GlyphsApplicationDetector.detect()
-		let applicationsByVersion = Dictionary(uniqueKeysWithValues: applications.map { ($0.majorVersion, $0) })
-		let payloadPluginVersion = (try? InstallerPayload.resolve()).flatMap { PluginVersionReader.readPluginVersion(pluginBundle: $0.pluginBundle) }
-		let runningVersions = GlyphsRuntime.runningVersions()
-		let targets = GlyphsMajorVersion.allCases.map { version in
-			GlyphsTargetStatusBuilder.build(
-				version: version,
-				application: applicationsByVersion[version],
-				preflight: Preflight.scanGlyphs(glyphsVersion: version),
-				payloadPluginVersion: payloadPluginVersion,
-				isRunning: runningVersions.contains(version)
-			)
-		}
-		let detectedVersions = Set(targets.filter(\.isDetected).map(\.version))
-
-		lastPreflight = preflight
-		lastCheck = check
-		lastGlyphsRunningVersions = runningVersions
-		snapshot = InstallerStatusSnapshotBuilder.build(
-			glyphsTargets: targets,
-			globalPreflight: preflight,
-			check: check,
-			payloadPluginVersion: payloadPluginVersion
-		)
-		selectedGlyphsVersions = InstallerTargetSelectionPolicy.reconciledSelection(
-			current: selectedGlyphsVersions,
-			detected: detectedVersions,
-			hasInitialized: hasInitializedGlyphsSelection
-		)
-		hasInitializedGlyphsSelection = true
-		let symlinkVersions = Set(targets.filter(\.installedPluginIsSymlink).map(\.version))
-		replaceDevSymlinkVersions.formIntersection(symlinkVersions)
-	}
-
-	func binding(for version: GlyphsMajorVersion) -> Binding<Bool> {
-		Binding(
-			get: { self.selectedGlyphsVersions.contains(version) },
-			set: { isSelected in
-				if isSelected {
-					self.selectedGlyphsVersions.insert(version)
-				} else {
-					self.selectedGlyphsVersions.remove(version)
-				}
-			}
-		)
-	}
-
-	func replacementBinding(for version: GlyphsMajorVersion) -> Binding<Bool> {
-		Binding(
-			get: { self.replaceDevSymlinkVersions.contains(version) },
-			set: { shouldReplace in
-				if shouldReplace {
-					self.replaceDevSymlinkVersions.insert(version)
-				} else {
-					self.replaceDevSymlinkVersions.remove(version)
-				}
-			}
-		)
-	}
-
-	func verifiedUpdatesBinding(for version: GlyphsMajorVersion) -> Binding<Bool> {
-		Binding(
-			get: { self.verifiedUpdatesEnabledVersions.contains(version) },
-			set: { enabled in
-				if enabled {
-					self.verifiedUpdatesEnabledVersions.insert(version)
-				} else {
-					self.verifiedUpdatesEnabledVersions.remove(version)
-				}
-			}
-		)
-	}
-
-	func uninstallBinding(for candidateID: String) -> Binding<Bool> {
-		Binding(
-			get: { self.uninstallSelectedCandidateIDs.contains(candidateID) },
-			set: { isSelected in
-				guard self.uninstallPlan.candidates.first(where: { $0.id == candidateID })?.safetyState.isSelectable == true else { return }
-				if isSelected {
-					self.uninstallSelectedCandidateIDs.insert(candidateID)
-				} else {
-					self.uninstallSelectedCandidateIDs.remove(candidateID)
-				}
-			}
-		)
-	}
-
-	func quitSelectedGlyphsWithConfirmation() {
-		GlyphsRuntime.quitGlyphsWithConfirmation(versions: selectedGlyphsVersions)
-	}
-
-	func quitSelectedUninstallGlyphsWithConfirmation() {
-		GlyphsRuntime.quitGlyphsWithConfirmation(
-			versions: selectedUninstallGlyphsVersions,
-			reason: NSLocalizedString("must be closed so its plug-in can be removed safely.", comment: "Uninstall quit Glyphs reason")
-		)
-	}
-
-	func presentUninstall() {
-		guard !actionState.isBusy else { return }
-		uninstallPlan = makeUninstallPlan()
-		uninstallSelectedCandidateIDs = uninstallPlan.selectedCandidateIDs
-		hasAcknowledgedUninstall = false
-		uninstallReport = nil
-		isShowingUninstallSheet = true
-	}
-
-	func dismissUninstall() {
-		guard actionState.activeKind != .uninstall else { return }
-		isShowingUninstallSheet = false
-	}
-
-	func startUninstall() {
-		guard canRunUninstall else { return }
-		let executionPlan = uninstallPlan.selecting(uninstallSelectedCandidateIDs)
-		guard !executionPlan.selectedCandidates.isEmpty else { return }
-
-		actionState.resetFor(.uninstall)
-		appendLog(NSLocalizedString("== Uninstall ==", comment: "Uninstall log heading"))
-		uninstallReport = nil
-		uninstallTask?.cancel()
-
-		let log: @Sendable (String) -> Void = { [weak self] line in
-			Task { @MainActor in self?.appendLog(line) }
-		}
-		let finish: @Sendable (GlyphsUninstallReport) -> Void = { [weak self] report in
-			Task { @MainActor in
-				guard let self else { return }
-				self.actionState.activeKind = nil
-				self.uninstallReport = report
-				self.refreshSnapshot()
-				self.uninstallPlan = self.makeUninstallPlan()
-				self.uninstallSelectedCandidateIDs = []
-				if report.failedCount == 0 {
-					self.appendLog(String(format: NSLocalizedString("Uninstall complete. Removed %d item(s).", comment: "Uninstall success log"), report.removedCount))
-				} else {
-					self.appendLog(String(format: NSLocalizedString("Uninstall finished with %d failure(s). Completed changes were kept.", comment: "Uninstall partial failure log"), report.failedCount))
-				}
-			}
-		}
-
-		uninstallTask = Task.detached(priority: .userInitiated) {
-			let report = GlyphsUninstaller(log: log).execute(plan: executionPlan)
-			finish(report)
-		}
-	}
-
-	private func makeUninstallPlan() -> GlyphsUninstallPlan {
-		let currentSkillNames = (try? InstallerPayload.resolve())?.managedSkillDirectories().map(\.lastPathComponent) ?? []
-		let skillNames = currentSkillNames + InstallerPayload.legacyManagedSkillNames
-		return GlyphsUninstallScanner.scan(managedSkillNames: skillNames)
-	}
-
-	func binding(for kind: InstallerClientKind) -> Binding<Bool> {
-		switch kind {
-		case .codex:
-			return Binding(get: { self.configureCodex }, set: { self.configureCodex = $0 })
-		case .claudeDesktop:
-			return Binding(get: { self.configureClaudeDesktop }, set: { self.configureClaudeDesktop = $0 })
-		case .claudeCode:
-			return Binding(get: { self.configureClaudeCode }, set: { self.configureClaudeCode = $0 })
-		}
-	}
-
-	func chooseStarterParentFolder() {
-		let panel = NSOpenPanel()
-		panel.allowsMultipleSelection = false
-		panel.canChooseFiles = false
-		panel.canChooseDirectories = true
-		panel.canCreateDirectories = true
-		panel.title = NSLocalizedString("Choose where to create the starter project folder", comment: "Open panel title")
-		panel.prompt = NSLocalizedString("Choose", comment: "Open panel prompt")
-		panel.begin { [weak self] resp in
-			guard let self, resp == .OK, let url = panel.url else { return }
-			Task { @MainActor in
-				self.starterParentFolder = url
-			}
-		}
-	}
-
-	func revealInFinder(url: URL) {
-		NSWorkspace.shared.activateFileViewerSelecting([url])
-	}
-
-	func startInstall() {
-		guard !actionState.isBusy else { return }
-		guard canInstall else {
-			setActionMessage("== Install ==", message: "ERROR: \(installFailureReason ?? "Install is blocked.")")
-			return
-		}
-		guard let targetPlans = makeInstallTargetPlans() else {
-			setActionMessage("== Install ==", message: "ERROR: Could not prepare the selected Glyphs installations.")
-			return
-		}
-
-		actionState.resetFor(.install)
-		appendLog("== Install ==")
-		actionState.installSteps = InstallStep.steps(for: targetPlans.map(\.version))
-		createdStarterProjectFolder = nil
-
-		let options = InstallOptions(
-			targets: targetPlans
-		)
-
-		beginHeartbeat()
-		installTask?.cancel()
-		let log: @Sendable (String) -> Void = { [weak self] line in
-			Task { @MainActor in self?.appendLog(line) }
-		}
-		let mark: @Sendable (InstallStep.ID, InstallStep.State) -> Void = { [weak self] id, state in
-			Task { @MainActor in self?.markInstallStep(id: id, state: state) }
-		}
-		let finish: @Sendable (Bool, Bool) -> Void = { [weak self] succeeded, restartRecommended in
-			Task { @MainActor in
-				guard let self else { return }
-				self.stopHeartbeat()
-				self.actionState.activeKind = nil
-				self.actionState.restartRecommended = restartRecommended && succeeded
-				self.refreshSnapshot()
-			}
-		}
-
-		installTask = Task.detached(priority: .userInitiated) { [runner, options] in
-			await InstallerViewModel.runInstallDetached(options: options, runner: runner, log: log, mark: mark, finish: finish)
-		}
-	}
-
-	func startWizard() {
-		guard !actionState.isBusy else { return }
-		guard canInstall else {
-			setActionMessage("== Wizard ==", message: "ERROR: \(installFailureReason ?? "Setup is blocked.")")
-			return
-		}
-		guard let targetPlans = makeInstallTargetPlans() else {
-			setActionMessage("== Wizard ==", message: "ERROR: Could not prepare the selected Glyphs installations.")
-			return
-		}
-
-		let payload = try? InstallerPayload.resolve()
-		let codexOverwriteSkills = installCodexSkills ? confirmOverwriteManagedSkillsIfNeeded(payload: payload, destRoot: InstallerPaths.codexSkillsDir, clientName: "Codex") : false
-		let claudeOverwriteSkills = installClaudeCodeSkills ? confirmOverwriteManagedSkillsIfNeeded(payload: payload, destRoot: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code") : false
-
-		actionState.resetFor(.wizard)
-		appendLog("== Wizard ==")
-		actionState.installSteps = InstallStep.steps(for: targetPlans.map(\.version))
-		createdStarterProjectFolder = nil
-
-		let installOptions = InstallOptions(
-			targets: targetPlans
-		)
-
-		let clientOptions = ClientsOptions(
-			configureCodex: configureCodex,
-			configureClaudeDesktop: configureClaudeDesktop,
-			configureClaudeCode: configureClaudeCode,
-			installCodexSkills: installCodexSkills,
-			overwriteCodexSkills: codexOverwriteSkills,
-			installClaudeCodeSkills: installClaudeCodeSkills,
-			overwriteClaudeCodeSkills: claudeOverwriteSkills
-		)
-
-		beginHeartbeat()
-		installTask?.cancel()
-		let log: @Sendable (String) -> Void = { [weak self] line in
-			Task { @MainActor in self?.appendLog(line) }
-		}
-		let mark: @Sendable (InstallStep.ID, InstallStep.State) -> Void = { [weak self] id, state in
-			Task { @MainActor in self?.markInstallStep(id: id, state: state) }
-		}
-		let finish: @Sendable (Bool, Bool, Bool) -> Void = { [weak self] succeeded, restartRecommended, reloadRecommended in
-			Task { @MainActor in
-				guard let self else { return }
-				self.stopHeartbeat()
-				self.actionState.activeKind = nil
-				self.actionState.restartRecommended = restartRecommended && succeeded
-				self.actionState.clientReloadRecommended = reloadRecommended && succeeded
-				self.refreshSnapshot()
-				if succeeded {
-					self.selectedTab = .status
-				}
-			}
-		}
-
-		installTask = Task.detached(priority: .userInitiated) { [runner, installOptions, clientOptions] in
-			await InstallerViewModel.runWizardDetached(
-				installOptions: installOptions,
-				clientOptions: clientOptions,
-				runner: runner,
-				log: log,
-				mark: mark,
-				finish: finish
-			)
-		}
-	}
-
-	func cancelInstall() {
-		installTask?.cancel()
-		installTask = nil
-		stopHeartbeat()
-		actionState.activeKind = nil
-		appendLog("Cancelled.")
-	}
-
-	func cancelWizard() {
-		installTask?.cancel()
-		installTask = nil
-		stopHeartbeat()
-		actionState.activeKind = nil
-		appendLog("Cancelled.")
-	}
-
-	func startClientConfig() {
-		guard !actionState.isBusy else { return }
-		guard configureCodex || configureClaudeDesktop || configureClaudeCode else {
-			setActionMessage("== Link to agents ==", message: "Nothing selected.")
-			return
-		}
-
-		actionState.resetFor(.link)
-		appendLog("== Link to agents ==")
-
-		let options = ClientsOptions(
-			configureCodex: configureCodex,
-			configureClaudeDesktop: configureClaudeDesktop,
-			configureClaudeCode: configureClaudeCode,
-			installCodexSkills: false,
-			overwriteCodexSkills: false,
-			installClaudeCodeSkills: false,
-			overwriteClaudeCodeSkills: false
-		)
-
-		clientsTask?.cancel()
-		let log: @Sendable (String) -> Void = { [weak self] line in
-			Task { @MainActor in self?.appendLog(line) }
-		}
-		let finish: @Sendable (Bool) -> Void = { [weak self] reloadRecommended in
-			Task { @MainActor in
-				guard let self else { return }
-				self.actionState.activeKind = nil
-				self.actionState.clientReloadRecommended = reloadRecommended
-				self.refreshSnapshot()
-			}
-		}
-
-		clientsTask = Task.detached(priority: .userInitiated) { [runner, options] in
-			await InstallerViewModel.runClientsDetached(options: options, runner: runner, log: log, finish: finish)
-		}
-	}
-
-	func cancelClientConfig() {
-		clientsTask?.cancel()
-		clientsTask = nil
-		actionState.activeKind = nil
-		appendLog("Cancelled.")
-	}
-
-	func startSkillInstall() {
-		guard !actionState.isBusy else { return }
-		guard installCodexSkills || installClaudeCodeSkills else {
-			setActionMessage("== Install skills ==", message: "Nothing selected.")
-			return
-		}
-
-		let payload = try? InstallerPayload.resolve()
-		let codexOverwriteSkills = installCodexSkills ? confirmOverwriteManagedSkillsIfNeeded(payload: payload, destRoot: InstallerPaths.codexSkillsDir, clientName: "Codex") : false
-		let claudeOverwriteSkills = installClaudeCodeSkills ? confirmOverwriteManagedSkillsIfNeeded(payload: payload, destRoot: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code") : false
-
-		actionState.resetFor(.skill)
-		appendLog("== Install skills ==")
-
-		let options = ClientsOptions(
-			configureCodex: false,
-			configureClaudeDesktop: false,
-			configureClaudeCode: false,
-			installCodexSkills: installCodexSkills,
-			overwriteCodexSkills: codexOverwriteSkills,
-			installClaudeCodeSkills: installClaudeCodeSkills,
-			overwriteClaudeCodeSkills: claudeOverwriteSkills
-		)
-
-		skillsTask?.cancel()
-		let log: @Sendable (String) -> Void = { [weak self] line in
-			Task { @MainActor in self?.appendLog(line) }
-		}
-		let finish: @Sendable (Bool) -> Void = { [weak self] reloadRecommended in
-			Task { @MainActor in
-				guard let self else { return }
-				self.actionState.activeKind = nil
-				self.actionState.clientReloadRecommended = reloadRecommended
-				self.refreshSnapshot()
-			}
-		}
-
-		skillsTask = Task.detached(priority: .userInitiated) { [runner, options] in
-			await InstallerViewModel.runClientsDetached(options: options, runner: runner, log: log, finish: finish)
-		}
-	}
-
-	func cancelSkillInstall() {
-		skillsTask?.cancel()
-		skillsTask = nil
-		actionState.activeKind = nil
-		appendLog("Cancelled.")
-	}
-
-	func createStarterProject() async {
-		guard !actionState.isBusy else { return }
-		guard let parent = starterParentFolder else { return }
-		actionState.resetFor(.project)
-		appendLog("== Starter project ==")
-		do {
-			let name = starterProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
-			let created = try StarterProjectCreator(log: appendLog).createStarterProject(in: parent, projectName: name.isEmpty ? nil : name)
-			createdStarterProjectFolder = created
-			appendLog("Created starter folder: \(created.path)")
-		} catch {
-			appendLog("ERROR: \(error.localizedDescription)")
-		}
-		actionState.activeKind = nil
-	}
-
-	private func startGlyphsWatcher() {
-		glyphsWatcherTask?.cancel()
-		glyphsWatcherTask = Task { [weak self] in
-			guard let self else { return }
-			while !Task.isCancelled {
-				try? await Task.sleep(nanoseconds: 1_000_000_000)
-				guard !Task.isCancelled else { break }
-				let runningVersions = GlyphsRuntime.runningVersions()
-				if runningVersions != self.lastGlyphsRunningVersions {
-					self.refreshSnapshot()
-				}
-			}
-		}
-	}
-
-	private func setActionMessage(_ header: String, message: String) {
-		actionState.logText = ""
-		appendLog(header)
-		appendLog(message)
-	}
-
-	private func appendLog(_ line: String) {
-		lastLogAt = Date()
-		if let progressText = InstallerProgressText.detail(for: line) {
-			actionState.progressText = progressText
-		}
-		if actionState.logText.isEmpty {
-			actionState.logText = line
-		} else {
-			actionState.logText += "\n" + line
-		}
-	}
-
-	private func markInstallStep(id: InstallStep.ID, state: InstallStep.State) {
-		guard let idx = actionState.installSteps.firstIndex(where: { $0.id == id }) else { return }
-		actionState.installSteps[idx].state = state
-	}
-
-	private func confirmOverwriteManagedSkillsIfNeeded(payload: InstallerPayload?, destRoot: URL, clientName: String) -> Bool {
-		guard let payload else { return false }
-		let installer = AgentSkillBundleInstaller(log: { _ in })
-		let existing = installer.existingManagedSkillDestinations(from: payload, under: destRoot)
-		guard !existing.isEmpty else { return false }
-
-		let alert = NSAlert()
-		alert.messageText = "Replace existing Glyphs MCP skills for \(clientName)?"
-		alert.informativeText = "Existing managed Glyphs MCP skills were found in \(destRoot.path).\n\nChoose Replace to update those skills in place. Choose Keep current to leave existing skills untouched; any missing Glyphs MCP skills will still be installed."
-		alert.addButton(withTitle: "Replace")
-		alert.addButton(withTitle: "Keep current")
-		return alert.runModal() == .alertFirstButtonReturn
-	}
-
-	private func makeInstallTargetPlans() -> [GlyphsInstallTargetPlan]? {
-		var plans: [GlyphsInstallTargetPlan] = []
-		for target in selectedTargetStatuses {
-			guard let pythonSelection = target.pythonStatus.makeSelection() else { return nil }
-			let strategy = GlyphsPluginInstallStrategy.resolve(
-				installedPluginIsSymlink: target.installedPluginIsSymlink,
-				replaceDevSymlink: replaceDevSymlinkVersions.contains(target.version)
-			)
-			plans.append(GlyphsInstallTargetPlan(
-				version: target.version,
-				pythonSelection: pythonSelection,
-				pluginsDirectory: target.pluginsDirectory,
-				pluginInstallStrategy: strategy,
-				enableVerifiedInAppUpdates: verifiedUpdatesEnabledVersions.contains(target.version)
-			))
-		}
-		return plans.isEmpty ? nil : plans
-	}
-
-	private func beginHeartbeat() {
-		stopHeartbeat()
-		heartbeatTask = Task { [weak self] in
-			guard let self else { return }
-			while !Task.isCancelled {
-				try? await Task.sleep(nanoseconds: 20_000_000_000)
-				guard self.actionState.isBusy else { break }
-				if Date().timeIntervalSince(self.lastLogAt) >= 20 {
-					self.appendLog("Still working…")
-				}
-			}
-		}
-	}
-
-	private func stopHeartbeat() {
-		heartbeatTask?.cancel()
-		heartbeatTask = nil
-	}
-
-	nonisolated private static func runGlyphsInstallPhase(
-		options: InstallOptions,
-		runner: ProcessRunner,
-		log: @escaping @Sendable (String) -> Void,
-		mark: @escaping @Sendable (InstallStep.ID, InstallStep.State) -> Void
-	) async throws {
-		func step(_ title: String, id: InstallStep.ID, operation: () async throws -> Void) async throws {
-			mark(id, .running)
-			log("-- \(title) --")
-			do {
-				try await operation()
-				mark(id, .success)
-			} catch {
-				mark(id, .failure)
-				throw error
-			}
-		}
-
-		var payload: InstallerPayload!
-		try await step("Resolve payload", id: .payload) {
-			payload = try InstallerPayload.resolve()
-			log("Payload OK: \(payload.payloadDir.path)")
-		}
-
-		for target in options.targets.sorted(by: { $0.version < $1.version }) {
-			if Task.isCancelled { throw CancellationError() }
-			try await step(
-				"Check \(target.version.displayName) Python environment",
-				id: .environment(target.version)
-			) {
-				let sitePackages = InstallerPaths.glyphsScriptsSitePackages(
-					glyphsVersion: target.version
-				)
-				do {
-					_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
-						python: target.pythonSelection.pythonExecutable,
-						probe: payload.runtimeProbe,
-						sitePackages: sitePackages,
-						mode: .preinstall
-					)
-				} catch {
-					throw InstallerError.userFacing(
-						"""
-Python environment check failed for \(target.version.displayName).
-\(error.localizedDescription)
-Installation stopped before changing dependencies, plug-ins, or client settings. See the Glyphs MCP troubleshooting guide.
-"""
-					)
-				}
-			}
-		}
-
-		var completedDependencyKeys: Set<String> = []
-		var downloadedPluginBundle: URL?
-		for target in options.targets.sorted(by: { $0.version < $1.version }) {
-			if Task.isCancelled { throw CancellationError() }
-			let dependencyStepID = InstallStep.ID.dependencies(target.version)
-			if completedDependencyKeys.contains(target.dependencyInstallKey) {
-				log("Reusing dependencies already installed for \(target.version.displayName).")
-				mark(dependencyStepID, .success)
-			} else {
-				try await step("Install \(target.version.displayName) dependencies", id: dependencyStepID) {
-					try await DepsInstaller(runner: runner, log: log).installAndVerify(
-						python: target.pythonSelection,
-						requirementsTxt: payload.requirementsTxt,
-						runtimeProbe: payload.runtimeProbe,
-						glyphsVersion: target.version
-					)
-				}
-				completedDependencyKeys.insert(target.dependencyInstallKey)
-			}
-
-			try await step("Install \(target.version.displayName) plug-in", id: .plugin(target.version)) {
-				let installer = PluginInstaller(log: log)
-				switch target.pluginInstallStrategy {
-				case .bundledPayload:
-					log("Installing the bundled plug-in for \(target.version.displayName).")
-					_ = try installer.installPluginBundle(from: payload.pluginBundle, toPluginsDir: target.pluginsDirectory, allowReplace: true)
-				case .keepDevSymlink:
-					log("Keeping the existing \(target.version.displayName) development symlink in place.")
-				case .latestFromGitHub:
-					if downloadedPluginBundle == nil {
-						log("Downloading the latest GitHub plug-in once for the selected targets.")
-						downloadedPluginBundle = try await GitHubPluginDownloader(runner: runner, log: log).downloadAndExtractPluginBundle()
-					}
-					guard let downloadedPluginBundle else {
-						throw InstallerError.userFacing("The latest GitHub plug-in could not be resolved.")
-					}
-					_ = try installer.installPluginBundle(from: downloadedPluginBundle, toPluginsDir: target.pluginsDirectory, allowReplace: true)
-				}
-			}
-		}
-
-		try await step("Set up future updates", id: .updater) {
-			let selections = Dictionary(
-				uniqueKeysWithValues: options.targets.map {
-					($0.version, $0.enableVerifiedInAppUpdates)
-				}
-			)
-			try UpdateHelperManager().configure(
-				embeddedExecutable: UpdateHelperManager.embeddedExecutable(),
-				selections: selections
-			)
-			let enabledNames = options.targets
-				.filter(\.enableVerifiedInAppUpdates)
-				.sorted { $0.version < $1.version }
-				.map { $0.version.displayName }
-			if enabledNames.isEmpty {
-				log("Future updates were not enabled for the selected Glyphs versions.")
-			} else {
-				log("Future updates enabled for \(enabledNames.joined(separator: " and ")).")
-			}
-		}
-	}
-
-	nonisolated private static func runInstallDetached(
-		options: InstallOptions,
-		runner: ProcessRunner,
-		log: @escaping @Sendable (String) -> Void,
-		mark: @escaping @Sendable (InstallStep.ID, InstallStep.State) -> Void,
-		finish: @escaping @Sendable (Bool, Bool) -> Void
-	) async {
-		do {
-			if Task.isCancelled { throw CancellationError() }
-			try await runGlyphsInstallPhase(options: options, runner: runner, log: log, mark: mark)
-
-			mark(.done, .done)
-			let names = options.targets.sorted(by: { $0.version < $1.version }).map { $0.version.displayName }.joined(separator: " and ")
-			log("Install complete for \(names). Next: open Glyphs and run Edit → Glyphs MCP Server.")
-			finish(true, false)
-		} catch is CancellationError {
-			mark(.done, .failure)
-			log("Cancelled.")
-			finish(false, false)
-		} catch {
-			mark(.done, .failure)
-			log("ERROR: \(error.localizedDescription)")
-			finish(false, false)
-		}
-	}
-
-	nonisolated private static func runClientsDetached(
-		options: ClientsOptions,
-		runner: ProcessRunner,
-		log: @escaping @Sendable (String) -> Void,
-		finish: @escaping @Sendable (Bool) -> Void
-	) async {
-		do {
-			var shouldRecommendReload = false
-			if options.configureCodex {
-				try await CodexConfigurator(runner: runner, log: log).configure()
-			}
-			if options.configureClaudeDesktop {
-				try ClaudeDesktopConfigurator(log: log).configure()
-			}
-			if options.configureClaudeCode {
-				try await ClaudeCodeConfigurator(runner: runner, log: log).configureIfAvailable()
-			}
-			if options.installCodexSkills || options.installClaudeCodeSkills {
-				let payload = try InstallerPayload.resolve()
-				let skillInstaller = AgentSkillBundleInstaller(log: log)
-				if options.installCodexSkills {
-					shouldRecommendReload = (try skillInstaller.installCodexSkills(payload: payload, overwriteExisting: options.overwriteCodexSkills)) || shouldRecommendReload
-				}
-				if options.installClaudeCodeSkills {
-					shouldRecommendReload = (try skillInstaller.installClaudeCodeSkills(payload: payload, overwriteExisting: options.overwriteClaudeCodeSkills)) || shouldRecommendReload
-				}
-				if shouldRecommendReload {
-					log("Reload or restart Codex / Claude Code to pick up the newly installed Glyphs MCP skills.")
-				}
-			}
-			log("Done.")
-			finish(shouldRecommendReload)
-		} catch {
-			log("ERROR: \(error.localizedDescription)")
-			finish(false)
-		}
-	}
-
-	nonisolated private static func runWizardDetached(
-		installOptions: InstallOptions,
-		clientOptions: ClientsOptions,
-		runner: ProcessRunner,
-		log: @escaping @Sendable (String) -> Void,
-		mark: @escaping @Sendable (InstallStep.ID, InstallStep.State) -> Void,
-		finish: @escaping @Sendable (Bool, Bool, Bool) -> Void
-	) async {
-		do {
-			if Task.isCancelled { throw CancellationError() }
-			try await runGlyphsInstallPhase(options: installOptions, runner: runner, log: log, mark: mark)
-
-			mark(.done, .done)
-			log("-- Link clients and install skills --")
-
-			var reloadRecommended = false
-			if clientOptions.configureCodex {
-				try await CodexConfigurator(runner: runner, log: log).configure()
-				reloadRecommended = true
-			}
-			if clientOptions.configureClaudeDesktop {
-				try ClaudeDesktopConfigurator(log: log).configure()
-				reloadRecommended = true
-			}
-			if clientOptions.configureClaudeCode {
-				try await ClaudeCodeConfigurator(runner: runner, log: log).configureIfAvailable()
-				reloadRecommended = true
-			}
-			if clientOptions.installCodexSkills || clientOptions.installClaudeCodeSkills {
-				let payload = try InstallerPayload.resolve()
-				let skillInstaller = AgentSkillBundleInstaller(log: log)
-				if clientOptions.installCodexSkills {
-					reloadRecommended = (try skillInstaller.installCodexSkills(payload: payload, overwriteExisting: clientOptions.overwriteCodexSkills)) || reloadRecommended
-				}
-				if clientOptions.installClaudeCodeSkills {
-					reloadRecommended = (try skillInstaller.installClaudeCodeSkills(payload: payload, overwriteExisting: clientOptions.overwriteClaudeCodeSkills)) || reloadRecommended
-				}
-			}
-
-			let names = installOptions.targets.sorted(by: { $0.version < $1.version }).map { $0.version.displayName }.joined(separator: " and ")
-			log("Setup complete for \(names). Next: open Glyphs and run Edit → Glyphs MCP Server.")
-			if reloadRecommended {
-				log("Reload or restart Codex / Claude Code to pick up the new configuration and skills.")
-			}
-			finish(true, false, reloadRecommended)
-		} catch is CancellationError {
-			mark(.done, .failure)
-			log("Cancelled.")
-			finish(false, false, false)
-		} catch {
-			mark(.done, .failure)
-			log("ERROR: \(error.localizedDescription)")
-			finish(false, false, false)
-		}
-	}
-}
-
-extension InstallerViewModel: @unchecked Sendable {}
-
-private struct InstallOptions: Sendable {
-	let targets: [GlyphsInstallTargetPlan]
-}
-
-private struct ClientsOptions: Sendable {
-	let configureCodex: Bool
-	let configureClaudeDesktop: Bool
-	let configureClaudeCode: Bool
-	let installCodexSkills: Bool
-	let overwriteCodexSkills: Bool
-	let installClaudeCodeSkills: Bool
-	let overwriteClaudeCodeSkills: Bool
-}
-
-struct InstallStep: Identifiable, Equatable {
-	enum ID: Hashable, Sendable {
-		case payload
-		case environment(GlyphsMajorVersion)
-		case dependencies(GlyphsMajorVersion)
-		case plugin(GlyphsMajorVersion)
-		case updater
-		case done
-	}
-
-	enum State: Equatable {
-		case pending
-		case running
-		case success
-		case failure
-		case done
-
-		var symbolName: String {
-			switch self {
-			case .pending: return "circle"
-			case .running: return "arrow.triangle.2.circlepath"
-			case .success: return "checkmark.circle.fill"
-			case .failure: return "xmark.octagon.fill"
-			case .done: return "flag.checkered"
-			}
-		}
-
-		var color: Color {
-			switch self {
-			case .pending: return .secondary
-			case .running: return .blue
-			case .success: return .green
-			case .failure: return .red
-			case .done: return .green
-			}
-		}
-	}
-
-	let id: ID
-	let title: String
-	var state: State
-
-	static var defaultSteps: [InstallStep] {
-		steps(for: [.installerDefault])
-	}
-
-	static func steps(for versions: [GlyphsMajorVersion]) -> [InstallStep] {
-		var result: [InstallStep] = [
-			.init(id: .payload, title: NSLocalizedString("Resolve payload", comment: "Install step title"), state: .pending),
-		]
-		for version in Array(Set(versions)).sorted() {
-			result.append(.init(
-				id: .environment(version),
-				title: String(format: NSLocalizedString("Check %@ Python environment", comment: "Install step title"), version.displayName),
-				state: .pending
-			))
-			result.append(.init(
-				id: .dependencies(version),
-				title: String(format: NSLocalizedString("Install %@ dependencies", comment: "Install step title"), version.displayName),
-				state: .pending
-			))
-			result.append(.init(
-				id: .plugin(version),
-				title: String(format: NSLocalizedString("Install %@ plug-in", comment: "Install step title"), version.displayName),
-				state: .pending
-			))
-		}
-		result.append(.init(
-			id: .updater,
-			title: NSLocalizedString("Set up future updates", comment: "Install step title"),
-			state: .pending
-		))
-		result.append(.init(id: .done, title: NSLocalizedString("Done", comment: "Install step title"), state: .pending))
-		return result
-	}
+    enum Stage: String, CaseIterable { case choose = "Choose", install = "Install", ready = "Ready" }
+    @Published var stage: Stage = .choose
+    @Published var applications: [GlyphsApplicationInfo] = []
+    @Published var selectedVersion: GlyphsMajorVersion = .v4
+    @Published var components: Set<String> = ["mcp", "curve-inspector", "reference-inspector"]
+    @Published var installed: Set<String> = []
+    @Published var clients: Set<InstallerClientKind> = []
+    @Published var detectedClients: [InstallerClientKind] = []
+    @Published var notice: ComponentNotice = .none
+    var message: String { notice.text }
+    @Published var log = ""
+    @Published var busy = false
+    @Published var skillConflicts: [SkillInstallationResult.Entry] = []
+    private var skillClients: Set<InstallerClientKind> = []
+    private var skillPayload: InstallerPayload?
+    @Published var troubleshooting = false
+    @Published var running = false
+    @Published var receiptURL: URL?
+    @Published var updateStatus: PluginUpdateStatus = .idle
+    var projectVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown" }
+    var versionLabel: String { DesktopIdentity.versionLabel }
+    private var task: Task<Void, Never>?
+    private var observers: [NSObjectProtocol] = []
+    private let runner = ProcessRunner()
+    private let fm = FileManager.default
+    var stopServiceBeforeQuit: (() async throws -> Void)?
+    private let root = InstallerPaths.home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2")
+
+    var application: GlyphsApplicationInfo? { applications.first { $0.majorVersion == selectedVersion } }
+    var componentPlan: DesktopComponentPlan { DesktopComponentPlan(installed: installed, selected: components) }
+    var canInstall: Bool { !busy && application != nil && !running && (selectedVersion == .v3 || componentPlan.hasWork) }
+    var canConnectClients: Bool { selectedVersion == .v3 || components.contains("mcp") }
+    var completionTitle: String {
+        if notice.isFailure { return "Components installed; AI connection needs attention" }
+        return selectedVersion == .v4 && installed.isEmpty ? "Components removed" : "Components installed"
+    }
+    var inspectorInstructions: String {
+        let commands = [("curve-inspector", "Curve Inspector"), ("reference-inspector", "Changes Against Reference")]
+            .filter { installed.contains($0.0) }.map { $0.1 }.joined(separator: " and ")
+        return commands.isEmpty ? "" : "In Glyphs’ View menu, enable " + commands + "."
+    }
+    var installButtonTitle: String { selectedVersion == .v4 && !installed.isEmpty ? "Apply Changes" : "Install" }
+
+    init() {
+        refresh()
+        let center = NSWorkspace.shared.notificationCenter
+        for event in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
+            observers.append(center.addObserver(forName: event, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.refreshRunning() }
+            })
+        }
+    }
+
+    deinit {
+        for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
+    }
+
+    func checkForUpdates() {
+        guard updateStatus != .checking else { return }
+        updateStatus = .checking
+        Task {
+            do { updateStatus = try await GitHubReleaseResolver.checkForUpdate(currentVersion: projectVersion) }
+            catch { updateStatus = .error(message: "Couldn’t check for updates. Please try again.") }
+        }
+    }
+
+    func refresh() {
+        applications = GlyphsApplicationDetector.detect()
+        if application == nil, let first = applications.first { selectedVersion = first.majorVersion }
+        let path = root.appendingPathComponent("installation.json")
+        if let data = try? Data(contentsOf: path), let receipt = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let names = receipt["components"] as? [String] {
+            installed = Set(names).intersection(DesktopComponent.ids)
+            components = DesktopComponentPlan.initialSelection(installed: installed, hasReceipt: true); receiptURL = path
+        } else {
+            let plugins = InstallerPaths.glyphsPluginsDir(glyphsVersion: .v4)
+            installed = Set(Self.componentNames.filter { fm.fileExists(atPath: plugins.appendingPathComponent($0.bundle).path) }.map(\.id))
+            components = DesktopComponentPlan.initialSelection(installed: installed, hasReceipt: false)
+        }
+        detectedClients = []
+        if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.openai.codex") != nil || fm.fileExists(atPath: InstallerPaths.home.appendingPathComponent(".codex").path) { detectedClients.append(.codex) }
+        if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anthropic.claudefordesktop") != nil || fm.fileExists(atPath: InstallerPaths.claudeDesktopConfig.path) { detectedClients.append(.claudeDesktop) }
+        if fm.fileExists(atPath: InstallerPaths.home.appendingPathComponent(".claude").path) { detectedClients.append(.claudeCode) }
+        refreshRunning()
+    }
+
+    func refreshRunning() {
+        running = application.map { app in NSWorkspace.shared.runningApplications.contains { $0.bundleURL?.standardizedFileURL == app.appURL.standardizedFileURL } } ?? false
+        notice.glyphsRunningChanged(running)
+    }
+
+    func quitGlyphs() {
+        guard !busy, let application else { return }
+        busy = true
+        Task {
+            defer { busy = false }
+            do {
+                if selectedVersion == .v4 { try await stopServiceBeforeQuit?() }
+                for app in NSWorkspace.shared.runningApplications where app.bundleURL?.standardizedFileURL == application.appURL.standardizedFileURL { app.terminate() }
+                notice = .waitingForGlyphs
+                refreshRunning()
+            } catch { notice = .failure(error.localizedDescription) }
+        }
+    }
+
+    func openGlyphs() {
+        if let application { NSWorkspace.shared.openApplication(at: application.appURL, configuration: NSWorkspace.OpenConfiguration()) }
+    }
+
+    func componentBinding(_ id: String) -> Binding<Bool> {
+        Binding(get: { self.components.contains(id) }, set: { selected in
+            if selected { self.components.insert(id) }
+            else { self.components.remove(id) }
+        })
+    }
+
+    func prepareComponentChange(_ id: String, enabled: Bool) {
+        guard !busy, DesktopComponent.ids.contains(id) else { return }
+        refresh()
+        selectedVersion = .v4; refreshRunning()
+        components = installed
+        if enabled { components.insert(id) } else { components.remove(id) }
+        clients = []; notice = .none; stage = .choose
+    }
+
+    func clientBinding(_ client: InstallerClientKind) -> Binding<Bool> {
+        Binding(get: { self.clients.contains(client) }, set: { selected in
+            if selected { self.clients.insert(client) } else { self.clients.remove(client) }
+        })
+    }
+
+    func install() {
+        refreshRunning()
+        guard canInstall, let application else { return }
+        skillConflicts = []; skillClients = []; skillPayload = nil
+        busy = true; stage = .install; notice = .information("Checking the installation…"); log = ""
+        let plan = DesktopComponentPlan(installed: DesktopInstallation().components, selected: components)
+        let chosen = plan.selected, connections = canConnectClients ? clients : []
+        task = Task {
+            var coreInstalled = false
+            do {
+                let payload = try await Task.detached { try InstallerPayload.resolve() }.value
+                refreshRunning()
+                guard !running else { throw InstallerError.userFacing("Close Glyphs, then try again.") }
+                if selectedVersion == .v4 {
+                    let lean = payload.payloadDir.appendingPathComponent("Lean")
+                    #if arch(arm64)
+                    let architecture = "arm64"
+                    #else
+                    let architecture = "x86_64"
+                    #endif
+                    let python = lean.appendingPathComponent("runtimes/\(architecture)/bin/python3")
+                    let helper = payload.payloadDir.appendingPathComponent("Installer/install_simple_v2.py")
+                    let base = ["-B", helper.path, "--build", lean.path, "--glyphs-app", application.appURL.path]
+                    if !chosen.isEmpty { try await execute(python, base + ["--preflight-only"]) }
+                    notice = .information("Applying component changes…")
+                    let args = base + ["--start"] + plan.arguments
+                    try await execute(python, args)
+                    receiptURL = root.appendingPathComponent("installation.json")
+                } else {
+                    notice = .information("Installing Glyphs MCP 1.11.0 for Glyphs 3…")
+                    try await installLegacy(payload)
+                }
+                coreInstalled = true
+                if !connections.isEmpty && (selectedVersion == .v3 || chosen.contains("mcp")) {
+                    notice = .information("Configuring AI connections…")
+                    try await configureClients(connections, payload: payload.forGlyphsVersion(selectedVersion))
+                }
+                refresh()
+                stage = .ready
+                notice = .information(selectedVersion == .v4 && installed.isEmpty
+                    ? "Your preferences have been kept."
+                    : "Open Glyphs to load your components.")
+            } catch {
+                notice = .failure(error.localizedDescription)
+                log += "\n" + error.localizedDescription
+                stage = coreInstalled ? .ready : .choose
+                if coreInstalled { refresh() }
+            }
+            busy = false
+        }
+    }
+
+    private func execute(_ executable: URL, _ args: [String]) async throws {
+        let result = try await runner.runCapturing(executable: executable, args: args,
+            environment: ProcessInfo.processInfo.environment.merging(["PYTHONDONTWRITEBYTECODE":"1", "PYTHONNOUSERSITE":"1"]) { _, new in new }, timeout: 300)
+        log += result.stdout + result.stderr
+        guard result.exitCode == 0 else {
+            let data = result.stdout.data(using: .utf8) ?? Data()
+            let response = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            let detail = (response?["error"] as? [String: Any])?["message"] as? String
+            throw InstallerError.userFacing(detail ?? (result.stderr.isEmpty ? result.stdout : result.stderr))
+        }
+    }
+
+    private func installLegacy(_ payload: InstallerPayload) async throws {
+        let preflight = await Task.detached { Preflight.scanGlyphs(glyphsVersion: .v3) }.value
+        let status = GlyphsPythonResolver.resolve(preflight: preflight)
+        guard let python = status.makeSelection() else { throw InstallerError.userFacing(status.installFailureReason ?? "Enable Python in Glyphs 3 first.") }
+        let plugin = payload.plugin(for: .v3)
+        let report = try await RuntimeProbeExecutor(runner: runner, log: { _ in }).check(
+            python: python.pythonExecutable, probe: plugin.runtimeProbe,
+            sitePackages: InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: .v3), mode: .preinstall)
+        guard let pathPlan = report.pathPlan else { throw InstallerError.userFacing("Glyphs 3 runtime check is incomplete.") }
+        try await DepsInstaller(runner: runner, log: { _ in }).installAndVerify(python: python,
+            requirementsTxt: payload.requirementsTxt, runtimeProbe: plugin.runtimeProbe, glyphsVersion: .v3, pathPlan: pathPlan)
+        _ = try PluginInstaller(log: { _ in }).installPluginBundle(from: plugin.bundleURL,
+            toPluginsDir: InstallerPaths.glyphsPluginsDir(glyphsVersion: .v3), allowReplace: true)
+        try Glyphs3UpdatePinManager().pin()
+    }
+
+    private func configureClients(_ clients: Set<InstallerClientKind>, payload: InstallerPayload) async throws {
+        let logger: (String) -> Void = { [weak self] text in self?.log += text + "\n" }
+        skillPayload = payload
+        let endpoint = selectedVersion == .v4 ? DesktopInstallation().endpoint : URL(string: "http://127.0.0.1:9680/mcp")!
+        let proxy: [String]? = selectedVersion == .v4 ? [root.appendingPathComponent("runtime/bin/python3").path, "-B", root.appendingPathComponent("sidecar/proxy.py").path] : nil
+        let skills = AgentSkillBundleInstaller(log: logger)
+        for client in clients.sorted(by: { $0.rawValue < $1.rawValue }) {
+            do {
+                switch client {
+                case .codex:
+                    try await CodexConfigurator(runner: runner, endpointURL: endpoint, log: logger).configure()
+                    recordSkills(try skills.installCodexSkills(payload: payload, overwriteExisting: false), client: client)
+                case .claudeDesktop:
+                    try ClaudeDesktopConfigurator(endpointURL: endpoint, proxyCommand: proxy, log: logger).configure()
+                case .claudeCode:
+                    try await ClaudeCodeConfigurator(runner: runner, endpointURL: endpoint, log: logger).configureIfAvailable()
+                    recordSkills(try skills.installClaudeCodeSkills(payload: payload, overwriteExisting: false), client: client)
+                }
+            } catch {
+                let name = client.displayName
+                throw InstallerError.userFacing("Couldn’t configure \(name). \(error.localizedDescription)")
+            }
+        }
+        if !skillConflicts.isEmpty { throw InstallerError.userFacing("AI connection configured; preserved skills need attention.\n" + skillConflicts.compactMap(\.repairAction).joined(separator: "\n")) }
+    }
+
+    private func recordSkills(_ result: SkillInstallationResult, client: InstallerClientKind) {
+        skillConflicts += result.conflicts
+        if !result.conflicts.isEmpty { skillClients.insert(client) }
+    }
+
+    func replacePreservedSkills() {
+        guard !busy, let payload = skillPayload else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            let installer = AgentSkillBundleInstaller(log: { [weak self] text in self?.log += text + "\n" })
+            for client in skillClients.sorted(by: { $0.rawValue < $1.rawValue }) {
+                if client == .codex { try installer.installCodexSkills(payload: payload, overwriteExisting: true) }
+                if client == .claudeCode { try installer.installClaudeCodeSkills(payload: payload, overwriteExisting: true) }
+            }
+            skillConflicts = []; skillClients = []
+            notice = .information("Skills updated. Replaced or retired skills were backed up outside the skill-discovery folder. See the log for exact paths.")
+        } catch { notice = .failure(error.localizedDescription) }
+    }
+
+    static let componentNames = DesktopComponent.all
 }

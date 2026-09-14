@@ -1,0 +1,134 @@
+---
+title: Connect a client
+description: Connect Codex, ChatGPT, Claude, Cursor, or another MCP client to Glyphs MCP.
+---
+
+import CodeBlock from '@theme/CodeBlock';
+
+All clients connect to the same local endpoint:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+Start Glyphs MCP before connecting the client. If connection fails, restart Glyphs, start the server, then reload the client.
+
+## Supported automatic links
+
+The installer can link Glyphs MCP into:
+
+- Codex App
+- Codex CLI
+- Claude App
+- Claude CLI
+
+Any MCP-compatible client can use the server if it supports a local Streamable HTTP endpoint or a bridge to one.
+
+## Codex App and Codex CLI
+
+Use the Codex MCP command:
+
+<CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list`}</CodeBlock>
+
+Codex can also read the server from `~/.codex/config.toml`:
+
+<CodeBlock language="toml">{`[mcp_servers.glyphs-mcp-server]
+url = "http://127.0.0.1:9680/mcp/"
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 120`}</CodeBlock>
+
+Reload Codex after changing MCP configuration.
+
+For the repository plugin, embedded feedback panel, and bundled skills, see
+[Codex and ChatGPT plugin UI](./codex-chatgpt-plugin-ui.mdx).
+
+## Claude CLI and Claude Code
+
+Use the Claude CLI:
+
+<CodeBlock language="bash">{`claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+claude mcp list`}</CodeBlock>
+
+In Claude Code, run `/mcp` after reload to confirm the server is listed.
+
+## Claude App
+
+Claude App configuration uses `~/Library/Application Support/Claude/claude_desktop_config.json`. In this config format, Claude App usually needs a local bridge command for a localhost HTTP MCP endpoint.
+
+One option is `npx mcp-remote`:
+
+<CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://127.0.0.1:9680/mcp/"
+      ]
+    }
+  }
+}`}</CodeBlock>
+
+If you edit the file manually, preserve unrelated top-level settings and other MCP servers.
+
+### Python bridge alternative
+
+Some users prefer a Python bridge such as `mcp-proxy`:
+
+<CodeBlock language="bash">{`pip install mcp-proxy`}</CodeBlock>
+
+<CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "mcp-proxy",
+      "args": [
+        "http://127.0.0.1:9680/mcp/",
+        "--transport=streamablehttp"
+      ],
+      "env": {
+        "PATH": "/Users/thierryc/.local/bin:/Users/thierryc/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}`}</CodeBlock>
+
+Set `env.PATH` when the app cannot find commands that work in Terminal. Common command locations include `~/.local/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`.
+
+## Cursor
+
+Cursor supports Streamable HTTP MCP servers through project or global
+`mcp.json` files. Add a project connection at `.cursor/mcp.json`:
+
+<CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "url": "http://127.0.0.1:9680/mcp/"
+    }
+  }
+}`}</CodeBlock>
+
+Use `~/.cursor/mcp.json` instead when the connection should be available across
+projects. Reload Cursor, open its MCP settings or **Available Tools**, and
+confirm that `glyphs-mcp-server` is enabled.
+
+The Glyphs MCP installers do not currently write Cursor configuration. Preserve
+other servers if you edit either file manually. See
+[Cursor's MCP documentation](https://docs.cursor.com/context/model-context-protocol)
+for current configuration locations and client behavior.
+
+## Verify
+
+After connecting, paste this prompt into the client:
+
+<CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
+If you see an error, quote it verbatim.`}</CodeBlock>
+
+## If it still fails
+
+- Confirm Glyphs is open.
+- Confirm **Edit -> Glyphs MCP Server** shows a running server.
+- Confirm the endpoint is exactly `http://127.0.0.1:9680/mcp/`.
+- Reload the client so it fetches the current `tools/list`.
+- Continue to [Troubleshooting](./troubleshooting.mdx).

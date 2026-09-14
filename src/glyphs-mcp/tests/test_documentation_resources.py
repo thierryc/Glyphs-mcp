@@ -9,6 +9,7 @@ from types import ModuleType
 import sys
 import types
 import unittest
+from unittest import mock
 
 
 def _ensure_fake_fastmcp() -> None:
@@ -66,6 +67,12 @@ def _load_module() -> ModuleType:
 
 
 class DocumentationResourcesTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Resource doubles must not replace FastMCP for later real transport tests.
+        self.enterContext(mock.patch.dict(sys.modules))
+        self.enterContext(mock.patch.dict(os.environ))
+        self.enterContext(mock.patch.object(sys, "path", list(sys.path)))
+
     def test_extract_doc_entries_prefers_structured_documents(self) -> None:
         module = _load_module()
         index_data = {

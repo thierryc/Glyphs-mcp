@@ -1,0 +1,21 @@
+{
+  "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/skills/glyphs": {
+    "SKILL.md": "c01b1a3e1b3c73c06da08bad74565a6e754e2e06faed45531bf6310a82b6dc26",
+    "references/connection-troubleshooting.md": "3296d3cdf008bbd347ed13220da03c9db25f7f06fd11afb1e5e7cb5d976da328",
+    "agents/openai.yaml": "065666df8fca8ae47afa2b5fd542787761dcb1d9c0807e3ad762656b15b7070c"
+  },
+  "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/plugins/glyphs-mcp/skills/glyphs": {
+    "SKILL.md": "c01b1a3e1b3c73c06da08bad74565a6e754e2e06faed45531bf6310a82b6dc26",
+    "references/connection-troubleshooting.md": "3296d3cdf008bbd347ed13220da03c9db25f7f06fd11afb1e5e7cb5d976da328",
+    "agents/openai.yaml": "065666df8fca8ae47afa2b5fd542787761dcb1d9c0807e3ad762656b15b7070c"
+  },
+  "/Users/thierryc/.codex/skills/glyphs": {
+    ".glyphs-mcp-owner.json": "98d182fda1bd52d455c821aa50c1ca966eec1778c2f40947321f44dd5f420b8d",
+    "SKILL.md": "e091ac68b6476e71eec7dce2f63fa7d3ca26ce9790c76c0ca41595326d40eb96",
+    "agents/openai.yaml": "4218cbe52bf24ccc65b62b0a610fde721c25cd47e32d915e899baaba902832f3"
+  },
+  "/Applications/Glyphs MCP.app/Contents/Resources/Payload/skills-v1/glyphs": {
+    "SKILL.md": "f502d60857177f888fe73b1c7dc3f3fdc57fffc5eed04d5a38cbdd1a790e4f71",
+    "agents/openai.yaml": "4218cbe52bf24ccc65b62b0a610fde721c25cd47e32d915e899baaba902832f3"
+  }
+}

@@ -1,0 +1,41 @@
+---
+title: Local projects and templates
+---
+
+Recent folders appear in the collapsible **My Project** sidebar section. Select a folder to open its workspace; the app restores your last selected project when you next launch it. Project files stay local.
+
+Choose **Project**, below Components, to browse templates. The **My Project** heading is a label; its disclosure arrow only expands or collapses the list. The section’s **More** menu provides **New Project…**, **Create from Template…**, **Open Project…**, **Add Template…**, and **Refresh Templates**. Collapsing the section keeps the current workspace open.
+
+## Manage a project
+
+Each project row has a **…** menu with **Open in Finder**, **Edit Settings…**, and **Remove from List**. The project workspace also has an **Edit** button that opens the same settings sheet.
+
+Change the display name used by Glyphs MCP, or choose the folder's new location if you moved it. **Save** updates the app's preferences; it does not rename, move, or modify project files. **Cancel** leaves the settings unchanged. A folder already listed as another project cannot be assigned twice.
+
+**Remove from List** forgets the project without deleting its folder. Removing the selected project shows the next recent project, or the template gallery when the list is empty. You can add the folder again using **Open Project…**.
+
+If a folder is missing, choose **Edit** to reconnect it. Finder and external-app shortcuts remain unavailable until the folder exists again.
+
+## Create a project
+
+1. Choose **Use Template** on a bundled, local, or public template card. **New Project…** starts directly with the included font-project template.
+2. Enter a name and choose the parent folder.
+3. Review the file and folder preview, then choose **Create Project**.
+
+Creation publishes a new directory only after its files are ready. A name collision or failed creation leaves existing projects untouched. The starter includes `sources`, `exports`, `proofs`, documentation and lean Glyphs MCP agent guidance using your configured MCP port.
+
+Templates are independent copies. Updating a template never changes a project created from it. **Save an Editable Template Copy…** creates a local copy that you can customize in your editor. Use **Add Template…** to make another folder available in the gallery.
+
+## Public templates and offline use
+
+The official registry lives in `templates/registry.json` in the project repository. Entries identify the author, license, public repository, template directory, pinned revision and archive SHA-256. **Refresh** checks for catalog changes; the bundled catalog remains available if the network is unavailable.
+
+Public templates download as archives. Verified downloads are cached for offline reuse. Git is not needed for scaffolding. The app does not execute template programs and excludes `.git` databases from copied projects. Unsafe paths, links, duplicate names, oversized archives and checksum failures are rejected.
+
+A public template can include example fonts, scripts and configuration. Review its preview and included licenses. Those files are copied as data; any later execution in an editor or terminal is a separate action.
+
+## Git information
+
+The project view displays branch, working-tree status, changed files and text diffs. It disables external diff and text-conversion helpers, and avoids optional index locks. Inspection does not initialize, stage, commit, switch branches, fetch, pull, push or clone a repository.
+
+Use **Open in Editor…** or **Open in Git Client…** for changes handled by your chosen application. If Git is unavailable, project creation, templates and all non-Git features remain usable.

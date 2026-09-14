@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-outlines-docs"
+  short_description: "Inspect curves with Curve Inspector and plan supported outli"
+  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."

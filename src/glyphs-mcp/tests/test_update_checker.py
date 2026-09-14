@@ -566,10 +566,11 @@ class UpdateCheckerTests(unittest.TestCase):
         terminal_installer = (
             _repo_root() / "src/glyphs-mcp/scripts/install_cli.py"
         ).read_text(encoding="utf-8")
-        self.assertIn("Make future updates easier", content_view)
-        self.assertIn("install it when you’re ready", content_view)
+        self.assertIn('sidebarItem("Components", icon:', content_view)
+        self.assertIn('case .components: InstallationView()', content_view)
         self.assertNotIn("Enable verified update preparation", content_view)
-        self.assertIn("Set up future updates", installer_model)
+        self.assertNotIn("Enable verified update preparation", content_view)
+        self.assertIn("Glyphs3UpdatePinManager().pin()", installer_model)
         self.assertIn("Make future updates easier", terminal_installer)
         for path in (
             _repo_root() / "macos-installer/GlyphsMCPInstaller/Resources/en.lproj/Localizable.strings",

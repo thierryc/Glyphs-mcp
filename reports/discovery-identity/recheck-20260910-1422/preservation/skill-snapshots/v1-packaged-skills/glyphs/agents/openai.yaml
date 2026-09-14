@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP"
+  short_description: "Use Glyphs MCP for any open-font task."
+  default_prompt: "Use $glyphs to inspect my current Glyphs context and handle my request with the safest matching workflow."
+
+policy:
+  allow_implicit_invocation: false

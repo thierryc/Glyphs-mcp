@@ -1,39 +1,37 @@
 ---
-title: Local docs development
-description: Run and verify the Glyphs MCP Docusaurus documentation site locally.
+title: Maintain the two documentation versions
 ---
 
-The documentation site lives in `website/` and reads authored docs from `content/`.
+The Docusaurus site in `website/` builds two independent documentation tracks:
 
-Current public docs URL:
+| Track | Source | URL below `/Glyphs-mcp` |
+| --- | --- | --- |
+| v1 · 1.11.0 | `website/versioned_docs/version-1.11.0/` | `/docs/` |
+| v2 · 2.0.0 | `content/` | `/docs/v2/` |
 
-```text
-https://thierryc.github.io/Glyphs-mcp/
+The v1 snapshot comes from the `v1.11.0` release tag. `website/v1-source.json` records its commit, original file hashes and the adapted snapshot hashes. Only version context and release-pinned links are adjusted. Historical benchmark pages and their images remain there. V2 uses its own sidebar and authored guidance; it must not inherit v1 tool instructions.
+
+The native version selector preserves matching document IDs between versions. A page found only in one version switches to the other version's overview. Existing v1 URLs remain unchanged. `/latest` continues to point to released v1 documentation until the public release is updated deliberately.
+
+## Local checks
+
+From the repository root:
+
+```sh
+npm ci --prefix website
+npm run build --prefix website
+npm run typecheck --prefix website
+PYTHON_BIN=/absolute/path/to/python scripts/run_python_tests.sh --pytest src/glyphs-mcp/tests/test_docs_surface_sync.py src/glyphs-mcp/tests/test_docs_versioning.py
 ```
 
-Use that URL in public copy until a shorter custom domain is configured.
+Both broken page links and broken Markdown links fail the production build. Preview the built output with `npm run serve --prefix website`; the site uses the `/Glyphs-mcp/` base path. Check the desktop and mobile version selector, both overview pages, a shared workflow page and a v2-only page.
 
-## Local server
+## Authoring rules
 
-```bash
-cd website
-npm install
-npm run start
-```
+Use relative Markdown links within a guide so Docusaurus resolves the appropriate version. Use explicit `/docs/` links only when intentionally pointing from v2 to v1; explain the version in the link text. Keep existing document IDs when a page has a meaningful counterpart.
 
-## Production build
+When adding a release snapshot, use Docusaurus versioning and update the version routes deliberately. Do not overwrite the pinned v1 documentation during a v2 version bump. Derive the current project label from the agent package manifest, not the pinned Glyphs 3 plist.
 
-```bash
-cd website
-npm run build
-```
+Documentation builds and publication are separate. Build and review locally; do not trigger GitHub Actions for this work. The public site is `https://thierryc.github.io/Glyphs-mcp/`. Mark an unpublished candidate as such until its release is actually public.
 
-The build must pass before publishing docs changes.
-
-## Documentation rules
-
-- Keep full installation, workflow, command reference, settings, resources, and troubleshooting content in this docs site.
-- Keep README and promotional pages short; link here for details.
-- Use `Glyphs MCP`, `Model Context Protocol`, `Glyphs 4 beta plug-in`, `local MCP server`, and `Streamable HTTP endpoint`.
-- Do not use the future short docs URL in public copy until it is configured.
-- Keep the endpoint exactly: `http://127.0.0.1:9680/mcp/`.
+See [Docusaurus versioning](https://docusaurus.io/docs/versioning) for the native version folders, routes and link behavior.

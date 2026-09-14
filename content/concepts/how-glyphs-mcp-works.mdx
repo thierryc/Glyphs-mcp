@@ -1,50 +1,27 @@
 ---
-title: How Glyphs MCP works
-description: "The mental model: Glyphs app, plug-in, local server, and AI client."
+title: How v2 works
 ---
 
-Glyphs MCP lets an AI client call structured tools against the Glyphs app running on your Mac.
+V2 separates expensive preparation from live editing. The AI client uses seven MCP tools; the native bridge supplies bounded reads and applies explicit changes on Glyphs' main thread.
 
-The important idea is simple: Glyphs remains the place where the font lives. The agent does not operate a remote copy or scrape the UI. It asks the local MCP server to run explicit tools inside Glyphs.
+| Part | Responsibility |
+| --- | --- |
+| AI client and skills | Choose a supported workflow, scope it and review its evidence with the designer. |
+| Sidecar | Serve MCP, manage jobs, copy saved sources and run external preparation. |
+| Private native worker | Use `glyphs-cli` with the selected Glyphs application to measure or prepare detached font data. |
+| Bridge | Read explicit targets, check preconditions, apply changes in chunks and manage exact recovery and native history. |
+| Companions | Draw cached curve or reference overlays independently of the MCP client. |
 
-## What runs where
+The bridge never saves a font. Source copying and whole-font preparation run outside the editor. Live writes yield to Cocoa between chunks so the canvas can remain responsive.
 
-- **Glyphs app**: holds the open fonts, masters, glyphs, layers, kerning, spacing, and current selection.
-- **Glyphs MCP plug-in**: runs inside Glyphs 4 beta and bridges GlyphsApp APIs to MCP tools.
-- **Local MCP server**: exposes a Streamable HTTP endpoint on your machine.
-- **AI client**: Codex, Claude, or another MCP client connected to the local endpoint.
+## One job, one identity
 
-Default endpoint:
+`start_job` prepares an external result and returns a job ID. `get_job` returns progress and evidence. `apply_job` applies the stored result to the matching saved document. `discard_job` cancels preparation or reverses still-current affected targets. Repeated apply or discard requests for the same ongoing operation do not create duplicate native operations.
 
-```text
-http://127.0.0.1:9680/mcp/
-```
+The bridge shares per-document ownership across apply, discard and rollback. A competing operation cannot open a second Undo scope or alter the owner's state.
 
-## Tools-first behavior
+## Native editing remains central
 
-Ask the agent to use dedicated tools first:
+Save accepts the reviewed result. Undo and Redo use native per-glyph history. Revert uses Glyphs' own saved-document workflow. The Reference Inspector compares against a selected source; it is not a log of tool calls or an acceptance interface.
 
-- `list_open_fonts` to find the active font context.
-- `get_font_masters` to identify masters.
-- `review_spacing` before any spacing apply step.
-- `generate_kerning_tab` or `review_kerning_bumper` before kerning changes.
-- `docs_search` and `docs_get` for focused Glyphs API lookup.
-
-Use `execute_code` or `execute_code_with_context` only when a workflow does not have a dedicated tool or when one focused script is safer than many dependent calls.
-
-## State and verification
-
-Font editing is stateful. A safe agent workflow should:
-
-1. Read current context.
-2. Confirm exact targets: font, master, glyph, layer, path, node, or selection.
-3. Use the smallest valid tool call.
-4. Dry-run or request confirmation before mutation.
-5. Read back affected state.
-6. Report what changed, what was skipped, and any remaining risk.
-
-## Browser vs MCP client
-
-Opening `http://127.0.0.1:9680/mcp/` in a browser can show a small discovery response. That only proves the local server is reachable. MCP clients still need correct Streamable HTTP configuration.
-
-If the browser works but the client does not, see [Troubleshooting](../getting-started/troubleshooting.mdx).
+Use the [seven-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.

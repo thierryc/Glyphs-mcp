@@ -1,0 +1,20 @@
+{
+  "protocolVersion": "2025-11-25",
+  "capabilities": {
+    "experimental": {},
+    "prompts": {
+      "listChanged": true
+    },
+    "resources": {
+      "subscribe": false,
+      "listChanged": true
+    },
+    "tools": {
+      "listChanged": true
+    }
+  },
+  "serverInfo": {
+    "name": "Glyphs MCP Sidecar",
+    "version": "0.1.0"
+  }
+}

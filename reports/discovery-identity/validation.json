@@ -1,0 +1,38 @@
+{
+  "baseline": {
+    "calls": {
+      "initialize": 8,
+      "tools/list": 8,
+      "get_status": 28,
+      "list_documents": 2
+    },
+    "isolatedCallbackResponsiveness": {
+      "n": 30,
+      "medianMs": 3.031646,
+      "minMs": 2.296959,
+      "maxMs": 3.352583,
+      "p95Ms": 3.344459
+    }
+  },
+  "candidate": {
+    "calls": {
+      "initialize": 8,
+      "tools/list": 8,
+      "get_status": 28,
+      "list_documents": 2
+    },
+    "isolatedCallbackResponsiveness": {
+      "n": 30,
+      "medianMs": 3.185021,
+      "minMs": 2.405209,
+      "maxMs": 3.408583,
+      "p95Ms": 3.392167
+    }
+  },
+  "passed": true,
+  "baselineReportUnchanged": true,
+  "identityComplete": true,
+  "routing": "8 assessed passes; 1 preserved configuration failure; not a blinded LLM benchmark",
+  "candidateInstalled": false,
+  "report02": "paused"
+}

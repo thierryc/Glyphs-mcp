@@ -1,0 +1,114 @@
+{
+  "protocol": 1,
+  "sidecarVersion": "0.1.0",
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "discard_job"
+  ],
+  "bridge": {
+    "reachable": true,
+    "protocol": 1,
+    "bridgeVersion": "0.1.0",
+    "activity": "ready",
+    "activeOperations": 0,
+    "companions": [
+      {
+        "protocol": 1,
+        "id": "curve-inspector",
+        "version": "0.1.0",
+        "capabilities": [
+          "curve.measure",
+          "curve.overlay"
+        ]
+      },
+      {
+        "protocol": 1,
+        "id": "reference-inspector",
+        "version": "0.1.0",
+        "capabilities": [
+          "reference.file",
+          "reference.git",
+          "reference.github",
+          "reference.overlay",
+          "reference.saved"
+        ]
+      }
+    ]
+  },
+  "worker": {
+    "available": true,
+    "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+    "application": "/Applications/Glyphs 4.app",
+    "plugins": "disabled",
+    "processModel": "one_shot",
+    "executions": []
+  },
+  "controlProtocol": 1,
+  "activity": {
+    "jobs": [
+      {
+        "jobId": "job_3c6a6793c6174b9e9d2d6c7e77daa59e",
+        "document": "Dactylotype",
+        "kind": "spacing",
+        "phase": "discarded",
+        "startedAt": 1788820914.35919,
+        "finishedAt": 1788820914.359205,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      {
+        "jobId": "job_1c56acdbb199497fa38c73b711e1f6d6",
+        "document": "Dactylotype",
+        "kind": "spacing",
+        "phase": "discarded",
+        "startedAt": 1788814415.162239,
+        "finishedAt": 1788814415.162254,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      {
+        "jobId": "job_011c6752f2ce4c1e93ca0e17647b255c",
+        "document": "Dactylotype",
+        "kind": "spacing",
+        "phase": "discarded",
+        "startedAt": 1788812122.127309,
+        "finishedAt": 1788812122.127327,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      {
+        "jobId": "job_6d4a1054ff4e444692ca54d16869e62a",
+        "document": "Dactylotype",
+        "kind": "spacing",
+        "phase": "discarded",
+        "startedAt": 1788811712.809588,
+        "finishedAt": 1788811712.8096042,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      {
+        "jobId": "job_fd6af3e1c9804e0391c564ea96c720be",
+        "document": "Dactylotype",
+        "kind": "spacing",
+        "phase": "discarded",
+        "startedAt": 1788809876.267634,
+        "finishedAt": 1788809876.267642,
+        "completed": null,
+        "total": null,
+        "message": null
+      }
+    ],
+    "activeCount": 0,
+    "moreCount": 0
+  },
+  "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+}

@@ -1,0 +1,22 @@
+---
+title: Start-node correspondence
+---
+
+Use `start_job(kind="start_nodes")` to match one explicit closed contour across **2–32 masters** for **1–100 named glyphs**.
+
+```json
+{
+  "document_id": "<document ID>",
+  "kind": "start_nodes",
+  "glyphs": ["o"],
+  "options": {"path": 0}
+}
+```
+
+`path` is the contour index, default 0. `masters` selects master IDs; otherwise all are considered. `referenceMaster` defaults to the first selected master in font order. `referenceNode` defaults to its native start node. Omit `delta`.
+
+The reference node is a matching landmark. The reference contour keeps its existing phase; other masters receive cyclic reorders through Glyphs' native start-node operation. Repeating the same successful job is a no-op.
+
+Review `get_job` before applying. Ambiguous matches, incompatible topology, open contours and missing targets reject preparation before live writes. This supports correspondence; it does not repair arbitrary master incompatibility or replace a master.
+
+Native application preserves contour geometry, node objects, metadata and hints. Review the result across masters, use native Undo/Redo or `discard_job` to restore it, and Save only after acceptance.

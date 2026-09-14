@@ -1,5 +1,17 @@
 import Foundation
 
+private final class ProcessTimeout {
+	private let lock = NSLock()
+	private var expired = false
+	let error: Error
+	init(_ message: String) { error = InstallerError.userFacing(message) }
+	func expire() { lock.lock(); expired = true; lock.unlock() }
+	func check() throws {
+		lock.lock(); let value = expired; lock.unlock()
+		if value { throw error }
+	}
+}
+
 public final class ProcessRunner {
 	public struct Result {
 		public let exitCode: Int32
@@ -46,6 +58,7 @@ public final class ProcessRunner {
 		timeout: TimeInterval
 	) async throws -> Result {
 		if Task.isCancelled { throw CancellationError() }
+		let deadline = ProcessTimeout("Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent).")
 
 		let proc = Process()
 		proc.executableURL = executable
@@ -105,12 +118,11 @@ public final class ProcessRunner {
 					group.addTask {
 						let nanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
 						try await Task.sleep(nanoseconds: nanoseconds)
+						deadline.expire()
 						if proc.isRunning {
 							proc.terminate()
 						}
-						throw InstallerError.userFacing(
-							"Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent)."
-						)
+						throw deadline.error
 					}
 					defer { group.cancelAll() }
 					guard let first = try await group.next() else {
@@ -123,6 +135,9 @@ public final class ProcessRunner {
 					proc.terminate()
 				}
 			})
+			// Termination can reach the task group before the timeout task throws.
+			// Preserve the timeout that initiated it instead of reporting exit 15.
+			try deadline.check()
 		} catch {
 			_ = await outTask.value
 			_ = await errTask.value
@@ -144,6 +159,7 @@ public final class ProcessRunner {
 		onLine: @escaping (String) -> Void
 	) async throws {
 		if Task.isCancelled { throw CancellationError() }
+		let deadline = ProcessTimeout("Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent).")
 
 		let proc = Process()
 		proc.executableURL = executable
@@ -202,12 +218,11 @@ public final class ProcessRunner {
 					group.addTask {
 						let nanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
 						try await Task.sleep(nanoseconds: nanoseconds)
+						deadline.expire()
 						if proc.isRunning {
 							proc.terminate()
 						}
-						throw InstallerError.userFacing(
-							"Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent). Check your network connection and try again."
-						)
+						throw deadline.error
 					}
 
 					defer { group.cancelAll() }
@@ -221,6 +236,7 @@ public final class ProcessRunner {
 					proc.terminate()
 				}
 			})
+			try deadline.check()
 		} catch {
 			_ = await outTask.value
 			_ = await errTask.value

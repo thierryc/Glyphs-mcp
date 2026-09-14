@@ -164,7 +164,7 @@ public struct UpdateHelperManager {
 			uniqueKeysWithValues: GlyphsMajorVersion.allCases.map { ($0, store.isEnabled($0)) }
 		)
 		for (version, enabled) in selections {
-			desired[version] = enabled
+			desired[version] = version == .v3 ? false : enabled
 		}
 
 		if desired.values.contains(true) {
@@ -174,7 +174,8 @@ public struct UpdateHelperManager {
 			try installAtomically(from: embeddedExecutable)
 		}
 
-		for (version, enabled) in selections {
+		for (version, requested) in selections {
+			let enabled = version == .v3 ? false : requested
 			store.setEnabled(version, enabled)
 			if !enabled {
 				try removeAuthorizations(for: version)
@@ -303,7 +304,8 @@ public struct UpdateHelperManager {
 		if rootExisted {
 			guard !isSymbolicLink(paths.root),
 				  let marker = try? String(contentsOf: paths.managedMarker, encoding: .utf8),
-				  marker == UpdateHelperProtocol.managedMarker,
+				  marker == UpdateHelperProtocol.managedMarker
+					|| marker == UpdateHelperProtocol.previousManagedMarker,
 				  !isSymbolicLink(paths.managedMarker) else {
 				throw UpdateStagingError("unsafe_path", "The existing updater directory is not marked as managed and was preserved.")
 			}

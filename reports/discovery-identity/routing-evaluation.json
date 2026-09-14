@@ -1,0 +1,695 @@
+{
+  "assessedAt": "2026-09-10T14:18:01.562079+00:00",
+  "method": "Single-agent review of the candidate instructions against explicit captured/synthetic cases; not an automated LLM benchmark.",
+  "cases": [
+    {
+      "case": "configured skill first",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "installed-v2",
+          "catalog": [
+            "get_status",
+            "list_documents",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "discard_job"
+          ],
+          "skill": "/Users/thierryc/.codex/skills/glyphs/SKILL.md"
+        }
+      ],
+      "observedDecision": "Configured entry requires an unavailable get_server_info and typed apiMajor gate. Incompatible; do not issue invented calls. Configuration remains preserved.",
+      "result": "fail"
+    },
+    {
+      "case": "current lean candidate",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "candidate",
+          "catalog": [
+            "get_status",
+            "list_documents",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "discard_job"
+          ],
+          "identity": {
+            "protocol": 1,
+            "sidecarVersion": "2.0.0",
+            "release": {
+              "version": "2.0.0",
+              "releaseVersion": "2.0.0-beta.1",
+              "channel": "beta",
+              "betaNumber": 1,
+              "installerBuild": 43
+            },
+            "runtimeId": "2.0.0-beta.1+9000d1765aaf",
+            "codeHash": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+            "identityEvidence": "initialization-time file fingerprint",
+            "interface": "glyphs-mcp-sidecar",
+            "interfaceVersion": 1,
+            "jobKinds": [
+              "width_delta",
+              "spacing",
+              "kerning_collision",
+              "start_nodes",
+              "slant"
+            ],
+            "tools": [
+              "get_status",
+              "list_documents",
+              "read_entities",
+              "start_job",
+              "get_job",
+              "apply_job",
+              "discard_job"
+            ],
+            "bridge": {
+              "reachable": true,
+              "protocol": 1,
+              "bridgeVersion": "2.0.0",
+              "release": {
+                "version": "2.0.0",
+                "releaseVersion": "2.0.0-beta.1",
+                "channel": "beta",
+                "betaNumber": 1,
+                "installerBuild": 43
+              },
+              "runtimeId": "2.0.0-beta.1+15e6419bc81e",
+              "codeHash": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+              "identityEvidence": "initialization-time file fingerprint",
+              "host": {
+                "identifier": "com.GeorgSeifert.Glyphs4",
+                "version": "4.1",
+                "build": "4107"
+              },
+              "activity": "ready",
+              "activeOperations": 0,
+              "companions": []
+            },
+            "worker": {
+              "available": true,
+              "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+              "application": "/Applications/Glyphs 4.app",
+              "plugins": "disabled",
+              "processModel": "one_shot",
+              "executions": []
+            },
+            "controlProtocol": 1,
+            "activity": {
+              "jobs": [],
+              "activeCount": 0,
+              "moreCount": 0
+            },
+            "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+          }
+        }
+      ],
+      "observedDecision": "Select candidate $glyphs; call get_status on candidate, validate interface revision 1 and independent component fingerprints. Public calls succeeded in native-candidate-verified.",
+      "result": "pass"
+    },
+    {
+      "case": "legacy sidecar 0.1.0",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "legacy-sidecar",
+          "catalog": [
+            "get_status",
+            "list_documents",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "discard_job"
+          ],
+          "identity": {
+            "protocol": 1,
+            "sidecarVersion": "0.1.0",
+            "tools": [
+              "get_status",
+              "list_documents",
+              "read_entities",
+              "start_job",
+              "get_job",
+              "apply_job",
+              "discard_job"
+            ],
+            "bridge": {
+              "reachable": true,
+              "protocol": 1,
+              "bridgeVersion": "0.1.0",
+              "activity": "ready",
+              "activeOperations": 0,
+              "companions": []
+            },
+            "worker": {
+              "available": true,
+              "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+              "application": "/Applications/Glyphs 4.app",
+              "plugins": "disabled",
+              "processModel": "one_shot",
+              "executions": []
+            },
+            "controlProtocol": 1,
+            "activity": {
+              "jobs": [],
+              "activeCount": 0,
+              "moreCount": 0
+            },
+            "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+          }
+        }
+      ],
+      "observedDecision": "Select lean workflow from the exact seven-tool catalog; missing identity is unavailable evidence, not an apiMajor blocker. Public calls succeeded in native-baseline-verified.",
+      "result": "pass"
+    },
+    {
+      "case": "v1 with available skill",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "v1-captured",
+          "catalog": [
+            "get_glyph_annotations",
+            "add_glyph_annotation",
+            "add_glyph_annotation_group",
+            "update_glyph_annotation",
+            "delete_glyph_annotation",
+            "clear_glyph_annotations",
+            "get_glyph_annotation_groups",
+            "get_glyph_components",
+            "add_component_to_glyph",
+            "add_anchor_to_glyph",
+            "add_corner_to_all_masters",
+            "review_tunni_geometry",
+            "apply_tunni_balance",
+            "review_curve_quality",
+            "review_curve_quality_across_masters",
+            "set_curve_review_overlay",
+            "get_curve_review_overlay_state",
+            "get_custom_parameters",
+            "set_custom_parameters",
+            "get_document_change_overview",
+            "ExportDesignspaceAndUFO",
+            "list_style_sets",
+            "set_kerning_pair",
+            "generate_kerning_tab",
+            "review_kerning_bumper",
+            "apply_kerning_bumper",
+            "apply_collinear_handles_smooth",
+            "set_spacing_guides",
+            "review_spacing",
+            "apply_spacing",
+            "set_spacing_params",
+            "show_glyphs_status",
+            "show_font_feedback",
+            "show_glyph_feedback",
+            "show_opentype_features",
+            "preview_spacing_feedback",
+            "preview_kerning_feedback",
+            "preview_handle_smoothing_feedback",
+            "apply_feedback_plan",
+            "open_feedback_target",
+            "list_open_fonts",
+            "get_font_glyphs",
+            "get_font_masters",
+            "set_master_italic_angle",
+            "get_font_instances",
+            "get_glyph_details",
+            "get_font_kerning",
+            "create_glyph",
+            "delete_glyph",
+            "update_glyph_properties",
+            "copy_glyph",
+            "update_glyph_metrics",
+            "save_font",
+            "get_icon_grid_horizontal_center",
+            "set_icon_grid_horizontal_center",
+            "reset_icon_grid_horizontal_center",
+            "review_master_stem_metrics",
+            "set_master_stem_metrics",
+            "review_unicode_assignments",
+            "apply_unicode_assignments",
+            "get_litsquare_metadata",
+            "get_selected_litsquare_path_roles",
+            "patch_litsquare_metadata",
+            "set_litsquare_path_roles",
+            "update_glyph_node_positions",
+            "get_glyph_paths",
+            "set_glyph_paths",
+            "get_server_info",
+            "get_selected_glyphs",
+            "get_selected_font_and_master",
+            "get_selected_nodes",
+            "review_start_node_alignment",
+            "apply_start_node_alignment",
+            "preview_tunni_balance_candidate",
+            "preview_collinear_handles_candidate",
+            "preview_compensated_tuning_candidate",
+            "preview_italic_first_pass_candidate",
+            "set_outline_candidate_overlay",
+            "get_outline_candidate_state",
+            "materialize_outline_candidate_session",
+            "review_outline_candidate_session",
+            "accept_outline_candidate_session",
+            "discard_outline_candidate_session",
+            "execute_code",
+            "execute_code_with_context",
+            "docs_search",
+            "docs_get"
+          ],
+          "identity": {
+            "ok": true,
+            "version": "1.11.0",
+            "runtimeId": "1.11.0+c98c9840e87a",
+            "codeHash": "c98c9840e87a9bb7773b8fe643f21e86400323874a35c695e8ad01eb5a46bacc",
+            "resourcesPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/installer-payload/Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Resources",
+            "infoPlistPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/installer-payload/Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+            "pythonVersion": "3.12.3",
+            "glyphsReachable": true,
+            "glyphsVersion": 3.5,
+            "openFontCount": 0,
+            "availableFonts": []
+          },
+          "skill": "/Applications/Glyphs MCP.app/Contents/Resources/Payload/skills-v1/glyphs/SKILL.md"
+        }
+      ],
+      "observedDecision": "Select the available v1 entry by contents and get_server_info/list_open_fonts workflow. No apiMajor==2 requirement. Captured Report 01 input; v1 was not restarted.",
+      "result": "pass"
+    },
+    {
+      "case": "v1 skill unavailable",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "v1-synthetic-missing-skill",
+          "catalog": [
+            "get_glyph_annotations",
+            "add_glyph_annotation",
+            "add_glyph_annotation_group",
+            "update_glyph_annotation",
+            "delete_glyph_annotation",
+            "clear_glyph_annotations",
+            "get_glyph_annotation_groups",
+            "get_glyph_components",
+            "add_component_to_glyph",
+            "add_anchor_to_glyph",
+            "add_corner_to_all_masters",
+            "review_tunni_geometry",
+            "apply_tunni_balance",
+            "review_curve_quality",
+            "review_curve_quality_across_masters",
+            "set_curve_review_overlay",
+            "get_curve_review_overlay_state",
+            "get_custom_parameters",
+            "set_custom_parameters",
+            "get_document_change_overview",
+            "ExportDesignspaceAndUFO",
+            "list_style_sets",
+            "set_kerning_pair",
+            "generate_kerning_tab",
+            "review_kerning_bumper",
+            "apply_kerning_bumper",
+            "apply_collinear_handles_smooth",
+            "set_spacing_guides",
+            "review_spacing",
+            "apply_spacing",
+            "set_spacing_params",
+            "show_glyphs_status",
+            "show_font_feedback",
+            "show_glyph_feedback",
+            "show_opentype_features",
+            "preview_spacing_feedback",
+            "preview_kerning_feedback",
+            "preview_handle_smoothing_feedback",
+            "apply_feedback_plan",
+            "open_feedback_target",
+            "list_open_fonts",
+            "get_font_glyphs",
+            "get_font_masters",
+            "set_master_italic_angle",
+            "get_font_instances",
+            "get_glyph_details",
+            "get_font_kerning",
+            "create_glyph",
+            "delete_glyph",
+            "update_glyph_properties",
+            "copy_glyph",
+            "update_glyph_metrics",
+            "save_font",
+            "get_icon_grid_horizontal_center",
+            "set_icon_grid_horizontal_center",
+            "reset_icon_grid_horizontal_center",
+            "review_master_stem_metrics",
+            "set_master_stem_metrics",
+            "review_unicode_assignments",
+            "apply_unicode_assignments",
+            "get_litsquare_metadata",
+            "get_selected_litsquare_path_roles",
+            "patch_litsquare_metadata",
+            "set_litsquare_path_roles",
+            "update_glyph_node_positions",
+            "get_glyph_paths",
+            "set_glyph_paths",
+            "get_server_info",
+            "get_selected_glyphs",
+            "get_selected_font_and_master",
+            "get_selected_nodes",
+            "review_start_node_alignment",
+            "apply_start_node_alignment",
+            "preview_tunni_balance_candidate",
+            "preview_collinear_handles_candidate",
+            "preview_compensated_tuning_candidate",
+            "preview_italic_first_pass_candidate",
+            "set_outline_candidate_overlay",
+            "get_outline_candidate_state",
+            "materialize_outline_candidate_session",
+            "review_outline_candidate_session",
+            "accept_outline_candidate_session",
+            "discard_outline_candidate_session",
+            "execute_code",
+            "execute_code_with_context",
+            "docs_search",
+            "docs_get"
+          ],
+          "identity": {
+            "ok": true,
+            "version": "1.11.0",
+            "runtimeId": "1.11.0+c98c9840e87a",
+            "codeHash": "c98c9840e87a9bb7773b8fe643f21e86400323874a35c695e8ad01eb5a46bacc",
+            "resourcesPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/installer-payload/Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Resources",
+            "infoPlistPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/installer-payload/Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+            "pythonVersion": "3.12.3",
+            "glyphsReachable": true,
+            "glyphsVersion": 3.5,
+            "openFontCount": 0,
+            "availableFonts": []
+          },
+          "availableV1Skills": []
+        }
+      ],
+      "observedDecision": "Report v1 server reachable; matching v1 skills unavailable. Name selected skill path and install matching skills; do not require lean tools.",
+      "result": "pass"
+    },
+    {
+      "case": "unknown interface revision",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "unknown-synthetic",
+          "catalog": [
+            "get_status",
+            "list_documents",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "discard_job"
+          ],
+          "identity": {
+            "interface": "glyphs-mcp-sidecar",
+            "interfaceVersion": 2
+          }
+        }
+      ],
+      "observedDecision": "Explicit unsupported revision takes priority over catalog resemblance; obtain matching instructions before work.",
+      "result": "pass"
+    },
+    {
+      "case": "unknown catalog",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "unknown-synthetic",
+          "catalog": [
+            "get_status",
+            "execute_something"
+          ]
+        }
+      ],
+      "observedDecision": "Do not classify a partial/mixed catalog as lean or v1; report evidence and obtain matching instructions.",
+      "result": "pass"
+    },
+    {
+      "case": "two simultaneous connections",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "A-v1-captured",
+          "catalog": [
+            "get_glyph_annotations",
+            "add_glyph_annotation",
+            "add_glyph_annotation_group",
+            "update_glyph_annotation",
+            "delete_glyph_annotation",
+            "clear_glyph_annotations",
+            "get_glyph_annotation_groups",
+            "get_glyph_components",
+            "add_component_to_glyph",
+            "add_anchor_to_glyph",
+            "add_corner_to_all_masters",
+            "review_tunni_geometry",
+            "apply_tunni_balance",
+            "review_curve_quality",
+            "review_curve_quality_across_masters",
+            "set_curve_review_overlay",
+            "get_curve_review_overlay_state",
+            "get_custom_parameters",
+            "set_custom_parameters",
+            "get_document_change_overview",
+            "ExportDesignspaceAndUFO",
+            "list_style_sets",
+            "set_kerning_pair",
+            "generate_kerning_tab",
+            "review_kerning_bumper",
+            "apply_kerning_bumper",
+            "apply_collinear_handles_smooth",
+            "set_spacing_guides",
+            "review_spacing",
+            "apply_spacing",
+            "set_spacing_params",
+            "show_glyphs_status",
+            "show_font_feedback",
+            "show_glyph_feedback",
+            "show_opentype_features",
+            "preview_spacing_feedback",
+            "preview_kerning_feedback",
+            "preview_handle_smoothing_feedback",
+            "apply_feedback_plan",
+            "open_feedback_target",
+            "list_open_fonts",
+            "get_font_glyphs",
+            "get_font_masters",
+            "set_master_italic_angle",
+            "get_font_instances",
+            "get_glyph_details",
+            "get_font_kerning",
+            "create_glyph",
+            "delete_glyph",
+            "update_glyph_properties",
+            "copy_glyph",
+            "update_glyph_metrics",
+            "save_font",
+            "get_icon_grid_horizontal_center",
+            "set_icon_grid_horizontal_center",
+            "reset_icon_grid_horizontal_center",
+            "review_master_stem_metrics",
+            "set_master_stem_metrics",
+            "review_unicode_assignments",
+            "apply_unicode_assignments",
+            "get_litsquare_metadata",
+            "get_selected_litsquare_path_roles",
+            "patch_litsquare_metadata",
+            "set_litsquare_path_roles",
+            "update_glyph_node_positions",
+            "get_glyph_paths",
+            "set_glyph_paths",
+            "get_server_info",
+            "get_selected_glyphs",
+            "get_selected_font_and_master",
+            "get_selected_nodes",
+            "review_start_node_alignment",
+            "apply_start_node_alignment",
+            "preview_tunni_balance_candidate",
+            "preview_collinear_handles_candidate",
+            "preview_compensated_tuning_candidate",
+            "preview_italic_first_pass_candidate",
+            "set_outline_candidate_overlay",
+            "get_outline_candidate_state",
+            "materialize_outline_candidate_session",
+            "review_outline_candidate_session",
+            "accept_outline_candidate_session",
+            "discard_outline_candidate_session",
+            "execute_code",
+            "execute_code_with_context",
+            "docs_search",
+            "docs_get"
+          ],
+          "identity": {
+            "ok": true,
+            "version": "1.11.0",
+            "runtimeId": "1.11.0+c98c9840e87a",
+            "codeHash": "c98c9840e87a9bb7773b8fe643f21e86400323874a35c695e8ad01eb5a46bacc",
+            "resourcesPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/installer-payload/Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Resources",
+            "infoPlistPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/installer-payload/Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+            "pythonVersion": "3.12.3",
+            "glyphsReachable": true,
+            "glyphsVersion": 3.5,
+            "openFontCount": 0,
+            "availableFonts": []
+          }
+        },
+        {
+          "id": "B-lean-captured",
+          "catalog": [
+            "get_status",
+            "list_documents",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "discard_job"
+          ],
+          "identity": {
+            "protocol": 1,
+            "sidecarVersion": "2.0.0",
+            "release": {
+              "version": "2.0.0",
+              "releaseVersion": "2.0.0-beta.1",
+              "channel": "beta",
+              "betaNumber": 1,
+              "installerBuild": 43
+            },
+            "runtimeId": "2.0.0-beta.1+9000d1765aaf",
+            "codeHash": "sha256:9000d1765aaf37a931ab0b73945795e3f8650943b4aa7201398af21f79504443",
+            "identityEvidence": "initialization-time file fingerprint",
+            "interface": "glyphs-mcp-sidecar",
+            "interfaceVersion": 1,
+            "jobKinds": [
+              "width_delta",
+              "spacing",
+              "kerning_collision",
+              "start_nodes",
+              "slant"
+            ],
+            "tools": [
+              "get_status",
+              "list_documents",
+              "read_entities",
+              "start_job",
+              "get_job",
+              "apply_job",
+              "discard_job"
+            ],
+            "bridge": {
+              "reachable": true,
+              "protocol": 1,
+              "bridgeVersion": "2.0.0",
+              "release": {
+                "version": "2.0.0",
+                "releaseVersion": "2.0.0-beta.1",
+                "channel": "beta",
+                "betaNumber": 1,
+                "installerBuild": 43
+              },
+              "runtimeId": "2.0.0-beta.1+15e6419bc81e",
+              "codeHash": "sha256:15e6419bc81e8250b7aa275eaa9fc95fe3dc520b3e4a227deebfca060b1b196a",
+              "identityEvidence": "initialization-time file fingerprint",
+              "host": {
+                "identifier": "com.GeorgSeifert.Glyphs4",
+                "version": "4.1",
+                "build": "4107"
+              },
+              "activity": "ready",
+              "activeOperations": 0,
+              "companions": []
+            },
+            "worker": {
+              "available": true,
+              "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+              "application": "/Applications/Glyphs 4.app",
+              "plugins": "disabled",
+              "processModel": "one_shot",
+              "executions": []
+            },
+            "controlProtocol": 1,
+            "activity": {
+              "jobs": [],
+              "activeCount": 0,
+              "moreCount": 0
+            },
+            "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+          }
+        }
+      ],
+      "observedDecision": "Keep A and B separate: A uses v1 get_server_info and its v1 skill; B uses lean get_status and candidate skill. Never union catalogs. This is captured-input review, not simultaneous live v1 execution.",
+      "result": "pass"
+    },
+    {
+      "case": "dirty source independent of discovery",
+      "evaluation": "single-agent instruction review",
+      "connections": [
+        {
+          "id": "dirty-synthetic",
+          "catalog": [
+            "get_status",
+            "list_documents",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "discard_job"
+          ],
+          "identity": {
+            "protocol": 1,
+            "sidecarVersion": "0.1.0",
+            "tools": [
+              "get_status",
+              "list_documents",
+              "read_entities",
+              "start_job",
+              "get_job",
+              "apply_job",
+              "discard_job"
+            ],
+            "bridge": {
+              "reachable": true,
+              "protocol": 1,
+              "bridgeVersion": "0.1.0",
+              "activity": "ready",
+              "activeOperations": 0,
+              "companions": []
+            },
+            "worker": {
+              "available": true,
+              "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+              "application": "/Applications/Glyphs 4.app",
+              "plugins": "disabled",
+              "processModel": "one_shot",
+              "executions": []
+            },
+            "controlProtocol": 1,
+            "activity": {
+              "jobs": [],
+              "activeCount": 0,
+              "moreCount": 0
+            },
+            "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+          },
+          "document": {
+            "dirty": true,
+            "path": null
+          }
+        }
+      ],
+      "observedDecision": "Identify lean interface before document work; unsaved/dirty state requires no Save for identification. Saved-source preparation remains gated by existing job checks.",
+      "result": "pass"
+    }
+  ]
+}

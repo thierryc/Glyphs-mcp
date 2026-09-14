@@ -2,7 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-scheme="GlyphsMCPInstaller"
+scheme="${GLYPHS_MCP_APP_NAME:-Glyphs MCP}"
+python_bin="${PYTHON_BIN:-python3}"
 app="$repo_root/dist/installer-app/$scheme.app"
 
 profile="${NOTARY_PROFILE:-gmcp-notary}"
@@ -40,37 +41,30 @@ notary_tmp="$(mktemp -d /tmp/gmcp-notary-payload.XXXXXX)"
 cleanup_notary_tmp() { rm -rf "$notary_tmp"; }
 trap cleanup_notary_tmp EXIT
 /usr/bin/tar -xzf "$payload_archive" -C "$notary_tmp"
-plugin="$notary_tmp/Payload/Glyphs MCP.glyphsPlugin"
-if [[ ! -d "$plugin" ]]; then
-  echo "error: signed installer payload does not contain Glyphs MCP.glyphsPlugin" >&2
-  exit 1
-fi
-/usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
+"$python_bin" "$repo_root/scripts/release_payload.py" verify "$notary_tmp/Payload" --identity "$identity"
+plugins=()
+# Process substitution does not propagate failure; resolve the list first.
+bundle_list="$("$python_bin" "$repo_root/scripts/release_payload.py" bundles "$notary_tmp/Payload")"
+while IFS= read -r plugin; do plugins+=("$plugin"); done <<<"$bundle_list"
 
-# Payload.gmcparchive is intentionally opaque to the outer app signature.
-# Submit the exact plug-in code hash separately so Gatekeeper can accept the
-# installed bundle after it is copied out of the notarized installer.
-plugin_zip="$notary_tmp/GlyphsMCPNotaryPayload.zip"
-/usr/bin/ditto -c -k --keepParent "$plugin" "$plugin_zip"
-echo "Submitting exact plug-in payload to notarytool (profile: $profile)…"
-if ! xcrun notarytool submit "$plugin_zip" --keychain-profile "$profile" --wait; then
-  echo "" >&2
-  echo "error: plug-in payload notarization failed." >&2
-  exit 1
-fi
-
-# A .glyphsPlugin is a custom code bundle, not an application. spctl's
-# execute assessment rejects it as "does not seem to be an app" even after
-# Apple accepts the notarization submission. Staple the accepted ticket to
-# the exact custom bundle and require Apple's ticket validator instead.
-echo "Stapling exact plug-in ticket…"
-xcrun stapler staple "$plugin"
-xcrun stapler validate "$plugin"
-/usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
-if [[ ! -f "$plugin/Contents/CodeResources" ]]; then
-  echo "error: stapled plug-in ticket is missing from Contents/CodeResources" >&2
-  exit 1
-fi
+# The app seals an opaque archive. Submit its expanded contents separately so
+# Apple inspects both private runtimes, all native libraries and all plug-ins.
+payload_zip="$notary_tmp/GlyphsMCPNotaryPayload.zip"
+/usr/bin/ditto -c -k --keepParent "$notary_tmp/Payload" "$payload_zip"
+xcrun notarytool submit "$payload_zip" --keychain-profile "$profile" --wait
+for plugin in "${plugins[@]}"; do
+  xcrun stapler staple "$plugin"
+  xcrun stapler validate "$plugin"
+  /usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
+  if [[ ! -f "$plugin/Contents/CodeResources" ]]; then
+    echo "error: stapled plug-in ticket is missing: $plugin" >&2
+    exit 1
+  fi
+done
+# Tickets change managed component bytes. Seal their final identities before
+# repacking, without changing the installer's identity verification policy.
+"$python_bin" "$repo_root/scripts/release_payload.py" refresh "$notary_tmp/Payload"
+"$python_bin" "$repo_root/scripts/release_payload.py" verify "$notary_tmp/Payload" --identity "$identity"
 
 # The stapled ticket changes the opaque payload archive, which is sealed by
 # the outer app. Rebuild the archive and re-sign the app before submitting the
@@ -106,7 +100,10 @@ echo "Stapling ticket…"
 xcrun stapler staple "$app"
 xcrun stapler validate "$app"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
-xcrun stapler validate "$plugin"
+for plugin in "${plugins[@]}"; do
+  xcrun stapler validate "$plugin"
+  /usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
+done
 /usr/bin/codesign --verify --strict --verbose=2 "$updater_helper"
 
 # Recreate the ZIP after stapling so the uploaded archive contains the ticket.
