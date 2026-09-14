@@ -82,7 +82,8 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     # Existing inverse callbacks/history only; no additional recovery system.
     # H3 adds one stateless bounded context projection, preserving all editing hooks.
     # H4 adds bounded glyph pages with constant-size guards and no inventory cache.
-    assert bridge <= 2010
+    # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
+    assert bridge <= 2130
     assert sidecar <= 3500
     assert protocol + bridge + sidecar <= 6000
     assert all(

@@ -1,0 +1,154 @@
+{
+  "nativeRows": [
+    {
+      "layerId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "name": "Light",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": true,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+      "name": "Regular",
+      "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+      "isMasterLayer": true,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "name": "Bold",
+      "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "isMasterLayer": true,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "H5_INTERMEDIATE",
+      "name": "{150}",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": true,
+      "isBraceLayer": true,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "H5_ALTERNATE",
+      "name": "Light [500\u2039wg]",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": true,
+      "isBraceLayer": false,
+      "isBracketLayer": true
+    },
+    {
+      "layerId": "H5_BACKUP",
+      "name": "Duplicate",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "H5_BACKUP2",
+      "name": "Duplicate",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    }
+  ],
+  "wrapperRows": [
+    {
+      "layerId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "name": "Light",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": true,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+      "name": "Regular",
+      "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+      "isMasterLayer": true,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "name": "Bold",
+      "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "isMasterLayer": true,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "H5_INTERMEDIATE",
+      "name": "{150}",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": true,
+      "isBraceLayer": true,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "H5_ALTERNATE",
+      "name": "Light [500\u2039wg]",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": true,
+      "isBraceLayer": false,
+      "isBracketLayer": true
+    },
+    {
+      "layerId": "H5_BACKUP",
+      "name": "Duplicate",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    },
+    {
+      "layerId": "H5_BACKUP2",
+      "name": "Duplicate",
+      "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "isMasterLayer": false,
+      "isSpecialLayer": false,
+      "isBraceLayer": false,
+      "isBracketLayer": false
+    }
+  ],
+  "nativeCount": 7,
+  "nativeIndices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "wrapperSource": "\tdef getByIndex(self, key: int) -> GSLayer:\n\t\tif self._owner.parent:\n\t\t\tcount = max(self._owner.countOfLayers(), self._owner.parent.countOfFontMasters())\n\t\t\tif key < 0:\n\t\t\t\tkey += count\n\t\t\tif key >= count:\n\t\t\t\traise IndexError(\"list index %s out of range %s\" % (key, count))\n\t\t\tif key < self._owner.parent.countOfFontMasters():\n\t\t\t\tFontMaster = self._owner.parent.fontMasterAtIndex_(key)\n\t\t\t\treturn self._owner.layerForId_(FontMaster.id)\n\t\t\telse:\n\t\t\t\tExtraLayerIndex = key - len(self._owner.parent.masters)\n\t\t\t\tidx = 0\n\t\t\t\tExtraLayer = None\n\t\t\t\twhile ExtraLayerIndex >= 0:\n\t\t\t\t\tExtraLayer = self._owner.objectInLayersAtIndex_(idx)\n\t\t\t\t\tif not ExtraLayer.isMasterLayer:\n\t\t\t\t\t\tExtraLayerIndex -= 1\n\t\t\t\t\tidx += 1\n\t\t\t\treturn ExtraLayer\n\t\telse:\n\t\t\tkey = _validate_idx(cast(Sequence, self), key)\n\t\t\treturn self._owner.objectInLayersAtIndex_(key)\n",
+  "wrapperFile": "/Applications/Glyphs 4.app/Contents/Scripts/GlyphsApp/__init__.py",
+  "masterIds": [
+    "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+    "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+    "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575"
+  ],
+  "nativeMethods": [
+    "countOfLayers",
+    "objectInLayersAtIndex_"
+  ],
+  "isolated": true
+}

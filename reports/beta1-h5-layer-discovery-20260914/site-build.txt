@@ -1,0 +1,13 @@
+
+> glyphs-mcp-docs@0.0.0 build
+> NO_UPDATE_NOTIFIER=1 docusaurus build
+
+[INFO] [en] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 798.99ms
+[webpackbar] ✔ Client: Compiled successfully in 971.98ms
+(node:50652) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[SUCCESS] Generated static files in "build".
+[INFO] Use `npm run serve` command to test your build locally.

@@ -34,6 +34,7 @@ intent when the prior target may no longer be intended.
 | Master | `{"kind":"master","id":"<master ID>"}` | `id`, `name` |
 | Master page | `{"kind":"masters","limit":100}`; sole selector | `id`, `name`; see pagination below |
 | Glyph inventory | `{"kind":"glyphs"}`; optional `limit`, opaque `cursor` | `name` |
+| Layer inventory | `{"kind":"layers","glyph":"a"}`; optional `limit`, opaque `cursor` | `id`, `name`, `associatedMasterId`, `isMasterLayer`, `isSpecialLayer`, `isBraceLayer`, `isBracketLayer` |
 | Context | `{"kind":"context"}`; optional `glyphLimit` with `selectedGlyphs` | `view`, `master`, `selectedGlyphs` |
 | Selection | `{"kind":"selection"}`; optional `nodeLimit` only with `nodes` | `glyph`, `layer`, `selectedNodeCount`, `selectedAnchorCount`, `selectedComponentCount`, `selectedGuideCount`, `selectedOtherCount`, optional `nodes` |
 | Kerning | `{"kind":"kerning","master":"<master ID>","direction":"LTR","left":"A","right":"V"}` | `value` only; `null` means absent. |

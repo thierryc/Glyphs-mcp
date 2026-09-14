@@ -1,0 +1,4 @@
+Using Glyphs 4.1 (4107)
+Using Python 3.14
+synthetic dabbad2db503543a326dd8c58a8262eaafc739e1ce2d81038fc311d1b888c040
+RobotoSlab 9187d4165991a01215cfcea00f07364c2db3df1e6853358bf7007c997927dbb3

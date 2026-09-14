@@ -40,7 +40,15 @@ and qualified: native names in pages of up to 100, explicit coverage and stale-c
 handling through `read_entities`. All **713 lean**, **38 isolated native** and
 **616 installed native** checks passed, including a 1,272-glyph Roboto Slab inventory.
 Native callback p95/max were 21.35/40.39 ms; document-discovery and queue tails remain
-separate. H5 layer discovery is paused for feedback.
+separate.
+
+[H5 layer discovery](beta1-h5-layer-discovery-20260914/report.md) is implemented,
+installed and functionally qualified: exact native layer IDs, associations and
+requested classification flags in bounded pages. **796 lean**, **164 isolated native**
+and **302 installed native** checks passed; 54 follow-up checks also passed.
+One original callback exceeded the 200 ms maximum (339 ms); it did not recur in
+21 focused reads. The original timing exception remains recorded. H6 stored-kerning
+discovery is paused for feedback.
 
 ## Current result
 

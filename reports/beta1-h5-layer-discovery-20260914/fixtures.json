@@ -1,0 +1,1225 @@
+{
+  "fixtures": [
+    {
+      "label": "synthetic",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-h5-layer-discovery-20260914/LayerDiscoveryTest.glyphs",
+      "sourceSHA256": "1b96d04cc9813cdca0c59d11a19426d58abc13fffdfeb0f9b46da75be63aae64",
+      "expected": {
+        "a": [
+          {
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "name": "Light",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "name": "Regular",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "name": "Bold",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_INTERMEDIATE",
+            "name": "{150}",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": true,
+            "isBraceLayer": true,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_ALTERNATE",
+            "name": "Light [500\u2039wg]",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": true,
+            "isBraceLayer": false,
+            "isBracketLayer": true
+          },
+          {
+            "id": "H5_BACKUP",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_BACKUP2",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ],
+        "b": [
+          {
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "name": "Light",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "name": "Regular",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "name": "Bold",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ],
+        "many": [
+          {
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "name": "Light",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "name": "Regular",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "name": "Bold",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_000",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_001",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_002",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_003",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_004",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_005",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_006",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_007",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_008",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_009",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_010",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_011",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_012",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_013",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_014",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_015",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_016",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_017",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_018",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_019",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_020",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_021",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_022",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_023",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_024",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_025",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_026",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_027",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_028",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_029",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_030",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_031",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_032",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_033",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_034",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_035",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_036",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_037",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_038",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_039",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_040",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_041",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_042",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_043",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_044",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_045",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_046",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_047",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_048",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_049",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_050",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_051",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_052",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_053",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_054",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_055",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_056",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_057",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_058",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_059",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_060",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_061",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_062",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_063",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_064",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_065",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_066",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_067",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_068",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_069",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_070",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_071",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_072",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_073",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_074",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_075",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_076",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_077",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_078",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_079",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_080",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_081",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_082",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_083",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_084",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_085",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_086",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_087",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_088",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_089",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_090",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_091",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_092",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_093",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_094",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_095",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_096",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_097",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_098",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_099",
+            "name": "Duplicate",
+            "associatedMasterId": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_100",
+            "name": "Duplicate",
+            "associatedMasterId": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "H5_EXTRA_101",
+            "name": "Duplicate",
+            "associatedMasterId": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+            "isMasterLayer": false,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ]
+      }
+    },
+    {
+      "label": "RobotoSlab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/RobotoSlab.glyphs",
+      "sourceSHA256": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845",
+      "expected": {
+        "a": [
+          {
+            "id": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "name": "Thin",
+            "associatedMasterId": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "name": "Regular",
+            "associatedMasterId": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "name": "Black",
+            "associatedMasterId": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ],
+        "A": [
+          {
+            "id": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "name": "Thin",
+            "associatedMasterId": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "name": "Regular",
+            "associatedMasterId": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "name": "Black",
+            "associatedMasterId": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ],
+        "g": [
+          {
+            "id": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "name": "Thin",
+            "associatedMasterId": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "name": "Regular",
+            "associatedMasterId": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "name": "Black",
+            "associatedMasterId": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ],
+        "adieresis": [
+          {
+            "id": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "name": "Thin",
+            "associatedMasterId": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "name": "Regular",
+            "associatedMasterId": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "name": "Black",
+            "associatedMasterId": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ],
+        "one": [
+          {
+            "id": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "name": "Thin",
+            "associatedMasterId": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "name": "Regular",
+            "associatedMasterId": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          },
+          {
+            "id": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "name": "Black",
+            "associatedMasterId": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+            "isMasterLayer": true,
+            "isSpecialLayer": false,
+            "isBraceLayer": false,
+            "isBracketLayer": false
+          }
+        ]
+      }
+    }
+  ],
+  "realSource": {
+    "repository": "https://github.com/googlefonts/robotoslab",
+    "revision": "67af3ce9c4ca574419e1295b6165a2eeee112e6e",
+    "license": "Apache-2.0; see LICENSE.txt",
+    "files": [
+      {
+        "sourcePath": "sources/RobotoSlab.glyphs",
+        "url": "https://raw.githubusercontent.com/googlefonts/robotoslab/67af3ce9c4ca574419e1295b6165a2eeee112e6e/sources/RobotoSlab.glyphs",
+        "local": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/RobotoSlab.glyphs",
+        "bytes": 1670090,
+        "sha256": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845"
+      },
+      {
+        "sourcePath": "LICENSE.txt",
+        "url": "https://raw.githubusercontent.com/googlefonts/robotoslab/67af3ce9c4ca574419e1295b6165a2eeee112e6e/LICENSE.txt",
+        "local": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/LICENSE.txt",
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      }
+    ]
+  }
+}

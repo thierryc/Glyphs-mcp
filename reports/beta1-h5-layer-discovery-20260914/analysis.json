@@ -1,0 +1,1014 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; sorted compact JSON with literal Unicode; {name,arguments} and one parsed response body; estimates, not billed usage",
+  "timings": {
+    "small": {
+      "readMs": {
+        "n": 5,
+        "median": 37.661709007807076,
+        "minimum": 36.70762502588332,
+        "maximum": 43.39591698953882,
+        "p95": 43.39591698953882
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 216.05379099491984,
+        "minimum": 71.75437500700355,
+        "maximum": 283.98737497627735,
+        "p95": 283.98737497627735
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 253.7155000027269,
+        "minimum": 110.81112502142787,
+        "maximum": 327.38329196581617,
+        "p95": 327.38329196581617
+      },
+      "firstAndWarmup": [
+        {
+          "label": "small",
+          "phase": "first",
+          "glyph": "a",
+          "discoveryMs": 277.41895901272073,
+          "initialTotalMs": 313.2604590500705,
+          "openDocuments": 4,
+          "readMs": 35.84150003734976,
+          "requests": 1,
+          "total": 7
+        },
+        {
+          "label": "small",
+          "phase": "warmup",
+          "glyph": "a",
+          "discoveryMs": 275.10183304548264,
+          "initialTotalMs": 458.41158303665,
+          "openDocuments": 4,
+          "readMs": 183.30974999116734,
+          "requests": 1,
+          "total": 7
+        }
+      ],
+      "pageHTTP": {
+        "n": 5,
+        "median": 37.661709007807076,
+        "minimum": 36.70762502588332,
+        "maximum": 43.39591698953882,
+        "p95": 43.39591698953882
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 5,
+          "median": 2.4906250182539225,
+          "minimum": 2.41929100593552,
+          "maximum": 2.570167009253055,
+          "p95": 2.570167009253055
+        },
+        "nativeMs": {
+          "n": 5,
+          "median": 13.606542022898793,
+          "minimum": 2.7333340258337557,
+          "maximum": 17.97516702208668,
+          "p95": 17.97516702208668
+        }
+      }
+    },
+    "many": {
+      "readMs": {
+        "n": 5,
+        "median": 85.8362089493312,
+        "minimum": 79.32862505549565,
+        "maximum": 103.05237502325326,
+        "p95": 103.05237502325326
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 185.96504197921604,
+        "minimum": 56.545124971307814,
+        "maximum": 308.78895899513736,
+        "p95": 308.78895899513736
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 282.3335829307325,
+        "minimum": 159.59749999456108,
+        "maximum": 394.62516794446856,
+        "p95": 394.62516794446856
+      },
+      "firstAndWarmup": [
+        {
+          "label": "many",
+          "phase": "first",
+          "glyph": "many",
+          "discoveryMs": 158.40562502853572,
+          "initialTotalMs": 218.55900005903095,
+          "openDocuments": 4,
+          "readMs": 60.153375030495226,
+          "requests": 2,
+          "total": 105
+        },
+        {
+          "label": "many",
+          "phase": "warmup",
+          "glyph": "many",
+          "discoveryMs": 192.205791012384,
+          "initialTotalMs": 274.85254098428413,
+          "openDocuments": 4,
+          "readMs": 82.64674997190014,
+          "requests": 2,
+          "total": 105
+        }
+      ],
+      "pageHTTP": {
+        "n": 10,
+        "median": 42.86016648984514,
+        "minimum": 30.937833013013005,
+        "maximum": 72.11454201024026,
+        "p95": 72.11454201024026
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 10,
+          "median": 2.5057705061044544,
+          "minimum": 2.3689160007052124,
+          "maximum": 6.77341700065881,
+          "p95": 6.77341700065881
+        },
+        "nativeMs": {
+          "n": 10,
+          "median": 11.10893746954389,
+          "minimum": 7.12199998088181,
+          "maximum": 37.96120797051117,
+          "p95": 37.96120797051117
+        }
+      }
+    },
+    "RobotoSlab": {
+      "readMs": {
+        "n": 5,
+        "median": 32.82954200403765,
+        "minimum": 32.18945796834305,
+        "maximum": 44.94737496133894,
+        "p95": 44.94737496133894
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 379.1556250071153,
+        "minimum": 128.90170799801126,
+        "maximum": 552.6152080274187,
+        "p95": 552.6152080274187
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 411.34508297545835,
+        "minimum": 161.7312500020489,
+        "maximum": 589.8122080252506,
+        "p95": 589.8122080252506
+      },
+      "firstAndWarmup": [
+        {
+          "label": "RobotoSlab",
+          "phase": "first",
+          "glyph": "a",
+          "discoveryMs": 286.03854204993695,
+          "initialTotalMs": 320.3060830128379,
+          "openDocuments": 4,
+          "readMs": 34.267540962900966,
+          "requests": 1,
+          "total": 3
+        },
+        {
+          "label": "RobotoSlab",
+          "phase": "warmup",
+          "glyph": "a",
+          "discoveryMs": 1247.3602090030909,
+          "initialTotalMs": 1276.0970000526868,
+          "openDocuments": 4,
+          "readMs": 28.736791049595922,
+          "requests": 1,
+          "total": 3
+        }
+      ],
+      "pageHTTP": {
+        "n": 5,
+        "median": 32.82954200403765,
+        "minimum": 32.18945796834305,
+        "maximum": 44.94737496133894,
+        "p95": 44.94737496133894
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 5,
+          "median": 2.5480830227024853,
+          "minimum": 2.3001250228844583,
+          "maximum": 2.594333025626838,
+          "p95": 2.594333025626838
+        },
+        "nativeMs": {
+          "n": 5,
+          "median": 9.15587501367554,
+          "minimum": 1.751874980982393,
+          "maximum": 10.05912502296269,
+          "p95": 10.05912502296269
+        }
+      }
+    }
+  },
+  "tokens": {
+    "small": {
+      "request": {
+        "n": 5,
+        "median": 72,
+        "minimum": 70,
+        "maximum": 82,
+        "p95": 82
+      },
+      "response": {
+        "n": 5,
+        "median": 561,
+        "minimum": 561,
+        "maximum": 561,
+        "p95": 561
+      },
+      "fiveFullInventories": [
+        643,
+        633,
+        633,
+        631,
+        638
+      ]
+    },
+    "many": {
+      "request": {
+        "n": 10,
+        "median": 156.5,
+        "minimum": 72,
+        "maximum": 243,
+        "p95": 243
+      },
+      "response": {
+        "n": 10,
+        "median": 3631.0,
+        "minimum": 531,
+        "maximum": 6731,
+        "p95": 6731
+      },
+      "fiveFullInventories": [
+        7570,
+        7576,
+        7582,
+        7585,
+        7567
+      ]
+    },
+    "RobotoSlab": {
+      "request": {
+        "n": 5,
+        "median": 74,
+        "minimum": 72,
+        "maximum": 75,
+        "p95": 75
+      },
+      "response": {
+        "n": 5,
+        "median": 294,
+        "minimum": 294,
+        "maximum": 294,
+        "p95": 294
+      },
+      "fiveFullInventories": [
+        368,
+        369,
+        368,
+        369,
+        366
+      ]
+    }
+  },
+  "loadBefore": [
+    16.18701171875,
+    25.0029296875,
+    25.33740234375
+  ],
+  "loadAfter": [
+    10.6533203125,
+    20.80224609375,
+    23.6767578125
+  ],
+  "timedOpenDocumentCounts": [
+    4
+  ],
+  "startedAt": "2026-09-14T18:05:50.352013+00:00",
+  "finishedAt": "2026-09-14T18:07:21.103568+00:00",
+  "allCallbacks": {
+    "queueMs": {
+      "n": 127,
+      "median": 2.53875000635162,
+      "minimum": 2.2407909855246544,
+      "maximum": 1212.8435419872403,
+      "p95": 296.4699580334127
+    },
+    "nativeMs": {
+      "n": 127,
+      "median": 8.886083029210567,
+      "minimum": 0.013833981938660145,
+      "maximum": 339.1825419967063,
+      "p95": 35.300708026625216
+    }
+  },
+  "callCounts": {
+    "get_status": 1,
+    "list_documents": 29,
+    "read_entities": 97
+  },
+  "toolErrors": [
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "missing"
+          }
+        ],
+        "fields": [
+          "id"
+        ]
+      },
+      "error": {
+        "code": "target_not_found",
+        "message": "glyph 'missing' is unavailable",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 0
+          }
+        ],
+        "fields": [
+          "id"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "layer page limit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 101
+          }
+        ],
+        "fields": [
+          "id"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "layer page limit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "cursor": "bad"
+          }
+        ],
+        "fields": [
+          "id"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "use the unmodified nextCursor from the previous layer page",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a"
+          }
+        ],
+        "fields": [
+          "bounds"
+        ]
+      },
+      "error": {
+        "code": "unsupported_read",
+        "message": "layer pages support id, name, associatedMasterId and native classification flags",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a"
+          }
+        ],
+        "fields": []
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "read_entities requires 1-32 fields",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a"
+          }
+        ],
+        "fields": [
+          "id",
+          "classification"
+        ]
+      },
+      "error": {
+        "code": "unsupported_read",
+        "message": "layer pages support id, name, associatedMasterId and native classification flags",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layers"
+          }
+        ],
+        "fields": [
+          "id"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "layer pages require one nonempty glyph name",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_a45f5556ed43446faee50d532e8c0be4",
+        "entities": [
+          {
+            "kind": "layer",
+            "glyph": "a",
+            "id": "Duplicate"
+          }
+        ],
+        "fields": [
+          "id"
+        ]
+      },
+      "error": {
+        "code": "target_not_found",
+        "message": "layer 'Duplicate' in glyph 'a' is unavailable",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_ef4c9a33a8f64f9d90d05738aa8000db",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 6,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY19lZjRjOWEzM2E4ZjY0ZjlkOTBkMDU3MzhhYTgwMDBkYiIsImdseXBoIjpbImEiLCItNzA4MTI3OTM2Il0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "stale_layer_cursor",
+        "message": "document, glyph, count or change signal changed; restart layer discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_79246bd1163d4d1194504dfa2ad0ce3e",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 6,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY183OTI0NmJkMTE2M2Q0ZDExOTQ1MDRkZmEyYWQwY2UzZSIsImdseXBoIjpbImEiLCItNjc4OTUzNjY0Il0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "stale_layer_cursor",
+        "message": "document, glyph, count or change signal changed; restart layer discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_7122f609c3584bb0b5f5f0d3b19448ec",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 6,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY183MTIyZjYwOWMzNTg0YmIwYjVmNWYwZDNiMTk0NDhlYyIsImdseXBoIjpbImEiLCItODIzNjMyNDQ4Il0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "stale_layer_cursor",
+        "message": "layer page boundary changed; restart layer discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_877b7450e461451dbe779110ff233aeb",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 6,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY184NzdiNzQ1MGU0NjE0NTFkYmU3NzkxMTBmZjIzM2FlYiIsImdseXBoIjpbImEiLCItNzI2Mzk2NTQ0Il0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "stale_layer_cursor",
+        "message": "document, glyph, count or change signal changed; restart layer discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_35bb335368b346a3a9bcc3c4a86221ce",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "b",
+            "limit": 6,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY18zNWJiMzM1MzY4YjM0NmEzYTliY2MzYzRhODYyMjFjZSIsImdseXBoIjpbImEiLCItNjc4MjA2NzIwIl0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "stale_layer_cursor",
+        "message": "document, glyph, count or change signal changed; restart layer discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_35bb335368b346a3a9bcc3c4a86221ce",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 100,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY18zNWJiMzM1MzY4YjM0NmEzYTliY2MzYzRhODYyMjFjZSIsImdseXBoIjpbImEiLCItNjc4MjA2NzIwIl0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_60409fa171194ec3a454786b44e74398",
+        "entities": [
+          {
+            "kind": "layers",
+            "glyph": "a",
+            "limit": 100,
+            "cursor": "l1.eyJkb2N1bWVudCI6ImRvY18zNWJiMzM1MzY4YjM0NmEzYTliY2MzYzRhODYyMjFjZSIsImdseXBoIjpbImEiLCItNjc4MjA2NzIwIl0sIm9mZnNldCI6NiwidG90YWwiOjcsImdlbmVyYXRpb24iOjAsImRpcnR5IjpmYWxzZSwiYWZ0ZXIiOlsiSDVfQkFDS1VQIiwiRHVwbGljYXRlIl19"
+          }
+        ],
+        "fields": [
+          "id",
+          "name",
+          "associatedMasterId",
+          "isMasterLayer",
+          "isSpecialLayer",
+          "isBraceLayer",
+          "isBracketLayer"
+        ]
+      },
+      "error": {
+        "code": "stale_layer_cursor",
+        "message": "document, glyph, count or change signal changed; restart layer discovery",
+        "details": {}
+      }
+    }
+  ],
+  "checks": {
+    "total": 302,
+    "passed": 302,
+    "distinct": 302
+  },
+  "passed": true,
+  "error": null,
+  "cleanupError": null,
+  "skillTextTokens": {
+    "SKILL.md": 959,
+    "references/layer-discovery.md": 728
+  },
+  "runtime": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+1dfd3ea6d279",
+    "codeHash": "sha256:1dfd3ea6d2793a43c70297a8729c9e1440ae0b797eb33651b2a80616bbaa6893",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1",
+      "layers.list.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+dd39b1c6edc6",
+      "codeHash": "sha256:dd39b1c6edc659dd6febe7408ebc007dc0455061621103641a4eee16ad7f1deb",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_c6b2529777ef415cb6aafd591e55ff66",
+          "document": "Roboto Slab",
+          "kind": "start_nodes",
+          "phase": "discarded",
+          "startedAt": 1789386064.489494,
+          "finishedAt": 1789386064.489534,
+          "completed": 2,
+          "total": 2,
+          "message": null
+        },
+        {
+          "jobId": "job_9010b4b75fb0445a8b88d9e0e9c9c9c6",
+          "document": "Roboto Slab",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789385892.703386,
+          "finishedAt": 1789385892.70342,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_1a3637ada6a84f9990fcc0e29a1d93f3",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382440.370841,
+          "finishedAt": 1789382440.370868,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_fdec62f9d05b4d04b534c255fab8909f",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382370.894219,
+          "finishedAt": 1789382370.894258,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_dac8c65021ff4ebab6cd7f63c4f3031a",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "applied",
+          "startedAt": 1789382244.508908,
+          "finishedAt": 1789382244.50895,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  },
+  "latencyFollowup": {
+    "passed": true,
+    "checks": 54,
+    "roles": {
+      "foreground": {
+        "httpMs": {
+          "n": 5,
+          "median": 42.00645798118785,
+          "minimum": 30.085875012446195,
+          "maximum": 46.98662500595674,
+          "p95": 46.98662500595674
+        },
+        "callbackMs": {
+          "n": 5,
+          "median": 8.574542007409036,
+          "minimum": 7.648041006177664,
+          "maximum": 20.912625011987984,
+          "p95": 20.912625011987984
+        },
+        "projectionMs": {
+          "n": 5,
+          "median": 0.8886249852366745,
+          "minimum": 0.8278749883174896,
+          "maximum": 0.991458015050739,
+          "p95": 0.991458015050739
+        },
+        "callbackCPUMs": {
+          "n": 5,
+          "median": 1.6816249999997979,
+          "minimum": 1.6295419999998728,
+          "maximum": 1.8799589999982658,
+          "p95": 1.8799589999982658
+        }
+      },
+      "afterForegroundSwitch": {
+        "httpMs": {
+          "n": 5,
+          "median": 139.47904104134068,
+          "minimum": 129.60645800922066,
+          "maximum": 461.55762497801334,
+          "p95": 461.55762497801334
+        },
+        "callbackMs": {
+          "n": 5,
+          "median": 18.13650003168732,
+          "minimum": 3.384083043783903,
+          "maximum": 30.486791976727545,
+          "p95": 30.486791976727545
+        },
+        "projectionMs": {
+          "n": 5,
+          "median": 0.8727920358069241,
+          "minimum": 0.8366669644601643,
+          "maximum": 0.9260419756174088,
+          "p95": 0.9260419756174088
+        },
+        "callbackCPUMs": {
+          "n": 5,
+          "median": 1.6914169999999729,
+          "minimum": 1.5135829999994854,
+          "maximum": 2.0791249999998485,
+          "p95": 2.0791249999998485
+        }
+      },
+      "backgroundIDsOnly": {
+        "httpMs": {
+          "n": 5,
+          "median": 24.26833298522979,
+          "minimum": 22.749874973669648,
+          "maximum": 69.28758299909532,
+          "p95": 69.28758299909532
+        },
+        "callbackMs": {
+          "n": 5,
+          "median": 4.200458992272615,
+          "minimum": 3.71816597180441,
+          "maximum": 38.87212497647852,
+          "p95": 38.87212497647852
+        },
+        "projectionMs": {
+          "n": 5,
+          "median": 0.680791970808059,
+          "minimum": 0.6595409940928221,
+          "maximum": 1.9099590135738254,
+          "p95": 1.9099590135738254
+        },
+        "callbackCPUMs": {
+          "n": 5,
+          "median": 1.5104580000002699,
+          "minimum": 1.3670409999999578,
+          "maximum": 4.580541999999355,
+          "p95": 4.580541999999355
+        }
+      }
+    },
+    "loadBefore": [
+      11.78271484375,
+      14.38623046875,
+      19.84033203125
+    ],
+    "loadAfter": [
+      10.66552734375,
+      14.06005859375,
+      19.66064453125
+    ],
+    "allCallbacks": {
+      "nativeMs": {
+        "n": 29,
+        "median": 9.567582979798317,
+        "minimum": 0.029333983547985554,
+        "maximum": 48.458834004122764,
+        "p95": 39.96029094560072
+      },
+      "cpuMs": {
+        "n": 29,
+        "median": 1.7150839999997558,
+        "minimum": 0.028375000000302464,
+        "maximum": 4.580541999999355,
+        "p95": 3.4161659999991656
+      },
+      "queueMs": {
+        "n": 29,
+        "median": 8.849249978084117,
+        "minimum": 2.3437089985236526,
+        "maximum": 428.11633297242224,
+        "p95": 415.32187501434237
+      }
+    },
+    "allProjectionMs": {
+      "n": 21,
+      "median": 0.8590000215917826,
+      "minimum": 0.6595409940928221,
+      "maximum": 1.9099590135738254,
+      "p95": 0.991458015050739
+    },
+    "callCounts": {
+      "get_status": 1,
+      "list_documents": 7,
+      "read_entities": 21
+    },
+    "idOnlyResponseTokens": {
+      "n": 7,
+      "median": 156,
+      "minimum": 156,
+      "maximum": 156,
+      "p95": 156
+    }
+  }
+}

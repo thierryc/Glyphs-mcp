@@ -1,0 +1,19 @@
+{
+  "existingFiles": 3666,
+  "unchanged": 3657,
+  "changed": [
+    "src/sidecar/glyphs_mcp_sidecar/server.py",
+    "src/protocol/glyphs_mcp_protocol/reads.py",
+    "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py",
+    "src/glyphs-mcp/tests/test_simple_v2_build.py",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs/references/layer-reads.md",
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs/references/layer-reads.md",
+    "content/reference/command-set.mdx"
+  ],
+  "missing": [],
+  "baseline": "H4 frozen source-before.json plus H4 commit 15956d9f3c959736fe6261713474522a987cb7d7 source/skill/content files",
+  "baselineSHA256": "a3e83bbc55b1c079692c3e61c5da48a1cf4ee98177776e811a008a0cb329b86b",
+  "limitation": "The initial H5 hash capture was empty because its exclusion checked the absolute build path. It is not evidence. This comparison uses the earlier preserved worktree bytes plus the intervening H4 commit; the H5 starting git status also records preexisting modifications."
+}

@@ -10,8 +10,9 @@ ID and return `id` from native `layerId`.
 Reuse the retained document ID; call `list_documents` only if it needs resolving,
 following [document targeting](document-targeting.md). Reuse known ordinary master
 IDs; otherwise discover them using the [master reference](master-reads.md). Their ordinary layers use those
-IDs. Special/backup layers need their own exact layer IDs. This interface does
-not enumerate special layers or infer them from names.
+IDs. Special/backup layers need their own exact layer IDs. Use
+[layer discovery](layer-discovery.md) when IDs are unknown; never infer IDs from
+names. Known IDs need no preliminary inventory.
 
 Call `read_entities` with 1–100 explicit entities and 1–32 supported fields:
 

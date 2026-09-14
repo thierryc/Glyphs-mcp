@@ -1,0 +1,9 @@
+{
+  "taskMacroArchivedTo": "/private/tmp/glyphs-h5-20260914/archived-Macro-4.py",
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "originalMacros": "Macro 1/2/3 untouched; Macro 1 selected again through UI",
+  "originalDocuments": "Two documents restored by Glyphs at startup preserved and verified in both native runs; 100-rep2.glyphs returned to front",
+  "instrumentation": "Original read/field/value/main-thread hooks restored; temporary getattr removed; no cleanup error",
+  "h5Documents": "All H5 disposable copies closed without saving",
+  "settings": "No autosave or application preference change"
+}

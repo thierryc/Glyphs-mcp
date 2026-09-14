@@ -1,0 +1,26 @@
+[
+  {
+    "path": "calls.jsonl.gz",
+    "rawBytes": 462577,
+    "rawSHA256": "c278ee9d4ea92a82057a98652d7b5fe75a1f4ecbce665d0d0fb828b3564aa169",
+    "compressedSHA256": "0b87946fa3e0338b1c70fa8b7b9afb3135b4064fd22eac37f563916abfbf3ff5"
+  },
+  {
+    "path": "latency-followup.json.gz",
+    "rawBytes": 492845,
+    "rawSHA256": "97c6026390020f5990534d0375dfdbfc3916b36412e4925964d5e3ed7a1540df",
+    "compressedSHA256": "a282863e0c1c2e978450dc77abb168b6bd4d2e271c83396d819f304063a842fa"
+  },
+  {
+    "path": "native-source.json.gz",
+    "rawBytes": 124945,
+    "rawSHA256": "d2bd787039e1c3247b58071cb6d1de656d7e972c3f87f89eb3cb980739514db6",
+    "compressedSHA256": "fe8d127e19f578bc4a0319a1c27748e5fe07878847c081a409f5b7a6314a2da4"
+  },
+  {
+    "path": "native-facts.json.gz",
+    "rawBytes": 2241818,
+    "rawSHA256": "b46311ee6fee315354e53a94da25b7f1e19e880af55c4b0f344fe23bbe2ae663",
+    "compressedSHA256": "a48df8bb9c83d06be53f44f5a2977794422486d8c8816243ea53727532d2b53c"
+  }
+]
