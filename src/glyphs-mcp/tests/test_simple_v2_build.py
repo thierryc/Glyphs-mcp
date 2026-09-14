@@ -78,7 +78,9 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     # Native setters for nodes, anchors and component matrices (benefit item 4).
     # Bounded native master pages and strict IDs add 53 lines; no new tool/history.
     # Compact selection context uses a small stateless read module; no new tool, job or history hooks.
-    assert bridge <= 1780
+    # Lazy native groups and restoration of their original automatic-grouping setting.
+    # Existing inverse callbacks/history only; no additional recovery system.
+    assert bridge <= 1805
     assert sidecar <= 3500
     assert protocol + bridge + sidecar <= 6000
     assert all(

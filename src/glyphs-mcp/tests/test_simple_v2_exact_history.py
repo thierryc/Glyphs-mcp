@@ -213,8 +213,7 @@ def test_rounding_guard_failure_retains_original_flag_for_cleanup(monkeypatch):
 
 def test_native_undo_begin_that_opens_then_raises_closes_only_its_group():
     from glyphs_mcp_bridge.native_undo import NativeUndoScope
-    class PartialManager:
-        level = 2
+    class PartialManager(UndoManager):
         def groupingLevel(self): return self.level
         def beginUndoGrouping(self):
             self.level += 1
@@ -222,5 +221,5 @@ def test_native_undo_begin_that_opens_then_raises_closes_only_its_group():
         def endUndoGrouping(self): self.level -= 1
     manager = PartialManager()
     with pytest.raises(RuntimeError, match='partial begin'):
-        NativeUndoScope(manager)
-    assert manager.level == 2
+        NativeUndoScope(manager).manager_for(None)
+    assert manager.level == 0 and manager.groupsByEvent()

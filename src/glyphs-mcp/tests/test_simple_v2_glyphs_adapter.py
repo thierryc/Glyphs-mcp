@@ -39,14 +39,22 @@ class ListCollection(list):
 class UndoManager:
     def __init__(self):
         self.events = []
+        self.level = 0
+        self.automatic = True
+
+    def groupingLevel(self): return self.level
+    def groupsByEvent(self): return self.automatic
+    def setGroupsByEvent_(self, value): self.automatic = value
 
     def beginUndoGrouping(self):
+        self.level += 1
         self.events.append("begin")
 
     def setActionName_(self, name):
         self.events.append(name)
 
     def endUndoGrouping(self):
+        self.level -= 1
         self.events.append("end")
 
 
@@ -220,13 +228,13 @@ def test_operation_cache_and_rounding_guard_preserve_fractional_width() -> None:
     assert layer.temporarilyDisableRounding is False
 
 
-def test_native_undo_group_is_named_once() -> None:
+def test_empty_native_undo_scope_leaves_document_history_untouched() -> None:
     value, _layer = adapter()
     document_id = value.list_documents()[0]["id"]
     document = value._font(document_id).parent
     value.begin_undo(document_id)
     value.end_undo(document_id, "Glyphs MCP: spacing")
-    assert document.undoManager().events == ["begin", "Glyphs MCP: spacing", "end"]
+    assert document.undoManager().events == []
 
 
 def test_native_integer_boolean_rounding_flag_preserves_fractional_values():
@@ -321,7 +329,8 @@ def test_glyph_undo_managers_own_layer_edits_and_are_grouped_once():
     assert scope.manager_for(a2) is first
     assert scope.manager_for(b1) is second
     scope.finish('Glyphs MCP: spacing')
-    for manager in (document,first,second):
+    assert document.events == []
+    for manager in (first,second):
         assert manager.events == ['begin','Glyphs MCP: spacing','end']
 
 

@@ -11,7 +11,6 @@ class NativeUndoScope:
     def __init__(self, fallback=None):
         self.fallback = fallback
         self.managers = {}
-        self._include(fallback)
 
     def _include(self, manager):
         if manager is None:
@@ -22,14 +21,27 @@ class NativeUndoScope:
         except Exception:
             identity = id(manager)
         if identity not in self.managers:
-            level = getattr(manager, "groupingLevel", lambda: None)()
+            # An extra automatic outer group increments Glyphs' change count
+            # again when it closes. Own one group, leaving existing UI groups
+            # untouched. The document fallback is opened only when used.
+            if manager.groupingLevel() != 0:
+                raise RuntimeError("Glyphs Undo has an open group; finish the active edit and retry")
+            automatic = bool(manager.groupsByEvent())
             try:
+                manager.setGroupsByEvent_(False)
+                if manager.groupsByEvent():
+                    raise RuntimeError("Glyphs did not disable automatic Undo grouping")
                 manager.beginUndoGrouping()
+                if manager.groupingLevel() != 1:
+                    raise RuntimeError("Glyphs did not open one Undo group")
             except Exception:
-                if level is not None and manager.groupingLevel() > level:
-                    manager.endUndoGrouping()
+                try:
+                    if manager.groupingLevel() == 1:
+                        manager.endUndoGrouping()
+                finally:
+                    manager.setGroupsByEvent_(automatic)
                 raise
-            self.managers[identity] = manager
+            self.managers[identity] = (manager, automatic)
         return manager
 
     def manager_for(self, layer):
@@ -39,14 +51,23 @@ class NativeUndoScope:
 
     def finish(self, name):
         first_error = None
-        for manager in reversed(tuple(self.managers.values())):
+        for manager, automatic in reversed(tuple(self.managers.values())):
             try:
+                if manager.groupingLevel() != 1:
+                    raise RuntimeError("Glyphs Undo grouping changed during the operation")
                 try:
                     manager.setActionName_(str(name)[:240])
                 finally:
                     manager.endUndoGrouping()
             except Exception as error:
                 first_error = first_error or error
+            finally:
+                try:
+                    manager.setGroupsByEvent_(automatic)
+                    if bool(manager.groupsByEvent()) != automatic:
+                        raise RuntimeError("Glyphs did not restore automatic Undo grouping")
+                except Exception as error:
+                    first_error = first_error or error
         self.managers.clear()
         if first_error:
             raise first_error

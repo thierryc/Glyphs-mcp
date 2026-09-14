@@ -1,0 +1,19 @@
+{
+  "skills": [],
+  "plugin-cache-skills": [],
+  "bridge": [],
+  "curve": [],
+  "reference": [],
+  "source": [
+    "bridge/glyphs_mcp_bridge/native_undo.py",
+    "glyphs-mcp/tests/test_simple_v2_build.py",
+    "glyphs-mcp/tests/test_simple_v2_exact_history.py",
+    "glyphs-mcp/tests/test_simple_v2_glyphs_adapter.py",
+    "glyphs-mcp/tests/test_simple_v2_undo_grouping.py"
+  ],
+  "font": [],
+  "v1-runtime": [],
+  "v1-skills": [],
+  "sidecar": [],
+  "scripts": []
+}

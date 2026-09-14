@@ -1,0 +1,11 @@
+{
+  "build": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/dirty-grouping-candidate-20260914/Lean",
+  "repeat": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/dirty-grouping-candidate-20260914/Lean-repeat",
+  "identical": true,
+  "wholePayloadSHA256": "sha256:626195470340c91a68f46dcafe8d64b4700949304ea4e104cba06d3d88ff4d7f",
+  "changedComponents": [
+    "bridge"
+  ],
+  "sidecar": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+  "bridge": "sha256:8b74a8d27ae48b6d3ef1a317439c925f488ae5c9a0e5f0733221f468b97af687"
+}

@@ -1,0 +1,168 @@
+{
+  "host": "4.1",
+  "build": "4107.0",
+  "mode": "isolated native CLI; no GUI document dirty assertion",
+  "cases": [
+    {
+      "case": "complete",
+      "passed": true,
+      "result": {
+        "jobId": "native-group",
+        "documentId": "doc_46a4ea09ba2644b0accba56d1e872703",
+        "status": "applied",
+        "completedChanges": 6,
+        "totalChanges": 6,
+        "error": null,
+        "message": "Review the change in Glyphs. Save to accept; Undo restores each glyph. Revert or discard_job restores the whole job.",
+        "firstUndoCounts": [
+          0,
+          0
+        ],
+        "appliedCounts": [
+          1,
+          1
+        ],
+        "redoUndoCounts": [
+          1,
+          1
+        ]
+      },
+      "finalGroups": [
+        [
+          0,
+          true
+        ],
+        [
+          0,
+          true
+        ]
+      ]
+    },
+    {
+      "case": "cancel",
+      "passed": true,
+      "result": {
+        "jobId": "native-group",
+        "documentId": "doc_ef2ceb1cdf5448b8bc2bde76fa65d522",
+        "status": "cancelled",
+        "completedChanges": 1,
+        "totalChanges": 6,
+        "error": {
+          "code": "cancelled",
+          "message": "application was cancelled",
+          "details": {
+            "recovery": {
+              "complete": true
+            }
+          }
+        },
+        "message": null
+      },
+      "finalGroups": [
+        [
+          0,
+          true
+        ],
+        [
+          0,
+          true
+        ]
+      ]
+    },
+    {
+      "case": "partial-write-failure",
+      "passed": true,
+      "result": {
+        "jobId": "native-group",
+        "documentId": "doc_8687ee30658c447fa29622c54fcf9ac6",
+        "status": "failed",
+        "completedChanges": 0,
+        "totalChanges": 6,
+        "error": {
+          "code": "native_write_failed",
+          "message": "Injected native setter failure after write",
+          "details": {
+            "target": {
+              "kind": "set",
+              "glyph": "control",
+              "layer": "DIRTY-TEST-MASTER-01",
+              "field": "width"
+            },
+            "recovery": {
+              "complete": true,
+              "currentTargetRestored": true
+            }
+          }
+        },
+        "message": null
+      },
+      "finalGroups": [
+        [
+          0,
+          true
+        ],
+        [
+          0,
+          true
+        ]
+      ]
+    },
+    {
+      "case": "preexisting-group",
+      "passed": true,
+      "result": {
+        "jobId": "native-group",
+        "documentId": "doc_d2112e58bd1848ae8337ae064b6559d9",
+        "status": "failed",
+        "completedChanges": 0,
+        "totalChanges": 6,
+        "error": {
+          "code": "native_write_failed",
+          "message": "Glyphs Undo has an open group; finish the active edit and retry",
+          "details": {
+            "target": {
+              "kind": "set",
+              "glyph": "control",
+              "layer": "DIRTY-TEST-MASTER-01",
+              "field": "width"
+            },
+            "recovery": {
+              "complete": true,
+              "currentTargetRestored": true,
+              "writeError": "Glyphs Undo has an open group; finish the active edit and retry"
+            }
+          }
+        },
+        "message": null
+      },
+      "finalGroups": [
+        [
+          0,
+          true
+        ],
+        [
+          0,
+          true
+        ]
+      ]
+    },
+    {
+      "case": "document-fallback",
+      "passed": true,
+      "result": {
+        "status": "passed",
+        "fontDataUnchanged": true
+      },
+      "finalGroups": [
+        [
+          0,
+          true
+        ],
+        [
+          0,
+          true
+        ]
+      ]
+    }
+  ]
+}
