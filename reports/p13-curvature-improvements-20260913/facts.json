@@ -1,0 +1,1633 @@
+{
+  "math": {
+    "proofs": 143,
+    "toothSamples": 85905,
+    "maxError": 3.410605131648481e-13,
+    "allPass": true
+  },
+  "controls": [
+    {
+      "file": "candidate-r1/v2/control-A-3.json",
+      "version": "r1",
+      "glyph": "A",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-A-3.json",
+      "version": "r2",
+      "glyph": "A",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-AE-0.json",
+      "version": "r2",
+      "glyph": "AE",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 23,
+        "cubicCount": 23,
+        "cubicCountLowerBound": 23,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-AE-3.json",
+      "version": "r2",
+      "glyph": "AE",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 23,
+        "cubicCount": 23,
+        "cubicCountLowerBound": 23,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-AE-6.json",
+      "version": "r2",
+      "glyph": "AE",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 23,
+        "cubicCount": 23,
+        "cubicCountLowerBound": 23,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-a-0.json",
+      "version": "r2",
+      "glyph": "A",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-a-6.json",
+      "version": "r2",
+      "glyph": "A",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-aacute-0.json",
+      "version": "r2",
+      "glyph": "aacute",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-aacute-3.json",
+      "version": "r2",
+      "glyph": "aacute",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-aacute-6.json",
+      "version": "r2",
+      "glyph": "aacute",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-at-0.json",
+      "version": "r2",
+      "glyph": "at",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 26,
+        "cubicCount": 26,
+        "cubicCountLowerBound": 26,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-at-3.json",
+      "version": "r2",
+      "glyph": "at",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 26,
+        "cubicCount": 26,
+        "cubicCountLowerBound": 26,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-at-6.json",
+      "version": "r2",
+      "glyph": "at",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 26,
+        "cubicCount": 26,
+        "cubicCountLowerBound": 26,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-atLimit-0.json",
+      "version": "r2",
+      "glyph": "atLimit",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 128,
+        "cubicCount": 128,
+        "cubicCountLowerBound": 128,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": "Curve Inspector \u00b7 reduced sampling \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-componentOnly-0.json",
+      "version": "r2",
+      "glyph": "componentOnly",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-eight-0.json",
+      "version": "r2",
+      "glyph": "eight",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 16,
+        "cubicCount": 16,
+        "cubicCountLowerBound": 16,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-eight-3.json",
+      "version": "r2",
+      "glyph": "eight",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 16,
+        "cubicCount": 16,
+        "cubicCountLowerBound": 16,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-eight-6.json",
+      "version": "r2",
+      "glyph": "eight",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 16,
+        "cubicCount": 16,
+        "cubicCountLowerBound": 16,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-empty-0.json",
+      "version": "r2",
+      "glyph": "empty",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-mixed-0.json",
+      "version": "r2",
+      "glyph": "mixed",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 1,
+        "cubicCount": 1,
+        "cubicCountLowerBound": 1,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-n-0.json",
+      "version": "r2",
+      "glyph": "n",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-n-3.json",
+      "version": "r2",
+      "glyph": "n",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-n-6.json",
+      "version": "r2",
+      "glyph": "n",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-o-0.json",
+      "version": "r2",
+      "glyph": "o",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-o-3.json",
+      "version": "r2",
+      "glyph": "o",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-o-6.json",
+      "version": "r2",
+      "glyph": "o",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-overLimit-0.json",
+      "version": "r2",
+      "glyph": "overLimit",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 128,
+        "cubicCount": null,
+        "cubicCountLowerBound": 129,
+        "complete": false,
+        "limitReason": "cubic_limit",
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": "Curve Inspector \u00b7 partial: first 128 cubics; more exist \u00b7 reduced sampling \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "candidate-r2/v2/control-s-0.json",
+      "version": "r2",
+      "glyph": "s",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 24,
+        "cubicCount": 24,
+        "cubicCountLowerBound": 24,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-s-3.json",
+      "version": "r2",
+      "glyph": "s",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 24,
+        "cubicCount": 24,
+        "cubicCountLowerBound": 24,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-s-6.json",
+      "version": "r2",
+      "glyph": "s",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 24,
+        "cubicCount": 24,
+        "cubicCountLowerBound": 24,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-space-0.json",
+      "version": "r2",
+      "glyph": "space",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-space-3.json",
+      "version": "r2",
+      "glyph": "space",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-space-6.json",
+      "version": "r2",
+      "glyph": "space",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "candidate-r2/v2/control-straight-0.json",
+      "version": "r2",
+      "glyph": "straight",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/control-atLimit-0.json",
+      "version": "final",
+      "glyph": "atLimit",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 128,
+        "cubicCount": 128,
+        "cubicCountLowerBound": 128,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": "Curve Inspector \u00b7 reduced sampling \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/control-closed-0.json",
+      "version": "final",
+      "glyph": "closed",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/control-componentOnly-0.json",
+      "version": "final",
+      "glyph": "componentOnly",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/control-empty-0.json",
+      "version": "final",
+      "glyph": "empty",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/control-mixed-0.json",
+      "version": "final",
+      "glyph": "mixed",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 1,
+        "cubicCount": 1,
+        "cubicCountLowerBound": 1,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/control-overLimit-0.json",
+      "version": "final",
+      "glyph": "overLimit",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 128,
+        "cubicCount": null,
+        "cubicCountLowerBound": 129,
+        "complete": false,
+        "limitReason": "cubic_limit",
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": "Curve Inspector \u00b7 partial: first 128 cubics; more exist \u00b7 reduced sampling \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/control-overLimit-1.json",
+      "version": "final",
+      "glyph": "overLimit",
+      "master": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 128,
+        "cubicCount": null,
+        "cubicCountLowerBound": 129,
+        "complete": false,
+        "limitReason": "cubic_limit",
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": "Curve Inspector \u00b7 partial: first 128 cubics; more exist \u00b7 reduced sampling \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/control-overLimit-2.json",
+      "version": "final",
+      "glyph": "overLimit",
+      "master": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 128,
+        "cubicCount": null,
+        "cubicCountLowerBound": 129,
+        "complete": false,
+        "limitReason": "cubic_limit",
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": "Curve Inspector \u00b7 partial: first 128 cubics; more exist \u00b7 reduced sampling \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/control-straight-0.json",
+      "version": "final",
+      "glyph": "straight",
+      "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-0041-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "A",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-0041-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "A",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-0041-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "A",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 2,
+        "cubicCount": 2,
+        "cubicCountLowerBound": 2,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-00410045-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "AE",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 23,
+        "cubicCount": 23,
+        "cubicCountLowerBound": 23,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-00410045-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "AE",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 23,
+        "cubicCount": 23,
+        "cubicCountLowerBound": 23,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-00410045-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "AE",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 23,
+        "cubicCount": 23,
+        "cubicCountLowerBound": 23,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 1
+      },
+      "notice": "Curve Inspector \u00b7 1 component omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-0061-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "a",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 20,
+        "cubicCount": 20,
+        "cubicCountLowerBound": 20,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-0061-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "a",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 20,
+        "cubicCount": 20,
+        "cubicCountLowerBound": 20,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-0061-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "a",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 20,
+        "cubicCount": 20,
+        "cubicCountLowerBound": 20,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-006100610063007500740065-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "aacute",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-006100610063007500740065-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "aacute",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-006100610063007500740065-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "aacute",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-00610074-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "at",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 26,
+        "cubicCount": 26,
+        "cubicCountLowerBound": 26,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00610074-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "at",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 26,
+        "cubicCount": 26,
+        "cubicCountLowerBound": 26,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00610074-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "at",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 26,
+        "cubicCount": 26,
+        "cubicCountLowerBound": 26,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00650069006700680074-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "eight",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 16,
+        "cubicCount": 16,
+        "cubicCountLowerBound": 16,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00650069006700680074-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "eight",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 16,
+        "cubicCount": 16,
+        "cubicCountLowerBound": 16,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00650069006700680074-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "eight",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 16,
+        "cubicCount": 16,
+        "cubicCountLowerBound": 16,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-006e-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "n",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-006e-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "n",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-006e-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "n",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 2
+      },
+      "notice": "Curve Inspector \u00b7 2 components omitted \u00b7 length capped at 0.12em"
+    },
+    {
+      "file": "v2/real-control-006f-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "o",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-006f-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "o",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-006f-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "o",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 8,
+        "cubicCount": 8,
+        "cubicCountLowerBound": 8,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-0073-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "s",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 24,
+        "cubicCount": 24,
+        "cubicCountLowerBound": 24,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-0073-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "s",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 24,
+        "cubicCount": 24,
+        "cubicCountLowerBound": 24,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-0073-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "s",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 24,
+        "cubicCount": 24,
+        "cubicCountLowerBound": 24,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00730070006100630065-20B80D33-B5FE-4CBE-AB86-1B0C04FA398E.json",
+      "version": "final",
+      "glyph": "space",
+      "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00730070006100630065-AF94AE23-1910-4859-814C-A48A47EEDF58.json",
+      "version": "final",
+      "glyph": "space",
+      "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    },
+    {
+      "file": "v2/real-control-00730070006100630065-F6800DE0-8362-44AC-BD73-6321DA3A4F97.json",
+      "version": "final",
+      "glyph": "space",
+      "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "coveragePass": true,
+      "coverage": {
+        "returnedCubicCount": 0,
+        "cubicCount": 0,
+        "cubicCountLowerBound": 0,
+        "complete": true,
+        "limitReason": null,
+        "cubicLimit": 128,
+        "nodeLimit": 8192,
+        "pathLimit": 512,
+        "omittedComponentCount": 0
+      },
+      "notice": ""
+    }
+  ],
+  "trials": [
+    {
+      "version": "r1",
+      "key": "first-at",
+      "activationExact": true,
+      "restorationExact": false,
+      "restorationDifferences": [
+        {
+          "path": "/layers/3/shapes/0/nodes/0/position/1",
+          "expected": -22.625,
+          "observed": -23
+        },
+        {
+          "path": "/layers/3/shapes/0/nodes/64/position/0",
+          "expected": 332.875,
+          "observed": 333
+        },
+        {
+          "path": "/layers/3/shapes/0/nodes/64/position/1",
+          "expected": -22.625,
+          "observed": -23
+        }
+      ],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "first-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "first-s",
+      "activationExact": true,
+      "restorationExact": false,
+      "restorationDifferences": [
+        {
+          "path": "/layers/3/shapes/0/nodes/0/position/0",
+          "expected": 616.03,
+          "observed": 616
+        },
+        {
+          "path": "/layers/3/shapes/0/nodes/0/position/1",
+          "expected": -19.625,
+          "observed": -20
+        },
+        {
+          "path": "/layers/3/shapes/0/nodes/72/position/0",
+          "expected": 349.53,
+          "observed": 350
+        },
+        {
+          "path": "/layers/3/shapes/0/nodes/72/position/1",
+          "expected": -19.625,
+          "observed": -20
+        }
+      ],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "trial-1-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "trial-2-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "trial-3-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "trial-4-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "trial-5-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r1",
+      "key": "warmup-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "r2",
+      "key": "final-closed",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    },
+    {
+      "version": "final",
+      "key": "final-o",
+      "activationExact": true,
+      "restorationExact": true,
+      "restorationDifferences": [],
+      "objectIdentityPreserved": true,
+      "hintReferencesPreserved": true,
+      "redoExact": true,
+      "finalDirty": true
+    }
+  ],
+  "finalRealLayerCount": 30,
+  "nativeTiming": {
+    "foreground": {
+      "n": 7,
+      "median": 1.9745,
+      "minimum": 0.009459,
+      "maximum": 5.322625,
+      "p95": 5.322625
+    },
+    "native-extraction": {
+      "n": 19,
+      "median": 2.022833,
+      "minimum": 0.747,
+      "maximum": 2.529584,
+      "p95": 2.529584
+    },
+    "notice-drawing": {
+      "n": 7,
+      "median": 3.436459,
+      "minimum": 0.727667,
+      "maximum": 10.861541,
+      "p95": 10.861541
+    },
+    "worker-comb": {
+      "n": 3,
+      "median": 1.863125,
+      "minimum": 0.729458,
+      "maximum": 2.300416,
+      "p95": 2.300416
+    },
+    "queue": {
+      "n": 793,
+      "median": 1.2438750127330422,
+      "minimum": 0.24445797316730022,
+      "maximum": 177.2419999470003,
+      "p95": 2.456416026689112
+    },
+    "restored": true,
+    "secondsAfterLastCallback": 7.741091012954712
+  },
+  "realOTimedReplayMs": {
+    "n": 5,
+    "median": 17021,
+    "minimum": 16704,
+    "maximum": 17678,
+    "p95": 17678
+  },
+  "httpLatencyMs": {
+    "get_status": {
+      "n": 19,
+      "median": 121.413333050441,
+      "minimum": 106.34179197950289,
+      "maximum": 1680.0757910241373,
+      "p95": 1680.0757910241373
+    },
+    "list_documents": {
+      "n": 16,
+      "median": 296.7519585217815,
+      "minimum": 21.96512499358505,
+      "maximum": 1156.2012499780394,
+      "p95": 1156.2012499780394
+    }
+  },
+  "calls": 35,
+  "discoveryCalls": 16,
+  "protocol": {
+    "realSmall": "o: first attempt, one warm-up and five timed repetitions on r1; final-revision restoration recheck",
+    "realComplex": "at: first complete attempt failed exact restoration; warm-up and five timed repetitions stopped. s: one additional failed restoration check. No substitute counts.",
+    "v1": "historical P13 synthetic comparison only; no fresh realistic-font v1 test"
+  },
+  "limits": [
+    "Full-font native oracle excludes derived bounds from stored-data hash but records a separate bounds hash.",
+    "Hint-reference hashes are empty: no new nonempty hint coverage.",
+    "No matched baseline/candidate load comparison.",
+    "Initial discovery is recorded separately from replay and must be included when reporting an initial task."
+  ]
+}

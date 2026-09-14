@@ -1,0 +1,63 @@
+{
+  "at": 1789356203.098857,
+  "pid": 65954,
+  "secondsAfterNativeFinish": 585.9800941944122,
+  "load": [
+    5.8583984375,
+    7.87841796875,
+    12.841796875
+  ],
+  "sourceDifferences": {
+    "sidecar": [],
+    "bridge": [],
+    "skills": [
+      ".glyphs-mcp-skills.json",
+      "glyphs-mcp-outlines-docs/SKILL.md",
+      "glyphs-mcp-outlines-docs/agents/openai.yaml",
+      "glyphs-mcp-outlines-docs/references/curvature-display.md"
+    ],
+    "source": [
+      "companions/curve-inspector/glyphs_curve_inspector/plugin.py",
+      "glyphs-mcp/tests/test_simple_v2_curvature_coverage.py",
+      "glyphs-mcp/tests/test_simple_v2_curve_lifecycle.py"
+    ],
+    "v1-runtime": [],
+    "v1-skills": [],
+    "original-font": [],
+    "curve-companion": [
+      "Contents/Resources/glyphs_curve_inspector/plugin.py",
+      "Contents/Resources/plugin.py"
+    ],
+    "configured-plugin-skills": []
+  },
+  "installed": {
+    "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/sidecar": "sha256:61c6975537eabcd1b015df6ed8f754a45616da11c3c1106a766410ed88c779ae",
+    "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+    "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc",
+    "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter": "sha256:d32c3836fb26a0afab95da0fc58cd0b2dd5f5ff05969e676abd60597b0c0fed8"
+  },
+  "trialSourcesPreserved": [
+    "/private/tmp/p13-improvements-20260913/trials/1789353669910-15b07b8b929b58-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789353884247-2689572c8d0ce8-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789353920884-02c419593da7e8-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789353959768-f14dd6fb3b7be8-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789353985396-ac4c9c9ec77d1-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354022941-ef2f010214f658-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354049447-7089025ae5e448-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354092957-c27d3b66920268-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354173486-407a90ec31283-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354234220-f7f8e9b613705-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354293118-6da66f4d56a638-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354633416-5c5fba8b7be9a-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789354804288-d5eb8c5ae22af-open.glyphs",
+    "/private/tmp/p13-improvements-20260913/trials/1789355214924-0192c61fc4cd28-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789355339284-eb3b510b77cc3-open.glyphspackage",
+    "/private/tmp/p13-improvements-20260913/trials/1789355572435-22ed54de41b6a-open.glyphs"
+  ],
+  "realBaselinePreserved": true,
+  "syntheticBaselinePreserved": true,
+  "configuredFocusedSkillMatches": true,
+  "helpersRemoved": true,
+  "autosavingDelay": 8,
+  "newCrashReports": []
+}

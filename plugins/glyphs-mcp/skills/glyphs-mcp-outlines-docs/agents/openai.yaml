@@ -1,7 +1,7 @@
 interface:
   display_name: "glyphs-mcp-outlines-docs"
   short_description: "Inspect native layer evidence and supported outlines"
-  default_prompt: "Use $glyphs to identify this connection, then follow its matching outline inspection workflow."
+  default_prompt: "Use $glyphs-mcp-outlines-docs for this outline task. Reuse verified connection and document context; load only the relevant focused reference."
 
 policy:
   allow_implicit_invocation: true

@@ -5,7 +5,8 @@ from __future__ import annotations
 from threading import RLock, Thread
 
 import objc  # type: ignore[import-not-found]
-from AppKit import NSBezierPath, NSColor, NSGraphicsContext, NSPoint  # type: ignore[import-not-found]
+from AppKit import NSBezierPath, NSColor, NSGraphicsContext, NSPoint, NSFont, NSFontAttributeName, NSMakeRect  # type: ignore[import-not-found]
+from Foundation import NSString  # type: ignore[import-not-found]
 from GlyphsApp import CURVE, OFFCURVE, DOCUMENTOPENED, DOCUMENTACTIVATED, TABDIDOPEN, UPDATEEDITVIEWFRAME, Glyphs, UPDATEINTERFACE  # type: ignore[import-not-found]
 from GlyphsApp.plugins import ReporterPlugin  # type: ignore[import-not-found]
 from PyObjCTools import AppHelper  # type: ignore[import-not-found]
@@ -40,38 +41,78 @@ def _position(node):
     return float(_value(point, "x", 0) or 0), float(_value(point, "y", 0) or 0)
 
 
-def extract_visible_cubics(layer, *, maximum=128):
+def extract_visible_cubics(layer, *, maximum=128, node_limit=8192, path_limit=512):
+    """Copy only this layer's direct cubics, plus honest bounded coverage evidence."""
     result = []
-    for path in list(_value(layer, "paths", []) or []):
-        nodes = list(_value(path, "nodes", []) or [])
+    reason = None
+    visited = 0
+    paths = _value(layer, "paths", ()) or ()
+    components = _value(layer, "components", None)
+    component_count = len(components) if components is not None else None
+    for path_index, path in enumerate(paths):
+        if path_index >= path_limit:
+            reason = "path_limit"
+            break
+        nodes = _value(path, "nodes", ()) or ()
+        count = len(nodes)
         closed = bool(_value(path, "closed", True))
         for index, node in enumerate(nodes):
-            if _value(node, "type", None) != CURVE or len(nodes) < 4:
+            if visited >= node_limit:
+                reason = "node_limit"
+                break
+            visited += 1
+            if _value(node, "type", None) != CURVE or count < 4:
                 continue
             if not closed and index < 3:
                 continue
-            indices = (
-                tuple((index - offset) % len(nodes) for offset in (3, 2, 1, 0))
-                if closed
-                else (index - 3, index - 2, index - 1, index)
-            )
-            start, first_control, second_control, end = (
-                nodes[item] for item in indices
-            )
-            controls = (first_control, second_control)
-            if any(_value(item, "type", None) != OFFCURVE for item in controls):
+            indices = tuple((index - offset) % count for offset in (3, 2, 1, 0))
+            start, first_control, second_control, end = (nodes[item] for item in indices)
+            if any(_value(item, "type", None) != OFFCURVE
+                   for item in (first_control, second_control)):
                 continue
-            result.append(
-                (
-                    _position(start),
-                    _position(first_control),
-                    _position(second_control),
-                    _position(end),
-                )
-            )
-            if len(result) >= maximum:
-                return result
-    return result
+            # Inspect one additional valid cubic; never count the rest of the layer.
+            if len(result) == maximum:
+                reason = "cubic_limit"
+                break
+            result.append(tuple(_position(item) for item in
+                                (start, first_control, second_control, end)))
+        if reason:
+            break
+    coverage = {
+        "returnedCubicCount": len(result),
+        "cubicCount": len(result) if reason is None else None,
+        "cubicCountLowerBound": len(result) + (reason == "cubic_limit"),
+        "complete": reason is None,
+        "limitReason": reason,
+        "cubicLimit": maximum,
+        "nodeLimit": node_limit,
+        "pathLimit": path_limit,
+        "omittedComponentCount": component_count,
+    }
+    return result, coverage
+
+
+def coverage_notice(coverage, model):
+    """Prepare one compact notice off the drawing path; complete refers to raw cubics."""
+    parts = []
+    reason = coverage["limitReason"]
+    if reason == "cubic_limit":
+        parts.append("partial: first %d cubics; more exist" % coverage["returnedCubicCount"])
+    elif reason:
+        parts.append("partial: inspection limit reached")
+    components = coverage["omittedComponentCount"]
+    if components is None:
+        parts.append("component coverage unavailable")
+    elif components:
+        parts.append("%d component%s omitted" % (components, "s" if components != 1 else ""))
+    if model.get("samplesPerCurve", 51) < 51:
+        parts.append("reduced sampling")
+    if model.get("strokeCapReached"):
+        parts.append("stroke limit reached")
+    # State the rendering ceiling; do not imply every displayed tooth was clamped.
+    if parts:
+        parts.append("length capped at 0.12em")
+    return "Curve Inspector · " + " · ".join(parts) if parts else ""
 
 
 class GlyphsCurveInspector(ReporterPlugin):
@@ -134,13 +175,13 @@ class GlyphsCurveInspector(ReporterPlugin):
             return
         font = _value(Glyphs, "font", None)
         layer = visible_layer(Glyphs)
-        curves = extract_visible_cubics(layer) if layer is not None else []
+        curves, coverage = extract_visible_cubics(layer)
         upm = float(_value(font, "upm", 1000.0) or 1000.0) if font is not None else 1000.0
         try:
             layer_id = int(objc.pyobjc_id(layer)) if layer is not None else None
         except Exception:
             layer_id = id(layer) if layer is not None else None
-        source_key = (layer_id, upm, tuple(curves))
+        source_key = (layer_id, upm, tuple(curves), tuple(sorted(coverage.items())))
         with self._lock:
             if source_key == self._source_key:
                 return
@@ -149,7 +190,7 @@ class GlyphsCurveInspector(ReporterPlugin):
             if self._cache_layer_id != layer_id:
                 self._cache_layer_id = None
             self._generation += 1
-            self._pending = (self._generation, curves, upm)
+            self._pending = (self._generation, curves, upm, coverage)
             if self._busy:
                 return
             self._busy = True
@@ -164,8 +205,10 @@ class GlyphsCurveInspector(ReporterPlugin):
                 if pending is None:
                     self._busy = False
                     return
-            generation, curves, upm = pending
+            generation, curves, upm, coverage = pending
             result = build_curvature_comb(curves, upm=upm)
+            result["coverage"] = coverage
+            result["notice"] = coverage_notice(coverage, result)
             AppHelper.callAfter(self._publish, generation, result)
 
     @objc.python_method
@@ -222,6 +265,34 @@ class GlyphsCurveInspector(ReporterPlugin):
                 if envelope_count:
                     NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
                     envelopes.stroke()
+        finally:
+            NSGraphicsContext.restoreGraphicsState()
+
+    @objc.python_method
+    def foregroundInViewCoords(self):
+        # View positioning only: no curve extraction, font traversal or mutation.
+        layer = visible_layer(Glyphs)
+        if layer is None or self._cache_layer_id != int(objc.pyobjc_id(layer)):
+            return
+        notice = self._cache.get("notice", "")
+        if not notice:
+            return
+        tab = _value(_value(Glyphs, "font"), "currentTab")
+        viewport = _value(tab, "safeViewPort")
+        if viewport is None:
+            return
+        NSGraphicsContext.saveGraphicsState()
+        try:
+            position = NSPoint(viewport.origin.x + 12, viewport.origin.y + 34)
+            size = NSString.stringWithString_(notice).sizeWithAttributes_(
+                {NSFontAttributeName: NSFont.labelFontOfSize_(10)})
+            background = NSMakeRect(position.x - 4, position.y - size.height - 4,
+                                    size.width + 8, size.height + 8)
+            NSColor.textBackgroundColor().colorWithAlphaComponent_(0.94).set()
+            NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(background, 3, 3).fill()
+            self.drawTextAtPoint(notice, position,
+                                 fontSize=10 * float(self.getScale() or 1), align="topleft",
+                                 fontColor=NSColor.labelColor())
         finally:
             NSGraphicsContext.restoreGraphicsState()
 

@@ -1,0 +1,13 @@
+{
+  "source": "Prior P09 frozen Dactylotype baseline, qualified against recorded file checksums",
+  "retainedLocalCopy": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/p13-curvature-candidate/fixtures/DactylotypeBaseline.glyphspackage",
+  "committedFontSource": false,
+  "manifest": "isolated-native.json:real.files",
+  "glyphs": 423,
+  "masters": 9,
+  "testedMasterIndices": [
+    0,
+    3,
+    6
+  ]
+}

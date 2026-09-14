@@ -38,7 +38,8 @@ an uncertain write as a new job; reconcile the existing job identity first.
 There is no arbitrary MCP Python or plugin reload. Unsupported edits require
 an explicitly authorised native workflow; do not invent an MCP command.
 
-Use Curve Inspector for the active edited glyph and Reference Inspector to
+For curvature display, load the [focused Curve Inspector guide](references/curvature-display.md).
+Use Reference Inspector to
 compare against Last Saved, a Font File, Local Git or Public GitHub. Keep draw
 callbacks display-only. Changes labels belong only to the edited occurrence,
 never repeated preview glyphs. Native outline visibility must survive startup,

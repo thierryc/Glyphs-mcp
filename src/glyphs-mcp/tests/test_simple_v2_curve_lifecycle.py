@@ -18,7 +18,7 @@ def reporter():
     tree = ast.parse(source.read_text())
     # Run the actual lifecycle methods without importing Cocoa into pytest.
     nodes = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))
-             and node.name in ("_value", "GlyphsCurveInspector")]
+             and node.name in ("_value", "coverage_notice", "GlyphsCurveInspector")]
     main_queue, workers, redraws, captures = [], [], [], []
     callbacks = {}
     graphics = SimpleNamespace(depth=0)
@@ -42,7 +42,7 @@ def reporter():
 
     def capture(layer):
         captures.append(layer)
-        return [((0, 0), (0, 100), (100, 100), (100, 0))]
+        return [((0, 0), (0, 100), (100, 100), (100, 0))], dict(limitReason=None, omittedComponentCount=0)
 
     namespace = {"ReporterPlugin": object, "Glyphs": host, "RLock": RLock, "Thread": Worker,
                  "objc": SimpleNamespace(python_method=lambda f: f, typedSelector=lambda _: lambda f: f, pyobjc_id=id),
@@ -141,7 +141,7 @@ def test_restored_curve_reporter_initializes_without_toggle_or_canvas_input(repo
 def test_curve_cache_stays_visible_while_changed_geometry_is_analyzed(reporter):
     r = reporter; r.enable(); layer = r.host.font.currentTab.activeLayer
     previous = r.plugin._cache
-    r.env['extract_visible_cubics'] = lambda _: [((0, 0), (5, 100), (100, 100), (100, 0))]
+    r.env['extract_visible_cubics'] = lambda _: ([((0, 0), (5, 100), (100, 100), (100, 0))], dict(limitReason=None, omittedComponentCount=0))
     r.plugin.update_(None)
     assert r.plugin._cache_layer_id == id(layer) and r.plugin._cache is previous
     assert len(r.redraws) == 1
@@ -152,4 +152,39 @@ def test_curve_cache_stays_visible_while_changed_geometry_is_analyzed(reporter):
 def test_curve_graphics_scope_balances_on_early_return(reporter):
     r = reporter
     r.plugin.foreground(object())
+    assert r.graphics.depth == 0
+
+
+def test_component_only_change_refreshes_notice_without_changed_cubics(reporter):
+    r = reporter; r.enable()
+    curves = r.plugin._cache['strokes']
+    r.env['extract_visible_cubics'] = lambda _: (curves, dict(limitReason=None, omittedComponentCount=1))
+    r.plugin.update_(None); r.drain(r.workers); r.drain(r.main)
+    assert '1 component omitted' in r.plugin._cache['notice']
+    r.env['extract_visible_cubics'] = lambda _: (curves, dict(limitReason=None, omittedComponentCount=0))
+    r.plugin.update_(None); r.drain(r.workers); r.drain(r.main)
+    assert r.plugin._cache['notice'] == ''
+    assert len(r.redraws) == 3
+
+
+def test_coverage_change_during_worker_rejects_stale_result(reporter):
+    r = reporter; r.enable()
+    curves = r.plugin._cache['strokes']
+    r.env['extract_visible_cubics'] = lambda _: (curves, dict(limitReason=None, omittedComponentCount=1))
+    r.plugin.update_(None); r.drain(r.workers)
+    r.env['extract_visible_cubics'] = lambda _: (curves, dict(limitReason=None, omittedComponentCount=2))
+    r.plugin.update_(None)
+    r.drain(r.main)
+    assert r.plugin._cache['notice'] == ''
+    r.drain(r.workers); r.drain(r.main)
+    assert '2 components omitted' in r.plugin._cache['notice']
+
+
+def test_no_notice_for_deactivated_or_other_layer(reporter):
+    r = reporter; r.enable()
+    r.plugin._cache['notice'] = 'partial'
+    r.host.font.currentTab.activeLayer = object()
+    r.plugin.foregroundInViewCoords()  # Must return before text/viewport access.
+    r.plugin.willDeactivate()
+    r.plugin.foregroundInViewCoords()
     assert r.graphics.depth == 0

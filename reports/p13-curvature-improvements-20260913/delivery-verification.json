@@ -1,0 +1,8 @@
+{
+  "previousP13Manifest": "reports/p13-curvature-display-20260913/evidence-manifest.json",
+  "originalP13FilesVerified": 1445,
+  "allOriginalP13HashesPreserved": true,
+  "retainedRealSourceFiles": 451,
+  "retainedPrivateSourceExact": true,
+  "syntheticFixtureRepeatExact": true
+}
