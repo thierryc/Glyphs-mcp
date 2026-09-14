@@ -1,5 +1,8 @@
 # Bounded glyph metadata reads
 
+If glyph names are unknown, use [bounded glyph discovery](glyph-discovery.md).
+Known names need no preliminary inventory.
+
 Reuse the specific connection already identified by `$glyphs` as the seven-tool
 lean sidecar and its retained document ID. Only if that binding is missing, use
 `list_documents` to resolve the intended path; follow

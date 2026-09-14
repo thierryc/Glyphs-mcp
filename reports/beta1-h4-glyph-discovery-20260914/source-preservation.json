@@ -1,0 +1,17 @@
+{
+  "existingFiles": 3662,
+  "unchanged": 3653,
+  "changed": [
+    "src/sidecar/glyphs_mcp_sidecar/server.py",
+    "src/protocol/glyphs_mcp_protocol/reads.py",
+    "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py",
+    "src/glyphs-mcp/tests/test_simple_v2_build.py",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs/references/metadata-reads.md",
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs/references/metadata-reads.md",
+    "content/reference/command-set.mdx"
+  ],
+  "missing": [],
+  "scope": "Existing source, skills, plugin, legacy, installer and content files; preexisting work preserved. Baseline excludes caches, build outputs and symlinks."
+}

@@ -39,6 +39,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 
 | Requested work | Focused reference |
 |---|---|
+| Discover glyph names | [Glyph discovery](references/glyph-discovery.md), requiring `glyphs.list.v1` |
 | Glyph metadata | [Metadata](references/metadata-reads.md) |
 | Native master IDs/names | [Masters](references/master-reads.md) |
 | Exact layers, fractional metrics and bounds | [Layers](references/layer-reads.md) |

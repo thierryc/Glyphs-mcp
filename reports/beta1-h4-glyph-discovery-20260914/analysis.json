@@ -1,0 +1,702 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; sorted compact JSON with literal Unicode; {name,arguments} and one parsed response body; estimates, not billed usage",
+  "timings": {
+    "100": {
+      "readMs": {
+        "n": 5,
+        "median": 36.87545796856284,
+        "minimum": 27.9536250163801,
+        "maximum": 82.7628750121221,
+        "p95": 82.7628750121221
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 290.8271250198595,
+        "minimum": 109.10512501141056,
+        "maximum": 398.55620794696733,
+        "p95": 398.55620794696733
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 327.2898750146851,
+        "minimum": 168.89579204143956,
+        "maximum": 435.4316659155302,
+        "p95": 435.4316659155302
+      },
+      "firstAndWarmup": [
+        {
+          "label": "100",
+          "phase": "first",
+          "discoveryMs": 143.0450840271078,
+          "initialTotalMs": 183.45254205632955,
+          "openDocuments": 2,
+          "readMs": 40.40745802922174,
+          "requests": 1,
+          "total": 100
+        },
+        {
+          "label": "100",
+          "phase": "warmup",
+          "discoveryMs": 164.362000010442,
+          "initialTotalMs": 213.27012503752485,
+          "openDocuments": 2,
+          "readMs": 48.90812502708286,
+          "requests": 1,
+          "total": 100
+        }
+      ],
+      "pageHTTP": {
+        "n": 5,
+        "median": 36.87545796856284,
+        "minimum": 27.9536250163801,
+        "maximum": 82.7628750121221,
+        "p95": 82.7628750121221
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 5,
+          "median": 2.4965409538708627,
+          "minimum": 2.469833998475224,
+          "maximum": 2.5863749906420708,
+          "p95": 2.5863749906420708
+        },
+        "nativeMs": {
+          "n": 5,
+          "median": 9.81179199879989,
+          "minimum": 5.600708012934774,
+          "maximum": 18.639540998265147,
+          "p95": 18.639540998265147
+        }
+      }
+    },
+    "101": {
+      "readMs": {
+        "n": 5,
+        "median": 71.81225001113489,
+        "minimum": 65.95758395269513,
+        "maximum": 115.10612501297146,
+        "p95": 115.10612501297146
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 282.7286249957979,
+        "minimum": 237.8882499760948,
+        "maximum": 399.63645895477384,
+        "p95": 399.63645895477384
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 378.98379209218547,
+        "minimum": 309.7004999872297,
+        "maximum": 469.80395895661786,
+        "p95": 469.80395895661786
+      },
+      "firstAndWarmup": [
+        {
+          "label": "101",
+          "phase": "first",
+          "discoveryMs": 500.3114169812761,
+          "initialTotalMs": 662.1249579475261,
+          "openDocuments": 2,
+          "readMs": 161.81354096625,
+          "requests": 2,
+          "total": 101
+        },
+        {
+          "label": "101",
+          "phase": "warmup",
+          "discoveryMs": 383.6720840190537,
+          "initialTotalMs": 436.50225101737306,
+          "openDocuments": 2,
+          "readMs": 52.83016699831933,
+          "requests": 2,
+          "total": 101
+        }
+      ],
+      "pageHTTP": {
+        "n": 10,
+        "median": 36.13039600895718,
+        "minimum": 24.651791958604008,
+        "maximum": 83.11504201265052,
+        "p95": 83.11504201265052
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 10,
+          "median": 2.516479493351653,
+          "minimum": 2.427041996270418,
+          "maximum": 30.298333964310586,
+          "p95": 30.298333964310586
+        },
+        "nativeMs": {
+          "n": 10,
+          "median": 9.971645486075431,
+          "minimum": 1.3867919915355742,
+          "maximum": 18.00974999787286,
+          "p95": 18.00974999787286
+        }
+      }
+    },
+    "RobotoSlab": {
+      "readMs": {
+        "n": 5,
+        "median": 452.72875000955537,
+        "minimum": 383.625125978142,
+        "maximum": 559.2397899599746,
+        "p95": 559.2397899599746
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 324.3852080195211,
+        "minimum": 245.36649999208748,
+        "maximum": 537.3879159451462,
+        "p95": 537.3879159451462
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 796.2814180064015,
+        "minimum": 698.0952500016429,
+        "maximum": 991.9555420055985,
+        "p95": 991.9555420055985
+      },
+      "firstAndWarmup": [
+        {
+          "label": "RobotoSlab",
+          "phase": "first",
+          "discoveryMs": 759.1138750431128,
+          "initialTotalMs": 1667.2498320112936,
+          "openDocuments": 2,
+          "readMs": 908.1359569681808,
+          "requests": 13,
+          "total": 1272
+        },
+        {
+          "label": "RobotoSlab",
+          "phase": "warmup",
+          "discoveryMs": 1129.0567920077592,
+          "initialTotalMs": 1664.3525440013036,
+          "openDocuments": 2,
+          "readMs": 535.2957519935444,
+          "requests": 13,
+          "total": 1272
+        }
+      ],
+      "pageHTTP": {
+        "n": 65,
+        "median": 32.81891602091491,
+        "minimum": 21.38687501428649,
+        "maximum": 138.76329100457951,
+        "p95": 49.744958989322186
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 65,
+          "median": 2.49429204268381,
+          "minimum": 2.2313749650493264,
+          "maximum": 2.6645000325515866,
+          "p95": 2.594207995571196
+        },
+        "nativeMs": {
+          "n": 65,
+          "median": 5.320750002283603,
+          "minimum": 2.2190420422703028,
+          "maximum": 13.85991700226441,
+          "p95": 12.611292011570185
+        }
+      }
+    }
+  },
+  "tokens": {
+    "100": {
+      "request": {
+        "n": 5,
+        "median": 51,
+        "minimum": 49,
+        "maximum": 52,
+        "p95": 52
+      },
+      "response": {
+        "n": 5,
+        "median": 743,
+        "minimum": 743,
+        "maximum": 743,
+        "p95": 743
+      },
+      "fiveFullInventories": [
+        794,
+        792,
+        794,
+        792,
+        795
+      ]
+    },
+    "101": {
+      "request": {
+        "n": 10,
+        "median": 114.5,
+        "minimum": 46,
+        "maximum": 184,
+        "p95": 184
+      },
+      "response": {
+        "n": 10,
+        "median": 525.0,
+        "minimum": 179,
+        "maximum": 871,
+        "p95": 871
+      },
+      "fiveFullInventories": [
+        1289,
+        1287,
+        1268,
+        1274,
+        1274
+      ]
+    },
+    "RobotoSlab": {
+      "request": {
+        "n": 65,
+        "median": 183,
+        "minimum": 51,
+        "maximum": 195,
+        "p95": 193
+      },
+      "response": {
+        "n": 65,
+        "median": 900,
+        "minimum": 688,
+        "maximum": 1102,
+        "p95": 1093
+      },
+      "fiveFullInventories": [
+        13886,
+        14119,
+        13991,
+        13892,
+        13847
+      ]
+    }
+  },
+  "loadBefore": [
+    24.537109375,
+    20.68212890625,
+    15.52294921875
+  ],
+  "loadAfter": [
+    32.06640625,
+    23.44873046875,
+    17.07177734375
+  ],
+  "allCallbacks": {
+    "queueMs": {
+      "n": 175,
+      "median": 2.521290967706591,
+      "minimum": 2.219917019829154,
+      "maximum": 1099.8445419827476,
+      "p95": 364.3710410105996
+    },
+    "nativeMs": {
+      "n": 175,
+      "median": 8.007499971427023,
+      "minimum": 0.01675001112744212,
+      "maximum": 40.385000000242144,
+      "p95": 21.347625006455928
+    }
+  },
+  "callCounts": {
+    "get_status": 1,
+    "list_documents": 31,
+    "read_entities": 143
+  },
+  "toolErrors": [
+    {
+      "arguments": {
+        "document_id": "doc_f85c92ea42ce419fa1d1c78903d359f0",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 100,
+            "cursor": "g1.eyJkb2N1bWVudCI6ImRvY19mODVjOTJlYTQyY2U0MTlmYTFkMWM3ODkwM2QzNTlmMCIsIm9mZnNldCI6MTAwLCJ0b3RhbCI6MTAxLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImFmdGVyIjpbIi0xMjg1OTE5MzYwIiwiaDRnMDk5Il19"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "stale_glyph_cursor",
+        "message": "document, count or change signal changed; restart glyph discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_30670c87d8ca465e88e92804cfd98c39",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 100,
+            "cursor": "g1.eyJkb2N1bWVudCI6ImRvY18zMDY3MGM4N2Q4Y2E0NjVlODhlOTI4MDRjZmQ5OGMzOSIsIm9mZnNldCI6MTAwLCJ0b3RhbCI6MTAxLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImFmdGVyIjpbIi0xMTYwNDk3MTUyIiwiaDRnMDk5Il19"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "stale_glyph_cursor",
+        "message": "document, count or change signal changed; restart glyph discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_0fb090e1fdbf4975b55c32cdba2ee58a",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 100,
+            "cursor": "g1.eyJkb2N1bWVudCI6ImRvY18wZmIwOTBlMWZkYmY0OTc1YjU1YzMyY2RiYTJlZTU4YSIsIm9mZnNldCI6MTAwLCJ0b3RhbCI6MTAxLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImFmdGVyIjpbIi0xMjEzMjI4OTI4IiwiaDRnMDk5Il19"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "stale_glyph_cursor",
+        "message": "glyph page boundary changed; restart glyph discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_4288c36a64564096a51d352d695ce815",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 100,
+            "cursor": "g1.eyJkb2N1bWVudCI6ImRvY180Mjg4YzM2YTY0NTY0MDk2YTUxZDM1MmQ2OTVjZTgxNSIsIm9mZnNldCI6MTAwLCJ0b3RhbCI6MTAxLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImFmdGVyIjpbIi0xMTQwNjc2MDk2IiwiaDRnMDk5Il19"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "stale_glyph_cursor",
+        "message": "document, count or change signal changed; restart glyph discovery",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_937e7ed688dd4826bfa49b7404d01aae",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 0
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "glyph page limit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_937e7ed688dd4826bfa49b7404d01aae",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 101
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "glyph page limit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_937e7ed688dd4826bfa49b7404d01aae",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "cursor": "bad"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "use the unmodified nextCursor from the previous glyph page",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_937e7ed688dd4826bfa49b7404d01aae",
+        "entities": [
+          {
+            "kind": "glyphs"
+          }
+        ],
+        "fields": []
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "read_entities requires 1-32 fields",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_937e7ed688dd4826bfa49b7404d01aae",
+        "entities": [
+          {
+            "kind": "glyphs"
+          }
+        ],
+        "fields": [
+          "unicode"
+        ]
+      },
+      "error": {
+        "code": "unsupported_read",
+        "message": "glyph pages support only the name field",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_937e7ed688dd4826bfa49b7404d01aae",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 100,
+            "cursor": "g1.eyJkb2N1bWVudCI6ImRvY185MzdlN2VkNjg4ZGQ0ODI2YmZhNDliNzQwNGQwMWFhZSIsIm9mZnNldCI6MTAwLCJ0b3RhbCI6MTAxLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImFmdGVyIjpbIi0xMTI5MjcxOTM2IiwiaDRnMDk5Il19"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_1ebed30d3181472ba7cf3ccdc37ec322",
+        "entities": [
+          {
+            "kind": "glyphs",
+            "limit": 100,
+            "cursor": "g1.eyJkb2N1bWVudCI6ImRvY185MzdlN2VkNjg4ZGQ0ODI2YmZhNDliNzQwNGQwMWFhZSIsIm9mZnNldCI6MTAwLCJ0b3RhbCI6MTAxLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImFmdGVyIjpbIi0xMTI5MjcxOTM2IiwiaDRnMDk5Il19"
+          }
+        ],
+        "fields": [
+          "name"
+        ]
+      },
+      "error": {
+        "code": "stale_glyph_cursor",
+        "message": "document, count or change signal changed; restart glyph discovery",
+        "details": {}
+      }
+    }
+  ],
+  "checks": {
+    "total": 616,
+    "passed": 616,
+    "distinct": 616
+  },
+  "passed": true,
+  "error": null,
+  "cleanupError": null,
+  "skillTextTokens": {
+    "SKILL.md": 928,
+    "references/glyph-discovery.md": 640
+  },
+  "runtime": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+9ed7938a2e54",
+    "codeHash": "sha256:9ed7938a2e549972cdf9dd95af1f7930246b857aa7ac7e9d90436321d7a8fbed",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+5331881901ff",
+      "codeHash": "sha256:5331881901ffaa1c4ed50f9b4d24daef9c74cd0a78af3166eaca82faca10b67d",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_c6b2529777ef415cb6aafd591e55ff66",
+          "document": "Roboto Slab",
+          "kind": "start_nodes",
+          "phase": "discarded",
+          "startedAt": 1789386064.489494,
+          "finishedAt": 1789386064.489534,
+          "completed": 2,
+          "total": 2,
+          "message": null
+        },
+        {
+          "jobId": "job_9010b4b75fb0445a8b88d9e0e9c9c9c6",
+          "document": "Roboto Slab",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789385892.703386,
+          "finishedAt": 1789385892.70342,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_1a3637ada6a84f9990fcc0e29a1d93f3",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382440.370841,
+          "finishedAt": 1789382440.370868,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_fdec62f9d05b4d04b534c255fab8909f",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382370.894219,
+          "finishedAt": 1789382370.894258,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_dac8c65021ff4ebab6cd7f63c4f3031a",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "applied",
+          "startedAt": 1789382244.508908,
+          "finishedAt": 1789382244.50895,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  }
+}

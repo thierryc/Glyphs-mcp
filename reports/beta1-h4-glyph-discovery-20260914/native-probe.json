@@ -1,0 +1,130 @@
+[
+  {
+    "label": "initial",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "control",
+      "h3test000",
+      "h3test001"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 0,
+    "dirty": false
+  },
+  {
+    "label": "rename-immediate",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 0,
+    "dirty": false
+  },
+  {
+    "label": "rename-after-yield",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 0,
+    "dirty": false
+  },
+  {
+    "label": "selection-after-yield",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 0,
+    "dirty": false
+  },
+  {
+    "label": "explicit-dirty",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 0,
+    "dirty": true
+  },
+  {
+    "label": "master-after-yield",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 1,
+    "dirty": true
+  },
+  {
+    "label": "add-after-yield",
+    "count": 110,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 110,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 3,
+    "dirty": true
+  },
+  {
+    "label": "delete-after-yield",
+    "count": 109,
+    "type": "FontGlyphsProxy",
+    "first": [
+      "h4renamed",
+      "component",
+      "curve"
+    ],
+    "nativeCount": 109,
+    "nativeChangeCount": {
+      "error": "'NSKVONotifying_GSDocument' object has no attribute 'changeCount'"
+    },
+    "generation": 5,
+    "dirty": true
+  }
+]

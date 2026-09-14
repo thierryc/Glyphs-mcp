@@ -33,6 +33,7 @@ intent when the prior target may no longer be intended.
 | Layer | `{"kind":"layer","glyph":"H","id":"<layer ID>"}` | `id`, `name`, `width`, `vertWidth`, `vertOrigin`, `leftMetricsKey`, `rightMetricsKey`, `widthMetricsKey`, `bounds`, `outlineHash` |
 | Master | `{"kind":"master","id":"<master ID>"}` | `id`, `name` |
 | Master page | `{"kind":"masters","limit":100}`; sole selector | `id`, `name`; see pagination below |
+| Glyph inventory | `{"kind":"glyphs"}`; optional `limit`, opaque `cursor` | `name` |
 | Context | `{"kind":"context"}`; optional `glyphLimit` with `selectedGlyphs` | `view`, `master`, `selectedGlyphs` |
 | Selection | `{"kind":"selection"}`; optional `nodeLimit` only with `nodes` | `glyph`, `layer`, `selectedNodeCount`, `selectedAnchorCount`, `selectedComponentCount`, `selectedGuideCount`, `selectedOtherCount`, optional `nodes` |
 | Kerning | `{"kind":"kerning","master":"<master ID>","direction":"LTR","left":"A","right":"V"}` | `value` only; `null` means absent. |
@@ -64,6 +65,14 @@ avoid editing between pages and re-enumerate after observed edits.
 nonempty native ID, never a name alias. IDs need not be UUIDs, and names can repeat.
 Require these capabilities on the current private build; if absent, update the
 bridge, sidecar and skills together. Protocol 1 alone does not establish support.
+
+For glyph-name discovery, require negotiated `glyphs.list.v1`. One glyph-page
+selector returns native-order `items`, `total`, `returned`, `complete` and an
+opaque `nextCursor`. The integer limit is 1–100, default 100; `name` is initially
+the only field. Pass the cursor unchanged until complete. On `stale_glyph_cursor`
+or any observed edit, discard partial results and restart. Document/count/change-
+signal/dirty/boundary guards are bounded, not an atomic multi-call snapshot.
+Known names need no inventory. See `glyphs/references/glyph-discovery.md`.
 
 For document context, require negotiated `document.context.v1`. Use one context
 selector and request `view`, `master` and/or `selectedGlyphs`. View is `font`,

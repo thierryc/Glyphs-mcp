@@ -10,7 +10,7 @@ from glyphs_mcp_protocol.reads import MASTER_PAGE_LIMIT
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
-from . import context, coordinates, kerning, selection, start_node
+from . import context, coordinates, glyph_inventory, kerning, selection, start_node
 
 
 _MISSING = object()
@@ -283,6 +283,7 @@ class GlyphsAdapter:
             if not isinstance(request, Mapping):
                 raise BridgeError("invalid_request", "entity selectors must be objects")
             kind = str(request.get("kind") or "")
+            if kind == "glyphs": return glyph_inventory.read(self, font, document_id, entities, fields)
             if kind == "kerning" and fields == ["value"]:
                 try:
                     result.append({"entity": dict(request), "values": {"value": kerning.read(font, request)}})

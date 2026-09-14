@@ -1,0 +1,32 @@
+[
+  {
+    "path": "native-facts.json.gz",
+    "rawBytes": 3615808,
+    "rawSHA256": "247d0093ef0aa034029cb9b7b8fcc7755faf6572c47b5dadc5fd55a0acce799f",
+    "compressedSHA256": "21aea325d0a22102a538248761b54140612ba83899d90f61926ea7df31adf65c"
+  },
+  {
+    "path": "native-source.json.gz",
+    "rawBytes": 67696,
+    "rawSHA256": "b732f0ba070143258c15ff6fa98cea5bd4122fbce7a202f08b283d95b478f0ac",
+    "compressedSHA256": "04f927bc9e91e6c0b2e084b7264d7107b7f5f36c5ebbcbb0ae71a8ef31ddd483"
+  },
+  {
+    "path": "native-source.log.gz",
+    "rawBytes": 197625,
+    "rawSHA256": "2e023ea82e75826150bec8a3c308acc6d29b5446be82b429741ca74014e336a9",
+    "compressedSHA256": "75deb1b6d25de326babd3828b8436c6142895261279287f376be29ce0d4cd827"
+  },
+  {
+    "path": "protected-before-install.json.gz",
+    "rawBytes": 181005,
+    "rawSHA256": "b52787e61a941a8cac49756fe75064556d1fe774697e0eb7fb2a8b07060d6f67",
+    "compressedSHA256": "d3f92ac969bb92c0137bf36fa14989e4db35e92eb36aae5780a3027690b4dcf5"
+  },
+  {
+    "path": "calls.jsonl.gz",
+    "rawBytes": 479875,
+    "rawSHA256": "bfe87996597f4b006ebe9011c8ea2fb27cd92b13ddb7e66f386a8b89f3d3f180",
+    "compressedSHA256": "81550028a995c523c2925d87c11e6cc7f9af8cabd22e9db093888e413f6fdffe"
+  }
+]

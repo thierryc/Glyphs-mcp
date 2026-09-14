@@ -1,0 +1,78 @@
+{
+.appVersion = "4107";
+.formatVersion = 3;
+axes = (
+{
+name = Weight;
+tag = wght;
+}
+);
+date = "2026-09-14 17:00:00 +0000";
+familyName = "H4 Glyph Inventory 0";
+fontMaster = (
+{
+axesValues = (
+100
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Weight;
+Location = 0;
+}
+);
+}
+);
+iconName = Light;
+id = "C7941642-FFB2-5D2E-B7FE-4A30A143BE40";
+name = Light;
+},
+{
+axesValues = (
+500
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Weight;
+Location = 0;
+}
+);
+}
+);
+id = "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC";
+name = Regular;
+},
+{
+axesValues = (
+900
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Weight;
+Location = 0;
+}
+);
+}
+);
+iconName = Bold;
+id = "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575";
+name = Bold;
+}
+);
+glyphs = (
+);
+settings = {
+gridLength = 0;
+};
+unitsPerEm = 1000;
+versionMajor = 1;
+versionMinor = 0;
+}

@@ -34,7 +34,13 @@ and bounded selected glyph names through the seven-tool interface. All 649 lean
 regressions, 133 isolated native selection checks and 102 distinct installed
 native checks passed after two documented harness corrections. Median context
 HTTP reads were 23/26 ms for small/bounded selections; queue tails remain separate.
-H4 is paused for feedback.
+
+[H4 bounded glyph discovery](beta1-h4-glyph-discovery-20260914/report.md) is installed
+and qualified: native names in pages of up to 100, explicit coverage and stale-cursor
+handling through `read_entities`. All **713 lean**, **38 isolated native** and
+**616 installed native** checks passed, including a 1,272-glyph Roboto Slab inventory.
+Native callback p95/max were 21.35/40.39 ms; document-discovery and queue tails remain
+separate. H5 layer discovery is paused for feedback.
 
 ## Current result
 
