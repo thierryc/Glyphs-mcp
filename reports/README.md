@@ -10,6 +10,10 @@ maps all 87 active v1 tools, distinguishes deliberate reductions from unresolved
 workflow gaps, and identifies incompatible installed skills plus separate,
 unintegrated master-compatibility work. It is a review, not a new native benchmark.
 
+[The gap-fix implementation plan](beta1-gap-fixes-plan-20260914/plan.md) starts
+with six high-priority steps. Each has a test gate and a short explanation of
+the next fix; the plan itself does not claim implementation or qualification.
+
 ## Current result
 
 [RV02 native-coding follow-up](rv02-native-coding-20260914/report.md) implemented,
