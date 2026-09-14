@@ -1,0 +1,61 @@
+{
+  "at": 1789347734.561296,
+  "elapsedSinceV1FinishSeconds": 191.43494319915771,
+  "checks": {
+    "sidecar": {
+      "files": 34,
+      "changed": [],
+      "pass_": true
+    },
+    "bridge": {
+      "files": 29,
+      "changed": [],
+      "pass_": true
+    },
+    "skills": {
+      "files": 1731,
+      "changed": [],
+      "pass_": true
+    },
+    "source": {
+      "files": 952,
+      "changed": [],
+      "pass_": true
+    },
+    "v1-runtime": {
+      "files": 730,
+      "changed": [],
+      "pass_": true
+    },
+    "v1-skills": {
+      "files": 54,
+      "changed": [],
+      "pass_": true
+    },
+    "original-font": {
+      "files": 451,
+      "changed": [],
+      "pass_": true
+    },
+    "curve-companion": {
+      "files": 8,
+      "changed": [],
+      "pass_": true
+    },
+    "configured-plugin-skills": {
+      "files": 77,
+      "changed": [],
+      "pass_": true
+    }
+  },
+  "copies": 32,
+  "changedCopies": [],
+  "newCrashes": [],
+  "processes": "14685 /Applications/Glyphs 4.app/Contents/MacOS/Glyphs 4\n43122 /Applications/Glyphs 3.app/Contents/MacOS/Glyphs 3\n",
+  "baselineHash": "6114ebb3b2c445b1f52b128c5cf6fcf84e70ca4fac9d008f4d4e0b70b5c68f8b",
+  "load": [
+    5.43798828125,
+    7.2294921875,
+    8.6162109375
+  ]
+}

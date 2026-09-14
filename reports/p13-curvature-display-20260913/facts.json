@@ -1,0 +1,1122 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; compact sorted literal-Unicode requests {name,arguments} plus parsed MCP response. Skills separate. Actual billed usage unavailable.",
+  "arms": {
+    "v2": {
+      "primaryTrials": 14,
+      "preservationPass": 14,
+      "mathPass": 14,
+      "strokeCoordinateChecks": 117544,
+      "maximumCoordinateError": 1.3500311979441904e-13,
+      "dirtyRestorationPass": 0,
+      "publicCallCounts": {
+        "get_status": 18,
+        "list_documents": 16
+      },
+      "httpLatency": {
+        "samples": 34,
+        "medianMs": 135.39445798960514,
+        "minMs": 32.490416953805834,
+        "maxMs": 258.1103339907713,
+        "p95Ms": 222.26900001987815
+      },
+      "transportExceptions": [],
+      "timed": {
+        "small": {
+          "rows": [
+            {
+              "key": "trial-1-small",
+              "replayMs": 13915,
+              "initialDiscoveryMs": 35.5664580129087,
+              "replayPlusInitialDiscoveryMs": 13950.566458012909,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 161,
+              "load": [
+                8.681640625,
+                16.79443359375,
+                16.01220703125
+              ],
+              "loadAfter": [
+                15.6728515625,
+                17.322265625,
+                16.224609375
+              ]
+            },
+            {
+              "key": "trial-2-small",
+              "replayMs": 13230,
+              "initialDiscoveryMs": 130.1283750217408,
+              "replayPlusInitialDiscoveryMs": 13360.12837502174,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 159,
+              "load": [
+                18.34130859375,
+                17.84814453125,
+                16.41650390625
+              ],
+              "loadAfter": [
+                29.62158203125,
+                20.67041015625,
+                17.4912109375
+              ]
+            },
+            {
+              "key": "trial-3-small",
+              "replayMs": 13529,
+              "initialDiscoveryMs": 179.5181249617599,
+              "replayPlusInitialDiscoveryMs": 13708.51812496176,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 161,
+              "load": [
+                29.57177734375,
+                20.80859375,
+                17.55859375
+              ],
+              "loadAfter": [
+                37.10205078125,
+                23.345703125,
+                18.57080078125
+              ]
+            },
+            {
+              "key": "trial-4-small",
+              "replayMs": 13434,
+              "initialDiscoveryMs": 181.67237500892952,
+              "replayPlusInitialDiscoveryMs": 13615.67237500893,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 162,
+              "load": [
+                37.09375,
+                23.572265625,
+                18.6787109375
+              ],
+              "loadAfter": [
+                25.578125,
+                22.9853515625,
+                18.80712890625
+              ]
+            },
+            {
+              "key": "trial-5-small",
+              "replayMs": 13103,
+              "initialDiscoveryMs": 145.128250005655,
+              "replayPlusInitialDiscoveryMs": 13248.128250005655,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 159,
+              "load": [
+                25.578125,
+                22.9853515625,
+                18.80712890625
+              ],
+              "loadAfter": [
+                13.8017578125,
+                20.14599609375,
+                18.03271484375
+              ]
+            }
+          ],
+          "metrics": {
+            "replayMs": {
+              "samples": 5,
+              "medianMs": 13434,
+              "minMs": 13103,
+              "maxMs": 13915,
+              "p95Ms": 13915
+            },
+            "initialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 145.128250005655,
+              "minMs": 35.5664580129087,
+              "maxMs": 181.67237500892952,
+              "p95Ms": 181.67237500892952
+            },
+            "replayPlusInitialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 13615.67237500893,
+              "minMs": 13248.128250005655,
+              "maxMs": 13950.566458012909,
+              "p95Ms": 13950.566458012909
+            }
+          },
+          "publicPayloadTokens": [
+            161,
+            159,
+            161,
+            162,
+            159
+          ]
+        },
+        "dense": {
+          "rows": [
+            {
+              "key": "trial-1-dense",
+              "replayMs": 16466,
+              "initialDiscoveryMs": 110.1277910056524,
+              "replayPlusInitialDiscoveryMs": 16576.127791005652,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 157,
+              "load": [
+                11.623046875,
+                17.85546875,
+                17.3291015625
+              ],
+              "loadAfter": [
+                8.0146484375,
+                15.3369140625,
+                16.427734375
+              ]
+            },
+            {
+              "key": "trial-2-dense",
+              "replayMs": 16417,
+              "initialDiscoveryMs": 141.00583299295977,
+              "replayPlusInitialDiscoveryMs": 16558.00583299296,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 161,
+              "load": [
+                8.09326171875,
+                15.2314453125,
+                16.3837890625
+              ],
+              "loadAfter": [
+                7.5830078125,
+                14.33154296875,
+                16.00927734375
+              ]
+            },
+            {
+              "key": "trial-3-dense",
+              "replayMs": 17219,
+              "initialDiscoveryMs": 146.74812502926216,
+              "replayPlusInitialDiscoveryMs": 17365.748125029262,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 156,
+              "load": [
+                7.5830078125,
+                14.33154296875,
+                16.00927734375
+              ],
+              "loadAfter": [
+                12.0556640625,
+                14.55615234375,
+                16.0087890625
+              ]
+            },
+            {
+              "key": "trial-4-dense",
+              "replayMs": 16980,
+              "initialDiscoveryMs": 32.490416953805834,
+              "replayPlusInitialDiscoveryMs": 17012.490416953806,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 160,
+              "load": [
+                12.0556640625,
+                14.55615234375,
+                16.0087890625
+              ],
+              "loadAfter": [
+                12.14892578125,
+                14.3291015625,
+                15.8671875
+              ]
+            },
+            {
+              "key": "trial-5-dense",
+              "replayMs": 17202,
+              "initialDiscoveryMs": 166.45345801953226,
+              "replayPlusInitialDiscoveryMs": 17368.453458019532,
+              "uiActionCount": 15,
+              "publicCalls": 1,
+              "publicPayloadTokens": 163,
+              "load": [
+                12.296875,
+                14.3232421875,
+                15.85595703125
+              ],
+              "loadAfter": [
+                10.80712890625,
+                13.72509765625,
+                15.5673828125
+              ]
+            }
+          ],
+          "metrics": {
+            "replayMs": {
+              "samples": 5,
+              "medianMs": 16980,
+              "minMs": 16417,
+              "maxMs": 17219,
+              "p95Ms": 17219
+            },
+            "initialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 141.00583299295977,
+              "minMs": 32.490416953805834,
+              "maxMs": 166.45345801953226,
+              "p95Ms": 166.45345801953226
+            },
+            "replayPlusInitialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 17012.490416953806,
+              "minMs": 16558.00583299296,
+              "maxMs": 17368.453458019532,
+              "p95Ms": 17368.453458019532
+            }
+          },
+          "publicPayloadTokens": [
+            157,
+            161,
+            156,
+            160,
+            163
+          ]
+        }
+      },
+      "firstSmallRecordedElapsedSeconds": 177.0581340789795,
+      "firstSmallSavedVisibleEvidenceSeconds": 70.44091701507568,
+      "nativeTiming": {
+        "durationSeconds": 10.003615140914917,
+        "restored": true,
+        "loadBefore": [
+          8.0146484375,
+          8.5771484375,
+          12.2421875
+        ],
+        "loadAfter": [
+          9.568359375,
+          8.8876953125,
+          12.30908203125
+        ],
+        "callbacks": {
+          "foreground": {
+            "samples": 8,
+            "medianMs": 8.666917,
+            "minMs": 8.138,
+            "maxMs": 10.472541,
+            "p95Ms": 10.472541
+          },
+          "native-extraction": {
+            "samples": 18,
+            "medianMs": 2.6878125,
+            "minMs": 2.283416,
+            "maxMs": 5.651959,
+            "p95Ms": 5.651959
+          },
+          "worker-comb": {
+            "samples": 2,
+            "medianMs": 3.0831869999999997,
+            "minMs": 3.060583,
+            "maxMs": 3.105791,
+            "p95Ms": 3.105791
+          }
+        },
+        "mainQueue": {
+          "samples": 714,
+          "medianMs": 1.2416454846970737,
+          "minMs": 0.2756249741651118,
+          "maxMs": 382.488708011806,
+          "p95Ms": 2.007166971452534
+        },
+        "afterLastRecordedCallbackSeconds": 7.077913999557495
+      },
+      "controls": {
+        "control-straight": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "straight",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": null
+        },
+        "control-master-Bold": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 1.2789769243681803e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-empty": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "empty",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": null
+        },
+        "control-master-Regular": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 8.526512829121202e-14,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-font-view": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": null,
+          "layer": null,
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": null
+        },
+        "control-overLimit": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "overLimit",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 129,
+          "representedCubics": 128,
+          "strokeCount": 1878,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1878,
+            "maxError": 1.1368683772161603e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-master-Light": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 1.3500311979441904e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-mixed": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "mixed",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 1,
+          "representedCubics": 1,
+          "strokeCount": 51,
+          "strokeCapReached": false,
+          "components": 1,
+          "math": {
+            "checked": 51,
+            "maxError": 2.1316282072803006e-14,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-dense": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 1.1368683772161603e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-final-disabled": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": false,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 1.1368683772161603e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-text": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 1.3500311979441904e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-profile-restored": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 1.1368683772161603e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-componentOnly": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "componentOnly",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 1,
+          "math": null
+        },
+        "control-zoom": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 1.1368683772161603e-13,
+            "errors": [],
+            "pass_": true
+          }
+        }
+      }
+    },
+    "v1": {
+      "primaryTrials": 14,
+      "preservationPass": 14,
+      "mathPass": 14,
+      "strokeCoordinateChecks": 117544,
+      "maximumCoordinateError": 2.2737367544323206e-13,
+      "dirtyRestorationPass": 0,
+      "publicCallCounts": {
+        "get_server_info": 17,
+        "list_open_fonts": 15,
+        "set_curve_review_overlay": 62,
+        "get_curve_review_overlay_state": 34
+      },
+      "httpLatency": {
+        "samples": 128,
+        "medianMs": 20.011562504805624,
+        "minMs": 7.971000042743981,
+        "maxMs": 123.24283400084823,
+        "p95Ms": 76.16483297897503
+      },
+      "transportExceptions": [],
+      "timed": {
+        "small": {
+          "rows": [
+            {
+              "key": "trial-1-small",
+              "replayMs": 9759,
+              "initialDiscoveryMs": 70.86804194841534,
+              "replayPlusInitialDiscoveryMs": 9829.868041948415,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1833,
+              "load": [
+                5.740234375,
+                7.72998046875,
+                10.650390625
+              ],
+              "loadAfter": [
+                7.482421875,
+                7.96337890625,
+                10.6484375
+              ]
+            },
+            {
+              "key": "trial-2-small",
+              "replayMs": 9747,
+              "initialDiscoveryMs": 83.79408298060298,
+              "replayPlusInitialDiscoveryMs": 9830.794082980603,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1833,
+              "load": [
+                8.083984375,
+                8.080078125,
+                10.673828125
+              ],
+              "loadAfter": [
+                6.31640625,
+                7.64208984375,
+                10.3935546875
+              ]
+            },
+            {
+              "key": "trial-3-small",
+              "replayMs": 9612,
+              "initialDiscoveryMs": 76.33999997051433,
+              "replayPlusInitialDiscoveryMs": 9688.339999970514,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1833,
+              "load": [
+                6.05078125,
+                7.56494140625,
+                10.35009765625
+              ],
+              "loadAfter": [
+                6.1806640625,
+                7.4599609375,
+                10.21533203125
+              ]
+            },
+            {
+              "key": "trial-4-small",
+              "replayMs": 9554,
+              "initialDiscoveryMs": 57.554124970920384,
+              "replayPlusInitialDiscoveryMs": 9611.55412497092,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1833,
+              "load": [
+                6.1806640625,
+                7.4599609375,
+                10.21533203125
+              ],
+              "loadAfter": [
+                5.810546875,
+                7.27587890625,
+                10.06884765625
+              ]
+            },
+            {
+              "key": "trial-5-small",
+              "replayMs": 9789,
+              "initialDiscoveryMs": 53.744500037282705,
+              "replayPlusInitialDiscoveryMs": 9842.744500037283,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1833,
+              "load": [
+                5.810546875,
+                7.27587890625,
+                10.06884765625
+              ],
+              "loadAfter": [
+                4.72509765625,
+                6.740234375,
+                9.708984375
+              ]
+            }
+          ],
+          "metrics": {
+            "replayMs": {
+              "samples": 5,
+              "medianMs": 9747,
+              "minMs": 9554,
+              "maxMs": 9789,
+              "p95Ms": 9789
+            },
+            "initialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 70.86804194841534,
+              "minMs": 53.744500037282705,
+              "maxMs": 83.79408298060298,
+              "p95Ms": 83.79408298060298
+            },
+            "replayPlusInitialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 9829.868041948415,
+              "minMs": 9611.55412497092,
+              "maxMs": 9842.744500037283,
+              "p95Ms": 9842.744500037283
+            }
+          },
+          "publicPayloadTokens": [
+            1833,
+            1833,
+            1833,
+            1833,
+            1833
+          ]
+        },
+        "dense": {
+          "rows": [
+            {
+              "key": "trial-1-dense",
+              "replayMs": 10902,
+              "initialDiscoveryMs": 70.36995800444856,
+              "replayPlusInitialDiscoveryMs": 10972.369958004449,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1965,
+              "load": [
+                11.07861328125,
+                7.9228515625,
+                9.93212890625
+              ],
+              "loadAfter": [
+                8.4970703125,
+                7.58203125,
+                9.73681640625
+              ]
+            },
+            {
+              "key": "trial-2-dense",
+              "replayMs": 11089,
+              "initialDiscoveryMs": 73.93183297244832,
+              "replayPlusInitialDiscoveryMs": 11162.931832972448,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1965,
+              "load": [
+                8.4970703125,
+                7.58203125,
+                9.73681640625
+              ],
+              "loadAfter": [
+                7.4375,
+                7.40087890625,
+                9.5947265625
+              ]
+            },
+            {
+              "key": "trial-3-dense",
+              "replayMs": 10941,
+              "initialDiscoveryMs": 76.16483297897503,
+              "replayPlusInitialDiscoveryMs": 11017.164832978975,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1965,
+              "load": [
+                7.4375,
+                7.40087890625,
+                9.5947265625
+              ],
+              "loadAfter": [
+                7.67236328125,
+                7.4189453125,
+                9.521484375
+              ]
+            },
+            {
+              "key": "trial-4-dense",
+              "replayMs": 10825,
+              "initialDiscoveryMs": 52.1257909713313,
+              "replayPlusInitialDiscoveryMs": 10877.125790971331,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1965,
+              "load": [
+                7.3779296875,
+                7.36181640625,
+                9.48876953125
+              ],
+              "loadAfter": [
+                7.2939453125,
+                7.333984375,
+                9.41552734375
+              ]
+            },
+            {
+              "key": "trial-5-dense",
+              "replayMs": 11238,
+              "initialDiscoveryMs": 45.747124997433275,
+              "replayPlusInitialDiscoveryMs": 11283.747124997433,
+              "uiActionCount": 7,
+              "publicCalls": 7,
+              "publicPayloadTokens": 1965,
+              "load": [
+                7.2939453125,
+                7.333984375,
+                9.41552734375
+              ],
+              "loadAfter": [
+                6.59521484375,
+                7.1650390625,
+                9.2705078125
+              ]
+            }
+          ],
+          "metrics": {
+            "replayMs": {
+              "samples": 5,
+              "medianMs": 10941,
+              "minMs": 10825,
+              "maxMs": 11238,
+              "p95Ms": 11238
+            },
+            "initialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 70.36995800444856,
+              "minMs": 45.747124997433275,
+              "maxMs": 76.16483297897503,
+              "p95Ms": 76.16483297897503
+            },
+            "replayPlusInitialDiscoveryMs": {
+              "samples": 5,
+              "medianMs": 11017.164832978975,
+              "minMs": 10877.125790971331,
+              "maxMs": 11283.747124997433,
+              "p95Ms": 11283.747124997433
+            }
+          },
+          "publicPayloadTokens": [
+            1965,
+            1965,
+            1965,
+            1965,
+            1965
+          ]
+        }
+      },
+      "firstSmallRecordedElapsedSeconds": 165.7917971611023,
+      "firstSmallSavedVisibleEvidenceSeconds": 99.91594505310059,
+      "nativeTiming": {
+        "durationSeconds": 10.001655101776123,
+        "restored": true,
+        "loadBefore": [
+          12.8193359375,
+          8.64453125,
+          9.42431640625
+        ],
+        "loadAfter": [
+          13.03564453125,
+          8.83544921875,
+          9.48291015625
+        ],
+        "callbacks": {
+          "foreground": {
+            "samples": 2,
+            "medianMs": 28.293,
+            "minMs": 28.283375,
+            "maxMs": 28.302625,
+            "p95Ms": 28.302625
+          }
+        },
+        "mainQueue": {
+          "samples": 851,
+          "medianMs": 1.2359999818727374,
+          "minMs": 0.21508400095626712,
+          "maxMs": 113.51404199376702,
+          "p95Ms": 1.78229104494676
+        },
+        "afterLastRecordedCallbackSeconds": 8.748218297958374
+      },
+      "controls": {
+        "control-straight": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "straight",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": null
+        },
+        "control-master-Bold": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 1.1368683772161603e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-empty": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "empty",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": null
+        },
+        "control-master-Regular": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 5.684341886080802e-14,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-font-view": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": null,
+          "layer": null,
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": null
+        },
+        "control-overLimit": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "overLimit",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 129,
+          "representedCubics": 129,
+          "strokeCount": 1892,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1892,
+            "maxError": 2.2737367544323206e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-master-Light": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 5.684341886080802e-14,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-mixed": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "mixed",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 1,
+          "representedCubics": 1,
+          "strokeCount": 51,
+          "strokeCapReached": false,
+          "components": 1,
+          "math": {
+            "checked": 51,
+            "maxError": 1.4210854715202004e-14,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-dense": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 2.2737367544323206e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-final-disabled": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": false,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 2.2737367544323206e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-text": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "small",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 3,
+          "representedCubics": 3,
+          "strokeCount": 152,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 152,
+            "maxError": 5.684341886080802e-14,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-profile-restored": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 2.2737367544323206e-13,
+            "errors": [],
+            "pass_": true
+          }
+        },
+        "control-componentOnly": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "componentOnly",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 0,
+          "representedCubics": 0,
+          "strokeCount": 0,
+          "strokeCapReached": false,
+          "components": 1,
+          "math": null
+        },
+        "control-zoom": {
+          "dataExact": true,
+          "objectIdentitiesExact": true,
+          "glyph": "dense",
+          "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "enabled": true,
+          "actualCubics": 40,
+          "representedCubics": 40,
+          "strokeCount": 1947,
+          "strokeCapReached": false,
+          "components": 0,
+          "math": {
+            "checked": 1947,
+            "maxError": 2.2737367544323206e-13,
+            "errors": [],
+            "pass_": true
+          }
+        }
+      }
+    }
+  },
+  "skillTokens": {
+    "v2-entry-skill.md": 817,
+    "v1-outlines-skill.md": 2306,
+    "v2-outlines-skill.md": 588
+  },
+  "uiReplayHarnessTokens": 2176,
+  "UIAndOracleTokensIncludedInPublicPayload": false
+}

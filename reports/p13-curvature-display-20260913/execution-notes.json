@@ -1,0 +1,27 @@
+{
+  "preparationFailures": [
+    "GlyphsLib draft rejected by native parser (no overlay operation)",
+    "Native generator adapted from paths.append to Glyphs4 shapes.append",
+    "Oracle activeLayer getter required calling native selector",
+    "Stale previous finish request stopped oracle restart; stale-command handling corrected"
+  ],
+  "probeFailure": {
+    "kind": "PyObjC BadPrototypeError during test callback restoration",
+    "hostProcessExited": false,
+    "reportSent": false,
+    "originalCallbackRestored": true,
+    "failedSampleExcluded": true,
+    "correctedProbeRestored": true
+  },
+  "uiFailure": "One stale AX index attempted port setter on Set button; no mutation occurred, current field then used",
+  "nativeCrashes": [],
+  "primaryRetries": 0,
+  "scopeLimitations": [
+    "Open cubic contours in P13 fixture; no new closed wraparound native gate",
+    "No hints in fixture",
+    "No application restart/startup test",
+    "No matched on/off probe overhead control",
+    "Unequal host load, active reporters, open document counts and fixed v2-first order",
+    "MCP-only token counts exclude UI/oracle/code/image costs; actual billed usage unavailable"
+  ]
+}
