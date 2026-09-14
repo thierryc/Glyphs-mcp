@@ -403,10 +403,10 @@ class Service:
         return {"available": True}
 async def check():
     service = Service()
-    app = server.create_server(service).http_app(stateless_http=captured["stateless_http"])
+    app = server.create_server(service).http_app(path=captured["path"], stateless_http=captured["stateless_http"])
     async with app.lifespan(app):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/mcp", headers={"Accept":"application/json, text/event-stream", "Mcp-Session-Id":"old-process-session", "MCP-Protocol-Version":"2025-03-26"}, json={"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"get_status", "arguments":{}}})
+            response = await client.post("/mcp/", headers={"Accept":"application/json, text/event-stream", "Mcp-Session-Id":"old-process-session", "MCP-Protocol-Version":"2025-03-26"}, json={"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"get_status", "arguments":{}}})
             assert response.status_code == 200, response.text
             assert '"available":true' in response.text.replace(" ", "").replace('\\"', '"'), response.text
             assert not service.closed, "HTTP completion must not cancel external jobs"

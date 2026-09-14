@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "projectVersion": "2.0.0",
+  "installerBuild": 43,
+  "releaseChannel": "beta",
+  "releaseVersion": "2.0.0-beta.1",
+  "version": "2.0.0",
+  "release": {
+    "version": "2.0.0",
+    "releaseVersion": "2.0.0-beta.1",
+    "channel": "beta",
+    "betaNumber": 1,
+    "installerBuild": 43
+  },
+  "protocol": 1,
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "discard_job"
+  ],
+  "bridge": {
+    "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+    "identity": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+    "codeHash": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    }
+  },
+  "sidecar": {
+    "identity": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+    "codeHash": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    }
+  },
+  "companions": [
+    {
+      "id": "curve-inspector",
+      "bundle": "Glyphs Curve Inspector.glyphsReporter",
+      "identity": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc"
+    },
+    {
+      "id": "reference-inspector",
+      "bundle": "Glyphs Reference Inspector.glyphsReporter",
+      "identity": "sha256:d32c3836fb26a0afab95da0fc58cd0b2dd5f5ff05969e676abd60597b0c0fed8"
+    }
+  ],
+  "runtimes": {
+    "arm64": {
+      "identity": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a",
+      "pythonVersion": "3.14.7",
+      "python": "bin/python3",
+      "glyphsCLI": "bin/glyphs",
+      "path": "runtimes/arm64",
+      "glyphsCLIVersion": "0.6.1",
+      "dependencyLockSHA256": "8de3bb2a2ce1294aef86f755277e15e5150033e65f8613833f5fce9c7f2c35f1"
+    },
+    "x86_64": {
+      "identity": "sha256:6f3a1fded6f8a2122223be930090bae4647be588b7e0b78e3086a8fae5690e88",
+      "pythonVersion": "3.14.7",
+      "python": "bin/python3",
+      "glyphsCLI": "bin/glyphs",
+      "path": "runtimes/x86_64",
+      "glyphsCLIVersion": "0.6.1",
+      "dependencyLockSHA256": "3dd70f9cbd6105fd58277a73d942f09ce6e2fe38a39ff8ef4f5144fa8ff14466"
+    }
+  },
+  "components": {
+    "mcp": {
+      "requires": [
+        "runtime",
+        "sidecar",
+        "bridge"
+      ]
+    },
+    "curve-inspector": {
+      "requires": []
+    },
+    "reference-inspector": {
+      "requires": [
+        "runtime"
+      ]
+    }
+  }
+}

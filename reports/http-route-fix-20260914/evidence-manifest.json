@@ -1,0 +1,185 @@
+{
+  "archive": {
+    "path": "evidence.tar.gz",
+    "bytes": 237726,
+    "sha256": "277d5ed67a26aabaef22b76ad0937746392e8f87aa59704703edab945604396b"
+  },
+  "memberCount": 35,
+  "members": [
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/archive_evidence.py",
+      "size": 3447,
+      "sha256": "f0b55a14d0c756bb29bb1c080c0a2e76afc626c60d7f22173c399cdc8ba6f659"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/baseline/calls.json",
+      "size": 36786,
+      "sha256": "99eb7e3f2ba9fcff1159c270910003eb75b9f77460a002d53304f5da7d7e2eac"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/baseline/facts.json",
+      "size": 15577,
+      "sha256": "98b095c60da2745c1cfc87974104a0b702aebf5b3bdefc37ca55633d296da96e"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/build.json",
+      "size": 630,
+      "sha256": "34487d31bec4acb87b98e524c66181d138d9cc08f043c886deea0419c9c16dbf"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/build_candidate.py",
+      "size": 1126,
+      "sha256": "82d3ace03d2640dae82df9799d1269a6bbc4af1f82507926ee84141b14105689"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/candidate/calls.json",
+      "size": 36649,
+      "sha256": "b1c1bff726c3412a5ae8b45127074ff7944f96eb2e16d43dd70b41e7bf022f97"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/candidate/facts.json",
+      "size": 15579,
+      "sha256": "0d791f4ea03eb9ca8648617728fa0f59db96522ddefb4b6dc0dba46c22d6b548"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/candidate-manifest.json",
+      "size": 2707,
+      "sha256": "fd2a30ec1705c0060c66ddace8e0e9bba4098c39f247d07aa9ccce9c7eb9c891"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/connector-status.json",
+      "size": 4743,
+      "sha256": "af589550f796f995fedd1dd7bc790e83d828f4a249ca11a5c41be8fef18ff228"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/freeze.json",
+      "size": 588343,
+      "sha256": "270c11936e7d3e386d219a3bf0bce5d18c824a5dad7f5d825016060b33ea1de3"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/host-before.json",
+      "size": 158,
+      "sha256": "387dbd9d60ff4b6dc9530e93975e26a4e21987301c4f0aba2d8d7007e4f85ea9"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/install-first-refused.json",
+      "size": 112,
+      "sha256": "2f7ac00dd69f3dea8e54c150e5e46be857442a5bfbb1d86d30c38b52ff9808ed"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/install-first-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/install-result.json",
+      "size": 3733,
+      "sha256": "74963d96a08c1fc1ce4ac0cab925d265c4acc5f0b98fd3e3da3a8bcb2f90c71c"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/install-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/installation-before.json",
+      "size": 4263,
+      "sha256": "6ebb295d1a34334710bcc8bba765b59115b3b00e8045f0b8a52d3328e06984b3"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/installation.json",
+      "size": 4269,
+      "sha256": "c786fe0f51e3c5a166dbb8288000b5f54dd6a75267957cb650300f67072cd966"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/live_probe.py",
+      "size": 5887,
+      "sha256": "d05a3935a241ad5538e390dfd8e153fa3c176a0188b3f68cf6a3054bee5d265e"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/report.md",
+      "size": 6795,
+      "sha256": "52496a1eeabbd92dac1d604644a64061f3d6abe12c60ad0f80c7649a28b721f5"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/sdk-client.json",
+      "size": 1063,
+      "sha256": "438a6fadd78264b95c3a07046987e21fae5c0f09bf5e1aecd853dfb960152a90"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/sdk_probe.py",
+      "size": 2247,
+      "sha256": "fac5d19dc70861221a7ac83e619e7b8847c1f00aeba92b18238d919db4f926d4"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/server-before.py",
+      "size": 7492,
+      "sha256": "35473ad23dd7eaf41804abefa24c64e4c7f738d7ef05778f6e3c34082ac7e8f6"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/test-spec.md",
+      "size": 1524,
+      "sha256": "5cb6d2320d0c07a0a2e2f927484dac660ed854450dbe26aa3be9707c2ad4f982"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/tests-focused.txt",
+      "size": 99,
+      "sha256": "43d84bb53c000cc79092e86e4c51ec2ffec24961469d78716efce9a20af5728a"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/tests-lean.txt",
+      "size": 741,
+      "sha256": "1e6019e05c85ce65f0a98de46257ca87e3ff7d019519ec704b9de9b22ee3c547"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/ui-actions.json",
+      "size": 576,
+      "sha256": "a881ca1f85e92ca1f3e1f77d480e38b12d394adba0cb9b023f5dc011d1fb4bf1"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/ui-after-quit.txt",
+      "size": 456,
+      "sha256": "927750ce6415dfb2347bbcfca1ce35396215f30ee797fb715af8082929648c49"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/ui-before.txt",
+      "size": 10588,
+      "sha256": "7623cd3e59f737b48eee4b576d8c9cadc500fc225fe686f8951533e7db1f882d"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/ui-restored.txt",
+      "size": 10446,
+      "sha256": "13376644940f95090a68d96217b71b124185be13497f4a5f3de2691d4bd416d7"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/verification.json",
+      "size": 2290,
+      "sha256": "ced9e64b637b7eb2ef0e8fcb09aa3c61e741df101873c666875c29f333043636"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/verify_delivery.py",
+      "size": 4365,
+      "sha256": "4f1ee333c770a52ec78355cb309ca27ddd38e1daf8ce5edd31d2984e7560033e"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/http-route-fix-20260914/worktree-before.txt",
+      "size": 10508,
+      "sha256": "c8c51a880d521c1befcc85bee34dd75571c41b505cb271c386e06a4bf216a6b7"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/latency-investigation-20260911/next-actions.md",
+      "size": 5331,
+      "sha256": "b8a8a092f93dbb68f30b4ae2d8f748e07f4bbb817d08ca08f391471d514d58c1"
+    },
+    {
+      "path": "reports/v1-v2/07-stored-kerning/latency-investigation-20260911/report.md",
+      "size": 14476,
+      "sha256": "8b7b4552df0ecad7153ffadeeba4edfde7cf7c76812b6084b50b80025e77f990"
+    },
+    {
+      "path": "reports/v1-v2/README.md",
+      "size": 40023,
+      "sha256": "6dbc3bc0689f028d133cd0938366d3d84b7c3d4e6bc8fe7d7bd8c3ea899658bb"
+    }
+  ]
+}

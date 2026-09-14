@@ -1,0 +1,49 @@
+{
+  "exactCatalogAndHandshake": true,
+  "exactSelectionAndErrors": true,
+  "statusChangedOnlySidecarIdentity": true,
+  "documentsEqualExceptFreshIDs": true,
+  "previousIDs": [
+    "doc_04605ab6015c4b4f85a23b4c3160fc92"
+  ],
+  "currentIDs": [
+    "doc_ca838d83ac654fda85c7438b323f959a"
+  ],
+  "toolCallsPerArm": 12,
+  "baselineHTTPExchanges": 24,
+  "candidateHTTPExchanges": 12,
+  "installed": {
+    "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a",
+    "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/sidecar": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+    "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+    "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc",
+    "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter": "sha256:d32c3836fb26a0afab95da0fc58cd0b2dd5f5ff05969e676abd60597b0c0fed8"
+  },
+  "preservation": {
+    "skills": [],
+    "plugin-cache-skills": [],
+    "bridge": [],
+    "curve": [],
+    "reference": [],
+    "source": [
+      "glyphs-mcp/tests/test_simple_v2_http_route.py",
+      "glyphs-mcp/tests/test_simple_v2_sidecar.py",
+      "sidecar/glyphs_mcp_sidecar/server.py"
+    ],
+    "font": [],
+    "v1-runtime": [],
+    "v1-skills": []
+  },
+  "configurationChanges": [
+    "/Users/thierryc/Library/Preferences/com.GeorgSeifert.Glyphs4.plist"
+  ],
+  "glyphsProcessBefore": "65954 /Applications/Glyphs 4.app/Contents/MacOS/Glyphs 4",
+  "glyphsProcessAfter": "16388 /Applications/Glyphs 4.app/Contents/MacOS/Glyphs 4",
+  "relaunchRequiredByExistingInstaller": true,
+  "newCrashReports": [],
+  "limitations": [
+    "Same existing disposable Font View control: no new editing/history, fresh-copy task benchmark or large-font benchmark.",
+    "No native callback or queue instrumentation; HTTP samples do not establish a matched-load speed improvement.",
+    "Expected new document IDs after the mandatory Glyphs restart."
+  ]
+}

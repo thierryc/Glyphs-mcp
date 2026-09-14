@@ -1,0 +1,11 @@
+{
+  "build": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/http-route-candidate-20260914/Lean",
+  "repeat": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/http-route-candidate-20260914/Lean-repeat",
+  "identical": true,
+  "wholePayloadSHA256": "sha256:f11c31c3ec85ffe2b5918a342e70e5b6ad0919229c6f60090d8de582e5a3ac7d",
+  "changedComponents": [
+    "sidecar"
+  ],
+  "sidecar": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+  "bridge": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b"
+}

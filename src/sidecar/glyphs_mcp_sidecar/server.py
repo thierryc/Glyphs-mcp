@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.transport == "http":
             # Jobs outlive individual stateless HTTP requests and sessions.
             server.run(transport="streamable-http", host=args.host, port=args.port,
-                       stateless_http=True)
+                       path="/mcp/", stateless_http=True)
         else:
             server.run()
     finally:
