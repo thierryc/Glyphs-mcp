@@ -72,3 +72,10 @@ Refer to `README.md` for the full command table and usage notes.
 - When adding tooling, update both the README table and relevant agent guides (Claude/Codex).
 - When tool workflows, catalog metadata, visibility, or safety rules change, update the matching skill in `skills/` and keep `.agents/skills` pointing at the same source of truth.
 - After changes that touch the plugin bundle, remind users to reinstall or resymlink it into the Glyphs plugins directory.
+
+Use [the qualification index](reports/README.md) for the latest tested state and
+remaining limits. Preserve historical reports and evidence; add a dated follow-up
+instead of rewriting measurements. Validate the current skill payload with
+`python scripts/check_lean_package.py` and
+`bash scripts/sync_codex_plugin_skills.sh --check`. Keep focused instructions in
+linked references rather than repeating them in every entry skill.

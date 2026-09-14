@@ -1,5 +1,20 @@
 # Changelog
 
+## Private lean v2 qualification — September 14, 2026
+
+- Install current OpenType skill routing through existing ownership checks and
+  backups; the lean payload now contains eleven managed skills.
+- Add focused native precision and qualified Glyphs 4 API guidance. Keep the
+  pinned official offline documentation unchanged.
+- Qualify the RV02 follow-up on disposable Roboto Slab copies: 150 checks pass,
+  none fail and populated-hint coverage remains unverified.
+- Retain seven MCP tools, five jobs, existing native Undo/discard and runtime
+  identities. No release was published or new script-execution tool added.
+
+See the [qualification index](reports/README.md) for measured evidence, historical
+comparisons and remaining limits. This entry records private qualification,
+not a new product version or a fresh v1 benchmark.
+
 ## 1.11.0 — Safe live Glyphs scripting
 
 _August 16, 2026_

@@ -476,3 +476,7 @@ PRs and feedback are welcome.
 ---
 
  
+
+Private lean v2 qualification is indexed in [reports/README.md](reports/README.md).
+The latest RV02 follow-up covers the installed OpenType, precision and native API
+guidance. Native scripts use Glyphs execution routes; they add no MCP tool.

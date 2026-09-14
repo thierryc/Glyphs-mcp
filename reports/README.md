@@ -1,0 +1,66 @@
+# Lean v2 qualification records
+
+Latest recorded qualification: **RV02, September 14, 2026**, committed in
+`5666e289`. This is the private `2.0.0-beta.1` candidate, installer build 43,
+tested in Glyphs 4.1 (4107). These records are evidence from specific runs;
+they do not establish public-release readiness or the identity of a later process.
+
+## Current result
+
+[RV02 native-coding follow-up](rv02-native-coding-20260914/report.md) implemented,
+installed and verified eleven managed skills, including current OpenType routing,
+native precision guidance and qualified Glyphs 4 API notes. It records 150 passed
+checks, zero failed and one unverified populated-hint case. The official offline
+documentation corpus is unchanged. [Agent assessment](rv02-native-coding-20260914/judgment.md)
+and [execution log](rv02-native-coding-20260914/action-log.md) distinguish measured
+results from judgment and first-attempt friction.
+
+Scripts are written with file tools and run through native Glyphs routes. The
+MCP interface remains seven tools and five jobs; RV02 adds no script-execution
+or feature-editing MCP tool and makes no latency improvement claim.
+
+Last recorded runtime identities are sidecar `2.0.0-beta.1+82daa62ac227` and
+bridge `2.0.0-beta.1+8b74a8d27ae4`. Full fingerprints, release metadata and host
+identity are in [RV02 status evidence](rv02-native-coding-20260914/runtime-final.json).
+The [installation receipt](rv02-native-coding-20260914/installation.json) and
+[backup proof](rv02-native-coding-20260914/backup-evidence.json) document the skill
+update; the runtime was unchanged during that update.
+
+## Report index
+
+| Record | Scope and later status |
+|---|---|
+| [RV02](rv02-native-coding-20260914/report.md) | Latest focused native-coding implementation and installed qualification. |
+| [RV02 plan](rv02-native-coding-plan-20260914/plan.md) | Accepted scope and acceptance criteria. |
+| [RV01](rv01-realistic-20260914/report.md) | Twelve realistic Roboto Slab tasks. RV02 addresses its skill/API findings and completes its pending UI cleanup. |
+| [Native grouping correction](dirty-grouping-20260914/report.md) | Minimal existing-hook change. Its pending installation/UI checks were subsequently completed in RV01 and confirmed in RV02. |
+| [Dirty-indicator investigation](dirty-indicator-20260914/report.md) | Native data restoration versus document dirty-state behavior; historical observations retained. |
+| [HTTP route correction](http-route-fix-20260914/report.md) | Serve the configured endpoint directly. This does not resolve all HTTP/queue tails. |
+| [P13 improvement](p13-curvature-improvements-20260913/report.md) | Curvature display and realistic-font qualification. |
+| [P13 paired baseline](p13-curvature-display-20260913/report.md) | MCP versus native companion/UI access, including historical v1 results. |
+| [P12 final checks](p12-final-checks-20260913/report.md) | Completes the outstanding slant controls; retains derived-bounds and crash limitations. |
+| [Crash guidance](crash-guidance-20260913/report.md) | Bounded recovery instructions, with permission required before temporarily pausing autosaving. |
+
+## Remaining limits
+
+- Populated-hint preservation is unverified in RV02; its edited layers had no hints.
+- HTTP/queue latency tails and the earlier autosave crashes remain separate
+  investigations. Successful bounded runs do not establish a crash root cause.
+- Native Redo→Undo dirty-state behavior is accepted as Glyphs parity. Exact
+  restoration does not imply every history path clears the document indicator.
+- Selection Lens label/position polish and clearer malformed-selector wording
+  remain deferred. Neither requires a new MCP tool.
+- RV02 does not remeasure v1 or replace the earlier paired benchmark results.
+
+## Evidence and maintenance
+
+Preserve earlier reports and their measurements. Each `coverage-index.md` is a
+historical snapshot from the original benchmark workspace; its relative links
+may refer to that workspace. Use the direct links above for the committed records
+in this checkout. Do not mistake a historical pending status for the latest result.
+
+RV02's [evidence manifest](rv02-native-coding-20260914/evidence-manifest.json)
+records the archive checksum and each member's checksum. Keep the archive,
+manifests, native proofs and preserved user-font copies. The build directory also
+contains evidence and source worktrees; cleanup must use inspected generated
+outputs, never a blanket removal of `build/`.
