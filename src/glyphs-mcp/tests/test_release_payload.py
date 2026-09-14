@@ -38,6 +38,16 @@ def test_bundle_order_is_inside_out(tmp_path):
     assert release.inventory(tmp_path)[1] == [inner, outer]
 
 
+def test_inventory_treats_application_contents_as_one_deep_signing_target(tmp_path):
+    application = tmp_path / "Reference.app"
+    executable = application / "Contents/MacOS/Reference"
+    executable.parent.mkdir(parents=True)
+    executable.write_bytes(b"\xcf\xfa\xed\xfe" + b"fixture")
+    natives, bundles = release.inventory(tmp_path)
+    assert natives == []
+    assert bundles == [application]
+
+
 def test_refresh_updates_signed_and_stapled_component_identities(tmp_path):
     lean = tmp_path / "Lean"
     lean.mkdir()

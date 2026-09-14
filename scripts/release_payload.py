@@ -17,7 +17,7 @@ BRIDGE = "Glyphs MCP Bridge.glyphsPlugin"
 COMPANIONS = {"curve-inspector": "Glyphs Curve Inspector.glyphsReporter",
               "reference-inspector": "Glyphs Reference Inspector.glyphsReporter"}
 SUFFIXES = {".glyphsPlugin", ".glyphsReporter", ".glyphsPalette", ".glyphsTool",
-            ".glyphsFilter", ".glyphsFileFormat", ".framework"}
+            ".glyphsFilter", ".glyphsFileFormat", ".framework", ".app"}
 MAGIC = {bytes.fromhex(value) for value in (
     "feedface", "cefaedfe", "feedfacf", "cffaedfe", "cafebabe", "bebafeca", "cafebabf", "bfbafeca")}
 
@@ -36,6 +36,8 @@ def inventory(root):
             with path.open("rb") as stream:
                 if stream.read(4) in MAGIC:
                     native.append(path)
+    applications = [path for path in bundles if path.suffix == ".app"]
+    native = [path for path in native if not any(app in path.parents for app in applications)]
     return native, sorted(bundles, key=lambda p: (-len(p.parts), str(p)))
 
 
@@ -128,6 +130,8 @@ def sign_payload(root, identity=IDENTITY):
             args = ["/usr/bin/codesign", "--sign", identity, "--timestamp", "--options", "runtime"]
             if path in [root / "Lean/runtimes" / a / "bin/glyphs" for a in ("arm64", "x86_64")]:
                 args += ["--entitlements", str(cli_entitlements)]
+            if path.suffix == ".app":
+                args += ["--force", "--deep"]
             run(*args, path)
             verify_code(path, identity)
 
