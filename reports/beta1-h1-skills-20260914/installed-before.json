@@ -1,0 +1,177 @@
+{
+  "/Users/thierryc/.codex/skills": {
+    "glyphs-mcp-icon-font": {
+      "identity": "sha256:84c45d6b8eaa5b24dde5604668eafd0f253bc0d4d11cb1f23b20943f136c8821",
+      "files": {
+        ".glyphs-mcp-owner.json": "ec6e655384197db0084c99de31ed3c237258553caa3aacb02915173757c3fdde",
+        "SKILL.md": "bd927c73da2ef8a8695557f843b3c182baa54532ee83e3ae23b48dc320c8fea4",
+        "agents/openai.yaml": "0593d5c04c70919b605be9caddda529da0cb8c24dbb3424e1b67e5ddaeed13af"
+      }
+    },
+    "glyphs-mcp-litsquare-metadata": {
+      "identity": "sha256:3b00fac7bb5204ded6db2871ba8ac333f360609e3616432774144a04e35a5e6f",
+      "files": {
+        ".glyphs-mcp-owner.json": "926c7ab730b3710575fc2a61ac13ed2d4b6dd013384d4b0cdaf88a892e70ff46",
+        "SKILL.md": "6a30decb7fe4e606b7e3a734cdccbed90eb05923e3e721d48091c4973209e03d",
+        "references/metadata-contract.md": "785cf949742f82e49e99cbf1fd7b469610b663c7656e45a7041a76d0386553ad",
+        "agents/openai.yaml": "469bd3ea982d588de22769372d0fc54a07730ca27f400a0908aceeec8def27d3"
+      }
+    },
+    "glyphs-mcp-color-font": {
+      "identity": "sha256:5a6bea26c08f043c6e2a7ad10a0bf05578d56eb599472fb38d032011b02cbbec",
+      "files": {
+        ".glyphs-mcp-owner.json": "5db57b1e7a801ee757907746c0e05fbc3cb3790d56510690e39ae8789454e0f8",
+        "SKILL.md": "5584cc5d4f5958db0352dd56bb34c9f63a05f4cb0b27477dc46aebaa24431570",
+        "references/color-font-audit.md": "c6fa6f9b363b230999d6f7387dccd4a936dd395ad3f022a531a4bb290f0f979f",
+        "agents/openai.yaml": "a445c216b8c7a197f9e749c83562081c3ee0be8a2262119f89094fe32b66a5f5"
+      }
+    },
+    "glyphs-mcp-variable-font": {
+      "identity": "sha256:a817ff1a10c5e73787d38f8a13b812b505b2b3743e03a745ebf5c17d457579cd",
+      "files": {
+        ".glyphs-mcp-owner.json": "dd1ef7e20871bbb7ff983055bc481648c832cce83164336d463b184b946e097d",
+        "SKILL.md": "8dda08b9cb427d7a05b32ae62f9593a9dd51c2415129b2404c0eb4c3155752df",
+        "references/variable-font-audit.md": "d5f90c974542a5cafa2db583ac7856cb3e68ae7b1e5c96d679e1b0d2f30aacb3",
+        "agents/openai.yaml": "b31e8a7c14edc664ed396b5f4c054ff4b166366bfbee18c713d285cbbc7c0e79"
+      }
+    },
+    "glyphs-mcp-production-audit": {
+      "identity": "sha256:371f0ceba3ef8f64c2c6c32625e59b26766b3866599299ddb9894e4d570b46af",
+      "files": {
+        ".glyphs-mcp-owner.json": "c18d766063117a3ff8862846ea082fdbce207b426c576a4cd239800a7c37be36",
+        "SKILL.md": "b6aad0f944a42add073c5243ac4106b5501531bfb6b10a5b28c9e9c4348fdfd5",
+        "agents/openai.yaml": "459cdb8ee0f6950b444deec0a74fd1ff5169cdc67b61c6042093555bd4c69720"
+      }
+    },
+    "glyphs-mcp-unicode-semantics": {
+      "identity": "sha256:7a64d85ea87ae2f645879a30163eee9a9a3d4a45a2254ec1371005a487d8163e",
+      "files": {
+        ".glyphs-mcp-owner.json": "209a207d52d6d1efa942a9a27ad9230915d5e40bd3d308fef1d96fc6605f6a63",
+        "SKILL.md": "fc74687fc1d8983e1e7eaa3f6fc037be59efe016d2b62747c08881d84ebe576e",
+        "references/unicode-semantic-glyphs.md": "4e55516d9bdfb51bf850b024f714973f9027a3ea9b5fd2e6b5ec117234bddb44",
+        "agents/openai.yaml": "df3a68c141795a5740afc4a4c230af5983b805ad8b1ba0b18ece56b7e9f50667"
+      }
+    },
+    "glyphs-mcp-export-validation": {
+      "identity": "sha256:c723b7beb99d579d3c6199a77a8f69e5669176e677ab563bfff73ef4eb8175e0",
+      "files": {
+        ".glyphs-mcp-owner.json": "da678e5b7fad816c3901b16699a0f3d3f5825cbe597f962b4a7af2459dfc9e2f",
+        "SKILL.md": "0ef03130c4d148ba2d73447dda5183954d8f673db82bc35a9463bf40256cc860",
+        "references/export-validation.md": "1015a49176621e39dc3885196c7e7fcdda5fcc5ab51c24e548542aea6f5f30be",
+        "agents/openai.yaml": "0ebba48764c07b49e68f09c0f0cf3ec328a48d74a9d8a5ce0bb65f614043a589"
+      }
+    }
+  },
+  "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/skills": {
+    "glyphs-mcp-icon-font": {
+      "identity": "sha256:51756138ae0a9d39c91cd5d59e2c9ec4edb4fcea9a8c9cbf6ba5f8425fbf0711",
+      "files": {
+        "SKILL.md": "331657e29db5ac10d8afc69e812e7875d2e5db87e0a876de942e13675eb45405",
+        "agents/openai.yaml": "0593d5c04c70919b605be9caddda529da0cb8c24dbb3424e1b67e5ddaeed13af"
+      }
+    },
+    "glyphs-mcp-litsquare-metadata": {
+      "identity": "sha256:e7d8a3abf8eaabdb6c06fe539581b216feac31ac15de5139474331be934aa11f",
+      "files": {
+        "SKILL.md": "eb6d95a94026e9c4719b7facd59c2426890e2c52fb973b496bec46f7a23c7d8b",
+        "references/metadata-contract.md": "785cf949742f82e49e99cbf1fd7b469610b663c7656e45a7041a76d0386553ad",
+        "agents/openai.yaml": "469bd3ea982d588de22769372d0fc54a07730ca27f400a0908aceeec8def27d3"
+      }
+    },
+    "glyphs-mcp-color-font": {
+      "identity": "sha256:81c1a73537d9014f2bd3cab9234731990b6d0329352eb0690cf54de2910f9336",
+      "files": {
+        "SKILL.md": "fd18a1d8679916b8664ff7385f4dcc172fba95db11644646e26a9a0471bf75de",
+        "references/color-font-audit.md": "c6fa6f9b363b230999d6f7387dccd4a936dd395ad3f022a531a4bb290f0f979f",
+        "agents/openai.yaml": "a445c216b8c7a197f9e749c83562081c3ee0be8a2262119f89094fe32b66a5f5"
+      }
+    },
+    "glyphs-mcp-variable-font": {
+      "identity": "sha256:efe99ae0b6faf66feb0a27dc77bd202567896d5be40f2da364f9f23d805a31ad",
+      "files": {
+        "SKILL.md": "3191d77e2ec8f74cda0fcb75d2c1ee7ae5abe3217bb0d7ec7efd2ad95622135c",
+        "references/variable-font-audit.md": "d5f90c974542a5cafa2db583ac7856cb3e68ae7b1e5c96d679e1b0d2f30aacb3",
+        "agents/openai.yaml": "b31e8a7c14edc664ed396b5f4c054ff4b166366bfbee18c713d285cbbc7c0e79"
+      }
+    },
+    "glyphs-mcp-production-audit": {
+      "identity": "sha256:326f35ee04ad9b2c65b83185abcf618edb84c7d1b3f0b73c5e93c67b148d1ca6",
+      "files": {
+        "SKILL.md": "51ef68fddf8b3ec93e0019af020aab8a22c5ce1c6ac066efaff18d4ba80d028d",
+        "agents/openai.yaml": "459cdb8ee0f6950b444deec0a74fd1ff5169cdc67b61c6042093555bd4c69720"
+      }
+    },
+    "glyphs-mcp-unicode-semantics": {
+      "identity": "sha256:2ff82ddf511f6c09e48a18b4304cf47072b20a51f6612aaaf59702dd990a8e20",
+      "files": {
+        "SKILL.md": "90bf9cc6313c1f153b6bbaf29643ca4a9b397d9f902a15bcddefc833f6651f5c",
+        "references/unicode-semantic-glyphs.md": "4e55516d9bdfb51bf850b024f714973f9027a3ea9b5fd2e6b5ec117234bddb44",
+        "agents/openai.yaml": "df3a68c141795a5740afc4a4c230af5983b805ad8b1ba0b18ece56b7e9f50667"
+      }
+    },
+    "glyphs-mcp-export-validation": {
+      "identity": "sha256:43030505752f9949df77a2d10557988ae3353df40d49884dcff602edbeea1b9b",
+      "files": {
+        "SKILL.md": "1406d657309aaa38a7133f3c9c0f0501df7f6d2525707c54aa98184dc8c62421",
+        "references/export-validation.md": "1015a49176621e39dc3885196c7e7fcdda5fcc5ab51c24e548542aea6f5f30be",
+        "agents/openai.yaml": "0ebba48764c07b49e68f09c0f0cf3ec328a48d74a9d8a5ce0bb65f614043a589"
+      }
+    }
+  },
+  "/Users/thierryc/.codex/plugins/cache/glyphs-mcp/glyphs-mcp/2.0.0/skills": {
+    "glyphs-mcp-icon-font": {
+      "identity": "sha256:51756138ae0a9d39c91cd5d59e2c9ec4edb4fcea9a8c9cbf6ba5f8425fbf0711",
+      "files": {
+        "SKILL.md": "331657e29db5ac10d8afc69e812e7875d2e5db87e0a876de942e13675eb45405",
+        "agents/openai.yaml": "0593d5c04c70919b605be9caddda529da0cb8c24dbb3424e1b67e5ddaeed13af"
+      }
+    },
+    "glyphs-mcp-litsquare-metadata": {
+      "identity": "sha256:e7d8a3abf8eaabdb6c06fe539581b216feac31ac15de5139474331be934aa11f",
+      "files": {
+        "SKILL.md": "eb6d95a94026e9c4719b7facd59c2426890e2c52fb973b496bec46f7a23c7d8b",
+        "references/metadata-contract.md": "785cf949742f82e49e99cbf1fd7b469610b663c7656e45a7041a76d0386553ad",
+        "agents/openai.yaml": "469bd3ea982d588de22769372d0fc54a07730ca27f400a0908aceeec8def27d3"
+      }
+    },
+    "glyphs-mcp-color-font": {
+      "identity": "sha256:81c1a73537d9014f2bd3cab9234731990b6d0329352eb0690cf54de2910f9336",
+      "files": {
+        "SKILL.md": "fd18a1d8679916b8664ff7385f4dcc172fba95db11644646e26a9a0471bf75de",
+        "references/color-font-audit.md": "c6fa6f9b363b230999d6f7387dccd4a936dd395ad3f022a531a4bb290f0f979f",
+        "agents/openai.yaml": "a445c216b8c7a197f9e749c83562081c3ee0be8a2262119f89094fe32b66a5f5"
+      }
+    },
+    "glyphs-mcp-variable-font": {
+      "identity": "sha256:efe99ae0b6faf66feb0a27dc77bd202567896d5be40f2da364f9f23d805a31ad",
+      "files": {
+        "SKILL.md": "3191d77e2ec8f74cda0fcb75d2c1ee7ae5abe3217bb0d7ec7efd2ad95622135c",
+        "references/variable-font-audit.md": "d5f90c974542a5cafa2db583ac7856cb3e68ae7b1e5c96d679e1b0d2f30aacb3",
+        "agents/openai.yaml": "b31e8a7c14edc664ed396b5f4c054ff4b166366bfbee18c713d285cbbc7c0e79"
+      }
+    },
+    "glyphs-mcp-production-audit": {
+      "identity": "sha256:326f35ee04ad9b2c65b83185abcf618edb84c7d1b3f0b73c5e93c67b148d1ca6",
+      "files": {
+        "SKILL.md": "51ef68fddf8b3ec93e0019af020aab8a22c5ce1c6ac066efaff18d4ba80d028d",
+        "agents/openai.yaml": "459cdb8ee0f6950b444deec0a74fd1ff5169cdc67b61c6042093555bd4c69720"
+      }
+    },
+    "glyphs-mcp-unicode-semantics": {
+      "identity": "sha256:2ff82ddf511f6c09e48a18b4304cf47072b20a51f6612aaaf59702dd990a8e20",
+      "files": {
+        "SKILL.md": "90bf9cc6313c1f153b6bbaf29643ca4a9b397d9f902a15bcddefc833f6651f5c",
+        "references/unicode-semantic-glyphs.md": "4e55516d9bdfb51bf850b024f714973f9027a3ea9b5fd2e6b5ec117234bddb44",
+        "agents/openai.yaml": "df3a68c141795a5740afc4a4c230af5983b805ad8b1ba0b18ece56b7e9f50667"
+      }
+    },
+    "glyphs-mcp-export-validation": {
+      "identity": "sha256:43030505752f9949df77a2d10557988ae3353df40d49884dcff602edbeea1b9b",
+      "files": {
+        "SKILL.md": "1406d657309aaa38a7133f3c9c0f0501df7f6d2525707c54aa98184dc8c62421",
+        "references/export-validation.md": "1015a49176621e39dc3885196c7e7fcdda5fcc5ab51c24e548542aea6f5f30be",
+        "agents/openai.yaml": "0ebba48764c07b49e68f09c0f0cf3ec328a48d74a9d8a5ce0bb65f614043a589"
+      }
+    }
+  }
+}

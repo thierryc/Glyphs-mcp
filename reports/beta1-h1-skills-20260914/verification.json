@@ -1,0 +1,37 @@
+{
+  "sourceExistingFilesChecked": 3605,
+  "sourceFilesChanged": [
+    "src/glyphs-mcp/tests/test_simple_v2_skill_routing.py",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs/references/connection-session.md",
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs/references/connection-session.md",
+    "macos-installer/GlyphsMCPInstaller/Core/ConfigPatchers.swift",
+    "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift"
+  ],
+  "unrelatedInstalledSkillFilesPreserved": 1695,
+  "protectedOuterAndCacheSkillFilesPreserved": 38,
+  "runtimeIdentityUnchanged": true,
+  "publicTools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "discard_job"
+  ],
+  "jobKinds": [
+    "width_delta",
+    "spacing",
+    "kerning_collision",
+    "start_nodes",
+    "slant"
+  ],
+  "retiredFoldersAbsent": true,
+  "verifiedManagedSkills": 11,
+  "nativeMutationCalls": 0,
+  "documentDiscoveryCalls": 0,
+  "restarts": 0,
+  "runtimeInstalls": 0
+}

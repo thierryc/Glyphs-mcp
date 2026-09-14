@@ -45,6 +45,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 | Active layer, selected-object counts or optional node details | [Selection](references/selection-reads.md), requiring `selection.context.v1` |
 | Exact stored kerning | [Kerning reads](references/kerning-reads.md) |
 | Additive advance changes | [Widths](references/width-changes.md) |
+| Color, variable, icon/Unicode, production/export or LitSquare audit scope | [Specialized scope](references/specialized-scope.md) |
 | Connection failure | [Troubleshooting](references/connection-troubleshooting.md) |
 | Glyphs crashed or unexpectedly exited | [Crash recovery](references/crash-recovery.md); ask before any temporary autosave pause |
 

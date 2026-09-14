@@ -1,0 +1,251 @@
+{
+  "entries" : [
+    {
+      "backup" : "",
+      "name" : "glyphs",
+      "outcome" : "installed",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-development",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-development"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-italic-first-pass",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-italic-first-pass"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-kerning",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-kerning"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-maintainer-feedback",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-maintainer-feedback"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-master-compatibility",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-master-compatibility"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-opentype-features",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-opentype-features"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-outlines-docs",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-outlines-docs"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-release",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-release"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-scripting",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-scripting"
+    },
+    {
+      "backup" : "",
+      "name" : "glyphs-mcp-spacing",
+      "outcome" : "current",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-spacing"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/dfd9f074-12fa-49a2-8d0e-c975795ac8f0\/glyphs-mcp-icon-font",
+      "name" : "glyphs-mcp-icon-font",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-icon-font"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/1f2c41d7-6612-4676-81b9-1b4d65aff51b\/glyphs-mcp-litsquare-metadata",
+      "name" : "glyphs-mcp-litsquare-metadata",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-litsquare-metadata"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/cc8f1eab-6ff3-4b7d-979b-2aa0aab7f260\/glyphs-mcp-color-font",
+      "name" : "glyphs-mcp-color-font",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-color-font"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/8885c584-11bf-4b80-84fa-cca74f58bf8c\/glyphs-mcp-variable-font",
+      "name" : "glyphs-mcp-variable-font",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-variable-font"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/dbcde08e-83b7-4016-ae47-a32784def83e\/glyphs-mcp-production-audit",
+      "name" : "glyphs-mcp-production-audit",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-production-audit"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/6dd0bd73-418f-4a74-a046-e5db0cd3adcf\/glyphs-mcp-unicode-semantics",
+      "name" : "glyphs-mcp-unicode-semantics",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-unicode-semantics"
+    },
+    {
+      "backup" : "\/Users\/thierryc\/.codex\/glyphs-mcp-skill-backups\/c89af4f0-8cfc-47aa-b2a0-a28eddf82478\/glyphs-mcp-export-validation",
+      "name" : "glyphs-mcp-export-validation",
+      "outcome" : "retired",
+      "path" : "\/Users\/thierryc\/.codex\/skills\/glyphs-mcp-export-validation"
+    }
+  ],
+  "explicitReviewedReplacement" : true,
+  "preflight" : [
+    {
+      "before" : "sha256:cb1f20d4e51b68bcca6298846203812d36312790fcd7275f3ed290555a7729eb",
+      "candidate" : "sha256:0db55ad0ad7f147dc6b789d18cc53a6e51a567cc555317b017406c3909146bc3",
+      "name" : "glyphs"
+    },
+    {
+      "before" : "sha256:6abf7d892047eaa44ce1a6b4cb5ab89c49f78cdadf429d73effcc64267574c0e",
+      "candidate" : "sha256:6abf7d892047eaa44ce1a6b4cb5ab89c49f78cdadf429d73effcc64267574c0e",
+      "name" : "glyphs-mcp-development"
+    },
+    {
+      "before" : "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c",
+      "candidate" : "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c",
+      "name" : "glyphs-mcp-italic-first-pass"
+    },
+    {
+      "before" : "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+      "candidate" : "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+      "name" : "glyphs-mcp-kerning"
+    },
+    {
+      "before" : "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+      "candidate" : "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+      "name" : "glyphs-mcp-maintainer-feedback"
+    },
+    {
+      "before" : "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+      "candidate" : "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+      "name" : "glyphs-mcp-master-compatibility"
+    },
+    {
+      "before" : "sha256:09d5a52dd67580dc86d81338dd63b57211a8278eae059921abb9417d6e9e77a2",
+      "candidate" : "sha256:09d5a52dd67580dc86d81338dd63b57211a8278eae059921abb9417d6e9e77a2",
+      "name" : "glyphs-mcp-opentype-features"
+    },
+    {
+      "before" : "sha256:fc26b74c1fc21c7b928ade8aeb3e54c4b3026d25d278ee88798217bfdd8f37d9",
+      "candidate" : "sha256:fc26b74c1fc21c7b928ade8aeb3e54c4b3026d25d278ee88798217bfdd8f37d9",
+      "name" : "glyphs-mcp-outlines-docs"
+    },
+    {
+      "before" : "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+      "candidate" : "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+      "name" : "glyphs-mcp-release"
+    },
+    {
+      "before" : "sha256:1432e0daed5aa9c08e19c0b683bcc3b7e06b7b76a68a7e9e29770a85753b7e90",
+      "candidate" : "sha256:1432e0daed5aa9c08e19c0b683bcc3b7e06b7b76a68a7e9e29770a85753b7e90",
+      "name" : "glyphs-mcp-scripting"
+    },
+    {
+      "before" : "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+      "candidate" : "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+      "name" : "glyphs-mcp-spacing"
+    }
+  ],
+  "repeatBackupUnchanged" : true,
+  "repeatOutcomes" : [
+    "current",
+    "current",
+    "current",
+    "current",
+    "current",
+    "current",
+    "current",
+    "current",
+    "current",
+    "current",
+    "current"
+  ],
+  "reviewedRetirements" : {
+    "glyphs-mcp-color-font" : "sha256:5a6bea26c08f043c6e2a7ad10a0bf05578d56eb599472fb38d032011b02cbbec",
+    "glyphs-mcp-export-validation" : "sha256:c723b7beb99d579d3c6199a77a8f69e5669176e677ab563bfff73ef4eb8175e0",
+    "glyphs-mcp-icon-font" : "sha256:84c45d6b8eaa5b24dde5604668eafd0f253bc0d4d11cb1f23b20943f136c8821",
+    "glyphs-mcp-litsquare-metadata" : "sha256:3b00fac7bb5204ded6db2871ba8ac333f360609e3616432774144a04e35a5e6f",
+    "glyphs-mcp-production-audit" : "sha256:371f0ceba3ef8f64c2c6c32625e59b26766b3866599299ddb9894e4d570b46af",
+    "glyphs-mcp-unicode-semantics" : "sha256:7a64d85ea87ae2f645879a30163eee9a9a3d4a45a2254ec1371005a487d8163e",
+    "glyphs-mcp-variable-font" : "sha256:a817ff1a10c5e73787d38f8a13b812b505b2b3743e03a745ebf5c17d457579cd"
+  },
+  "timestamp" : "2026-09-14T15:26:45Z",
+  "verified" : [
+    {
+      "expected" : "sha256:0db55ad0ad7f147dc6b789d18cc53a6e51a567cc555317b017406c3909146bc3",
+      "installed" : "sha256:0db55ad0ad7f147dc6b789d18cc53a6e51a567cc555317b017406c3909146bc3",
+      "name" : "glyphs"
+    },
+    {
+      "expected" : "sha256:6abf7d892047eaa44ce1a6b4cb5ab89c49f78cdadf429d73effcc64267574c0e",
+      "installed" : "sha256:6abf7d892047eaa44ce1a6b4cb5ab89c49f78cdadf429d73effcc64267574c0e",
+      "name" : "glyphs-mcp-development"
+    },
+    {
+      "expected" : "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c",
+      "installed" : "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c",
+      "name" : "glyphs-mcp-italic-first-pass"
+    },
+    {
+      "expected" : "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+      "installed" : "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+      "name" : "glyphs-mcp-kerning"
+    },
+    {
+      "expected" : "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+      "installed" : "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+      "name" : "glyphs-mcp-maintainer-feedback"
+    },
+    {
+      "expected" : "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+      "installed" : "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+      "name" : "glyphs-mcp-master-compatibility"
+    },
+    {
+      "expected" : "sha256:09d5a52dd67580dc86d81338dd63b57211a8278eae059921abb9417d6e9e77a2",
+      "installed" : "sha256:09d5a52dd67580dc86d81338dd63b57211a8278eae059921abb9417d6e9e77a2",
+      "name" : "glyphs-mcp-opentype-features"
+    },
+    {
+      "expected" : "sha256:fc26b74c1fc21c7b928ade8aeb3e54c4b3026d25d278ee88798217bfdd8f37d9",
+      "installed" : "sha256:fc26b74c1fc21c7b928ade8aeb3e54c4b3026d25d278ee88798217bfdd8f37d9",
+      "name" : "glyphs-mcp-outlines-docs"
+    },
+    {
+      "expected" : "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+      "installed" : "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+      "name" : "glyphs-mcp-release"
+    },
+    {
+      "expected" : "sha256:1432e0daed5aa9c08e19c0b683bcc3b7e06b7b76a68a7e9e29770a85753b7e90",
+      "installed" : "sha256:1432e0daed5aa9c08e19c0b683bcc3b7e06b7b76a68a7e9e29770a85753b7e90",
+      "name" : "glyphs-mcp-scripting"
+    },
+    {
+      "expected" : "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+      "installed" : "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+      "name" : "glyphs-mcp-spacing"
+    }
+  ]
+}

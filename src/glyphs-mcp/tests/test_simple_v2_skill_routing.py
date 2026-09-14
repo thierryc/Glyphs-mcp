@@ -227,3 +227,25 @@ def test_start_node_skill_keeps_context_and_explains_native_indices():
     metadata=yaml.safe_load((focused/'agents/openai.yaml').read_text())
     assert '$glyphs-mcp-master-compatibility' in metadata['interface']['default_prompt']
     assert not metadata['interface']['short_description'].endswith('consistent co')
+
+
+def test_specialized_scope_is_focused_and_does_not_claim_retired_audits():
+    entry = (SKILL/'SKILL.md').read_text()
+    scope = SKILL/'references/specialized-scope.md'
+    assert 'references/specialized-scope.md' in entry
+    assert 'specialized-scope.md' in (SKILL/'references/connection-session.md').read_text()
+    text = ' '.join(scope.read_text().split())
+    manifest = json.loads((ROOT/'skills/manifest.json').read_text())
+    names = {item['name'] for item in manifest['managedSkills']}
+    retired = {'icon-font','litsquare-metadata','color-font','variable-font',
+               'production-audit','unicode-semantics','export-validation'}
+    assert not {f'glyphs-mcp-{name}' for name in retired} & names
+    assert len(names) == 11
+    # Unsupported audits remain scoped; a native task is never an MCP fallback.
+    assert 'does not prove that a current lean runtime needs updating' in text
+    assert 'never claim that a partial read completes a full audit' in text
+    assert 'A native script is separate from the MCP' in text
+    assert 'v1 skills after catalog and identity' in text
+    assert 'document IDs or jobs' in text
+    assert 'Plugin caches and source worktrees are separate' in text
+    assert scope.read_bytes() == (ROOT/'plugins/glyphs-mcp/skills/glyphs/references/specialized-scope.md').read_bytes()

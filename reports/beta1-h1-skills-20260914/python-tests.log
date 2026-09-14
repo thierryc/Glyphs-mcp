@@ -1,0 +1,26 @@
+..............F..........s.....................                          [100%]
+=================================== FAILURES ===================================
+_____ test_specialized_scope_is_focused_and_does_not_claim_retired_audits ______
+
+    def test_specialized_scope_is_focused_and_does_not_claim_retired_audits():
+        entry = (SKILL/'SKILL.md').read_text()
+        scope = SKILL/'references/specialized-scope.md'
+        assert 'references/specialized-scope.md' in entry
+        assert 'specialized-scope.md' in (SKILL/'references/connection-session.md').read_text()
+        text = scope.read_text()
+        manifest = json.loads((ROOT/'skills/manifest.json').read_text())
+        names = {item['name'] for item in manifest['managedSkills']}
+        retired = {'icon-font','litsquare-metadata','color-font','variable-font',
+                   'production-audit','unicode-semantics','export-validation'}
+        assert not {f'glyphs-mcp-{name}' for name in retired} & names
+        assert len(names) == 11
+        # Unsupported audits remain scoped; a native task is never an MCP fallback.
+        assert 'does not prove that a current lean\nruntime needs updating' in text
+        assert 'never claim that a partial read completes a full audit' in text
+>       assert 'A native script is separate from\nthe MCP' in text
+E       AssertionError: assert 'A native script is separate from\nthe MCP' in '# Specialized requests in the current lean build\n\nReuse the verified connection and intended document ID. Do not re...old instructions may need a new skill-discovery session;\nverify the selected file rather than assuming hot refresh.\n'
+
+src/glyphs-mcp/tests/test_simple_v2_skill_routing.py:247: AssertionError
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_skill_routing.py::test_specialized_scope_is_focused_and_does_not_claim_retired_audits
+1 failed, 45 passed, 1 skipped in 5.46s

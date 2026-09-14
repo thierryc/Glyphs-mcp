@@ -14,6 +14,12 @@ unintegrated master-compatibility work. It is a review, not a new native benchma
 with six high-priority steps. Each has a test gate and a short explanation of
 the next fix; the plan itself does not claim implementation or qualification.
 
+[H1 skill cleanup](beta1-h1-skills-20260914/report.md) is implemented and installed:
+seven obsolete private instruction folders archived with exact backups, eleven
+current managed skills verified, 130 installer and 46 Python tests passed. The
+unchanged Starter wording assertion remains logged; the full desktop suite is
+not claimed clean. H2 is paused for user feedback. Runtime identities are unchanged.
+
 ## Current result
 
 [RV02 native-coding follow-up](rv02-native-coding-20260914/report.md) implemented,

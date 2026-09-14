@@ -1,0 +1,99 @@
+{
+  "files": [
+    {
+      "path": "InstallSkills.swift",
+      "bytes": 5527,
+      "sha256": "89c1661a96a1460aa299e8207d8184b2526b6ffdfad1b253859cf770a8b6fb90"
+    },
+    {
+      "path": "installation.json",
+      "bytes": 10558,
+      "sha256": "34fa6aec42ee9b719cb0534f2439c25e1b974c7ed02916a6b3aa876fbe592a2d"
+    },
+    {
+      "path": "installation.log",
+      "bytes": 4192,
+      "sha256": "4c0b7328080f80b00da9f79fa259d69bfcd9ff2b08ce60017dd1aec6446a91a4"
+    },
+    {
+      "path": "installed-before.json",
+      "bytes": 9855,
+      "sha256": "9dca513c6ca7cfacdbe2cc9296837d5ec1e58b7340c1024d5cf7279d2481d6ab"
+    },
+    {
+      "path": "installer-patch-identities.json",
+      "bytes": 507,
+      "sha256": "b5ced0ba74a03fce999c16bc7ea96e4e465fc83f2806984c4a76d950be6b1378"
+    },
+    {
+      "path": "installer-source.patch.gz",
+      "bytes": 4306,
+      "sha256": "7cdba210b8999f4d8065f1717b60a2a2e65a109927b1229aa932972f8a053446"
+    },
+    {
+      "path": "payload-build.json",
+      "bytes": 709,
+      "sha256": "4d81b1acd9c261789930ea506cb06575e3fa1e031f524f66956f8c2f56b8bc22"
+    },
+    {
+      "path": "python-tests-final.log",
+      "bytes": 110,
+      "sha256": "f9fdb8c07e3dcc11b860c7c4a8436145ddd71cca537bb06af4898e1774977d57"
+    },
+    {
+      "path": "python-tests.log",
+      "bytes": 1975,
+      "sha256": "052ae415dc5add0cafd57ee469709f8511bae79cc97fe0496c40af8e7d127ac8"
+    },
+    {
+      "path": "report.md",
+      "bytes": 7516,
+      "sha256": "ae334214bfd4c3666c6a6838e04f07d556c4a317a97d38c1ab23a47a7e379a5c"
+    },
+    {
+      "path": "reviewed-retirements.json",
+      "bytes": 747,
+      "sha256": "71de278101d12dd81a00fce072a931ea3813165266e4e8a76eaf8bf0c880182e"
+    },
+    {
+      "path": "routing-review.json",
+      "bytes": 2473,
+      "sha256": "662be0709b9889ba318a0921d7aedca825895c6554395b76351bbb79c4ee6d24"
+    },
+    {
+      "path": "runtime-after.json",
+      "bytes": 4644,
+      "sha256": "de60463d5a56bb913ebe263a07086aca7f84d193e6a23864f73bda26dbed154c"
+    },
+    {
+      "path": "runtime-before.json",
+      "bytes": 4644,
+      "sha256": "de60463d5a56bb913ebe263a07086aca7f84d193e6a23864f73bda26dbed154c"
+    },
+    {
+      "path": "swift-tests-final.log.gz",
+      "bytes": 16328,
+      "sha256": "c49915ab55d3cd285d342a65d537e46236800b289de4c5677147fcef28d37f66"
+    },
+    {
+      "path": "swift-tests-retry.log.gz",
+      "bytes": 26491,
+      "sha256": "fb2424464eabfdcd85e16fe62d33c50b020dc91da2cb70e696d8939e26dc4df2"
+    },
+    {
+      "path": "swift-tests.log.gz",
+      "bytes": 12577,
+      "sha256": "25fd5209f29e4f1ea6bbba255f23e8ad73d8e0e057ad745790d47958ccbfa593"
+    },
+    {
+      "path": "test-results.json",
+      "bytes": 3062,
+      "sha256": "1f7607769a21c1d21f9e64fde2d218ae3c032b0e15f0b7e71e3d3644d4b8acc4"
+    },
+    {
+      "path": "verification.json",
+      "bytes": 1069,
+      "sha256": "49105f928ff0ff805990ce440ac458e1178cbdf1da0992877e881cff6b8a25a7"
+    }
+  ]
+}

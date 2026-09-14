@@ -50,8 +50,10 @@ alone does not prove a Glyphs restart; stale document reads still fail explicitl
 Use [document targeting](document-targeting.md) for document lifetime and intent.
 
 A focused file requiring `apiMajor == 2`, `read_document` or `execute_python`
-targets the retired typed interface. Report its exact path; select the matching
+targets the retired typed interface when requested as a required workflow. Report its exact path; select the matching
 shipped lean skill or the entry's supported read reference. Repair a preserved
 conflict through **Replace preserved skills (backup)** in the existing installer.
+If the retired family has no current replacement, use [specialized scope](specialized-scope.md);
+do not treat its obsolete version gate as evidence of a stale runtime.
 Do not infer compatibility from a name or `surface` label. For failed setup,
 use [connection troubleshooting](connection-troubleshooting.md).

@@ -1,0 +1,10 @@
+{
+  "macos-installer/GlyphsMCPInstaller/Core/ConfigPatchers.swift": {
+    "before": "63507e0b5883bde76c25b16bd2b72448956cf4ec3c7a57ca4469fbb5cba2befd",
+    "after": "71238cfa5ed4567d93a3acad62fc443cacf7a418be975ed7c9b7991100862df2"
+  },
+  "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift": {
+    "before": "c5f86be4b6d4cc63a795c602549d6d9188eb7fb37e75e1d1de292780a3ca5084",
+    "after": "e1c26a1203dcaa32c8319072d6442ad3f160b5eb2e9a15579c001f4fccab47b1"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "method": "Agent dry-run review against authored references and retained/catalog fixtures; not a fresh native execution benchmark",
+  "cases": [
+    {
+      "request": "Read A\u2019s advance in the already identified font",
+      "selectedRoute": "glyphs \u2192 layer-reads",
+      "observedInstruction": "Reuse the known connection/document_id; request the needed fields. No setup restart.",
+      "result": "pass"
+    },
+    {
+      "request": "Create a Glyphs 4 plugin while Glyphs is closed",
+      "selectedRoute": "glyphs-mcp-development",
+      "observedInstruction": "Start from the artifact/workspace. No MCP or document discovery required.",
+      "result": "pass"
+    },
+    {
+      "request": "Audit this icon font for encoding stability",
+      "selectedRoute": "glyphs \u2192 specialized-scope",
+      "observedInstruction": "Explicit-glyph metadata is partial evidence. A complete audit needs separately scoped native/offline work; no apiMajor gate.",
+      "result": "pass"
+    },
+    {
+      "request": "Audit variable/color export readiness",
+      "selectedRoute": "glyphs \u2192 specialized-scope",
+      "observedInstruction": "State missing source/compiled/visual evidence; do not claim that current MCP supports a full audit.",
+      "result": "pass"
+    },
+    {
+      "request": "Write an agreed Glyphs 4 audit script",
+      "selectedRoute": "development/scripting",
+      "observedInstruction": "Native script route is distinct from seven MCP tools; writing does not imply live execution or a completed audit.",
+      "result": "pass"
+    },
+    {
+      "request": "Inspect through a separately configured v1 server",
+      "selectedRoute": "connection-session \u2192 available v1 skill",
+      "observedInstruction": "Verify the v1 catalog/get_server_info identity; retain separate IDs and do not apply lean jobs.",
+      "result": "pass"
+    },
+    {
+      "request": "A required current lean capability is missing",
+      "selectedRoute": "connection-session",
+      "observedInstruction": "Still request a coordinated private installation update; do not implement an older-private fallback.",
+      "result": "pass"
+    },
+    {
+      "request": "A retired apiMajor==2 skill appears in the task catalog",
+      "selectedRoute": "specialized-scope",
+      "observedInstruction": "Report the exact instruction path and stale discovery context; no false claim that the verified lean runtime is outdated.",
+      "result": "pass"
+    }
+  ]
+}

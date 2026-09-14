@@ -1,0 +1,36 @@
+{
+  "installerFinal": {
+    "tests": 130,
+    "failures": 0,
+    "seconds": 12.131,
+    "newH1Tests": 7
+  },
+  "pythonFinal": {
+    "passed": 46,
+    "skipped": 1,
+    "failed": 0,
+    "seconds": 4.2
+  },
+  "earlierAttempts": {
+    "sandboxedXcode": "build blocked by asset compiler sandbox access, no tests ran",
+    "python": "new contract test failed on indentation; whitespace normalization corrected",
+    "fullSwift": {
+      "tests": 179,
+      "failedTestCases": 2,
+      "assertionFailures": 4,
+      "failureLines": [
+        "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopProjectTests.swift:18: error: -[GlyphsMCPInstallerTests.DesktopProjectTests testStarterUsesActualPortAndCreatesIndependentFolders] : XCTAssertTrue failed",
+        "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift:3547: error: -[GlyphsMCPInstallerTests.GlyphsMCPInstallerTests testH1RetirementRestoredWhenLedgerWriteFails] : XCTAssertThrowsError failed: did not throw an error",
+        "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift:3548: error: -[GlyphsMCPInstallerTests.GlyphsMCPInstallerTests testH1RetirementRestoredWhenLedgerWriteFails] : XCTAssertEqual failed: threw error \"UpdateStagingError(code: \"payload_manifest\", message: \"Missing component directory.\")\"",
+        "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift:3549: error: -[GlyphsMCPInstallerTests.GlyphsMCPInstallerTests testH1RetirementRestoredWhenLedgerWriteFails] : XCTAssertEqual failed: threw error \"Error Domain=NSCocoaErrorDomain Code=256 \"The file \u201ckeep\u201d couldn\u2019t be opened.\" UserInfo={NSFilePath=/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/48B565DD-40D9-4ECC-81CD-1CAECB026AAF/client/skills/.glyphs-mcp-skills.json/keep, NSURL=file:///var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/48B565DD-40D9-4ECC-81CD-1CAECB026AAF/client/skills/.glyphs-mcp-skills.json/keep, NSUnderlyingError=0xcbf5885a0 {Error Domain=NSPOSIXErrorDomain Code=20 \"Not a directory\"}}\""
+      ]
+    },
+    "newH1Failure": "Test injection assumed directory replacement would fail; macOS replaced it. Corrected to immutable ledger and passed exact restoration."
+  },
+  "remainingUnrelatedFailure": {
+    "path": "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopProjectTests.swift:18",
+    "test": "testStarterUsesActualPortAndCreatesIndependentFolders",
+    "reason": "Untouched test expects contiguous old phrase get_status and list_documents; untouched Starter now instructs discovery once and retained document_id",
+    "status": "logged; not fixed during H1"
+  }
+}
