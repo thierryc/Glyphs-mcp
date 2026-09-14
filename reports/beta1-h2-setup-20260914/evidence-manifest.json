@@ -1,0 +1,79 @@
+{
+  "files": [
+    {
+      "path": "InstallSkills.swift",
+      "bytes": 3238,
+      "sha256": "32e9cd5be2d5aa07de5f65b1f1b72c6ca41f90eb55875f953f8893079d6bdf5d"
+    },
+    {
+      "path": "desktop-patch-identities.json",
+      "bytes": 939,
+      "sha256": "a9d5d51b61295f74700566c7827b23e8373988ccd3f4a4d14e4de3d631cca020"
+    },
+    {
+      "path": "desktop-source.patch.gz",
+      "bytes": 1514,
+      "sha256": "bf388cf5f6d052f14f3616a03d60460808edb70e563463573d2c84226c2c421e"
+    },
+    {
+      "path": "docs-build.log",
+      "bytes": 596,
+      "sha256": "d5d6dd6fc87883cc67b7fcdb790382023f2314c1a2df398591e9ac6a9c2bb4a3"
+    },
+    {
+      "path": "installation.json",
+      "bytes": 4514,
+      "sha256": "ef4dd406c85eedb4b50a61fd9f81da935e81e1814211efa9a1dff7556cbd5e2c"
+    },
+    {
+      "path": "installation.log",
+      "bytes": 885,
+      "sha256": "621cf9edc33e7aa99334f11bb97f49c341f2aec995fe2c35f76fa3d2888920e6"
+    },
+    {
+      "path": "payload-build.json",
+      "bytes": 709,
+      "sha256": "4d81b1acd9c261789930ea506cb06575e3fa1e031f524f66956f8c2f56b8bc22"
+    },
+    {
+      "path": "python-tests.log",
+      "bytes": 110,
+      "sha256": "568ffd261bde09a1844198c207564f6f2f86d97c76ad278f9df7135b73416d2b"
+    },
+    {
+      "path": "release-skill-before.json",
+      "bytes": 177,
+      "sha256": "5497835e21b5f75ed4f92188bfe7f45f854fdb70dc8f759160eb4d49fb4a56da"
+    },
+    {
+      "path": "report.md",
+      "bytes": 6629,
+      "sha256": "5bf2fb9a290871df1babec5483152289b01e1524462910a7aa5bff85c0882a0a"
+    },
+    {
+      "path": "runtime.json",
+      "bytes": 2416,
+      "sha256": "432f79b19f55697a465329407b644ae8ce38ad161fc49f36128a4766909ee519"
+    },
+    {
+      "path": "source-identity.json",
+      "bytes": 409,
+      "sha256": "8b374b8bcd3644385991f161a0c3d9fa028117df37fe0fbfb1803f3011dd7c64"
+    },
+    {
+      "path": "swift-tests.log.gz",
+      "bytes": 19966,
+      "sha256": "ac2235567c07a0687902a962747037042f537526c5832ce82db74dcf3244f2aa"
+    },
+    {
+      "path": "test-results.json",
+      "bytes": 583,
+      "sha256": "ef66d94ec0c20fbb321187e1acdb879de85c53707fc0e9c2ce10428e6f70c17c"
+    },
+    {
+      "path": "verification.json",
+      "bytes": 1415,
+      "sha256": "64c40cc192128351c71d37a7a76681091ca155b4fa4313783eb8a8ef58d3eed5"
+    }
+  ]
+}

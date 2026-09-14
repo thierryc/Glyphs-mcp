@@ -1,170 +1,52 @@
 ---
-title: Installation
-description: Install the Glyphs MCP plug-in and dependencies.
+title: Install Glyphs MCP v2
 ---
 
-Glyphs MCP ships as a Glyphs plug-in plus a small Python dependency set. The macOS installer supports **Glyphs 3 and Glyphs 4 beta**; install it first, then start the local MCP server from inside Glyphs.
+The **2.0.0 Beta 1** desktop application is being prepared for Glyphs 4. Its planned download is `Glyphs-MCP-2.0.0-beta.1.dmg`; it is not yet published. See the [beta guide](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA.md) for availability and testing instructions.
 
-## Recommended path
+## Choose → Install → Ready
 
-Download the signed and notarized macOS installer. It installs the already
-signed plug-in without changing its signature, installs dependencies where
-Glyphs can load them, links supported clients, and can install bundled agent
-skills.
+1. Save your work and quit Glyphs normally so its save prompts can protect open documents.
+2. Open the disk image, drag **Glyphs MCP.app** to Applications, then launch it. Choose the detected Glyphs application, or select its location.
+3. Choose your component cards, then select **Install** (or **Apply Changes** for an existing installation). Wait for **Ready** before reopening Glyphs.
+4. Optionally connect a detected AI application. You can also [connect manually](connect-client.mdx) later.
 
-The macOS app detects Glyphs 3 and Glyphs 4 separately. If both are installed, both are selected initially, and you can choose either version or install for both. A missing version is shown as not detected and cannot be selected.
+| Choice | Included |
+| --- | --- |
+| Glyphs MCP | The native bridge, external MCP server and private runtime. |
+| Curve Inspector | The independent curvature reporter. |
+| Reference Inspector | The independent reference reporter and its external font reader. |
 
-For version 1.6.0 and later, choose **Make future updates easier** for each
-Glyphs version you use. When a new version is available, the server window
-shows a small green banner. **Prepare Update** downloads and safely prepares
-that version without replacing the running or installed plug-in. Use **View
-Release** to install it when you are ready. Users upgrading from 1.5.4 must
-install 1.6.0 manually because the earlier plug-in does not contain this
-feature.
-
-Supported automatic links:
-
-- Codex App
-- Codex CLI
-- Claude App
-- Claude CLI
-
-Agent plugins are a separate, optional setup. Version 1.11.0 includes one shared
-repository package for Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot
-CLI, but the installer does not add, update, enable, or remove those plugins.
-Each host owns its plugin lifecycle. Existing standalone skills and manual MCP
-configuration remain supported; see [Use skills and optional
-plugins](./use-agent-skills.mdx).
-
-Downloads:
-
-- [Latest installer DMG](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg)
-- [Latest installer ZIP](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip)
-- [Latest release](https://github.com/thierryc/Glyphs-mcp/releases/latest)
-
-The terminal installer is also available from a checkout:
-
-```bash
-python3 install.py
-```
-
-Its default **Copy** mode downloads the installer ZIP for the checkout's exact
-version. Before installation it verifies the published checksum, Developer ID
-identity and Team ID, installer Gatekeeper acceptance, and the embedded
-plug-in's signature and stapled notarization ticket. Installation is
-transactional and preserves those exact bytes. The release must already be
-published and the machine must be online.
-
-On macOS, you can also double-click `RunInstall.command` in Finder to launch
-the same terminal installer.
-
-![Glyphs MCP Installer](/img/glyphs-mcp-installer.png)
+All three are selected on a fresh Glyphs 4 installation. Companion-only installation is supported. Existing component choices are retained on upgrades. A checked card installs or updates that component; an unchecked installed card removes it when you apply changes. Unchecked absent components do nothing. Unrelated plugins, files and component preferences are preserved.
 
 ## Requirements
 
-- macOS with **Glyphs 3 or Glyphs 4 beta**
-- Python **3.11-3.14**
-- Local access to the repo checkout or a downloaded release package
+The Glyphs 4 payload includes private Python, locked sidecar packages and architecture-matched `glyphs-cli` 0.6.1 for Apple Silicon and Intel. End users do not need to configure shell Python paths or install sidecar packages manually.
 
-If `python3` is missing or too old, install Python 3.14 from python.org and rerun the installer.
+Glyphs still needs its own working scripting environment. The installer checks the selected application before replacing files. On a fresh Glyphs installation:
 
-Glyphs 3 backward compatibility is kept for the shared MCP server code where possible. The macOS app detects it automatically. The terminal installer still defaults to Glyphs 4; for a terminal-based Glyphs 3 install, use `--glyphs-version 3`.
+1. Open **Window → Plugin Manager → Modules** in Glyphs and install **Python**.
+2. Restart Glyphs, then open **Glyphs → Settings → Addons**.
+3. In **Python version**, explicitly select the version labelled **(Glyphs)**, even if it already appears selected. This saves the framework path used by the external worker.
+4. Quit Glyphs normally, then retry **Install** in Glyphs MCP.
 
-## What the installer does
+System Git is required only for **Local Git** and **Public GitHub** references. **Last Saved** and **Font File** do not need it. Troubleshooting reports missing prerequisites.
 
-- Runs **Check Python environment** with the exact interpreter selected for
-  every Glyphs target before making persistent changes.
-- Prioritizes that target's shared `Scripts/site-packages` and stops if an
-  existing native package was built for a different Python ABI or Mac
-  architecture.
-- Detects installed Glyphs 3 and Glyphs 4 applications and lets you target either or both.
-- Installs Python dependencies for Glyphs.
-- Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.
-- Can link supported local MCP clients.
-- Can copy bundled Glyphs MCP skills into Codex or Claude Code skill directories.
-- Leaves optional Codex, Claude Code, Cursor, and GitHub Copilot agent plugins
-  to their host-specific installers.
-- Can enable the optional **Make future updates easier** feature. Its fixed
-  helper prepares a chosen version but never activates or replaces the
-  installed plug-in.
-- Verifies the complete runtime again after installation and prints the exact
-  interpreter and offending files when setup fails.
+## After installation
 
-Packages that are not installed yet are expected during the first check and do
-not block installation. If the check finds an existing package that the active
-Python cannot import, version 1.5.4 stops before pip, plug-in replacement, or
-client configuration. It does not delete, reinstall, or move shared packages.
-See [Troubleshooting](./troubleshooting.mdx#installer-stops-at-check-python-environment)
-for the diagnostic fields to include in a support request.
+Subsequent launches open [Overview](desktop.mdx). Components remains available for installation changes; Projects manages local folders and templates. The menu-bar popover shares Overview’s activity and service controls.
 
-## Scripted install
 
-For an automated signed-release install, use non-interactive Copy mode:
+Open **Edit → Glyphs MCP Server…** to start or stop the server and change the MCP port. The panel reports connection readiness. Use `get_status` to verify the independently fingerprinted sidecar and bridge against the installation receipt; [version and identity](../reference/version-identity.mdx) explains the product and protocol fields. The visible MCP server port is the one AI clients use, normally **9680**. The private bridge uses **9681** internally; it is hidden from the Glyphs interface.
 
-```bash
-python3 install.py --non-interactive --python-mode glyphs --plugin-mode copy --skip-skills --skip-client-guidance
-```
+Enable companions through the [View menu](../workflows/visual-review.mdx). A nonmodal welcome window appears once after the bridge loads and Glyphs is ready. The heart button, labelled **Welcome & Support**, reopens the same window. The preference survives documents, restarts and upgrades.
 
-The terminal installer targets Glyphs 4 by default. For a Glyphs 3 install, add `--glyphs-version 3`. This option does not affect the macOS app’s automatic target detection.
+## Updates and recovery
 
-Add skill installation when needed:
+Use **Check for Updates…** in Glyphs MCP to check its configured release channel. Beta 1 uses the beta feed on `lit/v2-beta`; stable builds use their stable feed. A local candidate or configured feed URL does not prove an update is published. Installation stages and verifies selected components before replacement. A failed replacement restores affected managed files, launch-agent configuration and installation records together. Ports, startup preferences, authentication and welcome preferences are preserved.
 
-```bash
-python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
-```
+When upgrading an earlier local 2.0.0 candidate, first finish or discard its jobs, then stop its server using its existing Glyphs server controls before installing the desktop components. That candidate does not support the desktop's idle reservation protocol; the new app deliberately refuses to stop it automatically. Early candidates also used temporary job storage. Resolve their prepared results before migration; automatic recovery of those temporary stores is not provided. Once the desktop components are installed, prepared results and job identities use persistent managed storage and survive controlled service restarts.
 
-The second example uses `--plugin-mode link` intentionally for development. A
-source link is mutable and has no signed-release or notarization guarantee. Do
-not use raw copies or source links as end-user distribution methods.
+Logs, paths and repair controls are under **Troubleshooting**. Resolve active jobs before replacing or restarting the server; stop is refused during an active native write.
 
-## Verify installation
-
-After installation, restart Glyphs. The Edit menu should include:
-
-- **Glyphs MCP Server**
-
-Then continue to [Start the server](./start-server.mdx).
-
-## Uninstall
-
-### macOS app
-
-1. Open the installer’s **Status** page and choose **Uninstall…**.
-2. Review the exact plug-ins, managed skills, and matching MCP client entries. Missing items and same-named custom client entries stay visible but cannot be selected.
-3. Quit only the selected Glyphs versions if prompted.
-4. Read the disclaimer, select the acknowledgment checkbox, and choose **Uninstall**.
-
-Client configuration files are backed up before their matching Glyphs MCP entry is removed. Unrelated configuration is preserved.
-
-### Terminal
-
-Preview every safely attributable Glyphs 3 and Glyphs 4 artifact without changing files:
-
-```bash
-python3 install.py --uninstall --glyphs-version both --dry-run
-```
-
-Run the interactive uninstall after reviewing that list:
-
-```bash
-python3 install.py --uninstall --glyphs-version both
-```
-
-For automation, explicit confirmation is mandatory:
-
-```bash
-python3 install.py --uninstall --glyphs-version both --non-interactive --confirm-uninstall
-```
-
-The terminal uninstaller continues to default to Glyphs 4. Use `--glyphs-version 3` or `--glyphs-version both` when needed. Repeat `--uninstall-component plugin`, `--uninstall-component skills`, or `--uninstall-component clients` to restrict the plan.
-
-### What is preserved
-
-The uninstaller never removes:
-
-- Python packages or any `Scripts/site-packages` folder
-- Glyphs preferences or Glyphs MCP settings
-- Font annotations or other font data
-- Documents, repositories, or shared parent folders
-
-Existing installations do not contain a dependency ownership receipt, and these Python locations may be shared with unrelated Glyphs scripts or Python tools. Removing packages automatically would therefore be unsafe.
+Selecting Glyphs 3 uses the pinned 1.11.0 payload and its existing Python setup. Follow the [v1 installation guide](/docs/getting-started/installation) for that environment.

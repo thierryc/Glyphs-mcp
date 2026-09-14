@@ -1,104 +1,72 @@
-# Glyphs MCP Installer (macOS)
+# Permanent desktop application
 
-This folder contains a small SwiftUI macOS app that installs the Glyphs MCP plug‑in and configures common local MCP clients.
+The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Overview and the menu-bar popover share one monitor and service controls. Components reuses the transactional installer. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
-## Bundle ID
+Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare the checksum-pinned Sparkle framework. Existing receipts are adopted without component changes. An earlier unpublished local candidate without the private control protocol must be stopped through its existing controls before migration.
 
-- `cx.ap.glyphsMcpServerInstaller`
+# Glyphs MCP local installer
 
-## Signing / notarization (Developer ID, not Mac App Store)
+The beta branch prepares product 2.0.0 Beta 1, release `2.0.0-beta.1`, installer build 43. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seven tools and five job kinds. See [version and identity](../content/reference/version-identity.mdx).
+The native installer uses **Choose → Install → Ready**, detects Glyphs and offers
+Glyphs MCP, Curve Inspector and Reference Inspector. Fresh installs select all
+three. Upgrades keep component choices; removal is explicit. AI connections
+are optional and existing authentication/configuration is preserved.
 
-Prereqs:
-- An Apple Developer team with a **Developer ID Application** certificate installed in your login keychain.
-- `xcrun notarytool` configured (recommended: keychain profile).
+Glyphs 4 uses an architecture-matched private CPython 3.14.7 runtime and locked
+FastMCP 2.12.0 / glyphs-cli 0.6.1 dependencies. Installations require no package
+downloads or shell configuration. Glyphs' selected scripting environment is
+preflighted separately. Git is required only for Git references.
 
-One-time notarytool setup example:
+The backend stages managed components and records replacement intent before
+renaming. It restores components, launch-agent configuration and receipts as
+one transaction on failure, and recovers interrupted transactions before
+reading upgrade choices. Ports, automatic start, authentication and welcome
+preferences remain outside component replacement. Unrelated files are retained.
+The Mac's normal Glyphs quit/save workflow must finish before replacement.
 
-```bash
-xcrun notarytool store-credentials gmcp-notary \
-  --team-id N9U29A4T8J \
-  --apple-id "<your apple id>" \
-  --password "<app-specific-password>"
+Glyphs 3 retains the pinned 1.11.0 bundle and its original Python dependency
+installation, with its version-specific skills. Legacy updater paths reject
+partial upgrades to the new component payload and direct users to the installer.
+
+## Build locally
+
+Use the repository's development Python for build scripts and tests. Fetch
+inputs once on a connected build machine, then build offline:
+
+```sh
+python scripts/download_private_runtime.py --architecture arm64
+python scripts/download_private_runtime.py --architecture x86_64
+python scripts/build_private_runtime.py --architecture arm64 --output build/private-runtime/arm64
+python scripts/build_private_runtime.py --architecture x86_64 --output build/private-runtime/x86_64
+python scripts/build_installer_payload.py
+python scripts/build_local_app.py
+python scripts/verify_desktop_app.py 'dist/local/Glyphs MCP.app' \
+  --receipt dist/local/build-receipt.json
 ```
 
-## Build (local)
+The local builder always uses a new DerivedData directory, removes it when the
+run ends, and checks the compiled image assets, linked frameworks, version and
+build number. The only local install candidate is `dist/local/Glyphs MCP.app`
+with its matching `build-receipt.json`. Verify the receipt immediately before
+installation; it binds the entire app to this worktree and its source contents.
+A failed build invalidates the old receipt. Never install a bundle found in an
+old Xcode output, copied DerivedData directory, or historical build snapshot.
+Build logs remain in `build/reports/local-app-build.log`.
 
-Open the project in Xcode:
+Use `python scripts/clean_desktop_builds.py` to inspect obsolete generated
+outputs and add `--apply` to remove them. It preserves source snapshots,
+validation reports, pinned runtimes and downloaded dependencies. Never delete
+`build/` wholesale: some development checkouts contain nested Git worktrees.
+Create new worktrees beside the repository, outside generated-output folders.
 
-- `macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj`
+The commands above build an unsigned Debug app. For the universal Developer
+ID-signed distribution, follow [RELEASING.md](RELEASING.md). That local workflow
+covers private runtimes, the bridge and companions, Apple notarization and
+verified GitHub version discovery, without release Actions. Public publication
+and the final welcome design remain separate from local candidate acceptance.
 
-Minimum requirements:
-- macOS 13.0+
-- Glyphs 3 or Glyphs 4 beta
-- Python 3.11–3.14 (recommended: python.org 3.14)
-
-Version 1.5.4 adds a **Check Python environment** step for every selected
-Glyphs target. All selected targets are checked with their exact Python and
-version-specific `Scripts/site-packages` path before pip or plug-in installation
-begins. An incompatible existing native extension stops the run and is shown in
-the UI and full JSON log. Missing packages remain non-blocking until
-post-install verification. The installer does not automatically delete,
-reinstall, move, or isolate shared packages.
-
-Notes for Xcode builds:
-- Debug builds use **Apple Development** signing with Team `N9U29A4T8J` so the app can run locally from Xcode.
-- Release builds use **Developer ID Application** signing with Team `N9U29A4T8J` for distribution outside the Mac App Store.
-- If you change signing teams/certs, run `Product > Clean Build Folder…` and delete this project’s DerivedData to avoid mixed-signature crashes (the app and embedded framework must be signed by the same Team ID).
-- If you see `Sandbox: rsync(...) deny file-write-create ...` during the `Copy Payload` build phase, ensure the build setting **Enable User Script Sandboxing** is set to `No` (we set `ENABLE_USER_SCRIPT_SANDBOXING = NO` in the project).
-- If you want a per-project DerivedData location (instead of the global default): `File > Project Settings…` → **Derived Data** → `Custom` (or `Relative to Project`).
-
-Or use scripts from repo root:
-
-```bash
-./scripts/run_local_release_tests.sh
-./scripts/generate_installer_appicon_assets.sh
-./scripts/build_installer_app.sh
-./scripts/notarize_installer_app.sh
-./scripts/make_installer_dmg.sh
-./scripts/verify_release_artifacts.sh --tag vX.Y.Z --write-checksums
-```
-
-Release tests and builds run locally; the installer release does not use GitHub Actions. The test gate uses an unsigned Debug build, while distributable artifacts must be Developer ID signed, notarized, stapled, and accepted by Gatekeeper.
-
-The release app embeds the signed plug-in and managed skills in
-`Payload.gmcparchive`, an immutable compressed-tar resource created before the
-outer app is signed. At runtime the installer extracts that resource to a
-private temporary directory, verifies the complete plug-in seal, copies it
-through a destination-local staging directory, verifies that its CDHash and
-Team ID are unchanged, and moves it into place atomically. It never ad-hoc
-re-signs the release payload. If any verification or final move fails, the
-previous plug-in is restored. The exact plug-in code hash is notarized
-separately from the outer app, its Apple ticket is stapled into the custom
-bundle, and both installer paths validate that ticket before installation.
-
-## Client configuration
-
-The installer currently supports three local client targets:
-
-- `Codex`
-- `Claude Desktop`
-- `Claude Code`
-
-The Claude integrations are intentionally separate:
-
-- Claude Desktop is patched through `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Claude Code is configured through the `claude` CLI when available, with `~/.claude.json` as fallback
-
-Only Codex and Claude Code receive the managed Glyphs MCP skill bundle.
-
-## Safe uninstall
-
-The Status page includes a reviewable uninstaller for Glyphs 3 and Glyphs 4 plug-ins, exact managed skill destinations, and matching Glyphs MCP client entries. It requires an explicit acknowledgment and blocks only when a selected Glyphs target is running.
-
-Client configuration is backed up before patching. Same-named entries with a different endpoint or command are treated as user-managed and preserved. The uninstaller does not remove shared Python packages, Glyphs preferences, font data, repositories, documents, or shared parent folders.
-
-## Releasing
-
-See `macos-installer/RELEASING.md`.
-
-Environment variables:
-- `CODESIGN_IDENTITY` (defaults to `Developer ID Application: Thierry Charbonnel (N9U29A4T8J)`)
-- `NOTARY_PROFILE` (defaults to `gmcp-notary`)
-- `DERIVED_DATA_PATH` (defaults to `/tmp/gmcp-installer-deriveddata`)
-
-The publisher also checks `EXPECTED_CODESIGN_IDENTITY` (defaulting to `CODESIGN_IDENTITY`) and `EXPECTED_TEAM_ID` during final artifact verification. The verifier copies the embedded plug-in to a temporary Glyphs plug-ins directory and requires the simulated installed bundle to retain its executable bytes and Developer ID signature. See `RELEASING.md` for the required clean-main, signed-tag, draft-release, checksum, and confirmation gates.
+Run `scripts/run_local_release_tests.sh` with `PYTHON_BIN` set for tests,
+component determinism, skill/docs checks and unsigned candidate verification.
+The actual Glyphs acceptance gate additionally requires an unlocked Mac and a
+disposable font. Record baseline and loaded timings independently; 200 ms is
+a diagnostic threshold, never an automatic rejection.

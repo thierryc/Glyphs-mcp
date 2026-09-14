@@ -1,0 +1,98 @@
+{
+  "before": {
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+82daa62ac227",
+    "codeHash": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "protocol": 1,
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "bridge": {
+      "reachable": true,
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+8b74a8d27ae4",
+      "codeHash": "sha256:8b74a8d27ae48b6d3ef1a317439c925f488ae5c9a0e5f0733221f468b97af687",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "protocol": 1
+    }
+  },
+  "after": {
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+82daa62ac227",
+    "codeHash": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "protocol": 1,
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "bridge": {
+      "reachable": true,
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+8b74a8d27ae4",
+      "codeHash": "sha256:8b74a8d27ae48b6d3ef1a317439c925f488ae5c9a0e5f0733221f468b97af687",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "protocol": 1
+    }
+  }
+}

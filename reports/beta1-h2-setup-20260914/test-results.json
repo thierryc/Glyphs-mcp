@@ -1,0 +1,28 @@
+{
+  "python": {
+    "passed": 70,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 5.68,
+    "newH2Tests": 5
+  },
+  "macOS": {
+    "passed": 179,
+    "failed": 0,
+    "seconds": 11.173,
+    "previousStarterFailureResolved": true
+  },
+  "siteBuild": {
+    "passed": true,
+    "brokenLinks": "throw",
+    "warning": "Node localStorage unavailable; non-failing"
+  },
+  "skillPackage": {
+    "count": 11,
+    "synchronized": true,
+    "entryValidation": true
+  },
+  "patchReconstructionVerified": true,
+  "nativeBenchmarkPerformed": false,
+  "latencyOrTokenImprovementClaimed": false
+}

@@ -1,0 +1,18 @@
+{
+  "macos-installer/GlyphsMCPInstaller/Sources/ContentView.swift": {
+    "before": "3848403c4894dc4f1ce0293f50c7572fb4b8c18a417d9eb7b8aa5489d5f1152a",
+    "after": "a2e63537c9b3a9f69ea1525d6c300ea519aa1bcccd88236374776dd3b239f66a"
+  },
+  "macos-installer/GlyphsMCPInstaller/Sources/InstallerViewModel.swift": {
+    "before": "12ce79581d9e436e67091ef0fd198100668d2d98f0ba1186efe9e72b99ab1c2a",
+    "after": "b5448d4253b38762528aadd4c9969f222e3192cf5200b60f9ad0e07d4c08d27e"
+  },
+  "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopProjectTests.swift": {
+    "before": "803c6b3dd5b778cb41266d4fef6b30b415807eede29c8783f0e43995e72c1ac6",
+    "after": "90de5c7a8b411f744553d6f9634058f1c04900bdc9be179e0bc1b1ea70642928"
+  },
+  "website/sidebars.ts": {
+    "before": "17e816de7f4e6767c47e67dad85538975f5852ae3f51d3d042d7726ada26293c",
+    "after": "cbc41738c1cf0b5f79149548dfe043b6db46435410ae77fe33b6a7009f239774"
+  }
+}

@@ -20,6 +20,13 @@ current managed skills verified, 130 installer and 46 Python tests passed. The
 unchanged Starter wording assertion remains logged; the full desktop suite is
 not claimed clean. H2 is paused for user feedback. Runtime identities are unchanged.
 
+[H2 setup/identity correction](beta1-h2-setup-20260914/report.md) aligns current
+migration, release and skill guidance, installs the updated release skill, and
+resolves the Starter assertion noted in H1. All **179 macOS** and **70 focused
+Python** tests passed (one optional Python skip); the documentation build passed.
+Desktop labels are corrected in source but the app was not reinstalled. H3 is
+paused for feedback; runtimes and historical evidence remain unchanged.
+
 ## Current result
 
 [RV02 native-coding follow-up](rv02-native-coding-20260914/report.md) implemented,

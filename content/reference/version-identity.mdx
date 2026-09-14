@@ -1,0 +1,86 @@
+---
+title: Version and identity
+---
+
+Use the catalog of the **specific MCP connection** to select instructions. A
+product label, a skill name or the Glyphs display name cannot identify an MCP
+interface by itself. The current lean catalog has seven tools; the v1 catalog
+and its pinned Glyphs 3 skills remain separate.
+
+## Current source target
+
+The release helper `scripts/desktop_release_identity.py` reads `release.json`
+and the Xcode project. The managed skill inventory comes from
+`skills/manifest.json`. This checkout currently targets:
+
+| Item | Value |
+| --- | --- |
+| Product version | `2.0.0` |
+| Release version | `2.0.0-beta.1` |
+| Channel | `beta` |
+| Beta number | `1` |
+| Installer build | `43` |
+| Lean interface | `glyphs-mcp-sidecar` |
+| Interface revision | `1` |
+| Bridge protocol | `1` |
+| Managed skills | `11` |
+| MCP tools | `7` |
+| Job kinds | `5` |
+| Glyphs 3 payload | `1.11.0` |
+
+`sidecarVersion` and `bridgeVersion` are coordinated product versions. The lean
+interface revision identifies the seven-tool contract; the bridge protocol
+identifies the sidecar/native message contract. The dated MCP transport version
+is negotiated separately during initialization. These values need not match.
+Independent Curve Inspector and Reference Inspector versions do not determine
+the MCP product version.
+
+## Verify an installation
+
+Compare the freshly observed `get_status` result with that installation's
+manifest and receipt:
+
+- `release` identifies the product/release version, channel, beta number and build.
+- `interface` and `interfaceVersion` identify the lean interface. Check advertised
+  `readCapabilities` and `jobKinds` for the requested workflow.
+- Sidecar `runtimeId` combines its release with a short file fingerprint;
+  `codeHash` gives the complete fingerprint. Check `bridge.release`,
+  `bridge.runtimeId` and `bridge.codeHash` independently.
+- `bridge.host` identifies the native application by bundle identifier, version
+  and build. Glyphs 4 uses `com.GeorgSeifert.Glyphs4`; the separate Glyphs 3 host
+  uses `com.GeorgSeifert.Glyphs3`.
+
+The fingerprint is computed from component files at initialization. It is not a
+hash of in-memory code, and changed installed files do not prove that the running
+process loaded them. Missing identity is unavailable evidence; differing expected
+and reported component hashes require investigation. Do not fabricate a match.
+
+The MCP endpoint remains `http://127.0.0.1:9680/mcp/` by default. Use the configured
+endpoint and **Edit → Glyphs MCP Server…** in the intended host. Verifying identity
+needs no document discovery or Save. Dirty-font state is unrelated to interface
+identification. During font work, retain the connection's known document ID and
+read fresh data; rediscover after stale-ID rejection or a known host/bridge restart.
+
+## Source, installation and release evidence
+
+A source version states what a checkout is preparing. An installation receipt
+states which files were installed. A live status response identifies the loaded
+components' initialization-time fingerprints. Developer ID, notarization,
+Gatekeeper and signed-update acceptance require results for the exact final
+artifacts. None of these is established by a marketing label or a docs build.
+
+The current candidate has local qualification records; signed distribution
+qualification remains separate. Public availability follows the beta launch
+process. A configured URL does not prove that a feed or release is published.
+
+Beta 1 uses tag `v2.0.0-beta.1` and branch `lit/v2-beta`. Its feed is
+`https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.
+Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.1.dmg` and
+`Glyphs-MCP-2.0.0-beta.1.zip`. A beta is a prerelease with `make_latest=false`;
+never publish `Glyphs-MCP-latest.dmg` for it. Stable releases use their separate
+feed and release process. Installer builds increase across beta and final
+releases; changing the label does not make an older build newer.
+
+See [migration](../getting-started/migrate-from-v1.mdx),
+[skill installation and conflicts](../getting-started/use-agent-skills.mdx), and
+[packaging and release discovery](../contributor/release-build-notes.mdx).

@@ -25,4 +25,5 @@ signing, notarizing, uploading assets or publication. Treat each public release
 phase separately. Report the artifact paths, versions, checksums, installation
 receipt and actual acceptance results. See the repository release procedure.
 
-[Documentation](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set-v2.mdx).
+Use [release identity and setup checks](references/release-identity.md) for
+product/interface versions, the managed skill inventory, beta artifacts and feeds.

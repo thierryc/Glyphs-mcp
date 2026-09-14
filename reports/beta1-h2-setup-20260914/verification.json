@@ -1,0 +1,37 @@
+{
+  "sourceFilesChecked": 3736,
+  "existingSourceFilesChanged": [
+    "content/getting-started/migrate-from-v1.mdx",
+    "content/getting-started/use-agent-skills.mdx",
+    "content/getting-started/troubleshooting.mdx",
+    "content/getting-started/installation.mdx",
+    "content/contributor/release-build-notes.mdx",
+    "content/reference/settings.mdx",
+    "skills/glyphs-mcp-release/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs-mcp-release/SKILL.md",
+    "macos-installer/RELEASING.md",
+    "macos-installer/README.md",
+    "macos-installer/GlyphsMCPInstaller/Sources/InstallerViewModel.swift",
+    "macos-installer/GlyphsMCPInstaller/Sources/ContentView.swift",
+    "macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopProjectTests.swift",
+    "website/sidebars.ts"
+  ],
+  "unchangedInstalledSkillFiles": 1706,
+  "installedSkillsVerified": 11,
+  "updatedSkills": [
+    "glyphs-mcp-release"
+  ],
+  "backupPath": "/Users/thierryc/.codex/glyphs-mcp-skill-backups/719118b0-919e-4cdd-8dbc-9738580661c2/glyphs-mcp-release",
+  "exactBackupVerified": true,
+  "runtimeIdentitiesUnchanged": true,
+  "sourceAndRuntimeReleaseAgree": true,
+  "sevenToolsAndFiveJobs": true,
+  "v1AndHistoricalDocsUnchanged": true,
+  "mcpStatusCalls": 2,
+  "documentDiscoveryCalls": 0,
+  "nativeMutations": 0,
+  "glyphsRestarts": 0,
+  "desktopAppInstalled": false,
+  "runtimeInstalled": false,
+  "published": false
+}
