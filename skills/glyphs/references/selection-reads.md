@@ -1,5 +1,9 @@
 # Native selection context
 
+For the toolbar master or selected glyphs in Font/Edit View, use the separate
+[document context read](context-reads.md), requiring `document.context.v1`.
+Keep this existing node/object selection response unchanged.
+
 Use the current private lean installation. On the **specific MCP connection**,
 check the retained `get_status` → `readCapabilities` for **`selection.context.v1`**;
 do not fetch status again solely to enter this reference. This is

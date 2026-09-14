@@ -10,7 +10,7 @@ independent sidecar/bridge identities and negotiated `readCapabilities`.
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
 | `get_status` | None | Read sidecar, worker and bridge availability. |
-| `list_documents` | None | Identify open documents and their paths, saved state and edit generation. |
+| `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job outside the editor. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
@@ -33,6 +33,7 @@ intent when the prior target may no longer be intended.
 | Layer | `{"kind":"layer","glyph":"H","id":"<layer ID>"}` | `id`, `name`, `width`, `vertWidth`, `vertOrigin`, `leftMetricsKey`, `rightMetricsKey`, `widthMetricsKey`, `bounds`, `outlineHash` |
 | Master | `{"kind":"master","id":"<master ID>"}` | `id`, `name` |
 | Master page | `{"kind":"masters","limit":100}`; sole selector | `id`, `name`; see pagination below |
+| Context | `{"kind":"context"}`; optional `glyphLimit` with `selectedGlyphs` | `view`, `master`, `selectedGlyphs` |
 | Selection | `{"kind":"selection"}`; optional `nodeLimit` only with `nodes` | `glyph`, `layer`, `selectedNodeCount`, `selectedAnchorCount`, `selectedComponentCount`, `selectedGuideCount`, `selectedOtherCount`, optional `nodes` |
 | Kerning | `{"kind":"kerning","master":"<master ID>","direction":"LTR","left":"A","right":"V"}` | `value` only; `null` means absent. |
 
@@ -63,6 +64,17 @@ avoid editing between pages and re-enumerate after observed edits.
 nonempty native ID, never a name alias. IDs need not be UUIDs, and names can repeat.
 Require these capabilities on the current private build; if absent, update the
 bridge, sidecar and skills together. Protocol 1 alone does not establish support.
+
+For document context, require negotiated `document.context.v1`. Use one context
+selector and request `view`, `master` and/or `selectedGlyphs`. View is `font`,
+`edit` or `unavailable`; master is native id/name or null. Selected glyph names
+follow native `font.selection` or `font.selectedLayers` order, bounded by an
+integer `glyphLimit` of 1–100 (default 100). Native selection can collapse repeated
+Edit View occurrences. `total`, `returned`, `limit`, `complete` and `source` make
+coverage explicit; missing native evidence includes an `unavailable` reason.
+Incomplete evidence is not a complete edit scope. No node details are implicit.
+See `glyphs/references/context-reads.md`. This capability also advertises the
+native `isCurrent` marker in `list_documents`; retained IDs never retarget.
 
 For selection, require negotiated `selection.context.v1`. Request the compact
 counts explicitly; smaller projections remain valid. Add `nodes` only when

@@ -1,0 +1,19 @@
+{
+  "beforeFiles": 3658,
+  "unchangedFiles": 3646,
+  "changed": [
+    "src/sidecar/glyphs_mcp_sidecar/server.py",
+    "src/protocol/glyphs_mcp_protocol/reads.py",
+    "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py",
+    "src/glyphs-mcp/tests/test_simple_v2_build.py",
+    "src/glyphs-mcp/tests/test_simple_v2_skill_routing.py",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs/references/selection-reads.md",
+    "skills/glyphs/references/document-targeting.md",
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs/references/selection-reads.md",
+    "plugins/glyphs-mcp/skills/glyphs/references/document-targeting.md",
+    "content/reference/command-set.mdx"
+  ],
+  "baselineSHA256": "3ace0fdda3aa1ce2d15b0f52b00f1049077551267e61dae919d0fe6bd648e61c"
+}

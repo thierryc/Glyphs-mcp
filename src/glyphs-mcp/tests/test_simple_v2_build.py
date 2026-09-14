@@ -80,7 +80,8 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     # Compact selection context uses a small stateless read module; no new tool, job or history hooks.
     # Lazy native groups and restoration of their original automatic-grouping setting.
     # Existing inverse callbacks/history only; no additional recovery system.
-    assert bridge <= 1805
+    # H3 adds one stateless bounded context projection, preserving all editing hooks.
+    assert bridge <= 1910
     assert sidecar <= 3500
     assert protocol + bridge + sidecar <= 6000
     assert all(

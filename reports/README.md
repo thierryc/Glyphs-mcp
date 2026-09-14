@@ -1,6 +1,6 @@
 # Lean v2 qualification records
 
-Latest recorded qualification: **RV02, September 14, 2026**, committed in
+Latest full native-coding qualification: **RV02, September 14, 2026**, committed in
 `5666e289`. This is the private `2.0.0-beta.1` candidate, installer build 43,
 tested in Glyphs 4.1 (4107). These records are evidence from specific runs;
 they do not establish public-release readiness or the identity of a later process.
@@ -18,14 +18,23 @@ the next fix; the plan itself does not claim implementation or qualification.
 seven obsolete private instruction folders archived with exact backups, eleven
 current managed skills verified, 130 installer and 46 Python tests passed. The
 unchanged Starter wording assertion remains logged; the full desktop suite is
-not claimed clean. H2 is paused for user feedback. Runtime identities are unchanged.
+not claimed clean at the H1 gate; H2 resolves that assertion below. Runtime
+identities were unchanged during H1.
 
 [H2 setup/identity correction](beta1-h2-setup-20260914/report.md) aligns current
 migration, release and skill guidance, installs the updated release skill, and
 resolves the Starter assertion noted in H1. All **179 macOS** and **70 focused
 Python** tests passed (one optional Python skip); the documentation build passed.
-Desktop labels are corrected in source but the app was not reinstalled. H3 is
-paused for feedback; runtimes and historical evidence remain unchanged.
+Desktop labels were corrected in source but the app was not reinstalled during
+H2; runtime identities were unchanged at that gate.
+
+[H3 compact context](beta1-h3-context-20260914/report.md) is implemented, installed
+and qualified in Glyphs 4.1 (4107): native current-font evidence, toolbar master
+and bounded selected glyph names through the seven-tool interface. All 649 lean
+regressions, 133 isolated native selection checks and 102 distinct installed
+native checks passed after two documented harness corrections. Median context
+HTTP reads were 23/26 ms for small/bounded selections; queue tails remain separate.
+H4 is paused for feedback.
 
 ## Current result
 

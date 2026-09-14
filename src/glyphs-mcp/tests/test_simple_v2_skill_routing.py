@@ -156,7 +156,7 @@ def test_document_targeting_reuses_ids_without_weakening_error_or_intent_guards(
                      'target_not_found', 'missing glyphs', 'not a path',
                      'Closing and reopening the same file creates a new ID',
                      'bridge/Glyphs restart', 'never silently substitute',
-                     'does not advertise a foreground flag', 'remembering identity does not cache contents'):
+                     'Require exactly one true marker', 'remembering identity does not cache contents'):
         assert required.lower() in text.lower()
     assert 'document-targeting.md' in (SKILL/'SKILL.md').read_text()
     for reference in ('selection-reads.md','metadata-reads.md','master-reads.md','layer-reads.md'):

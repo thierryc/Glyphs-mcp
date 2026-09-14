@@ -10,7 +10,7 @@ from glyphs_mcp_protocol.reads import MASTER_PAGE_LIMIT
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
-from . import coordinates, kerning, selection, start_node
+from . import context, coordinates, kerning, selection, start_node
 
 
 _MISSING = object()
@@ -132,7 +132,9 @@ class GlyphsAdapter:
             return self._generations.get(self._id(font), 0)
 
     def list_documents(self) -> list[dict[str, Any]]:
+        current = context.current_font(self.glyphs)
         return [dict(self._document_state(font),
+                     isCurrent=context.is_current(font, current, self._native_identity),
                      familyName=str(_value(font, "familyName", "Untitled") or "Untitled"))
                 for font in self._fonts()]
 
@@ -264,10 +266,10 @@ class GlyphsAdapter:
         if failures:
             raise BridgeError("native_write_failed", "Could not restore rounding flags", details={"layers": failures})
 
-    def read_entities(
-        self, document_id: str, entities: list[dict[str, Any]], fields: list[str]
-    ) -> list[dict[str, Any]]:
+    def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         font = self._font(document_id)
+        if any(isinstance(item, Mapping) and item.get("kind") == "context" for item in entities):
+            return context.read(font, entities, fields, self._native_identity)
         if "nodes" in fields and any(isinstance(item, Mapping) and item.get("kind") == "selection"
                                      for item in entities) and len(entities) != 1:
             raise BridgeError("invalid_request", "selection node details require one selection entity only")

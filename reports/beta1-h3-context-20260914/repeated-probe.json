@@ -1,0 +1,43 @@
+[
+  {
+    "range": [
+      0,
+      3
+    ],
+    "glyphs": [
+      "control",
+      "mixed"
+    ],
+    "ids": [
+      "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575"
+    ],
+    "selectionType": "__NSArrayI_Transfer"
+  },
+  {
+    "range": [
+      0,
+      0
+    ],
+    "glyphs": [
+      "control"
+    ],
+    "ids": [
+      "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575"
+    ],
+    "selectionType": "__NSSingleObjectArrayI"
+  },
+  {
+    "range": [
+      1,
+      1
+    ],
+    "glyphs": [
+      "mixed"
+    ],
+    "ids": [
+      "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575"
+    ],
+    "selectionType": "__NSArrayI_Transfer"
+  }
+]

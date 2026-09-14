@@ -42,8 +42,13 @@ that actual error. Listing documents again is not a recovery for missing glyphs.
 An explicit change of target requires resolving that target. Treat “the current/
 frontmost font” as a fresh targeting question when the previously identified font
 may no longer be intended. `read_entities` does not select the frontmost document;
-`list_documents` does not advertise a foreground flag. Use explicit user context
-or ask for the intended font when the available evidence is insufficient. Window
+`list_documents` advertises `isCurrent` with negotiated `document.context.v1`: true
+identifies Glyphs’ native current font, false means another/no current font, and
+null means native evidence is unavailable. Require exactly one true marker for
+an explicit current-font request; do not infer it from list order. If the capability
+is missing, update the bridge, sidecar and skills together. If current evidence
+is unavailable or ambiguous, obtain an explicit target. This is Glyphs’ current
+font, including when a utility window is frontmost, not a macOS window-order guess. Window
 activation alone must never silently redirect a read bound to an explicit font.
 
 Use the current private bridge, sidecar and skills together. Missing required

@@ -1,0 +1,20 @@
+{
+  "source": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v1-v2/06-selection-inspection/SelectionInspectionTest.glyphs",
+  "sourceSHA256": "4197343545265e18ff44b685535c197a446595c1b84495c56b9bade2cdb8ec7a",
+  "sha256": "3ace0fdda3aa1ce2d15b0f52b00f1049077551267e61dae919d0fe6bd648e61c",
+  "glyphCount": 109,
+  "masters": [
+    {
+      "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+      "name": "Light"
+    },
+    {
+      "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+      "name": "Regular"
+    },
+    {
+      "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+      "name": "Bold"
+    }
+  ]
+}

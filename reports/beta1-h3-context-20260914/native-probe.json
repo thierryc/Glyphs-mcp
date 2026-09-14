@@ -1,0 +1,318 @@
+{
+  "protectedBefore": [
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP Selection Inspection.glyphs",
+      "current": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP Selection Inspection.glyphs",
+      "dirty": false,
+      "tabType": "NSKVONotifying_GSEditViewController",
+      "tab": "<GSEditViewController: 0xa0ba29500>\u2303/component",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSEditViewController: 0xa0ba29500>\u2303/component",
+      "selectedTabType": "NSKVONotifying_GSEditViewController",
+      "selectedMaster": {
+        "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+        "name": "Light"
+      },
+      "glyphSelection": {
+        "type": "__NSArrayI_Transfer",
+        "count": 1,
+        "first": [
+          "component"
+        ]
+      },
+      "selectedLayers": {
+        "type": "__NSSingleObjectArrayI",
+        "count": 1,
+        "first": [
+          "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+        ]
+      },
+      "layerGlyphs": [
+        "control"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "case": "opened",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+        "name": "Light"
+      },
+      "glyphSelection": {
+        "type": "__NSArray0",
+        "count": 0,
+        "first": []
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 0,
+        "first": []
+      },
+      "layerGlyphs": []
+    },
+    {
+      "case": "font-multiple",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+        "name": "Light"
+      },
+      "glyphSelection": {
+        "type": "__NSArrayI_Transfer",
+        "count": 2,
+        "first": [
+          "control",
+          "mixed"
+        ]
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 2,
+        "first": [
+          "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+        ]
+      },
+      "layerGlyphs": [
+        "control",
+        "mixed"
+      ]
+    },
+    {
+      "case": "master-0",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+        "name": "Light"
+      },
+      "glyphSelection": {
+        "type": "__NSArrayI_Transfer",
+        "count": 2,
+        "first": [
+          "control",
+          "mixed"
+        ]
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 2,
+        "first": [
+          "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+        ]
+      },
+      "layerGlyphs": [
+        "control",
+        "mixed"
+      ]
+    },
+    {
+      "case": "master-1",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+        "name": "Regular"
+      },
+      "glyphSelection": {
+        "type": "__NSArrayI_Transfer",
+        "count": 2,
+        "first": [
+          "control",
+          "mixed"
+        ]
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 2,
+        "first": [
+          "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC"
+        ]
+      },
+      "layerGlyphs": [
+        "control",
+        "mixed"
+      ]
+    },
+    {
+      "case": "master-2",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+        "name": "Bold"
+      },
+      "glyphSelection": {
+        "type": "__NSArrayI_Transfer",
+        "count": 2,
+        "first": [
+          "control",
+          "mixed"
+        ]
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 2,
+        "first": [
+          "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575"
+        ]
+      },
+      "layerGlyphs": [
+        "control",
+        "mixed"
+      ]
+    },
+    {
+      "case": "font-empty",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+        "name": "Bold"
+      },
+      "glyphSelection": {
+        "type": "__NSArray0",
+        "count": 0,
+        "first": []
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 0,
+        "first": []
+      },
+      "layerGlyphs": []
+    },
+    {
+      "case": "edit-repeated",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NSKVONotifying_GSEditViewController",
+      "tab": "<GSEditViewController: 0x9ff8b2d00>\u2303/mixed \u2303",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSEditViewController: 0x9ff8b2d00>\u2303/mixed \u2303",
+      "selectedTabType": "NSKVONotifying_GSEditViewController",
+      "selectedMaster": {
+        "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+        "name": "Bold"
+      },
+      "glyphSelection": {
+        "type": "__NSArray0",
+        "count": 0,
+        "first": []
+      },
+      "selectedLayers": {
+        "type": "__NSSingleObjectArrayI",
+        "count": 1,
+        "first": [
+          "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575"
+        ]
+      },
+      "layerGlyphs": [
+        "control"
+      ]
+    },
+    {
+      "case": "font-after-tab",
+      "path": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NoneType",
+      "tab": "None",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSFontViewController: 0x9fff17000>",
+      "selectedTabType": "NSKVONotifying_GSFontViewController",
+      "selectedMaster": {
+        "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+        "name": "Bold"
+      },
+      "glyphSelection": {
+        "type": "__NSArray0",
+        "count": 0,
+        "first": []
+      },
+      "selectedLayers": {
+        "type": "__NSArrayM",
+        "count": 0,
+        "first": []
+      },
+      "layerGlyphs": []
+    }
+  ],
+  "protectedAfter": [
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP Selection Inspection.glyphs",
+      "current": "/private/tmp/glyphs-h3-20260914/H3-A.glyphs",
+      "dirty": false,
+      "tabType": "NSKVONotifying_GSEditViewController",
+      "tab": "<GSEditViewController: 0xa0ba29500>\u2303/component",
+      "fontViewType": "NSKVONotifying_GSFontViewController",
+      "selectedTab": "<GSEditViewController: 0xa0ba29500>\u2303/component",
+      "selectedTabType": "NSKVONotifying_GSEditViewController",
+      "selectedMaster": {
+        "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+        "name": "Light"
+      },
+      "glyphSelection": {
+        "type": "__NSArrayI_Transfer",
+        "count": 1,
+        "first": [
+          "component"
+        ]
+      },
+      "selectedLayers": {
+        "type": "__NSSingleObjectArrayI",
+        "count": 1,
+        "first": [
+          "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+        ]
+      },
+      "layerGlyphs": [
+        "control"
+      ]
+    }
+  ]
+}

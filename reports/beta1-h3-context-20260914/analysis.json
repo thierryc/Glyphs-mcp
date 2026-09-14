@@ -1,0 +1,400 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; sorted compact JSON with literal Unicode; {name,arguments} and one parsed response body; estimated tokens, not billed usage",
+  "timings": {
+    "small": {
+      "httpReadMs": {
+        "n": 5,
+        "median": 22.726208029780537,
+        "minimum": 20.686541975010186,
+        "maximum": 65.3585420222953,
+        "p95": 65.3585420222953
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 116.58812500536442,
+        "minimum": 92.0666249585338,
+        "maximum": 520.2725829440169,
+        "p95": 520.2725829440169
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 157.4251669808291,
+        "minimum": 122.83045798540115,
+        "maximum": 543.4876659419388,
+        "p95": 543.4876659419388
+      },
+      "firstAndWarmup": [
+        {
+          "size": "small",
+          "phase": "first",
+          "httpReadMs": 21.662916988134384,
+          "discoveryMs": 547.0932919997722,
+          "initialTotalMs": 568.7562089879066,
+          "openDocuments": 3
+        },
+        {
+          "size": "small",
+          "phase": "warmup",
+          "httpReadMs": 18.71475001098588,
+          "discoveryMs": 171.36300000129268,
+          "initialTotalMs": 190.07775001227856,
+          "openDocuments": 3
+        }
+      ]
+    },
+    "bounded": {
+      "httpReadMs": {
+        "n": 5,
+        "median": 25.97237500594929,
+        "minimum": 24.41058401018381,
+        "maximum": 38.14620798220858,
+        "p95": 38.14620798220858
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 164.02658296283334,
+        "minimum": 120.13279204256833,
+        "maximum": 201.2465419829823,
+        "p95": 201.2465419829823
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 188.43716697301716,
+        "minimum": 158.2790000247769,
+        "maximum": 232.42545797256753,
+        "p95": 232.42545797256753
+      },
+      "firstAndWarmup": [
+        {
+          "size": "bounded",
+          "phase": "first",
+          "httpReadMs": 51.726375008001924,
+          "discoveryMs": 213.98733399109915,
+          "initialTotalMs": 265.7137089991011,
+          "openDocuments": 3
+        },
+        {
+          "size": "bounded",
+          "phase": "warmup",
+          "httpReadMs": 28.929791995324194,
+          "discoveryMs": 179.9972919980064,
+          "initialTotalMs": 208.9270839933306,
+          "openDocuments": 3
+        }
+      ]
+    },
+    "nativeContext2": {
+      "queueMs": {
+        "n": 5,
+        "median": 2.489167032763362,
+        "minimum": 2.4122499744407833,
+        "maximum": 2.5344170280732214,
+        "p95": 2.5344170280732214
+      },
+      "callbackMs": {
+        "n": 5,
+        "median": 4.384750034660101,
+        "minimum": 1.1194580001756549,
+        "maximum": 8.284541021566838,
+        "p95": 8.284541021566838
+      }
+    },
+    "nativeContext109": {
+      "queueMs": {
+        "n": 5,
+        "median": 2.4806659785099328,
+        "minimum": 2.4645840167067945,
+        "maximum": 2.6039169752039015,
+        "p95": 2.6039169752039015
+      },
+      "callbackMs": {
+        "n": 5,
+        "median": 6.400374986696988,
+        "minimum": 1.856165996287018,
+        "maximum": 10.197625029832125,
+        "p95": 10.197625029832125
+      }
+    }
+  },
+  "tokens": {
+    "2": {
+      "request": {
+        "n": 5,
+        "median": 50,
+        "minimum": 49,
+        "maximum": 56,
+        "p95": 56
+      },
+      "response": {
+        "n": 5,
+        "median": 92,
+        "minimum": 92,
+        "maximum": 92,
+        "p95": 92
+      }
+    },
+    "109": {
+      "request": {
+        "n": 5,
+        "median": 50,
+        "minimum": 49,
+        "maximum": 53,
+        "p95": 53
+      },
+      "response": {
+        "n": 5,
+        "median": 582,
+        "minimum": 582,
+        "maximum": 582,
+        "p95": 582
+      }
+    }
+  },
+  "calls": 70,
+  "harnessErrors": [
+    "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-h3-context-20260914/qualify_native.py\", line 166, in run\n    main.call(repeated);inspect('A',doc,'repeated occurrences')\n    ~~~~~~~~~^^^^^^^^^^\n  File \"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/main_thread.py\", line 59, in call\n    raise outcome[\"error\"]\n  File \"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/main_thread.py\", line 43, in execute\n    outcome[\"value\"] = callback()\n                       ~~~~~~~~^^\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-h3-context-20260914/qualify_native.py\", line 165, in repeated\n    master_id=main.call(lambda:fonts['A'].masters[mi].id);t=f.currentTab;t.layers=[f.glyphs[n].layers[f.masters[1].id] for n in ('control','mixed','control')];t.selectedTextRange=NSMakeRange(0,3)\n  File \"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/main_thread.py\", line 57, in call\n    raise DispatchTimeout(\"cancelled\" if state == \"cancelled\" else \"uncertain\")\nglyphs_mcp_bridge.main_thread.DispatchTimeout: Queued Glyphs call cancelled\n",
+    "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-h3-context-20260914/qualify_native.py\", line 187, in run\n    check('dirty native flag',True,main.call(lambda:bool(fonts['A'].parent.isDocumentEdited())))\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-h3-context-20260914/qualify_native.py\", line 49, in check\n    assert expected==observed, name\n           ^^^^^^^^^^^^^^^^^^\nAssertionError: dirty native flag\n"
+  ],
+  "loadBefore": [
+    9.822265625,
+    13.4296875,
+    13.111328125
+  ],
+  "loadAfter": [
+    26.89208984375,
+    34.41455078125,
+    24.322265625
+  ],
+  "nativeAllCallbacks": {
+    "queueMs": {
+      "n": 70,
+      "median": 4.707833519205451,
+      "minimum": 2.3131250054575503,
+      "maximum": 634.2039580340497,
+      "p95": 516.6384999756701
+    },
+    "callbackMs": {
+      "n": 70,
+      "median": 4.465229518245906,
+      "minimum": 0.023667002096772194,
+      "maximum": 126.81129202246666,
+      "p95": 34.71745800925419
+    }
+  },
+  "callCounts": {
+    "get_status": 3,
+    "list_documents": 20,
+    "read_entities": 47
+  },
+  "toolErrors": [
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context",
+            "glyphLimit": 101
+          }
+        ],
+        "fields": [
+          "selectedGlyphs"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "context glyphLimit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context",
+            "glyphLimit": true
+          }
+        ],
+        "fields": [
+          "selectedGlyphs"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "context glyphLimit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context",
+            "glyphLimit": 1
+          }
+        ],
+        "fields": [
+          "view"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "glyphLimit requires selectedGlyphs",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context"
+          }
+        ],
+        "fields": [
+          "nodes"
+        ]
+      },
+      "error": {
+        "code": "unsupported_read",
+        "message": "context supports only view, master and selectedGlyphs",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context"
+          }
+        ],
+        "fields": [
+          "view",
+          "master",
+          "selectedGlyphs"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context"
+          }
+        ],
+        "fields": [
+          "view",
+          "master",
+          "selectedGlyphs"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_84b6ef584b2147a5b01e23635d287d54",
+        "entities": [
+          {
+            "kind": "context"
+          }
+        ],
+        "fields": [
+          "view",
+          "master",
+          "selectedGlyphs"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    }
+  ],
+  "uniqueChecks": 102,
+  "uniquePassed": 102,
+  "rawChecks": 122,
+  "rawPassed": 121,
+  "nativeRunPassed": true,
+  "cleanupError": null,
+  "skillTextTokens": {
+    "SKILL.md": 903,
+    "references/context-reads.md": 684
+  },
+  "runtime": {
+    "runtimeId": "2.0.0-beta.1+f15183c8c77b",
+    "codeHash": "sha256:f15183c8c77b2440187accf5bc83dbb1aeb64bd96e2997aea50a89fcd46d4acb",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+b889ff6290d5",
+      "codeHash": "sha256:b889ff6290d55698beaa1e40f7df7889b349219cdd730d67e658a9e4ba93b7ce",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    }
+  }
+}

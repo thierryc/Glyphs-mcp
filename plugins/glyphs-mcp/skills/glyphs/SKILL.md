@@ -42,6 +42,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 | Glyph metadata | [Metadata](references/metadata-reads.md) |
 | Native master IDs/names | [Masters](references/master-reads.md) |
 | Exact layers, fractional metrics and bounds | [Layers](references/layer-reads.md) |
+| Current master or selected glyphs in Font/Edit View | [Context](references/context-reads.md), requiring `document.context.v1` |
 | Active layer, selected-object counts or optional node details | [Selection](references/selection-reads.md), requiring `selection.context.v1` |
 | Exact stored kerning | [Kerning reads](references/kerning-reads.md) |
 | Additive advance changes | [Widths](references/width-changes.md) |

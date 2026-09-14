@@ -1,0 +1,25 @@
+{
+  "lean": {
+    "uniquePassed": 649,
+    "initialPassed": 647,
+    "initialSandboxFailures": 2,
+    "rerunSocketSuitePassed": 20,
+    "newH3Tests": 48
+  },
+  "isolatedNativeSelection": {
+    "passed": 133,
+    "failed": 0
+  },
+  "installedNativeContext": {
+    "distinctPassed": 102,
+    "rawPassed": 121,
+    "rawAssertions": 122,
+    "correctedHarnessIssues": 2
+  },
+  "finalBuildTestsPassed": 5,
+  "docsBuildPassed": true,
+  "managedSkillsVerified": 11,
+  "tools": 7,
+  "jobs": 5,
+  "protocol": 1
+}
