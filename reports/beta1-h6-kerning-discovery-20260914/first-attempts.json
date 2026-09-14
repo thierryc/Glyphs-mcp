@@ -1,0 +1,84 @@
+{
+  "firstNativeRun": {
+    "checks": 406,
+    "failed": [
+      {
+        "name": "RobotoSlab-rep1 bounded native counts",
+        "expected": true,
+        "observed": false,
+        "passed": false
+      }
+    ],
+    "calls": 136,
+    "error": "Traceback (most recent call last):\n  File \"/private/tmp/h6.py\", line 97, in run\n    result=inventory(name,doc,master,phase=phase);facts['trials'].append(dict(label=label,phase=phase,discoveryMs=discovery,initialTotalMs=discovery+result['readMs'],openDocuments=docs,hostLoad=os.getloadavg(),**result));save();main.call(lambda:close_copy(name))\n  File \"/private/tmp/h6.py\", line 67, in inventory\n    cb=facts['calls'][-1]['callbacks'];check(name+' bounded native counts',True,len(cb)==1 and cb[0]['countReads']<=result['scanned']+2 and cb[0]['glyphLookups']<=200)\n                                       ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/h6.py\", line 38, in check\n    ok=expected==observed;facts['checks'].append(dict(name=name,expected=expected,observed=observed,passed=ok));save();assert ok,name\n                                                                                                                              ^^\nAssertionError: RobotoSlab-rep1 bounded native counts\n"
+  },
+  "originalFirstTrials": {
+    "small": {
+      "label": "small",
+      "phase": "first",
+      "discoveryMs": 272.1493749995716,
+      "initialTotalMs": 326.42041699728,
+      "openDocuments": 4,
+      "hostLoad": [
+        6.47412109375,
+        10.76953125,
+        10.71142578125
+      ],
+      "readMs": 54.27104199770838,
+      "requests": 1,
+      "total": 3,
+      "callIndices": [
+        3
+      ]
+    },
+    "many": {
+      "label": "many",
+      "phase": "first",
+      "discoveryMs": 291.4417079882696,
+      "initialTotalMs": 571.9982499722391,
+      "openDocuments": 4,
+      "hostLoad": [
+        9.13623046875,
+        11.1767578125,
+        10.85498046875
+      ],
+      "readMs": 280.5565419839695,
+      "requests": 4,
+      "total": 308,
+      "callIndices": [
+        24,
+        25,
+        26,
+        27
+      ]
+    },
+    "RobotoSlab": {
+      "label": "RobotoSlab",
+      "phase": "first",
+      "discoveryMs": 299.73466700175777,
+      "initialTotalMs": 792.7955418708734,
+      "openDocuments": 4,
+      "hostLoad": [
+        10.1279296875,
+        11.27587890625,
+        10.8974609375
+      ],
+      "readMs": 493.06087486911565,
+      "requests": 10,
+      "total": 986,
+      "callIndices": [
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96
+      ]
+    }
+  },
+  "qualificationRerun": "native-facts.json.gz"
+}

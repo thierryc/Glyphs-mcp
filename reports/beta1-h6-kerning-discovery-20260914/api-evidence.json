@@ -1,0 +1,12 @@
+{
+  "nativeHost": "Glyphs 4.1 (4107)",
+  "nativeWrapper": {
+    "path": "/Applications/Glyphs 4.app/Contents/Scripts/GlyphsApp/__init__.py",
+    "sha256": "9501a83e0dde209bbb404a7b01866c4ab37b8f4c4913900331e98f94ccd783ee"
+  },
+  "pinnedWrapper": {
+    "path": "skills/glyphs-mcp-development/assets/knowledge/docs/sdk/ObjectWrapper/GlyphsApp/__init__.py",
+    "sha256": "6ff80ab0e067af99286527d87499e60cb9b5c6954de1a4218eb6a37aaf5e841c"
+  },
+  "qualification": "kerningLTR/kerningRTL/kerningVertical contain native MGOrderedDictionary tables; count/keyAtIndex_/objectForKey_ qualified on this host. Native glyphForId_ resolves only returned IDs. This does not establish availability on every Glyphs 4 build."
+}

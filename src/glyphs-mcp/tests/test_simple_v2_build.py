@@ -83,7 +83,8 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     # H3 adds one stateless bounded context projection, preserving all editing hooks.
     # H4 adds bounded glyph pages with constant-size guards and no inventory cache.
     # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
-    assert bridge <= 2130
+    # H6 adds stateless indexed kerning pages with a bounded work budget.
+    assert bridge <= 2300
     assert sidecar <= 3500
     assert protocol + bridge + sidecar <= 6000
     assert all(

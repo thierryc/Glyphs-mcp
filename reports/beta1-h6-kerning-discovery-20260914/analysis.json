@@ -1,0 +1,855 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; sorted compact JSON, literal Unicode; {name,arguments} + one parsed response body; estimates, not billed usage",
+  "timings": {
+    "small": {
+      "readMs": {
+        "n": 5,
+        "median": 42.76416701031849,
+        "minimum": 27.354000019840896,
+        "maximum": 61.48962501902133,
+        "p95": 61.48962501902133
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 231.10066703520715,
+        "minimum": 32.169500016607344,
+        "maximum": 312.05000000773,
+        "p95": 312.05000000773
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 292.5902920542285,
+        "minimum": 74.93366702692583,
+        "maximum": 339.4040000275709,
+        "p95": 339.4040000275709
+      },
+      "firstAndWarmup": [
+        {
+          "label": "small",
+          "phase": "first",
+          "discoveryMs": 171.3798749842681,
+          "initialTotalMs": 208.82858301047236,
+          "openDocuments": 4,
+          "hostLoad": [
+            8.126953125,
+            10.361328125,
+            10.599609375
+          ],
+          "readMs": 37.44870802620426,
+          "requests": 1,
+          "total": 3,
+          "callIndices": [
+            3
+          ]
+        },
+        {
+          "label": "small",
+          "phase": "warmup",
+          "discoveryMs": 277.14770898455754,
+          "initialTotalMs": 347.46945899678394,
+          "openDocuments": 4,
+          "hostLoad": [
+            7.87646484375,
+            10.27197265625,
+            10.56640625
+          ],
+          "readMs": 70.3217500122264,
+          "requests": 1,
+          "total": 3,
+          "callIndices": [
+            6
+          ]
+        }
+      ],
+      "pageHTTP": {
+        "n": 5,
+        "median": 42.76416701031849,
+        "minimum": 27.354000019840896,
+        "maximum": 61.48962501902133,
+        "p95": 61.48962501902133
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 5,
+          "median": 2.563667017966509,
+          "minimum": 2.4492500233463943,
+          "maximum": 12.791791989002377,
+          "p95": 12.791791989002377
+        },
+        "nativeMs": {
+          "n": 5,
+          "median": 10.81312500173226,
+          "minimum": 3.127083007711917,
+          "maximum": 19.09279200481251,
+          "p95": 19.09279200481251
+        }
+      }
+    },
+    "many": {
+      "readMs": {
+        "n": 5,
+        "median": 154.81433301465586,
+        "minimum": 136.13008306128904,
+        "maximum": 238.78741695079952,
+        "p95": 238.78741695079952
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 291.9591660029255,
+        "minimum": 218.1234160088934,
+        "maximum": 356.8819999927655,
+        "p95": 356.8819999927655
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 443.8160000136122,
+        "minimum": 354.25349907018244,
+        "maximum": 575.4714589565992,
+        "p95": 575.4714589565992
+      },
+      "firstAndWarmup": [
+        {
+          "label": "many",
+          "phase": "first",
+          "discoveryMs": 158.1043340265751,
+          "initialTotalMs": 280.419085000176,
+          "openDocuments": 4,
+          "hostLoad": [
+            8.04638671875,
+            10.26708984375,
+            10.56298828125
+          ],
+          "readMs": 122.3147509736009,
+          "requests": 4,
+          "total": 308,
+          "callIndices": [
+            24,
+            25,
+            26,
+            27
+          ]
+        },
+        {
+          "label": "many",
+          "phase": "warmup",
+          "discoveryMs": 567.7994590369053,
+          "initialTotalMs": 717.825377068948,
+          "openDocuments": 4,
+          "hostLoad": [
+            7.72216796875,
+            10.16259765625,
+            10.5244140625
+          ],
+          "readMs": 150.02591803204268,
+          "requests": 4,
+          "total": 308,
+          "callIndices": [
+            33,
+            34,
+            35,
+            36
+          ]
+        }
+      ],
+      "pageHTTP": {
+        "n": 20,
+        "median": 39.068917016265914,
+        "minimum": 24.359541945159435,
+        "maximum": 137.8825000138022,
+        "p95": 62.640582968015224
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 20,
+          "median": 2.495354478014633,
+          "minimum": 2.297166967764497,
+          "maximum": 95.17329203663394,
+          "p95": 2.7060419670306146
+        },
+        "nativeMs": {
+          "n": 20,
+          "median": 11.94814601331018,
+          "minimum": 2.9964580317027867,
+          "maximum": 24.38895800150931,
+          "p95": 18.943082948680967
+        }
+      }
+    },
+    "RobotoSlab": {
+      "readMs": {
+        "n": 5,
+        "median": 372.59204097790644,
+        "minimum": 317.0056251110509,
+        "maximum": 2142.985083919484,
+        "p95": 2142.985083919484
+      },
+      "discoveryMs": {
+        "n": 5,
+        "median": 441.27529102843255,
+        "minimum": 241.2492500152439,
+        "maximum": 626.4327919925563,
+        "p95": 626.4327919925563
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 771.5033750864677,
+        "minimum": 644.3917900323868,
+        "maximum": 2769.4178759120405,
+        "p95": 2769.4178759120405
+      },
+      "firstAndWarmup": [
+        {
+          "label": "RobotoSlab",
+          "phase": "first",
+          "discoveryMs": 441.56395801110193,
+          "initialTotalMs": 1642.5290831830353,
+          "openDocuments": 4,
+          "hostLoad": [
+            7.3662109375,
+            9.923828125,
+            10.43017578125
+          ],
+          "readMs": 1200.9651251719333,
+          "requests": 10,
+          "total": 986,
+          "callIndices": [
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96
+          ]
+        },
+        {
+          "label": "RobotoSlab",
+          "phase": "warmup",
+          "discoveryMs": 360.9446659684181,
+          "initialTotalMs": 817.589623038657,
+          "openDocuments": 4,
+          "hostLoad": [
+            6.68798828125,
+            9.69482421875,
+            10.3427734375
+          ],
+          "readMs": 456.6449570702389,
+          "requests": 10,
+          "total": 986,
+          "callIndices": [
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117
+          ]
+        }
+      ],
+      "pageHTTP": {
+        "n": 50,
+        "median": 37.21343749202788,
+        "minimum": 21.502958028577268,
+        "maximum": 927.0575830014423,
+        "p95": 209.14854196598753
+      },
+      "pageCallback": {
+        "queueMs": {
+          "n": 50,
+          "median": 2.5144164683297276,
+          "minimum": 2.216625027358532,
+          "maximum": 2.6539170066826046,
+          "p95": 2.632708987221122
+        },
+        "nativeMs": {
+          "n": 50,
+          "median": 6.672520481515676,
+          "minimum": 3.9364579715766013,
+          "maximum": 29.42887495737523,
+          "p95": 16.91841596039012
+        }
+      }
+    }
+  },
+  "tokens": {
+    "small": {
+      "pages": {
+        "n": 5,
+        "median": 302,
+        "minimum": 299,
+        "maximum": 303,
+        "p95": 303
+      },
+      "fullInventories": [
+        302,
+        303,
+        300,
+        302,
+        299
+      ]
+    },
+    "many": {
+      "pages": {
+        "n": 20,
+        "median": 5140.5,
+        "minimum": 907,
+        "maximum": 5331,
+        "p95": 5330
+      },
+      "fullInventories": [
+        16518,
+        16527,
+        16526,
+        16512,
+        16518
+      ]
+    },
+    "RobotoSlab": {
+      "pages": {
+        "n": 50,
+        "median": 5352.0,
+        "minimum": 4449,
+        "maximum": 5481,
+        "p95": 5478
+      },
+      "fullInventories": [
+        52400,
+        52353,
+        52319,
+        52383,
+        52377
+      ]
+    }
+  },
+  "loadBefore": [
+    8.126953125,
+    10.361328125,
+    10.599609375
+  ],
+  "loadAfter": [
+    33.5458984375,
+    17.57275390625,
+    13.298828125
+  ],
+  "startedAt": "2026-09-14T19:40:40.754591+00:00",
+  "finishedAt": "2026-09-14T19:43:32.482195+00:00",
+  "discoveryTokens": {
+    "n": 29,
+    "median": 318,
+    "minimum": 250,
+    "maximum": 322,
+    "p95": 322
+  },
+  "groupReadTokens": {
+    "n": 3,
+    "median": 174,
+    "minimum": 166,
+    "maximum": 186,
+    "p95": 186
+  },
+  "allCallbacks": {
+    "queueMs": {
+      "n": 360,
+      "median": 2.524645533412695,
+      "minimum": 2.216625027358532,
+      "maximum": 955.3335420205258,
+      "p95": 207.028208009433
+    },
+    "nativeMs": {
+      "n": 360,
+      "median": 8.315666491398588,
+      "minimum": 0.021209008991718292,
+      "maximum": 64.351583016105,
+      "p95": 24.778250022791326
+    }
+  },
+  "callCounts": {
+    "get_status": 1,
+    "list_documents": 29,
+    "read_entities": 328
+  },
+  "toolErrors": [
+    {
+      "arguments": {
+        "document_id": "doc_590edf37d120487fabdf467711c2dc5f",
+        "entities": [
+          {
+            "kind": "glyph",
+            "id": "missing"
+          }
+        ],
+        "fields": [
+          "leftKerningKey"
+        ]
+      },
+      "error": {
+        "code": "target_not_found",
+        "message": "glyph 'missing' is unavailable",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_590edf37d120487fabdf467711c2dc5f",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "missing",
+            "direction": "LTR"
+          }
+        ],
+        "fields": [
+          "value"
+        ]
+      },
+      "error": {
+        "code": "target_not_found",
+        "message": "master is unavailable",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_590edf37d120487fabdf467711c2dc5f",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "ltr"
+          }
+        ],
+        "fields": [
+          "value"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "kerning direction must be LTR, RTL or vertical",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_590edf37d120487fabdf467711c2dc5f",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 101
+          }
+        ],
+        "fields": [
+          "value"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "kerning page limit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_590edf37d120487fabdf467711c2dc5f",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "cursor": "bad"
+          }
+        ],
+        "fields": [
+          "value"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "use the unmodified nextCursor from the previous kerning page",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_590edf37d120487fabdf467711c2dc5f",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR"
+          }
+        ],
+        "fields": [
+          "effective"
+        ]
+      },
+      "error": {
+        "code": "unsupported_read",
+        "message": "kerning pages support requested left, right and value fields",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_ce34337434ec46db80f43d2996a2f015",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 1,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfY2UzNDMzNzQzNGVjNDZkYjgwZjQzZDI5OTZhMmYwMTUiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "stale_kerning_cursor",
+        "message": "kerning scope, change signal or boundary changed; restart without a cursor",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_66fe70d5f3f1419a97d90133510f904d",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 1,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfNjZmZTcwZDVmM2YxNDE5YTk3ZDkwMTMzNTEwZjkwNGQiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "stale_kerning_cursor",
+        "message": "kerning scope, change signal or boundary changed; restart without a cursor",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_ae5d02c3030b49abaec18470c670531c",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 1,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfYWU1ZDAyYzMwMzBiNDlhYmFlYzE4NDcwYzY3MDUzMWMiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "stale_kerning_cursor",
+        "message": "kerning scope, change signal or boundary changed; restart without a cursor",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_25dbf5f7fdd747f188aa97bfa4c826e3",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 1,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfMjVkYmY1ZjdmZGQ3NDdmMTg4YWE5N2JmYTRjODI2ZTMiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "stale_kerning_cursor",
+        "message": "kerning scope, change signal or boundary changed; restart without a cursor",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_b4385d6f7fef47b4b95e3de74ba1d5d5",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "RTL",
+            "limit": 100,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfYjQzODVkNmY3ZmVmNDdiNGI5NWUzZGU3NGJhMWQ1ZDUiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "stale_kerning_cursor",
+        "message": "kerning scope, change signal or boundary changed; restart without a cursor",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_b4385d6f7fef47b4b95e3de74ba1d5d5",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 100,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfYjQzODVkNmY3ZmVmNDdiNGI5NWUzZGU3NGJhMWQ1ZDUiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_5fba5d7a37f24950acfd60bb2caaa9ae",
+        "entities": [
+          {
+            "kind": "kerning_pairs",
+            "master": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+            "direction": "LTR",
+            "limit": 100,
+            "cursor": "k1.eyJzY29wZSI6WyJkb2NfYjQzODVkNmY3ZmVmNDdiNGI5NWUzZGU3NGJhMWQ1ZDUiLCJDNzk0MTY0Mi1GRkIyLTVEMkUtQjdGRS00QTMwQTE0M0JFNDAiLCJMVFIiLG51bGwsbnVsbF0sImNvdW50IjozLCJnZW5lcmF0aW9uIjowLCJkaXJ0eSI6ZmFsc2UsImkiOjEsImoiOjAsImJvdW5kYXJ5IjpbMCwiQE1NS19MX3JpZ2h0QSIsMSwwLCJATU1LX1JfViIsLTQ1LjI1XX0="
+          }
+        ],
+        "fields": [
+          "left",
+          "right",
+          "value"
+        ]
+      },
+      "error": {
+        "code": "stale_kerning_cursor",
+        "message": "kerning scope, change signal or boundary changed; restart without a cursor",
+        "details": {}
+      }
+    }
+  ],
+  "checks": {
+    "total": 1087,
+    "passed": 1087
+  },
+  "passed": true,
+  "error": null,
+  "cleanupError": null,
+  "runtime": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+8d20076967d8",
+    "codeHash": "sha256:8d20076967d8c1898f00ddfc2a3a38feb3f64e7d9d80f0f620e82954fa75bf39",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1",
+      "layers.list.v1",
+      "kerning.groups.v1",
+      "kerning.pairs.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+f5331ad953dd",
+      "codeHash": "sha256:f5331ad953dd8244a45b302a4a86416e2fd673a1afe22e987c3946aa2d17966e",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_c6b2529777ef415cb6aafd591e55ff66",
+          "document": "Roboto Slab",
+          "kind": "start_nodes",
+          "phase": "discarded",
+          "startedAt": 1789386064.489494,
+          "finishedAt": 1789386064.489534,
+          "completed": 2,
+          "total": 2,
+          "message": null
+        },
+        {
+          "jobId": "job_9010b4b75fb0445a8b88d9e0e9c9c9c6",
+          "document": "Roboto Slab",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789385892.703386,
+          "finishedAt": 1789385892.70342,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_1a3637ada6a84f9990fcc0e29a1d93f3",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382440.370841,
+          "finishedAt": 1789382440.370868,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_fdec62f9d05b4d04b534c255fab8909f",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382370.894219,
+          "finishedAt": 1789382370.894258,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_dac8c65021ff4ebab6cd7f63c4f3031a",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "applied",
+          "startedAt": 1789382244.508908,
+          "finishedAt": 1789382244.50895,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  },
+  "timedOpenDocumentCounts": [
+    4
+  ],
+  "skillTextTokens": {
+    "SKILL.md": 982,
+    "references/kerning-discovery.md": 915
+  }
+}

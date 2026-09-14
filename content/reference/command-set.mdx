@@ -143,3 +143,17 @@ For uncertain execution, retain the job ID and reconcile it with `get_job`. Do n
 Spacing preparation and reference comparison use an inclusive absolute **0.001 font-unit** tolerance. Width changes are evaluated independently of negligible translations. Native write verification, recovery, Undo/Redo, topology and source hashes remain exact.
 
 There are no additional v2 MCP endpoints for arbitrary Python, export, master replacement, Unicode assignment or general font repair. Those tasks use native Glyphs operations or reviewed workspace scripts. The companions add native views, not extra MCP tools.
+
+### Kerning discovery
+
+`read_entities` advertises `kerning.groups.v1` for explicitly requested native
+left/right/top/bottom kerning group and key properties on named glyphs.
+`kerning.pairs.v1` adds one `kerning_pairs` selector for an exact master and
+LTR/RTL/vertical direction. Request `left`, `right` and/or `value`, with optional
+raw `leftKey`/`rightKey` filters. Pages return at most 100 stored pairs and scan at
+most 256 groups/entries, including misses. `total` is null (unavailable); follow
+`nextCursor` until `complete`, even after an empty page. Sides retain raw keys and
+native glyph-name resolution, including explicit unresolved IDs. Pages are live,
+not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
+reads only: no effective-kerning engine, job or Save. Missing private capabilities
+require a coordinated bridge/sidecar/skills update. The catalog stays seven tools.

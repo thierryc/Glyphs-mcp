@@ -1,11 +1,14 @@
 ---
 name: glyphs-mcp-kerning
-description: Inspect exact stored kerning and review collision repairs for explicit glyph pairs.
+description: Discover native kerning groups and stored pairs, inspect exact values, and review collision repairs.
 metadata:
   surface: glyphs-mcp-v2
 ---
 
 # glyphs-mcp-kerning
+
+For unknown group assignments or stored pairs, use [kerning discovery](../glyphs/references/kerning-discovery.md). Require the matching private capability; reuse connection/document context and request only needed fields. Discovery needs no job.
+
 
 Reuse the verified [$glyphs](../glyphs/SKILL.md) connection, capabilities and
 intended `document_id` already in context; do not repeat setup for this skill.

@@ -10,7 +10,7 @@ from glyphs_mcp_protocol.reads import MASTER_PAGE_LIMIT
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
-from . import context, coordinates, glyph_inventory, layer_inventory, kerning, selection, start_node
+from . import context, coordinates, glyph_inventory, layer_inventory, kerning, kerning_inventory, selection, start_node
 
 
 _MISSING = object()
@@ -54,7 +54,7 @@ def _rect(value: Any) -> dict[str, float] | None:
 class GlyphsAdapter:
     """Thin native adapter; no method intentionally walks a complete font."""
 
-    GLYPH_FIELDS = frozenset({"name", "unicode", "category", "subCategory", "export"})
+    GLYPH_FIELDS = frozenset({"name", "unicode", "category", "subCategory", "export", *kerning_inventory.GROUP_FIELDS})
     LAYER_FIELDS = frozenset({"id", "name", "width", "vertWidth", "vertOrigin",
                               "leftMetricsKey", "rightMetricsKey", "widthMetricsKey", "bounds", "outlineHash"})
     MASTER_FIELDS = frozenset({"id", "name"})
@@ -283,8 +283,8 @@ class GlyphsAdapter:
             if not isinstance(request, Mapping):
                 raise BridgeError("invalid_request", "entity selectors must be objects")
             kind = str(request.get("kind") or "")
-            if kind in ("glyphs", "layers"):
-                return (glyph_inventory if kind == "glyphs" else layer_inventory).read(self, font, document_id, entities, fields)
+            if kind in ("glyphs", "layers", "kerning_pairs"):
+                return {"glyphs": glyph_inventory, "layers": layer_inventory, "kerning_pairs": kerning_inventory}[kind].read(self, font, document_id, entities, fields)
             if kind == "kerning" and fields == ["value"]:
                 try:
                     result.append({"entity": dict(request), "values": {"value": kerning.read(font, request)}})

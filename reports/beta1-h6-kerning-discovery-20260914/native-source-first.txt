@@ -1,0 +1,41 @@
+Using Glyphs 4.1 (4107)
+Using Python 3.14
+2026-09-14 15:31:29.584 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.585 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.585 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.585 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.585 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.585 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.585 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.586 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.586 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.586 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.586 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.587 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.587 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.587 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.587 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.587 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.588 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-14 15:31:29.589 glyphs[78916:12955594] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+Traceback (most recent call last):
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-h6-kerning-discovery-20260914/qualify_source.py", line 40, in <module>
+    req=dict(kind='kerning_pairs',master=m.id,direction=d,**({'cursor':cursor} if cursor else {}));r=a.read_entities(doc,[req],['left','right','value'])[0]['values'];items+=r['items'];pages+=1
+                                                                                                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/src/bridge/glyphs_mcp_bridge/glyphs_adapter.py", line 287, in read_entities
+    return {"glyphs": glyph_inventory, "layers": layer_inventory, "kerning_pairs": kerning_inventory}[kind].read(self, font, document_id, entities, fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/src/bridge/glyphs_mcp_bridge/kerning_inventory.py", line 121, in read
+    _append(items, font, fields, key, rk, amount)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/src/bridge/glyphs_mcp_bridge/kerning_inventory.py", line 143, in _append
+    raise BridgeError('unsupported_read', 'native stored kerning value is unavailable or nonfinite')
+glyphs_mcp_bridge.core.BridgeError: native stored kerning value is unavailable or nonfinite

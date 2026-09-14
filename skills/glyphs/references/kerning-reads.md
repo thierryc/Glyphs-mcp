@@ -47,5 +47,6 @@ One bad selector rejects the entire request; do not report partial success.
 | `ok:true`, value `0` | Report stored zero, preserving its distinction from absence. |
 
 Missing kerning glyph/master inputs return `invalid_request`, not the
-`target_not_found` used by separate glyph/layer reads. Do not invent a new
-kerning capability flag, raw-table tool, or fallback Python workflow.
+`target_not_found` used by separate glyph/layer reads. For unknown assignments or stored pairs, use
+[kerning discovery](kerning-discovery.md) through the existing read tool.
+No fallback Python workflow.

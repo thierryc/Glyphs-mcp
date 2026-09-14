@@ -1,0 +1,6 @@
+{
+  "executedHarnessSHA256": "2570e11b181c3c1abac7db613ed0a28bbd235c2be23b931168ee063b741e2417",
+  "retainedHarness": "qualify_native.py",
+  "postRunChange": "Allow losslessly compressed fixtures.json.gz as input; no qualification logic changed.",
+  "nativeSourceSHA256": "9cb63839991a674a7eda257b8575ce08ea554aca59c510e190619fac666dce0d"
+}

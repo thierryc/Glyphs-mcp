@@ -1,0 +1,34 @@
+
+==================================== ERRORS ====================================
+__ ERROR collecting src/glyphs-mcp/tests/test_simple_v2_kerning_inventory.py ___
+../../../.venv-v2/lib/python3.14/site-packages/_pytest/python.py:498: in importtestmodule
+    mod = import_path(
+../../../.venv-v2/lib/python3.14/site-packages/_pytest/pathlib.py:587: in import_path
+    importlib.import_module(module_name)
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+../../../.venv-v2/lib/python3.14/site-packages/_pytest/assertion/rewrite.py:177: in exec_module
+    source_stat, co = _rewrite_test(fn, self.config)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../.venv-v2/lib/python3.14/site-packages/_pytest/assertion/rewrite.py:357: in _rewrite_test
+    tree = ast.parse(source, filename=strfn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ast.py:46: in parse
+    return compile(source, filename, mode, flags,
+E     File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/src/glyphs-mcp/tests/test_simple_v2_kerning_inventory.py", line 21
+E       t=Table((('G'+str(i),Table(('R'+str(j),float(j)-0.25) for j in range(pairs))) for i in range(groups))
+E              ^
+E   SyntaxError: '(' was never closed
+=========================== short test summary info ============================
+ERROR src/glyphs-mcp/tests/test_simple_v2_kerning_inventory.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.14s

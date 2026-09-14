@@ -46,6 +46,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 | Exact layers, fractional metrics and bounds | [Layers](references/layer-reads.md) |
 | Current master or selected glyphs in Font/Edit View | [Context](references/context-reads.md), requiring `document.context.v1` |
 | Active layer, selected-object counts or optional node details | [Selection](references/selection-reads.md), requiring `selection.context.v1` |
+| Discover kerning groups or stored pairs | [Kerning discovery](references/kerning-discovery.md) |
 | Exact stored kerning | [Kerning reads](references/kerning-reads.md) |
 | Additive advance changes | [Widths](references/width-changes.md) |
 | Color, variable, icon/Unicode, production/export or LitSquare audit scope | [Specialized scope](references/specialized-scope.md) |

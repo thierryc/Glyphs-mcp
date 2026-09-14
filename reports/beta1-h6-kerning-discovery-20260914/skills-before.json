@@ -1,0 +1,21 @@
+{
+  "glyphs/SKILL.md": "94861e7209c4de76677135a1f5e3a8d11d23333a578728de002bd0434689d045",
+  "glyphs/references/layer-discovery.md": "416d98f1b0ab81cf05f76ba24d5b7a6a8a8014cdbf86603af977f8a5a63bbbb1",
+  "glyphs/references/glyph-discovery.md": "d8f907d98e514f81d404675df6e4e208c03f1bd5b0b33a9f3a93c8ac8e6a311c",
+  "glyphs/references/context-reads.md": "b3f9309f56551fcf8e77dcadd3f095505ec98fc99c3a077d7917fafa058399c6",
+  "glyphs/references/master-reads.md": "9992f878da14847a141b44750a0cab517c6869f8f6d1860cf4dd296aec9aca35",
+  "glyphs/references/width-changes.md": "0cf61885e61b3c97baba22bd0d2b77ad8fa5b08eb94011d296137e77f52c90a8",
+  "glyphs/references/layer-reads.md": "f1c82e62485187e48bdbb6feb9719e5b7f14e0c2793bce6e584726017c7a6c5d",
+  "glyphs/references/selection-reads.md": "26e35e62f34ad1bdf4b456d2b2e61edcaddd7705e9d588d81caa0ab1ae42a526",
+  "glyphs/references/kerning-reads.md": "17059047106c577fe38d8741e996790437892730ec9645c97b9f5b2d63744e95",
+  "glyphs/references/connection-session.md": "e9ba156876c100564a1b43f8c72b61ef3a89ba86533bd8f49e8a48e88794bf2e",
+  "glyphs/references/specialized-scope.md": "926137cb10f0585523182491de89f8e6a5ccb95841286a88dd855be35df02240",
+  "glyphs/references/connection-troubleshooting.md": "ccc6f16878478aa966c5e0b44e1c545a59471cb4139cf94e9a3a47f66c6eb764",
+  "glyphs/references/crash-recovery.md": "633ea9065482bcfb2a4a06146b70977aab2358d63ad6a21d49b1d1982a19f3ce",
+  "glyphs/references/document-targeting.md": "b2c970b5f1b21020a4e33a4e8c4eb9c39bcdfbc09e2c15116fccae5a2d8e8ddc",
+  "glyphs/references/metadata-reads.md": "f9af5aefb8f0bd020184f0c6574fc32ca28efb3332faac5f6feed0333d3441c0",
+  "glyphs/agents/openai.yaml": "7191980820a289578d2fc76afa93e23aabd1fe94200e69f0d8dae97985a458b2",
+  "glyphs-mcp-kerning/SKILL.md": "10a7f7354188f7a6f9c21d5ca0eedec466aa0e05dccf918c4a815917ecfbdb30",
+  "glyphs-mcp-kerning/references/lean-v2.md": "58d679a24d14e2fe58d11854a8935e87e35e22cb8e32f724a8f9d5b3eb98eec6",
+  "glyphs-mcp-kerning/agents/openai.yaml": "c75df7199b6af5965c4974b23e05b6dde28753dba656953d0c410d3d2687d79f"
+}

@@ -1,0 +1,104 @@
+{
+  "skills": [
+    {
+      "skill": "glyphs",
+      "files": 17,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-maintainer-feedback",
+      "files": 2,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-outlines-docs",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-development",
+      "files": 1189,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-scripting",
+      "files": 2,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-kerning",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-release",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-opentype-features",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-master-compatibility",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-spacing",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    },
+    {
+      "skill": "glyphs-mcp-italic-first-pass",
+      "files": 3,
+      "passed": true,
+      "extra": []
+    }
+  ],
+  "sidecarHashMatch": true,
+  "bridgeHashMatch": true,
+  "documentPathsDirtyAndForegroundRestored": true,
+  "documents": [
+    {
+      "id": "doc_3dbc170b6c784e0ea56966af51b43a5f",
+      "path": "/private/tmp/glyphs-h4-20260914/live/100-rep2.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "H4 Glyph Inventory 100"
+    },
+    {
+      "id": "doc_5f8095f6c9b1442f8dc8d9fb5846fa84",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP Selection Inspection.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "MCP Selection Inspection"
+    }
+  ],
+  "sevenTools": true,
+  "privateCapabilities": [
+    "master.read.exact.v1",
+    "masters.list.v1",
+    "layer.read.exact.v1",
+    "selection.nodes.native.v1",
+    "selection.context.v1",
+    "document.context.v1",
+    "glyphs.list.v1",
+    "layers.list.v1",
+    "kerning.groups.v1",
+    "kerning.pairs.v1"
+  ]
+}

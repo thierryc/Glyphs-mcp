@@ -1,0 +1,26 @@
+{
+  "originalHEAD": "53d22360485a9597836117de608a616bec33ac8f",
+  "baselineFiles": 3638,
+  "unchanged": 3626,
+  "changedOnlyH6": [
+    "src/sidecar/glyphs_mcp_sidecar/server.py",
+    "src/protocol/glyphs_mcp_protocol/reads.py",
+    "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py",
+    "src/glyphs-mcp/tests/test_simple_v2_build.py",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs-mcp-kerning/SKILL.md",
+    "skills/glyphs/references/kerning-reads.md",
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs-mcp-kerning/SKILL.md",
+    "plugins/glyphs-mcp/skills/glyphs/references/kerning-reads.md",
+    "content/reference/command-set.mdx",
+    "reports/README.md"
+  ],
+  "missing": [],
+  "curveInspectorUnchanged": true,
+  "referenceInspectorOnlyChangedFile": "Contents/Resources/glyphs_mcp_protocol/reads.py",
+  "runtimeDependenciesUnchanged": true,
+  "oldReportsUnchanged": true,
+  "v1SourceUnchanged": true,
+  "scope": "Checks all files captured before edits; preserves preexisting tracked/untracked work. New H6 files are additional."
+}

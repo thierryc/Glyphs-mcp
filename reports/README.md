@@ -47,8 +47,16 @@ installed and functionally qualified: exact native layer IDs, associations and
 requested classification flags in bounded pages. **796 lean**, **164 isolated native**
 and **302 installed native** checks passed; 54 follow-up checks also passed.
 One original callback exceeded the 200 ms maximum (339 ms); it did not recur in
-21 focused reads. The original timing exception remains recorded. H6 stored-kerning
-discovery is paused for feedback.
+21 focused reads. The original timing exception remains recorded.
+
+[H6 kerning discovery](beta1-h6-kerning-discovery-20260914/report.md) is implemented,
+installed and qualified: native group/key fields and bounded stored-pair pages in
+LTR/RTL/vertical through the same seven tools. **875 unique lean cases**,
+**155 isolated native checks** and **1,087 installed assertions** passed across
+the recorded gates. One live harness-attribution failure was corrected and
+preserved. Native callback p95/max were **24.78/64.35 ms**; HTTP/queue tails
+remain separate. All eleven skills and both running component hashes match the
+candidate. The next master-metrics/axis step is paused for feedback.
 
 ## Current result
 
@@ -64,7 +72,7 @@ Scripts are written with file tools and run through native Glyphs routes. The
 MCP interface remains seven tools and five jobs; RV02 adds no script-execution
 or feature-editing MCP tool and makes no latency improvement claim.
 
-Last recorded runtime identities are sidecar `2.0.0-beta.1+82daa62ac227` and
+RV02 recorded runtime identities were sidecar `2.0.0-beta.1+82daa62ac227` and
 bridge `2.0.0-beta.1+8b74a8d27ae4`. Full fingerprints, release metadata and host
 identity are in [RV02 status evidence](rv02-native-coding-20260914/runtime-final.json).
 The [installation receipt](rv02-native-coding-20260914/installation.json) and
@@ -75,6 +83,7 @@ update; the runtime was unchanged during that update.
 
 | Record | Scope and later status |
 |---|---|
+| [H6](beta1-h6-kerning-discovery-20260914/report.md) | Stored kerning discovery; installed and qualified, next step paused. |
 | [RV02](rv02-native-coding-20260914/report.md) | Latest focused native-coding implementation and installed qualification. |
 | [RV02 plan](rv02-native-coding-plan-20260914/plan.md) | Accepted scope and acceptance criteria. |
 | [RV01](rv01-realistic-20260914/report.md) | Twelve realistic Roboto Slab tasks. RV02 addresses its skill/API findings and completes its pending UI cleanup. |
