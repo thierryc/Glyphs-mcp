@@ -1,0 +1,32 @@
+........................................................................ [ 60%]
+.......................................F.sF....                          [100%]
+=================================== FAILURES ===================================
+____ AgentPluginTests.test_multi_host_documentation_keeps_plugins_optional _____
+
+self = <test_codex_plugin.AgentPluginTests testMethod=test_multi_host_documentation_keeps_plugins_optional>
+
+    def test_multi_host_documentation_keeps_plugins_optional(self) -> None:
+        readme = (REPO / "README.md").read_text(encoding="utf-8")
+        guide = (REPO / "content/getting-started/use-agent-skills.mdx").read_text(encoding="utf-8")
+        combined = readme + guide
+        for host in ("Codex", "Claude Code", "Cursor", "GitHub Copilot CLI"):
+            self.assertIn(host, combined)
+        self.assertIn("matching local package", guide)
+        for skill in json.loads((REPO / "skills/manifest.json").read_text())["managedSkills"]:
+>           self.assertIn("`" + skill["name"] + "`", guide)
+E           AssertionError: '`glyphs-mcp-opentype-features`' not found in "---\ntitle: Skills and optional plugins\n---\n\nSkills tell an agent how to use the supported workflows. They do not add tools to the server or grant permission to edit a font.\n\nThe optional package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. All four manifests use version `2.0.0` and share the same skills. Host installation is managed by the client. The installer offers supported Codex and Claude integrations; other hosts can use their own plugin installation or a manual MCP connection.\n\nThe plugin is optional. A client with a manual MCP connection can use all seven tools without it. For this local candidate, use the matching local package. Public marketplace commands resolve the repository's published state and should not be assumed to install an unpublished v2 candidate.\n\n## Included skills\n\n| Skill | Use |\n| --- | --- |\n| `glyphs` | Start with context, status and a suitable workflow. |\n| `glyphs-mcp-spacing` | Prepare and review sampled spacing suggestions. |\n| `glyphs-mcp-kerning` | Review explicit collision-kerning pairs. |\n| `glyphs-mcp-italic-first-pass` | Prepare a guarded first-pass slant. |\n| `glyphs-mcp-master-compatibility` | Inspect supported correspondence and start-node work. |\n| `glyphs-mcp-outlines-docs` | Inspect bounded outline information and native documentation. |\n| `glyphs-mcp-development` | Develop reusable scripts or plugins in the workspace. |\n| `glyphs-mcp-scripting` | Prepare reviewed scripts for native execution. |\n| `glyphs-mcp-release` | Prepare and validate repository releases. |\n| `glyphs-mcp-maintainer-feedback` | Turn a reproducible issue into useful maintainer evidence. |\n\nUse the general `glyphs` skill when unsure which workflow fits. Workspace development can start without an open font. Live jobs require the server, a saved clean font and an explicit scope.\n\nThe v1 guide retains its [marketplace and skill instructions](/docs/getting-started/use-agent-skills). Do not reuse v1 tool calls with the v2 server. See the [migration guide](migrate-from-v1.mdx).\n"
+
+src/glyphs-mcp/tests/test_codex_plugin.py:183: AssertionError
+____ AgentPluginTests.test_plugin_skill_copies_match_the_canonical_sources _____
+
+self = <test_codex_plugin.AgentPluginTests testMethod=test_plugin_skill_copies_match_the_canonical_sources>
+
+    def test_plugin_skill_copies_match_the_canonical_sources(self) -> None:
+>       self.assertEqual(len(SKILL_NAMES), 10)
+E       AssertionError: 11 != 10
+
+src/glyphs-mcp/tests/test_codex_plugin.py:210: AssertionError
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_codex_plugin.py::AgentPluginTests::test_multi_host_documentation_keeps_plugins_optional
+FAILED src/glyphs-mcp/tests/test_codex_plugin.py::AgentPluginTests::test_plugin_skill_copies_match_the_canonical_sources
+2 failed, 116 passed, 1 skipped in 12.32s

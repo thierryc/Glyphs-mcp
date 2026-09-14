@@ -2672,3 +2672,51 @@ exit 0
 		)
 	}
 }
+
+extension GlyphsMCPInstallerTests {
+    func testLegacyOpenTypeMarkerNeedsExplicitReplacementThenManagedUpgrade() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let source = root.appendingPathComponent("payload/skills")
+        let destination = root.appendingPathComponent("client/skills")
+        let name = "glyphs-mcp-opentype-features"
+        let authored = source.appendingPathComponent(name)
+        let installed = destination.appendingPathComponent(name)
+        for path in [authored, installed] {
+            try fm.createDirectory(at: path, withIntermediateDirectories: true)
+        }
+        try Data(#"{"schemaVersion":1,"managedSkills":[{"name":"glyphs-mcp-opentype-features","surface":"glyphs-mcp-v2"}]}"#.utf8)
+            .write(to: source.appendingPathComponent("manifest.json"))
+        let old = "Call get_server_info; require data.apiMajor == 2; use read_document and execute_python."
+        try Data(old.utf8).write(to: installed.appendingPathComponent("SKILL.md"))
+        try Data(#"{"component":"agent-skill","repository":"thierryc/Glyphs-mcp","schemaVersion":1,"skillName":"glyphs-mcp-opentype-features"}"#.utf8)
+            .write(to: installed.appendingPathComponent(".glyphs-mcp-owner.json"))
+        try Data("Native Glyphs 4 feature coding. The connection uses get_status and read_entities.".utf8)
+            .write(to: authored.appendingPathComponent("SKILL.md"))
+        let payload = InstallerPayload(payloadDir: root, pluginBundle: root, requirementsTxt: root, skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        let oldIdentity = try InstallerPayloadManifestResolver.treeIdentity(installed)
+        let conflict = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(conflict.entries.first?.outcome, .preservedConflict)
+        // Native-only guidance has no MCP-read recipe; the generic conflict
+        // still supplies the exact path and existing backed-up repair action.
+        XCTAssertTrue(conflict.entries.first?.repairAction?.contains("Replace preserved skills (backup)") == true)
+        XCTAssertTrue(conflict.entries.first?.repairAction?.contains(installed.path) == true)
+        XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(installed), oldIdentity)
+        let replaced = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: true)
+        XCTAssertEqual(replaced.entries.first?.outcome, .installed)
+        let backups = fm.enumerator(at: AgentSkillBundleInstaller.skillBackupRoot(for: destination),
+            includingPropertiesForKeys: nil)!.allObjects as! [URL]
+        XCTAssertTrue(backups.contains {
+            $0.lastPathComponent == name && (try? InstallerPayloadManifestResolver.treeIdentity($0)) == oldIdentity
+        })
+        XCTAssertFalse(fm.fileExists(atPath: installed.appendingPathComponent(".glyphs-mcp-owner.json").path))
+        XCTAssertEqual(try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false).entries.first?.outcome, .current)
+        try Data("Updated native feature guide.".utf8).write(to: authored.appendingPathComponent("SKILL.md"))
+        XCTAssertEqual(try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false).entries.first?.outcome, .installed)
+        try Data("User modification.".utf8).write(to: installed.appendingPathComponent("SKILL.md"))
+        XCTAssertEqual(try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false).entries.first?.outcome, .preservedConflict)
+        XCTAssertEqual(try String(contentsOf: installed.appendingPathComponent("SKILL.md")), "User modification.")
+    }
+}

@@ -11,6 +11,7 @@ For creating, revising or debugging a Glyphs 4 script/plugin, use
 [$glyphs-mcp-development](../glyphs-mcp-development/SKILL.md). Offline coding
 needs no connection, document discovery or Save. Generic Python with no Glyphs
 app or font target needs no Glyphs skill.
+OpenType source work uses [the native feature skill](../glyphs-mcp-opentype-features/SKILL.md).
 
 ## Continue from known context
 

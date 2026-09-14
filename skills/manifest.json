@@ -34,6 +34,10 @@
       "surface": "glyphs-mcp-v2"
     },
     {
+      "name": "glyphs-mcp-opentype-features",
+      "surface": "glyphs-mcp-v2"
+    },
+    {
       "name": "glyphs-mcp-release",
       "surface": "glyphs-mcp-v2"
     },

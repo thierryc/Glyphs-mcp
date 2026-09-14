@@ -1,0 +1,42 @@
+[
+  {
+    "task": "T04",
+    "layerCollateralExact": true,
+    "gridExact": true,
+    "survivingNodeMetadataExact": true,
+    "survivingNodes": 84,
+    "hintCount": 0
+  },
+  {
+    "task": "T05",
+    "layerCollateralExact": true,
+    "gridExact": true,
+    "survivingNodeMetadataExact": true,
+    "survivingNodes": 90,
+    "hintCount": 0
+  },
+  {
+    "task": "T06",
+    "layerCollateralExact": true,
+    "gridExact": true,
+    "survivingNodeMetadataExact": true,
+    "survivingNodes": 90,
+    "hintCount": 0
+  },
+  {
+    "task": "T07",
+    "layerCollateralExact": true,
+    "gridExact": true,
+    "survivingNodeMetadataExact": true,
+    "survivingNodes": 201,
+    "hintCount": 0
+  },
+  {
+    "task": "T08",
+    "layerCollateralExact": true,
+    "gridExact": true,
+    "survivingNodeMetadataExact": true,
+    "survivingNodes": 84,
+    "hintCount": 0
+  }
+]

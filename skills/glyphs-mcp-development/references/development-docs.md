@@ -57,6 +57,10 @@ Historical file-format versions do not change this skill's Glyphs 4 app target.
 native test. Report undocumented selectors and uncertain index relationships
 as uncertain; prove them in bounded disposable native tests when authorised.
 Project instructions and qualification notes are separate from official text.
+For native export keywords, feature flags and compiler results, read
+[qualified Glyphs 4 API notes](glyphs4-api-notes.md); for coordinate writes, use
+[native precision](native-precision.md). These focused notes preserve the pinned
+official corpus and identify the host actually tested.
 
 `update_required` means missing, corrupt or unsupported installed evidence.
 Update the development skill through the existing installer; do not silently

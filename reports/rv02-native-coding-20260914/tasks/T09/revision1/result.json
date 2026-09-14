@@ -1,0 +1,226 @@
+{
+  "artifactSHA256": "0a32ccf5f6bef591ab30ef8e55eb06eb7d8ae29c534217d56336461ae42f1817",
+  "result": {
+    "revision": 1,
+    "total": 12,
+    "returned": 12,
+    "complete": true,
+    "rows": [
+      {
+        "glyph": "o",
+        "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+        "width": 1155.0,
+        "paths": 2,
+        "components": 0,
+        "nodes": 28,
+        "offcurve": 16,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "o",
+        "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+        "width": 1124.0,
+        "paths": 2,
+        "components": 0,
+        "nodes": 28,
+        "offcurve": 16,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "o",
+        "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+        "width": 1174.0,
+        "paths": 2,
+        "components": 0,
+        "nodes": 28,
+        "offcurve": 16,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "a",
+        "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+        "width": 1116.0,
+        "paths": 2,
+        "components": 0,
+        "nodes": 47,
+        "offcurve": 24,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "a",
+        "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+        "width": 1132.0,
+        "paths": 2,
+        "components": 0,
+        "nodes": 47,
+        "offcurve": 24,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "a",
+        "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+        "width": 1167.0,
+        "paths": 2,
+        "components": 0,
+        "nodes": 47,
+        "offcurve": 24,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "aacute",
+        "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+        "width": 1116.0,
+        "paths": 0,
+        "components": 2,
+        "nodes": 0,
+        "offcurve": 0,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "aacute",
+        "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+        "width": 1132.0,
+        "paths": 0,
+        "components": 2,
+        "nodes": 0,
+        "offcurve": 0,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "aacute",
+        "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+        "width": 1167.0,
+        "paths": 0,
+        "components": 2,
+        "nodes": 0,
+        "offcurve": 0,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "space",
+        "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+        "width": 490.0,
+        "paths": 0,
+        "components": 0,
+        "nodes": 0,
+        "offcurve": 0,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "space",
+        "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+        "width": 509.0,
+        "paths": 0,
+        "components": 0,
+        "nodes": 0,
+        "offcurve": 0,
+        "mastersCompatible": true
+      },
+      {
+        "glyph": "space",
+        "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+        "width": 498.0,
+        "paths": 0,
+        "components": 0,
+        "nodes": 0,
+        "offcurve": 0,
+        "mastersCompatible": true
+      }
+    ]
+  },
+  "nativeReadMs": 3.4717919770628214,
+  "expectedRows": [
+    [
+      "o",
+      "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      1155.0,
+      28,
+      16
+    ],
+    [
+      "o",
+      "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      1124.0,
+      28,
+      16
+    ],
+    [
+      "o",
+      "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      1174.0,
+      28,
+      16
+    ],
+    [
+      "a",
+      "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      1116.0,
+      47,
+      24
+    ],
+    [
+      "a",
+      "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      1132.0,
+      47,
+      24
+    ],
+    [
+      "a",
+      "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      1167.0,
+      47,
+      24
+    ],
+    [
+      "aacute",
+      "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      1116.0,
+      0,
+      0
+    ],
+    [
+      "aacute",
+      "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      1132.0,
+      0,
+      0
+    ],
+    [
+      "aacute",
+      "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      1167.0,
+      0,
+      0
+    ],
+    [
+      "space",
+      "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      490.0,
+      0,
+      0
+    ],
+    [
+      "space",
+      "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      509.0,
+      0,
+      0
+    ],
+    [
+      "space",
+      "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      498.0,
+      0,
+      0
+    ]
+  ],
+  "rowsExact": true,
+  "rejected": [
+    "Missing glyph: missing.rv02",
+    "Unknown master ID",
+    "Supply 1\u201320 glyph names"
+  ],
+  "fullDataExact": true,
+  "objectsExact": true
+}

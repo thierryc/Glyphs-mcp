@@ -1,0 +1,78 @@
+{
+  "id": "T05",
+  "name": "Add exact collinear H midpoints",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789389739.933923,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "remove inserted midpoint recovers exact original data",
+      "expected": "e7fb70befb0bcc07c287b165bdba0c8c0874fcf00bc016f86ae9e35a00fdcf92",
+      "observed": "e7fb70befb0bcc07c287b165bdba0c8c0874fcf00bc016f86ae9e35a00fdcf92",
+      "status": "passed"
+    },
+    {
+      "name": "nodes added",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed"
+    },
+    {
+      "name": "all master topology compatible",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 1.057624991517514,
+  "result": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "path": 0,
+      "node": 1
+    }
+  ],
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 3,
+    "hintReferencesExact": true,
+    "beforeSHA256": "e7fb70befb0bcc07c287b165bdba0c8c0874fcf00bc016f86ae9e35a00fdcf92",
+    "afterSHA256": "053fb074c227eecaaf32234d06077d44423411f373e68bce90d67a9317908ccc"
+  },
+  "status": "passed",
+  "taskHarnessMs": 3313.4095830027945
+}

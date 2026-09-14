@@ -1,0 +1,6 @@
+interface:
+  display_name: "Glyphs 4 OpenType Features"
+  short_description: "Review and code native Glyphs 4 OpenType features."
+  default_prompt: "Use $glyphs-mcp-opentype-features to review or revise OpenType source for my Glyphs 4 font and verify the requested behavior."
+policy:
+  allow_implicit_invocation: true

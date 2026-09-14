@@ -1,0 +1,15 @@
+{
+  "caught": "RV02 intentional failure",
+  "beforeFlags": [
+    false,
+    true,
+    false
+  ],
+  "afterFlags": [
+    false,
+    true,
+    false
+  ],
+  "dataExact": true,
+  "objectsExact": true
+}

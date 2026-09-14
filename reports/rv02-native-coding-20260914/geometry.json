@@ -1,0 +1,210 @@
+{
+  "T04": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "sampledBidirectionalDistance": 0.7167973864851761,
+      "nodeCountsBefore": [
+        14,
+        14
+      ],
+      "nodeCountsAfter": [
+        14,
+        14
+      ]
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "sampledBidirectionalDistance": 0.7200737112330838,
+      "nodeCountsBefore": [
+        14,
+        14
+      ],
+      "nodeCountsAfter": [
+        14,
+        14
+      ]
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "sampledBidirectionalDistance": 0.6943361389484104,
+      "nodeCountsBefore": [
+        14,
+        14
+      ],
+      "nodeCountsAfter": [
+        14,
+        14
+      ]
+    }
+  ],
+  "T05": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "sampledBidirectionalDistance": 0,
+      "nodeCountsBefore": [
+        30
+      ],
+      "nodeCountsAfter": [
+        31
+      ],
+      "exactMidpoint": true
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "sampledBidirectionalDistance": 0,
+      "nodeCountsBefore": [
+        30
+      ],
+      "nodeCountsAfter": [
+        31
+      ],
+      "exactMidpoint": true
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "sampledBidirectionalDistance": 0,
+      "nodeCountsBefore": [
+        30
+      ],
+      "nodeCountsAfter": [
+        31
+      ],
+      "exactMidpoint": true
+    }
+  ],
+  "T06": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "sampledBidirectionalDistance": 0,
+      "nodeCountsBefore": [
+        31
+      ],
+      "nodeCountsAfter": [
+        30
+      ]
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "sampledBidirectionalDistance": 0,
+      "nodeCountsBefore": [
+        31
+      ],
+      "nodeCountsAfter": [
+        30
+      ]
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "sampledBidirectionalDistance": 0,
+      "nodeCountsBefore": [
+        31
+      ],
+      "nodeCountsAfter": [
+        30
+      ]
+    }
+  ],
+  "T07": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "sampledBidirectionalDistance": 0.013142983424957098,
+      "nodeCountsBefore": [
+        51,
+        16
+      ],
+      "nodeCountsAfter": [
+        69,
+        19
+      ]
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "sampledBidirectionalDistance": 0.013138958660880459,
+      "nodeCountsBefore": [
+        51,
+        16
+      ],
+      "nodeCountsAfter": [
+        69,
+        19
+      ]
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "sampledBidirectionalDistance": 0.013385589097563622,
+      "nodeCountsBefore": [
+        51,
+        16
+      ],
+      "nodeCountsAfter": [
+        69,
+        19
+      ]
+    }
+  ],
+  "T08": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "sampledBidirectionalDistance": 0.007446576196494802,
+      "nodeCountsBefore": [
+        14,
+        14
+      ],
+      "nodeCountsAfter": [
+        17,
+        14
+      ],
+      "polynomialMaxError": 4.0990372275064023e-13,
+      "passed": true
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "sampledBidirectionalDistance": 0.007765926488305541,
+      "nodeCountsBefore": [
+        14,
+        14
+      ],
+      "nodeCountsAfter": [
+        17,
+        14
+      ],
+      "polynomialMaxError": 4.687428401686771e-13,
+      "passed": true
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "sampledBidirectionalDistance": 0.007929303880724211,
+      "nodeCountsBefore": [
+        14,
+        14
+      ],
+      "nodeCountsAfter": [
+        17,
+        14
+      ],
+      "polynomialMaxError": 3.595093471822542e-13,
+      "passed": true
+    }
+  ],
+  "nativeInterpolations": [
+    {
+      "instance": "Light",
+      "polynomialError": 4.823324033076557e-13,
+      "beforeNodes": 14,
+      "afterNodes": 17
+    },
+    {
+      "instance": "Medium",
+      "polynomialError": 4.0990372275064023e-13,
+      "beforeNodes": 14,
+      "afterNodes": 17
+    },
+    {
+      "instance": "Bold",
+      "polynomialError": 5.084229945850415e-13,
+      "beforeNodes": 14,
+      "afterNodes": 17
+    }
+  ],
+  "method": "Independent Bernstein-polynomial check at 101 parameters for the explicit split. Contour distances are sampled bidirectionally against 150 subdivisions per cubic; approximate, not a certified Hausdorff bound. Values exceeding 0.05 fail the proposed native-extrema tolerance."
+}

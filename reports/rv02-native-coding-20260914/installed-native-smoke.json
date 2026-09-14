@@ -1,0 +1,14 @@
+{
+  "host": "4.1",
+  "build": "4107.0",
+  "nativeCoordinateMs": 1.0699579725041986,
+  "exactCoordinates": true,
+  "flagsRestored": true,
+  "unrelatedDataExact": true,
+  "objectsExact": true,
+  "invalidCompileRejected": true,
+  "diagnostic": "Feature compilation failed: Error Domain=Semantic Issue Code=34603010 \"Unknown glyph \u201cmissing.rv02\u201d\nFound in: feature \u201css20\u201d, line 1.\" UserInfo={NSRecoveryAttempter=<GSExportTempOperation: 0x1038bb720>, NSLocalizedRecoverySuggestion=Found in: feature \u201css20\u201d, line 1., Source Location=<FEASourceLocation: 0x87dea8770>, Location Affinity=0, NSLocalizedFailureReason=Unknown glyph \u201cmissing.rv02\u201d, NSLocalizedDescription=Unknown glyph \u201cmissing.rv02\u201d\nFound in: feature \u201css20\u201d, line 1., NSLocalizedRecoveryOptions=(\n    Show\n), Message=Unknown glyph \u201cmissing.rv02\u201d}",
+  "correctedCompilePassed": true,
+  "automatic": false,
+  "disabled": false
+}

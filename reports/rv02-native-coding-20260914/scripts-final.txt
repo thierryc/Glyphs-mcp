@@ -1,0 +1,787 @@
+Window: "MCP Selection Inspection.glyphs", App: Glyphs.
+1 Script, Secondary Actions: Cancel, Pick
+	2 menu Secondary Actions: Cancel
+		3 mekkablue
+			4 menu Secondary Actions: Cancel
+				5 Anchors
+					6 menu Secondary Actions: Cancel
+						7 Add Missing Smart Anchors, ID: runScriptMenu:
+						8 Show “Add missing smart anchors.py” in Finder, ID: showScriptInFinder:
+						9 Add ZWRO *origin Anchors, ID: runScriptMenu:
+						10 Show “Add ZWRO origin Anchors.py” in Finder, ID: showScriptInFinder:
+						11 Anchor Mover, ID: runScriptMenu:
+						12 Show “Anchor Mover.py” in Finder, ID: showScriptInFinder:
+						13 Anchor Remover, ID: runScriptMenu:
+						14 Show “Anchor Remover.py” in Finder, ID: showScriptInFinder:
+						15 Batch Insert Anchor, ID: runScriptMenu:
+						16 Show “Batch Insert Anchors.py” in Finder, ID: showScriptInFinder:
+						17 Exit-Entry Manager, ID: runScriptMenu:
+						18 Show “Exit-Entry Manager.py” in Finder, ID: showScriptInFinder:
+						19 Find and Replace in Anchor Names, ID: runScriptMenu:
+						20 Show “Find and Replace in Anchor Names.py” in Finder, ID: showScriptInFinder:
+						21 Fix Arabic Anchor Ordering in Ligatures, ID: runScriptMenu:
+						22 Show “Fix Arabic Anchor Order in Ligatures.py” in Finder, ID: showScriptInFinder:
+						23 Insert All Anchors in All Layers, ID: runScriptMenu:
+						24 Show “Insert All Anchors in All Layers.py” in Finder, ID: showScriptInFinder:
+						25 Mark Mover, ID: runScriptMenu:
+						26 Show “Mark Mover.py” in Finder, ID: showScriptInFinder:
+						27 Move ogonek Anchors to Baseline Intersection, ID: runScriptMenu:
+						28 Show “Move ogonek Anchors to Baseline Intersection.py” in Finder, ID: showScriptInFinder:
+						29 Move Vertical Caron Anchors to x-Height Intersection, ID: runScriptMenu:
+						30 Show “Move topright Anchors for Vertical Carons.py” in Finder, ID: showScriptInFinder:
+						31 Move Vietnamese Marks to top_viet Anchor in Circumflex, ID: runScriptMenu:
+						32 Show “Move Vietnamese Marks to top_viet Anchor in Circumflex.py” in Finder, ID: showScriptInFinder:
+						33 New Tab with Glyphs Containing Anchor, ID: runScriptMenu:
+						34 Show “New Tab with Glyphs Containing Anchor.py” in Finder, ID: showScriptInFinder:
+						35 New Tab with Stray Anchors, ID: runScriptMenu:
+						36 Show “New Tab with Stray Anchors.py” in Finder, ID: showScriptInFinder:
+						37 Propagate Components and Mark Anchoring, ID: runScriptMenu:
+						38 Show “Propagate Components and Mark Anchoring.py” in Finder, ID: showScriptInFinder:
+						39 Realign Stacking Anchors, ID: runScriptMenu:
+						40 Show “Realign Stacking Anchors.py” in Finder, ID: showScriptInFinder:
+						41 Replicate Anchors, ID: runScriptMenu:
+						42 Show “Replicate Anchors.py” in Finder, ID: showScriptInFinder:
+						43 Replicate Anchors in Suffixed Glyphs, ID: runScriptMenu:
+						44 Show “Replicate Anchors in Suffixed Glyphs.py” in Finder, ID: showScriptInFinder:
+						45 Report Non-Standard Anchors to Macro Window, ID: runScriptMenu:
+						46 Show “Report Non-Standard Anchors to Macro Window.py” in Finder, ID: showScriptInFinder:
+						47 Shine Through Anchors, ID: runScriptMenu:
+						48 Show “Shine Through Anchors.py” in Finder, ID: showScriptInFinder:
+						49 Snap Anchors to Nearest Metric, ID: runScriptMenu:
+						50 Show “Snap Anchors to Nearest Metric.py” in Finder, ID: showScriptInFinder:
+						51 Steal Anchors, ID: runScriptMenu:
+						52 Show “Steal Anchors.py” in Finder, ID: showScriptInFinder:
+				53 App
+					54 menu Secondary Actions: Cancel
+						55 Close All Tabs of All Open Fonts, ID: runScriptMenu:
+						56 Show “Close All Tabs of All Open Fonts.py” in Finder, ID: showScriptInFinder:
+						57 Copy Download URL for Current App Version, ID: runScriptMenu:
+						58 Show “Copy Download URL for Current App Version.py” in Finder, ID: showScriptInFinder:
+						59 Decrease Line Height, ID: runScriptMenu:
+						60 Show “Line Height Decrease.py” in Finder, ID: showScriptInFinder:
+						61 Increase Line Height, ID: runScriptMenu:
+						62 Show “Line Height Increase.py” in Finder, ID: showScriptInFinder:
+						63 Method Reporter, ID: runScriptMenu:
+						64 Show “Method Reporter.py” in Finder, ID: showScriptInFinder:
+						65 Navigate
+							66 menu Secondary Actions: Cancel
+								67 Activate Next Glyph, ID: runScriptMenu:
+								68 Show “Activate next glyph.py” in Finder, ID: showScriptInFinder:
+								69 Activate Previous Glyph, ID: runScriptMenu:
+								70 Show “Activate previous glyph.py” in Finder, ID: showScriptInFinder:
+						71 Parameter Reporter, ID: runScriptMenu:
+						72 Show “Parameter Reporter.py” in Finder, ID: showScriptInFinder:
+						73 Print Window, ID: runScriptMenu:
+						74 Show “Print Window.py” in Finder, ID: showScriptInFinder:
+						75 Reset Plugin Manager Repo, ID: runScriptMenu:
+						76 Show “Reset Plugin Manager Repo.py” in Finder, ID: showScriptInFinder:
+						77 Resetter, ID: runScriptMenu:
+						78 Show “Resetter.py” in Finder, ID: showScriptInFinder:
+						79 Set Export Paths to Adobe Fonts Folder, ID: runScriptMenu:
+						80 Show “Set Export Paths to Adobe Fonts Folder.py” in Finder, ID: showScriptInFinder:
+						81 Set Hidden App Preferences, ID: runScriptMenu:
+						82 Show “Set Hidden App Preferences.py” in Finder, ID: showScriptInFinder:
+						83 Set Label Colors, ID: runScriptMenu:
+						84 Show “Set Label Colors.py” in Finder, ID: showScriptInFinder:
+						85 Set Tool Shortcuts, ID: runScriptMenu:
+						86 Show “Set Tool Shortcuts.py” in Finder, ID: showScriptInFinder:
+						87 Toggle Horizontal-Vertical, ID: runScriptMenu:
+						88 Show “Toggle Horizontal-Vertical.py” in Finder, ID: showScriptInFinder:
+						89 Toggle Macro Window Separator, ID: runScriptMenu:
+						90 Show “Toggle Macro Window Separator.py” in Finder, ID: showScriptInFinder:
+						91 Toggle RTL/LTR, ID: runScriptMenu:
+						92 Show “Toggle RTL-LTR.py” in Finder, ID: showScriptInFinder:
+						93 Toggle Script Windows, ID: runScriptMenu:
+						94 Show “Toggle Script Windows.py” in Finder, ID: showScriptInFinder:
+						95 Update Git Repositories in Scripts Folder, ID: runScriptMenu:
+						96 Show “Update git Repositories in Scripts Folder.py” in Finder, ID: showScriptInFinder:
+						97 Update Text Preview, ID: runScriptMenu:
+						98 Show “Update Text Preview.py” in Finder, ID: showScriptInFinder:
+				99 Build Glyphs
+					100 menu Secondary Actions: Cancel
+						101 Add Adobe Symbol Glyphs, ID: runScriptMenu:
+						102 Show “Add Adobe Symbol Glyphs.py” in Finder, ID: showScriptInFinder:
+						103 Build APL Greek, ID: runScriptMenu:
+						104 Show “Build APL Greek.py” in Finder, ID: showScriptInFinder:
+						105 Build cadauna and careof, ID: runScriptMenu:
+						106 Show “Build careof and cadauna.py” in Finder, ID: showScriptInFinder:
+						107 Build Circled Glyphs, ID: runScriptMenu:
+						108 Show “Build Circled Glyphs.py” in Finder, ID: showScriptInFinder:
+						109 Build Dotted Numbers, ID: runScriptMenu:
+						110 Show “Build Dotted Numbers.py” in Finder, ID: showScriptInFinder:
+						111 Build ellipsis from period Components, ID: runScriptMenu:
+						112 Show “Build ellipsis from period components.py” in Finder, ID: showScriptInFinder:
+						113 Build exclamdown and questiondown, ID: runScriptMenu:
+						114 Show “Build exclamdown and questiondown.py” in Finder, ID: showScriptInFinder:
+						115 Build Extra Math Symbols, ID: runScriptMenu:
+						116 Show “Build Extra Math Symbols.py” in Finder, ID: showScriptInFinder:
+						117 Build Ldot and ldot, ID: runScriptMenu:
+						118 Show “Build Ldot and ldot.py” in Finder, ID: showScriptInFinder:
+						119 Build Parenthesized Glyphs, ID: runScriptMenu:
+						120 Show “Build Parenthesized Glyphs.py” in Finder, ID: showScriptInFinder:
+						121 Build Q from O and _tail.Q, ID: runScriptMenu:
+						122 Show “Build Q from O and _tail.Q.py” in Finder, ID: showScriptInFinder:
+						123 Build Rare Symbols, ID: runScriptMenu:
+						124 Show “Build Rare Symbols.py” in Finder, ID: showScriptInFinder:
+						125 Build rtlm Alternates, ID: runScriptMenu:
+						126 Show “Build rtlm Alternates.py” in Finder, ID: showScriptInFinder:
+						127 Build Small Figures, ID: runScriptMenu:
+						128 Show “Build Small Figures.py” in Finder, ID: showScriptInFinder:
+						129 Build Space Glyphs, ID: runScriptMenu:
+						130 Show “Build space glyphs.py” in Finder, ID: showScriptInFinder:
+						131 Build Symbols, ID: runScriptMenu:
+						132 Show “Build Symbols.py” in Finder, ID: showScriptInFinder:
+						133 Center punt volat, ID: runScriptMenu:
+						134 Show “Center punt volat.py” in Finder, ID: showScriptInFinder:
+						135 Quote Manager, ID: runScriptMenu:
+						136 Show “Quote Manager.py” in Finder, ID: showScriptInFinder:
+				137 Color Fonts
+					138 menu Secondary Actions: Cancel
+						139 Add All Missing Color Layers to Selected Glyphs, ID: runScriptMenu:
+						140 Show “Add All Color Layers to Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						141 Add sbix Images to Font, ID: runScriptMenu:
+						142 Show “Add sbix Images to Font.py” in Finder, ID: showScriptInFinder:
+						143 Color Palette Multiplier, ID: runScriptMenu:
+						144 Show “Color Palette Multiplier.py” in Finder, ID: showScriptInFinder:
+						145 Convert Layerfont to CPAL+COLR Font, ID: runScriptMenu:
+						146 Show “Convert Layerfont to CPAL+COLR Font.py” in Finder, ID: showScriptInFinder:
+						147 Convert Master Colors to CPAL Palette, ID: runScriptMenu:
+						148 Show “Convert Master Colors to CPAL Palette.py” in Finder, ID: showScriptInFinder:
+						149 CPAL Manager, ID: runScriptMenu:
+						150 Show “CPAL Manager.py” in Finder, ID: showScriptInFinder:
+						151 Delete Non-Color Layers in Selected Glyphs, ID: runScriptMenu:
+						152 Show “Delete Non-Color Layers in Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						153 Merge All Other Masters in Current Master, ID: runScriptMenu:
+						154 Show “Merge All Other Masters in Current Master.py” in Finder, ID: showScriptInFinder:
+						155 Merge CPAL Layers into Master Layer, ID: runScriptMenu:
+						156 Show “Merge CPAL Layers into Master Layer.py” in Finder, ID: showScriptInFinder:
+						157 Merge Suffixed Glyphs into Color Layers, ID: runScriptMenu:
+						158 Show “Merge Suffixed Glyphs into Color Layers.py” in Finder, ID: showScriptInFinder:
+						159 New Tabs with Palette Colors, ID: runScriptMenu:
+						160 Show “New Tabs with Palette Colors.py” in Finder, ID: showScriptInFinder:
+						161 Randomly Distribute Shapes on Color Layers, ID: runScriptMenu:
+						162 Show “Randomly Distribute Shapes on Color Layers.py” in Finder, ID: showScriptInFinder:
+						163 sbix Spacer, ID: runScriptMenu:
+						164 Show “sbix Spacer.py” in Finder, ID: showScriptInFinder:
+				165 Compare Frontmost Fonts
+					166 menu Secondary Actions: Cancel
+						167 Compare Anchors, ID: runScriptMenu:
+						168 Show “Compare Anchors of Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						169 Compare Composites, ID: runScriptMenu:
+						170 Show “Compare Composites of Two Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						171 Compare Font Info > Features, ID: runScriptMenu:
+						172 Show “4. Compare Font Info > Features.py” in Finder, ID: showScriptInFinder:
+						173 Compare Font Info > Font, ID: runScriptMenu:
+						174 Show “1. Compare Font Info > Font.py” in Finder, ID: showScriptInFinder:
+						175 Compare Font Info > Instances, ID: runScriptMenu:
+						176 Show “3. Compare Font Info > Instances.py” in Finder, ID: showScriptInFinder:
+						177 Compare Font Info > Masters, ID: runScriptMenu:
+						178 Show “2. Compare Font Info > Masters.py” in Finder, ID: showScriptInFinder:
+						179 Compare Glyph Heights, ID: runScriptMenu:
+						180 Show “Compare Glyph Heights of Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						181 Compare Glyph Info, ID: runScriptMenu:
+						182 Show “Compare Glyph Info.py” in Finder, ID: showScriptInFinder:
+						183 Compare Glyphsets, ID: runScriptMenu:
+						184 Show “Compare Glyphsets of Two Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						185 Compare Kerning Groups, ID: runScriptMenu:
+						186 Show “Compare Kerning Groups of Two Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						187 Compare Metrics, ID: runScriptMenu:
+						188 Show “Compare Metrics of Two Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						189 Compare Sidebearings, ID: runScriptMenu:
+						190 Show “Compare Sidebearings of Two Frontmost Fonts.py” in Finder, ID: showScriptInFinder:
+						191 Report Missing Glyphs for All Open Fonts, ID: runScriptMenu:
+						192 Show “Report Missing Glyphs in All Open Fonts.py” in Finder, ID: showScriptInFinder:
+				193 Components
+					194 menu Secondary Actions: Cancel
+						195 Alignment Manager, ID: runScriptMenu:
+						196 Show “Alignment Manager.py” in Finder, ID: showScriptInFinder:
+						197 Auto-Align Composites with Incremental Metrics Keys, ID: runScriptMenu:
+						198 Show “Auto-align Composites with Incremental Metrics Keys.py” in Finder, ID: showScriptInFinder:
+						199 Cap and Corner Manager, ID: runScriptMenu:
+						200 Show “Cap and Corner Manager.py” in Finder, ID: showScriptInFinder:
+						201 Component Mover, ID: runScriptMenu:
+						202 Show “Component Mover.py” in Finder, ID: showScriptInFinder:
+						203 Component Problem Finder, ID: runScriptMenu:
+						204 Show “Component Problem Finder.py” in Finder, ID: showScriptInFinder:
+						205 Composite Consistencer, ID: runScriptMenu:
+						206 Show “Composite Consistencer.py” in Finder, ID: showScriptInFinder:
+						207 Convert Cap to Segment Component, ID: runScriptMenu:
+						208 Show “Convert Cap to Segment Component.py” in Finder, ID: showScriptInFinder:
+						209 Decompose Components in Background, ID: runScriptMenu:
+						210 Show “Decompose Components in Background.py” in Finder, ID: showScriptInFinder:
+						211 Decompose Corner and Cap Components, ID: runScriptMenu:
+						212 Show “Decompose Corner and Cap Components.py” in Finder, ID: showScriptInFinder:
+						213 Find and Replace Components, ID: runScriptMenu:
+						214 Show “Find and Replace Components.py” in Finder, ID: showScriptInFinder:
+						215 Make Components Smart in All Selected Glyphs, ID: runScriptMenu:
+						216 Show “Make Component Smart.py” in Finder, ID: showScriptInFinder:
+						217 Make Glyph Smart, ID: runScriptMenu:
+						218 Show “Make Glyph Smart.py” in Finder, ID: showScriptInFinder:
+						219 Move Paths to Component, ID: runScriptMenu:
+						220 Show “Move Paths to Component.py” in Finder, ID: showScriptInFinder:
+						221 Populate Layer Backgrounds with Component, ID: runScriptMenu:
+						222 Show “Populate Backgrounds with Components.py” in Finder, ID: showScriptInFinder:
+						223 Propagate Corner Components to Other Masters, ID: runScriptMenu:
+						224 Show “Propagate Corner Components to Other Masters.py” in Finder, ID: showScriptInFinder:
+						225 Remove Components, ID: runScriptMenu:
+						226 Show “Remove Components.py” in Finder, ID: showScriptInFinder:
+						227 Remove Detached Corners, ID: runScriptMenu:
+						228 Show “Remove Detached Corners.py” in Finder, ID: showScriptInFinder:
+						229 Sync Components Across Masters, ID: runScriptMenu:
+						230 Show “Sync Components Across Masters.py” in Finder, ID: showScriptInFinder:
+				231 Features
+					232 menu Secondary Actions: Cancel
+						233 Activate Default Features, ID: runScriptMenu:
+						234 Show “Activate Default Features.py” in Finder, ID: showScriptInFinder:
+						235 Baseline Wiggle, ID: runScriptMenu:
+						236 Show “Baseline Wiggle.py” in Finder, ID: showScriptInFinder:
+						237 Build ccmp for Hebrew Presentation Forms, ID: runScriptMenu:
+						238 Show “Build ccmp for Hebrew Presentation Forms.py” in Finder, ID: showScriptInFinder:
+						239 Build Italic Shift Feature, ID: runScriptMenu:
+						240 Show “Build Italic Shift Feature.py” in Finder, ID: showScriptInFinder:
+						241 Build Positional Feature, ID: runScriptMenu:
+						242 Show “Build Positional Feature.py” in Finder, ID: showScriptInFinder:
+						243 Build rand Feature, ID: runScriptMenu:
+						244 Show “Build rand Feature.py” in Finder, ID: showScriptInFinder:
+						245 Contextual Cycler, ID: runScriptMenu:
+						246 Show “Contextual Cycler.py” in Finder, ID: showScriptInFinder:
+						247 Feature Code Tweaks, ID: runScriptMenu:
+						248 Show “Feature Code Tweaks.py” in Finder, ID: showScriptInFinder:
+						249 Find in Features, ID: runScriptMenu:
+						250 Show “Find in Features.py” in Finder, ID: showScriptInFinder:
+						251 Floating Features, ID: runScriptMenu:
+						252 Show “Floating Features.py” in Finder, ID: showScriptInFinder:
+						253 Fraction Fever 2, ID: runScriptMenu:
+						254 Show “Fraction Fever 2.py” in Finder, ID: showScriptInFinder:
+						255 New OT Class with Selected Glyphs, ID: runScriptMenu:
+						256 Show “New OT Class with Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						257 New Tab with OT Class, ID: runScriptMenu:
+						258 Show “New Tab with OT Class.py” in Finder, ID: showScriptInFinder:
+						259 Stylistic Sets
+							260 menu Secondary Actions: Cancel
+								261 Create .ssXX Glyph from Current Layer, ID: runScriptMenu:
+								262 Show “Create ssXX from layer.py” in Finder, ID: showScriptInFinder:
+								263 Create Pseudorandom calt Feature from ssXX Glyphs, ID: runScriptMenu:
+								264 Show “Create pseudorandom calt feature.py” in Finder, ID: showScriptInFinder:
+								265 Report ssXX Names of All Open Fonts, ID: runScriptMenu:
+								266 Show “Report ssXX Names.py” in Finder, ID: showScriptInFinder:
+								267 Set ssXX Names, ID: runScriptMenu:
+								268 Show “Set ssXX Names.py” in Finder, ID: showScriptInFinder:
+								269 Synchronize ssXX Glyphs, ID: runScriptMenu:
+								270 Show “Synchronize ssXX glyphs.py” in Finder, ID: showScriptInFinder:
+						271 Update Features without Reordering, ID: runScriptMenu:
+						272 Show “Update Features without Reordering.py” in Finder, ID: showScriptInFinder:
+						273 Update Glyph Names in Features, ID: runScriptMenu:
+						274 Show “Update Glyph Names in Features.py” in Finder, ID: showScriptInFinder:
+				275 Font Info
+					276 menu Secondary Actions: Cancel
+						277 Add meta Table, ID: runScriptMenu:
+						278 Show “Add meta Table.py” in Finder, ID: showScriptInFinder:
+						279 Batch-Import Masters, ID: runScriptMenu:
+						280 Show “Batch-Import Masters.py” in Finder, ID: showScriptInFinder:
+						281 Clean Version String, ID: runScriptMenu:
+						282 Show “Clean Version String.py” in Finder, ID: showScriptInFinder:
+						283 Find and Replace in Font Info, ID: runScriptMenu:
+						284 Show “Find and Replace in Font Info.py” in Finder, ID: showScriptInFinder:
+						285 Font Info Batch Setter, ID: runScriptMenu:
+						286 Show “Font Info Batch Setter.py” in Finder, ID: showScriptInFinder:
+						287 Font Info Overview, ID: runScriptMenu:
+						288 Show “Font Info Overview.py” in Finder, ID: showScriptInFinder:
+						289 OTVAR Maker, ID: runScriptMenu:
+						290 Show “OTVAR Maker.py” in Finder, ID: showScriptInFinder:
+						291 Prepare Font Info, ID: runScriptMenu:
+						292 Show “Prepare Font Info.py” in Finder, ID: showScriptInFinder:
+						293 PS Name Maker, ID: runScriptMenu:
+						294 Show “PS Name Maker.py” in Finder, ID: showScriptInFinder:
+						295 Remove Custom Parameters, ID: runScriptMenu:
+						296 Show “Remove Custom Parameters.py” in Finder, ID: showScriptInFinder:
+						297 Set Preferred Names (Name IDs 16 and 17) for Width Variants, ID: runScriptMenu:
+						298 Show “Set Preferred Names (Name IDs 16 and 17).py” in Finder, ID: showScriptInFinder:
+						299 Set Style Linking, ID: runScriptMenu:
+						300 Show “Set Style Linking.py” in Finder, ID: showScriptInFinder:
+						301 Set Subscript and Superscript Parameters, ID: runScriptMenu:
+						302 Show “Set Subscript and Superscript Parameters.py” in Finder, ID: showScriptInFinder:
+						303 Set Variable Style Names, ID: runScriptMenu:
+						304 Show “Set Variable Style Names.py” in Finder, ID: showScriptInFinder:
+						305 Set WWS Names (Name IDs 21 and 22), ID: runScriptMenu:
+						306 Show “Set WWS Names (Name IDs 21 and 22).py” in Finder, ID: showScriptInFinder:
+						307 Style Renamer, ID: runScriptMenu:
+						308 Show “Style Renamer.py” in Finder, ID: showScriptInFinder:
+						309 Turn Dimensions into Stems, ID: runScriptMenu:
+						310 Show “Turn Dimensions into Stems.py” in Finder, ID: showScriptInFinder:
+						311 Vertical Metrics Manager, ID: runScriptMenu:
+						312 Show “Vertical Metrics Manager.py” in Finder, ID: showScriptInFinder:
+				313 Glyph Names, Notes and Unicode
+					314 menu Secondary Actions: Cancel
+						315 Add PUA Unicode Values to Selected Glyphs, ID: runScriptMenu:
+						316 Show “Add PUA Unicode Values to Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						317 Casefolding Report, ID: runScriptMenu:
+						318 Show “Casefolding Report.py” in Finder, ID: showScriptInFinder:
+						319 Color Composites in Shade of Base Glyph, ID: runScriptMenu:
+						320 Show “Color Composites in Shade of Base Glyph.py” in Finder, ID: showScriptInFinder:
+						321 Convert to Lowercase, ID: runScriptMenu:
+						322 Show “Convert to Lowercase.py” in Finder, ID: showScriptInFinder:
+						323 Convert to Uppercase, ID: runScriptMenu:
+						324 Show “Convert to Uppercase.py” in Finder, ID: showScriptInFinder:
+						325 Double Encode micro, Ohm, increment and florin, ID: runScriptMenu:
+						326 Show “Double Encode micro, Ohm and increment.py” in Finder, ID: showScriptInFinder:
+						327 Encoding Converter, ID: runScriptMenu:
+						328 Show “Encoding Converter.py” in Finder, ID: showScriptInFinder:
+						329 Garbage Collection, ID: runScriptMenu:
+						330 Show “Garbage Collection.py” in Finder, ID: showScriptInFinder:
+						331 Glyph Order Manager, ID: runScriptMenu:
+						332 Show “Glyph Order Manager.py” in Finder, ID: showScriptInFinder:
+						333 Production Namer, ID: runScriptMenu:
+						334 Show “Production Namer.py” in Finder, ID: showScriptInFinder:
+						335 Rename Glyphs, ID: runScriptMenu:
+						336 Show “Rename Glyphs.py” in Finder, ID: showScriptInFinder:
+						337 Reorder Unicodes of Selected Glyphs, ID: runScriptMenu:
+						338 Show “Reorder Unicodes of Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						339 Reset Unicode Codepoints Based on GlyphData, ID: runScriptMenu:
+						340 Show “Reset Unicodes.py” in Finder, ID: showScriptInFinder:
+						341 Switch Mirrored Characters, ID: runScriptMenu:
+						342 Show “Switch Mirrored Characters.py” in Finder, ID: showScriptInFinder:
+				343 Guides
+					344 menu Secondary Actions: Cancel
+						345 Guides through All Selected Nodes, ID: runScriptMenu:
+						346 Show “Guides through All Selected Nodes.py” in Finder, ID: showScriptInFinder:
+						347 Remove Global Guides in Current Master, ID: runScriptMenu:
+						348 Show “Remove Global Guides in Current Master.py” in Finder, ID: showScriptInFinder:
+						349 Remove Local Guides in Selected Glyphs, ID: runScriptMenu:
+						350 Show “Remove Local Guides in Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						351 Select All Global Guides, ID: runScriptMenu:
+						352 Show “Select All Global Guides.py” in Finder, ID: showScriptInFinder:
+						353 Select All Local Guides in Selected Glyphs, ID: runScriptMenu:
+						354 Show “Select All Local Guides.py” in Finder, ID: showScriptInFinder:
+				355 Hinting
+					356 menu Secondary Actions: Cancel
+						357 Add Alignment Zones for Selected Glyphs, ID: runScriptMenu:
+						358 Show “Add Alignment Zones for Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						359 Add Hints to Selected Nodes, ID: runScriptMenu:
+						360 Show “Add Hints for Selected Nodes.py” in Finder, ID: showScriptInFinder:
+						361 Add TTF Autohint Control Instructions for Current Glyph, ID: runScriptMenu:
+						362 Show “Add TTF Autohint Control Instructions for Current Glyph.py” in Finder, ID: showScriptInFinder:
+						363 Auto Stems, ID: runScriptMenu:
+						364 Show “Auto Stems.py” in Finder, ID: showScriptInFinder:
+						365 BlueFuzzer, ID: runScriptMenu:
+						366 Show “BlueFuzzer.py” in Finder, ID: showScriptInFinder:
+						367 Keep First Master Hints Only, ID: runScriptMenu:
+						368 Show “Keep Only First Master Hints.py” in Finder, ID: showScriptInFinder:
+						369 New Tab with Glyphs in Alignment Zones, ID: runScriptMenu:
+						370 Show “New Tab with Glyphs in Alignment Zones.py” in Finder, ID: showScriptInFinder:
+						371 New Tab with Layers with TTDeltas, ID: runScriptMenu:
+						372 Show “New Tab with Layers with TTDeltas.py” in Finder, ID: showScriptInFinder:
+						373 New Tabs with Glyphs Not Reaching Into Zones, ID: runScriptMenu:
+						374 Show “New Tabs with Glyphs Not Reaching Into Zones.py” in Finder, ID: showScriptInFinder:
+						375 Remove PS Hints, ID: runScriptMenu:
+						376 Show “Remove PS Hints.py” in Finder, ID: showScriptInFinder:
+						377 Remove TT Hints, ID: runScriptMenu:
+						378 Show “Remove TT Hints.py” in Finder, ID: showScriptInFinder:
+						379 Remove Zero Deltas in Selected Glyphs, ID: runScriptMenu:
+						380 Show “Remove Zero Deltas in Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						381 Set blueFuzz to Zero for Master Instances, ID: runScriptMenu:
+						382 Show “Set blueFuzz to zero for master instances.py” in Finder, ID: showScriptInFinder:
+						383 Set blueScale, ID: runScriptMenu:
+						384 Show “Set blueScale.py” in Finder, ID: showScriptInFinder:
+						385 Set Family Alignment Zones, ID: runScriptMenu:
+						386 Show “Set Family Alignment Zones.py” in Finder, ID: showScriptInFinder:
+						387 Set TT Stem Hints to Auto, ID: runScriptMenu:
+						388 Show “Set TT Stem Hints to Auto.py” in Finder, ID: showScriptInFinder:
+						389 Set TT Stem Hints to No Stem, ID: runScriptMenu:
+						390 Show “Set TT Stem Hints to No Stem.py” in Finder, ID: showScriptInFinder:
+						391 Set ttfautohint Options, ID: runScriptMenu:
+						392 Show “Set TTF Autohint Options.py” in Finder, ID: showScriptInFinder:
+						393 Transfer Hints to First Master, ID: runScriptMenu:
+						394 Show “Transfer Hints to First Master.py” in Finder, ID: showScriptInFinder:
+						395 TT Autoinstruct Selected Glyphs, ID: runScriptMenu:
+						396 Show “TT Autoinstruct Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+				397 Images
+					398 menu Secondary Actions: Cancel
+						399 Add Same Image to Selected Glyphs, ID: runScriptMenu:
+						400 Show “Add Same Image to Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						401 Adjust Image Alpha, ID: runScriptMenu:
+						402 Show “Adjust Image Alpha.py” in Finder, ID: showScriptInFinder:
+						403 Remove Images, ID: runScriptMenu:
+						404 Show “Remove Images.py” in Finder, ID: showScriptInFinder:
+						405 Reset Image Transformations, ID: runScriptMenu:
+						406 Show “Reset Image Transformation.py” in Finder, ID: showScriptInFinder:
+						407 Set New Path for Images, ID: runScriptMenu:
+						408 Show “Set New Path for Images.py” in Finder, ID: showScriptInFinder:
+						409 Toggle Image Lock, ID: runScriptMenu:
+						410 Show “Toggle Image Lock.py” in Finder, ID: showScriptInFinder:
+						411 Transform Images, ID: runScriptMenu:
+						412 Show “Transform Images.py” in Finder, ID: showScriptInFinder:
+				413 Interpolation
+					414 menu Secondary Actions: Cancel
+						415 Add Grade, ID: runScriptMenu:
+						416 Show “Add Grade.py” in Finder, ID: showScriptInFinder:
+						417 Add Missing Brace Layers, ID: runScriptMenu:
+						418 Show “Add Missing Brace Layers.py” in Finder, ID: showScriptInFinder:
+						419 Axis Location Setter, ID: runScriptMenu:
+						420 Show “Axis Location Setter.py” in Finder, ID: showScriptInFinder:
+						421 Axis Mapper, ID: runScriptMenu:
+						422 Show “Axis Mapper.py” in Finder, ID: showScriptInFinder:
+						423 Batch Grader, ID: runScriptMenu:
+						424 Show “Batch Grader.py” in Finder, ID: showScriptInFinder:
+						425 Batch-Add Smart Axes, ID: runScriptMenu:
+						426 Show “Batch-Add Smart Axes.py” in Finder, ID: showScriptInFinder:
+						427 Brace and Bracket Manager, ID: runScriptMenu:
+						428 Show “Brace Layer Manager.py” in Finder, ID: showScriptInFinder:
+						429 Bracify, ID: runScriptMenu:
+						430 Show “Bracify.py” in Finder, ID: showScriptInFinder:
+						431 Compatibility Manager, ID: runScriptMenu:
+						432 Show “Compatibility Manager.py” in Finder, ID: showScriptInFinder:
+						433 Compatibility Manager 2, ID: runScriptMenu:
+						434 Show “Compatibility Manager 2.py” in Finder, ID: showScriptInFinder:
+						435 Composite Variabler, ID: runScriptMenu:
+						436 Show “Composite Variabler.py” in Finder, ID: showScriptInFinder:
+						437 Copy Layer to Layer, ID: runScriptMenu:
+						438 Show “Copy Layer to Layer.py” in Finder, ID: showScriptInFinder:
+						439 Dekink Master Layers, ID: runScriptMenu:
+						440 Show “Dekink Masters.py” in Finder, ID: showScriptInFinder:
+						441 Enhance Compatibility, ID: runScriptMenu:
+						442 Show “Enhance Compatibility.py” in Finder, ID: showScriptInFinder:
+						443 Fill Up Empty Masters, ID: runScriptMenu:
+						444 Show “Fill up Empty Masters.py” in Finder, ID: showScriptInFinder:
+						445 Find and Replace in Layer Names, ID: runScriptMenu:
+						446 Show “Find and Replace in Layer Names.py” in Finder, ID: showScriptInFinder:
+						447 Find Shapeshifting Glyphs, ID: runScriptMenu:
+						448 Show “Find Shapeshifting Glyphs.py” in Finder, ID: showScriptInFinder:
+						449 Insert Brace Layers for Movement along Background Path, ID: runScriptMenu:
+						450 Show “Insert Brace Layers for Movement along Background Path.py” in Finder, ID: showScriptInFinder:
+						451 Insert Brace Layers for Rotating Components, ID: runScriptMenu:
+						452 Show “Insert Brace Layers for Component Rotation.py” in Finder, ID: showScriptInFinder:
+						453 Insert Instances, ID: runScriptMenu:
+						454 Show “Insert Instances.py” in Finder, ID: showScriptInFinder:
+						455 Insert Layers, ID: runScriptMenu:
+						456 Show “Insert Layers.py” in Finder, ID: showScriptInFinder:
+						457 Instance Cooker, ID: runScriptMenu:
+						458 Show “Instance Cooker.py” in Finder, ID: showScriptInFinder:
+						459 Kink Finder, ID: runScriptMenu:
+						460 Show “KinkFinder.py” in Finder, ID: showScriptInFinder:
+						461 New Tab with Dangerous Glyphs for Interpolation, ID: runScriptMenu:
+						462 Show “New Tab with Dangerous Glyphs.py” in Finder, ID: showScriptInFinder:
+						463 New Tab with Special Layers, ID: runScriptMenu:
+						464 Show “New Tab with Special Layers.py” in Finder, ID: showScriptInFinder:
+						465 New Tab with Uneven Handle Distributions, ID: runScriptMenu:
+						466 Show “New Tab with Uneven Handle Distributions.py” in Finder, ID: showScriptInFinder:
+						467 Other
+							468 menu Secondary Actions: Cancel
+								469 Lines by Master, ID: runScriptMenu:
+								470 Show “Lines by Master.py” in Finder, ID: showScriptInFinder:
+								471 New Tab with Masters of Selected Glyphs, ID: runScriptMenu:
+								472 Show “New Tab with Masters of Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+								473 Show Masters of Next Glyph, ID: runScriptMenu:
+								474 Show “Show masters of next glyph.py” in Finder, ID: showScriptInFinder:
+								475 Show Masters of Previous Glyph, ID: runScriptMenu:
+								476 Show “Show masters of previous glyph.py” in Finder, ID: showScriptInFinder:
+								477 Show Next Instance, ID: runScriptMenu:
+								478 Show “Show next instance.py” in Finder, ID: showScriptInFinder:
+								479 Show Previous Instance, ID: runScriptMenu:
+								480 Show “Show previous instance.py” in Finder, ID: showScriptInFinder:
+						481 Re-interpolate Selected Layers, ID: runScriptMenu:
+						482 Show “Re-interpolate Selected Layers.py” in Finder, ID: showScriptInFinder:
+						483 Remove All Non-Master Layers, ID: runScriptMenu:
+						484 Show “Remove All Non-Master Layers.py” in Finder, ID: showScriptInFinder:
+						485 Report Instance Interpolations, ID: runScriptMenu:
+						486 Show “Report Instance Interpolations.py” in Finder, ID: showScriptInFinder:
+						487 Reproject Axis, ID: runScriptMenu:
+						488 Show “Reproject Axis.py” in Finder, ID: showScriptInFinder:
+						489 Reset Axis Mappings, ID: runScriptMenu:
+						490 Show “Reset Axis Mappings.py” in Finder, ID: showScriptInFinder:
+						491 Set Weight Axis Locations in Instances, ID: runScriptMenu:
+						492 Show “Set Weight Axis Locations in Instances.py” in Finder, ID: showScriptInFinder:
+						493 Short Segment Finder, ID: runScriptMenu:
+						494 Show “Short Segment Finder.py” in Finder, ID: showScriptInFinder:
+						495 Travel Tracker, ID: runScriptMenu:
+						496 Show “Travel Tracker.py” in Finder, ID: showScriptInFinder:
+						497 Variation Interpolator, ID: runScriptMenu:
+						498 Show “Variation Interpolator.py” in Finder, ID: showScriptInFinder:
+				499 Kerning
+					500 menu Secondary Actions: Cancel
+						501 Adjust Kerning, ID: runScriptMenu:
+						502 Show “Adjust Kerning in Master.py” in Finder, ID: showScriptInFinder:
+						503 Auto Bumper, ID: runScriptMenu:
+						504 Show “Auto Bumper.py” in Finder, ID: showScriptInFinder:
+						505 BBox Bumper, ID: runScriptMenu:
+						506 Show “BBox Bumper.py” in Finder, ID: showScriptInFinder:
+						507 Compare Kerning Between Masters, ID: runScriptMenu:
+						508 Show “Compare Kerning Between Masters.py” in Finder, ID: showScriptInFinder:
+						509 Compress Glyph, ID: runScriptMenu:
+						510 Show “Compress Glyph.py” in Finder, ID: showScriptInFinder:
+						511 Convert RTL Kerning from Glyphs 2 to 3, ID: runScriptMenu:
+						512 Show “Convert RTL Kerning from Glyphs 2 to 3.py” in Finder, ID: showScriptInFinder:
+						513 Copy Kerning Exceptions to Double Accents, ID: runScriptMenu:
+						514 Show “Copy Kerning Exceptions to Double Accents.py” in Finder, ID: showScriptInFinder:
+						515 Exception Cleaner, ID: runScriptMenu:
+						516 Show “Exception Cleaner.py” in Finder, ID: showScriptInFinder:
+						517 Find and Replace in Kerning Groups, ID: runScriptMenu:
+						518 Show “Find and Replace in Kerning Groups.py” in Finder, ID: showScriptInFinder:
+						519 GapFinder, ID: runScriptMenu:
+						520 Show “GapFinder.py” in Finder, ID: showScriptInFinder:
+						521 Import Kerning from .fea File, ID: runScriptMenu:
+						522 Show “Import Kerning from .fea File.py” in Finder, ID: showScriptInFinder:
+						523 Kern Flattener, ID: runScriptMenu:
+						524 Show “Kern Flattener.py” in Finder, ID: showScriptInFinder:
+						525 Kern String Mixer, ID: runScriptMenu:
+						526 Show “Kern String Mixer.py” in Finder, ID: showScriptInFinder:
+						527 KernCrash Current Glyph, ID: runScriptMenu:
+						528 Show “KernCrash Current Glyph.py” in Finder, ID: showScriptInFinder:
+						529 KernCrasher, ID: runScriptMenu:
+						530 Show “KernCrasher.py” in Finder, ID: showScriptInFinder:
+						531 New Tab with All Group Members, ID: runScriptMenu:
+						532 Show “New Tab with All Group Members.py” in Finder, ID: showScriptInFinder:
+						533 New Tab with Glyphs of Same Kerning Groups, ID: runScriptMenu:
+						534 Show “New Tab with Glyphs of Same Kerning Groups.py” in Finder, ID: showScriptInFinder:
+						535 New Tab with Kerning Missing in Masters, ID: runScriptMenu:
+						536 Show “New Tab with Kerning Missing in Masters.py” in Finder, ID: showScriptInFinder:
+						537 New Tab with Overkerned Pairs, ID: runScriptMenu:
+						538 Show “New Tab with Overkerns.py” in Finder, ID: showScriptInFinder:
+						539 New Tab with Right Groups, ID: runScriptMenu:
+						540 Show “New Tab with Right Groups.py” in Finder, ID: showScriptInFinder:
+						541 New Tab with Selected Glyph Combinations, ID: runScriptMenu:
+						542 Show “New Tab with Selected Glyph Combos.py” in Finder, ID: showScriptInFinder:
+						543 New Tab with Uneven Symmetric Kernings, ID: runScriptMenu:
+						544 Show “New Tab with Uneven Symmetric Kernings.py” in Finder, ID: showScriptInFinder:
+						545 New Tabs with Punctuation Kern Strings, ID: runScriptMenu:
+						546 Show “New Tabs with Punctuation Kern Strings.py” in Finder, ID: showScriptInFinder:
+						547 Partial Compress, ID: runScriptMenu:
+						548 Show “Partial Compress.py” in Finder, ID: showScriptInFinder:
+						549 Remove Kerning Between Categories, ID: runScriptMenu:
+						550 Show “Remove Kerning Between Categories.py” in Finder, ID: showScriptInFinder:
+						551 Remove Kerning Exceptions, ID: runScriptMenu:
+						552 Show “Remove Kerning Exceptions.py” in Finder, ID: showScriptInFinder:
+						553 Remove Kerning Pairs for Selected Glyphs, ID: runScriptMenu:
+						554 Show “Remove Kerning Pairs for Selected Glyphs.py” in Finder, ID: showScriptInFinder:
+						555 Remove Orphaned Group Kerning, ID: runScriptMenu:
+						556 Show “Remove Orphaned Group Kerning.py” in Finder, ID: showScriptInFinder:
+						557 Remove Small Kerning Pairs, ID: runScriptMenu:
+						558 Show “Remove Small Kerning Pairs.py” in Finder, ID: showScriptInFinder:
+						559 Report Kerning Mistakes, ID: runScriptMenu:
+						560 Show “Report Kerning Mistakes.py” in Finder, ID: showScriptInFinder:
+						561 Sample String Maker, ID: runScriptMenu:
+						562 Show “Sample String Maker.py” in Finder, ID: showScriptInFinder:
+						563 Sample Strings with Master Kerning, ID: runScriptMenu:
+						564 Show “Sample Strings with Master Kerning.py” in Finder, ID: showScriptInFinder:
+						565 Set Kerning Groups, ID: runScriptMenu:
+						566 Show “Set Kerning Groups.py” in Finder, ID: showScriptInFinder:
+						567 Split Kerning Groups, ID: runScriptMenu:
+						568 Show “Split Kerning Groups.py” in Finder, ID: showScriptInFinder:
+						569 Steal Kerning from InDesign, ID: runScriptMenu:
+						570 Show “Steal kerning from InDesign.py” in Finder, ID: showScriptInFinder:
+						571 Steal Kerning Groups, ID: runScriptMenu:
+						572 Show “Steal Kerning Groups from Font.py” in Finder, ID: showScriptInFinder:
+						573 Transfer RTL Kerning, ID: runScriptMenu:
+						574 Show “Transfer RTL kerning.py” in Finder, ID: showScriptInFinder:
+						575 Zero Kerner, ID: runScriptMenu:
+						576 Show “Zero Kerner.py” in Finder, ID: showScriptInFinder:
+				577 Paths
+					578 menu Secondary Actions: Cancel
+						579 Align Selected Nodes with Background, ID: runScriptMenu:
+						580 Show “Align Selected Nodes with Background.py” in Finder, ID: showScriptInFinder:
+						581 Batch-Set Path Attributes, ID: runScriptMenu:
+						582 Show “Batch-Set Path Attributes.py” in Finder, ID: showScriptInFinder:
+						583 Bézier Fixer, ID: runScriptMenu:
+						584 Show “Bézier Fixer.py” in Finder, ID: showScriptInFinder:
+						585 Center Line, ID: runScriptMenu:
+						586 Show “Center Line.py” in Finder, ID: showScriptInFinder:
+						587 Copy Glyphs from Other Font into Backup Layers, ID: runScriptMenu:
+						588 Show “Copy Glyphs from Other Font into Backup Layers.py” in Finder, ID: showScriptInFinder:
+						589 Distribute Nodes, ID: runScriptMenu:
+						590 Show “Distribute Nodes.py” in Finder, ID: showScriptInFinder:
+						591 Fill Up with Rectangles, ID: runScriptMenu:
+						592 Show “Fill Up with Rectangles.py” in Finder, ID: showScriptInFinder:
+						593 Find Close Encounters of Orthogonal Line Segments, ID: runScriptMenu:
+						594 Show “Find Close Encounters of Orthogonal Line Segments.py” in Finder, ID: showScriptInFinder:
+						595 Find Near Vertical Misses, ID: runScriptMenu:
+						596 Show “Find Near Vertical Misses.py” in Finder, ID: showScriptInFinder:
+						597 Green Blue Manager, ID: runScriptMenu:
+						598 Show “Green Blue Manager.py” in Finder, ID: showScriptInFinder:
+						599 Grid Switcher, ID: runScriptMenu:
+						600 Show “Grid Switcher.py” in Finder, ID: showScriptInFinder:
+						601 Insert Split Nodes at Selected Extra Nodes, ID: runScriptMenu:
+						602 Show “Insert Split Nodes at Selected Extra Nodes.py” in Finder, ID: showScriptInFinder:
+						603 Interpolate Two Paths, ID: runScriptMenu:
+						604 Show “Interpolate two paths.py” in Finder, ID: showScriptInFinder:
+						605 New Tab with Small Paths, ID: runScriptMenu:
+						606 Show “New Tab with Small Paths.py” in Finder, ID: showScriptInFinder:
+						607 Path Problem Finder, ID: runScriptMenu:
+						608 Show “Path Problem Finder.py” in Finder, ID: showScriptInFinder:
+						609 Position Clicker, ID: runScriptMenu:
+						610 Show “Position Clicker.py” in Finder, ID: showScriptInFinder:
+						611 Positional Harmonize, ID: runScriptMenu:
+						612 Show “Positional Harmonize.py” in Finder, ID: showScriptInFinder:
+						613 Remove All Open Paths, ID: runScriptMenu:
+						614 Show “Remove all Open Paths.py” in Finder, ID: showScriptInFinder:
+						615 Rewire Fire, ID: runScriptMenu:
+						616 Show “Rewire Fire.py” in Finder, ID: showScriptInFinder:
+						617 Rotate Around Anchor, ID: runScriptMenu:
+						618 Show “Rotate around anchor.py” in Finder, ID: showScriptInFinder:
+						619 Set Transform Origin, ID: runScriptMenu:
+						620 Show “Set Transform Origin.py” in Finder, ID: showScriptInFinder:
+						621 Snap Selected Points to Nearest Metric in All Masters, ID: runScriptMenu:
+						622 Show “Snap selected points to nearest metric in all masters.py” in Finder, ID: showScriptInFinder:
+						623 Straight Stem Cruncher, ID: runScriptMenu:
+						624 Show “Straight Stem Cruncher.py” in Finder, ID: showScriptInFinder:
+						625 Tackle Short Segments, ID: runScriptMenu:
+						626 Show “Tackle Short Segments.py” in Finder, ID: showScriptInFinder:
+				627 Pixelfonts
+					628 menu Secondary Actions: Cancel
+						629 Align Anchors to Grid, ID: runScriptMenu:
+						630 Show “Align Anchors to Grid.py” in Finder, ID: showScriptInFinder:
+						631 Delete Components out of Bounds, ID: runScriptMenu:
+						632 Show “Delete components out of bounds.py” in Finder, ID: showScriptInFinder:
+						633 Delete Duplicate Components, ID: runScriptMenu:
+						634 Show “Delete duplicate components.py” in Finder, ID: showScriptInFinder:
+						635 Flashify Pixels, ID: runScriptMenu:
+						636 Show “Flashify Pixels.py” in Finder, ID: showScriptInFinder:
+						637 Offset Pixel Rows, ID: runScriptMenu:
+						638 Show “Offset Pixel Rows.py” in Finder, ID: showScriptInFinder:
+						639 Reset Rotated and Mirrored Components, ID: runScriptMenu:
+						640 Show “Reset rotated and mirrored components.py” in Finder, ID: showScriptInFinder:
+				641 Post Production
+					642 menu Secondary Actions: Cancel
+						643 Add Empty DSIG (OTVAR), ID: runScriptMenu:
+						644 Show “Add Empty DSIG to Most Recent Variable Font Export.py” in Finder, ID: showScriptInFinder:
+						645 Fix GDEF Class Definition of Legacy Marks, ID: runScriptMenu:
+						646 Show “Fix GDEF class definition of Legacy Marks.py” in Finder, ID: showScriptInFinder:
+						647 Fix Italic PS Names (OTVAR), ID: runScriptMenu:
+						648 Show “Fix Italic PS Names.py” in Finder, ID: showScriptInFinder:
+						649 Fix STAT Entries (OTVAR), ID: runScriptMenu:
+						650 Show “Fix Italic STAT Entries.py” in Finder, ID: showScriptInFinder:
+						651 Read and Write STAT Axis Values (OTVAR), ID: runScriptMenu:
+						652 Show “Read and Write Axis Values.py” in Finder, ID: showScriptInFinder:
+						653 Upgrade STAT Axis Values from Discrete to Ranges (OTVAR), ID: runScriptMenu:
+						654 Show “Upgrade STAT Axis Values.py” in Finder, ID: showScriptInFinder:
+				655 Smallcaps
+					656 menu Secondary Actions: Cancel
+						657 Check Smallcap Consistency, ID: runScriptMenu:
+						658 Show “Check Smallcap Consistency.py” in Finder, ID: showScriptInFinder:
+						659 Copy Kerning from Caps to Smallcaps, ID: runScriptMenu:
+						660 Show “Copy Kerning from Caps to Smallcaps.py” in Finder, ID: showScriptInFinder:
+				661 Spacing
+					662 menu Secondary Actions: Cancel
+						663 Add Metrics Keys for Symmetric Glyphs, ID: runScriptMenu:
+						664 Show “Add Metrics Keys for Symmetric Glyphs.py” in Finder, ID: showScriptInFinder:
+						665 Adjust Sidebearings, ID: runScriptMenu:
+						666 Show “Adjust Sidebearings.py” in Finder, ID: showScriptInFinder:
+						667 Bracket Metrics Manager, ID: runScriptMenu:
+						668 Show “Bracket Metrics Manager.py” in Finder, ID: showScriptInFinder:
+						669 Center Glyphs, ID: runScriptMenu:
+						670 Show “Center Glyphs.py” in Finder, ID: showScriptInFinder:
+						671 Change Metrics by Percentage, ID: runScriptMenu:
+						672 Show “Change Metrics by Percentage.py” in Finder, ID: showScriptInFinder:
+						673 Duplexer, ID: runScriptMenu:
+						674 Show “Duplexer.py” in Finder, ID: showScriptInFinder:
+						675 Find and Replace in Metrics Keys, ID: runScriptMenu:
+						676 Show “Find and Replace in Metrics Keys.py” in Finder, ID: showScriptInFinder:
+						677 Fix Arrow Positioning, ID: runScriptMenu:
+						678 Show “Fix Arrow Positioning.py” in Finder, ID: showScriptInFinder:
+						679 Fix Math Operator Spacing, ID: runScriptMenu:
+						680 Show “Fix Math Operator Spacing.py” in Finder, ID: showScriptInFinder:
+						681 Freeze Placeholders, ID: runScriptMenu:
+						682 Show “Freeze Placeholders.py” in Finder, ID: showScriptInFinder:
+						683 Metrics Key Manager, ID: runScriptMenu:
+						684 Show “Metrics Key Manager.py” in Finder, ID: showScriptInFinder:
+						685 Mirror Spacer, ID: runScriptMenu:
+						686 Show “Mirror Spacer.py” in Finder, ID: showScriptInFinder:
+						687 Monospace Checker, ID: runScriptMenu:
+						688 Show “Monospace Checker.py” in Finder, ID: showScriptInFinder:
+						689 New Tab with All Figure Combinations, ID: runScriptMenu:
+						690 Show “New Tab with all Figure Combinations.py” in Finder, ID: showScriptInFinder:
+						691 New Tab with Fraction Figure Combinations, ID: runScriptMenu:
+						692 Show “New Tab with Fraction Figure Combinations.py” in Finder, ID: showScriptInFinder:
+						693 Remove Metrics Keys, ID: runScriptMenu:
+						694 Show “Remove Metrics Keys.py” in Finder, ID: showScriptInFinder:
+						695 Reset Alternate Glyph Widths, ID: runScriptMenu:
+						696 Show “Reset Alternate Glyph Widths.py” in Finder, ID: showScriptInFinder:
+						697 Spacing Checker, ID: runScriptMenu:
+						698 Show “Spacing Checker.py” in Finder, ID: showScriptInFinder:
+						699 Steal Metrics, ID: runScriptMenu:
+						700 Show “Steal Metrics.py” in Finder, ID: showScriptInFinder:
+						701 Tabular Checker, ID: runScriptMenu:
+						702 Show “Tabular Checker.py” in Finder, ID: showScriptInFinder:
+						703 Tabular Figure Maker, ID: runScriptMenu:
+						704 Show “Tabular Figure Maker.py” in Finder, ID: showScriptInFinder:
+				705 Test
+					706 menu Secondary Actions: Cancel
+						707 Copy InDesign Test Text, ID: runScriptMenu:
+						708 Show “Copy InDesign Test Text.py” in Finder, ID: showScriptInFinder:
+						709 Copy Word Test Text, ID: runScriptMenu:
+						710 Show “Copy Word Test Text.py” in Finder, ID: showScriptInFinder:
+						711 Language Report, ID: runScriptMenu:
+						712 Show “Language Report.py” in Finder, ID: showScriptInFinder:
+						713 Pangram Helper, ID: runScriptMenu:
+						714 Show “Pangram Helper.py” in Finder, ID: showScriptInFinder:
+						715 Report Highest and Lowest Glyphs, ID: runScriptMenu:
+						716 Show “Report Highest and Lowest Glyphs.py” in Finder, ID: showScriptInFinder:
+						717 Variable Font Test HTML, ID: runScriptMenu:
+						718 Show “Variable Font Test HTML.py” in Finder, ID: showScriptInFinder:
+						719 Webfont Test HTML, ID: runScriptMenu:
+						720 Show “Webfont Test HTML.py” in Finder, ID: showScriptInFinder:
+		721 Toshi Omagari
+			722 menu Secondary Actions: Cancel
+				723 Analyse Manuscript..., ID: runScriptMenu:
+				724 Show “Analyse Manuscript.py” in Finder, ID: showScriptInFinder:
+				725 Clear Backgrounds in Selected Layers..., ID: runScriptMenu:
+				726 Show “Clear Backgrounds in Selected Layers.py” in Finder, ID: showScriptInFinder:
+				727 Close Tabs with Few Glyphs..., ID: runScriptMenu:
+				728 Show “Close Tabs with Few Glyphs.py” in Finder, ID: showScriptInFinder:
+				729 Decomposed Components By Type in Selected Layers..., ID: runScriptMenu:
+				730 Show “Decompose Components By Type in Selected Layers.py” in Finder, ID: showScriptInFinder:
+				731 DrawBot Samples, ID: runScriptMenu:
+				732 Show “DrawBot Samples.py” in Finder, ID: showScriptInFinder:
+				733 Duplicate Glyph with Component, ID: runScriptMenu:
+				734 Show “Duplicate Glyph with Component.py” in Finder, ID: showScriptInFinder:
+				735 Export Glyph Annotations as PDF, ID: runScriptMenu:
+				736 Show “Export Glyph Annotations as PDF.py” in Finder, ID: showScriptInFinder:
+				737 Export InDesign Tagged Text with All Glyphs..., ID: runScriptMenu:
+				738 Show “Export InDesign Tagged Text.py” in Finder, ID: showScriptInFinder:
+				739 Instance Slider..., ID: runScriptMenu:
+				740 Show “Instance Slider.py” in Finder, ID: showScriptInFinder:
+				741 Make .case alternates from selected glyphs, ID: runScriptMenu:
+				742 Show “Make .case alternates from selected glyphs.py” in Finder, ID: showScriptInFinder:
+				743 Metrics & Kerning
+					744 menu Secondary Actions: Cancel
+						745 Batch Metric Keys..., ID: runScriptMenu:
+						746 Show “Batch Metric Keys.py” in Finder, ID: showScriptInFinder:
+						747 Copy Kerning Pairs Extended..., ID: runScriptMenu:
+						748 Show “Copy Kerning Pairs.py” in Finder, ID: showScriptInFinder:
+						749 Copy Kerning to Greek & Cyrillic..., ID: runScriptMenu:
+						750 Show “Copy Kerning to Greek & Cyrillic.py” in Finder, ID: showScriptInFinder:
+						751 Kerning Exception..., ID: runScriptMenu:
+						752 Show “Kerning Exception.py” in Finder, ID: showScriptInFinder:
+						753 New Tab With Unlocked Kerning Pairs, ID: runScriptMenu:
+						754 Show “New Tab With Unlocked Kerning Pairs.py” in Finder, ID: showScriptInFinder:
+						755 Port Arabic & Hebrew kerning for G3, ID: runScriptMenu:
+						756 Show “Port Arabic & Hebrew kerning for G3.py” in Finder, ID: showScriptInFinder:
+						757 Rename Kerning Groups..., ID: runScriptMenu:
+						758 Show “Rename Kerning Groups.py” in Finder, ID: showScriptInFinder:
+						759 Report Metric Keys..., ID: runScriptMenu:
+						760 Show “Report Metric Keys.py” in Finder, ID: showScriptInFinder:
+						761 Set Kerning Groups (Lat-Grk-Cyr), ID: runScriptMenu:
+						762 Show “Set Kerning Groups (Lat-Grk-Cyr).py” in Finder, ID: showScriptInFinder:
+						763 Split Lat-Grk-Cyr Kerning, ID: runScriptMenu:
+						764 Show “Split Lat-Grk-Cyr Kerning.py” in Finder, ID: showScriptInFinder:
+				765 Path
+					766 menu Secondary Actions: Cancel
+						767 Delete Diagonal Nodes Between Extremes, ID: runScriptMenu:
+						768 Show “Delete Diagonal Nodes Between Extremes.py” in Finder, ID: showScriptInFinder:
+						769 Nudge-move by Numerical Value..., ID: runScriptMenu:
+						770 Show “Nudge-Move by Numerical Value.py” in Finder, ID: showScriptInFinder:
+						771 Report Compatibility by Numbers, ID: runScriptMenu:
+						772 Show “Report Compatibility by Numbers.py” in Finder, ID: showScriptInFinder:
+						773 Report Glyphs with Acute-angled Node, ID: runScriptMenu:
+						774 Show “Report Glyphs with Acute Node.py” in Finder, ID: showScriptInFinder:
+						775 Un-Round Corners, ID: runScriptMenu:
+						776 Show “Un-Round Corners.py” in Finder, ID: showScriptInFinder:
+				777 Permutation Text Generator..., ID: runScriptMenu:
+				778 Show “Permutation Text Generator.py” in Finder, ID: showScriptInFinder:
+				779 Random Wikipedia Article..., ID: runScriptMenu:
+				780 Show “Random Wikipedia Article.py” in Finder, ID: showScriptInFinder:
+				781 Search Glyph In Class Features..., ID: runScriptMenu:
+				782 Show “Search Glyph in Classes & Features.py” in Finder, ID: showScriptInFinder:
+				783 Transform Images with Proper Maths..., ID: runScriptMenu:
+				784 Show “Transform Images with Proper Maths.py” in Finder, ID: showScriptInFinder:
+		785 Open Scripts Folder
+		786 Reload Scripts

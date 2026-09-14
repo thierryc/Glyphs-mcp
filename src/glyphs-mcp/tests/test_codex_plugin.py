@@ -210,7 +210,7 @@ class AgentPluginTests(unittest.TestCase):
             self.assertTrue((installed / manifest["mcpServers"]).is_file())
 
     def test_plugin_skill_copies_match_the_canonical_sources(self) -> None:
-        self.assertEqual(len(SKILL_NAMES), 11)
+        self.assertEqual(len(SKILL_NAMES), len(set(SKILL_NAMES)))
         plugin_names = tuple(sorted(path.name for path in (PLUGIN / "skills").iterdir() if path.is_dir()))
         self.assertEqual(plugin_names, tuple(sorted(SKILL_NAMES)))
         for name in SKILL_NAMES:

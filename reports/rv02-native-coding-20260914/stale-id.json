@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "error": {
+    "code": "document_not_found",
+    "message": "the Glyphs document is no longer open",
+    "details": {}
+  }
+}

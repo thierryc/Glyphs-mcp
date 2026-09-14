@@ -1,0 +1,22 @@
+[
+  {
+    "skill": "glyphs",
+    "exitCode": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "glyphs-mcp-development",
+    "exitCode": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "glyphs-mcp-scripting",
+    "exitCode": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "glyphs-mcp-opentype-features",
+    "exitCode": 0,
+    "output": "Skill is valid!\n"
+  }
+]

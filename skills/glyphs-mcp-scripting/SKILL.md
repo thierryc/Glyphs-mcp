@@ -17,6 +17,8 @@ for unfamiliar APIs and its existing `scaffold.py create script` and
 `validate --target 4` commands. Separate pure logic from native access. State
 targets, effects and verification; preserve fractional values, native flags,
 metadata and object identity.
+For coordinate edits, use the [native precision recipe](../glyphs-mcp-development/references/native-precision.md).
+For feature work, use [OpenType guidance](../glyphs-mcp-opentype-features/SKILL.md).
 
 Execution follows the user's authorised task. Use disposable copies for
 experiments and the [native iteration reference](../glyphs-mcp-development/references/native-iteration.md)

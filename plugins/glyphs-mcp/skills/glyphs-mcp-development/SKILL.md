@@ -13,6 +13,7 @@ closed: code creation, documentation lookup and static validation require no
 MCP connection, document discovery or font Save. Ordinary font-design work
 belongs to [$glyphs](../glyphs/SKILL.md); one-off native scripts can use
 [scripting](../glyphs-mcp-scripting/SKILL.md).
+Feature source work uses [OpenType guidance](../glyphs-mcp-opentype-features/SKILL.md).
 
 Continue with the workspace, verified connection/document binding and relevant
 instructions already in context. Load only a needed reference or missing excerpt;
@@ -27,6 +28,7 @@ switching between coding and font work does not restart either workflow.
 2. Search the [complete offline SDK/API and handbook corpus](references/development-docs.md)
    for unfamiliar APIs or missing evidence. Reuse loaded guides and native-symbol
    excerpts from the same installed corpus; fetch only what is needed next.
+   Coordinate edits use the [native precision recipe](references/native-precision.md).
 3. Run the existing helper from this skill directory, or resolve its absolute path:
 
    ```text

@@ -1,0 +1,86 @@
+{
+  "id": "T04",
+  "name": "Adjust an o handle",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789389733.4718652,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "exact requested handle changes only",
+      "expected": {
+        "sha256": "36ac881c7a041e7ea4ef6a4a796f31e65f8fead0d4a5b2cc634b81d7da9d06b1"
+      },
+      "observed": {
+        "sha256": "36ac881c7a041e7ea4ef6a4a796f31e65f8fead0d4a5b2cc634b81d7da9d06b1"
+      },
+      "status": "passed"
+    },
+    {
+      "name": "existing object order exact",
+      "expected": {
+        "sha256": "70c22c7688375c271f89261928a6c34b4ba274a8fedae914d0846c994f816151"
+      },
+      "observed": {
+        "sha256": "70c22c7688375c271f89261928a6c34b4ba274a8fedae914d0846c994f816151"
+      },
+      "status": "passed"
+    },
+    {
+      "name": "master compatibility retained",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 2.0323749631643295,
+  "result": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "path": 0,
+      "node": 0
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "path": 0,
+      "node": 0
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "path": 0,
+      "node": 0
+    }
+  ],
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "a846c7a604514cf6e41fad63e6b5c4c24d72d0cd3e9a2e664646a45d48a77507",
+    "afterSHA256": "be87014e40d8e2850a681a166f6caeda4ace5f01d361aeb73f36ff7f510cb95a"
+  },
+  "status": "passed",
+  "taskHarnessMs": 3803.9642500225455
+}

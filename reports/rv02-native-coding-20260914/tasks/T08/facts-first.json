@@ -1,0 +1,76 @@
+{
+  "id": "T08",
+  "name": "Corresponding cubic midpoint on o",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789389763.0230982,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "nodes added",
+      "expected": 9,
+      "observed": 9,
+      "status": "passed"
+    },
+    {
+      "name": "existing nodes retained",
+      "expected": 0,
+      "observed": 0,
+      "status": "passed"
+    },
+    {
+      "name": "native compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "widths exact",
+      "expected": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "observed": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "status": "passed"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 3.0576669960282743,
+  "result": 3,
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 9,
+    "hintReferencesExact": true,
+    "beforeSHA256": "4784e084b317fb5736c37e26e9467a8392f7121ce3aaf7da5eab99241a5a5ffc",
+    "afterSHA256": "7566da7babe9ea632f8bd80d68ad3d2048271a5ea8db29c9a45546c9b443fbc8"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2694.6552919689566
+}

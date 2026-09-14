@@ -1,0 +1,134 @@
+{
+  "tokenizer": {
+    "packageVersion": "0.12.0",
+    "encoding": "o200k_base",
+    "method": "Literal text; one parsed response; sorted compact JSON with literal Unicode",
+    "actualBilledTokens": null
+  },
+  "skillTokens": {
+    "glyphs": {
+      "before": 817,
+      "after": 843
+    },
+    "glyphs-mcp-development": {
+      "before": 774,
+      "after": 814
+    },
+    "glyphs-mcp-scripting": {
+      "before": 428,
+      "after": 477
+    },
+    "glyphs-mcp-opentype-features": {
+      "before": 425,
+      "after": 240
+    }
+  },
+  "focusedReferenceTokens": {
+    "glyphs-mcp-development/references/native-precision.md": 580,
+    "glyphs-mcp-development/references/glyphs4-api-notes.md": 691,
+    "glyphs-mcp-opentype-features/references/native-features.md": 558
+  },
+  "publicCalls": 6,
+  "directConnectorStatusCalls": 2,
+  "documentDiscoveries": 1,
+  "retryAfterMCPError": 0,
+  "metadataContinuationCalls": 1,
+  "publicPayloadTokens": {
+    "requests": 191,
+    "responses": 1329
+  },
+  "readLatency": {
+    "n": 4,
+    "median": 22.06722949631512,
+    "minimum": 13.801541994325817,
+    "maximum": 37.98550000647083,
+    "p95": 36.74336875847075,
+    "unit": "ms",
+    "limitation": "Heterogeneous valid/missing/stale reads, descriptive samples, not repeated matched workflows or a responsiveness probe"
+  },
+  "nativeActionMs": {
+    "T04": 2.0323749631643295,
+    "T05": 1.057624991517514,
+    "T06": 1.7456249915994704,
+    "T06-negative": 0.6465410115197301,
+    "T07": 5.067207966931164,
+    "T08": 3.0576669960282743,
+    "T10": 0.30700000934302807,
+    "T11": 70.96474996069446,
+    "T12": 70.96408301731572
+  },
+  "nativeExportMs": 548.4506670036353,
+  "installedNativeCoordinateMs": 1.0699579725041986,
+  "loadBefore": [
+    22.63818359375,
+    17.43212890625,
+    14.95263671875
+  ],
+  "loadAfter": [
+    7.98388671875,
+    21.94287109375,
+    22.8447265625
+  ],
+  "elapsedMinutes": 21.74318648179372,
+  "installCommands": 1,
+  "installerEntries": [
+    {
+      "name": "glyphs",
+      "outcome": "installed",
+      "path": "/Users/thierryc/.codex/skills/glyphs"
+    },
+    {
+      "name": "glyphs-mcp-development",
+      "outcome": "installed",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-development"
+    },
+    {
+      "name": "glyphs-mcp-italic-first-pass",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-italic-first-pass"
+    },
+    {
+      "name": "glyphs-mcp-kerning",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-kerning"
+    },
+    {
+      "name": "glyphs-mcp-maintainer-feedback",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-maintainer-feedback"
+    },
+    {
+      "name": "glyphs-mcp-master-compatibility",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-master-compatibility"
+    },
+    {
+      "name": "glyphs-mcp-opentype-features",
+      "outcome": "installed",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-opentype-features"
+    },
+    {
+      "name": "glyphs-mcp-outlines-docs",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-outlines-docs"
+    },
+    {
+      "name": "glyphs-mcp-release",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-release"
+    },
+    {
+      "name": "glyphs-mcp-scripting",
+      "outcome": "installed",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-scripting"
+    },
+    {
+      "name": "glyphs-mcp-spacing",
+      "outcome": "current",
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-spacing"
+    }
+  ],
+  "glyphsRelaunches": 0,
+  "nativeCLIInvocations": 8,
+  "nativeTimingLimit": "Directly measured isolated native action time; no GUI callback/queue probe. Load, oracle and process startup excluded. n=1 per phase."
+}

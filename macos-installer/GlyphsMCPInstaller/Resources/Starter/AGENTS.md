@@ -3,6 +3,7 @@
 Use $glyphs-mcp-development for a Glyphs 4 coding session: create or revise
 workspace scripts/plugins using its installed offline SDK/API corpus and helper.
 Offline creation and validation need no connection, open font or Save.
+For OpenType source work use $glyphs-mcp-opentype-features and its native workflow.
 For live font-design work use $glyphs on the {{SERVER_NAME}} MCP connection at
 {{ENDPOINT_URL}}. Verify its catalog and get_status. Discover the intended font
 once with list_documents; retain its connection-specific document_id for fresh

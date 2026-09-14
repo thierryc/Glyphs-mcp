@@ -1,0 +1,27 @@
+{
+  "rows": [
+    {
+      "name": "o",
+      "unicode": "006F",
+      "category": "Letter",
+      "subCategory": null,
+      "export": true
+    },
+    {
+      "name": "H",
+      "unicode": "0048",
+      "category": "Letter",
+      "subCategory": null,
+      "export": true
+    },
+    {
+      "name": "at",
+      "unicode": "0040",
+      "category": "Symbol",
+      "subCategory": null,
+      "export": true
+    }
+  ],
+  "fullDataExact": true,
+  "objectsExact": true
+}

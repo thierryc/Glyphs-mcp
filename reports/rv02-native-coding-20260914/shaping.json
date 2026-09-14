@@ -1,0 +1,208 @@
+{
+  "ttfSHA256": "800d9aa09056831b6cded1c7ca8dba41d4cc686470eb3908e5b2e19f57963cee",
+  "bytes": 135832,
+  "shaper": "0.56.0",
+  "shapeCases": [
+    {
+      "text": "g",
+      "features": {
+        "ss20": 0
+      },
+      "language": null,
+      "expected": [
+        "g"
+      ],
+      "observed": [
+        "g"
+      ],
+      "passed": true
+    },
+    {
+      "text": "g",
+      "features": {
+        "ss20": 1
+      },
+      "language": null,
+      "expected": [
+        "g.ss01"
+      ],
+      "observed": [
+        "g.ss01"
+      ],
+      "passed": true
+    },
+    {
+      "text": "agogo",
+      "features": {
+        "ss20": 1
+      },
+      "language": null,
+      "expected": [
+        "a",
+        "g.ss01",
+        "o",
+        "g.ss01",
+        "o"
+      ],
+      "observed": [
+        "a",
+        "g.ss01",
+        "o",
+        "g.ss01",
+        "o"
+      ],
+      "passed": true
+    },
+    {
+      "text": "fi",
+      "features": {
+        "liga": 0
+      },
+      "language": null,
+      "expected": [
+        "f",
+        "i"
+      ],
+      "observed": [
+        "f",
+        "i"
+      ],
+      "passed": true
+    },
+    {
+      "text": "fi",
+      "features": {
+        "liga": 1
+      },
+      "language": null,
+      "expected": [
+        "fi"
+      ],
+      "observed": [
+        "fi"
+      ],
+      "passed": true
+    },
+    {
+      "text": "1/4",
+      "features": {
+        "frac": 1
+      },
+      "language": null,
+      "expected": [
+        "onequarter"
+      ],
+      "observed": [
+        "onequarter"
+      ],
+      "passed": true
+    },
+    {
+      "text": "g",
+      "features": {
+        "ss01": 1
+      },
+      "language": null,
+      "expected": [
+        "g.ss01"
+      ],
+      "observed": [
+        "g.ss01"
+      ],
+      "passed": true
+    },
+    {
+      "text": "abc",
+      "features": {
+        "smcp": 1
+      },
+      "language": null,
+      "expected": [
+        "a.sc",
+        "b.sc",
+        "c.sc"
+      ],
+      "observed": [
+        "a.sc",
+        "b.sc",
+        "c.sc"
+      ],
+      "passed": true
+    },
+    {
+      "text": "012",
+      "features": {
+        "lnum": 1
+      },
+      "language": null,
+      "expected": [
+        "zero.lf",
+        "one.lf",
+        "two.lf"
+      ],
+      "observed": [
+        "zero.lf",
+        "one.lf",
+        "two.lf"
+      ],
+      "passed": true
+    },
+    {
+      "text": "\u015e",
+      "features": {
+        "locl": 1
+      },
+      "language": "ro",
+      "expected": [
+        "Scommaaccent"
+      ],
+      "observed": [
+        "Scommaaccent"
+      ],
+      "passed": true
+    },
+    {
+      "text": "HAMBURGEFONTSIV",
+      "expected": [
+        "H",
+        "A",
+        "M",
+        "B",
+        "U",
+        "R",
+        "G",
+        "E",
+        "F",
+        "O",
+        "N",
+        "T",
+        "S",
+        "I",
+        "V"
+      ],
+      "observed": [
+        "H",
+        "A",
+        "M",
+        "B",
+        "U",
+        "R",
+        "G",
+        "E",
+        "F",
+        "O",
+        "N",
+        "T",
+        "S",
+        "I",
+        "V"
+      ],
+      "passed": true
+    }
+  ],
+  "featureFlagsAndCodeExact": true,
+  "features": 17,
+  "automatic": 16,
+  "priorClassesExact": true,
+  "priorPrefixesExact": true
+}

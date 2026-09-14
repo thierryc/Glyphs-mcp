@@ -1,0 +1,197 @@
+Window: "MCP Selection Inspection.glyphs", App: Glyphs.
+0 standard window MCP Selection Inspection.glyphs – MCP Selection Inspection, Secondary Actions: Raise, URL: file:///Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP%20Selection%20Inspection.glyphs
+	1 split group
+		2 radio button Help: Glyphs, Value: 1
+		3 radio button Description: shape, Help: Shapes, Value: 0
+		4 radio button Help: Axes, Value: 0
+		5 container
+			6 scroll area Secondary Actions: Scroll Up, Scroll Down
+				7 text control
+				8 text component
+				9 text curve
+				10 text empty
+				11 text keys
+				12 text many
+				13 text mark
+				14 text mixed
+				15 text negative
+				16 text Symbol
+				17 text Other
+				18 scroll bar (settable, float) 0
+					19 value indicator (settable, float) 0
+					20 increment arrow button
+					21 decrement arrow button
+					22 increment page button
+					23 decrement page button
+			24 button filter
+			25 search text field (settable) Search
+				26 button search
+		27 splitter (disabled, settable, float) 258
+		28 split group
+			29 scroll area
+			30 scroll area Secondary Actions: Scroll Left, Scroll Right, Scroll Up, Scroll Down
+				31 scroll bar (settable, float) 0.4103293058516939
+					32 value indicator (settable, float) 0.4103293058516939
+					33 increment arrow button
+					34 decrement arrow button
+					35 increment page button
+					36 decrement page button
+				37 scroll bar (settable, float) 0.4229109454688113
+					38 value indicator (settable, float) 0.4229109454688113
+					39 increment arrow button
+					40 decrement arrow button
+					41 increment page button
+					42 decrement page button
+			43 splitter (disabled, settable, float) 909.5
+		44 toggle button on
+		45 toggle button off
+		46 toggle button off
+		47 slider (settable, float) 0
+			48 value indicator (settable, float) 0
+		49 pop up button Kerning & Spacing
+		50 pop up button Help: Writing Direction, Value: Automatic
+		51 button remove
+		52 text field (settable) 694 pt
+		53 button add
+		54 text Value: 2303, ID: content
+		55 text field (settable) control
+		56 button Description: info, Help: Show glyph in external application UnicodeChecker.
+		57 text field (settable) 50.13
+		58 image GlyphMetricsHorizontalTemplate
+		59 text field (settable) 349.5
+		60 text field (settable) Kern
+		61 text field (settable) Group
+		62 text field (settable) Group
+		63 text field (settable) 600.125
+		64 splitter (disabled, settable, float) 1456.5
+		65 scroll area
+			66 text Distribute
+			67 button Distribute Bottom Edges
+			68 button Distribute Centers Vertically
+			69 button Distribute Top Edges
+			70 button Distribute Gaps Vertically
+			71 button Distribute Left Edges
+			72 button Distribute Centers Horizontally
+			73 button Distribute Right Edges
+			74 button Distribute Gaps Horizontally
+			75 text Glyphs MCP Bridge 2.0.0 (2.0.0) ● Ready
+			76 button Welcome & Support
+			77 text Navigate
+			78 button More
+			79 text Weight
+			80 text field (settable) 100
+			81 button (disabled) Left
+			82 button Right
+			83 text Dimensions
+			84 container
+				85 image DimensionBackgroundTemplate
+				86 text field (settable) Placeholder: --, ID: HV
+				87 text field (settable) Placeholder: --, ID: HH
+				88 text field (settable) Placeholder: --, ID: OH
+				89 text field (settable) Placeholder: --, ID: OV
+				90 text field (settable) Placeholder: --, ID: VThick
+				91 text field (settable) Placeholder: --, ID: nV
+				92 text field (settable) Placeholder: --, ID: nd
+				93 text field (settable) Placeholder: --, ID: oH
+				94 text field (settable) Placeholder: --, ID: oV
+				95 text field (settable) Placeholder: --, ID: tH
+				96 text field (settable) Placeholder: --, ID: vThin
+				97 text field (settable) Placeholder: --, ID: VThin
+				98 text field (settable) Placeholder: --, ID: vThick
+			99 text Fit Curve
+			100 text field (settable) 56%
+			101 text field (settable) 75%
+			102 button add
+			103 button remove
+			104 button Normalize Handles
+			105 text Layers
+			106 scroll area
+				107 outline
+					108 row (selected) Description: hide, Value: Light
+						109 toggle button Description: hide, Value: off
+					110 row (selectable) Description: hide, Value: Regular
+						111 toggle button Description: hide, Value: off
+					112 row (selectable) Description: hide, Value: Bold
+						113 toggle button Description: hide, Value: off
+			114 button add
+			115 button (disabled) remove
+			116 toggle button off
+			117 button action
+			118 text Transformations
+			119 button
+			120 button
+			121 button
+			122 button Help: reverse scale, ID: scaleDown
+			123 text field (settable) 204.8%
+			124 stepper Value: 2.04800009727478, Secondary Actions: Increment, Decrement
+				125 increment arrow button
+				126 decrement arrow button
+			127 text field (disabled) 110%
+			128 stepper (disabled) Value: 1.1, Secondary Actions: Increment, Decrement
+				129 increment arrow button
+				130 decrement arrow button
+			131 button Help: scale, ID: scaleUp
+			132 button Help: rotate left, ID: rotateLeft
+			133 text field (settable) 45°
+			134 stepper Value: 45, Secondary Actions: Increment, Decrement
+				135 increment arrow button
+				136 decrement arrow button
+			137 button Description: refresh, Help: rotate right, ID: rotateRight
+			138 button Help: Slant left. Hold Shift key to Cursivy, ID: slantLeft
+			139 text field (settable) 5°
+			140 stepper Value: 5, Secondary Actions: Increment, Decrement
+				141 increment arrow button
+				142 decrement arrow button
+			143 button Help: Slant right. Hold Shift key to Cursivy, ID: slantRight
+			144 button Help: slant down, ID: slantDown
+			145 text field (settable) 5°
+			146 stepper Value: 5, Secondary Actions: Increment, Decrement
+				147 increment arrow button
+				148 decrement arrow button
+			149 button Help: slant up, ID: slantUp
+			150 toggle button off
+			151 button Description: flip horizontal, ID: flipHorizontal
+			152 button Description: flip vertical, ID: flipVertical
+			153 button Description: Rotate Left, Help: Rotate 90° CCW. Hold down the Option key for CW., ID: rotate90
+			154 button Align to left
+			155 button Align horizontal center
+			156 button Align to right
+			157 button Align to top
+			158 button Align vertical center
+			159 button Align to bottom
+			160 button Remove Overlap
+			161 button Subtract selected or front path
+			162 button Intersect selected or front path
+	163 toolbar
+		164 Masters
+			165 radio button Help: Light, Value: 1
+			166 radio button Help: Regular, Value: 0
+			167 radio button Help: Bold, Value: 0
+		168 button Description: Show Left Sidebar, Secondary Actions: Move next
+		169 button Description: Font Info, Help: Show Font Info (⌘I), Secondary Actions: Move next, Remove from toolbar
+		170 Tools
+			171 radio button Help: Select (V), Value: 1
+			172 radio button Help: Text (T), Value: 0
+			173 radio button Help: Draw (P), Value: 0
+			174 radio button Help: Rotate (R), Value: 0
+			175 radio button Help: Rectangle (F), Value: 0
+			176 radio button Help: Higher-Order Interpolation (O), Value: 0
+			177 radio button Help: Zoom (Z), Value: 0
+		178 button Description: Show Right Sidebar, Help: Show Right Sidebar (⌥⌘P), Secondary Actions: Move previous, Remove from toolbar
+	179 close button
+	180 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	181 minimize button
+	182 text MCP Selection Inspection.glyphs MCP Selection Inspection
+183 menu bar
+	184 Glyphs
+	185 File
+	186 Edit
+	187 Glyph
+	188 Path
+	189 Filter
+	190 View
+	191 Script
+	192 Window
+	193 Help
+
+The focused UI element is 29 scroll area

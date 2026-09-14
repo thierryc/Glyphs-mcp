@@ -1,0 +1,1307 @@
+{
+  "counts": {
+    "passed": 150,
+    "failed": 0,
+    "unverified": 1
+  },
+  "assertions": [
+    {
+      "name": "exact requested handle changes only",
+      "expected": {
+        "sha256": "36ac881c7a041e7ea4ef6a4a796f31e65f8fead0d4a5b2cc634b81d7da9d06b1"
+      },
+      "observed": {
+        "sha256": "36ac881c7a041e7ea4ef6a4a796f31e65f8fead0d4a5b2cc634b81d7da9d06b1"
+      },
+      "status": "passed",
+      "scope": "T04"
+    },
+    {
+      "name": "existing object order exact",
+      "expected": {
+        "sha256": "70c22c7688375c271f89261928a6c34b4ba274a8fedae914d0846c994f816151"
+      },
+      "observed": {
+        "sha256": "70c22c7688375c271f89261928a6c34b4ba274a8fedae914d0846c994f816151"
+      },
+      "status": "passed",
+      "scope": "T04"
+    },
+    {
+      "name": "master compatibility retained",
+      "expected": true,
+      "observed": true,
+      "status": "passed",
+      "scope": "T04"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed",
+      "scope": "T04"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T04",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T04",
+      "status": "passed"
+    },
+    {
+      "name": "remove inserted midpoint recovers exact original data",
+      "expected": "e7fb70befb0bcc07c287b165bdba0c8c0874fcf00bc016f86ae9e35a00fdcf92",
+      "observed": "e7fb70befb0bcc07c287b165bdba0c8c0874fcf00bc016f86ae9e35a00fdcf92",
+      "status": "passed",
+      "scope": "T05"
+    },
+    {
+      "name": "nodes added",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed",
+      "scope": "T05"
+    },
+    {
+      "name": "all master topology compatible",
+      "expected": true,
+      "observed": true,
+      "status": "passed",
+      "scope": "T05"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed",
+      "scope": "T05"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "only seeded midpoint removed",
+      "expected": "938d7df48f787a355c71cc2a8e12e6c6836c69063ee95a5de78284c068638ec6",
+      "observed": "938d7df48f787a355c71cc2a8e12e6c6836c69063ee95a5de78284c068638ec6",
+      "status": "passed",
+      "scope": "T06"
+    },
+    {
+      "name": "removed nodes",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed",
+      "scope": "T06"
+    },
+    {
+      "name": "master compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed",
+      "scope": "T06"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed",
+      "scope": "T06"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "explicit rejection",
+      "expected": true,
+      "observed": true,
+      "status": "passed",
+      "scope": "T06-negative"
+    },
+    {
+      "name": "zero partial mutation",
+      "expected": "4892d37d73e8bd20d2f8fd5b394528d0d24a721880d3e4092724767c3b303d3e",
+      "observed": "4892d37d73e8bd20d2f8fd5b394528d0d24a721880d3e4092724767c3b303d3e",
+      "status": "passed",
+      "scope": "T06-negative"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed",
+      "scope": "T06-negative"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T06-negative",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T06-negative",
+      "status": "passed"
+    },
+    {
+      "name": "at widths retained",
+      "expected": [
+        1799.0,
+        1821.0,
+        1797.0
+      ],
+      "observed": [
+        1799.0,
+        1821.0,
+        1797.0
+      ],
+      "status": "passed",
+      "scope": "T07"
+    },
+    {
+      "name": "native master compatibility retained",
+      "expected": true,
+      "observed": true,
+      "status": "passed",
+      "scope": "T07"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed",
+      "scope": "T07"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "nodes added",
+      "expected": 9,
+      "observed": 9,
+      "status": "passed",
+      "scope": "T08"
+    },
+    {
+      "name": "existing nodes retained",
+      "expected": 0,
+      "observed": 0,
+      "status": "passed",
+      "scope": "T08"
+    },
+    {
+      "name": "native compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed",
+      "scope": "T08"
+    },
+    {
+      "name": "widths exact",
+      "expected": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "observed": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "status": "passed",
+      "scope": "T08"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed",
+      "scope": "T08"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "read-only full data",
+      "expected": "00c1bdea16a5a639d117550c668958f4ef300bd314df3cd169247e2130c2bbbb",
+      "observed": "00c1bdea16a5a639d117550c668958f4ef300bd314df3cd169247e2130c2bbbb",
+      "status": "passed",
+      "scope": "T10"
+    },
+    {
+      "name": "feature count",
+      "expected": 17,
+      "observed": 17,
+      "status": "passed",
+      "scope": "T10"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T10",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T10",
+      "status": "passed"
+    },
+    {
+      "name": "exact new code",
+      "expected": "sub g by g.ss01;",
+      "observed": "sub g by g.ss01;",
+      "status": "passed",
+      "scope": "T11"
+    },
+    {
+      "name": "prior features unchanged",
+      "expected": {
+        "sha256": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10"
+      },
+      "observed": {
+        "sha256": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10"
+      },
+      "status": "passed",
+      "scope": "T11"
+    },
+    {
+      "name": "new feature active",
+      "expected": false,
+      "observed": false,
+      "status": "passed",
+      "scope": "T11"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T11",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T11",
+      "status": "passed"
+    },
+    {
+      "name": "corrected code",
+      "expected": "sub g by g.ss01;",
+      "observed": "sub g by g.ss01;",
+      "status": "passed",
+      "scope": "T12"
+    },
+    {
+      "name": "prior feature source preserved",
+      "expected": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10",
+      "observed": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10",
+      "status": "passed",
+      "scope": "T12"
+    },
+    {
+      "name": "unrelated native data",
+      "expected": true,
+      "observed": true,
+      "scope": "T12",
+      "status": "passed"
+    },
+    {
+      "name": "hint references",
+      "expected": true,
+      "observed": true,
+      "scope": "T12",
+      "status": "passed"
+    },
+    {
+      "name": "layerCollateralExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T04",
+      "status": "passed"
+    },
+    {
+      "name": "gridExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T04",
+      "status": "passed"
+    },
+    {
+      "name": "survivingNodeMetadataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T04",
+      "status": "passed"
+    },
+    {
+      "name": "layerCollateralExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "gridExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "survivingNodeMetadataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "layerCollateralExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "gridExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "survivingNodeMetadataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "layerCollateralExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "gridExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "survivingNodeMetadataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "layerCollateralExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "gridExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "survivingNodeMetadataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "exact inserted midpoint",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "exact inserted midpoint",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "exact inserted midpoint",
+      "expected": true,
+      "observed": true,
+      "scope": "T05",
+      "status": "passed"
+    },
+    {
+      "name": "removed midpoint leaves exact sampled polygon",
+      "expected": 0,
+      "observed": 0,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "removed midpoint leaves exact sampled polygon",
+      "expected": 0,
+      "observed": 0,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "removed midpoint leaves exact sampled polygon",
+      "expected": 0,
+      "observed": 0,
+      "scope": "T06",
+      "status": "passed"
+    },
+    {
+      "name": "split curve within 0.05 units",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "split curve within 0.05 units",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "split curve within 0.05 units",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "native Light interpolation within 0.05 units",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "native Medium interpolation within 0.05 units",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "native Bold interpolation within 0.05 units",
+      "expected": true,
+      "observed": true,
+      "scope": "T08",
+      "status": "passed"
+    },
+    {
+      "name": "complete parameter coverage and geometry within tolerance",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "complete parameter coverage and geometry within tolerance",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "complete parameter coverage and geometry within tolerance",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "complete parameter coverage and geometry within tolerance",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "complete parameter coverage and geometry within tolerance",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "complete parameter coverage and geometry within tolerance",
+      "expected": true,
+      "observed": true,
+      "scope": "T07",
+      "status": "passed"
+    },
+    {
+      "name": "exception propagated",
+      "expected": "RV02 intentional failure",
+      "observed": "RV02 intentional failure",
+      "scope": "qualification",
+      "status": "passed"
+    },
+    {
+      "name": "mixed previous flags restored",
+      "expected": [
+        false,
+        true,
+        false
+      ],
+      "observed": [
+        false,
+        true,
+        false
+      ],
+      "scope": "qualification",
+      "status": "passed"
+    },
+    {
+      "name": "failure data preserved",
+      "expected": true,
+      "observed": true,
+      "scope": "qualification",
+      "status": "passed"
+    },
+    {
+      "name": "failure objects preserved",
+      "expected": true,
+      "observed": true,
+      "scope": "qualification",
+      "status": "passed"
+    },
+    {
+      "name": "rowsExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 1",
+      "status": "passed"
+    },
+    {
+      "name": "fullDataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 1",
+      "status": "passed"
+    },
+    {
+      "name": "objectsExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 1",
+      "status": "passed"
+    },
+    {
+      "name": "bounded invalid inputs rejected",
+      "expected": 3,
+      "observed": 3,
+      "scope": "T09 revision 1",
+      "status": "passed"
+    },
+    {
+      "name": "rowsExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 2",
+      "status": "passed"
+    },
+    {
+      "name": "fullDataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 2",
+      "status": "passed"
+    },
+    {
+      "name": "objectsExact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 2",
+      "status": "passed"
+    },
+    {
+      "name": "bounded invalid inputs rejected",
+      "expected": 3,
+      "observed": 3,
+      "scope": "T09 revision 2",
+      "status": "passed"
+    },
+    {
+      "name": "anchor names exact",
+      "expected": true,
+      "observed": true,
+      "scope": "T09 revision 2",
+      "status": "passed"
+    },
+    {
+      "name": "shape g {'ss20': 0}",
+      "expected": [
+        "g"
+      ],
+      "observed": [
+        "g"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape g {'ss20': 1}",
+      "expected": [
+        "g.ss01"
+      ],
+      "observed": [
+        "g.ss01"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape agogo {'ss20': 1}",
+      "expected": [
+        "a",
+        "g.ss01",
+        "o",
+        "g.ss01",
+        "o"
+      ],
+      "observed": [
+        "a",
+        "g.ss01",
+        "o",
+        "g.ss01",
+        "o"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape fi {'liga': 0}",
+      "expected": [
+        "f",
+        "i"
+      ],
+      "observed": [
+        "f",
+        "i"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape fi {'liga': 1}",
+      "expected": [
+        "fi"
+      ],
+      "observed": [
+        "fi"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape 1/4 {'frac': 1}",
+      "expected": [
+        "onequarter"
+      ],
+      "observed": [
+        "onequarter"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape g {'ss01': 1}",
+      "expected": [
+        "g.ss01"
+      ],
+      "observed": [
+        "g.ss01"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape abc {'smcp': 1}",
+      "expected": [
+        "a.sc",
+        "b.sc",
+        "c.sc"
+      ],
+      "observed": [
+        "a.sc",
+        "b.sc",
+        "c.sc"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape 012 {'lnum': 1}",
+      "expected": [
+        "zero.lf",
+        "one.lf",
+        "two.lf"
+      ],
+      "observed": [
+        "zero.lf",
+        "one.lf",
+        "two.lf"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape Ş {'locl': 1}",
+      "expected": [
+        "Scommaaccent"
+      ],
+      "observed": [
+        "Scommaaccent"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "shape HAMBURGEFONTSIV control",
+      "expected": [
+        "H",
+        "A",
+        "M",
+        "B",
+        "U",
+        "R",
+        "G",
+        "E",
+        "F",
+        "O",
+        "N",
+        "T",
+        "S",
+        "I",
+        "V"
+      ],
+      "observed": [
+        "H",
+        "A",
+        "M",
+        "B",
+        "U",
+        "R",
+        "G",
+        "E",
+        "F",
+        "O",
+        "N",
+        "T",
+        "S",
+        "I",
+        "V"
+      ],
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "featureFlagsAndCodeExact",
+      "expected": true,
+      "observed": true,
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "priorClassesExact",
+      "expected": true,
+      "observed": true,
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "priorPrefixesExact",
+      "expected": true,
+      "observed": true,
+      "scope": "OpenType",
+      "status": "passed"
+    },
+    {
+      "name": "three native metadata rows exact",
+      "expected": [
+        {
+          "name": "o",
+          "unicode": "006F",
+          "category": "Letter",
+          "subCategory": null,
+          "export": true
+        },
+        {
+          "name": "H",
+          "unicode": "0048",
+          "category": "Letter",
+          "subCategory": null,
+          "export": true
+        },
+        {
+          "name": "at",
+          "unicode": "0040",
+          "category": "Symbol",
+          "subCategory": null,
+          "export": true
+        }
+      ],
+      "observed": [
+        {
+          "name": "o",
+          "unicode": "006F",
+          "category": "Letter",
+          "subCategory": null,
+          "export": true
+        },
+        {
+          "name": "H",
+          "unicode": "0048",
+          "category": "Letter",
+          "subCategory": null,
+          "export": true
+        },
+        {
+          "name": "at",
+          "unicode": "0040",
+          "category": "Symbol",
+          "subCategory": null,
+          "export": true
+        }
+      ],
+      "scope": "MCP",
+      "status": "passed"
+    },
+    {
+      "name": "named missing glyph",
+      "expected": "target_not_found",
+      "observed": "target_not_found",
+      "scope": "MCP",
+      "status": "passed"
+    },
+    {
+      "name": "error names requested glyph",
+      "expected": true,
+      "observed": true,
+      "scope": "MCP",
+      "status": "passed"
+    },
+    {
+      "name": "same-ID read after missing glyph",
+      "expected": true,
+      "observed": true,
+      "scope": "MCP",
+      "status": "passed"
+    },
+    {
+      "name": "closed document stale ID",
+      "expected": "document_not_found",
+      "observed": "document_not_found",
+      "scope": "MCP",
+      "status": "passed"
+    },
+    {
+      "name": "exactCoordinates",
+      "expected": true,
+      "observed": true,
+      "scope": "installed native",
+      "status": "passed"
+    },
+    {
+      "name": "flagsRestored",
+      "expected": true,
+      "observed": true,
+      "scope": "installed native",
+      "status": "passed"
+    },
+    {
+      "name": "unrelatedDataExact",
+      "expected": true,
+      "observed": true,
+      "scope": "installed native",
+      "status": "passed"
+    },
+    {
+      "name": "objectsExact",
+      "expected": true,
+      "observed": true,
+      "scope": "installed native",
+      "status": "passed"
+    },
+    {
+      "name": "invalidCompileRejected",
+      "expected": true,
+      "observed": true,
+      "scope": "installed native",
+      "status": "passed"
+    },
+    {
+      "name": "correctedCompilePassed",
+      "expected": true,
+      "observed": true,
+      "scope": "installed native",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs",
+      "expected": "sha256:cb1f20d4e51b68bcca6298846203812d36312790fcd7275f3ed290555a7729eb",
+      "observed": "sha256:cb1f20d4e51b68bcca6298846203812d36312790fcd7275f3ed290555a7729eb",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-development",
+      "expected": "sha256:6abf7d892047eaa44ce1a6b4cb5ab89c49f78cdadf429d73effcc64267574c0e",
+      "observed": "sha256:6abf7d892047eaa44ce1a6b4cb5ab89c49f78cdadf429d73effcc64267574c0e",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-italic-first-pass",
+      "expected": "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c",
+      "observed": "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-kerning",
+      "expected": "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+      "observed": "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-maintainer-feedback",
+      "expected": "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+      "observed": "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-master-compatibility",
+      "expected": "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+      "observed": "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-opentype-features",
+      "expected": "sha256:09d5a52dd67580dc86d81338dd63b57211a8278eae059921abb9417d6e9e77a2",
+      "observed": "sha256:09d5a52dd67580dc86d81338dd63b57211a8278eae059921abb9417d6e9e77a2",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-outlines-docs",
+      "expected": "sha256:fc26b74c1fc21c7b928ade8aeb3e54c4b3026d25d278ee88798217bfdd8f37d9",
+      "observed": "sha256:fc26b74c1fc21c7b928ade8aeb3e54c4b3026d25d278ee88798217bfdd8f37d9",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-release",
+      "expected": "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+      "observed": "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-scripting",
+      "expected": "sha256:1432e0daed5aa9c08e19c0b683bcc3b7e06b7b76a68a7e9e29770a85753b7e90",
+      "observed": "sha256:1432e0daed5aa9c08e19c0b683bcc3b7e06b7b76a68a7e9e29770a85753b7e90",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "installed glyphs-mcp-spacing",
+      "expected": "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+      "observed": "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "seven tools",
+      "expected": 7,
+      "observed": 7,
+      "scope": "runtime",
+      "status": "passed"
+    },
+    {
+      "name": "sidecar codeHash",
+      "expected": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+      "observed": "sha256:82daa62ac2277b49920d38c2207541841bc8294c6abf987ecddce5056c34be79",
+      "scope": "runtime",
+      "status": "passed"
+    },
+    {
+      "name": "bridge codeHash",
+      "expected": "sha256:8b74a8d27ae48b6d3ef1a317439c925f488ae5c9a0e5f0733221f468b97af687",
+      "observed": "sha256:8b74a8d27ae48b6d3ef1a317439c925f488ae5c9a0e5f0733221f468b97af687",
+      "scope": "runtime",
+      "status": "passed"
+    },
+    {
+      "name": "sidecar runtimeId",
+      "expected": "2.0.0-beta.1+82daa62ac227",
+      "observed": "2.0.0-beta.1+82daa62ac227",
+      "scope": "runtime",
+      "status": "passed"
+    },
+    {
+      "name": "bridge runtimeId",
+      "expected": "2.0.0-beta.1+8b74a8d27ae4",
+      "observed": "2.0.0-beta.1+8b74a8d27ae4",
+      "scope": "runtime",
+      "status": "passed"
+    },
+    {
+      "name": "official corpus unchanged",
+      "expected": {
+        "sha256": "dd7694ce9454b36341a011c699b5628a561ad14bb6f13ceaa2f0891fc3ed27a3"
+      },
+      "observed": {
+        "sha256": "dd7694ce9454b36341a011c699b5628a561ad14bb6f13ceaa2f0891fc3ed27a3"
+      },
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "src/bridge unchanged",
+      "expected": {
+        "sha256": "6442a18146cb22dff4215d82be23349b7aaf9eb942930f721a42f8bf9c70eaba"
+      },
+      "observed": {
+        "sha256": "6442a18146cb22dff4215d82be23349b7aaf9eb942930f721a42f8bf9c70eaba"
+      },
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "src/sidecar unchanged",
+      "expected": {
+        "sha256": "5adfade42aa3d2c4a6f63628267ce1dabf1a00f889ed888b3dabcead98bd936f"
+      },
+      "observed": {
+        "sha256": "5adfade42aa3d2c4a6f63628267ce1dabf1a00f889ed888b3dabcead98bd936f"
+      },
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "src/shared unchanged",
+      "expected": {},
+      "observed": {},
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "legacy/glyphs3 unchanged",
+      "expected": {
+        "sha256": "4537d7085570ef6f9bf7c63a275ad96fd029a3c03f569ac445d945cbb3496996"
+      },
+      "observed": {
+        "sha256": "4537d7085570ef6f9bf7c63a275ad96fd029a3c03f569ac445d945cbb3496996"
+      },
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "protected file /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/RobotoSlab.glyphs",
+      "expected": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845",
+      "observed": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845",
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "protected file /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP Selection Inspection.glyphs",
+      "expected": "6caf8b8a69a41d8d6bf5b0e313497c2c6d238fb1a3315fbd10cc57d88d99cf96",
+      "observed": "6caf8b8a69a41d8d6bf5b0e313497c2c6d238fb1a3315fbd10cc57d88d99cf96",
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "protected file /private/tmp/vc01-full-20260912/v2-current-5/1789186800389374000-open-unrelated.glyphs",
+      "expected": "ec8f6bde74328d5d012b803a3790fed223754510ed08e3efdf40ca07beac6f14",
+      "observed": "ec8f6bde74328d5d012b803a3790fed223754510ed08e3efdf40ca07beac6f14",
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "Dactylotype unchanged",
+      "expected": {
+        "sha256": "15825a64b170ec76bd475629685b494702755dea8d7ad071bceddc7267571a70"
+      },
+      "observed": {
+        "sha256": "15825a64b170ec76bd475629685b494702755dea8d7ad071bceddc7267571a70"
+      },
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "unrelated configured skills unchanged",
+      "expected": {
+        "sha256": "43980590555f83ba41fdba5cab214e7c065fbcc9aa734242f5b819e4f8b6f730"
+      },
+      "observed": {
+        "sha256": "43980590555f83ba41fdba5cab214e7c065fbcc9aa734242f5b819e4f8b6f730"
+      },
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "obsolete OpenType tree has exact external backup",
+      "expected": true,
+      "observed": true,
+      "scope": "installation",
+      "status": "passed"
+    },
+    {
+      "name": "new Glyphs crash reports",
+      "expected": [],
+      "observed": [],
+      "scope": "preservation",
+      "status": "passed"
+    },
+    {
+      "name": "RV01 script entry removed",
+      "expected": false,
+      "observed": false,
+      "scope": "cleanup",
+      "status": "passed"
+    },
+    {
+      "name": "user window restored",
+      "expected": true,
+      "observed": true,
+      "scope": "cleanup",
+      "status": "passed"
+    },
+    {
+      "name": "protected window not Edited",
+      "expected": false,
+      "observed": false,
+      "scope": "cleanup",
+      "status": "passed"
+    },
+    {
+      "name": "populated-hint preservation",
+      "status": "unverified",
+      "scope": "native",
+      "reason": "The edited real layers have zero hints."
+    }
+  ]
+}

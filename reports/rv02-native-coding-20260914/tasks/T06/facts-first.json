@@ -1,0 +1,78 @@
+{
+  "id": "T06",
+  "name": "Remove seeded redundant H midpoints",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789389746.3524249,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "path": 0,
+      "node": 1
+    }
+  ],
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "only seeded midpoint removed",
+      "expected": "938d7df48f787a355c71cc2a8e12e6c6836c69063ee95a5de78284c068638ec6",
+      "observed": "938d7df48f787a355c71cc2a8e12e6c6836c69063ee95a5de78284c068638ec6",
+      "status": "passed"
+    },
+    {
+      "name": "removed nodes",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed"
+    },
+    {
+      "name": "master compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "rounding flags restored",
+      "expected": [
+        false,
+        false,
+        false
+      ],
+      "observed": [
+        false,
+        false,
+        false
+      ],
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 1.7456249915994704,
+  "result": 3,
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": false,
+    "removedObjects": 3,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "cab33d4906cab65a16432795a0cb717fa36140e03acc1d32bfa258685f35c24a",
+    "afterSHA256": "938d7df48f787a355c71cc2a8e12e6c6836c69063ee95a5de78284c068638ec6"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2942.5734580145217
+}

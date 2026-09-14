@@ -1,0 +1,69 @@
+{
+  "valid": {
+    "ok": true,
+    "data": [
+      {
+        "entity": {
+          "kind": "glyph",
+          "id": "o"
+        },
+        "values": {
+          "name": "o",
+          "unicode": "006F",
+          "category": "Letter",
+          "subCategory": null,
+          "export": true
+        }
+      },
+      {
+        "entity": {
+          "kind": "glyph",
+          "id": "H"
+        },
+        "values": {
+          "name": "H",
+          "unicode": "0048",
+          "category": "Letter",
+          "subCategory": null,
+          "export": true
+        }
+      },
+      {
+        "entity": {
+          "kind": "glyph",
+          "id": "at"
+        },
+        "values": {
+          "name": "at",
+          "unicode": "0040",
+          "category": "Symbol",
+          "subCategory": null,
+          "export": true
+        }
+      }
+    ]
+  },
+  "missing": {
+    "ok": false,
+    "error": {
+      "code": "target_not_found",
+      "message": "glyph 'missing.rv02' is unavailable",
+      "details": {}
+    }
+  },
+  "repeat": {
+    "ok": true,
+    "data": [
+      {
+        "entity": {
+          "kind": "glyph",
+          "id": "o"
+        },
+        "values": {
+          "name": "o",
+          "unicode": "006F"
+        }
+      }
+    ]
+  }
+}
