@@ -1,0 +1,2591 @@
+{
+  "primary": [
+    {
+      "label": "ui2",
+      "baseline": {
+        "dirty": false,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          0,
+          0
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": false,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              700
+            ]
+          ]
+        ]
+      },
+      "phases": [
+        {
+          "phase": "edited",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:33:26.007070"
+              },
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "undo-immediate",
+          "state": {
+            "dirty": false,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              0,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:33:26.007070"
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "undo-settled",
+          "state": {
+            "dirty": false,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              0,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:33:26.007070"
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "redo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:33:26.007070"
+              },
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-undo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:33:26.007070"
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        }
+      ]
+    },
+    {
+      "label": "ui3",
+      "baseline": {
+        "dirty": false,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          0,
+          0
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": false,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              700
+            ]
+          ]
+        ]
+      },
+      "phases": [
+        {
+          "phase": "edited",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:35:37.231012"
+              },
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "edited-settled",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:35:37.231012"
+              },
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "undo",
+          "state": {
+            "dirty": false,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              0,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:35:37.231012"
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "redo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:35:37.231012"
+              },
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-undo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:35:37.231012"
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-settled",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": false,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/glyphs/0/lastChange",
+                "before": "2026-09-13 20:00:00",
+                "after": "2026-09-14 06:35:37.231012"
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        }
+      ]
+    },
+    {
+      "label": "v2a",
+      "baseline": {
+        "dirty": false,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          0,
+          0
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": false,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              700
+            ]
+          ]
+        ]
+      },
+      "phases": [
+        {
+          "phase": "applied",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              1,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "undo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "redo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              3,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-undo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-settled",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        }
+      ]
+    },
+    {
+      "label": "v2b",
+      "baseline": {
+        "dirty": false,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          0,
+          0
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": false,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              700
+            ]
+          ]
+        ]
+      },
+      "phases": [
+        {
+          "phase": "applied",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              1,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "undo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "redo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              3,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-undo",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "final-settled",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": false,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              0,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        }
+      ]
+    },
+    {
+      "label": "discard",
+      "baseline": {
+        "dirty": false,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          0,
+          0
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": false,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              700
+            ]
+          ]
+        ]
+      },
+      "phases": [
+        {
+          "phase": "applied",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              1,
+              0
+            ],
+            "glyphGroupLevels": [
+              1,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  608
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [
+              {
+                "path": "/layers/0/width",
+                "before": 600,
+                "after": 608
+              }
+            ],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        },
+        {
+          "phase": "restored",
+          "state": {
+            "dirty": true,
+            "hasUnautosavedChanges": true,
+            "glyphCounts": [
+              2,
+              0
+            ],
+            "glyphGroupLevels": [
+              1,
+              0
+            ],
+            "documentCanUndo": true,
+            "widths": [
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  600
+                ]
+              ],
+              [
+                [
+                  "DIRTY-TEST-MASTER-01",
+                  700
+                ]
+              ]
+            ]
+          },
+          "differences": {
+            "data": [],
+            "objects": [],
+            "hintReferences": [],
+            "bounds": []
+          }
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "before": "unrelated-native-edited",
+      "after": "unrelated-after-discard",
+      "state": {
+        "dirty": true,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          3,
+          1
+        ],
+        "glyphGroupLevels": [
+          1,
+          0
+        ],
+        "documentCanUndo": true,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              708
+            ]
+          ]
+        ]
+      },
+      "differences": {
+        "data": [
+          {
+            "path": "/layers/0/width",
+            "before": 608,
+            "after": 600
+          }
+        ],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "before": "unrelated-baseline",
+      "after": "unrelated-after-discard",
+      "state": {
+        "dirty": true,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          3,
+          1
+        ],
+        "glyphGroupLevels": [
+          1,
+          0
+        ],
+        "documentCanUndo": true,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              708
+            ]
+          ]
+        ]
+      },
+      "differences": {
+        "data": [
+          {
+            "path": "/glyphs/1/lastChange",
+            "before": "2026-09-13 20:00:00",
+            "after": "2026-09-14 06:40:25.606599"
+          },
+          {
+            "path": "/layers/1/width",
+            "before": 700,
+            "after": 708
+          }
+        ],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "before": "unrelated-baseline",
+      "after": "unrelated-ui-undo",
+      "state": {
+        "dirty": true,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          4,
+          0
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": true,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              700
+            ]
+          ]
+        ]
+      },
+      "differences": {
+        "data": [
+          {
+            "path": "/glyphs/1/lastChange",
+            "before": "2026-09-13 20:00:00",
+            "after": "2026-09-14 06:40:25.606599"
+          }
+        ],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "before": "initially-dirty-before-job",
+      "after": "initially-dirty-after-refusal",
+      "state": {
+        "dirty": true,
+        "hasUnautosavedChanges": false,
+        "glyphCounts": [
+          0,
+          1
+        ],
+        "glyphGroupLevels": [
+          0,
+          0
+        ],
+        "documentCanUndo": false,
+        "widths": [
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              600
+            ]
+          ],
+          [
+            [
+              "DIRTY-TEST-MASTER-01",
+              708
+            ]
+          ]
+        ]
+      },
+      "differences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    }
+  ],
+  "isolated": [
+    {
+      "source": "isolated-bookkeeping-primary-probes.json",
+      "case": "rounding_only",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping-primary-probes.json",
+      "case": "document_group_only",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping-primary-probes.json",
+      "case": "native_setter",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            1,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "undone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "redone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            3,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            2,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [
+          {
+            "path": "/glyphs/0/lastChange",
+            "before": "2026-09-13 20:00:00",
+            "after": "2026-09-14 06:44:42.680313"
+          }
+        ],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping-primary-probes.json",
+      "case": "block_no_document",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            1,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "undone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "redone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            3,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            2,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping-primary-probes.json",
+      "case": "block_with_document",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            1,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "undone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "redone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            3,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            2,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping.json",
+      "case": "document_group_without_action",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": true,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping.json",
+      "case": "native_setter_no_explicit_group",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "undone": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "redone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            2,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [
+          {
+            "path": "/glyphs/0/lastChange",
+            "before": "2026-09-13 20:00:00",
+            "after": "2026-09-14 06:47:05.089307"
+          }
+        ],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    },
+    {
+      "source": "isolated-bookkeeping.json",
+      "case": "block_single_group",
+      "states": {
+        "baseline": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "edited": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "undone": {
+          "dirty": false,
+          "hasUnautosavedChanges": false,
+          "glyphCounts": [
+            0,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "redone": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            2,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                608.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        },
+        "final": {
+          "dirty": true,
+          "hasUnautosavedChanges": true,
+          "glyphCounts": [
+            1,
+            0
+          ],
+          "glyphGroupLevels": [
+            0,
+            0
+          ],
+          "documentCanUndo": false,
+          "widths": [
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                600.0
+              ]
+            ],
+            [
+              [
+                "DIRTY-TEST-MASTER-01",
+                700.0
+              ]
+            ]
+          ]
+        }
+      },
+      "finalDifferences": {
+        "data": [],
+        "objects": [],
+        "hintReferences": [],
+        "bounds": []
+      }
+    }
+  ],
+  "limitations": [
+    "Native UI edits change glyph lastChange; timestamps are retained in the comparisons.",
+    "Isolated manager invocations are not public-agent workflow or native UI evidence.",
+    "No plugin-free GUI reproduction or alternate Glyphs 4 build was tested.",
+    "No native callback timing or performance benchmark was run."
+  ],
+  "timeline": {
+    "samples": 662,
+    "watches": 12,
+    "countsByLabel": {
+      "discard-clean": {
+        "samples": 77,
+        "observedSeconds": 19.615794125013053,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "ui2-edit": {
+        "samples": 25,
+        "observedSeconds": 6.349406249995809,
+        "dirtyValues": [
+          false,
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "ui2-undo": {
+        "samples": 69,
+        "observedSeconds": 17.819107124989387,
+        "dirtyValues": [
+          false,
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "ui3-delayed-edit": {
+        "samples": 78,
+        "observedSeconds": 19.836945832998026,
+        "dirtyValues": [
+          false,
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "ui3-final-undo": {
+        "samples": 78,
+        "observedSeconds": 19.84505670896033,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "ui3-undo": {
+        "samples": 7,
+        "observedSeconds": 1.6516856669913977,
+        "dirtyValues": [
+          false,
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "unrelated-discard": {
+        "samples": 78,
+        "observedSeconds": 19.802229584020097,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "v2a-apply": {
+        "samples": 77,
+        "observedSeconds": 19.82152399996994,
+        "dirtyValues": [
+          false,
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "v2a-final-undo": {
+        "samples": 78,
+        "observedSeconds": 19.829500833002385,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "v2a-undo": {
+        "samples": 8,
+        "observedSeconds": 2.126856458024122,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "v2b-final-undo": {
+        "samples": 78,
+        "observedSeconds": 19.866830791987013,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      },
+      "v2b-undo": {
+        "samples": 9,
+        "observedSeconds": 2.312959333998151,
+        "dirtyValues": [
+          true
+        ],
+        "unautosavedValues": [
+          false,
+          true
+        ]
+      }
+    }
+  },
+  "fixture": {
+    "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab",
+    "repeatSha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab",
+    "equal": true
+  },
+  "cleanup": {
+    "pid": 16388,
+    "autosavingDelay": 8,
+    "copies": [
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789381958364-1-open.glyphs",
+        "sha256": "9e4c4a2fefcfc47f228f67f2b405e0c149d6ea625da8f59a12c3b280753557ae"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789381995724-4-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789382029768-13-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789382126190-23-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789382196293-34-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789382285138-43-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789382376283-48-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      },
+      {
+        "path": "/private/tmp/dirty-indicator-20260914/1789382449484-56-open.glyphs",
+        "sha256": "3f455212ca52cad73fb0b7e5c0d7662e2b9a899ca988608e5bc9692c3d6127ab"
+      }
+    ],
+    "existing": [
+      {
+        "path": "/private/tmp/vc01-full-20260912/v2-current-5/1789186800389374000-open-unrelated.glyphs",
+        "dirty": false
+      }
+    ],
+    "originalsExact": true
+  },
+  "copies": [
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789381958364-1-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789381995724-4-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382029768-13-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382126190-23-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382196293-34-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382285138-43-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382376283-48-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382449484-56-open.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382601621176000-isolated-rounding_only.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382604777488000-isolated-document_group_only.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382608410609000-isolated-native_setter.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382674010813000-isolated-rounding_only.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382677227937000-isolated-document_group_only.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382680923875000-isolated-native_setter.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382685478892000-isolated-block_no_document.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382690111007000-isolated-block_with_document.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382820071251000-isolated-document_group_without_action.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382823186755000-isolated-native_setter_no_explicit_group.glyphs",
+      "unchanged": true
+    },
+    {
+      "path": "/private/tmp/dirty-indicator-20260914/1789382827864452000-isolated-block_single_group.glyphs",
+      "unchanged": true
+    }
+  ]
+}

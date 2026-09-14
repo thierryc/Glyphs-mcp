@@ -1,0 +1,19 @@
+{
+  "runtimeUnchanged": true,
+  "bridgeIdentityUnchanged": true,
+  "sevenTools": true,
+  "activeJobs": 0,
+  "activeOperations": 0,
+  "fixtureDeterministic": true,
+  "disposableSourcesUnchanged": true,
+  "disposableSources": 19,
+  "originalNativeDataObjectsPreserved": true,
+  "autosavingDelay": 8,
+  "temporaryCommandsRemoved": true,
+  "allAvailableFrozenRootsUnchanged": true,
+  "unavailableFrozenRoots": [
+    "plugin-cache-skills"
+  ],
+  "newCrashReports": [],
+  "productOrSkillFixImplemented": false
+}
