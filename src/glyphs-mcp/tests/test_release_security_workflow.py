@@ -412,6 +412,8 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn("--timestamp --options runtime", build)
         self.assertIn("Payload.gmcparchive", build)
         self.assertIn("/usr/bin/tar -czf", build)
+        self.assertIn("/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -czf", build)
+        self.assertNotIn("COPYFILE_DISABLE=1", build + notarize)
         self.assertIn("payload_archive_sha256_before_signing", build)
         self.assertIn("payload_archive_sha256_after_signing", build)
         self.assertIn("GlyphsMCPUpdater", build)

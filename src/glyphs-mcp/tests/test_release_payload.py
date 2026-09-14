@@ -48,6 +48,13 @@ def test_inventory_treats_application_contents_as_one_deep_signing_target(tmp_pa
     assert bundles == [application]
 
 
+def test_signing_and_verification_are_ordered_for_nested_code():
+    source = Path(release.__file__).read_text()
+    assert "ThreadPoolExecutor" not in source
+    assert 'if path.suffix == ".app":' in source
+    assert 'args += ["--force", "--deep"]' in source
+
+
 def test_refresh_updates_signed_and_stapled_component_identities(tmp_path):
     lean = tmp_path / "Lean"
     lean.mkdir()

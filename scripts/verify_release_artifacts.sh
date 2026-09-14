@@ -135,7 +135,7 @@ if [[ ! -f "$zipped_payload_archive" ]]; then
 fi
 zipped_payload_extract="$tmp_root/extracted-signed-payload"
 mkdir -p "$zipped_payload_extract"
-/usr/bin/tar -xzf "$zipped_payload_archive" -C "$zipped_payload_extract"
+/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -xzf "$zipped_payload_archive" -C "$zipped_payload_extract"
 zipped_payload_root="$zipped_payload_extract/Payload"
 "$python_bin" "$repo_root/scripts/build_installer_payload.py" \
   --verify-root "$zipped_payload_root" \

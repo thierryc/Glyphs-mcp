@@ -113,8 +113,10 @@ payload_check="$(mktemp -d /tmp/gmcp-signed-payload-check.XXXXXX)"
 cleanup_payload_check() { rm -rf "$payload_check"; cleanup_build; }
 trap cleanup_payload_check EXIT
 rm -f "$payload_archive"
-COPYFILE_DISABLE=1 /usr/bin/tar -czf "$payload_archive" -C "$(dirname "$payload_root")" "$(basename "$payload_root")"
-/usr/bin/tar -xzf "$payload_archive" -C "$payload_check"
+# Generic signatures on workflow resources live in extended attributes. Preserve
+# them in the archive and its verification extractions.
+/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -czf "$payload_archive" -C "$(dirname "$payload_root")" "$(basename "$payload_root")"
+/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -xzf "$payload_archive" -C "$payload_check"
 checked_payload="$payload_check/Payload"
 verify_target_payload_plugins "$checked_payload"
 payload_archive_sha256_before_signing="$(/usr/bin/shasum -a 256 "$payload_archive" | /usr/bin/awk '{print $1}')"
@@ -161,7 +163,7 @@ if [[ "$payload_archive_sha256_before_signing" != "$payload_archive_sha256_after
 fi
 rm -rf "$payload_check"
 mkdir -p "$payload_check"
-/usr/bin/tar -xzf "$payload_archive" -C "$payload_check"
+/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -xzf "$payload_archive" -C "$payload_check"
 checked_payload="$payload_check/Payload"
 verify_target_payload_plugins "$checked_payload"
 

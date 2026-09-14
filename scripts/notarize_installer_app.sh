@@ -40,7 +40,7 @@ fi
 notary_tmp="$(mktemp -d /tmp/gmcp-notary-payload.XXXXXX)"
 cleanup_notary_tmp() { rm -rf "$notary_tmp"; }
 trap cleanup_notary_tmp EXIT
-/usr/bin/tar -xzf "$payload_archive" -C "$notary_tmp"
+/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -xzf "$payload_archive" -C "$notary_tmp"
 "$python_bin" "$repo_root/scripts/release_payload.py" verify "$notary_tmp/Payload" --identity "$identity"
 plugins=()
 # Process substitution does not propagate failure; resolve the list first.
@@ -70,7 +70,7 @@ done
 # the outer app. Rebuild the archive and re-sign the app before submitting the
 # final app bytes to Apple.
 stapled_payload_archive="$notary_tmp/Payload.gmcparchive"
-COPYFILE_DISABLE=1 /usr/bin/tar -czf "$stapled_payload_archive" -C "$notary_tmp" Payload
+/usr/bin/env -u COPYFILE_DISABLE /usr/bin/tar -czf "$stapled_payload_archive" -C "$notary_tmp" Payload
 /bin/mv "$stapled_payload_archive" "$payload_archive"
 echo "Re-signing installer app with stapled plug-in payload…"
 /usr/bin/codesign --remove-signature "$app" 2>/dev/null || true

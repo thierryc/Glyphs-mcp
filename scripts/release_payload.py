@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Sign and verify all native code in a lean installer payload, locally."""
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import plistlib
@@ -135,8 +134,8 @@ def sign_payload(root, identity=IDENTITY):
             run(*args, path)
             verify_code(path, identity)
 
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            list(pool.map(sign, natives))
+        for native in natives:
+            sign(native)
         for bundle in bundles:
             sign(bundle)
     refresh_identities(root)
@@ -149,8 +148,8 @@ def verify_payload(root, identity=IDENTITY, *, installed=False):
     natives, bundles = inventory(root)
     if not natives or len(bundles) < 4:
         raise ValueError("Missing native payload code")
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        list(pool.map(lambda p: verify_code(p, identity), natives + bundles))
+    for path in natives + bundles:
+        verify_code(path, identity)
     if installed:
         # Copy every managed component, including runtimes. No signing or mutation at install time.
         with tempfile.TemporaryDirectory(prefix="glyphs-signed-install-") as temporary:
