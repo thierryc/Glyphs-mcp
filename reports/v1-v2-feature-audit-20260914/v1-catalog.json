@@ -1,0 +1,2003 @@
+[
+  {
+    "name": "get_server_info",
+    "title": "Get Server Info",
+    "description": "Read local server identity, runtime health, and open-font count without changing Glyphs.",
+    "category": "server",
+    "tags": [
+      "server",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Server Info",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_document_change_overview",
+    "title": "Get Document Change Overview",
+    "description": "Read the bounded MCP mutation overview for one tracked open Glyphs document.",
+    "category": "document-audit",
+    "tags": [
+      "document-audit",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "document-audit",
+    "annotations": {
+      "title": "Get Document Change Overview",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "execute_code",
+    "title": "Execute Code",
+    "description": "Run bounded Python in Glyphs when no dedicated tool fits; this can change fonts or external state.",
+    "category": "automation",
+    "tags": [
+      "automation",
+      "code"
+    ],
+    "visibility": "model+app",
+    "effect": "code",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Execute Code",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "execute_code_with_context",
+    "title": "Execute Code With Context",
+    "description": "Run bounded Python with an explicit font and glyph context when dedicated tools are insufficient.",
+    "category": "automation",
+    "tags": [
+      "automation",
+      "code"
+    ],
+    "visibility": "model+app",
+    "effect": "code",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Execute Code With Context",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "docs_search",
+    "title": "Docs Search",
+    "description": "Search the bundled official Glyphs API, plug-in, and file-format documentation without changing state.",
+    "category": "documentation",
+    "tags": [
+      "documentation",
+      "docs"
+    ],
+    "visibility": "model+app",
+    "effect": "docs",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Docs Search",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "docs_get",
+    "title": "Docs Get",
+    "description": "Fetch one bundled Glyphs documentation page by its exact result ID or path.",
+    "category": "documentation",
+    "tags": [
+      "documentation",
+      "docs"
+    ],
+    "visibility": "model+app",
+    "effect": "docs",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Docs Get",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "list_open_fonts",
+    "title": "List Open Fonts",
+    "description": "List every font currently open in Glyphs and return stable font indices for later calls.",
+    "category": "font",
+    "tags": [
+      "font",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "List Open Fonts",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_font_glyphs",
+    "title": "Get Font Glyphs",
+    "description": "List bounded glyph metadata for one explicit open font without changing it.",
+    "category": "font",
+    "tags": [
+      "font",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Font Glyphs",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_font_masters",
+    "title": "Get Font Masters",
+    "description": "Read masters, IDs, design metrics, and italic angles for one explicit open font.",
+    "category": "font",
+    "tags": [
+      "font",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Font Masters",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_master_italic_angle",
+    "title": "Set Master Italic Angle",
+    "description": "Dry-run or set one master's Glyphs italicAngle after explicit confirmation; never saves.",
+    "category": "font",
+    "tags": [
+      "font",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Set Master Italic Angle",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_font_instances",
+    "title": "Get Font Instances",
+    "description": "Read instance metadata for one explicit open font without changing it.",
+    "category": "font",
+    "tags": [
+      "font",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Font Instances",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_glyph_details",
+    "title": "Get Glyph Details",
+    "description": "Inspect one glyph's layers, metrics, shapes, anchors, components, and compatibility metadata.",
+    "category": "outlines",
+    "tags": [
+      "outlines",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Glyph Details",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_font_kerning",
+    "title": "Get Font Kerning",
+    "description": "Read bounded kerning data for one explicit font and master without changing it.",
+    "category": "kerning",
+    "tags": [
+      "kerning",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "kerning",
+    "annotations": {
+      "title": "Get Font Kerning",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_selected_glyphs",
+    "title": "Get Selected Glyphs",
+    "description": "Read the current Glyphs font-view selection and return exact glyph targets and links.",
+    "category": "selection",
+    "tags": [
+      "selection",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Selected Glyphs",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_selected_font_and_master",
+    "title": "Get Selected Font And Master",
+    "description": "Read the active font, master, and selection context from Glyphs without changing it.",
+    "category": "selection",
+    "tags": [
+      "selection",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Selected Font And Master",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_selected_nodes",
+    "title": "Get Selected Nodes",
+    "description": "Read selected Edit View nodes with glyph, layer, path, node, and master mapping.",
+    "category": "selection",
+    "tags": [
+      "selection",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Selected Nodes",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_litsquare_metadata",
+    "title": "Get LitSquare Metadata",
+    "description": "Read direct LitSquare metadata, validation states, provenance, and effective settings for an explicit target.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Get LitSquare Metadata",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_selected_litsquare_path_roles",
+    "title": "Get Selected LitSquare Path Roles",
+    "description": "Read selected LitSquare path roles with stable targets, counts, descriptions, and individual bounds.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Get Selected LitSquare Path Roles",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_icon_grid_horizontal_center",
+    "title": "Get Icon Grid Horizontal Center",
+    "description": "Read one layer's fixed IconGrid center plus advance and layer-content position candidates.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Get Icon Grid Horizontal Center",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "patch_litsquare_metadata",
+    "title": "Patch LitSquare Metadata",
+    "description": "Dry-run or confirm an RFC 7396 patch to one LitSquare metadata scope; preserves unknown data and never saves.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Patch LitSquare Metadata",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_litsquare_path_roles",
+    "title": "Set LitSquare Path Roles",
+    "description": "Dry-run or atomically confirm open-string LitSquare roles on fingerprinted paths; preserves other attributes and never saves.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Set LitSquare Path Roles",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_icon_grid_horizontal_center",
+    "title": "Set Icon Grid Horizontal Center",
+    "description": "Dry-run or store one explicit fixed IconGrid x-coordinate on a layer; never edits artwork or saves.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Set Icon Grid Horizontal Center",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "reset_icon_grid_horizontal_center",
+    "title": "Reset Icon Grid Horizontal Center",
+    "description": "Dry-run or remove only one layer's namespaced IconGrid center policy while preserving unrelated data.",
+    "category": "litsquare",
+    "tags": [
+      "litsquare",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "litsquare",
+    "annotations": {
+      "title": "Reset Icon Grid Horizontal Center",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_glyph_paths",
+    "title": "Get Glyph Paths",
+    "description": "Read editable path data for one glyph and master in a bounded round-trip-safe format.",
+    "category": "outlines",
+    "tags": [
+      "outlines",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Glyph Paths",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_start_node_alignment",
+    "title": "Review Start Node Alignment",
+    "description": "Review one semantic start-node landmark as a joint cyclic phase across explicit compatible masters.",
+    "category": "outlines",
+    "tags": [
+      "outlines",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "outline",
+    "annotations": {
+      "title": "Review Start Node Alignment",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "apply_start_node_alignment",
+    "title": "Apply Start Node Alignment",
+    "description": "Dry-run or atomically apply one fingerprint-bound joint start-node alignment after confirmation; never saves.",
+    "category": "outlines",
+    "tags": [
+      "outlines",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "outline",
+    "annotations": {
+      "title": "Apply Start Node Alignment",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "update_glyph_node_positions",
+    "title": "Update Glyph Node Positions",
+    "description": "Dry-run or atomically update explicit node coordinates on one glyph layer using the font grid by default.",
+    "category": "outlines",
+    "tags": [
+      "outlines",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "outline",
+    "annotations": {
+      "title": "Update Glyph Node Positions",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_glyph_paths",
+    "title": "Set Glyph Paths",
+    "description": "Replace paths on one explicit glyph layer after validation; preserves surrounding shapes and never saves.",
+    "category": "outlines",
+    "tags": [
+      "outlines",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Set Glyph Paths",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_glyph_components",
+    "title": "Get Glyph Components",
+    "description": "Inspect component identities, transforms, smart values, and target layers for one glyph.",
+    "category": "components",
+    "tags": [
+      "components",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Glyph Components",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "add_component_to_glyph",
+    "title": "Add Component To Glyph",
+    "description": "Add one component to an explicit glyph layer after validating its target.",
+    "category": "components",
+    "tags": [
+      "components",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Add Component To Glyph",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "add_anchor_to_glyph",
+    "title": "Add Anchor To Glyph",
+    "description": "Add one anchor at explicit coordinates on one targeted glyph layer.",
+    "category": "components",
+    "tags": [
+      "components",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Add Anchor To Glyph",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "add_corner_to_all_masters",
+    "title": "Add Corner To All Masters",
+    "description": "Add one corner hint at selected compatible nodes across explicit masters.",
+    "category": "components",
+    "tags": [
+      "components",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Add Corner To All Masters",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "create_glyph",
+    "title": "Create Glyph",
+    "description": "Create one named glyph in an explicit open font; does not save the document.",
+    "category": "glyph-editing",
+    "tags": [
+      "glyph-editing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Create Glyph",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "delete_glyph",
+    "title": "Delete Glyph",
+    "description": "Delete one named glyph from an explicit open font; use only after confirming references.",
+    "category": "glyph-editing",
+    "tags": [
+      "glyph-editing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Delete Glyph",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "update_glyph_properties",
+    "title": "Update Glyph Properties",
+    "description": "Update explicit glyph metadata fields without changing unrelated properties or saving.",
+    "category": "glyph-editing",
+    "tags": [
+      "glyph-editing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Update Glyph Properties",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "copy_glyph",
+    "title": "Copy Glyph",
+    "description": "Copy outline data from one explicit glyph to another after validating the destination.",
+    "category": "glyph-editing",
+    "tags": [
+      "glyph-editing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Copy Glyph",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "update_glyph_metrics",
+    "title": "Update Glyph Metrics",
+    "description": "Update width or sidebearings on one explicit glyph and master without saving.",
+    "category": "glyph-editing",
+    "tags": [
+      "glyph-editing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Update Glyph Metrics",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "save_font",
+    "title": "Save Font",
+    "description": "Save one explicit open font to its current path or an explicit new path.",
+    "category": "persistence",
+    "tags": [
+      "persistence",
+      "save"
+    ],
+    "visibility": "model+app",
+    "effect": "save",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Save Font",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_custom_parameters",
+    "title": "Get Custom Parameters",
+    "description": "Read generic font or master custom parameters without changing the document.",
+    "category": "parameters",
+    "tags": [
+      "parameters",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Custom Parameters",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_custom_parameters",
+    "title": "Set Custom Parameters",
+    "description": "Dry-run or atomically set explicit custom parameters after confirmation; never saves.",
+    "category": "parameters",
+    "tags": [
+      "parameters",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Set Custom Parameters",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "list_style_sets",
+    "title": "List Style Sets",
+    "description": "List OpenType stylistic sets, substitutions, and direct Glyphs review links without mutation.",
+    "category": "features",
+    "tags": [
+      "features",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "List Style Sets",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_kerning_pair",
+    "title": "Set Kerning Pair",
+    "description": "Set or remove one explicit kerning pair in one master; does not save the font.",
+    "category": "kerning",
+    "tags": [
+      "kerning",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "kerning",
+    "annotations": {
+      "title": "Set Kerning Pair",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "generate_kerning_tab",
+    "title": "Generate Kerning Tab",
+    "description": "Open a bounded kerning proof tab in Glyphs for interactive review.",
+    "category": "kerning",
+    "tags": [
+      "kerning",
+      "ui"
+    ],
+    "visibility": "app-only",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Generate Kerning Tab",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_kerning_bumper",
+    "title": "Review Kerning Bumper",
+    "description": "Measure bounded kerning collisions and propose conservative exceptions without mutation.",
+    "category": "kerning",
+    "tags": [
+      "kerning",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "kerning",
+    "annotations": {
+      "title": "Review Kerning Bumper",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "apply_kerning_bumper",
+    "title": "Apply Kerning Bumper",
+    "description": "Dry-run or apply explicit reviewed kerning exceptions after confirmation; never saves.",
+    "category": "kerning",
+    "tags": [
+      "kerning",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "kerning",
+    "annotations": {
+      "title": "Apply Kerning Bumper",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_spacing_guides",
+    "title": "Set Spacing Guides",
+    "description": "Add or clear only Glyphs MCP spacing guides on explicit glyph layers.",
+    "category": "spacing",
+    "tags": [
+      "spacing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "spacing",
+    "annotations": {
+      "title": "Set Spacing Guides",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_spacing",
+    "title": "Review Spacing",
+    "description": "Measure and propose class-aware spacing for explicit glyphs without changing the font.",
+    "category": "spacing",
+    "tags": [
+      "spacing",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "spacing",
+    "annotations": {
+      "title": "Review Spacing",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "apply_spacing",
+    "title": "Apply Spacing",
+    "description": "Dry-run or apply reviewed spacing to explicit glyphs after confirmation; never saves.",
+    "category": "spacing",
+    "tags": [
+      "spacing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "spacing",
+    "annotations": {
+      "title": "Apply Spacing",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_spacing_params",
+    "title": "Set Spacing Params",
+    "description": "Dry-run or set spacing custom parameters for one font or master without saving.",
+    "category": "spacing",
+    "tags": [
+      "spacing",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "spacing",
+    "annotations": {
+      "title": "Set Spacing Params",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_master_stem_metrics",
+    "title": "Review Master Stem Metrics",
+    "description": "Review master stem metrics required by italic construction without changing the font.",
+    "category": "italic",
+    "tags": [
+      "italic",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Review Master Stem Metrics",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_master_stem_metrics",
+    "title": "Set Master Stem Metrics",
+    "description": "Dry-run or set explicit master stem metrics after confirmation; never saves.",
+    "category": "italic",
+    "tags": [
+      "italic",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Set Master Stem Metrics",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_unicode_assignments",
+    "title": "Review Unicode Assignments",
+    "description": "Review Unicode mappings and deterministic allocation proposals without changing glyphs.",
+    "category": "unicode",
+    "tags": [
+      "unicode",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Review Unicode Assignments",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "apply_unicode_assignments",
+    "title": "Apply Unicode Assignments",
+    "description": "Dry-run or atomically apply explicit Unicode mappings after collision checks.",
+    "category": "unicode",
+    "tags": [
+      "unicode",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Apply Unicode Assignments",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_tunni_geometry",
+    "title": "Review Tunni Geometry",
+    "description": "Measure grid-safe Tunni balance for explicit cubic path segments without changing the font.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "curve",
+    "annotations": {
+      "title": "Review Tunni Geometry",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "apply_tunni_balance",
+    "title": "Apply Tunni Balance",
+    "description": "Dry-run or balance explicit cubic handles after confirmation and exact read-back verification.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "curve",
+    "annotations": {
+      "title": "Apply Tunni Balance",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_curve_quality",
+    "title": "Review Curve Quality",
+    "description": "Measure adaptive cubic events, curvature, continuity, and warnings on one explicit raw path.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "curve",
+    "annotations": {
+      "title": "Review Curve Quality",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_curve_quality_across_masters",
+    "title": "Review Curve Quality Across Masters",
+    "description": "Compare compatible cubic geometry and quality measurements across explicit masters.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "curve",
+    "annotations": {
+      "title": "Review Curve Quality Across Masters",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_curve_review_overlay",
+    "title": "Set Curve Review Overlay",
+    "description": "Show or hide native curvature and curve-event overlays in Glyphs Edit View.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "ui"
+    ],
+    "visibility": "model+app",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "curve",
+    "annotations": {
+      "title": "Set Curve Review Overlay",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_curve_review_overlay_state",
+    "title": "Get Curve Review Overlay State",
+    "description": "Read bounded native curve Reporter state for the embedded Glyphs app.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "curve",
+    "annotations": {
+      "title": "Get Curve Review Overlay State",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "apply_collinear_handles_smooth",
+    "title": "Apply Collinear Handles Smooth",
+    "description": "Dry-run or mark explicit collinear curve nodes smooth after confirmation.",
+    "category": "curve-geometry",
+    "tags": [
+      "curve-geometry",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Apply Collinear Handles Smooth",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "preview_tunni_balance_candidate",
+    "title": "Preview Tunni Balance Candidate",
+    "description": "Create a detached multi-target Tunni candidate and show only its visual difference.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "ui"
+    ],
+    "visibility": "model+app",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Preview Tunni Balance Candidate",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "preview_collinear_handles_candidate",
+    "title": "Preview Collinear Handles Candidate",
+    "description": "Create a detached smooth-node candidate for explicit path and node targets.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "ui"
+    ],
+    "visibility": "model+app",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Preview Collinear Handles Candidate",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "preview_compensated_tuning_candidate",
+    "title": "Preview Compensated Tuning Candidate",
+    "description": "Create detached compensated-tuning candidates for explicit glyphs and masters.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "ui"
+    ],
+    "visibility": "model+app",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Preview Compensated Tuning Candidate",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "preview_italic_first_pass_candidate",
+    "title": "Preview Italic First Pass Candidate",
+    "description": "Create a detached Roman-to-italic construction draft for guarded visual review.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "ui"
+    ],
+    "visibility": "model+app",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Preview Italic First Pass Candidate",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "set_outline_candidate_overlay",
+    "title": "Set Outline Candidate Overlay",
+    "description": "Show, hide, switch, or clear ephemeral candidate Reporter state without editing fonts.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "ui"
+    ],
+    "visibility": "model+app",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Set Outline Candidate Overlay",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_outline_candidate_state",
+    "title": "Get Outline Candidate State",
+    "description": "Read bounded ephemeral and materialized candidate-session state without mutation.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Get Outline Candidate State",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "materialize_outline_candidate_session",
+    "title": "Materialize Outline Candidate Session",
+    "description": "Dry-run or create editable candidate layers for one reviewed session.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Materialize Outline Candidate Session",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "review_outline_candidate_session",
+    "title": "Review Outline Candidate Session",
+    "description": "Revalidate a candidate against its live source and issue a fingerprint-bound token.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Review Outline Candidate Session",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "accept_outline_candidate_session",
+    "title": "Accept Outline Candidate Session",
+    "description": "Dry-run or promote only the exact reviewed candidate fields after confirmation.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Accept Outline Candidate Session",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "discard_outline_candidate_session",
+    "title": "Discard Outline Candidate Session",
+    "description": "Dry-run or delete only materialized layers owned by one candidate session.",
+    "category": "candidates",
+    "tags": [
+      "candidates",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "candidate",
+    "annotations": {
+      "title": "Discard Outline Candidate Session",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_glyph_annotations",
+    "title": "Get Glyph Annotations",
+    "description": "Read native annotations and Glyphs MCP ownership metadata for one explicit glyph layer.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Glyph Annotations",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "add_glyph_annotation",
+    "title": "Add Glyph Annotation",
+    "description": "Add one native annotation to an explicit layer and record Glyphs MCP ownership.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Add Glyph Annotation",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "add_glyph_annotation_group",
+    "title": "Add Glyph Annotation Group",
+    "description": "Add a linked group of native annotations to one explicit glyph layer.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Add Glyph Annotation Group",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "update_glyph_annotation",
+    "title": "Update Glyph Annotation",
+    "description": "Update one explicitly identified native annotation without touching unrelated items.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Update Glyph Annotation",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "delete_glyph_annotation",
+    "title": "Delete Glyph Annotation",
+    "description": "Delete one explicitly identified native annotation from one glyph layer.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Delete Glyph Annotation",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "clear_glyph_annotations",
+    "title": "Clear Glyph Annotations",
+    "description": "Clear managed annotations by default, or all annotations only with explicit scope.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "edit"
+    ],
+    "visibility": "model+app",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Clear Glyph Annotations",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "get_glyph_annotation_groups",
+    "title": "Get Glyph Annotation Groups",
+    "description": "Read Glyphs MCP-managed annotation groups for one explicit glyph layer.",
+    "category": "annotations",
+    "tags": [
+      "annotations",
+      "read"
+    ],
+    "visibility": "model+app",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Get Glyph Annotation Groups",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "ExportDesignspaceAndUFO",
+    "title": "Export Designspace and UFO",
+    "description": "Export designspace and UFO packages for one selected font to an explicit directory.",
+    "category": "export",
+    "tags": [
+      "export",
+      "files"
+    ],
+    "visibility": "model+app",
+    "effect": "files",
+    "state": "active",
+    "replacement": null,
+    "output_schema": null,
+    "annotations": {
+      "title": "Export Designspace and UFO",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "resource_uri": null
+  },
+  {
+    "name": "show_glyphs_status",
+    "title": "Show Glyphs Status",
+    "description": "Show local server, Glyphs, and open-font status in the embedded feedback panel.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Show Glyphs Status",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "show_font_feedback",
+    "title": "Show Font Feedback",
+    "description": "Show read-only information for one open font in the embedded feedback panel.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Show Font Feedback",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "show_glyph_feedback",
+    "title": "Show Glyph Feedback",
+    "description": "Show read-only glyph metadata in the embedded feedback panel.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Show Glyph Feedback",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "show_opentype_features",
+    "title": "Show OpenType Features",
+    "description": "Show a read-only OpenType feature report in the embedded feedback panel.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Show OpenType Features",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "preview_spacing_feedback",
+    "title": "Preview Spacing Feedback",
+    "description": "Preview an exact spacing plan in the embedded feedback panel without mutation.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Preview Spacing Feedback",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "preview_kerning_feedback",
+    "title": "Preview Kerning Feedback",
+    "description": "Preview an exact kerning plan in the embedded feedback panel without mutation.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Preview Kerning Feedback",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "preview_handle_smoothing_feedback",
+    "title": "Preview Handle Smoothing Feedback",
+    "description": "Preview an exact handle-smoothing plan in the embedded feedback panel.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "read"
+    ],
+    "visibility": "app-only",
+    "effect": "read",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Preview Handle Smoothing Feedback",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "apply_feedback_plan",
+    "title": "Apply Feedback Plan",
+    "description": "Apply one unexpired embedded feedback plan after explicit app confirmation.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "edit"
+    ],
+    "visibility": "app-only",
+    "effect": "edit",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Apply Feedback Plan",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  },
+  {
+    "name": "open_feedback_target",
+    "title": "Open Feedback Target",
+    "description": "Open resolved glyph targets from an embedded feedback result in a new Glyphs tab.",
+    "category": "app-feedback",
+    "tags": [
+      "app-feedback",
+      "ui"
+    ],
+    "visibility": "app-only",
+    "effect": "ui",
+    "state": "active",
+    "replacement": null,
+    "output_schema": "feedback",
+    "annotations": {
+      "title": "Open Feedback Target",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "resource_uri": "ui://glyphs-mcp/feedback-v1.html"
+  }
+]

@@ -5,6 +5,11 @@ Latest recorded qualification: **RV02, September 14, 2026**, committed in
 tested in Glyphs 4.1 (4107). These records are evidence from specific runs;
 they do not establish public-release readiness or the identity of a later process.
 
+The subsequent [v1 → v2 feature and intent audit](v1-v2-feature-audit-20260914/report.md)
+maps all 87 active v1 tools, distinguishes deliberate reductions from unresolved
+workflow gaps, and identifies incompatible installed skills plus separate,
+unintegrated master-compatibility work. It is a review, not a new native benchmark.
+
 ## Current result
 
 [RV02 native-coding follow-up](rv02-native-coding-20260914/report.md) implemented,

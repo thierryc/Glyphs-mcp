@@ -1,0 +1,644 @@
+[
+  {
+    "name": "Connection and runtime identity",
+    "v1Tools": [
+      "get_server_info"
+    ],
+    "v2State": "retained",
+    "intent": "documented",
+    "outcome": "get_status advertises coordinated release, separate fingerprints, host and capabilities.",
+    "recommendation": "Keep current route; distinguish release, interface and protocol versions.",
+    "evidence": [
+      "contract"
+    ],
+    "id": "F01"
+  },
+  {
+    "name": "Open-document discovery and targeting",
+    "v1Tools": [
+      "list_open_fonts"
+    ],
+    "v2State": "retained",
+    "intent": "documented",
+    "outcome": "list_documents returns live document IDs, paths, family names and dirty state; IDs replace font indices.",
+    "recommendation": "Retain per-connection IDs. Frontmost selection is a separate unresolved context gap.",
+    "evidence": [
+      "contract",
+      "adapter"
+    ],
+    "id": "F02"
+  },
+  {
+    "name": "Glyph inventory and metadata",
+    "v1Tools": [
+      "get_font_glyphs"
+    ],
+    "v2State": "partial",
+    "intent": "decision-needed",
+    "outcome": "Known names expose five fields. No glyph enumeration, layerCount or kerning-group fields; get_glyph_details also formerly supplied script/productionName.",
+    "recommendation": "Keep bounded projections, but explicitly decide bounded glyph discovery and missing scalar reads. No full-font response required.",
+    "evidence": [
+      "contract",
+      "adapter",
+      "metadata"
+    ],
+    "id": "F03"
+  },
+  {
+    "name": "Master metrics and axes",
+    "v1Tools": [
+      "get_font_masters"
+    ],
+    "v2State": "partial",
+    "intent": "decision-needed",
+    "outcome": "Native ID/name enumeration retained. Weight/width axis values, italicAngle, ascender, capHeight, descender and xHeight are absent from reads.",
+    "recommendation": "Decide additive requested fields in existing master reads. P04 verified identification, not all v1 master properties.",
+    "evidence": [
+      "contract",
+      "adapter",
+      "masters"
+    ],
+    "id": "F04"
+  },
+  {
+    "name": "Instances",
+    "v1Tools": [
+      "get_font_instances"
+    ],
+    "v2State": "omitted",
+    "intent": "decision-needed",
+    "outcome": "No instance entity or list; native coding can inspect instances, but no focused equivalent inspection route is shipped.",
+    "recommendation": "Choose bounded instance reads or an explicit native-only Beta 1 policy; do not claim variable-font inspection parity.",
+    "evidence": [
+      "contract",
+      "adapter"
+    ],
+    "id": "F05"
+  },
+  {
+    "name": "Layer inventory, geometry and components",
+    "v1Tools": [
+      "get_glyph_details",
+      "get_glyph_paths",
+      "get_glyph_components"
+    ],
+    "v2State": "partial",
+    "intent": "decision-needed",
+    "outcome": "Known exact layer IDs expose metrics/bounds/hash; selected nodes have details. No per-glyph layer enumeration, associatedMasterId, full paths/shape indices, anchor/path/component counts or component transforms/alignment reads.",
+    "recommendation": "Prioritize layer discovery and bounded one-layer structural evidence. A hash and a visual overlay are not a geometry response.",
+    "evidence": [
+      "contract",
+      "adapter",
+      "outlines"
+    ],
+    "id": "F06"
+  },
+  {
+    "name": "Font View selection and current context",
+    "v1Tools": [
+      "get_selected_glyphs",
+      "get_selected_font_and_master"
+    ],
+    "v2State": "partial",
+    "intent": "decision-needed",
+    "outcome": "Selection resolves currentTab.activeLayer only. Font View multi-selection, selectedFontMaster, explicit frontmost document, UPM and font/version counts are not returned.",
+    "recommendation": "Prioritize a compact native context projection through read_entities; keep detailed nodes restricted to one Edit View layer.",
+    "evidence": [
+      "contract",
+      "adapter",
+      "selection"
+    ],
+    "id": "F07"
+  },
+  {
+    "name": "Selected Edit View nodes",
+    "v1Tools": [
+      "get_selected_nodes"
+    ],
+    "v2State": "retained",
+    "intent": "documented",
+    "outcome": "selection.context.v1 supplies exact active glyph/layer, counts and optional bounded nodes, default 64/max 256. Rich v1 repeated metadata and master correspondence are not returned.",
+    "recommendation": "Keep the explicit counts/details contract. Additional cross-master selection mapping stays outside this capability.",
+    "evidence": [
+      "contract",
+      "selection"
+    ],
+    "id": "F08"
+  },
+  {
+    "name": "Stored kerning and group discovery",
+    "v1Tools": [
+      "get_font_kerning"
+    ],
+    "v2State": "partial",
+    "intent": "decision-needed",
+    "outcome": "Exact named/group-key values, absent versus zero and LTR/RTL/vertical retained. No pair-table enumeration or glyph-group membership reads. Collision reports reveal keys for prepared pairs only.",
+    "recommendation": "Decide a bounded discovery route; do not run an edit-preparation job merely to discover kerning groups.",
+    "evidence": [
+      "contract",
+      "kerning",
+      "collision"
+    ],
+    "id": "F09"
+  },
+  {
+    "name": "Width and exact sidebearing edits",
+    "v1Tools": [
+      "update_glyph_metrics"
+    ],
+    "v2State": "partial",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "width_delta is additive across all stored layers, including backups/special layers. No single-master filter or arbitrary absolute width/LSB/RSB setter. Spacing suggestions are not equivalent absolute setters.",
+    "recommendation": "Document a focused native metrics recipe or explicitly defer that workflow. Never expand a requested master scope to all stored layers.",
+    "evidence": [
+      "contract",
+      "widths"
+    ],
+    "id": "F10"
+  },
+  {
+    "name": "Spacing review and application",
+    "v1Tools": [
+      "review_spacing",
+      "apply_spacing"
+    ],
+    "v2State": "partial",
+    "intent": "documented",
+    "outcome": "External spacing retains reference/area policy, class-aware selection, fractions and native alignment protections. v1 rules/defaults/guards/debug parameter surface is intentionally reduced.",
+    "recommendation": "Keep the tested lean algorithm and state narrower options; do not promise arbitrary v1 rules compatibility.",
+    "evidence": [
+      "spacing",
+      "spacingSkill",
+      "benefits"
+    ],
+    "id": "F11"
+  },
+  {
+    "name": "Spacing guides and persistent spacing parameters",
+    "v1Tools": [
+      "set_spacing_guides",
+      "set_spacing_params"
+    ],
+    "v2State": "omitted",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No guide-writing job or dedicated persistent-parameter write; options belong to each prepared job. Native guides remain available.",
+    "recommendation": "State that job options do not migrate persistent v1 spacing rules or reproduce managed guides. Native route needs task-specific verification.",
+    "evidence": [
+      "contract",
+      "spacingSkill"
+    ],
+    "id": "F12"
+  },
+  {
+    "name": "Collision kerning review and repair",
+    "v1Tools": [
+      "review_kerning_bumper",
+      "apply_kerning_bumper"
+    ],
+    "v2State": "partial",
+    "intent": "documented",
+    "outcome": "Explicit LTR pair corrections retained with native effective resolution and exact exceptions. No automatic v1 relevant-pair discovery, kerning proof-tab option or complete option parity.",
+    "recommendation": "Keep explicit measured-pair scope and report sampling limits. Automatic discovery is not supplied by the retained collision job.",
+    "evidence": [
+      "contract",
+      "collision",
+      "benefits"
+    ],
+    "id": "F13"
+  },
+  {
+    "name": "Arbitrary kerning pair/group edits",
+    "v1Tools": [
+      "set_kerning_pair"
+    ],
+    "v2State": "native-route",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No public arbitrary set/remove pair operation. Collision jobs only generate measured positive corrections; raw bridge patch mechanics are not public tools.",
+    "recommendation": "Provide a short qualified native recipe if ordinary manual pair editing is a Beta 1 promise. Do not claim collision repair covers it.",
+    "evidence": [
+      "contract",
+      "collision"
+    ],
+    "id": "F14"
+  },
+  {
+    "name": "Kerning proof tabs",
+    "v1Tools": [
+      "generate_kerning_tab"
+    ],
+    "v2State": "native-route",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "Native tabs can be opened via UI/scripts; the dedicated bounded proof generator is not in the seven tools.",
+    "recommendation": "Document proof-text/tab creation as native work; no equivalent v2 generator was qualified in this audit.",
+    "evidence": [
+      "contract",
+      "reset"
+    ],
+    "id": "F15"
+  },
+  {
+    "name": "Start-node alignment",
+    "v1Tools": [
+      "review_start_node_alignment",
+      "apply_start_node_alignment"
+    ],
+    "v2State": "retained",
+    "intent": "documented",
+    "outcome": "start_nodes retains tested correspondence on one selected contour, preserving reference phase. Refuses malformed, ambiguous, open or mismatched contours.",
+    "recommendation": "Keep qualified native replay and exact history. This does not implement the earlier inspect/normalize/reorder compatibility plan.",
+    "evidence": [
+      "startNodes",
+      "masterSkill",
+      "benefits"
+    ],
+    "id": "F16"
+  },
+  {
+    "name": "Italic first pass",
+    "v1Tools": [
+      "preview_italic_first_pass_candidate"
+    ],
+    "v2State": "partial",
+    "intent": "documented",
+    "outcome": "slant supplies native mechanical shear and optional straight-stem preservation. Full balanced/cursivy policy, curve correction, source-to-target master copying and arbitrary special-layer repair are not ported.",
+    "recommendation": "Keep the mechanical-first-pass claim. No complete v1 optical-italic parity claim.",
+    "evidence": [
+      "slant",
+      "benefits"
+    ],
+    "id": "F17"
+  },
+  {
+    "name": "Master italic angle and stem editing",
+    "v1Tools": [
+      "set_master_italic_angle",
+      "review_master_stem_metrics",
+      "set_master_stem_metrics"
+    ],
+    "v2State": "native-route",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No master metadata/stem setter. Slant uses a requested angle and does not set the master italicAngle property.",
+    "recommendation": "Explicit native Font Info/script step when requested. Outline slant and master metadata are separate tasks.",
+    "evidence": [
+      "slant",
+      "contract"
+    ],
+    "id": "F18"
+  },
+  {
+    "name": "Node coordinates and path replacement",
+    "v1Tools": [
+      "update_glyph_node_positions",
+      "set_glyph_paths"
+    ],
+    "v2State": "native-route",
+    "intent": "documented",
+    "outcome": "General outline changes use authored native scripts/UI. RV01/RV02 qualified selected move/add/remove/extrema/split tasks, not arbitrary path replacement.",
+    "recommendation": "Keep the native precision recipe and per-task preservation tests; do not imply scripts acquire MCP job discard.",
+    "evidence": [
+      "nativeFeatures",
+      "precision",
+      "rv02"
+    ],
+    "id": "F19"
+  },
+  {
+    "name": "Components, anchors and corner hints",
+    "v1Tools": [
+      "add_component_to_glyph",
+      "add_anchor_to_glyph",
+      "add_corner_to_all_masters"
+    ],
+    "v2State": "native-route",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No corresponding public edit job. Native APIs/UI remain available, but current realistic tests do not qualify all three v1 edit outcomes.",
+    "recommendation": "Treat these as native-only and qualify concrete tasks; populated-hint preservation remains unverified in RV02.",
+    "evidence": [
+      "contract",
+      "precision",
+      "rv02"
+    ],
+    "id": "F20"
+  },
+  {
+    "name": "Glyph creation, deletion, copying and properties",
+    "v1Tools": [
+      "create_glyph",
+      "delete_glyph",
+      "update_glyph_properties",
+      "copy_glyph"
+    ],
+    "v2State": "native-route",
+    "intent": "documented",
+    "outcome": "The seven tools do not expose general glyph CRUD; native scripting/development is the documented route.",
+    "recommendation": "Keep explicit target and data-preservation checks. Retaining a generic script route is not proof of every former tool behavior.",
+    "evidence": [
+      "contract",
+      "scripting"
+    ],
+    "id": "F21"
+  },
+  {
+    "name": "Custom parameters",
+    "v1Tools": [
+      "get_custom_parameters",
+      "set_custom_parameters"
+    ],
+    "v2State": "native-route",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No custom-parameter entity or setter; font/master/instance native APIs are available through coding.",
+    "recommendation": "Document explicit native-only status; do not conflate these with per-job options.",
+    "evidence": [
+      "contract",
+      "scripting"
+    ],
+    "id": "F22"
+  },
+  {
+    "name": "OpenType and stylistic sets",
+    "v1Tools": [
+      "list_style_sets"
+    ],
+    "v2State": "partial",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "RV02 supplies focused feature source review/edit/compile/export/shaping guidance. v1 one-call stylistic-set substitution listing and group deep links are not recreated.",
+    "recommendation": "Keep corrected OpenType routing; add a concise stylistic-set inspection/proof recipe if that convenience is retained. No new feature MCP tool needed.",
+    "evidence": [
+      "nativeFeatures",
+      "rv02"
+    ],
+    "id": "F23"
+  },
+  {
+    "name": "Unicode/PUA audit and allocation",
+    "v1Tools": [
+      "review_unicode_assignments",
+      "apply_unicode_assignments"
+    ],
+    "v2State": "omitted",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "Unicode assignment tools and v1 icon-font skill are not in the lean payload. Generic native scripting does not preserve v1 collision/range/previous-map allocation policy automatically.",
+    "recommendation": "Explicitly defer icon/Unicode allocation for Beta 1 or port the focused native guidance and qualify it. Do not claim drawing/native Unicode UI replaces the allocator.",
+    "evidence": [
+      "contract",
+      "oldSkills",
+      "metadata"
+    ],
+    "id": "F24"
+  },
+  {
+    "name": "LitSquare metadata and semantic roles",
+    "v1Tools": [
+      "get_litsquare_metadata",
+      "get_selected_litsquare_path_roles",
+      "patch_litsquare_metadata",
+      "set_litsquare_path_roles"
+    ],
+    "v2State": "omitted",
+    "intent": "documented",
+    "outcome": "Metadata Inspector and LitSquare UI/tools were explicitly removed from the lean bridge; stored native metadata is not intentionally deleted.",
+    "recommendation": "Keep independent project tooling/native scripting separate. Release notes must say authoring/inspection integration is absent.",
+    "evidence": [
+      "reset",
+      "oldSkills"
+    ],
+    "id": "F25"
+  },
+  {
+    "name": "IconGrid fixed-centering integration",
+    "v1Tools": [
+      "get_icon_grid_horizontal_center",
+      "set_icon_grid_horizontal_center",
+      "reset_icon_grid_horizontal_center"
+    ],
+    "v2State": "omitted",
+    "intent": "documented",
+    "outcome": "Standalone Icon Grid remains independent; the MCP read/set/reset policy is not ported or advertised.",
+    "recommendation": "Do not describe the independent Reporter as a substitute for the removed agent controls. No second Icon Grid implementation.",
+    "evidence": [
+      "reset",
+      "oldSkills"
+    ],
+    "id": "F26"
+  },
+  {
+    "name": "Tunni analysis and balance",
+    "v1Tools": [
+      "review_tunni_geometry",
+      "apply_tunni_balance",
+      "preview_tunni_balance_candidate"
+    ],
+    "v2State": "omitted",
+    "intent": "documented",
+    "outcome": "Custom Tunni algorithms/candidates were explicitly excluded from the lean benefit queue.",
+    "recommendation": "Use existing native/manual methods where appropriate; no equivalent algorithm or automated outcome claim.",
+    "evidence": [
+      "benefits"
+    ],
+    "id": "F27"
+  },
+  {
+    "name": "Adaptive curve and cross-master diagnostics",
+    "v1Tools": [
+      "review_curve_quality",
+      "review_curve_quality_across_masters"
+    ],
+    "v2State": "partial",
+    "intent": "decision-needed",
+    "outcome": "Curve Inspector supplies a bounded visual comb; no public adaptive event/continuity report or cross-master quality report equivalent to v1.",
+    "recommendation": "Explicitly defer numerical diagnostic reports or specify a bounded external report recipe. A comb is not analytical parity.",
+    "evidence": [
+      "curve",
+      "benefits",
+      "contract"
+    ],
+    "id": "F28"
+  },
+  {
+    "name": "Curvature display",
+    "v1Tools": [
+      "set_curve_review_overlay",
+      "get_curve_review_overlay_state"
+    ],
+    "v2State": "retained",
+    "intent": "documented",
+    "outcome": "Independent Curve Inspector/native UI retains qualified display behavior. No MCP overlay-toggle/state tool; capability registration alone is not control.",
+    "recommendation": "Keep companion/UI distinction and P13 evidence; do not invent public companion calls.",
+    "evidence": [
+      "curve",
+      "curvatureSkill",
+      "p13"
+    ],
+    "id": "F29"
+  },
+  {
+    "name": "Collinear smooth-node repair",
+    "v1Tools": [
+      "apply_collinear_handles_smooth",
+      "preview_collinear_handles_candidate"
+    ],
+    "v2State": "omitted",
+    "intent": "documented",
+    "outcome": "Custom smoothness repair and candidate flow are explicitly outside the queue; native UI/script actions remain separate.",
+    "recommendation": "Keep native scope; no equivalent multi-target guarded smoothness repair is claimed.",
+    "evidence": [
+      "benefits"
+    ],
+    "id": "F30"
+  },
+  {
+    "name": "Compensated scaling",
+    "v1Tools": [
+      "preview_compensated_tuning_candidate"
+    ],
+    "v2State": "omitted",
+    "intent": "documented",
+    "outcome": "General compensated scaling/candidate generation explicitly excluded.",
+    "recommendation": "Do not port the custom engine for parity alone; state absence in migration notes.",
+    "evidence": [
+      "benefits"
+    ],
+    "id": "F31"
+  },
+  {
+    "name": "Candidate sessions and history",
+    "v1Tools": [
+      "set_outline_candidate_overlay",
+      "get_outline_candidate_state",
+      "materialize_outline_candidate_session",
+      "review_outline_candidate_session",
+      "accept_outline_candidate_session",
+      "discard_outline_candidate_session"
+    ],
+    "v2State": "partial",
+    "intent": "documented",
+    "outcome": "Supported edits use jobs/reports/apply/discard and native per-glyph Undo. Independent Reference Inspector compares references, not historical proposal sessions.",
+    "recommendation": "Keep lean native history; unsupported v1 candidate families do not become supported merely because the job lifecycle exists.",
+    "evidence": [
+      "contract",
+      "reset"
+    ],
+    "id": "F32"
+  },
+  {
+    "name": "Annotations and managed annotation groups",
+    "v1Tools": [
+      "get_glyph_annotations",
+      "add_glyph_annotation",
+      "add_glyph_annotation_group",
+      "update_glyph_annotation",
+      "delete_glyph_annotation",
+      "clear_glyph_annotations",
+      "get_glyph_annotation_groups"
+    ],
+    "v2State": "native-route",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No dedicated annotation/group reads or writes. Native annotations can be authored through UI/scripts; managed-group identity/cleanup policy is not supplied.",
+    "recommendation": "Explicit native-only Beta 1 policy; consider focused proofing guidance, not a new annotation subsystem.",
+    "evidence": [
+      "contract",
+      "scripting"
+    ],
+    "id": "F33"
+  },
+  {
+    "name": "Designspace/UFO export",
+    "v1Tools": [
+      "ExportDesignspaceAndUFO"
+    ],
+    "v2State": "omitted",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "Dedicated static/variable Designspace/UFO exporter and build-script generation are absent. RV02 TTF export evidence is a different deliverable.",
+    "recommendation": "Record explicit exporter deferral or qualify an existing external conversion route; do not claim TTF export replaces Designspace/UFO.",
+    "evidence": [
+      "contract",
+      "nativeFeatures"
+    ],
+    "id": "F34"
+  },
+  {
+    "name": "Save and persistence",
+    "v1Tools": [
+      "save_font"
+    ],
+    "v2State": "native-route",
+    "intent": "documented",
+    "outcome": "Native Save is acceptance, with task authorization. No MCP save command; jobs require a saved clean source.",
+    "recommendation": "Keep the deliberate boundary. Dirty/pathless reads are supported; dirty/pathless job edits are not.",
+    "evidence": [
+      "contract",
+      "reset"
+    ],
+    "id": "F35"
+  },
+  {
+    "name": "Live Python execution",
+    "v1Tools": [
+      "execute_code",
+      "execute_code_with_context"
+    ],
+    "v2State": "native-route",
+    "intent": "documented",
+    "outcome": "General Python execution is deliberately absent from MCP. Workspace scripts/native CLI or authorized in-app routes are used; saved CLI copies do not see unsaved live state.",
+    "recommendation": "Keep current coding loop and scoped verification. No extra execution tool is justified by RV02.",
+    "evidence": [
+      "scripting",
+      "nativeFeatures",
+      "rv02"
+    ],
+    "id": "F36"
+  },
+  {
+    "name": "Documentation search and retrieval",
+    "v1Tools": [
+      "docs_search",
+      "docs_get"
+    ],
+    "v2State": "retained",
+    "intent": "documented",
+    "outcome": "Bundled offline corpus plus local docs.py search/get replaces MCP docs tools; bounded results and provenance retained.",
+    "recommendation": "Keep focused offline retrieval and pinned source separation.",
+    "evidence": [
+      "docs"
+    ],
+    "id": "F37"
+  },
+  {
+    "name": "Document change overview",
+    "v1Tools": [
+      "get_document_change_overview"
+    ],
+    "v2State": "partial",
+    "intent": "documented",
+    "outcome": "Per-job status/report and bounded activity replace the tracked MCP mutation overview; there is no equivalent global audit/change-history view.",
+    "recommendation": "Keep per-job evidence and native reference comparison; do not rebuild an audit/history model.",
+    "evidence": [
+      "contract",
+      "reset"
+    ],
+    "id": "F38"
+  },
+  {
+    "name": "Embedded feedback panels and target links",
+    "v1Tools": [
+      "show_glyphs_status",
+      "show_font_feedback",
+      "show_glyph_feedback",
+      "show_opentype_features",
+      "preview_spacing_feedback",
+      "preview_kerning_feedback",
+      "preview_handle_smoothing_feedback",
+      "apply_feedback_plan",
+      "open_feedback_target"
+    ],
+    "v2State": "omitted",
+    "intent": "documented-with-workflow-gap",
+    "outcome": "No legacy MCP App feedback panel or embedded-plan endpoints. Agent reports and native companions/UI replace parts of review; clickable per-glyph/style-set navigation is not equivalent.",
+    "recommendation": "Document the UI/access change and decide whether lightweight proof navigation needs a focused recipe. No embedded feedback framework required.",
+    "evidence": [
+      "contract",
+      "reset"
+    ],
+    "id": "F39"
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "sourceRoot": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2",
+  "integratedIntoDesktopCandidate": false,
+  "nativeEditorQualificationClaimed": false,
+  "files": [
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/content/contributor/lean-master-compatibility.mdx",
+      "exists": true,
+      "sha256": "382f31aee5d7c97bbf89f1b18d0fa643fe0f0afb8c727d02462b45b18efe8655"
+    },
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/compatibility_job.py",
+      "exists": true,
+      "sha256": "2290f3a414644195ef3fecc0451e0fddf49d13fdfaf9aa76e2e77324521ee7f7"
+    },
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/protocol/glyphs_mcp_protocol/compatibility.py",
+      "exists": true,
+      "sha256": "185a4f38b7acd185273231de2aa85c96166c8aa5ec102e2a3a7cca39cab9934b"
+    },
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/protocol/glyphs_mcp_protocol/reorder.py",
+      "exists": true,
+      "sha256": "407c0e893a6b61345fe57c3b1e24f29d890ddb2fbdfe175ab08a660832e41622"
+    },
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/master-compatibility-native.json",
+      "exists": true,
+      "sha256": "a1c8ba3e44963fdcb66b3b75114ca083ecc438c75e10bbf8dafef1652938f4c7"
+    },
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/master-compatibility-worker.json",
+      "exists": true,
+      "sha256": "c61e495a23cc11aaee0e4cc36a4fea64460004363d60b86fc2ac611ed9edddc3"
+    },
+    {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/master-compatibility-live.json",
+      "exists": true,
+      "sha256": "0e34e9ceb689593e64d3a1d4c406c24729a55c1cc81640c284901d52d4ce00fd"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "reviewOnly": true,
+  "mappedActiveV1Tools": 87,
+  "v1DefinitionLocationsVerified": 87,
+  "historicalV1CatalogNamesMatch": true,
+  "featureGroups": 39,
+  "staleInstalledSkillGatesVerified": 7,
+  "artifactLinksVerified": 118,
+  "unrelatedFilesPreserved": 5180,
+  "changedProtectedFiles": [],
+  "fontDiscoveries": 0,
+  "nativeMutations": 0,
+  "publicV2StatusCalls": 1,
+  "v1Calls": 0
+}

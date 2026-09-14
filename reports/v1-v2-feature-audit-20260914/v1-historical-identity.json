@@ -1,0 +1,10 @@
+{
+  "evidence": "Historical Report 01, not a new v1 handshake",
+  "statusPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v1-v2/01-connection-routing/v1-status.json",
+  "statusSHA256": "f3111f6fdba0d1f5d258b13be2478b801fea5d892d996e9d53eea5358aa12c93",
+  "catalogSHA256": "90b5d30c8d59fa8f749fc739fb02f30bf55d81fc9a6216d5effc144353f15854",
+  "version": "1.11.0",
+  "runtimeId": "1.11.0+c98c9840e87a",
+  "codeHash": "c98c9840e87a9bb7773b8fe643f21e86400323874a35c695e8ad01eb5a46bacc",
+  "glyphsVersion": 3.5
+}

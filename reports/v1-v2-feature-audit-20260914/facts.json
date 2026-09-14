@@ -1,0 +1,693 @@
+{
+  "recordedAt": "2026-09-14T14:28:24.368877+00:00",
+  "sourceRoot": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop",
+  "sourceCommit": "1273347cfb43ed4f8a247fd1e861b12e5a8e61d9",
+  "method": "Static feature/intent audit plus one read-only v2 get_status; not a native feature benchmark. V1 is historical.",
+  "sourceCatalogSha256": "0de726cb317d92b77cd02399be6f6a8af725d7d63c264a23f411e769095be878",
+  "v1Implementations": {
+    "get_glyph_annotations": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 681,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "add_glyph_annotation": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 718,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "add_glyph_annotation_group": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 780,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "update_glyph_annotation": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 850,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "delete_glyph_annotation": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 955,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "clear_glyph_annotations": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 1014,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "get_glyph_annotation_groups": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_annotations.py",
+      "line": 1067,
+      "sha256": "d1d7511e42adc1a46ed6cc492a6c9d738af2d5ccd87bceb1503a7de43d0368c4"
+    },
+    "get_glyph_components": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_components.py",
+      "line": 47,
+      "sha256": "088f00f490156b7b252a061bfa848e67557ac82eba170748b313f99354f36a09"
+    },
+    "add_component_to_glyph": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_components.py",
+      "line": 156,
+      "sha256": "088f00f490156b7b252a061bfa848e67557ac82eba170748b313f99354f36a09"
+    },
+    "add_anchor_to_glyph": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_components.py",
+      "line": 253,
+      "sha256": "088f00f490156b7b252a061bfa848e67557ac82eba170748b313f99354f36a09"
+    },
+    "add_corner_to_all_masters": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_components.py",
+      "line": 321,
+      "sha256": "088f00f490156b7b252a061bfa848e67557ac82eba170748b313f99354f36a09"
+    },
+    "review_tunni_geometry": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_curve_geometry.py",
+      "line": 280,
+      "sha256": "2b419ef3185f5cd9f168707c1927332991e3e50d25e5e23f8ed750800a8b85fc"
+    },
+    "apply_tunni_balance": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_curve_geometry.py",
+      "line": 673,
+      "sha256": "2b419ef3185f5cd9f168707c1927332991e3e50d25e5e23f8ed750800a8b85fc"
+    },
+    "review_curve_quality": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_curve_geometry.py",
+      "line": 777,
+      "sha256": "2b419ef3185f5cd9f168707c1927332991e3e50d25e5e23f8ed750800a8b85fc"
+    },
+    "review_curve_quality_across_masters": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_curve_geometry.py",
+      "line": 1004,
+      "sha256": "2b419ef3185f5cd9f168707c1927332991e3e50d25e5e23f8ed750800a8b85fc"
+    },
+    "set_curve_review_overlay": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_curve_overlay.py",
+      "line": 164,
+      "sha256": "0825f9a45190312f0e720e942ecb6a5eb017da72bc930680a561e2feb1c6ac88"
+    },
+    "get_curve_review_overlay_state": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_curve_overlay.py",
+      "line": 233,
+      "sha256": "0825f9a45190312f0e720e942ecb6a5eb017da72bc930680a561e2feb1c6ac88"
+    },
+    "get_custom_parameters": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_custom_parameters.py",
+      "line": 169,
+      "sha256": "dc1983b4f45eb7bde01486b037a244ba09b0e23a1751dbf118c42b1599b571e8"
+    },
+    "set_custom_parameters": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_custom_parameters.py",
+      "line": 421,
+      "sha256": "dc1983b4f45eb7bde01486b037a244ba09b0e23a1751dbf118c42b1599b571e8"
+    },
+    "get_document_change_overview": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_document_changes.py",
+      "line": 454,
+      "sha256": "59e3b497116657b2609c14a8986cd3c38a1468f9d86f5d588fec319443196100"
+    },
+    "ExportDesignspaceAndUFO": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_export.py",
+      "line": 34,
+      "sha256": "fe010f7ea5f63fb785b747cfec82ae249cd83e51da618f8c1504d873454e283e"
+    },
+    "list_style_sets": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_features.py",
+      "line": 34,
+      "sha256": "77c6a601b5949251593b758135b6fe1cdae9be19b89c22e1b8cb3705fe505b43"
+    },
+    "show_glyphs_status": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 250,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "show_font_feedback": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 287,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "show_glyph_feedback": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 333,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "show_opentype_features": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 414,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "preview_spacing_feedback": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 722,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "preview_kerning_feedback": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 745,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "preview_handle_smoothing_feedback": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 792,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "apply_feedback_plan": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 815,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "open_feedback_target": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_feedback.py",
+      "line": 921,
+      "sha256": "0f383d04b8f3bc713966771e3cab1ccb21679ac61df9b46f83c0da00f9b5a09f"
+    },
+    "list_open_fonts": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 95,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "get_font_glyphs": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 133,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "get_font_masters": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 174,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "set_master_italic_angle": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 244,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "get_font_instances": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 312,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "get_glyph_details": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 354,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "get_font_kerning": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_font.py",
+      "line": 444,
+      "sha256": "785a766dcd4e7b490d4325742001fd1d0bd04eaeb94fe402d3ace6db71f4660c"
+    },
+    "create_glyph": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_glyph_ops.py",
+      "line": 45,
+      "sha256": "e425002d3a050c38fafe57e2b8aa81d14a46ba2322ff17d3ae49253368f53abb"
+    },
+    "delete_glyph": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_glyph_ops.py",
+      "line": 128,
+      "sha256": "e425002d3a050c38fafe57e2b8aa81d14a46ba2322ff17d3ae49253368f53abb"
+    },
+    "update_glyph_properties": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_glyph_ops.py",
+      "line": 199,
+      "sha256": "e425002d3a050c38fafe57e2b8aa81d14a46ba2322ff17d3ae49253368f53abb"
+    },
+    "copy_glyph": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_glyph_ops.py",
+      "line": 273,
+      "sha256": "e425002d3a050c38fafe57e2b8aa81d14a46ba2322ff17d3ae49253368f53abb"
+    },
+    "update_glyph_metrics": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_glyph_ops.py",
+      "line": 363,
+      "sha256": "e425002d3a050c38fafe57e2b8aa81d14a46ba2322ff17d3ae49253368f53abb"
+    },
+    "save_font": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_glyph_ops.py",
+      "line": 464,
+      "sha256": "e425002d3a050c38fafe57e2b8aa81d14a46ba2322ff17d3ae49253368f53abb"
+    },
+    "get_icon_grid_horizontal_center": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_icon_grid.py",
+      "line": 33,
+      "sha256": "f7d310d31ca26083c34c75b3bfbd42e6b899ee690938b4570e85810b565bca8c"
+    },
+    "set_icon_grid_horizontal_center": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_icon_grid.py",
+      "line": 54,
+      "sha256": "f7d310d31ca26083c34c75b3bfbd42e6b899ee690938b4570e85810b565bca8c"
+    },
+    "reset_icon_grid_horizontal_center": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_icon_grid.py",
+      "line": 83,
+      "sha256": "f7d310d31ca26083c34c75b3bfbd42e6b899ee690938b4570e85810b565bca8c"
+    },
+    "set_kerning_pair": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_kerning.py",
+      "line": 35,
+      "sha256": "dbb2a35b6574069d05445732aaddda37ff82422d93f74b4cc8a840d20d152cb3"
+    },
+    "generate_kerning_tab": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_kerning.py",
+      "line": 96,
+      "sha256": "dbb2a35b6574069d05445732aaddda37ff82422d93f74b4cc8a840d20d152cb3"
+    },
+    "review_kerning_bumper": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_kerning.py",
+      "line": 683,
+      "sha256": "dbb2a35b6574069d05445732aaddda37ff82422d93f74b4cc8a840d20d152cb3"
+    },
+    "apply_kerning_bumper": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_kerning.py",
+      "line": 881,
+      "sha256": "dbb2a35b6574069d05445732aaddda37ff82422d93f74b4cc8a840d20d152cb3"
+    },
+    "get_litsquare_metadata": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_litsquare.py",
+      "line": 33,
+      "sha256": "2e424d4e6bdcbf81ce82c4ab0f64837dc11ba91c87ef65181c55ba20b52b1c7f"
+    },
+    "get_selected_litsquare_path_roles": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_litsquare.py",
+      "line": 57,
+      "sha256": "2e424d4e6bdcbf81ce82c4ab0f64837dc11ba91c87ef65181c55ba20b52b1c7f"
+    },
+    "patch_litsquare_metadata": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_litsquare.py",
+      "line": 68,
+      "sha256": "2e424d4e6bdcbf81ce82c4ab0f64837dc11ba91c87ef65181c55ba20b52b1c7f"
+    },
+    "set_litsquare_path_roles": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_litsquare.py",
+      "line": 102,
+      "sha256": "2e424d4e6bdcbf81ce82c4ab0f64837dc11ba91c87ef65181c55ba20b52b1c7f"
+    },
+    "update_glyph_node_positions": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_node_positions.py",
+      "line": 257,
+      "sha256": "f6ae2caa9057918e9d9ff58010203b568dc43efb5c94eeedcd3dc3210c2a89ca"
+    },
+    "preview_tunni_balance_candidate": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 752,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "preview_collinear_handles_candidate": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 842,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "preview_compensated_tuning_candidate": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 925,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "preview_italic_first_pass_candidate": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 1070,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "set_outline_candidate_overlay": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 1250,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "get_outline_candidate_state": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 1282,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "materialize_outline_candidate_session": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 1685,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "review_outline_candidate_session": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 1964,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "accept_outline_candidate_session": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 2183,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "discard_outline_candidate_session": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_outline_candidates.py",
+      "line": 2315,
+      "sha256": "0ac2383da53577bc8677fd72e8c1663483099821423ec49f738ed90b54a25432"
+    },
+    "get_glyph_paths": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_paths.py",
+      "line": 36,
+      "sha256": "08e8fe2b29bdfb67d0e2d456848ded1c003320a7bba70222127070da03819002"
+    },
+    "set_glyph_paths": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_paths.py",
+      "line": 203,
+      "sha256": "08e8fe2b29bdfb67d0e2d456848ded1c003320a7bba70222127070da03819002"
+    },
+    "get_selected_glyphs": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_selection.py",
+      "line": 24,
+      "sha256": "ba27814c8b3ca53e68c782d0c2cfaa19b743cfbf7b1787d1fb55633e55c2b305"
+    },
+    "get_selected_font_and_master": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_selection.py",
+      "line": 72,
+      "sha256": "ba27814c8b3ca53e68c782d0c2cfaa19b743cfbf7b1787d1fb55633e55c2b305"
+    },
+    "get_selected_nodes": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_selection.py",
+      "line": 155,
+      "sha256": "ba27814c8b3ca53e68c782d0c2cfaa19b743cfbf7b1787d1fb55633e55c2b305"
+    },
+    "get_server_info": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_server.py",
+      "line": 14,
+      "sha256": "b08a0dd751d0bc00fb225672c0f0bbcc0097e70159725e50738293c7efa47446"
+    },
+    "apply_collinear_handles_smooth": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_smoothness.py",
+      "line": 98,
+      "sha256": "c71d9d3d9db46de4e10f30373f1413f2f602ae42cecff437acf0aa2b85cf10d9"
+    },
+    "set_spacing_guides": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_spacing.py",
+      "line": 185,
+      "sha256": "96b1a0576ba3e75a6dc96f60d2860cce9a35c37d205d4e84c201dbb8ff339ca2"
+    },
+    "review_spacing": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_spacing.py",
+      "line": 788,
+      "sha256": "96b1a0576ba3e75a6dc96f60d2860cce9a35c37d205d4e84c201dbb8ff339ca2"
+    },
+    "apply_spacing": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_spacing.py",
+      "line": 956,
+      "sha256": "96b1a0576ba3e75a6dc96f60d2860cce9a35c37d205d4e84c201dbb8ff339ca2"
+    },
+    "set_spacing_params": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_spacing.py",
+      "line": 1292,
+      "sha256": "96b1a0576ba3e75a6dc96f60d2860cce9a35c37d205d4e84c201dbb8ff339ca2"
+    },
+    "review_start_node_alignment": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_start_node_alignment.py",
+      "line": 636,
+      "sha256": "ed6e256af0cca55825944ffb4dc8ce7c9d90c8549a4adc268d60ca2bc40c8e0a"
+    },
+    "apply_start_node_alignment": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_start_node_alignment.py",
+      "line": 663,
+      "sha256": "ed6e256af0cca55825944ffb4dc8ce7c9d90c8549a4adc268d60ca2bc40c8e0a"
+    },
+    "review_master_stem_metrics": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_stems.py",
+      "line": 310,
+      "sha256": "5ed0e12da19743043a73b3b4ca2669c073d9e69e7564d9df731b19a07bc0deef"
+    },
+    "set_master_stem_metrics": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_stems.py",
+      "line": 338,
+      "sha256": "5ed0e12da19743043a73b3b4ca2669c073d9e69e7564d9df731b19a07bc0deef"
+    },
+    "review_unicode_assignments": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_unicode_assignments.py",
+      "line": 148,
+      "sha256": "fed1eb06ccf117661cf2722583e4272903c645223a02ba3158212772e9e21662"
+    },
+    "apply_unicode_assignments": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/mcp_tools_unicode_assignments.py",
+      "line": 281,
+      "sha256": "fed1eb06ccf117661cf2722583e4272903c645223a02ba3158212772e9e21662"
+    },
+    "docs_search": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/docs_tools.py",
+      "line": 126,
+      "sha256": "63c5cb10dcb5223d33ac62a837f8b62371ba869a0f0ffecb08de7d958c5550cd"
+    },
+    "docs_get": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/docs_tools.py",
+      "line": 228,
+      "sha256": "63c5cb10dcb5223d33ac62a837f8b62371ba869a0f0ffecb08de7d958c5550cd"
+    },
+    "execute_code": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/code_execution.py",
+      "line": 627,
+      "sha256": "36863cb144f5f3d4baa11e432aa12909a426efb898cf5cccbadf23c2231b7777"
+    },
+    "execute_code_with_context": {
+      "path": "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/code_execution.py",
+      "line": 709,
+      "sha256": "36863cb144f5f3d4baa11e432aa12909a426efb898cf5cccbadf23c2231b7777"
+    }
+  },
+  "activeV1Tools": 87,
+  "modelVisibleV1Tools": 76,
+  "appOnlyV1Tools": 11,
+  "removedBeforeV1Baseline": [
+    "render_glyph_review_image",
+    "docs_enable_page_resources",
+    "measure_stem_ratio",
+    "review_collinear_handles",
+    "review_italic_first_pass",
+    "apply_italic_first_pass",
+    "review_compensated_tuning",
+    "apply_compensated_tuning"
+  ],
+  "featureGroups": 39,
+  "mappedTools": 87,
+  "duplicateMappings": [],
+  "unmappedTools": [],
+  "featureStateCounts": {
+    "retained": 6,
+    "partial": 13,
+    "omitted": 10,
+    "native-route": 10
+  },
+  "intentCounts": {
+    "documented": 20,
+    "decision-needed": 7,
+    "documented-with-workflow-gap": 12
+  },
+  "v1ManagedSkills": [
+    "glyphs",
+    "glyphs-mcp-development",
+    "glyphs-mcp-features",
+    "glyphs-mcp-icon-font",
+    "glyphs-mcp-italic-first-pass",
+    "glyphs-mcp-kerning",
+    "glyphs-mcp-litsquare-metadata",
+    "glyphs-mcp-outlines-docs",
+    "glyphs-mcp-release",
+    "glyphs-mcp-scripting",
+    "glyphs-mcp-spacing"
+  ],
+  "v2ManagedSkills": [
+    "glyphs",
+    "glyphs-mcp-spacing",
+    "glyphs-mcp-kerning",
+    "glyphs-mcp-italic-first-pass",
+    "glyphs-mcp-master-compatibility",
+    "glyphs-mcp-outlines-docs",
+    "glyphs-mcp-development",
+    "glyphs-mcp-scripting",
+    "glyphs-mcp-opentype-features",
+    "glyphs-mcp-release",
+    "glyphs-mcp-maintainer-feedback"
+  ],
+  "incompatibleInstalledSkills": [
+    {
+      "name": "glyphs-mcp-icon-font",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-icon-font/SKILL.md",
+      "sha256": "bd927c73da2ef8a8695557f843b3c182baa54532ee83e3ae23b48dc320c8fea4",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": true,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with"
+      ]
+    },
+    {
+      "name": "glyphs-mcp-litsquare-metadata",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-litsquare-metadata/SKILL.md",
+      "sha256": "6a30decb7fe4e606b7e3a734cdccbed90eb05923e3e721d48091c4973209e03d",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": false,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with"
+      ]
+    },
+    {
+      "name": "glyphs-mcp-color-font",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-color-font/SKILL.md",
+      "sha256": "5584cc5d4f5958db0352dd56bb34c9f63a05f4cb0b27477dc46aebaa24431570",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": true,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, then resolve one font"
+      ]
+    },
+    {
+      "name": "glyphs-mcp-variable-font",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-variable-font/SKILL.md",
+      "sha256": "8dda08b9cb427d7a05b32ae62f9593a9dd51c2415129b2404c0eb4c3155752df",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": true,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with"
+      ]
+    },
+    {
+      "name": "glyphs-mcp-production-audit",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-production-audit/SKILL.md",
+      "sha256": "b6aad0f944a42add073c5243ac4106b5501531bfb6b10a5b28c9e9c4348fdfd5",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": true,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with"
+      ]
+    },
+    {
+      "name": "glyphs-mcp-unicode-semantics",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-unicode-semantics/SKILL.md",
+      "sha256": "fc74687fc1d8983e1e7eaa3f6fc037be59efe016d2b62747c08881d84ebe576e",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": true,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with"
+      ]
+    },
+    {
+      "name": "glyphs-mcp-export-validation",
+      "present": true,
+      "path": "/Users/thierryc/.codex/skills/glyphs-mcp-export-validation/SKILL.md",
+      "sha256": "0ef03130c4d148ba2d73447dda5183954d8f673db82bc35a9463bf40256cc860",
+      "managedInLeanPayload": false,
+      "incompatibleGate": true,
+      "claimsV2Surface": true,
+      "explicitImplicitInvocation": true,
+      "evidenceLines": [
+        "1. Call `get_server_info`, require `data.apiMajor == 2`, and resolve one source"
+      ]
+    }
+  ],
+  "evidence": {
+    "contract": {
+      "path": "content/reference/command-set.mdx",
+      "sha256": "27317228bf1b02990b8ae1df1557bc2d73ac021a662fd7628397f9c20022ef90"
+    },
+    "adapter": {
+      "path": "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py",
+      "sha256": "80707c74387fc9d6d32afea614535f687a635bdb56ba00cf0c1f48a3015236ef"
+    },
+    "selection": {
+      "path": "src/bridge/glyphs_mcp_bridge/selection.py",
+      "sha256": "682ab25ed9c47432c850a2797fd1140151a1e6c056842aa8047650922df24bdf"
+    },
+    "metadata": {
+      "path": "skills/glyphs/references/metadata-reads.md",
+      "sha256": "4bffb5e56fd8e9e9952ac85d12b7d53131a62f51d02d06491ae5c388dd056197"
+    },
+    "masters": {
+      "path": "skills/glyphs/references/master-reads.md",
+      "sha256": "9992f878da14847a141b44750a0cab517c6869f8f6d1860cf4dd296aec9aca35"
+    },
+    "kerning": {
+      "path": "skills/glyphs/references/kerning-reads.md",
+      "sha256": "17059047106c577fe38d8741e996790437892730ec9645c97b9f5b2d63744e95"
+    },
+    "widths": {
+      "path": "skills/glyphs/references/width-changes.md",
+      "sha256": "0cf61885e61b3c97baba22bd0d2b77ad8fa5b08eb94011d296137e77f52c90a8"
+    },
+    "spacing": {
+      "path": "src/sidecar/glyphs_mcp_sidecar/spacing.py",
+      "sha256": "ccd3e56bc37d6b74e64af3b81aed31c763bf96b4a40e9af977e76aa62d681bad"
+    },
+    "spacingSkill": {
+      "path": "skills/glyphs-mcp-spacing/references/lean-v2.md",
+      "sha256": "ed74194886d2d09511b2e3548a69014e544ca16c72ed986b6d02d16896f55727"
+    },
+    "collision": {
+      "path": "src/sidecar/glyphs_mcp_sidecar/kerning_job.py",
+      "sha256": "9bfe60df172199c63c13136a781cc75f01b00ef728fa78ba4cdd99d5d2770239"
+    },
+    "startNodes": {
+      "path": "skills/glyphs-mcp-master-compatibility/references/lean-v2.md",
+      "sha256": "d2a49ead5f363b514fbdad0ad5061689248722f4f55d8f9fe205f834556902ab"
+    },
+    "masterSkill": {
+      "path": "skills/glyphs-mcp-master-compatibility/SKILL.md",
+      "sha256": "f1c37798e6cfa2df4cf78c5e21e56e1b29a50cfa2be83f219456fb2b2005944a"
+    },
+    "slant": {
+      "path": "src/sidecar/glyphs_mcp_sidecar/slant_job.py",
+      "sha256": "dab1f1599afa5627e97a61317c9abab5cfe98d27aae70f87b120654931f66ee3"
+    },
+    "outlines": {
+      "path": "skills/glyphs-mcp-outlines-docs/SKILL.md",
+      "sha256": "ea8eec5bc14ad5575451224ad08c4dc82be62270c600160c81bc27cc3ceac8a2"
+    },
+    "precision": {
+      "path": "skills/glyphs-mcp-development/references/native-precision.md",
+      "sha256": "d2a1ba37473db311ae9960c4962709eedcd4d56249b6903d5862f3ade01293b4"
+    },
+    "scripting": {
+      "path": "skills/glyphs-mcp-scripting/SKILL.md",
+      "sha256": "bd30b4d13aef923fbaa44c266a8b594df94af482755c165c530906368b5690b5"
+    },
+    "nativeFeatures": {
+      "path": "skills/glyphs-mcp-opentype-features/references/native-features.md",
+      "sha256": "bd302e46630430352abe74f626acd3de19fec6043397706687748af143f9834c"
+    },
+    "docs": {
+      "path": "skills/glyphs-mcp-development/references/development-docs.md",
+      "sha256": "e60142759a3ebc6e932151423060d5667a2fd1d791178cd91ea4b3685208d32b"
+    },
+    "reset": {
+      "path": "V2-SIMPLE-RESET.md",
+      "sha256": "6c82569bf0142250ff38209dee8110711ad502a7315783c2807ca520ea8573b6"
+    },
+    "benefits": {
+      "path": "LEAN-V2-BENEFITS.md",
+      "sha256": "bc9e14b1e63752c5196120a7cdd7a21c71707e08cded49f7e1d3a0ba16d3b8b8"
+    },
+    "oldSkills": {
+      "path": "legacy/glyphs3/skills/manifest.json",
+      "sha256": "ca85ff513560ab5df7318e5de26cf4ebdae90430d9c1bfcf9dfde8a2aa07aaa2"
+    },
+    "curve": {
+      "path": "src/companions/curve-inspector/README.md",
+      "sha256": "8eb8cdc651cd9e38caaa8a31ca9c0836af3a31d7f6274dd60ba5a5f4cf36f4ab"
+    },
+    "curvatureSkill": {
+      "path": "skills/glyphs-mcp-outlines-docs/references/curvature-display.md",
+      "sha256": "4c1391416e7ed0b75fe30147fede08886cc2aa422b57ecc3d5b95678c5728b60"
+    },
+    "p13": {
+      "path": "reports/p13-curvature-improvements-20260913/report.md",
+      "sha256": "42b8ac804cdd7f543351fee7d85a8b6fe184e354e694cb58529b81b2fac08e8c"
+    },
+    "rv02": {
+      "path": "reports/rv02-native-coding-20260914/report.md",
+      "sha256": "b84172dc1c4dc3183fb3d22224514b2853498cb2a09d01e645c0b37a3e78edda"
+    }
+  }
+}
