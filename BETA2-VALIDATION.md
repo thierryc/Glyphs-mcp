@@ -110,8 +110,10 @@ Commit `42eb72b34955cf202c16a3b1e9a8044f75e074b2` was pushed only to
 `main` was not changed. Apple accepted the payload/components submission
 `ae5ccf8b-9584-4f75-bdbb-067b4f5c6545`, the outer app submission
 `818a33d8-0242-42e5-a5b3-2004e1aaca6b`, and the final restored DMG submission
-`afd649b5-2919-4dc7-bf2e-b6950823f762`. The app and DMG were stapled and
-accepted by Gatekeeper.
+`afd649b5-2919-4dc7-bf2e-b6950823f762`. After correcting Finder icon placement
+without changing the signed app payload or tag, Apple accepted replacement DMG
+submission `f594e3f0-abfc-4cd7-b07c-8775fb057c1c`. The app and corrected DMG
+were stapled and accepted by Gatekeeper.
 
 The final verifier checked 74 Mach-O files, 32 bundles, the mounted DMG and an
 extracted installed copy. The publisher reran all local gates before upload,
@@ -122,7 +124,7 @@ is published with `make_latest=false`; the stable Latest release remains
 
 Final release checksums:
 
-- `35faebedd0d4a36b64fac2fec5c7d0871843e22d86a5828646c64bed508c0291` — DMG
+- `f65431f5a405442971b029022692f22e642477a3c376782b3e5a07fd25433443` — DMG
 - `9af495f4e4d834088df8d99e6a14a6faa3ed5f87137217b2f35f963ea9e7e532` — Sparkle ZIP
 - `a1b088f0cb8a533eb4a44b0507d9b2996b13c7cfc9459010596b3e42468bd61d` — signed appcast
 

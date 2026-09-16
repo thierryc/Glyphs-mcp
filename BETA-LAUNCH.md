@@ -160,7 +160,7 @@ publish these notes with unresolved placeholders.
 ## Beta 2 local preparation record — 16 September 2026
 
 - The hybrid native/Pierre/SVG implementation is complete. The complete local
-  gate passed with 1,929 Python tests (2 optional skips), all 189 macOS tests,
+  gate passed with 1,930 Python tests (2 optional skips), all 189 macOS tests,
   deterministic ARM64/Intel payloads, the documentation production build and
   a fresh unsigned app verification.
 - The visible app check covered the two-pane hierarchy, filtering, file status,
@@ -176,6 +176,11 @@ publish these notes with unresolved placeholders.
 - The versioned DMG, Sparkle ZIP, signed appcast and checksums were published as
   a non-Latest prerelease. Stable Latest remains `v1.11.0`, and `main` was not
   changed.
+- A packaging-only follow-up corrected Finder icon placement in the DMG. The
+  script now applies positions to the icon-view window and fails unless they
+  persist after closing and reopening it. The signed app payload and release
+  tag were unchanged; the replacement DMG was notarized, visually checked and
+  passed the complete local release suite before publication.
 
 ## Beta 1 preparation record — 8 September 2026
 

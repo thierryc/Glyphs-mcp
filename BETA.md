@@ -114,6 +114,6 @@ recorded. The beta adds no telemetry or mailing-list subscription.
 
 Final SHA-256 checksums:
 
-- DMG: `35faebedd0d4a36b64fac2fec5c7d0871843e22d86a5828646c64bed508c0291`
+- DMG: `f65431f5a405442971b029022692f22e642477a3c376782b3e5a07fd25433443`
 - Sparkle ZIP: `9af495f4e4d834088df8d99e6a14a6faa3ed5f87137217b2f35f963ea9e7e532`
 - Signed appcast: `a1b088f0cb8a533eb4a44b0507d9b2996b13c7cfc9459010596b3e42468bd61d`
