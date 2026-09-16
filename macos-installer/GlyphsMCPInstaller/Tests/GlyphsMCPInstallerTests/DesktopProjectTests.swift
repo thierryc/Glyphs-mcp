@@ -140,12 +140,258 @@ final class DesktopProjectTests: XCTestCase {
         let index = project.appendingPathComponent(".git/index")
         let indexModified = try index.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
         let observed = try await reader.inspect(project)
-        XCTAssertTrue(observed.changes.contains(where: { $0.path == "font.txt" }))
+        let change = try XCTUnwrap(observed.changes.first(where: { $0.path == "font.txt" }))
+        let comparison = try await reader.comparison(project, change: change, headRevision: observed.headRevision)
+        XCTAssertEqual(comparison.oldContent, .text("before\n"))
+        XCTAssertEqual(comparison.newContent, .text("after\n"))
         let diff = try await reader.diff(project, path: "font.txt")
         XCTAssertTrue(diff.contains("+after")); XCTAssertTrue(diff.contains("-before"))
         XCTAssertEqual(try snapshot(), before)
         XCTAssertEqual(try index.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate, indexModified)
         XCTAssertFalse(FileManager.default.fileExists(atPath: project.appendingPathComponent("helper-ran").path))
+    }
+
+    func testCombinedHeadToWorkingTreeComparisonsCoverGitChangeKinds() async throws {
+        let reader = ReadOnlyGit()
+        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let project = try temporary(), runner = ProcessRunner()
+        func command(_ args: [String]) throws {
+            let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
+            guard result.exitCode == 0 else { throw ProjectError(result.stderr) }
+        }
+        func write(_ path: String, _ text: String) throws {
+            try Data(text.utf8).write(to: project.appendingPathComponent(path))
+        }
+        try command(["init"])
+        try write("staged.txt", "staged before\n")
+        try write("unstaged.txt", "unstaged before\n")
+        try write("mixed.txt", "mixed before\n")
+        try write("deleted.txt", "deleted before\n")
+        try write("rename-old.txt", "rename line one\nrename line two\n")
+        try command(["add", "."])
+        try command(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture"])
+
+        try write("staged.txt", "staged after\n"); try command(["add", "staged.txt"])
+        try write("unstaged.txt", "unstaged after\n")
+        try write("mixed.txt", "mixed staged\n"); try command(["add", "mixed.txt"]); try write("mixed.txt", "mixed final\n")
+        try write("added.txt", "added\n"); try command(["add", "added.txt"])
+        try write("untracked.txt", "untracked\n")
+        try command(["rm", "deleted.txt"])
+        try command(["mv", "rename-old.txt", "rename-new.txt"])
+
+        let observed = try await reader.inspect(project)
+        func comparison(_ path: String) async throws -> GitFileComparison {
+            let change = try XCTUnwrap(observed.changes.first(where: { $0.path == path }), "Missing status for \(path)")
+            return try await reader.comparison(project, change: change, headRevision: observed.headRevision)
+        }
+        var value = try await comparison("staged.txt")
+        XCTAssertEqual(value.oldContent, .text("staged before\n")); XCTAssertEqual(value.newContent, .text("staged after\n"))
+        XCTAssertEqual(try XCTUnwrap(observed.changes.first(where: { $0.path == "staged.txt" })).stagedStatus, "M")
+        value = try await comparison("unstaged.txt")
+        XCTAssertEqual(value.oldContent, .text("unstaged before\n")); XCTAssertEqual(value.newContent, .text("unstaged after\n"))
+        XCTAssertEqual(try XCTUnwrap(observed.changes.first(where: { $0.path == "unstaged.txt" })).workingStatus, "M")
+        value = try await comparison("mixed.txt")
+        XCTAssertEqual(value.oldContent, .text("mixed before\n")); XCTAssertEqual(value.newContent, .text("mixed final\n"))
+        XCTAssertEqual(try XCTUnwrap(observed.changes.first(where: { $0.path == "mixed.txt" })).status, "MM")
+        value = try await comparison("added.txt")
+        XCTAssertEqual(value.kind, .added); XCTAssertEqual(value.oldContent, .missing); XCTAssertEqual(value.newContent, .text("added\n"))
+        value = try await comparison("untracked.txt")
+        XCTAssertEqual(value.kind, .untracked); XCTAssertEqual(value.oldContent, .missing); XCTAssertEqual(value.newContent, .text("untracked\n"))
+        value = try await comparison("deleted.txt")
+        XCTAssertEqual(value.kind, .deleted); XCTAssertEqual(value.oldContent, .text("deleted before\n")); XCTAssertEqual(value.newContent, .missing)
+        value = try await comparison("rename-new.txt")
+        XCTAssertEqual(value.kind, .renamed); XCTAssertEqual(value.originalPath, "rename-old.txt")
+        XCTAssertEqual(value.oldContent, .text("rename line one\nrename line two\n")); XCTAssertEqual(value.newContent, value.oldContent)
+    }
+
+    func testComparisonClassifiesUnsafeAndNonRenderingWorkingFiles() async throws {
+        let reader = ReadOnlyGit()
+        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let project = try temporary(), outside = try temporary(), runner = ProcessRunner()
+        func command(_ args: [String]) throws {
+            let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
+            guard result.exitCode == 0 else { throw ProjectError(result.stderr) }
+        }
+        try command(["init"])
+        try Data("outside".utf8).write(to: outside.appendingPathComponent("secret"))
+        try Data([0, 1, 2]).write(to: project.appendingPathComponent("binary.dat"))
+        try Data([0xff, 0xfe]).write(to: project.appendingPathComponent("invalid.txt"))
+        try Data(repeating: 65, count: GitFileComparison.maximumBytes + 1).write(to: project.appendingPathComponent("large.txt"))
+        try FileManager.default.createSymbolicLink(atPath: project.appendingPathComponent("link.txt").path,
+                                                    withDestinationPath: outside.appendingPathComponent("secret").path)
+        let observed = try await reader.inspect(project)
+        func value(_ path: String) async throws -> GitFileContent {
+            let change = try XCTUnwrap(observed.changes.first(where: { $0.path == path }))
+            return try await reader.comparison(project, change: change, headRevision: nil).newContent
+        }
+        let binary = try await value("binary.dat")
+        let invalidText = try await value("invalid.txt")
+        let oversized = try await value("large.txt")
+        let link = try await value("link.txt")
+        XCTAssertEqual(binary, .binary)
+        XCTAssertEqual(invalidText, .binary)
+        XCTAssertEqual(oversized, .oversized(GitFileComparison.maximumBytes + 1))
+        XCTAssertEqual(link, .symbolicLink(outside.appendingPathComponent("secret").path))
+
+        try FileManager.default.createSymbolicLink(atPath: project.appendingPathComponent("escape").path,
+                                                    withDestinationPath: outside.path)
+        let escaping = GitObservation.Change(status: "??", stagedStatus: "?", workingStatus: "?",
+                                             kind: .untracked, path: "escape/secret")
+        do { _ = try await reader.comparison(project, change: escaping, headRevision: nil); XCTFail("An intermediate link must be rejected") }
+        catch { XCTAssertTrue(error.localizedDescription.contains("symbolic link")) }
+        let invalid = GitObservation.Change(status: "??", stagedStatus: "?", workingStatus: "?",
+                                            kind: .untracked, path: "../secret")
+        do { _ = try await reader.comparison(project, change: invalid, headRevision: nil); XCTFail("An invalid path must be rejected") }
+        catch { }
+        let cancelled = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await reader.comparison(project, change: escaping, headRevision: nil)
+        }
+        do { _ = try await cancelled.value; XCTFail("A pre-cancelled comparison must stop") }
+        catch is CancellationError { }
+    }
+
+    func testNoCommitRepositoryTreatsTrackedAndUntrackedFilesAsAdditions() async throws {
+        let reader = ReadOnlyGit()
+        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let project = try temporary(), runner = ProcessRunner()
+        func command(_ args: [String]) throws {
+            let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
+            guard result.exitCode == 0 else { throw ProjectError(result.stderr) }
+        }
+        try command(["init"])
+        try Data("tracked\n".utf8).write(to: project.appendingPathComponent("tracked.txt")); try command(["add", "tracked.txt"])
+        try Data("untracked\n".utf8).write(to: project.appendingPathComponent("untracked.txt"))
+        let observed = try await reader.inspect(project)
+        XCTAssertNil(observed.headRevision)
+        for path in ["tracked.txt", "untracked.txt"] {
+            let change = try XCTUnwrap(observed.changes.first(where: { $0.path == path }))
+            let value = try await reader.comparison(project, change: change, headRevision: observed.headRevision)
+            XCTAssertEqual(value.oldContent, .missing)
+            XCTAssertEqual(value.newContent, .text(path == "tracked.txt" ? "tracked\n" : "untracked\n"))
+        }
+    }
+
+    func testGlyphDiffLayerPairingSelectsFirstChangedLayer() throws {
+        let metrics = GlyphMetrics(ascender: 800, capHeight: 700, xHeight: 500, descender: -200)
+        func layer(_ id: String, _ label: String, _ width: Double) -> GlyphLayerSnapshot {
+            GlyphLayerSnapshot(id: id, label: label, isMaster: true, outline: [], openOutline: [], anchors: [:], width: width, metrics: metrics)
+        }
+        let before = GlyphFontSnapshot(missingGlyph: false, glyphName: "A", layers: [layer("one", "Regular", 600), layer("two", "Bold", 700)])
+        let after = GlyphFontSnapshot(missingGlyph: false, glyphName: "A", layers: [layer("one", "Regular", 600), layer("two", "Bold", 710)])
+        let difference = GlyphLayerDifference(
+            id: "two", label: "Bold", outlineChanged: false,
+            referenceOutline: [], currentOutline: [], referenceSegments: [], currentSegments: [], anchors: [],
+            width: [700, 710], metricRange: [-200, 800],
+            regions: [.init(id: "difference-1", kind: .width, bounds: [676, -224, 58, 1048])],
+            hasVisibleDifference: true
+        )
+        let document = GlyphDiffDocument(schemaVersion: 2, before: before, after: after,
+                                         changedLayerIDs: ["two"], differences: [difference])
+        XCTAssertEqual(document.layers.map(\.changed), [false, true])
+        XCTAssertEqual(document.initialLayerID, "two")
+        XCTAssertEqual(document.layers[1].difference, difference)
+        XCTAssertEqual(try JSONDecoder().decode(GlyphDiffDocument.self, from: JSONEncoder().encode(document)), document)
+    }
+
+    func testGlyphViewportMathUsesGlyphsStyleStepsLimitsAndRegionFraming() throws {
+        XCTAssertEqual(GlyphViewportMath.stepped(1, direction: 1), 1.25, accuracy: 0.000_001)
+        XCTAssertEqual(GlyphViewportMath.stepped(1, direction: -1), 0.8, accuracy: 0.000_001)
+        XCTAssertEqual(GlyphViewportMath.clamped(0.01), 0.25, accuracy: 0.000_001)
+        XCTAssertEqual(GlyphViewportMath.clamped(100), 32, accuracy: 0.000_001)
+
+        let region = try XCTUnwrap(GlyphViewportMath.focusRect(for: [10, 20, 20, 40]))
+        XCTAssertEqual(region.width, 160, accuracy: 0.000_001)
+        XCTAssertEqual(region.height, 160, accuracy: 0.000_001)
+        XCTAssertEqual(region.midX, 20, accuracy: 0.000_001)
+        XCTAssertEqual(region.midY, 40, accuracy: 0.000_001)
+
+        let viewport = CGSize(width: 800, height: 600)
+        let viewBox = CGRect(x: 0, y: 0, width: 1_000, height: 1_000)
+        XCTAssertEqual(GlyphViewportMath.fitScale(viewport: viewport, viewBox: viewBox), 0.6, accuracy: 0.000_001)
+        XCTAssertEqual(GlyphViewportMath.actualSizeMagnification(viewport: viewport, viewBox: viewBox), 5.0 / 3.0, accuracy: 0.000_001)
+        XCTAssertEqual(GlyphViewportMath.magnificationToFit(viewport: viewport, viewBox: viewBox, target: region), 6.25, accuracy: 0.000_001)
+
+        let fitted = GlyphViewportMath.fitted(viewBox)
+        XCTAssertEqual(fitted, .init(centerX: 500, centerY: 500, magnification: 1))
+        let contentAnchor = CGPoint(x: 250, y: 400)
+        let rootAnchor = CGPoint(x: 250, y: 400)
+        let anchored = GlyphViewportMath.anchored(fitted, magnification: 2,
+                                                 contentAnchor: contentAnchor,
+                                                 rootAnchor: rootAnchor, viewBox: viewBox)
+        XCTAssertEqual(anchored.centerX, 375, accuracy: 0.000_001)
+        XCTAssertEqual(anchored.centerY, 450, accuracy: 0.000_001)
+        XCTAssertEqual(viewBox.midX + anchored.magnification * (contentAnchor.x - anchored.centerX),
+                       rootAnchor.x, accuracy: 0.000_001)
+        XCTAssertEqual(viewBox.midY + anchored.magnification * (contentAnchor.y - anchored.centerY),
+                       rootAnchor.y, accuracy: 0.000_001)
+        XCTAssertTrue(GlyphViewportMath.isRestorable(anchored, in: viewBox))
+        XCTAssertFalse(GlyphViewportMath.isRestorable(.init(centerX: .infinity, centerY: 0, magnification: 1),
+                                                      in: viewBox))
+        XCTAssertGreaterThan(GlyphViewportMath.smooth(1, wheelDelta: 20), 1)
+        XCTAssertLessThan(GlyphViewportMath.smooth(1, wheelDelta: -20), 1)
+    }
+
+    func testGlyphDiffRejectsMaterializedPackageSymlinks() throws {
+        let package = try temporary().appendingPathComponent("Fixture.glyphspackage")
+        try FileManager.default.createDirectory(at: package.appendingPathComponent("glyphs"), withIntermediateDirectories: true)
+        try Data("glyphname = A;".utf8).write(to: package.appendingPathComponent("glyphs/A_.glyph"))
+        try GlyphDiffService.validateMaterializedPackage(package)
+        try FileManager.default.createSymbolicLink(
+            at: package.appendingPathComponent("glyphs/escape.glyph"),
+            withDestinationURL: URL(fileURLWithPath: "/etc/passwd")
+        )
+        XCTAssertThrowsError(try GlyphDiffService.validateMaterializedPackage(package)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Symbolic links"))
+        }
+    }
+
+    func testGlyphDiffRuntimePrefersVersionMatchedApplicationPayload() throws {
+        let root = try temporary()
+        let resources = root.appendingPathComponent("Resources", isDirectory: true)
+        let bundledLean = resources.appendingPathComponent("Payload/Lean", isDirectory: true)
+        let bundledCLI = bundledLean.appendingPathComponent("runtimes/test/bin/glyphs")
+        let bundledWorker = bundledLean.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
+        try FileManager.default.createDirectory(at: bundledCLI.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: bundledWorker.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data().write(to: bundledCLI)
+        try Data().write(to: bundledWorker)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: bundledCLI.path)
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let installedRoot = home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2", isDirectory: true)
+        let installedCLI = installedRoot.appendingPathComponent("runtime/bin/glyphs")
+        let installedWorker = installedRoot.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
+        try FileManager.default.createDirectory(at: installedCLI.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: installedWorker.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data().write(to: installedCLI)
+        try Data().write(to: installedWorker)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: installedCLI.path)
+
+        let resolved = try GlyphDiffRuntime.resolve(
+            installation: DesktopInstallation(home: home),
+            resourceURL: resources,
+            architecture: "test"
+        )
+        XCTAssertEqual(resolved.glyphsCLI, bundledCLI)
+        XCTAssertEqual(resolved.sidecar, bundledLean.appendingPathComponent("sidecar", isDirectory: true))
+    }
+
+    func testGitChangeTreeBuildsHierarchyAndFiltersCurrentOrOriginalPath() throws {
+        let changes = [
+            GitObservation.Change(status: " M", stagedStatus: " ", workingStatus: "M", kind: .modified,
+                                  path: "Sources/App.swift"),
+            GitObservation.Change(status: "R ", stagedStatus: "R", workingStatus: " ", kind: .renamed,
+                                  path: "Docs/New.md", originalPath: "Documentation/Old.md"),
+            GitObservation.Change(status: "??", stagedStatus: "?", workingStatus: "?", kind: .untracked,
+                                  path: "README.md"),
+        ]
+        let tree = GitChangeTree.hierarchy(changes)
+        XCTAssertEqual(tree.map(\.name), ["Docs", "Sources", "README.md"])
+        XCTAssertEqual(tree.first?.children?.first?.change?.statusLabel, "R")
+        XCTAssertEqual(GitChangeTree.filtered(changes, query: "app").map(\.path), ["Sources/App.swift"])
+        XCTAssertEqual(GitChangeTree.filtered(changes, query: "old").map(\.path), ["Docs/New.md"])
+        XCTAssertEqual(GitChangeTree.filtered(changes, query: "  "), changes)
     }
 
     func testGitBranchLabelsDistinguishNoCommitsAndDetachedRevisionWithoutWrites() async throws {

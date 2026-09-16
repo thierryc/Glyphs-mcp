@@ -63,6 +63,20 @@ def verify(app, root=ROOT):
     for name in ('GlyphsMCPInstallerCore', 'Sparkle'):
         if not (app / 'Contents/Frameworks' / (name + '.framework') / name).is_file():
             raise ValueError(f'Missing linked framework: {name}')
+    pierre_lock = json.loads((root / 'third_party/pierre-diffs-swift.json').read_text())
+    pierre_bundle = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle'
+    if not pierre_bundle.is_dir():
+        raise ValueError('Missing PierreDiffsSwift package resource bundle')
+    pierre_resources = pierre_bundle / 'Contents/Resources/Resources'
+    pierre_hashes = {}
+    for name, expected_hash in pierre_lock['resources'].items():
+        resource = pierre_resources / name
+        if not resource.is_file():
+            raise ValueError(f'Missing PierreDiffsSwift JavaScript resource: {name}')
+        actual_hash = hashlib.sha256(resource.read_bytes()).hexdigest()
+        if actual_hash != expected_hash:
+            raise ValueError(f'PierreDiffsSwift JavaScript identity mismatch: {name}')
+        pierre_hashes[name] = actual_hash
     catalog = root / 'macos-installer/GlyphsMCPInstaller/Resources/Assets.xcassets'
     required = {path.stem for path in catalog.rglob('*.imageset')}
     required.add('GlyphsMCPMenu')
@@ -73,7 +87,10 @@ def verify(app, root=ROOT):
     if missing:
         raise ValueError('Missing compiled assets: ' + ', '.join(sorted(missing)))
     return {'version': info['CFBundleShortVersionString'], 'build': info['CFBundleVersion'],
-            'assets': sorted(required), 'appSHA256': tree_digest(app)}
+            'assets': sorted(required),
+            'pierre': {'version': pierre_lock['version'], 'commit': pierre_lock['commit'],
+                       'bundleSHA256': tree_digest(pierre_bundle), 'resources': pierre_hashes},
+            'appSHA256': tree_digest(app)}
 
 
 def verify_receipt(app, receipt, root=ROOT):

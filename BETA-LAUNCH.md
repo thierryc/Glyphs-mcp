@@ -1,8 +1,8 @@
-# Glyphs MCP 2.0.0 Beta — release and launch plan
+# Glyphs MCP 2.0.0 Beta 2 — release and launch plan
 
 ## Decision
 
-Prepare **2.0.0 Beta 1**, tag `v2.0.0-beta.1`, build **43**, on `lit/v2-beta`.
+Prepare **2.0.0 Beta 2**, tag `v2.0.0-beta.2`, build **44**, on `lit/v2-beta`.
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -13,7 +13,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 1**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 2**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -25,7 +25,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
   pin archives to commits and SHA-256, then publish registry-only changes on
   that branch. Refresh loads the new list; installed projects are unchanged.
 - Use `lit/v2-beta/appcast.xml` only for beta updates. Keep build numbers
-  increasing: 43, 44, 45… even though the marketing version was renumbered.
+  increasing: 44, 45, 46… even though the marketing version was renumbered.
   Update signatures and build ordering follow the
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
@@ -54,7 +54,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.1 --publish --confirm-publish v2.0.0-beta.1
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.2 --publish --confirm-publish v2.0.0-beta.2
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -64,9 +64,9 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 2 uses `--beta 2` and a higher installer build. Final 2.0.0 gets a new
+Beta 3 uses `--beta 3` and a higher installer build. Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
-`main`. Do not relabel Beta 1 as final or repoint its tag.
+`main`. Do not relabel Beta 2 as final or repoint its tag.
 
 ## Enrollment and feedback
 
@@ -113,15 +113,15 @@ verified public branch URL at posting time.
 
 Forum title: **Glyphs MCP 2.0.0 Beta — open for testing**
 
-> Glyphs MCP 2.0.0 Beta 1 is available to try. It brings component installation,
-> server controls and template-based font projects into a native Mac app for
-> Glyphs 4. Curve Inspector and Reference Inspector are included as optional
-> components.
+> Glyphs MCP 2.0.0 Beta 2 is available to try. It adds a two-pane, read-only Git
+> diff browser with syntax-highlighted source diffs and visual before/after
+> overlays for glyphs inside `.glyphspackage` sources. The existing component,
+> project and review workflows remain available for Glyphs 4.
 >
 > This is a beta. Please begin with a copy of a font and read the compatibility
 > notes. Downloads are open; joining the tester group is optional. I'd especially
-> welcome reports about installation, connecting your AI client, project
-> templates and completing a small review/apply/discard workflow.
+> welcome reports about source and visual glyph diffs, installation, connecting
+> your AI client, project templates and a small review/apply/discard workflow.
 >
 > Download, setup and feedback: [beta guide]. Glyphs 3 remains on the existing
 > 1.11.0 plugin.
@@ -134,27 +134,45 @@ Social draft:
 
 **Three days later:** answer recurring setup questions in the guide and share
 one concrete workflow demonstration. **After one week:** publish a short
-feedback update, known issues and what is planned for Beta 2. Thank testers
+feedback update, known issues and what is planned for Beta 3. Thank testers
 publicly only with their permission. Avoid a fixed update cadence until the
 first feedback volume is known.
 
 ## Draft GitHub release notes
 
-**Glyphs MCP 2.0.0 Beta 1 · build 43**
+**Glyphs MCP 2.0.0 Beta 2 · build 44**
 
-This first public beta introduces the Glyphs 4 desktop workspace, component
-management, project templates, Curve Inspector and Reference Inspector. The
-app includes its private runtime and seven tools for supported reviewable font
-jobs. Templates can be refreshed from the beta registry without reinstalling.
+This second beta adds a two-pane, read-only Git browser. Text files use
+syntax-highlighted unified or split diffs; changed glyphs inside
+`.glyphspackage` sources add Visual/Text switching with layer selection and
+near-black current geometry, mint reference changes and a cyan delta fill.
+Holding Space shows a pure-black silhouette. The app loads selected files on demand and
+does not expose editing, comments, staging or commit actions.
 
-This release starts the 2.0.0 beta cycle; Glyphs 3 continues to use 1.11.0.
+The desktop now requires macOS 14. Glyphs 3 continues to use 1.11.0, and the
+seven-tool MCP interface and bridge protocol are unchanged.
 
 Before publication, insert the tested macOS/Glyphs compatibility table,
 verified installation and rollback steps, actual known issues and checksums.
 Link to BETA.md for open downloads, optional enrollment and reports. Do not
 publish these notes with unresolved placeholders.
 
-## Local preparation verified — 8 September 2026
+## Beta 2 local preparation record — 15 September 2026
+
+- The hybrid native/Pierre/SVG implementation is complete. The complete local
+  gate passed with 1,923 Python tests (2 optional skips), all 185 macOS tests,
+  deterministic ARM64/Intel payloads, the documentation production build and
+  a fresh unsigned app verification.
+- The visible app check covered the two-pane hierarchy, filtering, file status,
+  Pierre source diff, accessible file buttons and safe glyph Text fallback.
+  The Glyphs 4 worker also returned real decomposed glyph geometry through the
+  installed private runtime.
+- The detailed evidence and remaining signed-distribution gates are recorded
+  in [BETA2-VALIDATION.md](BETA2-VALIDATION.md).
+- No commit, push, tag, signing, notarization, upload or publication was
+  performed.
+
+## Beta 1 preparation record — 8 September 2026
 
 - 64 targeted Python tests passed, including beta identity, draft/public asset
   checks, version drift, deterministic lean payloads and desktop packaging.

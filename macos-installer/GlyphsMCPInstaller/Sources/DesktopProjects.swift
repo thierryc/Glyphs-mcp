@@ -11,6 +11,12 @@ struct DesktopProjectEditing: Identifiable {
     let id: String
 }
 
+enum DesktopGlyphDiffMode: String, CaseIterable, Identifiable {
+    case visual = "Visual"
+    case text = "Text"
+    var id: String { rawValue }
+}
+
 @MainActor
 final class DesktopProjectsModel: ObservableObject {
     @Published private(set) var navigation: DesktopProjectNavigation
@@ -20,14 +26,23 @@ final class DesktopProjectsModel: ObservableObject {
     @Published var editing: DesktopProjectEditing?
     @Published private(set) var git: GitObservation?
     @Published private(set) var gitMessage = ""
-    @Published private(set) var diff = ""
+    @Published private(set) var selectedChange: GitObservation.Change?
+    @Published private(set) var comparison: GitFileComparison?
+    @Published private(set) var comparisonMessage = ""
+    @Published private(set) var glyphDiff: GlyphDiffDocument?
+    @Published private(set) var glyphMessage = ""
+    @Published private(set) var loadingComparison = false
+    @Published private(set) var loadingGlyphDiff = false
+    @Published var glyphMode: DesktopGlyphDiffMode = .visual
     @Published private(set) var inspecting = false
     @Published private(set) var loadingTemplates = false
     @Published private(set) var message = ""
     let store = TemplateStore()
     private let defaults: UserDefaults
     private let gitReader = ReadOnlyGit()
+    private let glyphReader = GlyphDiffService()
     private var inspection: Task<Void, Never>?
+    private var comparisonTask: Task<Void, Never>?
     var selectedProject: String? { navigation.selectedProject }
 
     init(defaults: UserDefaults = .standard) {
@@ -111,7 +126,10 @@ final class DesktopProjectsModel: ObservableObject {
         defaults.set(localTemplates, forKey: "localTemplates")
     }
     func inspect() {
-        inspection?.cancel(); git = nil; diff = ""; gitMessage = ""; inspecting = false
+        let selectedPath = selectedChange?.path
+        inspection?.cancel(); comparisonTask?.cancel(); git = nil; gitMessage = ""; inspecting = false
+        comparison = nil; glyphDiff = nil; comparisonMessage = ""; glyphMessage = ""
+        loadingComparison = false; loadingGlyphDiff = false
         guard let project = selectedProject else { return }
         guard folderExists(project) else {
             gitMessage = "Project folder not found. Choose Edit to locate it."
@@ -123,19 +141,56 @@ final class DesktopProjectsModel: ObservableObject {
                 let observation = try await gitReader.inspect(URL(fileURLWithPath: project))
                 guard !Task.isCancelled, selectedProject == project else { return }
                 git = observation
+                if let change = observation.changes.first(where: { $0.path == selectedPath }) ?? observation.changes.first {
+                    selectChange(change)
+                } else {
+                    selectedChange = nil
+                }
             } catch { if !Task.isCancelled, selectedProject == project { gitMessage = error.localizedDescription } }
             if !Task.isCancelled, selectedProject == project { inspecting = false }
         }
     }
     func showDiff(_ path: String) {
-        guard let project = selectedProject else { return }
-        inspection?.cancel(); inspecting = true; diff = ""
-        inspection = Task {
+        guard let change = git?.changes.first(where: { $0.path == path }) else { return }
+        selectChange(change)
+    }
+    func selectChange(_ change: GitObservation.Change) {
+        guard let project = selectedProject, let git else { return }
+        comparisonTask?.cancel()
+        selectedChange = change
+        comparison = nil; glyphDiff = nil; comparisonMessage = ""; glyphMessage = ""
+        loadingComparison = true; loadingGlyphDiff = change.isGlyphPackageGlyph
+        comparisonTask = Task {
             do {
-                let value = try await gitReader.diff(URL(fileURLWithPath: project), path: path)
-                if !Task.isCancelled, selectedProject == project { diff = value }
-            } catch { if !Task.isCancelled, selectedProject == project { gitMessage = error.localizedDescription } }
-            if !Task.isCancelled, selectedProject == project { inspecting = false }
+                async let glyphValueTask: GlyphDiffDocument? = change.isGlyphPackageGlyph
+                    ? glyphReader.compare(project: URL(fileURLWithPath: project), change: change, headRevision: git.headRevision)
+                    : nil
+                let value = try await gitReader.comparison(URL(fileURLWithPath: project), change: change, headRevision: git.headRevision)
+                guard !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path else { return }
+                comparison = value
+                loadingComparison = false
+                let glyphValue: GlyphDiffDocument?
+                if change.isGlyphPackageGlyph {
+                    do { glyphValue = try await glyphValueTask }
+                    catch {
+                        glyphValue = nil
+                        if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
+                            glyphMessage = error.localizedDescription
+                            glyphMode = .text
+                        }
+                    }
+                } else { glyphValue = nil }
+                guard !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path else { return }
+                glyphDiff = glyphValue
+            } catch {
+                if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
+                    comparisonMessage = error.localizedDescription
+                }
+            }
+            if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
+                loadingComparison = false
+                loadingGlyphDiff = false
+            }
         }
     }
     func openExternal(_ key: String) {
@@ -164,63 +219,27 @@ struct DesktopProjectWorkspace: View {
     @ObservedObject var model: DesktopProjectsModel
     let path: String
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HStack(alignment: .top, spacing: 16) {
-                    Image(systemName: "folder.fill").font(.system(size: 34)).foregroundStyle(Color.accentColor)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(model.navigation.name(for: path)).font(.largeTitle.bold())
-                        Text(path).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
-                    }
-                    Spacer()
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 16) {
+                Image(systemName: "folder.fill").font(.system(size: 34)).foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(model.navigation.name(for: path)).font(.largeTitle.bold())
+                    Text(path).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
                 }
-                HStack(spacing: 10) {
-                    Group {
-                        Button("Open in Finder") { model.showInFinder(path) }
-                        Button("Open in Editor…") { model.openExternal("projectEditor") }
-                        Button("Open in Git Client…") { model.openExternal("projectGitClient") }
-                    }.disabled(!model.folderExists(path))
-                    Spacer(minLength: 0)
-                    Button { model.edit(path) } label: { Label("Edit", systemImage: "pencil") }
-                        .help("Edit project settings")
-                }
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack {
-                            Label("Git information", systemImage: "arrow.triangle.branch").font(.headline)
-                            Spacer()
-                            Button(action: model.inspect) { Image(systemName: "arrow.clockwise") }
-                                .help("Refresh Git information").accessibilityLabel("Refresh Git information").disabled(model.inspecting)
-                        }
-                        if let git = model.git {
-                            HStack {
-                                Text(git.branch).fontWeight(.medium)
-                                Spacer()
-                                Text(git.changes.isEmpty ? "Working tree is clean" : "\(git.changes.count) changed files").foregroundStyle(.secondary)
-                            }
-                            if !git.changes.isEmpty {
-                                Divider()
-                                LazyVStack(alignment: .leading, spacing: 8) {
-                                    ForEach(git.changes) { change in
-                                        Button { model.showDiff(change.path) } label: {
-                                            HStack { Text(change.status).monospaced().foregroundStyle(.secondary); Text(change.path); Spacer() }
-                                        }.buttonStyle(.plain)
-                                    }
-                                }
-                            }
-                        } else {
-                            Text(model.gitMessage.isEmpty ? "Reading local Git information…" : model.gitMessage).foregroundStyle(.secondary)
-                        }
-                        if !model.diff.isEmpty {
-                            Divider()
-                            ScrollView([.horizontal, .vertical]) {
-                                Text(model.diff).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }.frame(maxHeight: 300)
-                        }
-                    }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }.padding(32).frame(maxWidth: 900, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
+                Spacer()
+            }
+            HStack(spacing: 10) {
+                Group {
+                    Button("Open in Finder") { model.showInFinder(path) }
+                    Button("Open in Editor…") { model.openExternal("projectEditor") }
+                    Button("Open in Git Client…") { model.openExternal("projectGitClient") }
+                }.disabled(!model.folderExists(path))
+                Spacer(minLength: 0)
+                Button { model.edit(path) } label: { Label("Edit", systemImage: "pencil") }
+                    .help("Edit project settings")
+            }
+            DesktopGitWorkspace(model: model)
         }
+        .padding(.horizontal, 28).padding(.top, 28).padding(.bottom, 18)
     }
 }

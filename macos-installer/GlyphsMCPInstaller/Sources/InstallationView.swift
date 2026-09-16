@@ -72,7 +72,7 @@ struct InstallationView: View {
         }
         .padding(28)
         .frame(minWidth: 560, idealWidth: 610, minHeight: 600, idealHeight: 660)
-        .onChange(of: model.selectedVersion) { _ in model.refreshRunning() }
+        .onChange(of: model.selectedVersion) { _, _ in model.refreshRunning() }
     }
 
     private var header: some View {

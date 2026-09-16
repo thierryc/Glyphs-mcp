@@ -2,11 +2,15 @@
 
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Overview and the menu-bar popover share one monitor and service controls. Components reuses the transactional installer. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
-Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare the checksum-pinned Sparkle framework. Existing receipts are adopted without component changes. An earlier unpublished local candidate without the private control protocol must be stopped through its existing controls before migration.
+Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare
+checksum-pinned Sparkle and the audited local PierreDiffsSwift package. Existing
+receipts are adopted without component changes. An earlier unpublished local
+candidate without the private control protocol must be stopped through its
+existing controls before migration.
 
 # Glyphs MCP local installer
 
-The beta branch prepares product 2.0.0 Beta 1, release `2.0.0-beta.1`, installer build 43. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seven tools and five job kinds. See [version and identity](../content/reference/version-identity.mdx).
+The beta branch prepares product 2.0.0 Beta 2, release `2.0.0-beta.2`, installer build 44. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seven tools and five job kinds. See [version and identity](../content/reference/version-identity.mdx).
 The native installer uses **Choose → Install → Ready**, detects Glyphs and offers
 Glyphs MCP, Curve Inspector and Reference Inspector. Fresh installs select all
 three. Upgrades keep component choices; removal is explicit. AI connections

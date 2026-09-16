@@ -16,6 +16,14 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
+def test_current_checkout_is_beta_2_build_44():
+    release = load(REPO)
+    assert release['version'] == '2.0.0'
+    assert release['tag'] == 'v2.0.0-beta.2'
+    assert release['label'] == '2.0.0 Beta 2'
+    assert release['installerBuild'] == 44
+
+
 def test_beta_identity_preserves_numeric_bundle_version_and_build():
     release = identity('2.0.0', 'beta', 1)
     assert release['version'] == '2.0.0'

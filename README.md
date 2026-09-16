@@ -1,4 +1,4 @@
-# Glyphs MCP Desktop 2.0.0 Beta 1
+# Glyphs MCP Desktop 2.0.0 Beta 2
 
 **Beta preparation — not yet available for public download.**
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
@@ -13,7 +13,9 @@ installation. Upgrades preserve existing choices, ports and startup settings;
 component removal is explicit. AI application connections are optional.
 
 The permanent app includes Overview, Components and Projects, a static menu-bar
-popover, local and public templates, and read-only Git information. Automatic
+popover, local and public templates, and a read-only Git diff browser. Its
+native file tree opens source diffs in unified or split form and can compare
+individual `.glyphspackage` glyphs as visual overlays or source text. Automatic
 update checks and desktop launch at login are separate opt-in settings.
 
 In Glyphs, **Edit → Glyphs MCP Server…** opens Start/Stop and port settings.
@@ -36,14 +38,16 @@ Glyphs 3 remains on the pinned 1.11.0 plugin and its existing dependency setup.
 The two documentation tracks describe these versions separately. This candidate
 is prepared locally; it has not been published as a release.
 
-Documentation sources: [v2 · 2.0.0 Beta 1](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 2](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
+Unsigned Beta 2 qualification evidence is in
+[BETA2-VALIDATION.md](BETA2-VALIDATION.md).
 The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 `/docs/v2/`. Both are built together from `website/`.
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.1.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.2.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

@@ -5,8 +5,8 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current target is product **2.0.0**, release **2.0.0-beta.1**, beta number **1**,
-installer build **43**: **eleven managed skills**, seven MCP tools and five job
+The current target is product **2.0.0**, release **2.0.0-beta.2**, beta number **2**,
+installer build **44**: **eleven managed skills**, seven MCP tools and five job
 kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
 **1**, bridge protocol **1**. The dated MCP transport version is negotiated
@@ -20,10 +20,10 @@ These are initialization-time file fingerprints, not in-memory code hashes.
 Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
-Use the helper's release tag and channel URLs. Beta 1 uses `v2.0.0-beta.1` and
+Use the helper's release tag and channel URLs. Beta 2 uses `v2.0.0-beta.2` and
 `lit/v2-beta`, including
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.
-Beta DMG and ZIP names include `2.0.0-beta.1`. Do not publish a beta Latest alias;
+Beta DMG and ZIP names include `2.0.0-beta.2`. Do not publish a beta Latest alias;
 its GitHub release is a prerelease with `make_latest=false`. Stable release feeds
 and Latest aliases belong to their separate release process. Read
 `BETA-LAUNCH.md` and `macos-installer/RELEASING.md` before release preparation.

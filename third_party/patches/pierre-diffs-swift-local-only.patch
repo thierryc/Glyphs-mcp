@@ -1,0 +1,28 @@
+--- a/Sources/PierreDiffsSwift/WebView/PierreDiffView.swift
++++ b/Sources/PierreDiffsSwift/WebView/PierreDiffView.swift
+@@ -150,2 +150,3 @@
+   public func makeNSView(context: Context) -> WKWebView {
+     let configuration = WKWebViewConfiguration()
++    configuration.websiteDataStore = .nonPersistent()
+@@ -160 +161 @@
+-    configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
++    configuration.preferences.setValue(false, forKey: "developerExtrasEnabled")
+--- a/Sources/PierreDiffsSwift/WebView/DiffHTMLTemplate.swift
++++ b/Sources/PierreDiffsSwift/WebView/DiffHTMLTemplate.swift
+@@ -21,2 +21,3 @@
+         <meta charset="UTF-8">
++        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+--- a/Sources/PierreDiffsSwift/WebView/DiffWebViewCoordinator.swift
++++ b/Sources/PierreDiffsSwift/WebView/DiffWebViewCoordinator.swift
+@@ -561 +561,10 @@
+ extension DiffWebViewCoordinator: WKNavigationDelegate {
++
++  public func webView(
++    _ webView: WKWebView,
++    decidePolicyFor navigationAction: WKNavigationAction,
++    decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
++  ) {
++    let scheme = navigationAction.request.url?.scheme
++    decisionHandler(scheme == nil || scheme == "about" ? .allow : .cancel)
++  }

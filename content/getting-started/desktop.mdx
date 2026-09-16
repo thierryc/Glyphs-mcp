@@ -48,7 +48,28 @@ Compare outlines and spacing against Last Saved, another font file, Local Git or
 
 The **Project** sidebar destination, directly below Components, opens the template gallery. The collapsible **My Project** section lists recent folders and restores the last selected project on launch. Its heading is a label; the disclosure arrow expands or collapses the list. Use its **More** menu to open a folder or create a project. The gallery includes the bundled starter, public catalog templates, and your local editable templates.
 
-Selecting a project opens its workspace with Finder, editor, and Git-client shortcuts plus read-only Git information. Each project row has a **…** menu for Finder, settings, and removal from the list. **Edit** opens the same settings from the workspace: change its display name or reconnect a moved folder. These actions preserve project files.
+Selecting a project opens its workspace with Finder, editor, and Git-client
+shortcuts plus a read-only Git diff browser. The resizable left pane groups
+changed files into folders and supports filtering; the right pane loads only
+the selected file. Source diffs offer unified or split layouts and optional
+line wrapping. Individual files under `.glyphspackage/glyphs/` also offer a
+Visual/Text switch, layer and overlay controls, and guides. In Both mode,
+unchanged geometry remains neutral while only the symmetric delta, changed
+reference segments, anchors and width band receive comparison color. Current
+geometry remains near-black, reference changes are mint and the delta fill is
+cyan. Nodes and handles use lighter neutral grays. Use the arrow
+buttons to visit each localized difference and Reset to return to full-glyph
+Fit. The canvas supports Command-plus/minus/zero, Command-Option-zero actual
+size, trackpad pinch, Option-scroll and the temporary Z click-zoom tool. Hold
+Space for a pure-black filled silhouette without changing the viewport.
+Binary, invalid UTF-8, symlink and over-2-MiB sides show a clear unavailable
+state. The browser cannot edit, comment, stage or commit.
+
+![Beta 2 read-only Git diff browser](../images/desktop-git-diff-beta2.png)
+
+Each project row has a **…** menu for Finder, settings, and removal from the
+list. **Edit** opens the same settings from the workspace: change its display
+name or reconnect a moved folder. These actions preserve project files.
 
 ## Support and diagnostics
 

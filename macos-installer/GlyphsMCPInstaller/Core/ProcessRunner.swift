@@ -15,8 +15,16 @@ private final class ProcessTimeout {
 public final class ProcessRunner {
 	public struct Result {
 		public let exitCode: Int32
-		public let stdout: String
-		public let stderr: String
+		public let stdoutData: Data
+		public let stderrData: Data
+		public var stdout: String { String(decoding: stdoutData, as: UTF8.self) }
+		public var stderr: String { String(decoding: stderrData, as: UTF8.self) }
+
+		init(exitCode: Int32, stdoutData: Data, stderrData: Data) {
+			self.exitCode = exitCode
+			self.stdoutData = stdoutData
+			self.stderrData = stderrData
+		}
 	}
 
 	public init() {}
@@ -42,13 +50,13 @@ public final class ProcessRunner {
 		do {
 			try proc.run()
 		} catch {
-			return Result(exitCode: -1, stdout: "", stderr: "Failed to run \(executable.path): \(error)")
+			return Result(exitCode: -1, stdoutData: Data(), stderrData: Data("Failed to run \(executable.path): \(error)".utf8))
 		}
 		proc.waitUntilExit()
 
-		let stdout = String(data: outPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-		let stderr = String(data: errPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-		return Result(exitCode: proc.terminationStatus, stdout: stdout, stderr: stderr)
+		let stdout = outPipe.fileHandleForReading.readDataToEndOfFile()
+		let stderr = errPipe.fileHandleForReading.readDataToEndOfFile()
+		return Result(exitCode: proc.terminationStatus, stdoutData: stdout, stderrData: stderr)
 	}
 
 	public func runCapturing(
@@ -73,26 +81,26 @@ public final class ProcessRunner {
 		proc.standardError = errPipe
 
 		let outTask = Task {
-			var lines: [String] = []
+			var data = Data()
 			do {
-				for try await line in outPipe.fileHandleForReading.bytes.lines {
-					lines.append(String(line))
+				for try await byte in outPipe.fileHandleForReading.bytes {
+					data.append(byte)
 				}
 			} catch {
 				// A launch or exit error is reported separately below.
 			}
-			return lines.joined(separator: "\n")
+			return data
 		}
 		let errTask = Task {
-			var lines: [String] = []
+			var data = Data()
 			do {
-				for try await line in errPipe.fileHandleForReading.bytes.lines {
-					lines.append(String(line))
+				for try await byte in errPipe.fileHandleForReading.bytes {
+					data.append(byte)
 				}
 			} catch {
 				// A launch or exit error is reported separately below.
 			}
-			return lines.joined(separator: "\n")
+			return data
 		}
 
 		let status: Int32
@@ -148,7 +156,7 @@ public final class ProcessRunner {
 		let stdout = await outTask.value
 		let stderr = await errTask.value
 		if Task.isCancelled { throw CancellationError() }
-		return Result(exitCode: status, stdout: stdout, stderr: stderr)
+		return Result(exitCode: status, stdoutData: stdout, stderrData: stderr)
 	}
 
 	public func runStreaming(

@@ -17,6 +17,21 @@ public struct DesktopProjectNavigation: Equatable {
         return nil
     }
 
+    /// Present projects by their displayed names while retaining `recent` as
+    /// the persistence and eviction order.
+    public var alphabetizedProjects: [String] {
+        recent.sorted { left, right in
+            switch name(for: left).localizedStandardCompare(name(for: right)) {
+            case .orderedAscending:
+                return true
+            case .orderedDescending:
+                return false
+            case .orderedSame:
+                return left.localizedStandardCompare(right) == .orderedAscending
+            }
+        }
+    }
+
     public init(defaults: UserDefaults, hasInstallation: Bool) {
         var seen = Set<String>()
         let normalized = (defaults.stringArray(forKey: "recentProjects") ?? []).filter { $0.hasPrefix("/") }

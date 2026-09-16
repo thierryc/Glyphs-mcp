@@ -29,7 +29,7 @@ def feed(version, build, url, signature, size, *, channel="stable", beta_number=
     ET.SubElement(item, 'title').text = 'Glyphs MCP ' + release['label']
     ET.SubElement(item, '{'+SPARKLE+'}version').text = str(build)
     ET.SubElement(item, '{'+SPARKLE+'}shortVersionString').text = release['label']
-    ET.SubElement(item, '{'+SPARKLE+'}minimumSystemVersion').text = '13.0'
+    ET.SubElement(item, '{'+SPARKLE+'}minimumSystemVersion').text = '14.0'
     ET.SubElement(item, 'description').text = 'The desktop application manages components, sidecar activity and local font projects. Component migration is a separate installation step.'
     ET.SubElement(item, 'enclosure', {'url': url, '{'+SPARKLE+'}edSignature': signature, 'length': str(size), 'type': 'application/octet-stream'})
     ET.indent(root)

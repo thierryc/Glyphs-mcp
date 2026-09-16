@@ -1,0 +1,15 @@
+{
+  "version": "1.2.4",
+  "commit": "c2249d7890de957a96480711152d90a06fa1222b",
+  "url": "https://github.com/jamesrochabrun/PierreDiffsSwift/archive/refs/tags/1.2.4.tar.gz",
+  "sha256": "07fcc457c0e436d4b89776cfe6a5e0cfc7be4ebba5e0e3c7ea19b96f00ce8df1",
+  "license": "MIT",
+  "bundled": {
+    "@pierre/diffs": "1.3.5",
+    "shiki": "4.4.1"
+  },
+  "resources": {
+    "pierre-diffs-bundle.js": "7343dfd142566cb0fbaa9a5fe6d6deae69c7143f61842b1b3ec6b3519e5a2a64",
+    "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+  }
+}

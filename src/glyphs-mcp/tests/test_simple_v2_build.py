@@ -73,8 +73,9 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     bridge = _python_lines(REPO / "src" / "bridge" / "glyphs_mcp_bridge")
     sidecar = _python_lines(REPO / "src" / "sidecar" / "glyphs_mcp_sidecar")
     # Explicit, bounded coordinate vectors and topology guards (benefit item 4).
-    # Shared initialization-time fingerprint helper; editing contracts unchanged.
-    assert protocol <= 425
+    # Beta 2 adds a stateless, versioned read-only glyph-diff worker and shared
+    # geometry serializer; it adds no public tool, job, history, or edit contract.
+    assert protocol <= 600
     # Native setters for nodes, anchors and component matrices (benefit item 4).
     # Bounded native master pages and strict IDs add 53 lines; no new tool/history.
     # Compact selection context uses a small stateless read module; no new tool, job or history hooks.

@@ -1,22 +1,24 @@
-# Glyphs MCP 2.0.0 Beta 1
+# Glyphs MCP 2.0.0 Beta 2
 
-**Status: preparing the beta. No public beta download is available yet.**
+**Status: preparing the Beta 2 candidate. Beta 1 remains the previous prerelease.**
 
 A native macOS workspace for connecting AI applications to Glyphs 4, managing
 components, and starting font projects from templates. This is an early beta;
 feedback will help shape version 2.0.0.
 
-The planned release is **v2.0.0-beta.1**, desktop **build 43**, from `lit/v2-beta`.
+The planned release is **v2.0.0-beta.2**, desktop **build 44**, from `lit/v2-beta`.
+Local implementation and unsigned qualification evidence is recorded in
+[BETA2-VALIDATION.md](BETA2-VALIDATION.md).
 Glyphs 3 stays on its separate, pinned 1.11.0 plugin.
 
 ## Download and requirements
 
 When published, this page will link to the exact GitHub prerelease and its
-`Glyphs-MCP-2.0.0-beta.1.dmg`. Until then, the unsigned local build is for
+`Glyphs-MCP-2.0.0-beta.2.dmg`. Until then, the unsigned local build is for
 maintainer review only. The stable download remains available through
 [GitHub Releases](https://github.com/thierryc/Glyphs-mcp/releases/latest).
 
-Target requirements: macOS 13 or later, Apple silicon or Intel, and Glyphs 4
+Target requirements: macOS 14 or later, Apple silicon or Intel, and Glyphs 4
 for the new bridge. The installer bundles private runtimes; terminal setup is
 not required. The supported matrix must pass release qualification before the
 beta is offered publicly. Your AI client is configured separately.
@@ -34,6 +36,15 @@ beta is offered publicly. Your AI client is configured separately.
    public template. Use **Refresh** to retrieve the current beta template list.
 5. On your font copy, prepare a small supported spacing or kerning job, inspect
    its report, then apply or discard it. Check native Undo and Redo before Save.
+6. In a Git-backed project, select a changed text file and try unified, split,
+   wrapping and copying. For a changed file under
+   `.glyphspackage/glyphs/`, switch between **Visual** and **Text**, select a
+   layer, and inspect the Before/Both/After overlays. Confirm unchanged geometry
+   is neutral, the reference is mint and only the geometric delta fill is cyan.
+   Exercise previous/next difference, Reset, Command zoom shortcuts, pinch,
+   Option-scroll and Z-click zoom. Hold Space for the black silhouette preview.
+   These
+   previews are read-only and do not stage, edit or comment on files.
 
 The beta keeps the existing application and service identity. It is not an
 independent environment for running a second server beside a previous build.
@@ -79,7 +90,8 @@ join a group to use the beta. Once the download is live, volunteers can use the
 Issues are public; no email address or font upload is required.
 
 The most useful first reports cover installation, client connection, template
-refresh, project creation, inspector display and a complete apply/discard cycle.
+refresh, project creation, source and glyph diff display, inspector display and
+a complete apply/discard cycle.
 Include your beta/build number, macOS, processor, Glyphs version, client, steps,
 expected result and actual result. Share a minimal sample only if you can make
 it public. [Report a beta issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%202.0.0%5D%20&body=Beta%20and%20build%3A%0AmacOS%20and%20processor%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0ASteps%3A%0AExpected%3A%0AActual%3A).

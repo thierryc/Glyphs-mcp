@@ -1,5 +1,6 @@
 """Reject stale or incomplete desktop apps before they become install candidates."""
 import json
+import hashlib
 from pathlib import Path
 import plistlib
 import sys
@@ -10,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
 import verify_desktop_app as verifier
 import clean_desktop_builds as cleaner
 import build_local_app as builder
+import prepare_desktop_dependencies as dependencies
 
 
 @pytest.fixture
@@ -24,6 +26,17 @@ def bundle(tmp_path, monkeypatch):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b'fixture')
     (app / 'Contents/Info.plist').write_bytes(plistlib.dumps(info))
+    resources = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Resources/Resources'
+    resources.mkdir(parents=True)
+    pierre_resources = {'diff-core.js': b'fixture-normal', 'diff-core-edit.js': b'fixture-edit'}
+    for name, data in pierre_resources.items():
+        (resources / name).write_bytes(data)
+    lock = {'version': '1.2.4', 'commit': 'c2249d7890de957a96480711152d90a06fa1222b',
+            'resources': {name: hashlib.sha256(data).hexdigest()
+                          for name, data in pierre_resources.items()}}
+    lock_path = tmp_path / 'third_party/pierre-diffs-swift.json'
+    lock_path.parent.mkdir(parents=True)
+    lock_path.write_text(json.dumps(lock))
     catalog = tmp_path / 'macos-installer/GlyphsMCPInstaller/Resources/Assets.xcassets'
     for name in ['GlyphsMCPMenu', 'GitHubMark']:
         (catalog / (name + '.imageset')).mkdir(parents=True)
@@ -62,6 +75,132 @@ def test_rejects_missing_linked_framework(bundle):
     (app / 'Contents/Frameworks/Sparkle.framework/Sparkle').unlink()
     with pytest.raises(ValueError, match='Missing linked framework: Sparkle'):
         verifier.verify(app, root)
+
+
+def test_rejects_missing_pierre_resource_bundle(bundle):
+    app, root = bundle
+    resource = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Resources/Resources/diff-core.js'
+    resource.unlink()
+    with pytest.raises(ValueError, match='Missing PierreDiffsSwift JavaScript resource'):
+        verifier.verify(app, root)
+
+
+def test_rejects_modified_pierre_javascript(bundle):
+    app, root = bundle
+    resource = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Resources/Resources/diff-core.js'
+    resource.write_bytes(b'modified')
+    with pytest.raises(ValueError, match='PierreDiffsSwift JavaScript identity mismatch'):
+        verifier.verify(app, root)
+
+
+def test_pierre_hardening_patch_is_exact_and_idempotence_is_rejected(tmp_path):
+    root = tmp_path / 'PierreDiffsSwift'
+    files = {
+        'Sources/PierreDiffsSwift/WebView/PierreDiffView.swift':
+            '    let configuration = WKWebViewConfiguration()\n'
+            '    configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")\n',
+        'Sources/PierreDiffsSwift/WebView/DiffHTMLTemplate.swift':
+            '        <meta charset="UTF-8">\n',
+        'Sources/PierreDiffsSwift/WebView/DiffWebViewCoordinator.swift':
+            'extension DiffWebViewCoordinator: WKNavigationDelegate {\n\n',
+    }
+    for relative, content in files.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+    dependencies.apply_pierre_local_only_patch(root)
+    combined = '\n'.join((root / relative).read_text() for relative in files)
+    assert 'websiteDataStore = .nonPersistent()' in combined
+    assert 'developerExtrasEnabled")' in combined and 'setValue(false' in combined
+    assert 'Content-Security-Policy' in combined
+    assert 'scheme == nil || scheme == "about"' in combined
+    with pytest.raises(ValueError, match='patch context changed'):
+        dependencies.apply_pierre_local_only_patch(root)
+
+
+def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
+    source = (Path(__file__).resolve().parents[3]
+              / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
+    assert 'configuration.websiteDataStore = .nonPersistent()' in source
+    assert 'allowsContentJavaScript = true' in source
+    assert 'WKContentWorld.world(name: "GlyphDiffCamera")' in source
+    assert "script-src 'none'" in source
+    assert 'scheme == nil || scheme == "about" ? .allow : .cancel' in source
+    assert 'evaluateJavaScript' not in source
+    assert 'callAsyncJavaScript' in source
+    assert 'requestAnimationFrame(apply)' in source
+    assert 'magnification: state.magnification, final: force' in source
+    assert 'if final || abs(zoomBinding.wrappedValue - magnification) >= 0.005' in source
+    assert 'webView.setMagnification' not in source
+    assert '.fixed-control{transform-box:fill-box' in source
+    assert 'let signature = "\\(viewportKey):\\(String(reflecting: layer)):\\(fullViewBox)"' in source
+    assert '"setPresentation"' in source
+    assert '"setFillPreview"' in source
+    assert '"setCamera"' in source
+    assert '"smoothZoom"' in source
+    assert 'body["key"] as? String == viewportKey' in source
+    assert 'GlyphViewportMath.isRestorable(state, in: fullViewBox)' in source
+    assert source.count("<path class='delta'") == 1
+    assert "fill-rule:evenodd" in source
+    assert ".neutral{fill:none;stroke:" in source
+    assert "if value.outlineChanged" in source
+    assert "visible('delta-fill', both)" in source
+    assert "visible('after-neutral', payload.overlay === 'after' || (both && payload.hasAfter))" in source
+    assert "guard zoomToolActive else" in source
+    assert '.smoothZoom(-delta, canvasPoint(event))' in source
+    assert '.pan(CGPoint(x: -event.scrollingDeltaX, y: -event.scrollingDeltaY))' in source
+    assert '.neutral{fill:none;stroke:var(--neutral);stroke-width:1;' in source
+    assert '.reference-change{fill:none;stroke:#3fe2a6;stroke-width:1;' in source
+    assert '.current-change{fill:none;stroke:var(--neutral);stroke-width:1;' in source
+    assert '.neutral-handle{stroke:var(--handle);stroke-width:1;' in source
+    assert '.current-handle{stroke:var(--handle)}' in source
+    assert '.neutral-node,.neutral-control{fill:none;stroke:var(--control);' in source
+    assert '.current-node,.current-control{fill:none;stroke:var(--control);' in source
+    assert 'control: colorScheme == .dark ? "#a8a8a8" : "#858585"' in source
+    assert 'handle: colorScheme == .dark ? "#707070" : "#b8b8b8"' in source
+    assert "style.setProperty('--control', payload.control)" in source
+    assert "style.setProperty('--handle', payload.handle)" in source
+    assert '.fill-preview path.neutral:not(.open){fill:#000;stroke:#000}' in source
+    assert '.fill-preview #delta-fill' in source
+    assert 'event.charactersIgnoringModifiers == " "' in source
+    assert 'actionHandler?(.fillPreview(true))' in source
+    assert 'actionHandler?(.fillPreview(false))' in source
+    assert "svg.classList.toggle('fill-preview', payload.active)" in source
+    assert "value[0]-3.5" in source and "width='7' height='7'" in source
+    assert "r='3'" in source
+    assert ".neutral-node,.neutral-control{fill:none;" in source
+    assert ".reference-node,.reference-control{fill:none;" in source
+    assert ".current-node,.current-control{fill:none;" in source
+    assert "class='fixed-position-label fixed-guide-label' data-x='\\(maxX)' data-y='\\(-value)'" in source
+    assert "class='fixed-position-label fixed-anchor-label'" in source
+    assert 'let labelX = css == "reference" ? -8 : 8' in source
+    assert 'let labelY = css == "reference" ? -8 : 14' in source
+    assert ".reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}" in source
+    assert ".current-change.anchor-label{fill:var(--neutral);stroke:none;text-anchor:start}" in source
+    assert ".label{fill:var(--guide);font:500 12px -apple-system" in source
+    assert "document.querySelectorAll('.fixed-position-label')" in source
+    assert "Math.hypot(matrix.a, matrix.b)" in source
+    assert "const inverse = 1 / (z * displayScale())" in source
+    assert "translate(${item.x} ${item.y}) scale(${inverse})" in source
+    assert "new ResizeObserver(schedule).observe(svg)" in source
+
+
+def test_desktop_layout_minimums_keep_navigation_and_diff_controls_visible():
+    root = Path(__file__).resolve().parents[3]
+    content = (root / 'macos-installer/GlyphsMCPInstaller/Sources/ContentView.swift').read_text()
+    delegate = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopAppDelegate.swift').read_text()
+    git_workspace = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
+    assert 'static let minimumWidth: CGFloat = 1_040' in content
+    assert 'static let sidebarMinimumWidth: CGFloat = 220' in content
+    assert '.frame(maxWidth: .infinity, alignment: .leading)' in content
+    assert 'window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth' in delegate
+    assert '.frame(minWidth: 220, idealWidth: 260, maxWidth: 380' in git_workspace
+    assert 'ViewThatFits(in: .horizontal)' in git_workspace
+    assert '.frame(minWidth: 140, idealWidth: 175, maxWidth: 190)' in git_workspace
+    assert '.pickerStyle(.segmented).labelsHidden().frame(width: 170)' in git_workspace
+    assert 'Toggle("Guides", isOn: $guides).toggleStyle(.checkbox).fixedSize()' in git_workspace
+    assert '.frame(minWidth: 500, maxWidth: .infinity' in git_workspace
+    assert '.toggleStyle(.checkbox).fixedSize()' in git_workspace
 
 
 @pytest.mark.parametrize('change', ['source', 'worktree', 'app', 'none'])

@@ -22,6 +22,24 @@ final class DesktopProjectNavigationTests: XCTestCase {
         XCTAssertEqual(preferences.string(forKey: "unrelated"), "preserved")
     }
 
+    func testProjectsAreDisplayedAlphabeticallyByDisplayNameWithoutChangingRecency() throws {
+        let preferences = defaults()
+        preferences.set(["/Fonts/Zulu", "/Fonts/Alpha", "/Fonts/Middle"], forKey: "recentProjects")
+        preferences.set([
+            "/Fonts/Zulu": "Bravo",
+            "/Fonts/Alpha": "Zulu",
+            "/Fonts/Middle": "Alpha"
+        ], forKey: "projectDisplayNames")
+        var state = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+
+        XCTAssertEqual(state.recent, ["/Fonts/Zulu", "/Fonts/Alpha", "/Fonts/Middle"])
+        XCTAssertEqual(state.alphabetizedProjects, ["/Fonts/Middle", "/Fonts/Zulu", "/Fonts/Alpha"])
+
+        state.select(.project("/Fonts/Alpha"))
+        XCTAssertEqual(state.recent, ["/Fonts/Alpha", "/Fonts/Zulu", "/Fonts/Middle"])
+        XCTAssertEqual(state.alphabetizedProjects, ["/Fonts/Middle", "/Fonts/Zulu", "/Fonts/Alpha"])
+    }
+
     func testTemplatesHeaderIsExplicitAndDoesNotClearRememberedProject() {
         let preferences = defaults()
         var state = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)

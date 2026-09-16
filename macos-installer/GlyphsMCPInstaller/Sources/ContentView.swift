@@ -2,6 +2,16 @@ import AppKit
 import SwiftUI
 import GlyphsMCPInstallerCore
 
+enum DesktopDashboardLayout {
+    static let initialWidth: CGFloat = 1_180
+    static let initialHeight: CGFloat = 780
+    static let minimumWidth: CGFloat = 1_040
+    static let minimumHeight: CGFloat = 600
+    static let sidebarMinimumWidth: CGFloat = 220
+    static let sidebarIdealWidth: CGFloat = 250
+    static let sidebarMaximumWidth: CGFloat = 320
+}
+
 struct ContentView: View {
     @EnvironmentObject private var installer: InstallerViewModel
     @EnvironmentObject private var desktop: DesktopModel
@@ -22,27 +32,35 @@ struct ContentView: View {
                                 .font(.system(size: 10, weight: .semibold)).frame(width: 14, height: 22)
                         }.buttonStyle(.plain)
                             .accessibilityLabel(projectsExpanded ? "Collapse My Project" : "Expand My Project")
-                        Text("My Project").fontWeight(.semibold).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("My Project").fontWeight(.semibold).lineLimit(1)
+                            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                         DesktopProjectActions(model: projects)
                     }.font(.callout).foregroundStyle(.secondary).padding(.horizontal, 8).padding(.top, 16).padding(.bottom, 4)
                     if projectsExpanded {
-                        ForEach(projects.navigation.recent, id: \.self) { path in
+                        ForEach(projects.navigation.alphabetizedProjects, id: \.self) { path in
                             projectRow(path)
                         }
                         if projects.navigation.recent.isEmpty {
                             Text("No projects yet").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
                         }
                     }
-                }.padding(12)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .safeAreaInset(edge: .bottom) {
                 Button { desktop.showWelcome() } label: {
-                    Label("Welcome & Support", systemImage: "heart.circle").frame(maxWidth: .infinity, alignment: .leading)
+                    Label("Welcome & Support", systemImage: "heart.circle").lineLimit(1)
+                        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                 }.buttonStyle(.plain).padding()
             }
             .modifier(DesktopSidebarToolbarDefaults())
-            .frame(minWidth: 190)
-            .navigationSplitViewColumnWidth(min: 190, ideal: 225, max: 300)
+            .frame(minWidth: DesktopDashboardLayout.sidebarMinimumWidth)
+            .navigationSplitViewColumnWidth(
+                min: DesktopDashboardLayout.sidebarMinimumWidth,
+                ideal: DesktopDashboardLayout.sidebarIdealWidth,
+                max: DesktopDashboardLayout.sidebarMaximumWidth
+            )
         } detail: {
             switch projects.navigation.destination {
             case .overview: DesktopOverview { id, enabled in
@@ -56,7 +74,8 @@ struct ContentView: View {
         }
         .navigationTitle(DesktopIdentity.applicationTitle)
         .modifier(DesktopSidebarToggle(columnVisibility: $columnVisibility))
-        .frame(minWidth: 800, minHeight: 600)
+        .frame(minWidth: DesktopDashboardLayout.minimumWidth,
+               minHeight: DesktopDashboardLayout.minimumHeight)
         .task { projects.inspect(); await projects.loadTemplates() }
         .sheet(item: $projects.creation) { creation in
             DesktopProjectWizard(model: projects, template: creation.template)
@@ -72,7 +91,7 @@ struct ContentView: View {
         return HStack(spacing: 4) {
             Button { projects.select(.project(path)) } label: {
                 Label(name, systemImage: "folder").lineLimit(1).truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
                     .contentShape(Rectangle())
             }.buttonStyle(.plain).help(path)
                 .accessibilityAddTraits(selected ? .isSelected : [])
@@ -90,7 +109,8 @@ struct ContentView: View {
         let selected = projects.navigation.destination == destination
         return Button { projects.select(destination) } label: {
             Label(title, systemImage: icon).lineLimit(1).truncationMode(.middle)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10).padding(.vertical, 8)
                 .contentShape(Rectangle())
         }.buttonStyle(.plain)
             .foregroundStyle(selected ? Color.white : Color.primary)
@@ -103,30 +123,22 @@ private struct DesktopSidebarToggle: ViewModifier {
     @Binding var columnVisibility: NavigationSplitViewVisibility
 
     @ViewBuilder func body(content: Content) -> some View {
-        if #available(macOS 14, *) {
-            content.toolbar {
-                ToolbarItem(placement: .navigation) {
-                    Button {
-                        columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
-                    } label: {
-                        Label(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.left")
-                    }
-                    .help(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar")
+        content.toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+                } label: {
+                    Label(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.left")
                 }
+                .help(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar")
             }
-        } else {
-            content
         }
     }
 }
 
 private struct DesktopSidebarToolbarDefaults: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
-        if #available(macOS 14, *) {
-            content.toolbar(removing: .sidebarToggle)
-        } else {
-            content
-        }
+        content.toolbar(removing: .sidebarToggle)
     }
 }
 

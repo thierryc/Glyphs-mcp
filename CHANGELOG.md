@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.0.0 Beta 2 — visual Git diff browser, build 44
+
+- Replace the raw Git patch excerpt with a full-height, two-pane browser: a
+  native hierarchical file list and an on-demand, read-only diff preview.
+  Folder and file rows use Xcode-style disclosure controls and indentation so
+  nested package paths remain visually distinct.
+- Render UTF-8 source changes with PierreDiffsSwift 1.2.4, `@pierre/diffs`
+  1.3.5 and Shiki 4.4.1. Provide unified/split layouts, wrapping, line numbers,
+  word changes, syntax color and local light/dark appearance.
+- Add Visual/Text previews for individual glyph files inside
+  `.glyphspackage` sources. Visual mode uses Glyphs 4's authoritative
+  decomposed geometry. Current geometry stays near-black, with lighter neutral
+  nodes and handles; the symmetric-difference fill is cyan and changed
+  reference geometry is mint. Anchors and width bands follow the same
+  comparison palette. The
+  app prefers its own version-matched runtime and worker, so an older installed
+  component cannot leave the visual canvas empty.
+- Add layer, overlay and guide controls plus ordered previous/reset/next
+  difference navigation. Zoom uses 1.25× steps from 25% to 3200%, with the
+  Glyphs-style Command shortcuts, actual size, trackpad pinch, Option-scroll
+  and temporary Z-tool click zoom. Holding Space shows a pure-black filled
+  silhouette, and mouse/trackpad canvas panning uses the inverted requested
+  direction. Visual and text viewport state survives
+  switching during the app session. Unsupported or failed geometry falls back
+  to the text diff with a reason.
+- Define the comparison as combined `HEAD` to working tree, including staged,
+  unstaged, mixed, added, untracked, deleted and renamed changes without
+  mutating the repository.
+- Reject binary, invalid UTF-8, symlink and over-2-MiB previews; block remote
+  WebView navigation and use nonpersistent data stores.
+- Raise the desktop and test minimum to macOS 14. Glyphs 3 remains pinned to
+  1.11.0; MCP tools, interface revision, bridge protocol and schemas are
+  unchanged.
+
+This is the current unpublished candidate. Beta 1 history remains below.
+
 ## Private lean v2 qualification — September 14, 2026
 
 - Install current OpenType skill routing through existing ownership checks and
@@ -17,7 +53,7 @@ not a new product version or a fresh v1 benchmark.
 
 ## 2.0.0 Beta 1 — local preparation, build 43
 
-This is the current desktop candidate. The unpublished 2.1.0 designation is
+This was the first desktop beta candidate. The unpublished 2.1.0 designation is
 retired; its local development changes are included in this beta.
 
 - Add the permanent desktop workspace with Overview, Components, Projects,

@@ -60,11 +60,14 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     func showDashboard() {
         popover.performClose(nil)
         if dashboard == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 970, height: 740),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0,
+                width: DesktopDashboardLayout.initialWidth, height: DesktopDashboardLayout.initialHeight),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.title = DesktopIdentity.applicationTitle
             window.identifier = NSUserInterfaceItemIdentifier("glyphs-mcp-dashboard")
             window.setFrameAutosaveName("Glyphs MCP Dashboard")
+            window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth,
+                                           height: DesktopDashboardLayout.minimumHeight)
             window.isReleasedWhenClosed = false; window.delegate = self
             window.contentViewController = NSHostingController(rootView: ContentView().environmentObject(installer).environmentObject(desktop))
             // Use one window-wide separator instead of automatic per-column styles.
@@ -80,8 +83,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     func showSettings() {
         popover.performClose(nil)
         NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14, *) { NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) }
-        else { NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil) }
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     func showWelcome() {
