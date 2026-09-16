@@ -738,6 +738,7 @@ final class InstallerViewModel: ObservableObject {
 			log("Payload OK: \(payload.payloadDir.path)")
 		}
 
+		var dependencyPathPlans: [GlyphsMajorVersion: RuntimeProbeDocument.PathPlan] = [:]
 		for target in options.targets.sorted(by: { $0.version < $1.version }) {
 			if Task.isCancelled { throw CancellationError() }
 			try await step(
@@ -748,12 +749,16 @@ final class InstallerViewModel: ObservableObject {
 					glyphsVersion: target.version
 				)
 				do {
-					_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
+					let document = try await RuntimeProbeExecutor(runner: runner, log: log).check(
 						python: target.pythonSelection.pythonExecutable,
 						probe: payload.runtimeProbe,
 						sitePackages: sitePackages,
 						mode: .preinstall
 					)
+					guard let pathPlan = document.pathPlan else {
+						throw InstallerError.userFacing("Python environment check omitted the runtime path plan.")
+					}
+					dependencyPathPlans[target.version] = pathPlan
 				} catch {
 					throw InstallerError.userFacing(
 						"""
@@ -766,24 +771,21 @@ Installation stopped before changing dependencies, plug-ins, or client settings.
 			}
 		}
 
-		var completedDependencyKeys: Set<String> = []
 		var downloadedPluginBundle: URL?
 		for target in options.targets.sorted(by: { $0.version < $1.version }) {
 			if Task.isCancelled { throw CancellationError() }
+			guard let pathPlan = dependencyPathPlans[target.version] else {
+				throw InstallerError.userFacing("The verified dependency path plan for \(target.version.displayName) is unavailable.")
+			}
 			let dependencyStepID = InstallStep.ID.dependencies(target.version)
-			if completedDependencyKeys.contains(target.dependencyInstallKey) {
-				log("Reusing dependencies already installed for \(target.version.displayName).")
-				mark(dependencyStepID, .success)
-			} else {
-				try await step("Install \(target.version.displayName) dependencies", id: dependencyStepID) {
-					try await DepsInstaller(runner: runner, log: log).installAndVerify(
-						python: target.pythonSelection,
-						requirementsTxt: payload.requirementsTxt,
-						runtimeProbe: payload.runtimeProbe,
-						glyphsVersion: target.version
-					)
-				}
-				completedDependencyKeys.insert(target.dependencyInstallKey)
+			try await step("Install \(target.version.displayName) dependencies", id: dependencyStepID) {
+				try await DepsInstaller(runner: runner, log: log).installAndVerify(
+					python: target.pythonSelection,
+					requirementsTxt: payload.requirementsTxt,
+					runtimeProbe: payload.runtimeProbe,
+					glyphsVersion: target.version,
+					pathPlan: pathPlan
+				)
 			}
 
 			try await step("Install \(target.version.displayName) plug-in", id: .plugin(target.version)) {

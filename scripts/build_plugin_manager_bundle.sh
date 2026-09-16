@@ -199,6 +199,7 @@ done < <(git ls-files -z "$src_bundle")
 # documented build-before-stage workflow. Keep this allowlist narrow so the
 # tracked-file rule still excludes arbitrary local artifacts.
 for rel in \
+  "Contents/Resources/runtime_path_policy.py" \
   "Contents/Resources/tool_catalog.py" \
   "Contents/Resources/tool_registration.py" \
   "Contents/Resources/tool_result_schemas.py" \
@@ -301,6 +302,8 @@ required = [
     os.path.join(root, "Contents", "Info.plist"),
     os.path.join(root, "Contents", "MacOS", "plugin"),
     os.path.join(root, "Contents", "Resources", "plugin.py"),
+    os.path.join(root, "Contents", "Resources", "runtime_path_policy.py"),
+    os.path.join(root, "Contents", "Resources", "runtime_probe.py"),
 ]
 
 missing = [p for p in required if not os.path.exists(p)]

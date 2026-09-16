@@ -7,7 +7,9 @@ import site
 import sys
 import traceback
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Tuple
+
+from runtime_path_policy import apply_runtime_path_plan, build_runtime_path_plan
 
 
 def _glyphs_major_version() -> str:
@@ -57,94 +59,19 @@ def _glyphs_user_site_packages() -> Path:
 
 
 def _ensure_user_site_packages_on_path() -> None:
-    """Ensure the active Python can import MCP dependencies.
-
-    Glyphs may run either its embedded runtime or an external python.org/Homebrew
-    interpreter. Always add the Glyphs Scripts/site-packages directory, and when
-    Glyphs is using an external Python also add that interpreter's user site so
-    pip installs land where the plug-in can see them.
-    """
-
-    def _add(path: Optional[Path]) -> None:
-        if not path:
-            return
-        try:
-            real = path.resolve()
-        except Exception:
-            real = path
-        if not real.is_dir():
-            return
-
-        # Remove any existing entries that point to the same directory so we
-        # can control ordering (especially when mixing Glyphs' Python with
-        # an external interpreter).
-        try:
-            real_resolved = real.resolve()
-        except Exception:
-            real_resolved = real
-        real_str = str(real)
-        real_resolved_str = str(real_resolved)
-
-        for entry in list(sys.path):
-            try:
-                entry_path = Path(entry)
-            except Exception:
-                entry_path = None
-
-            if entry == real_str or entry == real_resolved_str:
-                sys.path.remove(entry)
-                continue
-
-            if entry_path is not None:
-                try:
-                    if entry_path.resolve() == real_resolved:
-                        sys.path.remove(entry)
-                except Exception:
-                    continue
-
-        try:
-            site.addsitedir(str(real))
-        except Exception:
-            # Never block plugin startup on sys.path tweaks
-            pass
-
-    glyphs_site = _glyphs_user_site_packages()
-
-    # Detect whether Glyphs is running with its embedded Python.
-    exe = Path(sys.executable).resolve()
-    is_embedded = any(parent.name.endswith(".app") and "Glyphs" in parent.name for parent in exe.parents)
-
-    additions: List[Path] = []
-
-    if not is_embedded:
-        try:
-            import site as _site  # shadowing module name is intentional
-
-            user_site = Path(_site.getusersitepackages())
-        except Exception:
-            user_site = None
-        else:
-            # Avoid re-adding the Glyphs Scripts folder when Glyphs delegates to it.
-            if user_site:
-                try:
-                    if glyphs_site and user_site.resolve() == glyphs_site.resolve():
-                        pass
-                    else:
-                        additions.append(user_site)
-                except Exception:
-                    additions.append(user_site)
-
-    # Always add Glyphs' Scripts/site-packages last so external site-packages
-    # take precedence when both are present.
-    additions.append(glyphs_site)
-
-    for entry in additions:
-        _add(entry)
+    """Apply the same dependency path plan used by both installers."""
+    plan = build_runtime_path_plan(
+        _glyphs_user_site_packages(),
+        Path(sys.executable),
+    )
+    apply_runtime_path_plan(plan)
 
     # Allow manual overrides for debugging (colon-separated list).
     extras = os.environ.get("GLYPHS_MCP_EXTRA_SITEPACKAGES", "")
     for entry in (p.strip() for p in extras.split(os.pathsep) if p.strip()):
-        _add(Path(os.path.expanduser(entry)))
+        path = Path(os.path.expanduser(entry))
+        if path.is_dir():
+            site.addsitedir(str(path))
 
 
 _ensure_user_site_packages_on_path()

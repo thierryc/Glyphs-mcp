@@ -1044,9 +1044,36 @@ class RuntimeProbeResult:
         value = self.payload.get("issues")
         return value if isinstance(value, list) else []
 
+    @property
+    def path_plan(self) -> Dict[str, Any]:
+        value = self.payload.get("pathPlan")
+        return value if isinstance(value, dict) else {}
+
 
 class RuntimeProbeError(RuntimeError):
     pass
+
+
+def _valid_runtime_path_plan(path_plan: Any) -> bool:
+    if not isinstance(path_plan, dict):
+        return False
+    primary = path_plan.get("primaryRoot")
+    fallbacks = path_plan.get("fallbackRoots")
+    ordered = path_plan.get("orderedRoots")
+    runtime_kind = path_plan.get("runtimeKind")
+    install_mode = path_plan.get("installMode")
+    return (
+        path_plan.get("schemaVersion") == 1
+        and (runtime_kind, install_mode)
+        in {("embedded", "target"), ("external", "user")}
+        and isinstance(primary, str)
+        and bool(primary)
+        and isinstance(fallbacks, list)
+        and all(isinstance(value, str) and value for value in fallbacks)
+        and isinstance(ordered, list)
+        and ordered == [primary, *fallbacks]
+        and len(set(ordered)) == len(ordered)
+    )
 
 
 def runtime_probe_path() -> Path:
@@ -1069,6 +1096,7 @@ def run_runtime_probe(
     allowed_origins: Sequence[Path] = (),
     allow_user_site: bool = False,
     allow_runtime_paths: bool = False,
+    expected_path_plan: Optional[Dict[str, Any]] = None,
     timeout: int = RUNTIME_PROBE_TIMEOUT_SECONDS,
 ) -> RuntimeProbeResult:
     probe = runtime_probe_path()
@@ -1151,6 +1179,15 @@ def run_runtime_probe(
         raise RuntimeProbeError(
             "Python environment check omitted required diagnostic details."
         )
+    path_plan = payload.get("pathPlan")
+    if not _valid_runtime_path_plan(path_plan):
+        raise RuntimeProbeError(
+            "Python environment check returned an invalid runtime path plan."
+        )
+    if expected_path_plan is not None and path_plan != expected_path_plan:
+        raise RuntimeProbeError(
+            "Python environment path plan changed between preflight and verification."
+        )
     blocking = payload["blocking"]
     if completed.returncode not in ({2} if blocking else {0}):
         raise RuntimeProbeError(
@@ -1172,22 +1209,51 @@ def _runtime_probe_failure_message(result: RuntimeProbeResult) -> str:
     blocking_issues = [
         issue for issue in result.issues if issue.get("blocking") is True
     ]
+    codes = {str(issue.get("code")) for issue in blocking_issues}
+    native_codes = {"incompatible_abi", "incompatible_architecture"}
+    location_codes = {"symlink_escape", "unexpected_origin"}
+    import_codes = {"missing_module", "import_failure"}
+    if codes and codes <= native_codes:
+        headline = "Native compatibility failure."
+        direction = (
+            "Reinstall the reported packages with the selected Python, or select "
+            "the Python version that matches the winning native files."
+        )
+    elif codes and codes <= location_codes:
+        headline = "Dependency-location verification failure."
+        direction = (
+            "Correct the reported origin or symlink, then reinstall into the "
+            "primary root shown in pathPlan."
+        )
+    elif codes and codes <= import_codes:
+        headline = "Dependency import failure."
+        direction = (
+            "Install the requirements into the primary root shown in pathPlan, "
+            "then rerun verification."
+        )
+    else:
+        headline = "Python environment verification failure."
+        direction = "Resolve each blocking issue in the diagnostic JSON, then rerun the installer."
     details = "\n".join(
         f"  • {issue.get('message', 'Unknown Python environment error')}"
         + (f"\n    File: {issue['file']}" if issue.get("file") else "")
         for issue in blocking_issues
     )
+    boundary = (
+        "Installation stopped before changing dependencies or the plug-in."
+        if result.payload.get("mode") == "preinstall"
+        else "Post-install verification failed, so installation will not be reported as successful."
+    )
     return (
-        f"Glyphs uses Python {version} at {executable}, but its ABI does not "
-        "match one or more existing native packages, or the environment could "
-        "not be verified.\n"
+        f"{headline}\nGlyphs uses Python {version} at {executable}.\n"
         f"{details or '  • The Python environment could not be verified.'}\n"
-        "Installation stopped before changing dependencies or the plug-in. "
-        "See the Glyphs MCP troubleshooting guide."
+        f"Next: {direction}\n{boundary} See the Glyphs MCP troubleshooting guide."
     )
 
 
-def check_runtime_preinstall(python: Path, site_packages: Path) -> None:
+def check_runtime_preinstall(
+    python: Path, site_packages: Path
+) -> RuntimeProbeResult:
     console.print(
         Panel.fit(
             f"Python: {python}\nShared packages: {site_packages}",
@@ -1210,13 +1276,14 @@ def check_runtime_preinstall(python: Path, site_packages: Path) -> None:
         console.print(f"[red]{_runtime_probe_failure_message(result)}[/red]")
         raise SystemExit(2)
     console.print("[green]Python environment preflight passed.[/green]")
+    return result
 
 
 def verify_runtime(
     python: Path,
     extra_site_packages: Optional[Path] = None,
     *,
-    allow_user_site: bool = False,
+    expected_path_plan: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """Verify the complete installed runtime with the shared probe."""
     site_packages = extra_site_packages or glyphs_scripts_site_packages()
@@ -1232,9 +1299,7 @@ def verify_runtime(
             python,
             site_packages,
             "postinstall",
-            allowed_origins=[site_packages],
-            allow_user_site=allow_user_site,
-            allow_runtime_paths=True,
+            expected_path_plan=expected_path_plan,
         )
     except RuntimeProbeError as exc:
         console.print(f"[red]Runtime verification failed:[/red] {exc}")
@@ -1299,26 +1364,19 @@ def check_existing_glyphs_runtime(
 ) -> None:
     _, python, _ = resolve_glyphs_python_runtime(glyphs_version)
     target = glyphs_scripts_site_packages(glyphs_version)
-    check_runtime_preinstall(python, target)
-    if not verify_runtime(python, target):
+    preflight = check_runtime_preinstall(python, target)
+    if not verify_runtime(python, target, expected_path_plan=preflight.path_plan):
         raise SystemExit(2)
 
 
-def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
-    pip_cmd, verify_python, source = resolve_glyphs_python_runtime(glyphs_version)
-
-    target = glyphs_scripts_site_packages(glyphs_version)
-    check_runtime_preinstall(verify_python, target)
-    target.mkdir(parents=True, exist_ok=True)
-    console.print(Panel.fit(f"{source}\nInstalling requirements into:\n{target}", title="Glyphs Python", border_style="green"))
-    pip_environment = os.environ.copy()
-    existing_pythonpath = pip_environment.get("PYTHONPATH")
-    pip_environment["PYTHONPATH"] = (
-        f"{target}{os.pathsep}{existing_pythonpath}"
-        if existing_pythonpath
-        else str(target)
-    )
-    run(pip_cmd + [
+def _dependency_pip_invocation(
+    *,
+    python: Path,
+    pip_prefix: Sequence[str],
+    requirements: Path,
+    path_plan: Dict[str, Any],
+) -> Tuple[List[str], Optional[Dict[str, str]]]:
+    common = [
         "install",
         "--upgrade",
         "--upgrade-strategy",
@@ -1333,13 +1391,45 @@ def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", 
         "2",
         "--no-compile",
         "--only-binary=:all:",
-        "--target",
-        str(target),
-        "-r",
-        str(requirements),
-    ], env=pip_environment)
+    ]
+    install_mode = path_plan.get("installMode")
+    primary_root = path_plan.get("primaryRoot")
+    if install_mode == "user":
+        return [str(python), "-m", "pip", *common, "--user", "-r", str(requirements)], None
+    if install_mode != "target" or not isinstance(primary_root, str) or not primary_root:
+        raise RuntimeProbeError("Runtime path plan has an invalid install destination.")
+    environment = os.environ.copy()
+    existing_pythonpath = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = (
+        f"{primary_root}{os.pathsep}{existing_pythonpath}"
+        if existing_pythonpath
+        else primary_root
+    )
+    return [*pip_prefix, *common, "--target", primary_root, "-r", str(requirements)], environment
 
-    if not verify_runtime(verify_python, target):
+
+def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
+    pip_cmd, verify_python, source = resolve_glyphs_python_runtime(glyphs_version)
+
+    target = glyphs_scripts_site_packages(glyphs_version)
+    preflight = check_runtime_preinstall(verify_python, target)
+    primary_root = Path(str(preflight.path_plan["primaryRoot"]))
+    if preflight.path_plan["installMode"] == "target":
+        primary_root.mkdir(parents=True, exist_ok=True)
+    console.print(Panel.fit(f"{source}\nInstalling requirements into:\n{primary_root}", title="Glyphs Python", border_style="green"))
+    command, environment = _dependency_pip_invocation(
+        python=verify_python,
+        pip_prefix=pip_cmd,
+        requirements=requirements,
+        path_plan=preflight.path_plan,
+    )
+    run(command, env=environment)
+
+    if not verify_runtime(
+        verify_python,
+        target,
+        expected_path_plan=preflight.path_plan,
+    ):
         raise SystemExit(2)
 
 
@@ -1349,33 +1439,22 @@ def install_with_custom_python(
     glyphs_version: Literal["3", "4"] = "4",
 ) -> None:
     target = glyphs_scripts_site_packages(glyphs_version)
-    check_runtime_preinstall(python, target)
+    preflight = check_runtime_preinstall(python, target)
     console.print(Panel.fit(f"Installing requirements to user site for:\n{python}"
                            f"\n(version: {python_version(python) or 'unknown'})",
                            title="Custom Python", border_style="cyan"))
-    run([
-        str(python),
-        "-m",
-        "pip",
-        "install",
-        "--upgrade",
-        "--upgrade-strategy",
-        "only-if-needed",
-        "--disable-pip-version-check",
-        "--no-input",
-        "--progress-bar",
-        "off",
-        "--timeout",
-        "30",
-        "--retries",
-        "2",
-        "--no-compile",
-        "--only-binary=:all:",
-        "--user",
-        "-r",
-        str(requirements),
-    ])
-    if not verify_runtime(python, target, allow_user_site=True):
+    command, environment = _dependency_pip_invocation(
+        python=python,
+        pip_prefix=[str(python), "-m", "pip"],
+        requirements=requirements,
+        path_plan=preflight.path_plan,
+    )
+    run(command, env=environment)
+    if not verify_runtime(
+        python,
+        target,
+        expected_path_plan=preflight.path_plan,
+    ):
         raise SystemExit(2)
 
 

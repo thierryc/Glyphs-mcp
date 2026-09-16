@@ -9,22 +9,23 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.11.0 (release candidate)
+## What's new in 1.11.1 (release candidate)
 
-**Safe live vibe coding for Glyphs Python.**
+**One dependency path policy across the plug-in and both installers.**
 
-- The new `glyphs-mcp-scripting` skill turns natural-language ideas into small,
-  documentation-grounded scripts for the running Glyphs app. Read-only probes
-  can run directly; mutations are returned as exact `snippet_only` previews and
-  stop for explicit approval before unchanged execution.
-- Existing coding workflows remain intact: `glyphs-mcp-development` owns
-  reusable scripts and six plug-in types, while outline and italic fallback
-  code stays in its domain-specific skills.
-- The general `glyphs` router now distinguishes live runs, Macro Panel snippets,
-  reusable artifacts, and non-Glyphs Python explicitly.
-- Codex/ChatGPT, Claude Code, Cursor, GitHub Copilot CLI, and both installers
-  receive the same 11 synchronized skills.
-- The MCP runtime remains at 87 active tools: 76 model-visible and 11 app-only.
+- External, repository, python.org, and Homebrew interpreters prioritize their
+  user site and use the matching Glyphs `Scripts/site-packages` as fallback.
+  Python physically embedded in a Glyphs app prioritizes the Glyphs folder.
+- Preflight, pip, post-install verification, and plug-in startup now consume the
+  same serialized path plan. Plan drift stops installation.
+- Lower-priority duplicate packages are warnings. Imports through symlinks are
+  accepted only when their resolved targets stay inside an approved root.
+- Diagnostics distinguish native compatibility, dependency location, import,
+  and mixed environment failures and give the user a specific next step.
+- The installer does not delete, move, or rewrite existing shared packages.
+- The macOS installer now recognizes running Glyphs applications only by the
+  supported stable and beta bundle IDs, so Glyphs 4 Finder preview extensions
+  no longer block Glyphs 3 or Glyphs 4 installation.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
 [Read the changelog →](CHANGELOG.md) ·
@@ -105,7 +106,7 @@ Glyphs 3 backward compatibility is maintained for the shared MCP server code whe
 
 ## Optional agent plugins
 
-Glyphs MCP 1.11.0 provides one shared plugin package for Codex/ChatGPT, Claude
+Glyphs MCP 1.11.1 provides one shared plugin package for Codex/ChatGPT, Claude
 Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
 but all four load the same 11 skills and the same local MCP connection:
 
@@ -135,7 +136,7 @@ installers do not install, update, or remove these agent plugins; each host owns
 that lifecycle. The repository also does not enable GitHub Copilot plugins
 through `.github/copilot/settings.json`.
 
-All host manifests use version `1.11.0`. Skills inherit that package version,
+All host manifests use version `1.11.1`. Skills inherit that package version,
 while the running MCP server reports the matching native Glyphs MCP version.
 See [Use agent skills and optional plugins](content/getting-started/use-agent-skills.mdx)
 for install, update, removal, fallback, and host-specific invocation details.
@@ -229,7 +230,7 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.11.0)
+## Command Set (MCP server v1.11.1)
 
 Glyphs MCP exposes **87 active tools** through one catalog-driven surface:
 **76 are model-visible** and **11 are app-only**. Every tool has a concise
@@ -238,7 +239,7 @@ class, lifecycle state, and optional structured-output schema.
 
 The generated [command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
 is the authoritative list. README intentionally does not duplicate the full
-table. This catalog is shipped in this repo (version `1.11.0`). Typical
+table. This catalog is shipped in this repo (version `1.11.1`). Typical
 workflows begin with `list_open_fonts`, resolve explicit glyph
 and master targets, review or preview a detached candidate, dry-run changes,
 and ask for approval before confirmation. No edit tool saves implicitly.

@@ -1,6 +1,8 @@
 import AppKit
 import Foundation
 
+private let ambiguousGlyphsBetaBundleIdentifier = "com.GeorgSeifert.GlyphsBeta"
+
 public struct GlyphsApplicationInfo: Identifiable, Equatable, Sendable {
 	public let majorVersion: GlyphsMajorVersion
 	public let appURL: URL
@@ -28,16 +30,56 @@ public struct GlyphsApplicationInfo: Identifiable, Equatable, Sendable {
 	}
 }
 
-public enum GlyphsApplicationDetector {
-	private static let ambiguousBetaBundleIdentifier = "com.GeorgSeifert.GlyphsBeta"
+public struct GlyphsRunningProcessInfo: Equatable, Sendable {
+	public let bundleIdentifier: String?
+	public let shortVersion: String?
+	public let displayName: String?
+	public let fileName: String?
 
+	public init(
+		bundleIdentifier: String?,
+		shortVersion: String?,
+		displayName: String?,
+		fileName: String?
+	) {
+		self.bundleIdentifier = bundleIdentifier
+		self.shortVersion = shortVersion
+		self.displayName = displayName
+		self.fileName = fileName
+	}
+}
+
+public enum GlyphsRunningProcessDetector {
+	public static let supportedBundleIdentifiers = GlyphsMajorVersion.allCases.flatMap(\.bundleIdentifiers) + [
+		ambiguousGlyphsBetaBundleIdentifier,
+	]
+	private static let supportedBundleIdentifierSet = Set(supportedBundleIdentifiers)
+
+	public static func classify(_ process: GlyphsRunningProcessInfo) -> GlyphsMajorVersion? {
+		guard
+			let bundleIdentifier = process.bundleIdentifier,
+			supportedBundleIdentifierSet.contains(bundleIdentifier)
+		else { return nil }
+		return GlyphsApplicationDetector.classify(
+			bundleIdentifier: bundleIdentifier,
+			shortVersion: process.shortVersion,
+			displayName: process.displayName,
+			fileName: process.fileName
+		)
+	}
+
+	public static func runningVersions(in processes: [GlyphsRunningProcessInfo]) -> Set<GlyphsMajorVersion> {
+		Set(processes.compactMap(classify))
+	}
+}
+
+public enum GlyphsApplicationDetector {
 	public static func detect(
 		home: URL = InstallerPaths.home,
 		workspace: NSWorkspace = .shared
 	) -> [GlyphsApplicationInfo] {
 		var candidateURLs: Set<URL> = []
-		let bundleIdentifiers = GlyphsMajorVersion.allCases.flatMap(\.bundleIdentifiers) + [ambiguousBetaBundleIdentifier]
-		for bundleIdentifier in bundleIdentifiers {
+		for bundleIdentifier in GlyphsRunningProcessDetector.supportedBundleIdentifiers {
 			if let appURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier) {
 				candidateURLs.insert(appURL.standardizedFileURL)
 			}
@@ -88,6 +130,7 @@ public enum GlyphsApplicationDetector {
 			for version in GlyphsMajorVersion.allCases where version.bundleIdentifiers.contains(bundleIdentifier) {
 				return version
 			}
+			guard bundleIdentifier == ambiguousGlyphsBetaBundleIdentifier else { return nil }
 		}
 
 		let names = [displayName, fileName]
@@ -99,7 +142,7 @@ public enum GlyphsApplicationDetector {
 		// A generic beta bundle does not identify its major version. Only use the
 		// app version as a discriminator after confirming this is a Glyphs bundle
 		// or a Glyphs-named application, so unrelated 3.x/4.x apps are ignored.
-		let isAmbiguousBetaBundle = bundleIdentifier == ambiguousBetaBundleIdentifier
+		let isAmbiguousBetaBundle = bundleIdentifier == ambiguousGlyphsBetaBundleIdentifier
 		guard isAmbiguousBetaBundle || names.contains("glyphs") else { return nil }
 		let trimmedVersion = shortVersion?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 		if trimmedVersion.hasPrefix("3") { return .v3 }

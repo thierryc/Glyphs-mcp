@@ -11,6 +11,41 @@ Do not duplicate release flow, command reference, or long installer notes across
 
 Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
 
+## Prepared 1.11.1 candidate
+
+Version `1.11.1` (installer build `27`) adds one standard-library-only runtime
+path policy shared by plug-in startup, the runtime probe, and both installers.
+External and repository-selected interpreters install into and prioritize their
+user site, with each Glyphs version's `Scripts/site-packages` as an approved
+fallback. Python physically embedded inside a Glyphs app installs into and
+prioritizes that Glyphs folder.
+
+The probe records the additive schema-v1 `pathPlan`, logical and resolved
+origins, the winning root, and lower-priority candidates. A winning ABI or
+architecture mismatch remains blocking. Lower-priority duplicates are warnings;
+approved cross-root symlinks pass, escaping symlinks and unrelated origins
+block. Preflight, pip, requirement reuse, post-install verification, and plug-in
+startup use the same root order, and post-install plan drift blocks completion.
+No existing dependency is deleted, moved, or rewritten.
+
+The macOS installer also replaces broad bundle-prefix and display-name process
+matching with the exact supported stable and beta Glyphs application bundle
+IDs. Glyphs 4 Quick Look and thumbnail Finder extensions are rejected before
+name or version fallback and cannot block either installer target. Pure
+process-metadata tests preserve per-version blocking and the explicitly
+supported ambiguous beta ID without depending on live `NSWorkspace` state.
+
+The complete local release gate passes 880 Python tests with 2 intentional
+environment-dependent skips, including isolated Python 3.12 and 3.14 pinned
+wheel installation. All 109 macOS installer tests pass, shell syntax and patch
+whitespace checks pass, and the unsigned Debug installer builds successfully.
+Focused runtime-probe, terminal-installer, payload, and Plugin Manager mirror
+tests are included in that gate. The documentation production build, release
+metadata check, shared-skill synchronization check, and all 22 canonical and
+packaged skill validations also pass. Live Glyphs 3.5/4 and signed-artifact QA
+remain outstanding; no commit, tag, push, signing, notarization, upload, or
+publication has been performed.
+
 ## Prepared 1.11.0 candidate
 
 Version `1.11.0` (installer build `26`) preserves the 87-tool MCP runtime and

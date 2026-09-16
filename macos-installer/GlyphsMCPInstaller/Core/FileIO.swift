@@ -165,6 +165,7 @@ public struct InstallerPayload {
 		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payloadDir.appendingPathComponent("requirements.txt")
 		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
+		let runtimePathPolicy = plugin.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
 		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: plugin.path) else {
 			throw InstallerError.userFacing("Missing payload plugin bundle: \(plugin.path)")
@@ -174,6 +175,9 @@ public struct InstallerPayload {
 		}
 		guard FileManager.default.fileExists(atPath: runtimeProbe.path) else {
 			throw InstallerError.userFacing("Missing payload Python runtime probe: \(runtimeProbe.path)")
+		}
+		guard FileManager.default.fileExists(atPath: runtimePathPolicy.path) else {
+			throw InstallerError.userFacing("Missing payload Python runtime path policy: \(runtimePathPolicy.path)")
 		}
 		let resolvedSkillsDir = FileManager.default.fileExists(atPath: skillsDir.path) ? skillsDir : nil
 		return InstallerPayload(

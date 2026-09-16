@@ -221,9 +221,13 @@ candidates, tangent/imbalance boundaries, and continuous opt-in.
   restrictions, and loopback-only binding.
 - Install/upgrade both Glyphs targets with the release installer. Confirm
   canonical and Plugin Manager runtimes, four host manifests, packaged skills,
-  and build number agree. Each host resolves version `1.11.0`, the same 11
+  and build number agree. Each host resolves version `1.11.1`, the same 11
   skills, and the same localhost MCP endpoint (the version script updates this
   sentence for the candidate).
+- With the Glyphs 4 Quick Look and thumbnail Finder extensions active, confirm
+  that neither installer target is marked running while both main applications
+  are closed. Then run Glyphs 3 and Glyphs 4 separately and confirm that only
+  the corresponding installer target is blocked and that quitting clears it.
 - Exercise update discovery and **Prepare Update** only with signed disposable
   loopback fixtures. Detection never authorizes installation; cancellation,
   checksum/signature/version failure, receipts, and unchanged installed bundle

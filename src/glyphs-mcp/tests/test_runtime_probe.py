@@ -27,9 +27,74 @@ def load_module(name, path):
 
 probe = load_module("glyphs_mcp_runtime_probe_tests", PROBE_PATH)
 installer = load_module("glyphs_mcp_install_cli_probe_tests", INSTALLER_PATH)
+policy = sys.modules["runtime_path_policy"]
 
 
 class RuntimeProbeTests(unittest.TestCase):
+    @staticmethod
+    def path_plan(primary, *fallbacks):
+        roots = [str(primary), *(str(path) for path in fallbacks)]
+        return {
+            "schemaVersion": 1,
+            "runtimeKind": "external",
+            "installMode": "user",
+            "executable": sys.executable,
+            "primaryRoot": roots[0],
+            "fallbackRoots": roots[1:],
+            "orderedRoots": roots,
+        }
+
+    def test_shared_policy_selects_external_user_site_and_embedded_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            glyphs_site = root / "Glyphs 4" / "Scripts" / "site-packages"
+            user_site = root / "user" / "site-packages"
+            with mock.patch.object(policy, "_user_site_packages", return_value=user_site):
+                external = policy.build_runtime_path_plan(
+                    glyphs_site,
+                    root / "Repositories" / "Python.framework" / "bin" / "python3",
+                )
+                embedded = policy.build_runtime_path_plan(
+                    glyphs_site,
+                    root / "Glyphs 4.app" / "Contents" / "MacOS" / "python3",
+                )
+        self.assertEqual(external["installMode"], "user")
+        self.assertEqual(external["orderedRoots"], [str(user_site), str(glyphs_site)])
+        self.assertEqual(embedded["installMode"], "target")
+        self.assertEqual(embedded["orderedRoots"], [str(glyphs_site)])
+
+    def test_shared_policy_applies_roots_at_first_site_packages_position(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            primary = root / "primary"
+            fallback = root / "fallback"
+            primary.mkdir()
+            fallback.mkdir()
+            original = list(sys.path)
+            sys.path[:] = [
+                "/fixture/plugin-resources",
+                "/fixture/stdlib",
+                "/fixture/global/site-packages",
+                str(fallback),
+                str(primary),
+                str(primary),
+            ]
+            try:
+                policy.apply_runtime_path_plan(self.path_plan(primary, fallback))
+                self.assertEqual(
+                    sys.path[:5],
+                    [
+                        "/fixture/plugin-resources",
+                        "/fixture/stdlib",
+                        str(primary),
+                        str(fallback),
+                        "/fixture/global/site-packages",
+                    ],
+                )
+                self.assertEqual(sys.path.count(str(primary)), 1)
+            finally:
+                sys.path[:] = original
+
     def test_issue_47_cpython_311_file_is_incompatible_with_python_314(self):
         compatible, detected = probe._is_abi_compatible(
             Path("_pydantic_core.cpython-311-darwin.so"),
@@ -241,19 +306,107 @@ class RuntimeProbeTests(unittest.TestCase):
         self.assertEqual(postinstall["issues"][0]["code"], "missing_module")
 
     def test_postinstall_unexpected_origin_is_blocking(self):
-        with tempfile.TemporaryDirectory() as module_directory, tempfile.TemporaryDirectory() as allowed_directory:
+        with tempfile.TemporaryDirectory() as primary_directory, tempfile.TemporaryDirectory() as module_directory:
+            primary = Path(primary_directory)
             module_root = Path(module_directory)
-            (module_root / "fixture_origin.py").write_text(
-                "VALUE = 1\n", encoding="utf-8"
-            )
-            result = probe.run_probe(
-                mode="postinstall",
-                site_packages=module_root,
-                allowed_origins=[Path(allowed_directory)],
-                modules=["fixture_origin"],
-            )
+            (module_root / "fixture_origin.py").write_text("VALUE = 1\n", encoding="utf-8")
+            sys.path.insert(0, str(module_root))
+            try:
+                with mock.patch.object(
+                    probe,
+                    "build_runtime_path_plan",
+                    return_value=self.path_plan(primary),
+                ):
+                    result = probe.run_probe(
+                        mode="postinstall",
+                        site_packages=primary,
+                        modules=["fixture_origin"],
+                    )
+            finally:
+                sys.path.remove(str(module_root))
+                probe._clear_module("fixture_origin")
         self.assertTrue(result["blocking"])
         self.assertEqual(result["issues"][0]["code"], "unexpected_origin")
+
+    def test_valid_primary_shadows_incompatible_fallback_without_blocking(self):
+        current = probe._expected_cpython_tag()
+        stale = "311" if current != "311" else "314"
+        module = "fixture_shadowed_native"
+        with tempfile.TemporaryDirectory() as primary_directory, tempfile.TemporaryDirectory() as fallback_directory:
+            primary = Path(primary_directory)
+            fallback = Path(fallback_directory)
+            (primary / f"{module}.py").write_text("VALUE = 1\n", encoding="utf-8")
+            (fallback / f"{module}.cpython-{stale}-darwin.so").touch()
+            with mock.patch.object(
+                probe,
+                "build_runtime_path_plan",
+                return_value=self.path_plan(primary, fallback),
+            ), mock.patch.object(
+                probe, "NATIVE_MODULES", probe.NATIVE_MODULES | {module}
+            ):
+                result = probe.run_probe(
+                    mode="postinstall",
+                    site_packages=fallback,
+                    modules=[module],
+                )
+            probe._clear_module(module)
+        self.assertFalse(result["blocking"])
+        self.assertTrue(any(issue["code"] == "shadowed_duplicate" for issue in result["issues"]))
+        self.assertFalse(any(issue["code"] == "incompatible_abi" for issue in result["issues"]))
+
+    def test_valid_fallback_can_win_with_nonblocking_diagnostic(self):
+        module = "fixture_valid_fallback"
+        with tempfile.TemporaryDirectory() as primary_directory, tempfile.TemporaryDirectory() as fallback_directory:
+            primary = Path(primary_directory)
+            fallback = Path(fallback_directory)
+            (fallback / f"{module}.py").write_text("VALUE = 1\n", encoding="utf-8")
+            with mock.patch.object(
+                probe,
+                "build_runtime_path_plan",
+                return_value=self.path_plan(primary, fallback),
+            ):
+                result = probe.run_probe(
+                    mode="postinstall",
+                    site_packages=fallback,
+                    modules=[module],
+                )
+            probe._clear_module(module)
+        self.assertFalse(result["blocking"])
+        self.assertEqual(result["checks"][0]["selectedRoot"], str(fallback))
+        self.assertTrue(
+            any(issue["code"] == "fallback_origin" for issue in result["issues"])
+        )
+
+    def test_symlink_into_allowed_root_passes_and_escape_blocks(self):
+        module = "fixture_symlink_origin"
+        with tempfile.TemporaryDirectory() as primary_directory, tempfile.TemporaryDirectory() as fallback_directory, tempfile.TemporaryDirectory() as outside_directory:
+            primary = Path(primary_directory)
+            fallback = Path(fallback_directory)
+            outside = Path(outside_directory)
+            allowed_package = fallback / module
+            allowed_package.mkdir()
+            (allowed_package / "__init__.py").write_text("VALUE = 'allowed'\n", encoding="utf-8")
+            (primary / module).symlink_to(allowed_package, target_is_directory=True)
+            plan = self.path_plan(primary, fallback)
+            with mock.patch.object(probe, "build_runtime_path_plan", return_value=plan):
+                allowed_result = probe.run_probe(
+                    mode="postinstall", site_packages=fallback, modules=[module]
+                )
+            probe._clear_module(module)
+            (primary / module).unlink()
+            outside_package = outside / module
+            outside_package.mkdir()
+            (outside_package / "__init__.py").write_text("VALUE = 'outside'\n", encoding="utf-8")
+            (primary / module).symlink_to(outside_package, target_is_directory=True)
+            with mock.patch.object(probe, "build_runtime_path_plan", return_value=plan):
+                blocked_result = probe.run_probe(
+                    mode="postinstall", site_packages=fallback, modules=[module]
+                )
+            probe._clear_module(module)
+        self.assertFalse(allowed_result["blocking"])
+        self.assertTrue(blocked_result["blocking"])
+        issue = next(issue for issue in blocked_result["issues"] if issue["code"] == "symlink_escape")
+        self.assertIn(str(outside_package), issue["message"])
 
 
 class PythonInstallerProbeProtocolTests(unittest.TestCase):
@@ -272,6 +425,15 @@ class PythonInstallerProbeProtocolTests(unittest.TestCase):
                 "architecture": "arm64",
             },
             "sitePackages": "/tmp/site-packages",
+            "pathPlan": {
+                "schemaVersion": 1,
+                "runtimeKind": "external",
+                "installMode": "user",
+                "executable": "/tmp/python",
+                "primaryRoot": "/tmp/user-site",
+                "fallbackRoots": ["/tmp/site-packages"],
+                "orderedRoots": ["/tmp/user-site", "/tmp/site-packages"],
+            },
             "checks": [],
             "issues": [],
         }
@@ -318,6 +480,23 @@ class PythonInstallerProbeProtocolTests(unittest.TestCase):
                     Path("/tmp/python"), Path("/tmp/site-packages"), "preinstall"
                 )
 
+    def test_postinstall_path_plan_drift_is_rejected(self):
+        payload = self.valid_payload(mode="postinstall")
+        expected = dict(payload["pathPlan"])
+        expected["primaryRoot"] = "/tmp/different-user-site"
+        with mock.patch.object(
+            installer.subprocess,
+            "run",
+            return_value=self.completed(json.dumps(payload)),
+        ):
+            with self.assertRaisesRegex(installer.RuntimeProbeError, "path plan changed"):
+                installer.run_runtime_probe(
+                    Path("/tmp/python"),
+                    Path("/tmp/site-packages"),
+                    "postinstall",
+                    expected_path_plan=expected,
+                )
+
     def test_timeout_is_rejected(self):
         with mock.patch.object(
             installer.subprocess,
@@ -339,8 +518,17 @@ class PythonInstallerProbeProtocolTests(unittest.TestCase):
         with mock.patch.object(
             installer,
             "check_runtime_preinstall",
-            side_effect=lambda selected, target: events.append(
-                ("preflight", selected, target)
+            side_effect=lambda selected, target: events.append(("preflight", selected, target))
+            or mock.Mock(
+                path_plan={
+                    "schemaVersion": 1,
+                    "runtimeKind": "external",
+                    "installMode": "user",
+                    "executable": str(selected),
+                    "primaryRoot": "/tmp/user-site",
+                    "fallbackRoots": [str(target)],
+                    "orderedRoots": ["/tmp/user-site", str(target)],
+                }
             ),
         ), mock.patch.object(
             installer,

@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.11.1 — Runtime path policy and installer process detection
+
+_September 16, 2026_
+
+Glyphs MCP 1.11.1 fixes dependency verification when Glyphs uses an external or
+repository-selected Python and a checked package exists in both that
+interpreter's user site and Glyphs `Scripts/site-packages`. The fix is generic;
+it does not contain package-name exceptions.
+
+### One install and import policy
+
+- A new standard-library-only runtime path policy classifies Python physically
+  embedded in a Glyphs app separately from external, repository, python.org,
+  and Homebrew interpreters.
+- Embedded Python installs into and prioritizes the matching Glyphs
+  `Scripts/site-packages`. External Python installs with `pip --user`,
+  prioritizes its user site, and keeps the version-specific Glyphs folder as an
+  approved fallback.
+- The runtime probe, terminal installer, macOS installer, and plug-in startup
+  apply the same ordered roots. Preflight and post-install path-plan drift is a
+  blocking error.
+
+### Origin and compatibility diagnostics
+
+- The winning package copy determines ABI and architecture compatibility.
+  Lower-priority duplicates are reported as non-blocking
+  `shadowed_duplicate` diagnostics, including stale native copies.
+- Logical and resolved import origins are recorded separately. Symlinks into
+  another approved root are accepted; links escaping every approved root block
+  with `symlink_escape`, and unrelated imports block with
+  `unexpected_origin`.
+- Installer summaries distinguish native compatibility, dependency-location,
+  dependency-import, and mixed environment failures and include a next action.
+- No dependency directory or existing package is automatically deleted, moved,
+  or rewritten.
+
+### Exact Glyphs application detection
+
+- The macOS installer now matches running Glyphs processes against the exact
+  supported Glyphs 3, Glyphs 3 Beta, Glyphs 4, Glyphs 4 Beta, and ambiguous
+  Glyphs Beta application bundle IDs.
+- Glyphs 4 Quick Look and thumbnail Finder extensions are rejected even when
+  their names contain Glyphs and their short version begins with `4`, so they
+  cannot block either installer target.
+- Running Glyphs 3 and Glyphs 4 applications continue to block only their
+  corresponding target.
+
+### Packaging and validation
+
+- Source and Plugin Manager bundles both include the shared policy and updated
+  probe. Bundle and installer-payload validation require both files and reject
+  drift.
+- Generic fixtures cover external and embedded ordering, fallback selection,
+  duplicates, ABI/architecture precedence, allowed and escaping symlinks,
+  unrelated origins, path-plan drift, and installer command selection.
+- Pure process-metadata regressions cover Finder-extension rejection,
+  extension-only process lists, per-target blocking, and every supported stable
+  and beta application bundle ID.
+
 ## 1.11.0 — Safe live Glyphs scripting
 
 _August 16, 2026_

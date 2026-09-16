@@ -29,7 +29,7 @@ Supported automatic links:
 - Claude App
 - Claude CLI
 
-Agent plugins are a separate, optional setup. Version 1.11.0 includes one shared
+Agent plugins are a separate, optional setup. Version 1.11.1 includes one shared
 repository package for Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot
 CLI, but the installer does not add, update, enable, or remove those plugins.
 Each host owns its plugin lifecycle. Existing standalone skills and manual MCP
@@ -74,9 +74,12 @@ Glyphs 3 backward compatibility is kept for the shared MCP server code where pos
 
 - Runs **Check Python environment** with the exact interpreter selected for
   every Glyphs target before making persistent changes.
-- Prioritizes that target's shared `Scripts/site-packages` and stops if an
-  existing native package was built for a different Python ABI or Mac
-  architecture.
+- Uses one ordered path plan: external or repository-selected Python prioritizes
+  its user site with that target's `Scripts/site-packages` as fallback; Python
+  physically embedded in a Glyphs app prioritizes the Glyphs folder.
+- Stops when the package copy that can win has an incompatible Python ABI or
+  Mac architecture, an unapproved origin, or an escaping symlink. It reports
+  lower-priority duplicates without deleting or moving them.
 - Detects installed Glyphs 3 and Glyphs 4 applications and lets you target either or both.
 - Installs Python dependencies for Glyphs.
 - Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.

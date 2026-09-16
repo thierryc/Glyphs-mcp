@@ -156,7 +156,7 @@ If you are on an unsupported version, install Python 3.14 from python.org and re
 
 ## Installer stops at Check Python environment
 
-Starting with 1.5.4, both installers check the exact Python selected for each
+Starting with 1.11.1, both installers check the exact Python selected for each
 Glyphs target before running pip or changing the plug-in. The check prevents a
 false success when shared native packages were built for a different Python
 ABI. A typical example is Glyphs using Python 3.14 while
@@ -179,13 +179,28 @@ Copy these details from the installer error and log:
 - the inspected `Scripts/site-packages` path;
 - every issue code, module, and offending file.
 
-If more than one native build exists, the check accepts the environment when a
-compatible candidate imports successfully. `.abi3` extensions and compatible
-universal binaries are also accepted. If the result looks incorrect, attach
-the JSON diagnostic to a GitHub issue rather than deleting shared packages
-blindly.
+If more than one native build exists, compatibility is decided by the copy that
+can actually win under the ordered path plan. An incompatible winning copy is
+blocking; incompatible lower-priority copies are warnings. `.abi3` extensions
+and compatible universal binaries are accepted. If the result looks incorrect,
+attach the JSON diagnostic to a GitHub issue rather than deleting shared
+packages blindly.
 
-For now, resolve the Python/package mismatch deliberately—for example by
+The installer, verification probe, and plug-in use one ordered runtime path
+plan. A Python interpreter physically embedded in a Glyphs app prioritizes that
+Glyphs version's `Scripts/site-packages`. A selected repository, python.org, or
+Homebrew interpreter prioritizes its user site and treats the Glyphs folder as
+an approved fallback. The diagnostic JSON records this decision in `pathPlan`.
+
+When the same checked module exists in more than one planned root, the first
+copy is verified and lower-priority copies are reported as non-blocking
+`shadowed_duplicate` issues. A package symlink is accepted only when its target
+resolves inside another approved root. A `symlink_escape` issue reports both the
+visible import path and its resolved target; move or replace that link only
+after confirming which scripts share it. The installer never deletes, moves,
+or rewrites an existing package while diagnosing these conditions.
+
+Resolve a blocking Python/package mismatch deliberately—for example by
 selecting the Python version those packages were built for, or by rebuilding
 the environment after reviewing which other Glyphs scripts share it. Automatic
 repair and isolated dependency storage are intentionally deferred pending
@@ -195,7 +210,7 @@ Glyphs team feedback.
 
 If the plug-in starts but tool calls fail with `ImportError` or
 `ModuleNotFoundError`, dependencies may not be installed where Glyphs can load
-them. A normal 1.5.4 installation treats missing modules as non-blocking during
+them. A normal 1.11.1 installation treats missing modules as non-blocking during
 preflight, installs dependencies, and then requires every runtime import to
 pass before reporting completion.
 

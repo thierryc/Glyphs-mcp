@@ -3,9 +3,8 @@ import Foundation
 import GlyphsMCPInstallerCore
 
 enum GlyphsRuntime {
-	private static let bundleIDs = GlyphsMajorVersion.allCases.flatMap(\.bundleIdentifiers) + [
-		"com.GeorgSeifert.GlyphsBeta",
-	]
+	private static let bundleIDs = GlyphsRunningProcessDetector.supportedBundleIdentifiers
+	private static let bundleIDSet = Set(bundleIDs)
 
 	static func runningVersions() -> Set<GlyphsMajorVersion> {
 		Set(glyphsRunningApps().compactMap { majorVersion(for: $0) })
@@ -66,12 +65,7 @@ enum GlyphsRuntime {
 			}
 		}
 		for app in NSWorkspace.shared.runningApplications {
-			if let bundleID = app.bundleIdentifier?.lowercased(), bundleID.hasPrefix("com.georgseifert.glyphs") {
-				byPID[app.processIdentifier] = app
-				continue
-			}
-			let name = (app.localizedName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-			if ["glyphs", "glyphs 3", "glyphs 4", "glyphs3", "glyphs4"].contains(name) {
+			if let bundleID = app.bundleIdentifier, bundleIDSet.contains(bundleID) {
 				byPID[app.processIdentifier] = app
 			}
 		}
@@ -88,11 +82,11 @@ enum GlyphsRuntime {
 		let shortVersion = app.bundleURL
 			.flatMap(Bundle.init(url:))?
 			.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-		return GlyphsApplicationDetector.classify(
+		return GlyphsRunningProcessDetector.classify(GlyphsRunningProcessInfo(
 			bundleIdentifier: app.bundleIdentifier,
 			shortVersion: shortVersion,
 			displayName: app.localizedName,
 			fileName: app.bundleURL?.deletingPathExtension().lastPathComponent
-		)
+		))
 	}
 }

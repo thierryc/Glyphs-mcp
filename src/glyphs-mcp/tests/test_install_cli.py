@@ -104,10 +104,12 @@ class InstallerSmokeTests(unittest.TestCase):
             old_version = os.environ.get("GLYPHS_MCP_GLYPHS_VERSION")
             os.environ["HOME"] = tmp
             os.environ["GLYPHS_MCP_GLYPHS_VERSION"] = "4"
+            sys.path.insert(0, str(plugin_path.parent))
             try:
                 exec(compile(prefix, str(plugin_path), "exec"), namespace)
                 site_packages = namespace["_glyphs_user_site_packages"]()
             finally:
+                sys.path.remove(str(plugin_path.parent))
                 if old_home is None:
                     os.environ.pop("HOME", None)
                 else:
@@ -1084,7 +1086,21 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="4": None
                 install_cli.glyphs_python_pip = lambda glyphs_version="4": fake_pip
                 install_cli.verify_runtime = lambda *args, **kwargs: True
-                install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
+                install_cli.check_runtime_preinstall = lambda *args, **kwargs: mock.Mock(
+                    path_plan={
+                        "schemaVersion": 1,
+                        "runtimeKind": "embedded",
+                        "installMode": "target",
+                        "executable": str(fake_python),
+                        "primaryRoot": str(
+                            Path(tmp) / "Library" / "Application Support" / "Glyphs 4" / "Scripts" / "site-packages"
+                        ),
+                        "fallbackRoots": [],
+                        "orderedRoots": [
+                            str(Path(tmp) / "Library" / "Application Support" / "Glyphs 4" / "Scripts" / "site-packages")
+                        ],
+                    }
+                )
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt")
             finally:
                 install_cli.run = original_run
@@ -1153,8 +1169,23 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli.glyphs_python_pip = lambda glyphs_version="3": self.fail("Glyphs 4 selected Python should be preferred")
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="3": selected_python if glyphs_version == "4" else None
                 install_cli.python_version = lambda python: "3.14.0"
-                install_cli.verify_runtime = lambda python, target=None: verify_calls.append((python, target)) or True
-                install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
+                install_cli.verify_runtime = lambda python, target=None, **kwargs: verify_calls.append((python, target)) or True
+                install_cli.check_runtime_preinstall = lambda *args, **kwargs: mock.Mock(
+                    path_plan={
+                        "schemaVersion": 1,
+                        "runtimeKind": "external",
+                        "installMode": "user",
+                        "executable": str(selected_python),
+                        "primaryRoot": str(Path(tmp) / "Library" / "Python" / "3.14" / "lib" / "python" / "site-packages"),
+                        "fallbackRoots": [
+                            str(Path(tmp) / "Library" / "Application Support" / "Glyphs 4" / "Scripts" / "site-packages")
+                        ],
+                        "orderedRoots": [
+                            str(Path(tmp) / "Library" / "Python" / "3.14" / "lib" / "python" / "site-packages"),
+                            str(Path(tmp) / "Library" / "Application Support" / "Glyphs 4" / "Scripts" / "site-packages"),
+                        ],
+                    }
+                )
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt", glyphs_version="4")
             finally:
                 install_cli.run = original_run
@@ -1177,7 +1208,8 @@ class InstallerSmokeTests(unittest.TestCase):
             / "site-packages"
         )
         self.assertEqual(calls[0][:5], [str(selected_python), "-m", "pip", "install", "--upgrade"])
-        self.assertIn(str(target), calls[0])
+        self.assertIn("--user", calls[0])
+        self.assertNotIn(str(target), calls[0])
         self.assertNotIn("--force-reinstall", calls[0])
         self.assertEqual(verify_calls, [(selected_python, target)])
 
@@ -1192,7 +1224,17 @@ class InstallerSmokeTests(unittest.TestCase):
             install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
             install_cli.verify_runtime = lambda *args, **kwargs: True
             install_cli.python_version = lambda python: "3.12.9"
-            install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
+            install_cli.check_runtime_preinstall = lambda *args, **kwargs: mock.Mock(
+                path_plan={
+                    "schemaVersion": 1,
+                    "runtimeKind": "external",
+                    "installMode": "user",
+                    "executable": "/tmp/python3.12",
+                    "primaryRoot": "/tmp/user-site",
+                    "fallbackRoots": [str(install_cli.glyphs_scripts_site_packages())],
+                    "orderedRoots": ["/tmp/user-site", str(install_cli.glyphs_scripts_site_packages())],
+                }
+            )
             install_cli.install_with_custom_python(Path("/tmp/python3.12"), _repo_root() / "requirements.txt")
         finally:
             install_cli.run = original_run

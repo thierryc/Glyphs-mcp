@@ -1173,12 +1173,24 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try plist.write(to: infoPlist, atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
+		try "# policy\n".write(
+			to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"),
+			atomically: true,
+			encoding: .utf8
+		)
 
 		let b = try XCTUnwrap(Bundle(url: bundleURL))
 		let resolved = try InstallerPayload.resolve(bundle: b)
 		XCTAssertEqual(resolved.pluginBundle.lastPathComponent, "Glyphs MCP.glyphsPlugin")
 		XCTAssertEqual(resolved.payloadDir.lastPathComponent, "Payload")
 		XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.requirementsTxt.path))
+
+		try FileManager.default.removeItem(
+			at: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py")
+		)
+		XCTAssertThrowsError(try InstallerPayload.resolve(bundle: b)) { error in
+			XCTAssertTrue(error.localizedDescription.contains("runtime path policy"), error.localizedDescription)
+		}
 	}
 
 	func testInstallerPayloadResolveExtractsSignedPayloadArchive() throws {
@@ -1198,6 +1210,11 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
+		try "# policy\n".write(
+			to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"),
+			atomically: true,
+			encoding: .utf8
+		)
 		try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true, attributes: nil)
 
 		let infoPlist = contents.appendingPathComponent("Info.plist")
@@ -1368,7 +1385,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let probe = root.appendingPathComponent("runtime_probe.py")
 		let target = root.appendingPathComponent("Glyphs 4/Scripts/site-packages")
 		let json = """
-{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"sitePackages":"\(target.path)","checks":[],"issues":[]}
+{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"sitePackages":"\(target.path)","pathPlan":{"schemaVersion":1,"runtimeKind":"external","installMode":"user","executable":"\(python.path)","primaryRoot":"/tmp/user-site","fallbackRoots":["\(target.path)"],"orderedRoots":["/tmp/user-site","\(target.path)"]},"checks":[],"issues":[]}
 """
 		let script = """
 #!/bin/sh
@@ -1396,6 +1413,7 @@ exit 0
 			.split(separator: "\n")
 			.map(String.init)
 		XCTAssertEqual(document.runtime.executable, python.path)
+		XCTAssertEqual(document.pathPlan?.installMode, "user")
 		XCTAssertEqual(
 			arguments,
 			[
@@ -1406,6 +1424,31 @@ exit 0
 				target.path,
 			]
 		)
+
+		let driftedPlan = RuntimeProbeDocument.PathPlan(
+			schemaVersion: 1,
+			runtimeKind: "external",
+			installMode: "user",
+			executable: python.path,
+			primaryRoot: "/tmp/different-user-site",
+			fallbackRoots: [target.path],
+			orderedRoots: ["/tmp/different-user-site", target.path]
+		)
+		do {
+			_ = try await RuntimeProbeExecutor(
+				runner: ProcessRunner(),
+				log: { _ in }
+			).check(
+				python: python,
+				probe: probe,
+				sitePackages: target,
+				mode: .preinstall,
+				expectedPathPlan: driftedPlan
+			)
+			XCTFail("Expected path plan drift to fail.")
+		} catch {
+			XCTAssertTrue(error.localizedDescription.contains("path plan changed"), error.localizedDescription)
+		}
 	}
 
 	func testRuntimeProbeExecutorRejectsStderrOnlyFailure() async throws {
@@ -1451,6 +1494,7 @@ exit 0
 		let requirements = URL(fileURLWithPath: "/tmp/requirements.txt")
 		let target = URL(fileURLWithPath: "/tmp/glyphs-mcp-site-packages")
 		let args = installer.pipInstallArgs(requirementsTxt: requirements, target: target)
+		let userArgs = installer.pipInstallArgs(requirementsTxt: requirements)
 
 		XCTAssertFalse(args.contains("--force-reinstall"), "\(args)")
 		XCTAssertTrue(args.contains("--upgrade"), "\(args)")
@@ -1458,6 +1502,8 @@ exit 0
 		XCTAssertTrue(args.contains("--disable-pip-version-check"), "\(args)")
 		XCTAssertTrue(args.contains("--timeout"), "\(args)")
 		XCTAssertTrue(args.contains("--retries"), "\(args)")
+		XCTAssertTrue(userArgs.contains("--user"), "\(userArgs)")
+		XCTAssertFalse(userArgs.contains("--target"), "\(userArgs)")
 		XCTAssertEqual(installer.pipEnvironment(target: target)["PYTHONPATH"]?.split(separator: ":").first, Substring(target.path))
 	}
 
@@ -1658,6 +1704,115 @@ exit 0
 			displayName: "Unrelated App",
 			fileName: "Unrelated App"
 		))
+	}
+
+	func testGlyphsApplicationClassifierRejectsFinderExtensions() {
+		let extensionBundleIdentifiers = [
+			"com.GeorgSeifert.Glyphs4.GlyphsQuickLookExtension",
+			"com.GeorgSeifert.Glyphs4.GlyphsThumbnailExtension",
+		]
+
+		for bundleIdentifier in extensionBundleIdentifiers {
+			XCTAssertNil(
+				GlyphsApplicationDetector.classify(
+					bundleIdentifier: bundleIdentifier,
+					shortVersion: "4.1",
+					displayName: "Glyphs 4 Finder Extension",
+					fileName: "Glyphs 4 Finder Extension"
+				),
+				bundleIdentifier
+			)
+		}
+	}
+
+	func testGlyphsRunningProcessDetectorReturnsNoVersionsForExtensionsOnly() {
+		let processes = [
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsQuickLookExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Quick Look Extension",
+				fileName: "GlyphsQuickLookExtension"
+			),
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsThumbnailExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Thumbnail Extension",
+				fileName: "GlyphsThumbnailExtension"
+			),
+		]
+
+		XCTAssertTrue(GlyphsRunningProcessDetector.runningVersions(in: processes).isEmpty)
+	}
+
+	func testFinderExtensionsDoNotBlockEitherInstallerTarget() {
+		let processes = [
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsQuickLookExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Quick Look Extension",
+				fileName: "GlyphsQuickLookExtension"
+			),
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsThumbnailExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Thumbnail Extension",
+				fileName: "GlyphsThumbnailExtension"
+			),
+		]
+		let runningVersions = GlyphsRunningProcessDetector.runningVersions(in: processes)
+		let targets = GlyphsMajorVersion.allCases.map {
+			makeTargetStatus(version: $0, detected: true, isRunning: runningVersions.contains($0))
+		}
+
+		for version in GlyphsMajorVersion.allCases {
+			XCTAssertNil(
+				InstallerTargetSelectionPolicy.installFailureReason(
+					selectedVersions: [version],
+					targets: targets
+				),
+				version.displayName
+			)
+		}
+	}
+
+	func testGlyphsRunningProcessDetectorRecognizesSupportedStableAndBetaBundleIDs() {
+		let expectedVersions: [(GlyphsRunningProcessInfo, GlyphsMajorVersion)] = [
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs3", shortVersion: "3.5", displayName: "Glyphs 3", fileName: "Glyphs 3"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs3Beta", shortVersion: "3.6", displayName: "Glyphs 3 Beta", fileName: "Glyphs 3 Beta"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs4", shortVersion: "4.1", displayName: "Glyphs 4", fileName: "Glyphs 4"), .v4),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs4Beta", shortVersion: "4.2", displayName: "Glyphs 4 Beta", fileName: "Glyphs 4 Beta"), .v4),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.GlyphsBeta", shortVersion: "3.6", displayName: "Glyphs Beta", fileName: "Glyphs Beta"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.GlyphsBeta", shortVersion: "4.1", displayName: "Glyphs Beta", fileName: "Glyphs Beta"), .v4),
+		]
+
+		for (process, expectedVersion) in expectedVersions {
+			XCTAssertEqual(GlyphsRunningProcessDetector.classify(process), expectedVersion)
+		}
+	}
+
+	func testGenuineGlyphsProcessesBlockOnlyTheirCorrespondingInstallerTarget() {
+		let genuineProcesses: [(GlyphsRunningProcessInfo, GlyphsMajorVersion)] = [
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs3", shortVersion: "3.5", displayName: "Glyphs 3", fileName: "Glyphs 3"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs4", shortVersion: "4.1", displayName: "Glyphs 4", fileName: "Glyphs 4"), .v4),
+		]
+
+		for (process, runningVersion) in genuineProcesses {
+			let runningVersions = GlyphsRunningProcessDetector.runningVersions(in: [process])
+			let targets = GlyphsMajorVersion.allCases.map {
+				makeTargetStatus(version: $0, detected: true, isRunning: runningVersions.contains($0))
+			}
+			for version in GlyphsMajorVersion.allCases {
+				let failureReason = InstallerTargetSelectionPolicy.installFailureReason(
+					selectedVersions: [version],
+					targets: targets
+				)
+				if version == runningVersion {
+					XCTAssertNotNil(failureReason, version.displayName)
+				} else {
+					XCTAssertNil(failureReason, version.displayName)
+				}
+			}
+		}
 	}
 
 	func testGlyphsApplicationDetectorFindsBothAndPrefersStableBundle() throws {
