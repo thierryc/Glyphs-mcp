@@ -169,8 +169,13 @@ publish these notes with unresolved placeholders.
   installed private runtime.
 - The detailed evidence and remaining signed-distribution gates are recorded
   in [BETA2-VALIDATION.md](BETA2-VALIDATION.md).
-- No commit, push, tag, signing, notarization, upload or publication was
-  performed.
+- The preparation record above was followed by a separate publication gate.
+  Commit `42eb72b` and its signed `v2.0.0-beta.2` tag were pushed only to
+  `lit/v2-beta`. The app and DMG were signed, notarized, stapled and accepted by
+  Gatekeeper; the guarded publisher reran the full suite before uploading.
+- The versioned DMG, Sparkle ZIP, signed appcast and checksums were published as
+  a non-Latest prerelease. Stable Latest remains `v1.11.0`, and `main` was not
+  changed.
 
 ## Beta 1 preparation record — 8 September 2026
 
