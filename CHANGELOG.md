@@ -13,7 +13,9 @@
   `.glyphspackage` sources. Visual mode uses Glyphs 4's authoritative
   decomposed geometry. Current geometry stays near-black, with lighter neutral
   nodes and handles; the symmetric-difference fill is cyan and changed
-  reference geometry is mint. Anchors and width bands follow the same
+  reference geometry is mint. Current outlines, delta segments and fine node
+  details use separate screen-stable stroke weights, and the left origin guide
+  remains visible while zooming. Anchors and width bands follow the same
   comparison palette. The
   app prefers its own version-matched runtime and worker, so an older installed
   component cannot leave the visual canvas empty.
@@ -30,11 +32,20 @@
   mutating the repository.
 - Reject binary, invalid UTF-8, symlink and over-2-MiB previews; block remote
   WebView navigation and use nonpersistent data stores.
+- Explain the comparison and Glyphs-geometry work beneath the loading indicator
+  with reduced-motion-aware progress messages instead of leaving a blank wait.
 - Raise the desktop and test minimum to macOS 14. Glyphs 3 remains pinned to
   1.11.0; MCP tools, interface revision, bridge protocol and schemas are
   unchanged.
+- Keep the Overview scroll container full-width while centering its readable
+  content column, so the scrollbar remains attached to the trailing edge of
+  the application window at every supported window size.
+- Add a designed 680 × 420 disk-image window with a generated background,
+  application icon, Applications alias and explicit drag-to-install guidance.
+  The editable SVG source and deterministic PNG renderer are kept with the
+  packaging scripts.
 
-This is the current unpublished candidate. Beta 1 history remains below.
+Beta 1 history remains below.
 
 ## Private lean v2 qualification — September 14, 2026
 

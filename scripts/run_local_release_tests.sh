@@ -16,6 +16,7 @@ echo "Checking release scripts…"
   scripts/build_installer_app.sh \
   scripts/notarize_installer_app.sh \
   scripts/make_installer_dmg.sh \
+  scripts/render_dmg_background.sh \
   scripts/publish_release_assets.sh \
   scripts/run_python_tests.sh \
   scripts/run_local_release_tests.sh \

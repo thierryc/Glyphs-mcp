@@ -157,10 +157,10 @@ verified installation and rollback steps, actual known issues and checksums.
 Link to BETA.md for open downloads, optional enrollment and reports. Do not
 publish these notes with unresolved placeholders.
 
-## Beta 2 local preparation record — 15 September 2026
+## Beta 2 local preparation record — 16 September 2026
 
 - The hybrid native/Pierre/SVG implementation is complete. The complete local
-  gate passed with 1,923 Python tests (2 optional skips), all 185 macOS tests,
+  gate passed with 1,929 Python tests (2 optional skips), all 189 macOS tests,
   deterministic ARM64/Intel payloads, the documentation production build and
   a fresh unsigned app verification.
 - The visible app check covered the two-pane hierarchy, filtering, file status,

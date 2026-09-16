@@ -85,8 +85,7 @@ struct DesktopGitWorkspace: View {
                 header(change)
                 Divider()
                 if model.loadingComparison && model.comparison == nil {
-                    ProgressView("Preparing \(change.isGlyphPackageGlyph ? "glyph and text" : "text") diff…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    DiffLoadingView.comparison(includesGlyphGeometry: change.isGlyphPackageGlyph)
                 } else if let comparison = model.comparison {
                     comparisonView(change, comparison: comparison)
                 } else {
@@ -130,8 +129,7 @@ struct DesktopGitWorkspace: View {
                         glyphVisual(document).opacity(effectiveGlyphMode == .visual ? 1 : 0)
                             .allowsHitTesting(effectiveGlyphMode == .visual).accessibilityHidden(effectiveGlyphMode != .visual)
                     } else if model.loadingGlyphDiff && model.glyphMode == .visual {
-                        ProgressView("Rendering glyph geometry…")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        DiffLoadingView.glyphGeometry
                     }
                 }
             }
@@ -672,19 +670,19 @@ private struct GlyphDiffWebView: NSViewRepresentable {
                               ("x-Height", metrics.xHeight), ("Baseline", 0), ("Descender", metrics.descender)] {
             metricGuides += "<line class='guide' x1='\(minX)' y1='\(-value)' x2='\(maxX)' y2='\(-value)'/><g class='fixed-position-label fixed-guide-label' data-x='\(maxX)' data-y='\(-value)'><text class='label' x='-12' y='-10'>\(name)</text></g>"
         }
+        metricGuides += "<line class='origin-advance advance guide-dependent' x1='0' y1='\(-metrics.ascender)' x2='0' y2='\(-metrics.descender)'/>"
         let before = layer.before.map(neutralSnapshot) ?? ""
         let after = layer.after.map(neutralSnapshot) ?? ""
         let pieces = layer.difference.map { deltaPieces($0, minY: minY, maxY: maxY) }
         return """
         <!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'none'">
-        <style>:root{--background:#fff;--neutral:#242424;--control:#858585;--handle:#b8b8b8;--guide:#d7b28a;--inverse-zoom:1}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--background);user-select:none}svg{width:100%;height:100%;min-width:520px;min-height:420px}.guide{stroke:var(--guide);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.72}.label{fill:var(--guide);font:500 12px -apple-system;text-anchor:end}.neutral{fill:none;stroke:var(--neutral);stroke-width:1;fill-rule:evenodd;vector-effect:non-scaling-stroke}.neutral-node,.neutral-control{fill:none;stroke:var(--control);stroke-width:1;vector-effect:non-scaling-stroke}.neutral-handle{stroke:var(--handle);stroke-width:1;vector-effect:non-scaling-stroke}.open{fill:none}.advance{stroke-dasharray:5 4;opacity:.55}.delta{fill:#3fd1e243;stroke:none;fill-rule:evenodd}.width-change{fill:#3fd1e243}.reference-change{fill:none;stroke:#3fe2a6;stroke-width:1;vector-effect:non-scaling-stroke}.current-change{fill:none;stroke:var(--neutral);stroke-width:1;vector-effect:non-scaling-stroke}.reference-handle,.current-handle{stroke-width:1;opacity:.72;vector-effect:non-scaling-stroke}.reference-handle{stroke:#3fe2a6}.current-handle{stroke:var(--handle)}.reference-node,.reference-control{fill:none;stroke:#3fe2a6;stroke-width:1;vector-effect:non-scaling-stroke}.current-node,.current-control{fill:none;stroke:var(--control);stroke-width:1;vector-effect:non-scaling-stroke}.anchor-link{stroke:#3fd1e2;stroke-width:1;opacity:.65;vector-effect:non-scaling-stroke}.anchor{stroke-width:1;fill:none;vector-effect:non-scaling-stroke}.anchor-label{font:12px -apple-system}.reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}.current-change.anchor-label{fill:var(--neutral);stroke:none;text-anchor:start}.fixed-control{transform-box:fill-box;transform-origin:center;transform:scale(var(--inverse-zoom))}.fill-preview path.neutral:not(.open){fill:#000;stroke:#000}.fill-preview .neutral-node,.fill-preview .neutral-control,.fill-preview .neutral-handle,.fill-preview .advance,.fill-preview #delta-fill,.fill-preview #reference-changes,.fill-preview #current-changes{display:none}</style></head>
+        <style>:root{--background:#fff;--neutral:#242424;--control:#858585;--handle:#b8b8b8;--guide:#d7b28a;--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;--inverse-zoom:1}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--background);user-select:none}svg{width:100%;height:100%;min-width:520px;min-height:420px}.guide{stroke:var(--guide);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.72}.label{fill:var(--guide);font:500 12px -apple-system;text-anchor:end}.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);fill-rule:evenodd;vector-effect:non-scaling-stroke}.neutral-node,.neutral-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.open{fill:none}.advance{stroke-dasharray:5 4;opacity:.55}.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;stroke-linecap:round;opacity:.9;vector-effect:non-scaling-stroke}.delta{fill:#3fd1e25c;stroke:none;fill-rule:evenodd}.width-change{fill:#3fd1e25c}.reference-change{fill:none;stroke:#3fe2a6;stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.current-change{fill:none;stroke:#3fd1e2;stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.reference-handle,.current-handle{stroke-width:var(--detail-stroke);opacity:.72;vector-effect:non-scaling-stroke}.reference-handle{stroke:#3fe2a6}.current-handle{stroke:var(--handle)}.reference-node,.reference-control{fill:none;stroke:#3fe2a6;stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.current-node,.current-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.anchor-link{stroke:#3fd1e2;stroke-width:var(--detail-stroke);opacity:.65;vector-effect:non-scaling-stroke}.anchor{stroke-width:var(--detail-stroke);fill:none;vector-effect:non-scaling-stroke}.anchor-label{font:12px -apple-system}.reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}.current-change.anchor-label{fill:#3fd1e2;stroke:none;text-anchor:start}.fixed-control{transform-box:fill-box;transform-origin:center;transform:scale(var(--inverse-zoom))}.fill-preview path.neutral:not(.open){fill:#000;stroke:#000}.fill-preview .neutral-node,.fill-preview .neutral-control,.fill-preview .neutral-handle,.fill-preview .advance,.fill-preview #delta-fill,.fill-preview #reference-changes,.fill-preview #current-changes{display:none}</style></head>
         <body><svg id="glyph-canvas" role="img" aria-label="Read-only glyph difference for \(escape(layer.label))" viewBox="\(viewBox.minX) \(viewBox.minY) \(viewBox.width) \(viewBox.height)" preserveAspectRatio="xMidYMid meet"><g id="camera"><g id="metric-guides" class="guide-dependent">\(metricGuides)</g><g id="before-neutral">\(before)</g><g id="after-neutral">\(after)</g><g id="delta-fill">\(pieces?.fill ?? "")</g><g id="reference-changes">\(pieces?.reference ?? "")</g><g id="current-changes">\(pieces?.current ?? "")</g></g></svg></body></html>
         """
     }
 
     private func neutralSnapshot(_ value: GlyphLayerSnapshot) -> String {
         var result = "<path class='neutral' d='\(path(value.outline))'/><path class='neutral open' d='\(path(value.openOutline))'/>"
-        result += "<line class='neutral advance guide-dependent' x1='0' y1='\(-value.metrics.ascender)' x2='0' y2='\(-value.metrics.descender)'/>"
         result += "<line class='neutral advance guide-dependent' x1='\(value.width)' y1='\(-value.metrics.ascender)' x2='\(value.width)' y2='\(-value.metrics.descender)'/>"
         result += pathDetails(value.outline, css: "neutral")
         result += pathDetails(value.openOutline, css: "neutral")
@@ -1069,6 +1067,78 @@ private struct GlyphDiffWebView: NSViewRepresentable {
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             let scheme = navigationAction.request.url?.scheme
             decisionHandler(scheme == nil || scheme == "about" ? .allow : .cancel)
+        }
+    }
+}
+
+private struct DiffLoadingView: View {
+    let title: String
+    let messages: [String]
+    let accessibilityStatus: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var messageIndex = 0
+
+    static func comparison(includesGlyphGeometry: Bool) -> DiffLoadingView {
+        DiffLoadingView(
+            title: includesGlyphGeometry ? "Preparing glyph and text diff…" : "Preparing text diff…",
+            messages: includesGlyphGeometry ? [
+                "Reading the reference version from Git…",
+                "Comparing HEAD with the working tree…",
+                "Preparing text and visual changes…"
+            ] : [
+                "Reading the reference version from Git…",
+                "Comparing HEAD with the working tree…",
+                "Preparing changed lines and words…"
+            ],
+            accessibilityStatus: includesGlyphGeometry
+                ? "Preparing the Git text and glyph comparison"
+                : "Preparing the Git text comparison"
+        )
+    }
+
+    static var glyphGeometry: DiffLoadingView {
+        DiffLoadingView(
+            title: "Rendering glyph geometry…",
+            messages: [
+                "Reading the reference glyph from Git…",
+                "Loading layers and decomposing components…",
+                "Comparing outlines, anchors, and widths…",
+                "Preparing the interactive visual diff…"
+            ],
+            accessibilityStatus: "Rendering the visual glyph comparison"
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ProgressView()
+                .controlSize(.large)
+            Text(title)
+                .font(.headline)
+            ZStack {
+                Text(messages[messageIndex])
+                    .id(messageIndex)
+                    .transition(reduceMotion ? .identity : .opacity)
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(minHeight: 20)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityStatus)
+        .task {
+            guard messages.count > 1 else { return }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(1.8)) }
+                catch { return }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                    messageIndex = (messageIndex + 1) % messages.count
+                }
+            }
         }
     }
 }

@@ -12,6 +12,11 @@ enum DesktopDashboardLayout {
     static let sidebarMaximumWidth: CGFloat = 320
 }
 
+enum DesktopOverviewLayout {
+    static let contentMaximumWidth: CGFloat = 850
+    static let contentPadding: CGFloat = 32
+}
+
 struct ContentView: View {
     @EnvironmentObject private var installer: InstallerViewModel
     @EnvironmentObject private var desktop: DesktopModel
@@ -211,8 +216,12 @@ struct DesktopOverview: View {
                         }
                     }.font(.callout).padding(.top, 8)
                 }
-            }.padding(32).frame(maxWidth: 850, alignment: .leading)
+            }
+            .padding(DesktopOverviewLayout.contentPadding)
+            .frame(maxWidth: DesktopOverviewLayout.contentMaximumWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { desktop.setVisible("overview", true) }
         .onDisappear { desktop.setVisible("overview", false) }
     }

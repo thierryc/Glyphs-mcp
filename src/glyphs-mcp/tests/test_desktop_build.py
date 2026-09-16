@@ -151,10 +151,16 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert "guard zoomToolActive else" in source
     assert '.smoothZoom(-delta, canvasPoint(event))' in source
     assert '.pan(CGPoint(x: -event.scrollingDeltaX, y: -event.scrollingDeltaY))' in source
-    assert '.neutral{fill:none;stroke:var(--neutral);stroke-width:1;' in source
-    assert '.reference-change{fill:none;stroke:#3fe2a6;stroke-width:1;' in source
-    assert '.current-change{fill:none;stroke:var(--neutral);stroke-width:1;' in source
-    assert '.neutral-handle{stroke:var(--handle);stroke-width:1;' in source
+    assert '--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;' in source
+    assert '.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);' in source
+    assert '.reference-change{fill:none;stroke:#3fe2a6;stroke-width:var(--delta-stroke);' in source
+    assert '.delta{fill:#3fd1e25c;stroke:none;fill-rule:evenodd}' in source
+    assert '.width-change{fill:#3fd1e25c}' in source
+    assert '.current-change{fill:none;stroke:#3fd1e2;stroke-width:var(--delta-stroke);' in source
+    assert "class='origin-advance advance guide-dependent' x1='0'" in source
+    assert '.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;' in source
+    assert "class='neutral advance guide-dependent' x1='0'" not in source
+    assert '.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);' in source
     assert '.current-handle{stroke:var(--handle)}' in source
     assert '.neutral-node,.neutral-control{fill:none;stroke:var(--control);' in source
     assert '.current-node,.current-control{fill:none;stroke:var(--control);' in source
@@ -180,8 +186,24 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert 'let labelX = css == "reference" ? -8 : 8' in source
     assert 'let labelY = css == "reference" ? -8 : 14' in source
     assert ".reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}" in source
-    assert ".current-change.anchor-label{fill:var(--neutral);stroke:none;text-anchor:start}" in source
+    assert ".current-change.anchor-label{fill:#3fd1e2;stroke:none;text-anchor:start}" in source
     assert ".label{fill:var(--guide);font:500 12px -apple-system" in source
+
+
+def test_diff_loading_states_explain_work_without_repeated_accessibility_announcements():
+    source = (Path(__file__).resolve().parents[3]
+              / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
+    assert 'DiffLoadingView.comparison(includesGlyphGeometry: change.isGlyphPackageGlyph)' in source
+    assert 'DiffLoadingView.glyphGeometry' in source
+    assert 'Reading the reference version from Git…' in source
+    assert 'Comparing HEAD with the working tree…' in source
+    assert 'Loading layers and decomposing components…' in source
+    assert 'Comparing outlines, anchors, and widths…' in source
+    assert 'Preparing the interactive visual diff…' in source
+    assert 'try await Task.sleep(for: .seconds(1.8))' in source
+    assert 'withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3))' in source
+    assert '.accessibilityElement(children: .ignore)' in source
+    assert '.accessibilityLabel(accessibilityStatus)' in source
     assert "document.querySelectorAll('.fixed-position-label')" in source
     assert "Math.hypot(matrix.a, matrix.b)" in source
     assert "const inverse = 1 / (z * displayScale())" in source
@@ -197,6 +219,10 @@ def test_desktop_layout_minimums_keep_navigation_and_diff_controls_visible():
     assert 'static let minimumWidth: CGFloat = 1_040' in content
     assert 'static let sidebarMinimumWidth: CGFloat = 220' in content
     assert '.frame(maxWidth: .infinity, alignment: .leading)' in content
+    assert 'static let contentMaximumWidth: CGFloat = 850' in content
+    assert '.frame(maxWidth: DesktopOverviewLayout.contentMaximumWidth, alignment: .leading)' in content
+    assert '.frame(maxWidth: .infinity, alignment: .center)' in content
+    assert '.frame(maxWidth: .infinity, maxHeight: .infinity)' in content
     assert 'window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth' in delegate
     assert '.frame(minWidth: 220, idealWidth: 260, maxWidth: 380' in git_workspace
     assert 'ViewThatFits(in: .horizontal)' in git_workspace

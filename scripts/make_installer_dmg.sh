@@ -10,9 +10,22 @@ identity="${CODESIGN_IDENTITY:-Developer ID Application: Thierry Charbonnel (N9U
 skip="${SKIP_NOTARIZATION:-0}"
 
 app="$repo_root/dist/installer-app/$scheme.app"
+background="$repo_root/macos-installer/DMG/background.png"
 if [[ ! -d "$app" ]]; then
   echo "error: app not found: $app" >&2
   echo "Run: ./scripts/build_installer_app.sh" >&2
+  exit 1
+fi
+if [[ ! -f "$background" ]]; then
+  echo "error: DMG background not found: $background" >&2
+  echo "Render macos-installer/DMG/background.svg at exactly 680x420 pixels." >&2
+  exit 1
+fi
+
+background_width="$(/usr/bin/sips -g pixelWidth "$background" 2>/dev/null | awk '/pixelWidth:/ {print $2}')"
+background_height="$(/usr/bin/sips -g pixelHeight "$background" 2>/dev/null | awk '/pixelHeight:/ {print $2}')"
+if [[ "$background_width" != "680" || "$background_height" != "420" ]]; then
+  echo "error: DMG background must be exactly 680x420 pixels (found ${background_width:-?}x${background_height:-?})" >&2
   exit 1
 fi
 
@@ -43,6 +56,8 @@ mkdir -p "$stage"
 
 cp -R "$app" "$stage/$scheme.app"
 ln -s /Applications "$stage/Applications"
+mkdir -p "$stage/.background"
+cp "$background" "$stage/.background/background.png"
 
 rm -f "$dmg_versioned"
 if [[ "$release_channel" == "stable" ]]; then rm -f "$dmg_latest"; fi
@@ -88,6 +103,39 @@ fi
 
 echo "Populating image at: $mnt"
 /usr/bin/ditto "$stage" "$mnt"
+
+echo "Applying Finder window layout…"
+/usr/bin/osascript - "$mnt" "$scheme" <<'APPLESCRIPT'
+on run argv
+  set folderPath to item 1 of argv
+  set appName to (item 2 of argv) & ".app"
+  set mountedFolder to POSIX file folderPath as alias
+  set backgroundFile to POSIX file (folderPath & "/.background/background.png") as alias
+  tell application "Finder"
+    open mountedFolder
+    delay 1
+    set dmgWindow to front Finder window
+    set current view of dmgWindow to icon view
+    set toolbar visible of dmgWindow to false
+    set statusbar visible of dmgWindow to false
+    set pathbar visible of dmgWindow to false
+    set bounds of dmgWindow to {100, 100, 780, 548}
+    set viewOptions to the icon view options of dmgWindow
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to 112
+    set text size of viewOptions to 12
+    set background picture of viewOptions to backgroundFile
+    set position of item appName of mountedFolder to {170, 194}
+    set position of item "Applications" of mountedFolder to {510, 194}
+    update mountedFolder without registering applications
+    delay 2
+    close dmgWindow
+  end tell
+end run
+APPLESCRIPT
+
+# Give Finder a moment to flush .DS_Store before detaching the writable image.
+/bin/sleep 1
 
 echo "Detaching: $device"
 hdiutil detach "$device" >/dev/null

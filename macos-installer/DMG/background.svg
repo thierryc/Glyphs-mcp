@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="420" viewBox="0 0 680 420">
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbfcfd"/>
+      <stop offset="1" stop-color="#f2f5f7"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="44%" r="55%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#122018" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="680" height="420" fill="url(#surface)"/>
+  <rect width="680" height="420" fill="url(#glow)"/>
+
+  <!-- A restrained glyph-editing motif keeps the installer connected to Beta 2. -->
+  <path d="M-34 307 C47 266 83 205 139 136 C178 88 219 78 270 103"
+        fill="none" stroke="#08c464" stroke-width="1.25" stroke-opacity="0.11"/>
+  <path d="M710 302 C626 276 602 214 568 148 C540 94 496 73 446 96"
+        fill="none" stroke="#17b9d4" stroke-width="1.25" stroke-opacity="0.11"/>
+  <g fill="#ffffff" stroke="#08c464" stroke-width="1" stroke-opacity="0.19">
+    <rect x="136" y="134" width="6" height="6"/>
+    <circle cx="270" cy="103" r="3.5"/>
+  </g>
+  <g fill="#ffffff" stroke="#17b9d4" stroke-width="1" stroke-opacity="0.19">
+    <rect x="565" y="145" width="6" height="6"/>
+    <circle cx="446" cy="96" r="3.5"/>
+  </g>
+
+  <g font-family="SF Pro Display" text-anchor="middle">
+    <text x="340" y="50" fill="#15181a" font-size="24" font-weight="600">Install Glyphs MCP</text>
+    <text x="340" y="75" fill="#667078" font-size="13">Drag the app into the Applications folder</text>
+  </g>
+
+  <!-- Finder supplies the application and Applications icons at x=170 and x=510. -->
+  <g filter="url(#softShadow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M258 194 H414" stroke="#ffffff" stroke-width="10"/>
+    <path d="M258 194 H414" stroke="#08c464" stroke-width="4"/>
+    <path d="M403 182 L417 194 L403 206" stroke="#ffffff" stroke-width="10"/>
+    <path d="M403 182 L417 194 L403 206" stroke="#08c464" stroke-width="4"/>
+  </g>
+
+  <g font-family="SF Pro Display" text-anchor="middle">
+    <text x="340" y="329" fill="#15181a" font-size="18" font-weight="600">Drag, drop, then open Glyphs MCP</text>
+    <text x="340" y="354" fill="#667078" font-size="13">The app will guide you through installing the Glyphs components.</text>
+    <text x="340" y="386" fill="#7d878e" font-size="12">macOS 14 or later  •  Glyphs 4</text>
+  </g>
+</svg>

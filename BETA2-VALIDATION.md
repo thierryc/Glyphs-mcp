@@ -1,6 +1,6 @@
 # 2.0.0 Beta 2 — local validation
 
-Status on 15 September 2026: **implementation and local unsigned release gates
+Status on 16 September 2026: **implementation and local unsigned release gates
 passed for 2.0.0 Beta 2, build 44.** Distribution gates remain closed.
 
 ## Implemented candidate
@@ -47,8 +47,8 @@ changed. Glyphs 3 remains pinned to 1.11.0.
 The complete `scripts/run_local_release_tests.sh` passed with the repository's
 `.venv-v2` Python interpreter:
 
-- 1,928 Python tests passed and 2 optional tests skipped.
-- All 185 macOS installer tests passed, including the expanded 16-test project
+- 1,929 Python tests passed and 2 optional tests skipped.
+- All 189 macOS installer tests passed, including the expanded 19-test project
   suite for Git comparison, safety, hierarchy, glyph-layer pairing and package
   validation.
 - ARM64 and Intel private runtimes started without downloads and exposed the
@@ -65,6 +65,13 @@ passed 18 of 18 tests, including schema-2 decoding and viewport math; the
 geometry/worker suites passed 27 of 27 tests, and the desktop build/security
 suite passed 18 of 18 tests. A fresh unsigned app build and receipt verification
 passed again, and `git diff --check` remained clean.
+
+The final local candidate also passed the complete suite after the Overview
+scroll-width correction, explanatory animated diff-loading states, screen-stable
+0.5-pixel neutral outlines, 0.65-pixel delta segments, 0.25-pixel node details,
+the strengthened delta fill, and the persistent left origin guide. The designed
+680 × 420 disk-image background and Finder layout are checked by the release
+suite and remain editable from their committed SVG source.
 
 The host has Xcode 26.3 and Apple Swift 6.2.4 rather than Xcode 16. The app and
 all tests target macOS 14.0, the application remains in Swift language mode
