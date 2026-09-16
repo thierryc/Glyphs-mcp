@@ -121,6 +121,8 @@ def test_pierre_hardening_patch_is_exact_and_idempotence_is_rejected(tmp_path):
 def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     source = (Path(__file__).resolve().parents[3]
               / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
+    service = (Path(__file__).resolve().parents[3]
+               / 'macos-installer/GlyphsMCPInstaller/Core/GlyphDiff.swift').read_text()
     assert 'configuration.websiteDataStore = .nonPersistent()' in source
     assert 'allowsContentJavaScript = true' in source
     assert 'WKContentWorld.world(name: "GlyphDiffCamera")' in source
@@ -173,6 +175,8 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert ".current-node,.current-control{fill:none;" in source
     assert "class='fixed-position-label fixed-guide-label' data-x='\\(maxX)' data-y='\\(-value)'" in source
     assert "class='fixed-position-label fixed-anchor-label'" in source
+    assert 'let payload = try? InstallerPayload.resolve()' in service
+    assert 'GlyphDiffRuntime.resolve(extractedPayloadURL: payload?.payloadDir)' in service
     assert 'let labelX = css == "reference" ? -8 : 8' in source
     assert 'let labelY = css == "reference" ? -8 : 14' in source
     assert ".reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}" in source

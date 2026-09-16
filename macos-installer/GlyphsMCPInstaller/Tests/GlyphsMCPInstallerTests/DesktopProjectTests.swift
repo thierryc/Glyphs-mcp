@@ -377,6 +377,31 @@ final class DesktopProjectTests: XCTestCase {
         XCTAssertEqual(resolved.sidecar, bundledLean.appendingPathComponent("sidecar", isDirectory: true))
     }
 
+    func testGlyphDiffRuntimeUsesExtractedSignedApplicationPayload() throws {
+        let root = try temporary()
+        let resources = root.appendingPathComponent("Resources", isDirectory: true)
+        let payload = root.appendingPathComponent("extracted/Payload", isDirectory: true)
+        let bundledLean = payload.appendingPathComponent("Lean", isDirectory: true)
+        let bundledCLI = bundledLean.appendingPathComponent("runtimes/test/bin/glyphs")
+        let bundledWorker = bundledLean.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
+        try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: bundledCLI.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: bundledWorker.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data().write(to: bundledCLI)
+        try Data().write(to: bundledWorker)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: bundledCLI.path)
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let resolved = try GlyphDiffRuntime.resolve(
+            installation: DesktopInstallation(home: home),
+            resourceURL: resources,
+            extractedPayloadURL: payload,
+            architecture: "test"
+        )
+        XCTAssertEqual(resolved.glyphsCLI, bundledCLI)
+        XCTAssertEqual(resolved.sidecar, bundledLean.appendingPathComponent("sidecar", isDirectory: true))
+    }
+
     func testGitChangeTreeBuildsHierarchyAndFiltersCurrentOrOriginalPath() throws {
         let changes = [
             GitObservation.Change(status: " M", stagedStatus: " ", workingStatus: "M", kind: .modified,

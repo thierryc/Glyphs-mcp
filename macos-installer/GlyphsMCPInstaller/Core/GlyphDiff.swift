@@ -306,12 +306,20 @@ public struct GlyphDiffRuntime: Equatable, Sendable {
     public static func resolve(
         installation: DesktopInstallation = DesktopInstallation(),
         resourceURL: URL? = Bundle.main.resourceURL,
+        extractedPayloadURL: URL? = nil,
         architecture: String = processArchitecture,
         fileManager: FileManager = .default
     ) throws -> GlyphDiffRuntime {
         var candidates: [GlyphDiffRuntime] = []
         if let resourceURL {
             let lean = resourceURL.appendingPathComponent("Payload/Lean", isDirectory: true)
+            candidates.append(.init(
+                glyphsCLI: lean.appendingPathComponent("runtimes/\(architecture)/bin/glyphs"),
+                sidecar: lean.appendingPathComponent("sidecar", isDirectory: true)
+            ))
+        }
+        if let extractedPayloadURL {
+            let lean = extractedPayloadURL.appendingPathComponent("Lean", isDirectory: true)
             candidates.append(.init(
                 glyphsCLI: lean.appendingPathComponent("runtimes/\(architecture)/bin/glyphs"),
                 sidecar: lean.appendingPathComponent("sidecar", isDirectory: true)
@@ -367,8 +375,11 @@ public struct GlyphDiffService {
         guard change.isGlyphPackageGlyph else { throw ProjectError("Visual comparison is available for glyph files inside .glyphspackage sources.") }
         let afterLocation = try location(change.path)
         let beforeLocation = try location(change.originalPath ?? change.path)
+        let runtime = try await ProjectFiles.perform {
+            let payload = try? InstallerPayload.resolve()
+            return try GlyphDiffRuntime.resolve(extractedPayloadURL: payload?.payloadDir)
+        }
         let installation = DesktopInstallation()
-        let runtime = try GlyphDiffRuntime.resolve(installation: installation)
         var applications = GlyphsApplicationDetector.detect()
         if let installed = installation.application {
             applications.append(contentsOf: GlyphsApplicationDetector.detect(candidates: [installed]))
