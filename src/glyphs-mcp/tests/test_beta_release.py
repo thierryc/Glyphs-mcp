@@ -87,3 +87,14 @@ def test_beta_upload_requires_prerelease_and_rejects_latest_alias(tmp_path):
     latest = tmp_path / 'Glyphs-MCP-latest.dmg'
     latest.write_bytes(asset.read_bytes())
     with pytest.raises(ValueError, match='[Ll]atest'): verify(release, tag, [latest], published=True)
+
+
+def test_dmg_layout_targets_window_and_verifies_persisted_positions():
+    script = (REPO / 'scripts/make_installer_dmg.sh').read_text()
+    assert 'set position of item appName of dmgWindow to {170, 194}' in script
+    assert 'set position of item "Applications" of dmgWindow to {510, 194}' in script
+    assert 'set position of item appName of mountedFolder' not in script
+    assert 'set appPosition to position of item appName of verifiedWindow' in script
+    assert 'set applicationsPosition to position of item "Applications" of verifiedWindow' in script
+    assert 'if appPosition is not equal to {170, 194}' in script
+    assert 'if applicationsPosition is not equal to {510, 194}' in script

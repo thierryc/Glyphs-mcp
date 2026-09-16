@@ -125,11 +125,29 @@ on run argv
     set icon size of viewOptions to 112
     set text size of viewOptions to 12
     set background picture of viewOptions to backgroundFile
-    set position of item appName of mountedFolder to {170, 194}
-    set position of item "Applications" of mountedFolder to {510, 194}
+    -- Positions belong to the icon-view window. Addressing the mounted folder
+    -- can leave Finder's default alphabetical layout in the saved .DS_Store.
+    set position of item appName of dmgWindow to {170, 194}
+    set position of item "Applications" of dmgWindow to {510, 194}
     update mountedFolder without registering applications
     delay 2
     close dmgWindow
+    delay 1
+
+    -- Reopen the image before conversion and fail closed unless Finder actually
+    -- persisted the intended app → Applications layout.
+    open mountedFolder
+    delay 1
+    set verifiedWindow to front Finder window
+    set appPosition to position of item appName of verifiedWindow
+    set applicationsPosition to position of item "Applications" of verifiedWindow
+    if appPosition is not equal to {170, 194} then
+      error "Finder did not persist the application icon position: " & appPosition
+    end if
+    if applicationsPosition is not equal to {510, 194} then
+      error "Finder did not persist the Applications icon position: " & applicationsPosition
+    end if
+    close verifiedWindow
   end tell
 end run
 APPLESCRIPT
