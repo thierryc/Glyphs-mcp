@@ -203,7 +203,7 @@ done
 
 gh release upload "$tag" "${assets[@]}"
 # Fail closed while still a draft if GitHub has different or incomplete bytes.
-gh api "repos/thierryc/Glyphs-mcp/releases/tags/$tag" | \
+gh release view "$tag" --json tagName,isDraft,isPrerelease,url,assets | \
   "$python_bin" "$repo_root/scripts/release_discovery.py" --tag "$tag" "${assets[@]}"
 if [[ "$publish" == "1" ]]; then
   if [[ "$release_channel" == "beta" ]]; then

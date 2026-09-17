@@ -1,7 +1,7 @@
 # Glyphs MCP 2.0.0 Beta 3
 
-**Status: Beta 3 is a local release candidate. It has not been signed,
-notarized, uploaded or published. The stable Latest release remains v1.11.0.**
+**Status: Beta 3 is published as a signed and notarized GitHub prerelease. The
+stable Latest release remains v1.11.0.**
 
 Beta 3 unifies installation, server controls and agent connections in a single
 native **Setup** page for Glyphs 4. The source target is `2.0.0-beta.3`, desktop
@@ -18,11 +18,21 @@ installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-There is no Beta 3 download until the separately authorized signing,
-notarization and publication work is complete. Do not treat a local build, feed
-URL or candidate filename as a published release. The released Beta 2 and
-stable v1.11.0 downloads remain available through
-[GitHub Releases](https://github.com/thierryc/Glyphs-mcp/releases).
+Download the signed and notarized
+[Beta 3 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.3/Glyphs-MCP-2.0.0-beta.3.dmg),
+or review the complete
+[Beta 3 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3),
+including the signed Sparkle update archive, appcast and `SHA256SUMS`. Beta 3 is
+deliberately not the repository's Latest release; stable v1.11.0 remains the
+default stable download.
+
+Published SHA-256 values:
+
+```text
+f3e7af3a8dd4262258689803bca17f4d9b0a5c823218198eb76f712150c15900  Glyphs-MCP-2.0.0-beta.3.dmg
+17a94148ffc5de3b24fa7d16b4342b52e7310763f8b46547974bd43cdc1b2950  Glyphs-MCP-2.0.0-beta.3.zip
+c82e535612f2e954ba4158aa1e99c1abbd2c4b2f87ed6bb1db4fb54e3548239e  appcast.xml
+```
 
 ## First session
 
@@ -100,6 +110,7 @@ workflow is intentionally narrower than v1 and exposes no arbitrary Python
 tool. In Project visual diffs, changing glyph files can retain the previously
 selected master even when that master is unchanged; choose a layer without the
 “unchanged” suffix to display the available geometry difference. Physical Intel
-acceptance, signed-update migration, Developer ID,
-notarization, Gatekeeper, mounted-DMG and published-download verification
-remain unverified until the separately authorized release phase.
+acceptance, signed-update migration and the complete packaged manual scenario
+matrix remain unverified. Developer ID signatures, Apple notarization,
+stapling, Gatekeeper acceptance, DMG extraction, published asset identity and
+the signed Sparkle feed are verified for the released candidate.

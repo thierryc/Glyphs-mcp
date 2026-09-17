@@ -3,9 +3,10 @@
 Candidate: Glyphs MCP `2.0.0-beta.3`, desktop build 45, branch
 `lit/v2-beta`.
 
-Status: **automated local qualification complete; manual acceptance pending**.
-This record does not authorize or claim committing, tagging, pushing, signing,
-notarizing, uploading or publishing the candidate.
+Status: **published prerelease; automated and release-only qualification
+complete; manual acceptance pending**. The signed tag is `v2.0.0-beta.3` at
+commit `bdd4d0402c7498bf6611eea41ac62c786b22080a`. The stable Latest release
+remains v1.11.0.
 
 ## Source and payload invariants
 
@@ -40,7 +41,8 @@ results here rather than carrying forward Beta 2 counts.
 | --- | --- |
 | Focused Beta 3 payload tests | 4 passed |
 | Focused installer/configuration Python tests | 56 passed, 1 skipped |
-| Complete Python suite | 1,938 passed, 2 skipped |
+| Tagged release candidate Python suite | 1,939 passed, 2 skipped |
+| Post-publication branch Python suite | 1,940 passed, 2 skipped |
 | Complete macOS installer suite | 195 test methods passed, including generated-payload verification |
 | `./scripts/sync_codex_plugin_skills.sh` | 11 packaged skills synchronized |
 | `PYTHON_BIN=.venv-v2/bin/python ./scripts/run_local_release_tests.sh` | Passed; no artifacts published |
@@ -62,8 +64,9 @@ The visible check also confirmed an existing Beta 2-era selection issue: after
 switching glyph files, Visual can retain an unchanged master because master IDs
 are shared between glyphs. Selecting a changed master displays the comparison;
 the geometry worker returned the expected changed-layer IDs. This limitation
-is disclosed in `BETA.md`. No packaged, signed or physical-Intel acceptance is
-inferred from this development installation.
+is disclosed in `BETA.md`. This development installation does not itself prove
+packaged or physical-Intel acceptance; packaged release evidence is recorded
+separately below.
 
 ## Manual acceptance matrix
 
@@ -88,9 +91,27 @@ recorded.
 | Troubleshooting log window | Unverified | Unverified | Sources, refresh, copy, redaction and Reveal in Finder |
 | Disk image at standard/Retina scale | Unverified | Unverified | Crisp copy, correct 680 × 420 point layout and icon positions |
 
-## Release-only gates still excluded
+## Release evidence
 
-Developer ID signatures, notarization, stapling, Gatekeeper, signed Sparkle
-updates, final DMG mounting/extraction, public checksums and GitHub availability
-belong to the separately authorized release phase. Do not infer any of them
-from a local build or this record.
+- [x] Signed annotated tag `v2.0.0-beta.3` verifies with Thierry Charbonnel's
+  release key and resolves to the exact pushed branch commit.
+- [x] The payload, final app and DMG were accepted by Apple's notary service:
+  `2595bdd5-838c-456c-aa1d-66385995b191`,
+  `405bc360-daaf-42d1-89ec-74aa3ada470b` and
+  `cb04f8ed-4630-466c-904a-d6649c69cd3c`.
+- [x] Stapler validation and Gatekeeper assessment accept the app and DMG as
+  Notarized Developer ID software from team `N9U29A4T8J`.
+- [x] The extracted distribution verifies 88 Mach-O files, 47 signed bundles,
+  installed-copy identities and the versioned Cursor ownership receipt.
+- [x] The signed Sparkle archive and appcast verify against build 45 and the
+  configured public key.
+- [x] GitHub publishes the four exact assets as a non-Latest prerelease at
+  <https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3>.
+
+Published SHA-256 values:
+
+```text
+f3e7af3a8dd4262258689803bca17f4d9b0a5c823218198eb76f712150c15900  Glyphs-MCP-2.0.0-beta.3.dmg
+17a94148ffc5de3b24fa7d16b4342b52e7310763f8b46547974bd43cdc1b2950  Glyphs-MCP-2.0.0-beta.3.zip
+c82e535612f2e954ba4158aa1e99c1abbd2c4b2f87ed6bb1db4fb54e3548239e  appcast.xml
+```

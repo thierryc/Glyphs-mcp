@@ -460,6 +460,10 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn("SHA256SUMS", publish)
         self.assertNotIn("--clobber", publish)
         self.assertIn("release-state", publish)
+        self.assertIn(
+            'gh release view "$tag" --json tagName,isDraft,isPrerelease,url,assets',
+            publish,
+        )
         self.assertIn("sign_nested_payload_code", build)
         self.assertIn('release_payload.py" sign', build)
         self.assertIn('ARCHS="arm64 x86_64"', build)
