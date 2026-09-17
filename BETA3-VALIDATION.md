@@ -6,7 +6,7 @@ Candidate: Glyphs MCP `2.0.0-beta.3`, desktop build 45, branch
 Status: **published prerelease; automated and release-only qualification
 complete; manual acceptance pending**. The signed tag is `v2.0.0-beta.3` at
 commit `bdd4d0402c7498bf6611eea41ac62c786b22080a`. The stable Latest release
-remains v1.11.0.
+remains v1.11.1.
 
 ## Source and payload invariants
 

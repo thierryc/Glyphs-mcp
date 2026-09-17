@@ -1,7 +1,7 @@
 # Glyphs MCP 2.0.0 Beta 3
 
 **Status: Beta 3 is published as a signed and notarized GitHub prerelease. The
-stable Latest release remains v1.11.0.**
+stable Latest release remains v1.11.1.**
 
 Beta 3 unifies installation, server controls and agent connections in a single
 native **Setup** page for Glyphs 4. The source target is `2.0.0-beta.3`, desktop
@@ -23,7 +23,7 @@ Download the signed and notarized
 or review the complete
 [Beta 3 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3),
 including the signed Sparkle update archive, appcast and `SHA256SUMS`. Beta 3 is
-deliberately not the repository's Latest release; stable v1.11.0 remains the
+deliberately not the repository's Latest release; stable v1.11.1 remains the
 default stable download.
 
 Published SHA-256 values:
