@@ -471,10 +471,11 @@ public enum InstallerAdvancedModePreferences {
 	}
 }
 
-public enum InstallerClientKind: Int, CaseIterable, Identifiable {
+public enum InstallerClientKind: Int, CaseIterable, Identifiable, Sendable {
 	case codex
-	case claudeDesktop
 	case claudeCode
+	case claudeDesktop
+	case cursor
 
 	public var id: Int { rawValue }
 
@@ -483,6 +484,7 @@ public enum InstallerClientKind: Int, CaseIterable, Identifiable {
 		case .codex: return "Codex"
 		case .claudeDesktop: return "Claude Desktop"
 		case .claudeCode: return "Claude Code"
+		case .cursor: return "Cursor"
 		}
 	}
 }
@@ -709,8 +711,9 @@ public enum InstallerStatusSnapshotBuilder {
 	private static func buildClientStatuses(preflight: PreflightResult, check: CheckResult) -> [InstallerClientStatusSnapshot] {
 		let descriptors = InstallerClientOrdering.ordered([
 			.init(kind: .codex, isDetected: isCodexDetected(check: check)),
-			.init(kind: .claudeDesktop, isDetected: isClaudeDesktopDetected(check: check)),
 			.init(kind: .claudeCode, isDetected: isClaudeCodeDetected(preflight: preflight, check: check)),
+			.init(kind: .claudeDesktop, isDetected: isClaudeDesktopDetected(check: check)),
+			.init(kind: .cursor, isDetected: FileManager.default.fileExists(atPath: InstallerPaths.home.appendingPathComponent(".cursor").path)),
 		])
 
 		return descriptors.map { descriptor in
@@ -767,6 +770,9 @@ public enum InstallerStatusSnapshotBuilder {
 			return .init(label: "App", summary: itemLevel(title: "Claude app", check: check) == .ok ? "Installed" : "Not found", detail: path)
 		case .claudeCode:
 			return .init(label: "App", summary: "", detail: nil, isVisible: false)
+		case .cursor:
+			let found = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.todesktop.230313mzl4w4u92") != nil
+			return .init(label: "App", summary: found ? "Installed" : "Not found", detail: nil)
 		}
 	}
 
@@ -780,6 +786,8 @@ public enum InstallerStatusSnapshotBuilder {
 		case .claudeCode:
 			let path = preflight.claudePath ?? itemDetails(title: "Claude Code CLI", check: check)
 			return .init(label: "CLI", summary: (preflight.claudePath != nil || itemLevel(title: "Claude Code CLI", check: check) == .ok) ? "Installed" : "Not found", detail: path)
+		case .cursor:
+			return .init(label: "CLI", summary: "", detail: nil, isVisible: false)
 		}
 	}
 
@@ -794,6 +802,9 @@ public enum InstallerStatusSnapshotBuilder {
 		case .claudeCode:
 			let summary = itemDetails(title: "Claude Code MCP settings", check: check) ?? "Missing"
 			return .init(label: "Config", summary: summary, detail: InstallerPaths.claudeCodeConfig.path)
+		case .cursor:
+			let installed = FileManager.default.fileExists(atPath: InstallerPaths.cursorPluginDir.path)
+			return .init(label: "Plugin", summary: installed ? "Configured" : "Missing", detail: InstallerPaths.cursorPluginDir.path)
 		}
 	}
 
@@ -816,6 +827,8 @@ public enum InstallerStatusSnapshotBuilder {
 			return "Claude Desktop uses ~/Library/Application Support/Claude/claude_desktop_config.json."
 		case .claudeCode:
 			return "Claude Code uses ~/.claude.json."
+		case .cursor:
+			return "Cursor uses a managed local plug-in bundle. Reload Cursor after changes."
 		}
 	}
 

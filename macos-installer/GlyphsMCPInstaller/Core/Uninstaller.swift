@@ -201,20 +201,28 @@ public enum ConfigRemovalInspection: Equatable, Sendable {
 }
 
 public enum CodexTomlUninstaller {
-	public static func inspect(toml: String, serverName: String = InstallerConstants.codexServerName) -> ConfigRemovalInspection {
+	public static func inspect(
+		toml: String,
+		serverName: String = InstallerConstants.codexServerName,
+		endpoint: String = InstallerConstants.endpointURL.absoluteString
+	) -> ConfigRemovalInspection {
 		guard let range = blockRange(toml: toml, serverName: serverName) else {
 			return .missing(NSLocalizedString("No matching Glyphs MCP entry.", comment: "Uninstall missing client config"))
 		}
 		let block = String(toml[range])
 		guard let config = CodexTomlInspector.readServerConfig(toml: block, serverName: serverName),
-			  config.url == InstallerConstants.endpointURL.absoluteString else {
+			  config.url == endpoint else {
 			return .preserved(NSLocalizedString("A same-named entry has different settings and will be preserved.", comment: "Uninstall preserves custom client config"))
 		}
 		return .removable(NSLocalizedString("Matching Glyphs MCP client entry.", comment: "Uninstall matching client config"))
 	}
 
-	public static func removingMatchingEntry(toml: String, serverName: String = InstallerConstants.codexServerName) -> String? {
-		guard case .removable = inspect(toml: toml, serverName: serverName),
+	public static func removingMatchingEntry(
+		toml: String,
+		serverName: String = InstallerConstants.codexServerName,
+		endpoint: String = InstallerConstants.endpointURL.absoluteString
+	) -> String? {
+		guard case .removable = inspect(toml: toml, serverName: serverName, endpoint: endpoint),
 			  let range = blockRange(toml: toml, serverName: serverName) else { return nil }
 		return String(toml[..<range.lowerBound]) + String(toml[range.upperBound...])
 	}

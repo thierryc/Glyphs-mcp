@@ -1,6 +1,6 @@
 # Permanent desktop application
 
-The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Overview and the menu-bar popover share one monitor and service controls. Components reuses the transactional installer. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
+The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
 Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare
 checksum-pinned Sparkle and the audited local PierreDiffsSwift package. Existing
@@ -10,11 +10,13 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-The beta branch prepares product 2.0.0 Beta 2, release `2.0.0-beta.2`, installer build 44. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seven tools and five job kinds. See [version and identity](../content/reference/version-identity.mdx).
-The native installer uses **Choose → Install → Ready**, detects Glyphs and offers
-Glyphs MCP, Curve Inspector and Reference Inspector. Fresh installs select all
-three. Upgrades keep component choices; removal is explicit. AI connections
-are optional and existing authentication/configuration is preserved.
+The beta branch prepares product 2.0.0 Beta 3, release `2.0.0-beta.3`, installer build 45. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seven tools and five job kinds. See [version and identity](../content/reference/version-identity.mdx).
+The native installer keeps installation on **Setup**. It offers Glyphs MCP,
+Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
+and Cursor connections. **Install All** reconciles every item; each card also
+supports independent install, update, removal and retry. One serialized queue
+runs an atomic component transaction before configuring connectors. Existing
+authentication and unrelated client configuration are preserved.
 
 Glyphs 4 uses an architecture-matched private CPython 3.14.7 runtime and locked
 FastMCP 2.12.0 / glyphs-cli 0.6.1 dependencies. Installations require no package
@@ -28,9 +30,11 @@ reading upgrade choices. Ports, automatic start, authentication and welcome
 preferences remain outside component replacement. Unrelated files are retained.
 The Mac's normal Glyphs quit/save workflow must finish before replacement.
 
-Glyphs 3 retains the pinned 1.11.0 bundle and its original Python dependency
-installation, with its version-specific skills. Legacy updater paths reject
-partial upgrades to the new component payload and direct users to the installer.
+The Beta 3 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
+release, original Python dependency installation and version-specific skills;
+the pinned v1 source metadata remains unchanged and is not embedded in this
+desktop payload. Legacy updater paths reject partial upgrades to the new
+component payload and direct users to the appropriate installer.
 
 ## Build locally
 

@@ -2,81 +2,119 @@
 title: Glyphs MCP Desktop
 ---
 
-**Glyphs MCP.app** brings installation, server controls and font projects into one native macOS application. The 2.0.0 desktop candidate is distributed directly, outside the Mac App Store. Public publication is a separate release step.
+**Glyphs MCP.app** brings installation, agent connections, server controls and
+font projects into one native macOS application. The 2.0.0 desktop candidate is
+distributed directly, outside the Mac App Store. Public publication is a
+separate release step.
 
-## Overview and the menu bar
+## Setup and the menu bar
 
-Overview shows the MCP service, its Glyphs connection and current work. The menu-bar icon opens the same information in a compact popover. It uses the Regular-S `litsquare.logo.glyphsMCP` artwork from LitSquare Symbols in a native square button, centered when idle. A steady cyan (`#00BBD0`) dot beside the logo indicates an active font task or sidecar-owned worker. A running but idle server has no dot; connection failures clear the dot until activity can be confirmed again. The button keeps the same width in both states, so neighboring icons do not move. The dot uses standard sRGB without a brightness boost. The saturated cyan improves light-menu visibility with a plain circle in both appearances.
+**Setup** is the home page. It shows the MCP service, Glyphs connection, current
+work, installed components and agent connections. Start or stop the server,
+open Glyphs, refresh status and manage installation without navigating to a
+separate page.
 
-Preparation shows a phase and elapsed time. Application and recovery show available progress in **changes**, which may differ from the number of layers. “Worker available” means `glyphs-cli` is installed; “worker running” means the sidecar owns a current worker process. A slow reply does not imply a modal dialog or a failed font operation.
+The menu-bar icon opens the same server and activity information in a compact
+popover. A steady cyan (`#00BBD0`) dot indicates an active font task or a
+sidecar-owned worker. A running but idle server has no dot; connection failures
+clear it until activity can be confirmed again.
 
-The main view shows active work, proposals awaiting review, or one recent result. Older jobs are available under **Recent Tasks**. Results identify the operation and distinguish changes reverted in Glyphs from a proposal discarded before application.
+One monitor serves Setup and the menu bar. Visible content refreshes every two
+seconds during work and every five seconds while idle. With both hidden, native
+job-file notifications wake the authenticated status reader; two-second checks
+continue only while the menu-bar dot indicates work. A failed connection
+preserves the last observation with a stale indication.
 
-One monitor serves Overview and the menu bar. Visible content refreshes every two seconds during work and every five seconds while idle. With both content views hidden, native job-file notifications wake the authenticated status reader; two-second checks continue only while the menu-bar dot indicates work. Hidden, idle views use no recurring checks. A failed connection preserves the last observation with a stale indication.
+Start, Stop and port changes use the same control helper as Glyphs. Stop and
+component replacement refuse active preparation, application, cancellation or
+recovery. Prepared results and job identities remain in the managed job store
+across controlled service restarts. An uncertain native result must be
+reconciled through its existing job ID; it is never automatically resubmitted.
 
-Start, Stop and port changes use the same control helper as Glyphs. Stop and component replacement refuse active preparation, application, cancellation or recovery. Prepared results and job identities are retained at the managed job store across controlled service restarts. An uncertain native result must be reconciled through its existing job ID; it is never automatically submitted again.
+## Components and connections
+
+The component cards manage **Glyphs MCP**, **Curve Inspector** and **Reference
+Inspector**. Connection cards manage **Codex**, **Claude Code**, **Claude
+Desktop** and **Cursor**. A missing item offers **Install**; an installed item
+offers **Update** and **Remove**; a failed operation offers **Retry**. Removal
+requires confirmation.
+
+**Install All** immediately queues all three components and four connections.
+If every item is installed, the primary action becomes **Update All**. Component
+changes run as one atomic transaction before connectors are configured in
+order. A failed connector remains failed on its own card and does not stop the
+remaining connector work. Other card actions are disabled while the queue is
+active.
+
+Cards remain on Setup throughout the operation and show **Queued**,
+**Installing**, **Updating**, **Removing**, **Installed** or **Failed**. If
+Glyphs is running, Setup shows inline guidance and a **Quit Glyphs** action that
+uses Glyphs' normal save prompt before replacement continues.
+
+Codex and Claude Code receive the MCP connection and managed skills. Claude
+Desktop receives its MCP configuration. Cursor receives a complete local
+plugin under `~/.cursor/plugins/local/glyphs-mcp`. Configuration patchers back
+up existing files, preserve unrelated entries and custom options, and mutate
+only Glyphs MCP. Cursor updates and removal require a verified installer-owned
+bundle; modified or unowned content becomes a visible conflict.
+
+### Curve Inspector
+
+After installation, enable **View → Curve Inspector** in Glyphs to inspect curve
+geometry and handles directly on the canvas.
+
+### Reference Inspector
+
+Choose a reference under **Edit → Comparison Reference**, then enable the
+Reference Inspector overlay in the View menu. See
+[visual review](../workflows/visual-review.mdx) for both companion workflows.
+
+**Check for Updates…** uses Sparkle and the configured release channel.
+Automatic checking is opt-in. Updating the desktop app and reconciling bundled
+components are separate operations.
 
 ## Closing, quitting and login
 
 - Closing the dashboard keeps the menu-bar interface available.
-- **Quit Glyphs MCP** closes the desktop interface. The separate sidecar service keeps its own startup setting.
-- **Settings → Open Glyphs MCP at login** is off initially. When enabled, login opens the menu-bar interface without opening the dashboard.
-- **Start the MCP server at login** is a separate setting. An upgrade preserves its existing value.
+- **Quit Glyphs MCP** closes the desktop interface. The sidecar service keeps
+  its own startup setting.
+- **Settings → Open Glyphs MCP at login** is off initially. When enabled, login
+  opens the menu-bar interface without opening the dashboard.
+- **Start the MCP server at login** is a separate setting preserved by updates.
 - Menu-bar visibility defaults on and can be changed in Settings.
-
-## Components and updates
-
-Components retains the **Choose → Install → Ready** flow. Each component has a card with an image area, a description and documentation. A fresh installation selects Glyphs MCP, Curve Inspector and Reference Inspector. Existing installations restore their choices from the receipt, including an installation with all components removed.
-
-When Glyphs is running, the orange **Quit Glyphs** button appears beside the Choose → Install → Ready steps. It uses Glyphs’ normal save prompt.
-
-Checked cards install the bundled version of a component. “Install bundled version” does not indicate that a newer version has been found. Unchecking an installed card marks it **Remove**; unchecking an absent component does nothing. Choose **Apply Changes** to apply the selection. Rechecking a card cancels its pending removal. The separate removal list is no longer needed.
-
-Overview shows the same component cards with **Install** and **Remove** buttons. Both open Components with the proposed selection. Choose **Apply Changes** after reviewing it and closing Glyphs. Remove uninstalls the component while keeping its preferences; hiding an inspector overlay remains a separate action in Glyphs’ View menu.
-
-### Curve Inspector
-
-Inspect curve geometry and handles directly on the canvas. After installation, enable **View → Curve Inspector** in Glyphs. See [visual review](../workflows/visual-review.mdx) for the companion workflow.
-
-### Reference Inspector
-
-Compare outlines and spacing against Last Saved, another font file, Local Git or Public GitHub. Choose the reference under **Edit → Comparison Reference**, then enable its overlay in the View menu. See [visual review](../workflows/visual-review.mdx) for the reference workflow.
-
-**Check for Updates…** uses Sparkle and the project's GitHub update feed. Automatic checking is opt-in; installation remains your choice. Updating the desktop app and migrating installed Glyphs components are separate steps. If component migration fails, the manager remains available to work with the previous installation or retry.
 
 ## Projects
 
-The **Project** sidebar destination, directly below Components, opens the template gallery. The collapsible **My Project** section lists recent folders and restores the last selected project on launch. Its heading is a label; the disclosure arrow expands or collapses the list. Use its **More** menu to open a folder or create a project. The gallery includes the bundled starter, public catalog templates, and your local editable templates.
+The **Project** destination below Setup opens the template gallery. The
+collapsible **My Project** section lists recent folders and restores the last
+selected project. Use its **More** menu to open a folder or create a project.
 
-Selecting a project opens its workspace with Finder, editor, and Git-client
-shortcuts plus a read-only Git diff browser. The resizable left pane groups
-changed files into folders and supports filtering; the right pane loads only
-the selected file. Source diffs offer unified or split layouts and optional
-line wrapping. Individual files under `.glyphspackage/glyphs/` also offer a
-Visual/Text switch, layer and overlay controls, and guides. In Both mode,
-unchanged geometry remains neutral while only the symmetric delta, changed
-reference segments, anchors and width band receive comparison color. Current
-geometry remains near-black, reference changes are mint and the delta fill is
-cyan. Nodes and handles use lighter neutral grays. Use the arrow
-buttons to visit each localized difference and Reset to return to full-glyph
-Fit. The canvas supports Command-plus/minus/zero, Command-Option-zero actual
-size, trackpad pinch, Option-scroll and the temporary Z click-zoom tool. Hold
-Space for a pure-black filled silhouette without changing the viewport.
-Binary, invalid UTF-8, symlink and over-2-MiB sides show a clear unavailable
-state. The browser cannot edit, comment, stage or commit.
+Selecting a project opens Finder, editor and Git-client shortcuts plus a
+read-only Git diff browser. The resizable left pane groups changed files into
+folders and supports filtering; the right pane loads only the selected file.
+Source diffs offer unified or split layouts and optional wrapping. Individual
+files under `.glyphspackage/glyphs/` also offer Visual/Text modes, layer and
+overlay controls, guides and difference navigation. Binary, invalid UTF-8,
+symlink and over-2-MiB sides show a clear unavailable state. The browser cannot
+edit, comment, stage or commit.
 
-![Beta 2 read-only Git diff browser](../images/desktop-git-diff-beta2.png)
+![Read-only Git diff browser](../images/desktop-git-diff-beta2.png)
 
-Each project row has a **…** menu for Finder, settings, and removal from the
-list. **Edit** opens the same settings from the workspace: change its display
-name or reconnect a moved folder. These actions preserve project files.
+Each project row has a **…** menu for Finder, settings and removal from the
+list. These actions preserve project files.
 
-## Support and diagnostics
+## Troubleshooting logs
 
-**Welcome & Support** opens the reusable welcome window manually. This does not change the bridge's existing first-launch welcome preference or its heart button.
+The discreet `doc.text.magnifyingglass` button in the Setup header opens one
+reusable **Glyphs MCP Logs** window. It combines installation and update events,
+card failures, recent server events, `sidecar.log` and `sidecar-error.log`.
+Filter or refresh sources, copy selected or all text, copy a redacted
+diagnostic report, or reveal the log folder in Finder. Log text is bounded,
+monospaced and selectable; missing files do not prevent the window from
+opening. Copied diagnostics redact tokens, credentials and authorization
+headers.
 
-Overview's **Troubleshooting** section contains versions, paths and **Copy Diagnostic Report**. Authentication values are removed from the copied report. A stale status is a last observation, not confirmation that execution stopped.
-
-See [installation](installation.mdx), [projects and templates](../workflows/projects.mdx), and [troubleshooting](troubleshooting.mdx).
-
-Port changes are available when the current font task finishes; they are not queued. After applying a new MCP port, update your AI connections to use it.
+See [installation](installation.mdx),
+[projects and templates](../workflows/projects.mdx), and
+[troubleshooting](troubleshooting.mdx). Port changes are available after the
+current font task finishes; update agent connections after changing the port.

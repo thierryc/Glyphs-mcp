@@ -47,9 +47,76 @@ public struct DesktopComponent: Identifiable {
     public static let ids = Set(all.map(\.id))
 }
 
+public enum SetupOperation: String, Equatable, Sendable {
+    case install, update, remove
+
+    public var progressLabel: String {
+        switch self {
+        case .install: return "Installing…"
+        case .update: return "Updating…"
+        case .remove: return "Removing…"
+        }
+    }
+}
+
+public enum SetupItemState: Equatable, Sendable {
+    case notInstalled
+    case queued(SetupOperation)
+    case active(SetupOperation)
+    case installed
+    case failed(SetupOperation, String)
+
+    public var statusLabel: String {
+        switch self {
+        case .notInstalled: return "Not installed"
+        case .queued: return "Queued"
+        case .active(let operation): return operation.progressLabel
+        case .installed: return "Installed"
+        case .failed: return "Failed"
+        }
+    }
+
+    public var operation: SetupOperation? {
+        switch self {
+        case .queued(let operation), .active(let operation), .failed(let operation, _): return operation
+        case .notInstalled, .installed: return nil
+        }
+    }
+
+    public var failureMessage: String? {
+        if case .failed(_, let message) = self { return message }
+        return nil
+    }
+
+    public var isActive: Bool {
+        if case .active = self { return true }
+        return false
+    }
+}
+
+public enum SetupQueueItem: Equatable, Sendable {
+    case component(String, SetupOperation)
+    case connector(InstallerClientKind, SetupOperation)
+}
+
+public enum SetupQueuePolicy {
+    public static func bulkPlan(
+        installedComponents: Set<String>,
+        installedConnectors: Set<InstallerClientKind>
+    ) -> [SetupQueueItem] {
+        let components = DesktopComponent.all.map {
+            SetupQueueItem.component($0.id, installedComponents.contains($0.id) ? .update : .install)
+        }
+        let connectors = InstallerClientKind.allCases.map {
+            SetupQueueItem.connector($0, installedConnectors.contains($0) ? .update : .install)
+        }
+        return components + connectors
+    }
+}
+
 /// Checkboxes describe the desired installation; the existing transaction still
 /// receives explicit removals so unchecked, absent components are untouched.
-public struct DesktopComponentPlan {
+public struct DesktopComponentPlan: Sendable {
     public let installed: Set<String>
     public let selected: Set<String>
     public var removals: Set<String> { installed.subtracting(selected) }
@@ -69,6 +136,30 @@ public struct DesktopComponentPlan {
     }
     public func action(for id: String) -> String {
         selected.contains(id) ? (installed.contains(id) ? "Install bundled version" : "Install") : (installed.contains(id) ? "Remove" : "Not installed")
+    }
+}
+
+public struct ComponentTransactionExecutor: Sendable {
+    private let handler: @Sendable (DesktopComponentPlan) async throws -> Void
+
+    public init(_ handler: @escaping @Sendable (DesktopComponentPlan) async throws -> Void) {
+        self.handler = handler
+    }
+
+    public func execute(_ plan: DesktopComponentPlan) async throws {
+        try await handler(plan)
+    }
+}
+
+public struct ConnectorChangeExecutor: Sendable {
+    private let handler: @Sendable (InstallerClientKind, SetupOperation) async throws -> Void
+
+    public init(_ handler: @escaping @Sendable (InstallerClientKind, SetupOperation) async throws -> Void) {
+        self.handler = handler
+    }
+
+    public func execute(_ client: InstallerClientKind, operation: SetupOperation) async throws {
+        try await handler(client, operation)
     }
 }
 

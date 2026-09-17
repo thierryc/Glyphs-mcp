@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.0.0 Beta 3 — unified Setup, build 45
+
+- Merge the former Overview and Components destinations into one **Setup**
+  page. Server status and controls, Glyphs component management, agent
+  connections, inline progress, failures and running-Glyphs guidance now stay
+  in one place.
+- Add **Install All** and **Update All** for the three Glyphs components and
+  four connections: Codex, Claude Code, Claude Desktop and Cursor. Preserve
+  independent install, update, remove and retry actions on every card.
+- Serialize installation through one atomic component transaction followed by
+  independent connector operations. A failed connector no longer prevents the
+  remaining connections from being configured.
+- Package an owned Cursor local plugin with its manifest, assets and managed
+  skills. Updates create a backup and replace only a recognized Glyphs MCP
+  bundle; removal refuses modified or unowned content.
+- Add a reusable **Glyphs MCP Logs** window with source filtering, refresh,
+  copy and redacted diagnostic-report actions. Persist bounded installer events
+  and combine them with recent server and sidecar logs.
+- Make the Beta 3 installer payload Glyphs 4-only. The separate v1.11.0 release,
+  source metadata and documentation remain available for Glyphs 3, but its
+  plug-in and skills are no longer embedded in the v2 desktop payload.
+- Replace the 72-dpi disk-image background with a multi-resolution 1x/2x TIFF
+  generated from the vector source for sharp text on Retina displays.
+
 ## 2.0.0 Beta 2 — visual Git diff browser, build 44
 
 - Replace the raw Git patch excerpt with a full-height, two-pane browser: a

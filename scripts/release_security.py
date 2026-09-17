@@ -247,7 +247,7 @@ def validate_unsigned_candidate(
     return {
         "releaseVersion": version,
         "installerBuild": installer_build,
-        "targets": {"3": PINNED_GLYPHS3_VERSION, "4": version},
+        "targets": {"4": version} if lean else {"3": PINNED_GLYPHS3_VERSION, "4": version},
         "canonicalSchemaVersion": None if lean else CURRENT_V2_CANONICAL_SCHEMA_VERSION,
         "publicToolCount": 7 if lean else CURRENT_V2_PUBLIC_TOOL_COUNT,
         "managedSkillCount": len(json.loads((root / "skills/manifest.json").read_text())["managedSkills"]) if lean else 18,
@@ -263,7 +263,13 @@ def validate_unsigned_candidate(
 
 def validate_candidate_repository_state(repo_root: Path) -> None:
     root = repo_root.resolve()
-    for base in ("main", "origin/main"):
+    release = release_identity(root)
+    bases = (
+        ("origin/lit/v2-beta",)
+        if release["channel"] == "beta"
+        else ("main", "origin/main")
+    )
+    for base in bases:
         result = subprocess.run(
             ["git", "merge-base", "--is-ancestor", base, "HEAD"],
             cwd=root,

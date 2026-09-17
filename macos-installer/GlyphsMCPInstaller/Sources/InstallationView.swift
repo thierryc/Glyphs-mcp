@@ -4,207 +4,362 @@ import GlyphsMCPInstallerCore
 
 struct InstallationView: View {
     @EnvironmentObject private var model: InstallerViewModel
+    @State private var pendingRemoval: RemovalTarget?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header.padding(.bottom, 22)
-            Divider()
-            ScrollEdgeShadowView {
-                VStack(alignment: .leading, spacing: 20) {
-                    switch model.stage {
-                    case .choose: choices
-                    case .install:
-                        ProgressView().frame(maxWidth: .infinity).padding(.top, 44)
-                        Text(model.message).frame(maxWidth: .infinity).padding(.bottom, 44)
-                    case .ready:
-                        Label(model.completionTitle, systemImage: model.notice.isFailure ? "exclamationmark.triangle" : "checkmark.circle").font(.title2)
-                        Text(model.message).foregroundStyle(model.notice.isFailure ? Color.red : Color.primary)
-                        if model.selectedVersion == .v3 || !model.installed.isEmpty {
-                            if model.selectedVersion == .v3 {
-                                Text("In Glyphs, open Edit → Glyphs MCP Server to manage the server.").foregroundStyle(.secondary)
-                            } else {
-                                if model.installed.contains("mcp") {
-                                    Text("Start or stop the MCP server in Overview. Change its port in Settings.").foregroundStyle(.secondary)
-                                }
-                                if !model.inspectorInstructions.isEmpty { Text(model.inspectorInstructions).foregroundStyle(.secondary) }
-                            }
-                            Button("Open Glyphs", action: model.openGlyphs).buttonStyle(.borderedProminent)
-                        }
-                        Button("Manage Components") { model.stage = .choose; model.notice = .none }
-                    }
-                    if model.stage == .choose && !model.message.isEmpty {
-                        if model.notice.isFailure {
-                            Label(model.message, systemImage: "exclamationmark.circle").foregroundStyle(.red).textSelection(.enabled)
-                        } else {
-                            Text(model.message).foregroundStyle(.secondary).textSelection(.enabled)
-                        }
-                    }
-                    if !model.skillConflicts.isEmpty {
-                        Text(model.skillConflicts.map(\.path).joined(separator: "\n")).font(.caption).textSelection(.enabled)
-                        Button("Replace preserved skills (backup)", action: model.replacePreservedSkills).disabled(model.busy)
-                    }
-                    DisclosureGroup("Troubleshooting", isExpanded: $model.troubleshooting) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            if let receipt = model.receiptURL {
-                                Button("Show Installation Receipt") { NSWorkspace.shared.activateFileViewerSelecting([receipt]) }
-                            }
-                            Text(model.log.isEmpty ? "No diagnostic messages." : model.log)
-                                .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                            Button("Detect Applications Again", action: model.refresh).disabled(model.busy)
-                        }.padding(.top, 8)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 22)
+        VStack(alignment: .leading, spacing: 26) {
+            setupActions
+            if !model.message.isEmpty { setupNotice }
+            components
+            connections
+            if !model.inspectorInstructions.isEmpty {
+                Text(model.inspectorInstructions).font(.callout).foregroundStyle(.secondary)
             }
-            Divider()
-            HStack {
-                Link("Documentation", destination: DesktopIdentity.documentation)
-                Text("·").foregroundStyle(.secondary)
-                Link("Report an Issue", destination: URL(string: "https://github.com/thierryc/Glyphs-mcp/issues")!)
-                Spacer()
-                if model.stage == .choose {
-                    Button(model.installButtonTitle, action: model.install).buttonStyle(.borderedProminent)
-                        .disabled(!model.canInstall).keyboardShortcut(.defaultAction)
-                }
-            }
-            .padding(.top, 22)
         }
-        .padding(28)
-        .frame(minWidth: 560, idealWidth: 610, minHeight: 600, idealHeight: 660)
-        .onChange(of: model.selectedVersion) { _, _ in model.refreshRunning() }
+        .confirmationDialog(
+            pendingRemoval?.title ?? "Remove item?",
+            isPresented: Binding(
+                get: { pendingRemoval != nil },
+                set: { if !$0 { pendingRemoval = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: pendingRemoval
+        ) { target in
+            Button("Remove", role: .destructive) {
+                pendingRemoval = nil
+                switch target.kind {
+                case .component(let id): model.removeComponent(id)
+                case .connector(let client): model.removeConnector(client)
+                }
+            }
+            Button("Cancel", role: .cancel) { pendingRemoval = nil }
+        } message: { target in
+            Text(target.message)
+        }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Components").font(.largeTitle.bold())
-                Text(model.versionLabel).font(.caption).foregroundStyle(.secondary)
+    private var setupActions: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Glyphs components and agent connections")
+                    .font(.title3.weight(.semibold))
+                Text("Install the bundled Beta-3 components, then configure every supported agent.")
+                    .font(.callout).foregroundStyle(.secondary)
             }
-            HStack(spacing: 12) {
-                ForEach(InstallerViewModel.Stage.allCases, id: \.self) { step in
-                    Text(step.rawValue).font(.subheadline.weight(model.stage == step ? .semibold : .regular))
-                        .foregroundStyle(model.stage == step ? Color.accentColor : .secondary)
-                    if step != .ready { Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary) }
-                }
-                Spacer()
-                if model.running {
-                    Button("Quit Glyphs", action: model.quitGlyphs)
-                        .buttonStyle(.borderedProminent).tint(.orange)
-                        .disabled(model.busy)
-                        .help("Close Glyphs using its normal save prompt before changing components.")
+            Spacer()
+            Button(LocalizedStringKey(model.bulkActionTitle), action: model.installAll)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(!model.canRunBulkAction)
+                .keyboardShortcut(.defaultAction)
+        }
+    }
+
+    @ViewBuilder private var setupNotice: some View {
+        Label(model.message, systemImage: model.notice.isFailure ? "exclamationmark.triangle" : "info.circle")
+            .font(.callout)
+            .foregroundStyle(model.notice.isFailure ? Color.red : Color.secondary)
+            .textSelection(.enabled)
+    }
+
+    private var components: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Components").font(.title3.bold())
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 16)], spacing: 16) {
+                ForEach(DesktopComponent.all) { component in
+                    ComponentSetupCard(
+                        component: component,
+                        state: model.state(for: component),
+                        disabled: model.busy,
+                        install: { model.installComponent(component.id) },
+                        update: { model.updateComponent(component.id) },
+                        remove: { pendingRemoval = .component(component) },
+                        retry: { model.retryComponent(component.id) }
+                    )
                 }
             }
         }
     }
 
-    private var choices: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if model.applications.isEmpty {
-                Text("Install Glyphs first, then refresh the detected applications.")
-            } else {
-                Picker("Glyphs version", selection: $model.selectedVersion) {
-                    ForEach(model.applications) { app in Text(app.displayName).tag(app.majorVersion) }
-                }
-                if model.running && model.notice != .waitingForGlyphs {
-                    Text("Quit Glyphs before changing components. You can save unsaved fonts when prompted.")
-                        .font(.callout).foregroundStyle(.secondary)
-                }
-                if model.selectedVersion == .v4 {
-                    Text("Select the components to keep installed. Applying changes installs the selected versions and removes unchecked installed components.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 16)], spacing: 16) {
-                        ForEach(DesktopComponent.all) { component in
-                            ComponentCard(component: component) {
-                                Toggle(component.title, isOn: model.componentBinding(component.id))
-                                    .toggleStyle(.checkbox).font(.headline)
-                            } action: {
-                                Text(model.componentPlan.action(for: component.id))
-                                    .font(.callout.weight(.medium))
-                                    .foregroundStyle(model.componentPlan.removals.contains(component.id) ? Color.red : Color.secondary)
-                            }
-                        }
-                    }.disabled(model.busy)
-                } else {
-                    Text("Glyphs 3 uses Glyphs MCP 1.11.0 and its existing Python setup.")
-                        .foregroundStyle(.secondary)
-                }
-                if !model.detectedClients.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("AI connections (optional)").fontWeight(.medium)
-                        if !model.canConnectClients { Text("Install Glyphs MCP to connect an AI assistant.").foregroundStyle(.secondary) }
-                        ForEach(model.detectedClients, id: \.self) { client in
-                            Toggle(client.displayName,
-                                   isOn: model.clientBinding(client)).disabled(!model.canConnectClients)
-                        }
-                    }
+    private var connections: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Connections").font(.title3.bold())
+                Text("Install All configures every connection, even when its host app is not detected.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 16)], spacing: 16) {
+                ForEach(InstallerClientKind.allCases) { client in
+                    ConnectorSetupCard(
+                        client: client,
+                        state: model.state(for: client),
+                        detected: model.detectedClients.contains(client),
+                        version: model.connectorVersions[client],
+                        guidance: model.connectorGuidance(client),
+                        symbol: model.connectorSymbol(client),
+                        disabled: model.busy,
+                        install: { model.installConnector(client) },
+                        update: { model.updateConnector(client) },
+                        remove: { pendingRemoval = .connector(client) },
+                        retry: { model.retryConnector(client) }
+                    )
                 }
             }
         }
     }
 }
 
-/// Both surfaces use the same card and image slot. A bundled preview asset can
-/// replace the native illustration without changing installation behavior.
-struct ComponentCard<Selection: View, Action: View>: View {
+private struct ComponentSetupCard: View {
     let component: DesktopComponent
-    @ViewBuilder var selection: () -> Selection
-    @ViewBuilder var action: () -> Action
+    let state: SetupItemState
+    let disabled: Bool
+    let install: () -> Void
+    let update: () -> Void
+    let remove: () -> Void
+    let retry: () -> Void
+
+    var body: some View {
+        SetupCard {
+            componentPreview
+        } title: {
+            Text(component.title).font(.headline)
+        } detail: {
+            Text(component.detail)
+        } status: {
+            SetupStatus(state: state)
+        } actions: {
+            SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
+        } footer: {
+            Link("Documentation", destination: component.documentation).font(.caption)
+                .accessibilityLabel("\(component.title) documentation")
+        }
+    }
+
+    @ViewBuilder private var componentPreview: some View {
+        if let image = NSImage(named: component.previewAsset) {
+            Image(nsImage: image).resizable().interpolation(.high).scaledToFill()
+        } else if component.id == "mcp" {
+            Image(nsImage: NSApp.applicationIconImage).resizable().interpolation(.high).scaledToFit().padding(12)
+        } else {
+            Image(systemName: component.symbol).font(.system(size: 36)).foregroundStyle(Color.accentColor)
+        }
+    }
+}
+
+private struct ConnectorSetupCard: View {
+    let client: InstallerClientKind
+    let state: SetupItemState
+    let detected: Bool
+    let version: String?
+    let guidance: String
+    let symbol: String
+    let disabled: Bool
+    let install: () -> Void
+    let update: () -> Void
+    let remove: () -> Void
+    let retry: () -> Void
+
+    var body: some View {
+        SetupCard(compact: true) {
+            Image(systemName: symbol).font(.system(size: 28)).foregroundStyle(Color.accentColor)
+        } title: {
+            HStack {
+                Text(client.displayName).font(.headline)
+                Spacer()
+                Text(LocalizedStringKey(detected ? "Detected" : "Not detected"))
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        } detail: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(LocalizedStringKey(guidance))
+                if let version { Text("Managed version \(version)").font(.caption) }
+            }
+        } status: {
+            SetupStatus(state: state)
+        } actions: {
+            SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
+        } footer: {
+            EmptyView()
+        }
+    }
+}
+
+private struct SetupCard<Preview: View, Title: View, Detail: View, Status: View, Actions: View, Footer: View>: View {
+    var compact = false
+    @ViewBuilder var preview: () -> Preview
+    @ViewBuilder var title: () -> Title
+    @ViewBuilder var detail: () -> Detail
+    @ViewBuilder var status: () -> Status
+    @ViewBuilder var actions: () -> Actions
+    @ViewBuilder var footer: () -> Footer
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            preview()
+                .frame(maxWidth: .infinity)
+                .frame(height: compact ? 54 : 92)
+                .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .accessibilityHidden(true)
+            title()
+            detail().font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, minHeight: compact ? 48 : 64, alignment: .topLeading)
+            status()
+            actions()
+            footer()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08)))
+    }
+}
+
+private struct SetupStatus: View {
+    let state: SetupItemState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 7) {
+                if state.isActive || isQueued { ProgressView().controlSize(.small) }
+                Image(systemName: symbol).foregroundStyle(color)
+                Text(LocalizedStringKey(state.statusLabel)).font(.caption.weight(.medium)).foregroundStyle(color)
+            }
+            if let failure = state.failureMessage {
+                Text(failure).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+            }
+        }
+    }
+
+    private var isQueued: Bool { if case .queued = state { return true }; return false }
+    private var symbol: String {
+        switch state {
+        case .notInstalled: return "circle"
+        case .queued: return "clock"
+        case .active: return "arrow.triangle.2.circlepath"
+        case .installed: return "checkmark.circle.fill"
+        case .failed: return "exclamationmark.triangle.fill"
+        }
+    }
+    private var color: Color {
+        switch state {
+        case .installed: return .green
+        case .failed: return .red
+        default: return .secondary
+        }
+    }
+}
+
+private struct SetupCardActions: View {
+    let state: SetupItemState
+    let disabled: Bool
+    let install: () -> Void
+    let update: () -> Void
+    let remove: () -> Void
+    let retry: () -> Void
+
+    var body: some View {
+        HStack {
+            switch state {
+            case .notInstalled:
+                Button("Install", action: install).buttonStyle(.borderedProminent).disabled(disabled)
+            case .installed:
+                Button("Update", action: update).disabled(disabled)
+                Button("Remove", role: .destructive, action: remove).disabled(disabled)
+            case .failed:
+                Button("Retry", action: retry).buttonStyle(.borderedProminent).disabled(disabled)
+            case .queued, .active:
+                Text(LocalizedStringKey(state.statusLabel)).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+    }
+}
+
+private struct RemovalTarget: Identifiable {
+    enum Kind { case component(String), connector(InstallerClientKind) }
+    let id = UUID()
+    let title: String
+    let message: String
+    let kind: Kind
+
+    static func component(_ component: DesktopComponent) -> RemovalTarget {
+        .init(title: "Remove \(component.title)?",
+              message: "The component will be removed while other components and saved preferences are preserved.",
+              kind: .component(component.id))
+    }
+
+    static func connector(_ client: InstallerClientKind) -> RemovalTarget {
+        .init(title: "Remove \(client.displayName) connection?",
+              message: "Only installer-owned Glyphs MCP settings and managed files will be removed. Modified or unowned content is preserved as a conflict.",
+              kind: .connector(client))
+    }
+}
+
+struct TroubleshootingLogView: View {
+    @EnvironmentObject private var installer: InstallerViewModel
+    @EnvironmentObject private var desktop: DesktopModel
+    @State private var source: InstallerLogSource = .all
+    @State private var text = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            preview.frame(maxWidth: .infinity).frame(height: 100)
-                .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
-                .clipShape(RoundedRectangle(cornerRadius: 10)).accessibilityHidden(true)
-            selection()
-            Text(component.detail).font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
-            action()
-            Link("Documentation", destination: component.documentation).font(.caption)
-                .accessibilityLabel("\(component.title) documentation")
-        }.padding(16).frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08)))
+            HStack {
+                Picker("Source", selection: $source) {
+                    ForEach(InstallerLogSource.allCases) { source in
+                        Text(LocalizedStringKey(source.displayName)).tag(source)
+                    }
+                }.frame(width: 220)
+                Button("Refresh", action: refresh)
+                Spacer()
+                Button("Copy Selected") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
+                Button("Copy All") { copy(text) }
+                Button("Copy Redacted Diagnostic Report") { copy(installer.redactedDiagnostics(serverEvents: desktop.recentMessages)) }
+                Button("Reveal Logs in Finder", action: installer.revealLogs)
+            }
+            TextEditor(text: $text)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(minWidth: 720, minHeight: 440)
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.12)))
+            Text("Diagnostic copies redact common authorization headers, tokens, credentials, and secrets.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .onAppear(perform: refresh)
+        .onChange(of: source) { _, _ in refresh() }
     }
 
-    @ViewBuilder private var preview: some View {
-        if let image = NSImage(named: component.previewAsset) {
-            Image(nsImage: image).resizable().scaledToFill()
-        } else if component.id == "mcp" {
-            Image(nsImage: NSApp.applicationIconImage).resizable().scaledToFit().padding(12)
-        } else {
-            Image(systemName: component.symbol).font(.system(size: 38)).foregroundStyle(Color.accentColor)
-        }
+    private func refresh() {
+        text = installer.logText(source: source, serverEvents: desktop.recentMessages)
+    }
+
+    private func copy(_ value: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(value, forType: .string)
     }
 }
 
 /// Keep the native scrollbar and let content reach the adjacent dividers.
-/// Geometry observation also updates when content expands or the window resizes.
-private struct ScrollEdgeShadowView<Content: View>: View {
+struct ScrollEdgeShadowView<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var coordinateSpace = UUID()
     @State private var contentFrame: CGRect = .zero
     @ViewBuilder var content: () -> Content
-
     private let shadowDepth: CGFloat = 12
 
     var body: some View {
         GeometryReader { viewport in
             ScrollView {
-                content()
-                    .onGeometryChange(for: CGRect.self) { geometry in
-                        geometry.frame(in: .named(coordinateSpace))
-                    } action: { contentFrame = $0 }
+                content().onGeometryChange(for: CGRect.self) { geometry in
+                    geometry.frame(in: .named(coordinateSpace))
+                } action: { contentFrame = $0 }
             }
             .coordinateSpace(name: coordinateSpace)
-            .overlay(alignment: .top) {
-                edgeShadow(hiddenDistance: -contentFrame.minY, top: true)
-            }
-            .overlay(alignment: .bottom) {
-                edgeShadow(hiddenDistance: contentFrame.maxY - viewport.size.height, top: false)
-            }
+            .overlay(alignment: .top) { edgeShadow(hiddenDistance: -contentFrame.minY, top: true) }
+            .overlay(alignment: .bottom) { edgeShadow(hiddenDistance: contentFrame.maxY - viewport.size.height, top: false) }
         }
     }
 
@@ -212,17 +367,12 @@ private struct ScrollEdgeShadowView<Content: View>: View {
         let opacity = colorScheme == .dark ? 0.24 : 0.07
         let strength = min(max(hiddenDistance, 0) / shadowDepth, 1)
         return LinearGradient(
-            stops: [
-                .init(color: .black.opacity(contrast == .increased ? opacity * 1.6 : opacity), location: 0),
-                .init(color: .black.opacity(opacity * 0.3), location: 0.4),
-                .init(color: .clear, location: 1)
-            ],
+            stops: [.init(color: .black.opacity(contrast == .increased ? opacity * 1.6 : opacity), location: 0),
+                    .init(color: .black.opacity(opacity * 0.3), location: 0.4),
+                    .init(color: .clear, location: 1)],
             startPoint: top ? .top : .bottom,
             endPoint: top ? .bottom : .top
         )
-        .frame(height: shadowDepth)
-        .opacity(strength)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        .frame(height: shadowDepth).opacity(strength).allowsHitTesting(false).accessibilityHidden(true)
     }
 }

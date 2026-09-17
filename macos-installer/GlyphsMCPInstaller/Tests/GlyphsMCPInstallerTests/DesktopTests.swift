@@ -32,6 +32,32 @@ final class DesktopTests: XCTestCase {
         }
     }
 
+    func testRunningListenerRemainsVisibleWhenActivityStatusIsUnavailable() throws {
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(
+            hasServer: true, running: true, status: nil, hasNotice: true
+        ), "Server running")
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(
+            hasServer: true, running: nil, status: nil, hasNotice: true
+        ), "Server unavailable")
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(
+            hasServer: true, running: nil, status: nil, hasNotice: false
+        ), "Checking server")
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(
+            hasServer: true, running: false, status: nil, hasNotice: false
+        ), "Server stopped")
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(
+            hasServer: false, running: true, status: nil, hasNotice: false
+        ), "MCP server not installed")
+
+        let status = try JSONDecoder().decode(
+            DesktopServerStatus.self,
+            from: Data(#"{"sidecarVersion":"2.1.0","bridge":{"reachable":true},"worker":{"available":true},"controlProtocol":1}"#.utf8)
+        )
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(
+            hasServer: true, running: true, status: status, hasNotice: false
+        ), "Ready")
+    }
+
     func testControlFeedbackDistinguishesServiceActions() {
         XCTAssertNil(DesktopDiagnostics.controlProgress(nil))
         XCTAssertEqual(DesktopDiagnostics.controlProgress("start"), "Starting…")
@@ -97,6 +123,31 @@ final class DesktopTests: XCTestCase {
         XCTAssertFalse(plan.arguments.contains("custom-plugin"))
     }
 
+    func testBulkSetupQueuesThreeComponentsBeforeAllFourConnectors() {
+        let plan = SetupQueuePolicy.bulkPlan(
+            installedComponents: ["mcp"],
+            installedConnectors: [.codex, .cursor]
+        )
+        XCTAssertEqual(plan, [
+            .component("mcp", .update),
+            .component("curve-inspector", .install),
+            .component("reference-inspector", .install),
+            .connector(.codex, .update),
+            .connector(.claudeCode, .install),
+            .connector(.claudeDesktop, .install),
+            .connector(.cursor, .update),
+        ])
+    }
+
+    func testSetupItemStateExposesInlineProgressAndRetryOperation() {
+        XCTAssertEqual(SetupItemState.queued(.install).statusLabel, "Queued")
+        XCTAssertEqual(SetupItemState.active(.update).statusLabel, "Updating…")
+        XCTAssertEqual(SetupItemState.failed(.remove, "blocked").operation, .remove)
+        XCTAssertEqual(SetupItemState.failed(.remove, "blocked").failureMessage, "blocked")
+        XCTAssertTrue(SetupItemState.active(.install).isActive)
+        XCTAssertFalse(SetupItemState.installed.isActive)
+    }
+
     func testAdoptionPreservesReceiptChoicesAndUsesActualAgentPort() throws {
         let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: home) }
@@ -153,7 +204,7 @@ final class DesktopTests: XCTestCase {
     func testMonitoringStopsWhenBothSurfacesAreHidden() {
         var policy = DesktopMonitorPolicy()
         XCTAssertNil(policy.interval(busy: true))
-        policy.surfaces.insert("overview")
+        policy.surfaces.insert("setup")
         XCTAssertNil(policy.interval(busy: false))
         policy.dashboardVisible = true
         XCTAssertEqual(policy.interval(busy: true), 2)

@@ -11,6 +11,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     lazy var updates = DesktopUpdates(installationBusy: { [weak self] in self?.installer.busy == true })
     private var dashboard: NSWindow?
     private var welcome: NSWindow?
+    private var troubleshootingLogs: NSWindow?
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
     private var preferences: NSObjectProtocol?
@@ -21,6 +22,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = updates
         installer.stopServiceBeforeQuit = { [weak self] in try await self?.desktop.stopForInstallation() }
+        installer.showTroubleshootingLogs = { [weak self] in self?.showTroubleshootingLogs() }
         popover.behavior = .transient
         popover.animates = false
         popover.delegate = self
@@ -101,6 +103,24 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         welcome?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         // Desktop presentation is manual and never changes the bridge's
         // first-successful-display preference.
+    }
+
+    func showTroubleshootingLogs() {
+        if troubleshootingLogs == nil {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 620),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+            window.title = NSLocalizedString("Glyphs MCP Logs", comment: "Troubleshooting log window title")
+            window.identifier = NSUserInterfaceItemIdentifier("glyphs-mcp-logs")
+            window.setFrameAutosaveName("Glyphs MCP Logs")
+            window.contentMinSize = NSSize(width: 760, height: 480)
+            window.isReleasedWhenClosed = false
+            window.contentViewController = NSHostingController(rootView:
+                TroubleshootingLogView().environmentObject(installer).environmentObject(desktop))
+            window.center()
+            troubleshootingLogs = window
+        }
+        troubleshootingLogs?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func updateMenuBar() {
@@ -224,7 +244,7 @@ struct DesktopSettings: View {
             }
             Section("Application updates") {
                 Toggle("Automatically check for updates", isOn: Binding(get: { updates.automaticChecks }, set: { updates.automaticChecks = $0 }))
-                Text("Choose when to install app updates. Manage Glyphs plugins in Components.").font(.caption).foregroundStyle(.secondary)
+                Text("Choose when to install app updates. Manage Glyphs components and agent connections in Setup.").font(.caption).foregroundStyle(.secondary)
                 Button("Check for Updates…", action: updates.check).disabled(!updates.canCheck)
                 if !updates.message.isEmpty { Text(updates.message).font(.caption).foregroundStyle(.secondary) }
             }

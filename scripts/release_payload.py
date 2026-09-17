@@ -41,8 +41,7 @@ def inventory(root):
 
 
 def managed_bundles(root):
-    return [root / "Plugins/Glyphs3/Glyphs MCP.glyphsPlugin",
-            root / "Lean" / BRIDGE, *(root / "Lean" / n for n in COMPANIONS.values())]
+    return [root / "Lean" / BRIDGE, *(root / "Lean" / n for n in COMPANIONS.values())]
 
 
 def component_records(root, manifest):
@@ -117,7 +116,7 @@ def sign_payload(root, identity=IDENTITY):
     validate_payload(root)
     verify_identities(root)
     natives, bundles = inventory(root)
-    if not natives or len(bundles) < 4:
+    if not natives or len(bundles) < 3:
         raise ValueError("Missing native payload code")
     with tempfile.TemporaryDirectory(prefix="glyphs-sign-entitlements-") as temporary:
         cli_entitlements = Path(temporary) / "glyphs-cli.plist"
@@ -146,7 +145,7 @@ def verify_payload(root, identity=IDENTITY, *, installed=False):
     validate_payload(root)
     verify_identities(root)
     natives, bundles = inventory(root)
-    if not natives or len(bundles) < 4:
+    if not natives or len(bundles) < 3:
         raise ValueError("Missing native payload code")
     for path in natives + bundles:
         verify_code(path, identity)

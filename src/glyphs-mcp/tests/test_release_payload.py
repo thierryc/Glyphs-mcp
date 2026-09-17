@@ -90,8 +90,7 @@ def test_component_paths_cannot_be_changed_by_manifest(tmp_path):
         release.refresh_identities(tmp_path)
 
 
-def test_four_managed_bundles_include_pinned_glyphs3_and_both_companions(tmp_path):
+def test_three_managed_bundles_include_glyphs4_bridge_and_both_companions(tmp_path):
     paths = release.managed_bundles(tmp_path)
-    assert len(paths) == 4
-    assert paths[0] == tmp_path / "Plugins/Glyphs3/Glyphs MCP.glyphsPlugin"
-    assert {p.name for p in paths[1:]} == {release.BRIDGE, *release.COMPANIONS.values()}
+    assert len(paths) == 3
+    assert {p.name for p in paths} == {release.BRIDGE, *release.COMPANIONS.values()}

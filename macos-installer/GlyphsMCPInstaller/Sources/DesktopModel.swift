@@ -32,9 +32,12 @@ final class DesktopModel: ObservableObject {
     private var observers: [NSObjectProtocol] = []
 
     var title: String {
-        if !installation.hasServer { return "MCP server not installed" }
-        if serviceRunning == false { return "Server stopped" }
-        return status?.title ?? (notice.isEmpty ? "Checking server" : "Server unavailable")
+        DesktopDiagnostics.serverTitle(
+            hasServer: installation.hasServer,
+            running: serviceRunning,
+            status: status,
+            hasNotice: !notice.isEmpty
+        )
     }
     var canControl: Bool { !controlling && !stale && status?.controlProtocol == 1 && status?.isBusy == false }
     var canChangeSettings: Bool { installation.hasServer && !controlling && (serviceRunning == false || canControl) }
@@ -149,7 +152,7 @@ final class DesktopModel: ObservableObject {
         } catch {
             guard !Task.isCancelled, !controlling else { return }
             stale = status != nil
-            let message = (error as? URLError) != nil ? "The server is not responding. Refresh or check Components and Troubleshooting." : error.localizedDescription
+            let message = (error as? URLError) != nil ? "The server is not responding. Refresh Setup or open the troubleshooting logs." : error.localizedDescription
             if let observed = try? await serviceAction("status"), let data = observed["data"] as? [String: Any] {
                 serviceRunning = data["processRunning"] as? Bool ?? data["running"] as? Bool
             } else { serviceRunning = nil }
@@ -174,7 +177,7 @@ final class DesktopModel: ObservableObject {
         guard !controlling else { throw InstallerError.userFacing("A service control is already in progress.") }
         await refresh()
         guard installation.hasServer, serviceRunning != false else { return }
-        guard canControl else { throw InstallerError.userFacing(status?.isBusy == true ? "Wait for the current font task to finish before closing Glyphs." : "The MCP server could not be stopped safely. Open Overview and check Troubleshooting before changing components.") }
+        guard canControl else { throw InstallerError.userFacing(status?.isBusy == true ? "Wait for the current font task to finish before closing Glyphs." : "The MCP server could not be stopped safely. Open Setup and check the troubleshooting logs before changing components.") }
         controlAction = "stop"
         defer { controlAction = nil }
         _ = try await serviceAction("stop")

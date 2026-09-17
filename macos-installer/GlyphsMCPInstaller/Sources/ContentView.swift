@@ -12,7 +12,7 @@ enum DesktopDashboardLayout {
     static let sidebarMaximumWidth: CGFloat = 320
 }
 
-enum DesktopOverviewLayout {
+enum DesktopSetupLayout {
     static let contentMaximumWidth: CGFloat = 850
     static let contentPadding: CGFloat = 32
 }
@@ -28,8 +28,7 @@ struct ContentView: View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
-                    sidebarItem("Overview", icon: "square.grid.2x2", destination: .overview)
-                    sidebarItem("Components", icon: "puzzlepiece.extension", destination: .components)
+                    sidebarItem("Setup", icon: "shippingbox.and.arrow.backward", destination: .setup)
                     sidebarItem("Project", icon: "folder.badge.plus", destination: .templates)
                     HStack(spacing: 6) {
                         Button { projectsExpanded.toggle() } label: {
@@ -68,11 +67,7 @@ struct ContentView: View {
             )
         } detail: {
             switch projects.navigation.destination {
-            case .overview: DesktopOverview { id, enabled in
-                installer.prepareComponentChange(id, enabled: enabled)
-                projects.select(.components)
-            }
-            case .components: InstallationView()
+            case .setup: DesktopSetup()
             case .templates: DesktopProjectCatalog(model: projects)
             case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
             }
@@ -147,16 +142,25 @@ private struct DesktopSidebarToolbarDefaults: ViewModifier {
     }
 }
 
-struct DesktopOverview: View {
+struct DesktopSetup: View {
     @EnvironmentObject private var installer: InstallerViewModel
     @EnvironmentObject private var desktop: DesktopModel
-    let changeComponent: (String, Bool) -> Void
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Your Glyphs workspace").font(.largeTitle.bold())
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Setup").font(.largeTitle.bold())
+                        Text("Install and manage Glyphs MCP from one place.").foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button { installer.showTroubleshootingLogs?() } label: {
+                        Image(systemName: "doc.text.magnifyingglass")
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Open Troubleshooting Logs")
+                    .help("Open Troubleshooting Logs")
                 }
                 GroupBox {
                     VStack(alignment: .leading, spacing: 16) {
@@ -175,55 +179,33 @@ struct DesktopOverview: View {
                         DesktopActivityView()
                     }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 }
+                if installer.running {
+                    HStack(spacing: 12) {
+                        Label("Quit Glyphs before changing components. You can save unsaved fonts when prompted.", systemImage: "exclamationmark.triangle")
+                            .font(.callout).foregroundStyle(.orange)
+                        Spacer()
+                        Button("Quit Glyphs", action: installer.quitGlyphs)
+                            .buttonStyle(.borderedProminent).tint(.orange).disabled(installer.busy)
+                    }
+                }
                 HStack(spacing: 12) {
                     Button("Open Glyphs", action: installer.openGlyphs).disabled(installer.application == nil)
-                    Button("Refresh") { Task { await desktop.refresh() } }
+                    Button("Refresh") {
+                        installer.refresh(resetFailures: true)
+                        Task { await desktop.refresh() }
+                    }.disabled(installer.busy)
                     Spacer()
                     Text(installer.versionLabel).font(.caption).foregroundStyle(.secondary)
                 }
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Components").font(.title3.bold())
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 16)], spacing: 16) {
-                        ForEach(DesktopComponent.all) { component in
-                            ComponentCard(component: component) {
-                                Text(component.title).font(.headline)
-                            } action: {
-                                let installed = installer.installed.contains(component.id)
-                                HStack {
-                                    Text(installed ? "Installed" : "Not installed").font(.caption).foregroundStyle(.secondary)
-                                    Spacer()
-                                    Button(installed ? "Remove" : "Install") { changeComponent(component.id, !installed) }
-                                        .disabled(installer.busy || !installer.applications.contains { $0.majorVersion == .v4 })
-                                        .accessibilityLabel("\(installed ? "Remove" : "Install") \(component.title)")
-                                        .help(installed ? "Review removal in Components. Its preferences will be kept." : "Review installation in Components for Glyphs 4.")
-                                }
-                            }
-                        }
-                    }
-                }
-                DisclosureGroup("Troubleshooting") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("MCP endpoint: \(desktop.installation.endpoint.absoluteString)").textSelection(.enabled)
-                        if let executable = desktop.status?.worker.executable { Text("glyphs-cli: \(executable)").textSelection(.enabled) }
-                        Text("Installed components: \(desktop.installation.version ?? "Unknown")")
-                        if !desktop.recentMessages.isEmpty {
-                            Text("Recent events").font(.headline)
-                            Text(desktop.recentMessages.joined(separator: "\n")).font(.caption).textSelection(.enabled)
-                        }
-                        HStack {
-                            Button("Copy Diagnostic Report", action: desktop.copyDiagnostics)
-                            Button("Open Logs") { NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/Glyphs MCP")) }
-                        }
-                    }.font(.callout).padding(.top, 8)
-                }
+                InstallationView()
             }
-            .padding(DesktopOverviewLayout.contentPadding)
-            .frame(maxWidth: DesktopOverviewLayout.contentMaximumWidth, alignment: .leading)
+            .padding(DesktopSetupLayout.contentPadding)
+            .frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { desktop.setVisible("overview", true) }
-        .onDisappear { desktop.setVisible("overview", false) }
+        .onAppear { desktop.setVisible("setup", true) }
+        .onDisappear { desktop.setVisible("setup", false) }
     }
 }
 

@@ -16,17 +16,18 @@ and the Xcode project. The managed skill inventory comes from
 | Item | Value |
 | --- | --- |
 | Product version | `2.0.0` |
-| Release version | `2.0.0-beta.2` |
+| Release version | `2.0.0-beta.3` |
 | Channel | `beta` |
-| Beta number | `2` |
-| Installer build | `44` |
+| Beta number | `3` |
+| Installer build | `45` |
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
 | MCP tools | `7` |
 | Job kinds | `5` |
-| Glyphs 3 payload | `1.11.0` |
+| Desktop payload targets | `Glyphs 4 only` |
+| Separate pinned v1 release | `1.11.0` |
 
 `sidecarVersion` and `bridgeVersion` are coordinated product versions. The lean
 interface revision identifies the seven-tool contract; the bridge protocol
@@ -47,8 +48,8 @@ manifest and receipt:
   `codeHash` gives the complete fingerprint. Check `bridge.release`,
   `bridge.runtimeId` and `bridge.codeHash` independently.
 - `bridge.host` identifies the native application by bundle identifier, version
-  and build. Glyphs 4 uses `com.GeorgSeifert.Glyphs4`; the separate Glyphs 3 host
-  uses `com.GeorgSeifert.Glyphs3`.
+  and build. The Beta 3 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
+  uses its separate v1.11.0 distribution.
 
 The fingerprint is computed from component files at initialization. It is not a
 hash of in-memory code, and changed installed files do not prove that the running
@@ -73,10 +74,10 @@ The current candidate has local qualification records; signed distribution
 qualification remains separate. Public availability follows the beta launch
 process. A configured URL does not prove that a feed or release is published.
 
-Beta 2 uses tag `v2.0.0-beta.2` and branch `lit/v2-beta`. Its feed is
+Beta 3 uses tag `v2.0.0-beta.3` and branch `lit/v2-beta`. Its feed is
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.
-Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.2.dmg` and
-`Glyphs-MCP-2.0.0-beta.2.zip`. A beta is a prerelease with `make_latest=false`;
+Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.3.dmg` and
+`Glyphs-MCP-2.0.0-beta.3.zip`. A beta is a prerelease with `make_latest=false`;
 never publish `Glyphs-MCP-latest.dmg` for it. Stable releases use their separate
 feed and release process. Installer builds increase across beta and final
 releases; changing the label does not make an older build newer.

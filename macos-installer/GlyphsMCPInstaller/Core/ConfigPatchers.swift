@@ -15,11 +15,6 @@ public struct CodexConfigurator {
 
 	public func configure() async throws {
 		log("Configuring Codex…")
-        if let text = try? String(contentsOf: InstallerPaths.codexConfig, encoding: .utf8),
-           CodexTomlInspector.readServerConfig(toml: text, serverName: InstallerConstants.codexServerName) != nil {
-            log("Keeping the existing Codex connection and authentication settings."); return
-        }
-
 		try patchCodexToml(at: InstallerPaths.codexConfig)
 		log("Codex configured.")
 	}
@@ -119,11 +114,6 @@ public struct ClaudeCodeConfigurator {
 	}
 
 	public func configureIfAvailable() async throws {
-        let (root, _) = try JsonConfig.loadJSON(at: InstallerPaths.claudeCodeConfig)
-        if (root["mcpServers"] as? [String: Any])?[InstallerConstants.claudeCodeServerName] != nil {
-            log("Keeping the existing Claude Code connection and authentication settings."); return
-        }
-
 		try patchClaudeCodeConfig(at: InstallerPaths.claudeCodeConfig)
 		log("Claude Code configured.")
 	}
@@ -166,11 +156,6 @@ public struct ClaudeDesktopConfigurator {
 
     public func configure() throws {
 		log("Configuring Claude Desktop…")
-
-        let (root, _) = try JsonConfig.loadJSON(at: InstallerPaths.claudeDesktopConfig)
-        if (root["mcpServers"] as? [String: Any])?[InstallerConstants.claudeDesktopServerName] != nil {
-            log("Keeping the existing Claude Desktop connection and authentication settings."); return
-        }
 
 		try patchClaudeDesktopConfig(at: InstallerPaths.claudeDesktopConfig)
 		log("Claude Desktop configured.")
@@ -216,7 +201,7 @@ public struct ClaudeDesktopConfigurator {
 // MARK: - Agent skills
 
 public struct SkillInstallationResult: Equatable {
-    public enum Outcome: String { case installed, current, retired, preservedConflict = "preserved-conflict" }
+    public enum Outcome: String { case installed, current, removed, retired, preservedConflict = "preserved-conflict" }
     public struct Entry: Equatable {
         public let name: String
         public let path: String
@@ -386,6 +371,39 @@ public struct AgentSkillBundleInstaller {
 		return (current + legacy + retiredPrivateSkillDestinations(from: payload, under: destRoot)).sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}
 
+    @discardableResult
+    public func removeOwnedSkills(from payload: InstallerPayload, under destRoot: URL) throws -> SkillInstallationResult {
+        let ownershipURL = destRoot.appendingPathComponent(".glyphs-mcp-skills.json")
+        var ownership = (try? Data(contentsOf: ownershipURL))
+            .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
+        var result = SkillInstallationResult()
+        for source in payload.managedSkillDirectories() {
+            let name = source.lastPathComponent
+            let destination = destRoot.appendingPathComponent(name, isDirectory: true)
+            guard itemExists(at: destination) else {
+                ownership.removeValue(forKey: name)
+                continue
+            }
+            guard let ownedIdentity = ownership[name],
+                  let currentIdentity = try? InstallerPayloadManifestResolver.treeIdentity(destination),
+                  currentIdentity == ownedIdentity else {
+                result.entries.append(.init(name: name, path: destination.path, outcome: .preservedConflict,
+                    compatibilityIssue: "This managed skill is modified or unowned and was preserved."))
+                continue
+            }
+            let backup = try backupSkill(destination)
+            try FileManager.default.removeItem(at: destination)
+            ownership.removeValue(forKey: name)
+            result.entries.append(.init(name: name, path: destination.path, outcome: .removed, backupPath: backup.path))
+        }
+        if !ownership.isEmpty {
+            try FileIO.writeAtomically(try JSONEncoder().encode(ownership), to: ownershipURL)
+        } else if FileManager.default.fileExists(atPath: ownershipURL.path) {
+            try FileManager.default.removeItem(at: ownershipURL)
+        }
+        return result
+    }
+
     // Known removed private families only; names or owner markers alone do not
     // select a folder. In particular, separate v1 instructions are preserved.
     private func retiredPrivateSkillDestinations(from payload: InstallerPayload, under root: URL) -> [URL] {
@@ -428,6 +446,352 @@ public struct AgentSkillBundleInstaller {
 	private func itemExists(at url: URL) -> Bool {
 		FileManager.default.fileExists(atPath: url.path) || ((try? url.checkResourceIsReachable()) ?? false)
 	}
+}
+
+// MARK: - Cursor local plug-in
+
+public enum CursorPluginState: Equatable, Sendable {
+    case missing
+    case installed(version: String)
+    case conflict(String)
+}
+
+public struct CursorPluginOwnershipReceipt: Codable, Equatable, Sendable {
+    public let schemaVersion: Int
+    public let owner: String
+    public let destination: String
+    public let version: String
+    public let identity: String
+
+    public init(destination: URL, version: String, identity: String) {
+        self.schemaVersion = 1
+        self.owner = "glyphs-mcp-installer"
+        self.destination = destination.standardizedFileURL.path
+        self.version = version
+        self.identity = identity
+    }
+}
+
+public struct CursorPluginInstaller {
+    public let source: URL
+    public let destination: URL
+    public let receiptURL: URL
+    public let expectedIdentity: String
+    public let version: String
+    private let fileManager: FileManager
+    private let log: (String) -> Void
+
+    public init(
+        source: URL,
+        destination: URL = InstallerPaths.cursorPluginDir,
+        receiptURL: URL = InstallerPaths.cursorPluginReceipt,
+        expectedIdentity: String,
+        version: String,
+        fileManager: FileManager = .default,
+        log: @escaping (String) -> Void
+    ) {
+        self.source = source
+        self.destination = destination
+        self.receiptURL = receiptURL
+        self.expectedIdentity = expectedIdentity
+        self.version = version
+        self.fileManager = fileManager
+        self.log = log
+    }
+
+    public func inspect() -> CursorPluginState {
+        guard itemExists(destination) else { return .missing }
+        guard recognizedPlugin(at: destination) else {
+            return .conflict("An unrecognized item occupies \(destination.path).")
+        }
+        guard let receipt = readReceipt(), receipt.destination == destination.standardizedFileURL.path else {
+            return .conflict("The existing Glyphs MCP Cursor plug-in is not owned by this installer.")
+        }
+        guard let currentIdentity = try? InstallerPayloadManifestResolver.treeIdentity(destination),
+              currentIdentity == receipt.identity else {
+            return .conflict("The installer-owned Cursor plug-in was modified and has been preserved.")
+        }
+        return .installed(version: receipt.version)
+    }
+
+    @discardableResult
+    public func installOrUpdate() throws -> URL? {
+        guard recognizedPlugin(at: source) else {
+            throw InstallerError.userFacing("The packaged Cursor plug-in is not recognized.")
+        }
+        let sourceIdentity = try InstallerPayloadManifestResolver.treeIdentity(source)
+        guard sourceIdentity == expectedIdentity else {
+            throw InstallerError.userFacing("The packaged Cursor plug-in failed its integrity check.")
+        }
+        guard manifestVersion(at: source) == version else {
+            throw InstallerError.userFacing("The packaged Cursor plug-in version does not match the installer.")
+        }
+
+        let existing = itemExists(destination)
+        if existing, case .conflict(let message) = inspect() {
+            throw InstallerError.userFacing(message)
+        }
+        try fileManager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let stage = destination.deletingLastPathComponent()
+            .appendingPathComponent(".glyphs-mcp-stage-\(UUID().uuidString)", isDirectory: true)
+        let displaced = destination.deletingLastPathComponent()
+            .appendingPathComponent(".glyphs-mcp-previous-\(UUID().uuidString)", isDirectory: true)
+        try fileManager.copyItem(at: source, to: stage)
+        defer {
+            if itemExists(stage) { try? fileManager.removeItem(at: stage) }
+        }
+        guard try InstallerPayloadManifestResolver.treeIdentity(stage) == sourceIdentity else {
+            throw InstallerError.userFacing("The staged Cursor plug-in failed its integrity check.")
+        }
+
+        let backup = existing ? try verifiedBackup(of: destination) : nil
+        let previousReceipt = try? Data(contentsOf: receiptURL)
+        _ = try FileIO.backupIfExists(receiptURL)
+        do {
+            if existing { try fileManager.moveItem(at: destination, to: displaced) }
+            try fileManager.moveItem(at: stage, to: destination)
+            let receipt = CursorPluginOwnershipReceipt(destination: destination, version: version, identity: sourceIdentity)
+            try FileIO.writeAtomically(try JSONEncoder().encode(receipt), to: receiptURL)
+            if itemExists(displaced) { try fileManager.removeItem(at: displaced) }
+            log("Cursor plug-in \(existing ? "updated" : "installed"): \(destination.path)")
+            if let backup { log("Cursor plug-in backup: \(backup.path)") }
+            return backup
+        } catch {
+            if itemExists(destination) { try? fileManager.removeItem(at: destination) }
+            if itemExists(displaced) { try? fileManager.moveItem(at: displaced, to: destination) }
+            if let previousReceipt {
+                try? FileIO.writeAtomically(previousReceipt, to: receiptURL)
+            } else if fileManager.fileExists(atPath: receiptURL.path) {
+                try? fileManager.removeItem(at: receiptURL)
+            }
+            throw error
+        }
+    }
+
+    @discardableResult
+    public func remove() throws -> URL? {
+        guard itemExists(destination) else { return nil }
+        guard case .installed = inspect() else {
+            let detail: String
+            if case .conflict(let message) = inspect() { detail = message }
+            else { detail = "The Cursor plug-in is not installer-owned." }
+            throw InstallerError.userFacing(detail)
+        }
+        let backup = try verifiedBackup(of: destination)
+        try fileManager.removeItem(at: destination)
+        if fileManager.fileExists(atPath: receiptURL.path) { try fileManager.removeItem(at: receiptURL) }
+        log("Cursor plug-in removed. Backup: \(backup.path)")
+        return backup
+    }
+
+    private func verifiedBackup(of source: URL) throws -> URL {
+        let identity = try InstallerPayloadManifestResolver.treeIdentity(source)
+        let root = source.deletingLastPathComponent()
+            .appendingPathComponent(".glyphs-mcp-backups/\(FileIO.timestampString())-\(UUID().uuidString)", isDirectory: true)
+        let backup = root.appendingPathComponent(source.lastPathComponent, isDirectory: true)
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        try fileManager.copyItem(at: source, to: backup)
+        guard try InstallerPayloadManifestResolver.treeIdentity(backup) == identity else {
+            throw InstallerError.userFacing("Cursor plug-in backup verification failed.")
+        }
+        return backup
+    }
+
+    private func readReceipt() -> CursorPluginOwnershipReceipt? {
+        guard let data = try? Data(contentsOf: receiptURL),
+              let receipt = try? JSONDecoder().decode(CursorPluginOwnershipReceipt.self, from: data),
+              receipt.schemaVersion == 1, receipt.owner == "glyphs-mcp-installer" else { return nil }
+        return receipt
+    }
+
+    private func recognizedPlugin(at url: URL) -> Bool {
+        manifestName(at: url) == "glyphs-mcp"
+    }
+
+    private func manifestName(at url: URL) -> String? {
+        let manifest = url.appendingPathComponent(".cursor-plugin/plugin.json")
+        guard let data = try? Data(contentsOf: manifest),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return root["name"] as? String
+    }
+
+    private func manifestVersion(at url: URL) -> String? {
+        let manifest = url.appendingPathComponent(".cursor-plugin/plugin.json")
+        guard let data = try? Data(contentsOf: manifest),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return root["version"] as? String
+    }
+
+    private func itemExists(_ url: URL) -> Bool {
+        fileManager.fileExists(atPath: url.path) || ((try? url.checkResourceIsReachable()) ?? false)
+    }
+}
+
+public enum ConnectorConfigurationRemover {
+    public static func removeCodex(
+        at url: URL = InstallerPaths.codexConfig,
+        endpoint: URL = InstallerConstants.endpointURL
+    ) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        let current = try String(contentsOf: url, encoding: .utf8)
+        guard let updated = CodexTomlUninstaller.removingMatchingEntry(
+            toml: current,
+            serverName: InstallerConstants.codexServerName,
+            endpoint: endpoint.absoluteString
+        ) else {
+            throw InstallerError.userFacing("The Codex Glyphs MCP entry is modified and was preserved.")
+        }
+        _ = try FileIO.backupIfExists(url)
+        try FileIO.writeUTF8Atomically(updated, to: url)
+    }
+
+    public static func removeClaude(
+        client: InstallerClientKind,
+        at url: URL,
+        serverName: String,
+        endpoint: URL = InstallerConstants.endpointURL
+    ) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        let data = try Data(contentsOf: url)
+        guard var root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              var servers = root["mcpServers"] as? [String: Any],
+              let server = servers[serverName] as? [String: Any] else { return }
+        let matches: Bool
+        switch client {
+        case .claudeCode:
+            matches = server["type"] as? String == "http" && server["url"] as? String == endpoint.absoluteString
+        case .claudeDesktop:
+            let args = server["args"] as? [String] ?? []
+            let command = server["command"] as? String ?? ""
+            matches = args.contains(endpoint.absoluteString)
+                && ((command == "npx" && args.contains("mcp-remote")) || command.hasSuffix("/python3"))
+        case .codex, .cursor:
+            matches = false
+        }
+        guard matches else {
+            throw InstallerError.userFacing("The \(client.displayName) Glyphs MCP entry is modified and was preserved.")
+        }
+        servers.removeValue(forKey: serverName)
+        root["mcpServers"] = servers
+        _ = try FileIO.backupIfExists(url)
+        try JsonConfig.writeJSON(root, to: url)
+    }
+}
+
+// MARK: - Installer event logs
+
+public enum InstallerLogSource: String, CaseIterable, Identifiable, Sendable {
+    case all
+    case installer
+    case server
+    case sidecar
+    case sidecarError
+
+    public var id: String { rawValue }
+    public var displayName: String {
+        switch self {
+        case .all: return "All"
+        case .installer: return "Installer"
+        case .server: return "Server"
+        case .sidecar: return "sidecar.log"
+        case .sidecarError: return "sidecar-error.log"
+        }
+    }
+}
+
+public final class InstallerEventLogger: @unchecked Sendable {
+    public let fileURL: URL
+    private let maximumBytes: Int
+    private let lock = NSLock()
+
+    public init(
+        directory: URL = InstallerPaths.installerLogDirectory,
+        fileName: String = "installer-events.log",
+        maximumBytes: Int = 1_000_000
+    ) {
+        self.fileURL = directory.appendingPathComponent(fileName)
+        self.maximumBytes = maximumBytes
+    }
+
+    public func append(_ message: String, now: Date = Date()) {
+        lock.lock()
+        defer { lock.unlock() }
+        do {
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if let size = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+               size >= maximumBytes {
+                let rotated = fileURL.appendingPathExtension("1")
+                try? FileManager.default.removeItem(at: rotated)
+                try FileManager.default.moveItem(at: fileURL, to: rotated)
+            }
+            let formatter = ISO8601DateFormatter()
+            let line = "[\(formatter.string(from: now))] \(message)\n"
+            if !FileManager.default.fileExists(atPath: fileURL.path) {
+                try FileIO.writeUTF8Atomically(line, to: fileURL)
+            } else {
+                let handle = try FileHandle(forWritingTo: fileURL)
+                try handle.seekToEnd()
+                try handle.write(contentsOf: Data(line.utf8))
+                try handle.close()
+            }
+        } catch {
+            // Logging must never make an installation operation fail.
+        }
+    }
+}
+
+public struct InstallerLogCollector: Sendable {
+    public let logDirectory: URL
+    public let maximumBytesPerSource: Int
+
+    public init(logDirectory: URL = InstallerPaths.installerLogDirectory, maximumBytesPerSource: Int = 512_000) {
+        self.logDirectory = logDirectory
+        self.maximumBytesPerSource = maximumBytesPerSource
+    }
+
+    public func collect(source: InstallerLogSource, serverEvents: [String] = []) -> String {
+        let sections: [(InstallerLogSource, String)] = [
+            (.installer, readTail(logDirectory.appendingPathComponent("installer-events.log"))),
+            (.server, serverEvents.joined(separator: "\n")),
+            (.sidecar, readTail(logDirectory.appendingPathComponent("sidecar.log"))),
+            (.sidecarError, readTail(logDirectory.appendingPathComponent("sidecar-error.log"))),
+        ]
+        let selected = source == .all ? sections : sections.filter { $0.0 == source }
+        return selected.map { item in
+            let body = item.1.isEmpty ? "No log entries available." : item.1
+            return "--- \(item.0.displayName) ---\n\(body)"
+        }.joined(separator: "\n\n")
+    }
+
+    public func redactedDiagnosticReport(_ text: String) -> String {
+        var result = text
+        let patterns = [
+            "(?i)(authorization\\s*[:=]\\s*)(bearer\\s+)?[^\\s\\\"']+",
+            "(?i)((?:api[_-]?key|token|secret|password|credential)\\s*[:=]\\s*)[^\\s,;\\\"']+",
+            "(?i)(\\\"(?:api[_-]?key|token|secret|password|credential)\\\"\\s*:\\s*\\\")[^\\\"]+",
+        ]
+        for pattern in patterns {
+            guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
+            let range = NSRange(result.startIndex..<result.endIndex, in: result)
+            result = expression.stringByReplacingMatches(in: result, range: range, withTemplate: "$1[REDACTED]")
+        }
+        return result
+    }
+
+    private func readTail(_ url: URL) -> String {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return "" }
+        defer { try? handle.close() }
+        do {
+            let end = try handle.seekToEnd()
+            let start = end > UInt64(maximumBytesPerSource) ? end - UInt64(maximumBytesPerSource) : 0
+            try handle.seek(toOffset: start)
+            var data = try handle.readToEnd() ?? Data()
+            if start > 0, let newline = data.firstIndex(of: 0x0A) { data.removeSubrange(...newline) }
+            return String(decoding: data, as: UTF8.self)
+        } catch {
+            return "Unable to read \(url.lastPathComponent): \(error.localizedDescription)"
+        }
+    }
 }
 
 // MARK: - JSON helpers

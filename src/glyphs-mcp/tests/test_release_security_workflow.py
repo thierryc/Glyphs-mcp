@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import unittest
 import hashlib
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -246,6 +247,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             "check_lean_package.py",
             "npm run build",
             "release_security.py candidate",
+            'export PYTHON_BIN="$python_bin"',
         ):
             self.assertIn(required, runner)
         project = (
@@ -254,6 +256,69 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('${CODE_SIGNING_ALLOWED:-YES}', project)
         self.assertIn("leaving payload plug-in executables unsigned", project)
+
+    def test_candidate_repository_uses_the_canonical_beta_branch(self) -> None:
+        completed = mock.Mock(returncode=0, stderr="")
+        with (
+            mock.patch.object(
+                self.security,
+                "release_identity",
+                return_value={"channel": "beta"},
+            ),
+            mock.patch.object(
+                self.security.subprocess,
+                "run",
+                return_value=completed,
+            ) as run,
+        ):
+            self.security.validate_candidate_repository_state(REPO)
+
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(
+            run.call_args.args[0],
+            ["git", "merge-base", "--is-ancestor", "origin/lit/v2-beta", "HEAD"],
+        )
+
+    def test_candidate_repository_keeps_stable_main_ancestry_checks(self) -> None:
+        completed = mock.Mock(returncode=0, stderr="")
+        with (
+            mock.patch.object(
+                self.security,
+                "release_identity",
+                return_value={"channel": "stable"},
+            ),
+            mock.patch.object(
+                self.security.subprocess,
+                "run",
+                return_value=completed,
+            ) as run,
+        ):
+            self.security.validate_candidate_repository_state(REPO)
+
+        self.assertEqual(
+            [call.args[0][3] for call in run.call_args_list],
+            ["main", "origin/main"],
+        )
+
+    def test_candidate_repository_fails_closed_when_beta_base_is_missing(self) -> None:
+        completed = mock.Mock(returncode=1, stderr="fatal: bad revision")
+        with (
+            mock.patch.object(
+                self.security,
+                "release_identity",
+                return_value={"channel": "beta"},
+            ),
+            mock.patch.object(
+                self.security.subprocess,
+                "run",
+                return_value=completed,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                self.security.ReleaseSecurityError,
+                "origin/lit/v2-beta.*fatal: bad revision",
+            ):
+                self.security.validate_candidate_repository_state(REPO)
 
     def test_checksum_manifest_is_deterministic_and_detects_tampering(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-release-checksums.") as temp:
@@ -472,7 +537,9 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             self.assertIn("Glyphs-MCP-latest.dmg", script)
             self.assertNotIn("GlyphsMCPInstaller-$version.dmg", script)
         self.assertIn("Glyphs-MCP-latest.dmg", readme)
-        self.assertIn("Choose → Install → Ready", installation)
+        self.assertIn("Choose **Install All** on Setup", installation)
+        self.assertIn("**Queued**, **Installing** and **Installed**", installation)
+        self.assertNotIn("Choose → Install → Ready", installation)
 
 
 if __name__ == "__main__":

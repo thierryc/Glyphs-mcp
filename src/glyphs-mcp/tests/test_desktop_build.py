@@ -220,7 +220,7 @@ def test_desktop_layout_minimums_keep_navigation_and_diff_controls_visible():
     assert 'static let sidebarMinimumWidth: CGFloat = 220' in content
     assert '.frame(maxWidth: .infinity, alignment: .leading)' in content
     assert 'static let contentMaximumWidth: CGFloat = 850' in content
-    assert '.frame(maxWidth: DesktopOverviewLayout.contentMaximumWidth, alignment: .leading)' in content
+    assert '.frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)' in content
     assert '.frame(maxWidth: .infinity, alignment: .center)' in content
     assert '.frame(maxWidth: .infinity, maxHeight: .infinity)' in content
     assert 'window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth' in delegate

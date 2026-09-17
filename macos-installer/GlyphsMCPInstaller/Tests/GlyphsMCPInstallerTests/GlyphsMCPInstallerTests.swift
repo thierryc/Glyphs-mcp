@@ -808,7 +808,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		XCTAssertEqual(
 			ordered.map(\.kind),
-			[InstallerClientKind.codex, .claudeDesktop, .claudeCode]
+			[InstallerClientKind.codex, .claudeCode, .claudeDesktop]
 		)
 	}
 
@@ -1450,15 +1450,22 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		)
 		let resolved = try InstallerPayloadManifestResolver.resolve(payload)
 		let glyphs4 = try XCTUnwrap(resolved.targets[4])
-        XCTAssertEqual(resolved.schemaVersion, 3)
+        XCTAssertEqual(resolved.schemaVersion, 4)
         let app = try XCTUnwrap(Bundle(url: products.appendingPathComponent("Glyphs MCP.app")))
         let appVersion = try XCTUnwrap(app.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
         XCTAssertEqual(glyphs4.pluginVersion, appVersion)
         XCTAssertNil(glyphs4.runtimeIdentity)
+        XCTAssertNil(glyphs4.baselineTag)
+        XCTAssertNil(glyphs4.baselineCommit)
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: payload.appendingPathComponent("payload.json"))) as? [String: Any])
         XCTAssertEqual(manifest["leanIdentity"] as? String, try InstallerPayloadManifestResolver.treeIdentity(payload.appendingPathComponent("Lean")))
         XCTAssertEqual(manifest["installerIdentity"] as? String, try InstallerPayloadManifestResolver.treeIdentity(payload.appendingPathComponent("Installer")))
-        XCTAssertEqual(resolved.targets[3]?.pluginVersion, "1.11.0")
+        XCTAssertNil(resolved.targets[3])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: payload.appendingPathComponent("skills-v1").path))
+        let cursor = try XCTUnwrap(resolved.cursorPluginURL)
+        XCTAssertEqual(cursor.path, payload.appendingPathComponent("AgentPlugins/Cursor/glyphs-mcp").path)
+        XCTAssertEqual(resolved.cursorPluginIdentity, try InstallerPayloadManifestResolver.treeIdentity(cursor))
+        XCTAssertEqual(resolved.cursorPluginVersion, appVersion)
         let lean = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: payload.appendingPathComponent("Lean/manifest.json"))) as? [String: Any])
         XCTAssertEqual((lean["tools"] as? [String])?.count, 7)
         XCTAssertEqual(Set((lean["runtimes"] as? [String: Any] ?? [:]).keys), ["arm64", "x86_64"])
@@ -3556,5 +3563,93 @@ extension GlyphsMCPInstallerTests {
         try f.write(AgentSkillBundleInstaller.skillBackupRoot(for: f.destination), "not a directory")
         XCTAssertThrowsError(try f.install())
         XCTAssertEqual(try InstallerPayloadManifestResolver.treeIdentity(f.destination.appendingPathComponent(name)), hash)
+    }
+
+    func testCursorPluginInstallUpdateAndOwnedRemovalAreAtomicAndBackedUp() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let source = root.appendingPathComponent("source"), destination = root.appendingPathComponent("local/glyphs-mcp")
+        let receipt = root.appendingPathComponent("local/.glyphs-mcp-installer.json")
+        try writeCursorPlugin(at: source, version: "2.0.0", marker: "first")
+        var installer = CursorPluginInstaller(source: source, destination: destination, receiptURL: receipt,
+            expectedIdentity: try InstallerPayloadManifestResolver.treeIdentity(source), version: "2.0.0", log: { _ in })
+        XCTAssertNil(try installer.installOrUpdate())
+        XCTAssertEqual(installer.inspect(), .installed(version: "2.0.0"))
+
+        try fm.removeItem(at: source)
+        try writeCursorPlugin(at: source, version: "2.0.0", marker: "second")
+        installer = CursorPluginInstaller(source: source, destination: destination, receiptURL: receipt,
+            expectedIdentity: try InstallerPayloadManifestResolver.treeIdentity(source), version: "2.0.0", log: { _ in })
+        let updateBackup = try XCTUnwrap(try installer.installOrUpdate())
+        XCTAssertEqual(try String(contentsOf: updateBackup.appendingPathComponent("assets/marker.txt")), "first")
+        XCTAssertEqual(try String(contentsOf: destination.appendingPathComponent("assets/marker.txt")), "second")
+
+        let removalBackup = try XCTUnwrap(try installer.remove())
+        XCTAssertEqual(try String(contentsOf: removalBackup.appendingPathComponent("assets/marker.txt")), "second")
+        XCTAssertFalse(fm.fileExists(atPath: destination.path))
+        XCTAssertFalse(fm.fileExists(atPath: receipt.path))
+    }
+
+    func testCursorPluginPreservesModifiedAndUnownedContentAsConflicts() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let source = root.appendingPathComponent("source"), destination = root.appendingPathComponent("local/glyphs-mcp")
+        let receipt = root.appendingPathComponent("local/.glyphs-mcp-installer.json")
+        try writeCursorPlugin(at: source, version: "2.0.0", marker: "source")
+        let identity = try InstallerPayloadManifestResolver.treeIdentity(source)
+        var installer = CursorPluginInstaller(source: source, destination: destination, receiptURL: receipt,
+            expectedIdentity: identity, version: "2.0.0", log: { _ in })
+        try installer.installOrUpdate()
+        try Data("user edit".utf8).write(to: destination.appendingPathComponent("assets/marker.txt"))
+        guard case .conflict = installer.inspect() else { return XCTFail("Modified plug-in was not a conflict") }
+        XCTAssertThrowsError(try installer.remove())
+        XCTAssertTrue(fm.fileExists(atPath: destination.path))
+
+        try fm.removeItem(at: destination)
+        try fm.removeItem(at: receipt)
+        try fm.copyItem(at: source, to: destination)
+        installer = CursorPluginInstaller(source: source, destination: destination, receiptURL: receipt,
+            expectedIdentity: identity, version: "2.0.0", log: { _ in })
+        guard case .conflict = installer.inspect() else { return XCTFail("Unowned plug-in was not a conflict") }
+        XCTAssertThrowsError(try installer.installOrUpdate())
+        XCTAssertTrue(fm.fileExists(atPath: destination.path))
+    }
+
+    func testInstallerLogsAreBoundedMissingSafeRotatedAndRedacted() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        let collector = InstallerLogCollector(logDirectory: root, maximumBytesPerSource: 32)
+        XCTAssertTrue(collector.collect(source: .sidecar).contains("No log entries available"))
+        var malformed = Data((String(repeating: "old", count: 30) + "\nlatest token=secret\n").utf8)
+        malformed.append(0xff)
+        try malformed.write(to: root.appendingPathComponent("sidecar.log"))
+        let bounded = collector.collect(source: .sidecar)
+        XCTAssertFalse(bounded.contains(String(repeating: "old", count: 10)))
+        let redacted = collector.redactedDiagnosticReport(
+            "Authorization: Bearer abc.def\ntoken=secret\n\"api_key\":\"private\""
+        )
+        XCTAssertFalse(redacted.contains("abc.def"))
+        XCTAssertFalse(redacted.contains("secret"))
+        XCTAssertFalse(redacted.contains("private"))
+        XCTAssertGreaterThanOrEqual(redacted.components(separatedBy: "[REDACTED]").count, 4)
+
+        let logger = InstallerEventLogger(directory: root, maximumBytes: 20)
+        logger.append(String(repeating: "a", count: 40), now: Date(timeIntervalSince1970: 0))
+        logger.append("next", now: Date(timeIntervalSince1970: 1))
+        XCTAssertTrue(fm.fileExists(atPath: logger.fileURL.path))
+        XCTAssertTrue(fm.fileExists(atPath: logger.fileURL.appendingPathExtension("1").path))
+    }
+
+    private func writeCursorPlugin(at root: URL, version: String, marker: String) throws {
+        let fm = FileManager.default
+        try fm.createDirectory(at: root.appendingPathComponent(".cursor-plugin"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: root.appendingPathComponent("assets"), withIntermediateDirectories: true)
+        let manifest = try JSONSerialization.data(withJSONObject: ["name": "glyphs-mcp", "version": version], options: .sortedKeys)
+        try manifest.write(to: root.appendingPathComponent(".cursor-plugin/plugin.json"))
+        try Data(marker.utf8).write(to: root.appendingPathComponent("assets/marker.txt"))
     }
 }

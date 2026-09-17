@@ -7,6 +7,21 @@ scheme="GlyphsMCPInstaller"
 python_bin="${PYTHON_BIN:-python3}"
 xcodebuild_bin="${XCODEBUILD_BIN:-xcodebuild}"
 
+# Xcode runs shell phases from the project directory, not the repository root.
+# Resolve an explicitly relative interpreter before exporting it so the Copy
+# Payload phase uses the same qualified Python as this release gate.
+if [[ "$python_bin" == */* ]]; then
+  if [[ "$python_bin" != /* ]]; then python_bin="$repo_root/$python_bin"; fi
+elif ! python_bin="$(command -v "$python_bin")"; then
+  echo "error: Python interpreter not found: ${PYTHON_BIN:-python3}" >&2
+  exit 1
+fi
+if [[ ! -x "$python_bin" ]]; then
+  echo "error: Python interpreter is not executable: $python_bin" >&2
+  exit 1
+fi
+export PYTHON_BIN="$python_bin"
+
 cd "$repo_root"
 
 "$python_bin" scripts/prepare_desktop_dependencies.py

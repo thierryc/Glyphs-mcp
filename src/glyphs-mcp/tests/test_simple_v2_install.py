@@ -174,6 +174,50 @@ def test_explicit_removal_preserves_remaining_companions_and_preferences(tmp_pat
     assert result['components'] == [] and result['launchAgent'] is None
 
 
+def test_scoped_update_and_removal_never_replace_unrelated_components(tmp_path):
+    from build_simple_v2 import _identity
+    output, home, app = fixture_install(tmp_path)
+    install(output, home, Path(sys.executable), app, ['curve-inspector', 'reference-inspector'])
+    plugins = home/'Library/Application Support/Glyphs 4/Plugins'
+    paths = {
+        'mcp': plugins/'Glyphs MCP Bridge.glyphsPlugin',
+        'curve-inspector': plugins/'Glyphs Curve Inspector.glyphsReporter',
+        'reference-inspector': plugins/'Glyphs Reference Inspector.glyphsReporter',
+    }
+    before = {name: _identity(path) for name, path in paths.items()}
+
+    updated = install(output, home, Path(sys.executable), app, ['curve-inspector'], mcp=False,
+                      only_components=['curve-inspector'])
+    assert set(updated['components']) == set(paths)
+    assert _identity(paths['mcp']) == before['mcp']
+    assert _identity(paths['reference-inspector']) == before['reference-inspector']
+
+    removed = install(output, home, Path(sys.executable), app, mcp=False,
+                      remove_components=['curve-inspector'], only_components=['curve-inspector'])
+    assert set(removed['components']) == {'mcp', 'reference-inspector'}
+    assert not paths['curve-inspector'].exists()
+    assert _identity(paths['mcp']) == before['mcp']
+    assert _identity(paths['reference-inspector']) == before['reference-inspector']
+
+    root = home/'Library/Application Support/Glyphs MCP/lean-v2'
+    runtime = root/'runtime'
+    runtime.mkdir()
+    (runtime/'marker').write_text('shared with reference inspector')
+    receipt_path = root/'installation.json'
+    receipt = json.loads(receipt_path.read_text())
+    runtime_record = {'path': str(runtime), 'identity': _identity(runtime)}
+    receipt['installed'].append(runtime_record)
+    receipt['runtime'] = {'identity': runtime_record['identity']}
+    receipt_path.write_text(json.dumps(receipt))
+    reference_identity = _identity(paths['reference-inspector'])
+    reference_only = install(output, home, Path(sys.executable), app, mcp=False,
+                             remove_components=['mcp'], only_components=['mcp'])
+    assert set(reference_only['components']) == {'reference-inspector'}
+    assert runtime.is_dir()
+    assert next(item for item in reference_only['installed'] if item['path'] == str(runtime)) == runtime_record
+    assert _identity(paths['reference-inspector']) == reference_identity
+
+
 def test_failed_upgrade_restores_agent_receipt_components_and_unrelated_files(tmp_path, monkeypatch):
     import install_simple_v2 as installer
     from build_simple_v2 import _identity

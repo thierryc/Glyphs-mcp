@@ -1,10 +1,11 @@
 # DMG presentation assets
 
-The Finder window uses a **680 × 420 point** content canvas. Keep
-`background.png` at exactly **680 × 420 pixels** so Finder displays it at the
-intended size without scaling or cropping.
+The Finder window uses a **680 × 420 point** content canvas. The packaged
+`background.tiff` contains **680 × 420** and **1360 × 840** representations so
+Finder can render the text sharply at both standard and Retina scale.
 
-`background.svg` is the editable source. Regenerate the PNG with:
+`background.svg` is the editable source. Regenerate the 1x PNG, 2x PNG and
+multi-resolution TIFF with:
 
 ```sh
 ./scripts/render_dmg_background.sh

@@ -11,7 +11,7 @@ Start with `get_status` and the status in **Edit → Glyphs MCP Server…**. The
 | Skill requests `apiMajor == 2` | Identify its exact path and the selected connection. An obsolete private skill does not imply a stale lean server; see [skill conflicts](use-agent-skills.mdx#preserved-conflicts-and-retired-private-skills). |
 | Client shows v1 tools | Check for an old server, duplicate connection or outdated agent package. Refresh the intended v2 connection. |
 | Scripting preflight fails | Follow the [Glyphs Python setup steps](installation.mdx#requirements). After installing Python and restarting Glyphs, explicitly select its **(Glyphs)** version under **Settings → Addons**, quit Glyphs, and retry. |
-| Worker unavailable | Check installation Troubleshooting. The managed private runtime and CLI must match this Mac and the selected Glyphs application. |
+| Worker unavailable | Open the Setup log window. The managed private runtime and CLI must match this Mac and the selected Glyphs application. |
 | Port change rejected | Choose an available port other than the reserved bridge port, then update the client URL after applying it. |
 | Git reference unavailable | Install or repair system Git, or use Last Saved or Font File. Verify repository, revision and font path. |
 | No reference commands available | Open and save a font first. Unsaved fonts and no-font windows intentionally disable these commands. |
@@ -29,7 +29,7 @@ Use `discard_job` to cancel preparation or reverse current affected targets of a
 
 ## Useful issue reports
 
-Use **Open Logs** in the server window or installer Troubleshooting. Include the product release/build, each component’s `runtimeId` and complete `codeHash`, interface/protocol revision, Glyphs version/build, architecture, reproduction steps, job ID, error/recovery details and a shareable disposable font if possible. Omit authentication tokens and unrelated private data.
+Use **Open Logs** in the server window or **Open Troubleshooting Logs** in the Setup header. The dedicated desktop window combines installer events, card failures, recent server events and sidecar logs. Use **Copy Redacted Diagnostic Report** before sharing it. Include the product release/build, each component’s `runtimeId` and complete `codeHash`, interface/protocol revision, Glyphs version/build, architecture, reproduction steps, job ID, error/recovery details and a shareable disposable font if possible. Omit unrelated private data and inspect the redacted report before posting it.
 
 Record idle and loaded responsiveness separately. The 200 ms HTTP probe threshold is diagnostic; investigate reproducible plugin stalls and distinguish modal waiting from native execution.
 

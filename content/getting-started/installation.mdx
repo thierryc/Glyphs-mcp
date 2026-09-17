@@ -2,53 +2,90 @@
 title: Install Glyphs MCP v2
 ---
 
-The **2.0.0 Beta 2** desktop application is available for Glyphs 4 as a versioned [GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.2). Download `Glyphs-MCP-2.0.0-beta.2.dmg` and read the [beta guide](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA.md) for requirements, limitations and testing instructions. The stable Latest release remains v1.11.0.
+The **2.0.0 Beta 3** desktop application is a local Glyphs 4 release candidate.
+It is not yet signed, notarized or published. Read the
+[beta guide](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA.md)
+for current requirements, limitations and qualification status. The stable
+Latest release remains v1.11.0.
 
-## Choose → Install → Ready
+## Install from Setup
 
-1. Save your work and quit Glyphs normally so its save prompts can protect open documents.
-2. Open the disk image, follow its arrow to drag **Glyphs MCP.app** onto the
-   **Applications** alias, then launch the installed copy. Choose the detected
-   Glyphs application, or select its location.
-3. Choose your component cards, then select **Install** (or **Apply Changes** for an existing installation). Wait for **Ready** before reopening Glyphs.
-4. Optionally connect a detected AI application. You can also [connect manually](connect-client.mdx) later.
+1. Save your work and quit Glyphs normally so its save prompts can protect open
+   documents.
+2. Open the disk image, drag **Glyphs MCP.app** to **Applications**, and launch
+   the installed copy.
+3. Choose **Install All** on Setup. The three Glyphs components are installed
+   in one transaction, then Codex, Claude Code, Claude Desktop and Cursor are
+   configured sequentially.
+4. Watch each card move through **Queued**, **Installing** and **Installed**.
+   A connector failure remains on that card and offers **Retry** while the queue
+   continues.
+5. Reopen Glyphs and reload or restart each configured agent when its card
+   requests it.
 
-| Choice | Included |
+| Component | Included |
 | --- | --- |
 | Glyphs MCP | The native bridge, external MCP server and private runtime. |
 | Curve Inspector | The independent curvature reporter. |
-| Reference Inspector | The independent reference reporter and its external font reader. |
+| Reference Inspector | The independent reference reporter and external font reader. |
 
-All three are selected on a fresh Glyphs 4 installation. Companion-only installation is supported. Existing component choices are retained on upgrades. A checked card installs or updates that component; an unchecked installed card removes it when you apply changes. Unchecked absent components do nothing. Unrelated plugins, files and component preferences are preserved.
+Every card also works independently. Missing items offer **Install**. Installed
+items offer **Update** and **Remove**. Removal requires confirmation. Updating a
+component reinstalls only that bundled component; removing one preserves the
+others and keeps existing preferences. When Glyphs is open, the inline **Quit
+Glyphs** action uses the application's normal save prompts before replacement.
+
+Setup includes all four connectors by default even when a host is not detected.
+Codex and Claude Code receive the MCP entry and managed skills; Claude Desktop
+receives the MCP entry; Cursor receives the complete local plugin bundle at
+`~/.cursor/plugins/local/glyphs-mcp`. Configuration changes make backups,
+preserve unrelated settings and modify only Glyphs MCP. Modified or unowned
+Cursor content is reported as a conflict rather than replaced or removed.
 
 ## Requirements
 
-The Glyphs 4 payload includes private Python, locked sidecar packages and architecture-matched `glyphs-cli` 0.6.1 for Apple Silicon and Intel. End users do not need to configure shell Python paths or install sidecar packages manually.
+The Glyphs 4 payload includes private Python, locked sidecar packages and
+architecture-matched `glyphs-cli` 0.6.1 for Apple silicon and Intel. End users
+do not need to configure shell Python paths or install sidecar packages.
 
-Glyphs still needs its own working scripting environment. The installer checks the selected application before replacing files. On a fresh Glyphs installation:
+Glyphs still needs a working scripting environment. On a fresh installation:
 
 1. Open **Window → Plugin Manager → Modules** in Glyphs and install **Python**.
 2. Restart Glyphs, then open **Glyphs → Settings → Addons**.
-3. In **Python version**, explicitly select the version labelled **(Glyphs)**, even if it already appears selected. This saves the framework path used by the external worker.
-4. Quit Glyphs normally, then retry **Install** in Glyphs MCP.
+3. Under **Python version**, explicitly select the version labelled
+   **(Glyphs)**, even if it already appears selected.
+4. Quit Glyphs normally, then choose **Retry** on the failed Setup card.
 
-System Git is required only for **Local Git** and **Public GitHub** references. **Last Saved** and **Font File** do not need it. Troubleshooting reports missing prerequisites.
+System Git is required only for **Local Git** and **Public GitHub** references.
+**Last Saved** and **Font File** do not need it.
 
 ## After installation
 
-Subsequent launches open [Overview](desktop.mdx). Components remains available for installation changes; Projects manages local folders and templates. The menu-bar popover shares Overview’s activity and service controls.
+Subsequent launches open [Setup](desktop.mdx). Start or stop the server, inspect
+component and connection status, update individual cards, open Glyphs and
+refresh detection there. **Project** manages local folders and templates. The
+menu-bar popover shares Setup's activity and service controls.
 
+Open **Edit → Glyphs MCP Server…** in Glyphs for native server status and the
+configured MCP port. The visible endpoint is normally
+`http://127.0.0.1:9680/mcp/`; the private bridge uses port 9681 internally.
+Use `get_status` to compare sidecar and bridge identities with the installation
+receipt; [version and identity](../reference/version-identity.mdx) explains the
+product and protocol fields.
 
-Open **Edit → Glyphs MCP Server…** to start or stop the server and change the MCP port. The panel reports connection readiness. Use `get_status` to verify the independently fingerprinted sidecar and bridge against the installation receipt; [version and identity](../reference/version-identity.mdx) explains the product and protocol fields. The visible MCP server port is the one AI clients use, normally **9680**. The private bridge uses **9681** internally; it is hidden from the Glyphs interface.
+## Updates, logs and recovery
 
-Enable companions through the [View menu](../workflows/visual-review.mdx). A nonmodal welcome window appears once after the bridge loads and Glyphs is ready. The heart button, labelled **Welcome & Support**, reopens the same window. The preference survives documents, restarts and upgrades.
+Use **Check for Updates…** to check the configured channel. Beta 3 uses the feed
+on `lit/v2-beta`; a configured feed or local candidate does not prove a release
+is published. Component replacement stages and verifies selected files before
+an atomic rename. Failure restores affected components, launch-agent
+configuration and installation records together. Ports, startup preferences,
+authentication and welcome preferences are preserved.
 
-## Updates and recovery
+The log icon in Setup opens **Glyphs MCP Logs** with installer, server and
+sidecar sources plus a redacted diagnostic-report action. Resolve active jobs
+before replacing or restarting the server; stop is refused during an active
+native write.
 
-Use **Check for Updates…** in Glyphs MCP to check its configured release channel. Beta 2 uses the beta feed on `lit/v2-beta`; stable builds use their stable feed. A local candidate or configured feed URL does not prove an update is published. Installation stages and verifies selected components before replacement. A failed replacement restores affected managed files, launch-agent configuration and installation records together. Ports, startup preferences, authentication and welcome preferences are preserved.
-
-When upgrading an earlier local 2.0.0 candidate, first finish or discard its jobs, then stop its server using its existing Glyphs server controls before installing the desktop components. That candidate does not support the desktop's idle reservation protocol; the new app deliberately refuses to stop it automatically. Early candidates also used temporary job storage. Resolve their prepared results before migration; automatic recovery of those temporary stores is not provided. Once the desktop components are installed, prepared results and job identities use persistent managed storage and survive controlled service restarts.
-
-Logs, paths and repair controls are under **Troubleshooting**. Resolve active jobs before replacing or restarting the server; stop is refused during an active native write.
-
-Selecting Glyphs 3 uses the pinned 1.11.0 payload and its existing Python setup. Follow the [v1 installation guide](/docs/getting-started/installation) for that environment.
+Beta 3 does not embed Glyphs 3 or v1 skills. For Glyphs 3, use the separate
+v1.11.0 release and its [v1 installation guide](/docs/getting-started/installation).

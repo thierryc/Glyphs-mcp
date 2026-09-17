@@ -10,7 +10,9 @@ identity="${CODESIGN_IDENTITY:-Developer ID Application: Thierry Charbonnel (N9U
 skip="${SKIP_NOTARIZATION:-0}"
 
 app="$repo_root/dist/installer-app/$scheme.app"
-background="$repo_root/macos-installer/DMG/background.png"
+background="$repo_root/macos-installer/DMG/background.tiff"
+background_1x="$repo_root/macos-installer/DMG/background.png"
+background_2x="$repo_root/macos-installer/DMG/background@2x.png"
 if [[ ! -d "$app" ]]; then
   echo "error: app not found: $app" >&2
   echo "Run: ./scripts/build_installer_app.sh" >&2
@@ -18,14 +20,29 @@ if [[ ! -d "$app" ]]; then
 fi
 if [[ ! -f "$background" ]]; then
   echo "error: DMG background not found: $background" >&2
-  echo "Render macos-installer/DMG/background.svg at exactly 680x420 pixels." >&2
+  echo "Render the 1x/2x DMG background from macos-installer/DMG/background.svg." >&2
   exit 1
 fi
 
-background_width="$(/usr/bin/sips -g pixelWidth "$background" 2>/dev/null | awk '/pixelWidth:/ {print $2}')"
-background_height="$(/usr/bin/sips -g pixelHeight "$background" 2>/dev/null | awk '/pixelHeight:/ {print $2}')"
-if [[ "$background_width" != "680" || "$background_height" != "420" ]]; then
-  echo "error: DMG background must be exactly 680x420 pixels (found ${background_width:-?}x${background_height:-?})" >&2
+for representation in "$background_1x:680:420" "$background_2x:1360:840"; do
+  image="${representation%%:*}"
+  dimensions="${representation#*:}"
+  expected_width="${dimensions%%:*}"
+  expected_height="${dimensions##*:}"
+  if [[ ! -f "$image" ]]; then
+    echo "error: DMG background representation not found: $image" >&2
+    exit 1
+  fi
+  image_width="$(/usr/bin/sips -g pixelWidth "$image" 2>/dev/null | awk '/pixelWidth:/ {print $2}')"
+  image_height="$(/usr/bin/sips -g pixelHeight "$image" 2>/dev/null | awk '/pixelHeight:/ {print $2}')"
+  if [[ "$image_width" != "$expected_width" || "$image_height" != "$expected_height" ]]; then
+    echo "error: $(basename "$image") must be ${expected_width}x${expected_height} pixels (found ${image_width:-?}x${image_height:-?})" >&2
+    exit 1
+  fi
+done
+tiff_directories="$(/usr/bin/tiffutil -info "$background" | grep -c '^Directory at')"
+if [[ "$tiff_directories" != "2" ]]; then
+  echo "error: DMG background must contain 1x and 2x image representations" >&2
   exit 1
 fi
 
@@ -57,7 +74,7 @@ mkdir -p "$stage"
 cp -R "$app" "$stage/$scheme.app"
 ln -s /Applications "$stage/Applications"
 mkdir -p "$stage/.background"
-cp "$background" "$stage/.background/background.png"
+cp "$background" "$stage/.background/background.tiff"
 
 rm -f "$dmg_versioned"
 if [[ "$release_channel" == "stable" ]]; then rm -f "$dmg_latest"; fi
@@ -110,7 +127,7 @@ on run argv
   set folderPath to item 1 of argv
   set appName to (item 2 of argv) & ".app"
   set mountedFolder to POSIX file folderPath as alias
-  set backgroundFile to POSIX file (folderPath & "/.background/background.png") as alias
+  set backgroundFile to POSIX file (folderPath & "/.background/background.tiff") as alias
   tell application "Finder"
     open mountedFolder
     delay 1

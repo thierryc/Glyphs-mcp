@@ -3,16 +3,16 @@
 Record the **configured endpoint and connection identifier** before diagnosing.
 The unchanged v2 default is `http://127.0.0.1:9680/mcp/`; its authenticated internal
 bridge defaults to loopback port 9681. Read the actual endpoint from the client
-configuration or Glyphs MCP’s Overview; do not assume a default is configured.
+configuration or Glyphs MCP’s Setup page; do not assume a default is configured.
 In Glyphs 4, open **Edit → Glyphs MCP Server…** for server status and controls.
-In the Glyphs MCP desktop app, use Overview and Troubleshooting for worker and
-installation evidence. Never expose the bridge token in a report.
+In the Glyphs MCP desktop app, use Setup and **Open Troubleshooting Logs** for
+worker and installation evidence. Never expose the bridge token in a report.
 
 | Evidence | Explanation and recovery |
 |---|---|
 | Seven-tool catalog, skill demands other tools | Wrong skill. Select the shipped lean `$glyphs`; inspect the conflicting skill path. Re-run skill setup to refresh an unchanged installer-owned skill. For preserved conflicts, use **Replace preserved skills (backup)** in the installer; review the preserved path first. Plugin caches are managed by their plugin, never edited in place. |
 | Required private lean capability/job or current interface metadata missing | The installation needs updating. Update the bridge, sidecar and skills together through the installer, reload affected processes, and verify the negotiated capabilities. Do not substitute workflows from earlier private v2 builds. |
-| v1 identity with v2 instructions | Wrong skill for this connection. Use the available v1 skill from the desktop payload’s `skills-v1` or configure the intended v2 connection explicitly. A successful v1 handshake does not indicate a stopped server. |
+| v1 identity with v2 instructions | Wrong skill for this connection. Use the separate v1.11.0 distribution and its skills, or configure the intended v2 connection explicitly. Beta 3 contains no `skills-v1`. A successful v1 handshake does not indicate a stopped server. |
 | Sidecar responds, `bridge.reachable: false` | Check whether the intended Glyphs 4 process is still running. If it unexpectedly exited, use [crash recovery](crash-recovery.md) before reopening it. Otherwise inspect Edit → Glyphs MCP Server…. Check bridge installation, endpoint and panel error; start it explicitly when authorized. Do not reinstall skills to fix a stopped bridge. |
 | `worker.available: false` | Inspect `worker.executable`, application path and setup/preflight error. Repair the worker/runtime component through the installer; reads may remain available. |
 | Address already in use or unexpected catalog | Identify the process holding the configured port. Stop the unintended server when authorized, or explicitly configure a separate free loopback port for v1. Never switch v2’s port automatically. |

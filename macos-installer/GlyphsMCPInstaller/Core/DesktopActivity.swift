@@ -120,6 +120,19 @@ public struct DesktopServerStatus: Decodable, Equatable {
 }
 
 public enum DesktopDiagnostics {
+    public static func serverTitle(
+        hasServer: Bool,
+        running: Bool?,
+        status: DesktopServerStatus?,
+        hasNotice: Bool
+    ) -> String {
+        if !hasServer { return "MCP server not installed" }
+        if running == false { return "Server stopped" }
+        if let status { return status.title }
+        if running == true { return "Server running" }
+        return hasNotice ? "Server unavailable" : "Checking server"
+    }
+
     public static func statusFailure(_ code: Int?) -> String {
         if code == 401 || code == 403 { return "The MCP server rejected this app’s connection. Check authentication in Troubleshooting." }
         return "The MCP server could not report its activity. Try Refresh or open Troubleshooting."

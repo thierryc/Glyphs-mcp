@@ -1,4 +1,4 @@
-# Glyphs MCP Desktop 2.0.0 Beta 2
+# Glyphs MCP Desktop 2.0.0 Beta 3
 
 **Beta preparation — not yet available for public download.**
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
@@ -7,13 +7,15 @@ Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
 no terminal setup is required for the Glyphs 4 sidecar.
 
-Open **Glyphs MCP.app**, choose Glyphs and the components, then select **Install**.
-Glyphs MCP, Curve Inspector and Reference Inspector are selected on a fresh
-installation. Upgrades preserve existing choices, ports and startup settings;
-component removal is explicit. AI application connections are optional.
+Open **Glyphs MCP.app** and use **Setup**. **Install All** reconciles Glyphs MCP,
+Curve Inspector and Reference Inspector, then configures Codex, Claude Code,
+Claude Desktop and Cursor. Every card also supports independent install,
+update, removal and retry. Upgrades preserve ports, startup settings and
+unrelated agent configuration.
 
-The permanent app includes Overview, Components and Projects, a static menu-bar
-popover, local and public templates, and a read-only Git diff browser. Its
+The permanent app includes Setup and Project destinations, a static menu-bar
+popover, a dedicated troubleshooting-log window, local and public templates,
+and a read-only Git diff browser. Its
 native file tree opens source diffs in unified or split form and can compare
 individual `.glyphspackage` glyphs as visual overlays or source text. Automatic
 update checks and desktop launch at login are separate opt-in settings.
@@ -34,20 +36,21 @@ The seven tools are `get_status`, `list_documents`, `read_entities`,
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-Glyphs 3 remains on the pinned 1.11.0 plugin and its existing dependency setup.
-The two documentation tracks describe these versions separately. This candidate
-is prepared locally; it has not been published as a release.
+The Beta 3 payload is Glyphs 4-only. Glyphs 3 remains available through the
+separate pinned v1.11.0 release and its existing dependency setup. The two
+documentation tracks describe these versions separately. This candidate is
+prepared locally; it has not been published as a release.
 
-Documentation sources: [v2 · 2.0.0 Beta 2](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 3](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
-Unsigned Beta 2 qualification evidence is in
-[BETA2-VALIDATION.md](BETA2-VALIDATION.md).
+Beta 3 qualification evidence and the remaining manual matrix are in
+[BETA3-VALIDATION.md](BETA3-VALIDATION.md).
 The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 `/docs/v2/`. Both are built together from `website/`.
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.2.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.3.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

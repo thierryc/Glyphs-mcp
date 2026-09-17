@@ -1,119 +1,105 @@
-# Glyphs MCP 2.0.0 Beta 2
+# Glyphs MCP 2.0.0 Beta 3
 
-**Status: Beta 2 is available as a GitHub prerelease. The stable Latest release
-remains v1.11.0.**
+**Status: Beta 3 is a local release candidate. It has not been signed,
+notarized, uploaded or published. The stable Latest release remains v1.11.0.**
 
-A native macOS workspace for connecting AI applications to Glyphs 4, managing
-components, and starting font projects from templates. This is an early beta;
-feedback will help shape version 2.0.0.
+Beta 3 unifies installation, server controls and agent connections in a single
+native **Setup** page for Glyphs 4. The source target is `2.0.0-beta.3`, desktop
+build 45, on `lit/v2-beta`. Local qualification evidence and the remaining
+manual matrix are recorded in [BETA3-VALIDATION.md](BETA3-VALIDATION.md).
 
-The release is **v2.0.0-beta.2**, desktop **build 44**, from `lit/v2-beta`.
-Implementation and qualification evidence is recorded in
-[BETA2-VALIDATION.md](BETA2-VALIDATION.md).
-Glyphs 3 stays on its separate, pinned 1.11.0 plugin.
+Glyphs 3 is not included in the Beta 3 desktop payload. Its separate v1.11.0
+release, source metadata and documentation remain unchanged.
 
-## Download and requirements
+## Requirements and availability
 
-[Download Glyphs MCP 2.0.0 Beta 2](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.2/Glyphs-MCP-2.0.0-beta.2.dmg),
-or review the complete [Beta 2 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.2)
-and its `SHA256SUMS` before installing. The stable download remains available
-through [GitHub Releases](https://github.com/thierryc/Glyphs-mcp/releases/latest).
+Beta 3 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+installer bundles architecture-matched private runtimes; terminal setup is not
+required for an end-user installation. Glyphs still needs its own **Python
+(Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-Target requirements: macOS 14 or later, Apple silicon or Intel, and Glyphs 4
-for the new bridge. The installer bundles private runtimes; terminal setup is
-not required. The signed app and DMG are notarized and accepted by Gatekeeper;
-both packaged architectures passed automated qualification. Your AI client is
-configured separately.
+There is no Beta 3 download until the separately authorized signing,
+notarization and publication work is complete. Do not treat a local build, feed
+URL or candidate filename as a published release. The released Beta 2 and
+stable v1.11.0 downloads remain available through
+[GitHub Releases](https://github.com/thierryc/Glyphs-mcp/releases).
 
 ## First session
 
-1. Make a duplicate of a font for testing. Keep the original and your existing
-   application available while evaluating the beta.
-2. Open the beta app and choose **Components**. Select your Glyphs version and
-   the components you want. Follow the app's instruction to quit Glyphs before
-   applying component changes, then reopen Glyphs.
-3. In **Overview**, verify the server status. Connect an AI client using the
-   address shown by the app. Avoid running a second MCP server on the same port.
-4. In **Project**, create a disposable project from the bundled starter or a
-   public template. Use **Refresh** to retrieve the current beta template list.
-5. On your font copy, prepare a small supported spacing or kerning job, inspect
-   its report, then apply or discard it. Check native Undo and Redo before Save.
-6. In a Git-backed project, select a changed text file and try unified, split,
-   wrapping and copying. For a changed file under
-   `.glyphspackage/glyphs/`, switch between **Visual** and **Text**, select a
-   layer, and inspect the Before/Both/After overlays. Confirm unchanged geometry
-   is neutral, the reference is mint and only the geometric delta fill is cyan.
-   Exercise previous/next difference, Reset, Command zoom shortcuts, pinch,
-   Option-scroll and Z-click zoom. Hold Space for the black silhouette preview.
-   These
-   previews are read-only and do not stage, edit or comment on files.
+1. Make a duplicate of a font for testing and save current work in Glyphs.
+2. Drag **Glyphs MCP.app** from the disk image to **Applications**, then open
+   the installed copy.
+3. In **Setup**, choose **Install All**. All three Glyphs components are handled
+   in one transaction, followed by Codex, Claude Code, Claude Desktop and
+   Cursor connections. Cards remain on Setup and show **Queued**,
+   **Installing**, **Installed** or **Failed** as work progresses.
+4. If Glyphs is running, use the inline **Quit Glyphs** guidance and complete
+   its normal save prompts. Installation resumes only after it is safe to
+   replace components.
+5. Reopen or reload installed agent applications when their cards request it.
+   Start the MCP server and verify the address shown in Setup, normally
+   `http://127.0.0.1:9680/mcp/`.
+6. In **Project**, create a disposable project, then exercise a small supported
+   spacing or kerning job on the font copy. Review the report and verify native
+   Undo/Redo before Save.
 
-The beta keeps the existing application and service identity. It is not an
-independent environment for running a second server beside a previous build.
-Desktop updates and component installation are separate steps. For the
-migration details, read [the migration guide](content/getting-started/migrate-from-v1.mdx).
-To roll back, finish or discard pending jobs, remove the Beta 2 components in
-the app, then reinstall the previous stable release. Keep font and settings
-backups until the beta workflow has been accepted for your environment.
+## Setup cards
 
-## Components
+The component cards manage **Glyphs MCP**, **Curve Inspector** and **Reference
+Inspector**. Missing items offer **Install**. Installed items offer **Update**
+and **Remove**. Failed work offers **Retry**. Individual removal requires
+confirmation and preserves unrelated components and existing preferences.
 
-### Glyphs MCP
+The compact **Connections** cards manage:
 
-Connect an AI client to Glyphs 4. The seven tools inspect documents and prepare,
-review, apply or discard supported jobs. There is no arbitrary Python tool.
-See the [tool contract](content/reference/command-set-v2.mdx).
+- **Codex**: MCP configuration and managed skills.
+- **Claude Code**: MCP configuration and managed skills.
+- **Claude Desktop**: MCP configuration.
+- **Cursor**: the complete local Glyphs MCP plugin bundle, including its MCP
+  manifest, assets and skills.
 
-### Curve Inspector
+**Install All** includes all four connections even when a host is not detected.
+Configuration changes create backups, preserve unrelated entries and custom
+options, and change only the Glyphs MCP entry. Cursor update and removal require
+a verified installer-owned bundle; modified or unowned content is reported as
+a conflict rather than overwritten or deleted.
 
-Inspect curve geometry and handles directly on the canvas.
+## Troubleshooting logs
 
-### Reference Inspector
-
-Compare outlines and spacing with a reference such as the last saved version,
-another font file or a Git revision. See
-[desktop component documentation](content/getting-started/desktop.mdx).
+The discreet log button in the Setup header opens one reusable **Glyphs MCP
+Logs** window. It combines bounded installation events, per-card failures,
+recent server events, `sidecar.log` and `sidecar-error.log`. Advanced users can
+filter and refresh sources, copy selected or all text, copy a redacted
+diagnostic report, or reveal the log folder in Finder. Missing log files are
+reported without failing the view. Tokens, credentials and authorization
+headers are removed from copied diagnostics.
 
 ## Templates and updates
 
-The beta uses `templates/registry.json` on `lit/v2-beta` and a separate template
-cache. A registry update can change the available list without reinstalling
-the app. It takes effect when you refresh; it does not change existing projects.
-If the registry is unavailable, the app retains the cached or bundled list.
-Public template archives are pinned to a commit and checksum.
+The beta uses `templates/registry.json` and the update feed on `lit/v2-beta`.
+Template refresh is independent of component installation. Desktop updates and
+component reconciliation are also separate operations; a migration failure
+must leave the manager available to retry or continue with the previous
+installation.
 
-Beta app updates use a separate feed on the same beta branch. Automatic checks
-are optional. A stable release will require an explicit release decision and
-a new build; this beta will not silently become the final release.
+## Help test the candidate
 
-## Help test the beta
+The remaining manual matrix covers fresh, partial, update, removal, ownership
+conflict, running-Glyphs, absent-agent and reload-required scenarios on Apple
+silicon and Intel. It also verifies all four agent connections after reload or
+restart. Do not mark those rows complete without evidence from the exact
+candidate.
 
-Downloads are open to everyone. Enrollment is optional: you do not need to
-join a group to use the beta. Volunteers can use the
-[prefilled enrollment issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%20tester%5D%20I%27d%20like%20to%20help&body=macOS%20version%3A%0AApple%20silicon%20or%20Intel%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0AWorkflows%20I%20can%20test%3A%0A%0AI%20would%20like%20to%20receive%20beta%20testing%20follow-ups%20in%20this%20GitHub%20issue.).
-Issues are public; no email address or font upload is required.
+Useful reports include the beta/build number, macOS and processor, Glyphs
+version/build, affected card, operation state, client, exact reproduction and a
+redacted diagnostic report. Share a disposable font only when it can be public.
+[Report a beta issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%202.0.0%5D%20&body=Beta%20and%20build%3A%0AmacOS%20and%20processor%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0ASteps%3A%0AExpected%3A%0AActual%3A).
 
-The most useful first reports cover installation, client connection, template
-refresh, project creation, source and glyph diff display, inspector display and
-a complete apply/discard cycle.
-Include your beta/build number, macOS, processor, Glyphs version, client, steps,
-expected result and actual result. Share a minimal sample only if you can make
-it public. [Report a beta issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%202.0.0%5D%20&body=Beta%20and%20build%3A%0AmacOS%20and%20processor%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0ASteps%3A%0AExpected%3A%0AActual%3A).
-
-Known limitations: the welcome screen is still a placeholder; the seven-tool
-workflow is materially narrower than the legacy catalog and exposes no
-arbitrary Python tool. Visual diffs cover individual `.glyph` files under
-`.glyphspackage/glyphs/`, not monolithic `.glyphs` files, and require a
-compatible Glyphs 4 runtime. There is no diff editing, staging, commenting or
-all-layers grid. Both architectures are packaged and automatically verified,
-but this final build was not exercised on physical Intel hardware. The final
-DMG passed mounted and extracted-install verification; an additional
-VirtualBuddy guest retest was blocked because that VirtualBuddy build disables
-file transfer. An end-to-end Beta 1 → Beta 2 Sparkle update trial remains to be
-recorded. The beta adds no telemetry or mailing-list subscription.
-
-Final SHA-256 checksums:
-
-- DMG: `f65431f5a405442971b029022692f22e642477a3c376782b3e5a07fd25433443`
-- Sparkle ZIP: `9af495f4e4d834088df8d99e6a14a6faa3ed5f87137217b2f35f963ea9e7e532`
-- Signed appcast: `a1b088f0cb8a533eb4a44b0507d9b2996b13c7cfc9459010596b3e42468bd61d`
+Known limitations: the welcome screen remains a placeholder; the seven-tool
+workflow is intentionally narrower than v1 and exposes no arbitrary Python
+tool. In Project visual diffs, changing glyph files can retain the previously
+selected master even when that master is unchanged; choose a layer without the
+“unchanged” suffix to display the available geometry difference. Physical Intel
+acceptance, signed-update migration, Developer ID,
+notarization, Gatekeeper, mounted-DMG and published-download verification
+remain unverified until the separately authorized release phase.

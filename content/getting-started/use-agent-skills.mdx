@@ -4,9 +4,18 @@ title: Skills and optional plugins
 
 Skills tell an agent how to use the supported workflows. They do not add tools to the server or grant permission to edit a font.
 
-The optional package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. All four manifests use version `2.0.0` and share the same skills. Host installation is managed by the client. The installer offers supported Codex and Claude integrations; other hosts can use their own plugin installation or a manual MCP connection.
+The package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. All four manifests use version `2.0.0` and share the same skills. Beta 3 Setup configures Codex and Claude Code with MCP plus managed skills, configures Claude Desktop's MCP entry, and installs the complete local Cursor bundle at `~/.cursor/plugins/local/glyphs-mcp`. GitHub Copilot CLI remains a package-supported host without a Beta 3 Setup card.
 
-The plugin is optional. A client with a manual MCP connection can use all seven tools without it. For this local candidate, use the matching local package. Public marketplace commands resolve the repository's published state and should not be assumed to install an unpublished v2 candidate.
+The agent plugin is optional for using the seven MCP tools; a manual MCP
+connection can use the same server catalog. **Install All** nevertheless
+includes all four supported Setup connectors by default, even if a host is not
+detected. For this local candidate, use the matching local package.
+Configuration patching creates backups, preserves unrelated entries and custom
+options, and changes only Glyphs MCP. Cursor update and removal require an
+installer-owned bundle whose version and hash still match its receipt; modified
+or unowned content becomes a visible conflict. Public marketplace commands
+resolve published state and must not be assumed to install an unpublished
+candidate.
 
 ## Included skills
 

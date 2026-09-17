@@ -29,11 +29,19 @@ public struct ResolvedInstallerPayloadManifest: Equatable, Sendable {
 	public let requirementsURL: URL
 	public let skillsURL: URL?
 	public let targets: [Int: ResolvedInstallerTargetPayload]
+	public let cursorPluginURL: URL?
+	public let cursorPluginIdentity: String?
+	public let cursorPluginVersion: String?
 }
 
 /// The single schema-v2 parser used by the installer and the standalone updater.
 public enum InstallerPayloadManifestResolver {
 	private struct Manifest: Decodable {
+		struct CursorPlugin: Decodable {
+			let path: String
+			let identity: String
+			let version: String
+		}
 		struct Target: Decodable {
 			struct Baseline: Decodable {
 				let tag: String
@@ -50,6 +58,7 @@ public enum InstallerPayloadManifestResolver {
 		let requirementsPath: String
 		let skillsPath: String?
 		let targets: [String: Target]
+		let cursorPlugin: CursorPlugin?
 	}
 
 	public static func resolve(_ payloadDirectory: URL) throws -> ResolvedInstallerPayloadManifest {
@@ -57,8 +66,8 @@ public enum InstallerPayloadManifestResolver {
 		let data = try Data(contentsOf: manifestURL)
 		guard data.count <= 64 * 1024,
 			  let manifest = try? JSONDecoder().decode(Manifest.self, from: data),
-			  [2, 3].contains(manifest.schemaVersion),
-			  Set(manifest.targets.keys) == Set(["3", "4"]) else {
+			  [2, 3, 4].contains(manifest.schemaVersion),
+			  Set(manifest.targets.keys) == (manifest.schemaVersion == 4 ? Set(["4"]) : Set(["3", "4"])) else {
 			throw UpdateStagingError("payload_manifest", "Installer payload manifest is malformed or unsupported.")
 		}
 		guard manifest.requirementsPath == "requirements.txt", manifest.skillsPath == "skills" else {
@@ -72,7 +81,7 @@ public enum InstallerPayloadManifestResolver {
 		guard let skills, FileManager.default.fileExists(atPath: skills.path) else {
 			throw UpdateStagingError("payload_manifest", "Installer payload skills are missing.")
 		}
-		if manifest.schemaVersion == 3 {
+		if manifest.schemaVersion >= 3 {
             let fields = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             for directory in ["Lean", "Installer"] {
                 guard let expected = fields?[directory.lowercased() + "Identity"] as? String,
@@ -82,29 +91,31 @@ public enum InstallerPayloadManifestResolver {
             }
         }
 		var targets: [Int: ResolvedInstallerTargetPayload] = [:]
-		for glyphsMajor in [3, 4] {
+		for glyphsMajor in manifest.schemaVersion == 4 ? [4] : [3, 4] {
 			guard let target = manifest.targets[String(glyphsMajor)] else {
 				throw UpdateStagingError("payload_manifest", "Installer payload target is missing.")
 			}
 			let expectedTrack = glyphsMajor == 3 ? "1.x" : "2.x"
 			let expectedPolicy: InstallerTargetUpdatePolicy = glyphsMajor == 3 ? .pinned : .release
-			let expectedPluginPath = manifest.schemaVersion == 3 && glyphsMajor == 4
+			let expectedPluginPath = manifest.schemaVersion >= 3 && glyphsMajor == 4
 				? "Lean/Glyphs MCP Bridge.glyphsPlugin" : "Plugins/Glyphs\(glyphsMajor)/Glyphs MCP.glyphsPlugin"
 			guard target.pluginPath == expectedPluginPath,
 				  target.runtimeTrack == expectedTrack,
-				  target.updatePolicy == expectedPolicy,
-				  let baseline = target.baseline,
-				  !baseline.tag.isEmpty,
-				  !baseline.commit.isEmpty else {
+				  target.updatePolicy == expectedPolicy else {
 				throw UpdateStagingError("payload_manifest", "Installer payload target policy is invalid.")
 			}
 			if glyphsMajor == 3 {
-				guard target.pluginVersion == "1.11.0",
+				guard let baseline = target.baseline,
+					  !baseline.tag.isEmpty,
+					  !baseline.commit.isEmpty,
+					  target.pluginVersion == "1.11.0",
 					  baseline.tag == "v1.11.0",
 					  baseline.commit == "13ca805",
 					  target.runtimeIdentity == nil else {
 					throw UpdateStagingError("payload_manifest", "Glyphs 3 payload provenance is not the pinned v1.11 baseline.")
 				}
+			} else if manifest.schemaVersion == 4, target.baseline != nil {
+				throw UpdateStagingError("payload_manifest", "Glyphs 3 baseline metadata is not allowed in the Beta-3 payload.")
 			}
 			let bundleURL = try resolveRelativePath(target.pluginPath, under: payloadDirectory)
 			let infoURL = bundleURL.appendingPathComponent("Contents/Info.plist")
@@ -115,8 +126,8 @@ public enum InstallerPayloadManifestResolver {
 				let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
 				(plist["CFBundleShortVersionString"] as? String) == target.pluginVersion,
 				(plist["CFBundleVersion"] as? String) == target.pluginVersion,
-				(manifest.schemaVersion == 3 && glyphsMajor == 4 || FileManager.default.fileExists(atPath: runtimeProbe.path)),
-				(manifest.schemaVersion == 3 && glyphsMajor == 4 || FileManager.default.fileExists(atPath: runtimePolicy.path))
+				(manifest.schemaVersion >= 3 && glyphsMajor == 4 || FileManager.default.fileExists(atPath: runtimeProbe.path)),
+				(manifest.schemaVersion >= 3 && glyphsMajor == 4 || FileManager.default.fileExists(atPath: runtimePolicy.path))
 			else {
 				throw UpdateStagingError("payload_manifest", "Installer payload target version or runtime is invalid.")
 			}
@@ -151,11 +162,28 @@ public enum InstallerPayloadManifestResolver {
 				runtimeIdentity: target.runtimeIdentity
 			)
 		}
+		var cursorURL: URL?
+		if manifest.schemaVersion == 4 {
+			guard let cursor = manifest.cursorPlugin,
+				  cursor.path == "AgentPlugins/Cursor/glyphs-mcp",
+				  cursor.identity.range(of: "^sha256:[0-9a-f]{64}$", options: .regularExpression) != nil,
+				  cursor.version == manifest.targets["4"]?.pluginVersion else {
+				throw UpdateStagingError("payload_manifest", "Cursor plug-in metadata is missing or invalid.")
+			}
+			let resolved = try resolveRelativePath(cursor.path, under: payloadDirectory)
+			guard try treeIdentity(resolved) == cursor.identity else {
+				throw UpdateStagingError("payload_manifest", "Cursor plug-in identity mismatch.")
+			}
+			cursorURL = resolved
+		}
 		return ResolvedInstallerPayloadManifest(
 			schemaVersion: manifest.schemaVersion,
 			requirementsURL: requirements,
 			skillsURL: skills,
-			targets: targets
+			targets: targets,
+			cursorPluginURL: cursorURL,
+			cursorPluginIdentity: manifest.cursorPlugin?.identity,
+			cursorPluginVersion: manifest.cursorPlugin?.version
 		)
 	}
 

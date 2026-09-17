@@ -3,13 +3,14 @@
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
-The current candidate is Glyphs MCP Desktop 2.0.0 Beta 2 / build 44,
+The current candidate is Glyphs MCP Desktop 2.0.0 Beta 3 / build 45,
 with coordinated sidecar/bridge product version `2.0.0`, interface revision `1`
 and bridge protocol `1`. Follow [the beta release plan](../BETA-LAUNCH.md)
 for its prerelease tag, beta update feed and download names.
-The Glyphs 4 payload has seven tools, eleven managed skills, two optional
-companions and private Python runtimes for Apple Silicon and Intel.
-Glyphs 3 remains pinned to 1.11.0 at v1.11.0 / 13ca805.
+The Glyphs 4-only payload has seven tools, eleven managed skills, two optional
+companions, the Cursor plugin and private Python runtimes for Apple Silicon and
+Intel. Glyphs 3 remains available through its separate pinned v1.11.0 release
+at v1.11.0 / 13ca805; it is not packaged in Beta 3.
 
 ## Prerequisites
 
@@ -52,7 +53,7 @@ disposable-font acceptance evidence and original-source hash separately.
 scripts/build_installer_app.sh
 scripts/notarize_installer_app.sh
 scripts/make_installer_dmg.sh
-scripts/verify_release_artifacts.sh --tag v2.0.0-beta.2 --write-checksums
+scripts/verify_release_artifacts.sh --tag v2.0.0-beta.3 --write-checksums
 ```
 
 The Release installer is universal. `release_payload.py` discovers every
@@ -68,10 +69,10 @@ identities in the lean manifest, then the outer payload identity. Installer
 verification remains exact; signing is never performed during installation.
 
 Notarization submits an expanded payload ZIP so Apple can inspect all nested
-code. The accepted tickets are stapled to the pinned Glyphs 3 plug-in, bridge
-and both companions. Identities are refreshed again after stapling. The
-payload is compressed into the app’s sealed `Payload.gmcparchive`; the app is
-re-signed, notarized and stapled, then the DMG is signed, notarized and stapled.
+code. The accepted tickets are stapled to the Glyphs 4 bridge and both
+companions. Identities are refreshed again after stapling. The payload is
+compressed into the app’s sealed `Payload.gmcparchive`; the app is re-signed,
+notarized and stapled, then the DMG is signed, notarized and stapled.
 
 The final verifier checks Developer ID, team, hardened runtime, timestamps,
 Gatekeeper acceptance, all nested signatures, component identities and
@@ -91,7 +92,7 @@ Sparkle 2.9.6 is checksum-pinned in `third_party/sparkle.json`. Its separate Ed2
 
 Run `scripts/build_desktop_release.sh` for the signed/notarized app, DMG and local update candidate. The product is `dist/installer-app/Glyphs MCP.app`. `dist/desktop-update/` contains the signed versioned ZIP, signed appcast, SHA256SUMS and an unpublished candidate record. The Xcode scheme remains GlyphsMCPInstaller. Sparkle nested apps, XPC services and frameworks are signed inside out with their entitlements preserved.
 
-The Beta 2 feed candidate is `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`; archives use the exact prerelease tag and versioned GitHub Releases URLs. Stable releases use `main/appcast.xml` after their separate release decision. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is opt-in and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
+The Beta 3 feed candidate is `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`; archives use the exact prerelease tag and versioned GitHub Releases URLs. Stable releases use `main/appcast.xml` after their separate release decision. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is opt-in and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
 
 Publication is a separate approved step. Publish verified archives first, then the exact signed appcast. Never edit signed feed bytes. There are no GitHub Actions. Keep v1 documentation and download guidance intact; the legacy installer updater is not the desktop updater.
 

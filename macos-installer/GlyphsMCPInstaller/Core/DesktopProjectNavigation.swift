@@ -1,7 +1,7 @@
 import Foundation
 
 public enum DesktopDestination: Hashable {
-    case overview, components, templates
+    case setup, templates
     case project(String)
 }
 
@@ -43,7 +43,7 @@ public struct DesktopProjectNavigation: Equatable {
             .filter { restored.contains($0.key) && !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         let stored = defaults.string(forKey: "lastSelectedProject")
         lastProject = stored.flatMap { restored.contains($0) ? $0 : nil } ?? restored.first
-        destination = hasInstallation ? lastProject.map(DesktopDestination.project) ?? .overview : .components
+        destination = hasInstallation ? lastProject.map(DesktopDestination.project) ?? .setup : .setup
     }
 
     public mutating func select(_ value: DesktopDestination?) {

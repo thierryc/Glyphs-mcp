@@ -49,7 +49,7 @@ final class DesktopProjectNavigationTests: XCTestCase {
         XCTAssertNil(state.selectedProject)
         XCTAssertEqual(state.lastProject, "/Fonts/Alpha")
         XCTAssertEqual(DesktopProjectNavigation(defaults: preferences, hasInstallation: true).selectedProject, "/Fonts/Alpha")
-        state.select(.overview)
+        state.select(.setup)
         XCTAssertNil(state.selectedProject)
         state.select(nil)
         XCTAssertEqual(state.selectedProject, "/Fonts/Alpha")
@@ -62,11 +62,11 @@ final class DesktopProjectNavigationTests: XCTestCase {
         XCTAssertTrue(state.recent.isEmpty)
     }
 
-    func testFirstInstallationStillOpensComponents() {
+    func testFirstInstallationOpensUnifiedSetup() {
         let preferences = defaults()
         preferences.set(["/Fonts/Alpha"], forKey: "recentProjects")
         let state = DesktopProjectNavigation(defaults: preferences, hasInstallation: false)
-        XCTAssertEqual(state.destination, .components)
+        XCTAssertEqual(state.destination, .setup)
         XCTAssertEqual(state.lastProject, "/Fonts/Alpha")
     }
 
@@ -136,9 +136,9 @@ final class DesktopProjectNavigationTests: XCTestCase {
         XCTAssertEqual(state.lastProject, folder.path)
         state.save(to: preferences)
         XCTAssertEqual(DesktopProjectNavigation(defaults: preferences, hasInstallation: true), state)
-        state.select(.components)
+        state.select(.setup)
         try state.update("/Fonts/Other", name: "Other Family", folder: URL(fileURLWithPath: "/Fonts/Other"))
-        XCTAssertEqual(state.destination, .components)
+        XCTAssertEqual(state.destination, .setup)
         XCTAssertEqual(state.lastProject, folder.path)
     }
 

@@ -16,12 +16,12 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
-def test_current_checkout_is_beta_2_build_44():
+def test_current_checkout_is_beta_3_build_45():
     release = load(REPO)
     assert release['version'] == '2.0.0'
-    assert release['tag'] == 'v2.0.0-beta.2'
-    assert release['label'] == '2.0.0 Beta 2'
-    assert release['installerBuild'] == 44
+    assert release['tag'] == 'v2.0.0-beta.3'
+    assert release['label'] == '2.0.0 Beta 3'
+    assert release['installerBuild'] == 45
 
 
 def test_beta_identity_preserves_numeric_bundle_version_and_build():
@@ -98,3 +98,9 @@ def test_dmg_layout_targets_window_and_verifies_persisted_positions():
     assert 'set applicationsPosition to position of item "Applications" of verifiedWindow' in script
     assert 'if appPosition is not equal to {170, 194}' in script
     assert 'if applicationsPosition is not equal to {510, 194}' in script
+    assert 'background.tiff' in script
+    assert 'background@2x.png' in script
+    renderer = (REPO / 'scripts/render_dmg_background.sh').read_text()
+    assert 'render_representation 1' in renderer
+    assert 'render_representation 2' in renderer
+    assert 'tiffutil -cathidpicheck' in renderer
