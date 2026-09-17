@@ -58,6 +58,9 @@ def test_signing_and_verification_are_ordered_for_nested_code():
 def test_refresh_updates_signed_and_stapled_component_identities(tmp_path):
     lean = tmp_path / "Lean"
     lean.mkdir()
+    cursor = tmp_path / release.CURSOR_PLUGIN_PATH
+    cursor.mkdir(parents=True)
+    (cursor / "plugin.json").write_text("before signing")
     manifest = {"bridge": {"bundle": release.BRIDGE, "identity": "old", "codeHash": "old"},
                 "companions": [{"id": key, "bundle": name, "identity": "old"}
                                for key, name in release.COMPANIONS.items()],
@@ -68,9 +71,14 @@ def test_refresh_updates_signed_and_stapled_component_identities(tmp_path):
         (lean / path).mkdir(parents=True)
         (lean / path / "code").write_bytes(b"signed bytes")
     (lean / "manifest.json").write_text(json.dumps(manifest))
-    (tmp_path / "payload.json").write_text('{"leanIdentity": "old"}')
+    (tmp_path / "payload.json").write_text(json.dumps({
+        "leanIdentity": "old",
+        "cursorPlugin": {"path": release.CURSOR_PLUGIN_PATH, "identity": "old"},
+    }))
     release.refresh_identities(tmp_path)
     release.verify_identities(tmp_path)
+    outer = json.loads((tmp_path / "payload.json").read_text())
+    assert outer["cursorPlugin"]["identity"] == release._identity(cursor)
     before_hash = json.loads((lean / "manifest.json").read_text())["bridge"]["codeHash"]
     (lean / release.BRIDGE / "CodeResources").write_bytes(b"ticket")
     with pytest.raises(ValueError, match="fingerprint"):
@@ -81,6 +89,35 @@ def test_refresh_updates_signed_and_stapled_component_identities(tmp_path):
     assert signed["identity"] != "old"
     assert signed["codeHash"] != before_hash
     assert signed["codeHash"] == release._fingerprint_helper().payload_hash(lean/release.BRIDGE)
+
+
+def test_cursor_identity_is_refreshed_after_release_signing(tmp_path):
+    lean = tmp_path / "Lean"
+    lean.mkdir()
+    manifest = {"bridge": {"bundle": release.BRIDGE, "identity": "old"},
+                "companions": [{"id": key, "bundle": name, "identity": "old"}
+                               for key, name in release.COMPANIONS.items()],
+                "sidecar": {"identity": "old"},
+                "runtimes": {a: {"path": "runtimes/" + a, "identity": "old"}
+                             for a in ("arm64", "x86_64")}}
+    for path in [release.BRIDGE, *release.COMPANIONS.values(), "sidecar", "runtimes/arm64", "runtimes/x86_64"]:
+        (lean / path).mkdir(parents=True)
+        (lean / path / "code").write_bytes(b"signed bytes")
+    (lean / "manifest.json").write_text(json.dumps(manifest))
+    cursor = tmp_path / release.CURSOR_PLUGIN_PATH
+    cursor.mkdir(parents=True)
+    (cursor / "native-example").write_bytes(b"unsigned")
+    (tmp_path / "payload.json").write_text(json.dumps({
+        "leanIdentity": "old",
+        "cursorPlugin": {"path": release.CURSOR_PLUGIN_PATH, "identity": "unsigned"},
+    }))
+
+    (cursor / "native-example").write_bytes(b"signed")
+    release.refresh_identities(tmp_path)
+    release.verify_identities(tmp_path)
+
+    outer = json.loads((tmp_path / "payload.json").read_text())
+    assert outer["cursorPlugin"]["identity"] == release._identity(cursor)
 
 
 def test_component_paths_cannot_be_changed_by_manifest(tmp_path):

@@ -15,6 +15,7 @@ TEAM = "N9U29A4T8J"
 BRIDGE = "Glyphs MCP Bridge.glyphsPlugin"
 COMPANIONS = {"curve-inspector": "Glyphs Curve Inspector.glyphsReporter",
               "reference-inspector": "Glyphs Reference Inspector.glyphsReporter"}
+CURSOR_PLUGIN_PATH = "AgentPlugins/Cursor/glyphs-mcp"
 SUFFIXES = {".glyphsPlugin", ".glyphsReporter", ".glyphsPalette", ".glyphsTool",
             ".glyphsFilter", ".glyphsFileFormat", ".framework", ".app"}
 MAGIC = {bytes.fromhex(value) for value in (
@@ -67,6 +68,16 @@ def component_records(root, manifest):
     return records
 
 
+def cursor_plugin_record(root, manifest):
+    record = manifest.get("cursorPlugin")
+    if not isinstance(record, dict) or record.get("path") != CURSOR_PLUGIN_PATH:
+        raise ValueError("Unexpected Cursor plugin path")
+    path = root / CURSOR_PLUGIN_PATH
+    if not path.is_dir() or path.is_symlink():
+        raise ValueError("Missing regular Cursor plugin directory: " + str(path))
+    return path, record
+
+
 def refresh_identities(root):
     """Release-only: call after verified signing or accepted stapling, before sealing the app."""
     root = Path(root).resolve()
@@ -81,6 +92,8 @@ def refresh_identities(root):
     outer_path = root / "payload.json"
     outer = json.loads(outer_path.read_text())
     outer["leanIdentity"] = _identity(root / "Lean")
+    cursor_path, cursor_record = cursor_plugin_record(root, outer)
+    cursor_record["identity"] = _identity(cursor_path)
     outer_path.write_text(json.dumps(outer, indent=2, sort_keys=True) + "\n")
 
 
@@ -95,6 +108,9 @@ def verify_identities(root):
     outer = json.loads((root / "payload.json").read_text())
     if outer["leanIdentity"] != _identity(root / "Lean"):
         raise ValueError("Lean payload identity mismatch")
+    cursor_path, cursor_record = cursor_plugin_record(root, outer)
+    if cursor_record.get("identity") != _identity(cursor_path):
+        raise ValueError("Cursor plugin identity mismatch")
 
 
 def run(*args):
