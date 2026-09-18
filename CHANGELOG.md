@@ -3,12 +3,22 @@
 ## 2.0.0 Beta 4 — component-aware glyph diffs, build 46
 
 - Distinguish referenced components from native paths in the Project visual
-  glyph diff by filling each transformed component outline with 8% black.
+  glyph diff with an appearance-aware 8% neutral fill. Holding Space now uses
+  a black silhouette in light mode and a white silhouette in dark mode.
 - Keep component references as separate snapshot geometry so counters and
   overlapping components render correctly while outline comparison continues
   to use Glyphs’ complete decomposed path.
-- Preserve compatibility with visual-diff snapshots produced before component
-  geometry was added.
+- Require one identity-verified schema-3 geometry reader. Bundled payloads are
+  validated before selection; installed fallback requires matching receipt,
+  sidecar and runtime identities and reports its source without executing an
+  unverifiable worker.
+- Add quadratic contours, decomposed components, open paths,
+  component-inclusive fitting, per-layer warnings, concise error categories,
+  expandable details, Retry and an accessible orange/blue legend.
+- Match canonical segments independently of contour order so inserted or
+  reordered contours do not mark unrelated geometry as changed.
+- Preserve the text diff whenever no verified visual reader is available or a
+  closed visible outline cannot be produced.
 
 ## 2.0.0 Beta 3 — unified Setup, build 45
 

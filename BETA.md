@@ -1,15 +1,18 @@
 # Glyphs MCP 2.0.0 Beta 4
 
-**Status: Beta 4 is a local candidate under qualification and is not yet
+**Status: Beta 4 is a signed and notarized release candidate and is not yet
 published. Beta 3 remains the latest public beta; stable Latest remains
 v1.11.1.**
 
-Beta 4 fills resolved component references with 8% black in the Project visual
-glyph diff so component geometry is distinct from native paths. It retains the
-single native **Setup** page for Glyphs 4. The source target is
-`2.0.0-beta.4`, desktop build 46, on `lit/v2-beta`. Beta 4 qualification is
-pending; the published Beta 3 evidence remains in
-[BETA3-VALIDATION.md](BETA3-VALIDATION.md).
+Beta 4 hardens the Project visual glyph diff around one verified schema-3
+reader and completes component, quadratic-curve and open-path rendering.
+Resolved component references receive an appearance-aware 8% neutral fill,
+while holding Space shows a black silhouette in light mode and a white
+silhouette in dark mode. It retains the single native **Setup** page for
+Glyphs 4. The source target is `2.0.0-beta.4`, desktop build 46, on
+`lit/v2-beta`. Candidate evidence is recorded in
+[BETA4-VALIDATION.md](BETA4-VALIDATION.md); the published Beta 3 evidence
+remains in [BETA3-VALIDATION.md](BETA3-VALIDATION.md).
 
 Glyphs 3 is not included in the Beta 4 desktop payload. Its separate v1.11.0
 release, source metadata and documentation remain unchanged.
@@ -21,8 +24,8 @@ installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-There is no Beta 4 download or checksum yet. Until Beta 4 passes its release
-gates, use the signed and notarized
+There is no public Beta 4 download yet. Until its GitHub publication gate
+passes, use the signed and notarized
 [Beta 3 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3).
 It remains a prerelease rather than the repository's Latest release.
 
@@ -101,8 +104,7 @@ Known limitations: the welcome screen remains a placeholder; the seven-tool
 workflow is intentionally narrower than v1 and exposes no arbitrary Python
 tool. In Project visual diffs, changing glyph files can retain the previously
 selected master even when that master is unchanged; choose a layer without the
-“unchanged” suffix to display the available geometry difference. Physical Intel
-acceptance, signed-update migration and the complete packaged manual scenario
-matrix remain unverified. Developer ID signatures, Apple notarization,
-stapling, Gatekeeper acceptance, DMG extraction, asset identity and the signed
-Sparkle feed have not yet been verified for the Beta 4 candidate.
+“unchanged” suffix to display the available geometry difference. Physical
+Intel acceptance and the complete packaged manual scenario matrix remain
+unverified. The signed application update and component migration passed in an
+Apple-silicon VirtualBuddy guest; public download discovery remains pending.

@@ -146,20 +146,39 @@ first feedback volume is known.
 
 **Glyphs MCP 2.0.0 Beta 4 · build 46**
 
-This fourth beta makes component references immediately distinguishable in the
-Project visual glyph diff: every resolved component outline receives an 8%
-black fill while native paths remain unfilled. It retains the unified Setup,
-serialized component and connection management, verified Cursor plugin and
-dedicated redacted troubleshooting logs introduced in Beta 3.
+This fourth beta hardens and completes the Project visual glyph diff. It uses
+one identity-verified schema-3 reader, supports quadratic contours,
+decomposed components and open paths, and matches segments independently of
+contour order. Component references receive an appearance-aware 8% neutral
+fill while native paths remain unfilled. Holding Space shows a black silhouette
+in light mode and a white silhouette in dark mode. Per-layer warnings preserve
+usable previews, and fatal outline failures still fall back to Text.
+
+The app retains the unified Setup, serialized component and connection
+management, verified Cursor plugin and dedicated redacted troubleshooting logs
+introduced in Beta 3.
 
 The desktop requires macOS 14. Its payload is now Glyphs 4-only; Glyphs 3
 continues through the separate v1.11.0 release. The seven-tool MCP interface
 and bridge protocol are unchanged.
 
-Before publication, insert the tested macOS/Glyphs compatibility table,
-verified installation and rollback steps, actual known issues and checksums.
-Link to BETA.md for open downloads, optional enrollment and reports. Do not
-publish these notes with unresolved placeholders.
+Signed update acceptance passed on an Apple-silicon VirtualBuddy guest running
+macOS 26.6.2 and Glyphs 4.1 (4107): a notarized build-45 fixture discovered,
+downloaded, verified, installed and relaunched build 46, after which Update All
+migrated the components and Setup returned Ready. The previous Beta 3 app was
+retained as a timestamped backup. Physical Intel acceptance and the remaining
+manual scenario matrix are still open and are disclosed in BETA.md.
+
+Candidate SHA-256 values:
+
+```text
+09c12429a49339627a167de7e3df040f7f6ece6495fea299942bb4671d175715  Glyphs-MCP-2.0.0-beta.4.dmg
+0ef5b1eb17d3b0c67d9eb78ec0669ff91b0871629b6a7ace8f660dda8d50be35  Glyphs-MCP-2.0.0-beta.4.zip
+d5c33763a8d1439fc765d703c188e93117b81ade3a34287400cc78b6df9aa406  appcast.xml
+```
+
+See BETA.md for open downloads, optional enrollment, known limitations and
+the issue-report template.
 
 ## Beta 2 local preparation record — 16 September 2026
 
