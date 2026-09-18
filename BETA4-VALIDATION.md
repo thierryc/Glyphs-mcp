@@ -3,10 +3,12 @@
 Candidate: Glyphs MCP `2.0.0-beta.4`, desktop build 46, branch
 `lit/v2-beta`.
 
-Status: **signed and notarized release candidate; signed update acceptance
-complete; GitHub publication pending**. The source candidate begins at commit
-`45eb12cbba9c8c57b905c4d396577c3ba4f2425a`. Stable Latest remains separate
-from this prerelease.
+Status: **published signed and notarized GitHub prerelease; signed update
+acceptance complete**. The implementation begins at commit
+`45eb12cbba9c8c57b905c4d396577c3ba4f2425a`; signed tag
+`v2.0.0-beta.4` identifies qualification commit
+`c09f10a1d6aeb0edc1c3e6b374a04af336dd1fd8`. Stable Latest remains v1.11.1,
+separate from this prerelease.
 
 ## Source and visual-diff invariants
 
@@ -36,7 +38,7 @@ from this prerelease.
 | Complete Python suite | 1,954 passed, 2 skipped; 4 warnings |
 | Complete macOS/Xcode suite | Passed |
 | Deterministic Lean payloads | Passed for arm64 and x86_64 |
-| Private runtime startup | arm64 4.327 s; x86_64 9.888 s |
+| Private runtime startup | arm64 4.746 s; x86_64 9.936 s |
 | Documentation production build | Passed |
 | Unsigned app verification and release security | Passed |
 | `git diff --check` | Passed |
@@ -57,12 +59,12 @@ did not modify or save a user font.
   installed-copy identities and the packaged schema-3 reader contract.
 - [x] The signed Sparkle archive and appcast verify as Beta 4/build 46.
 
-Candidate SHA-256 values:
+Published SHA-256 values:
 
 ```text
 09c12429a49339627a167de7e3df040f7f6ece6495fea299942bb4671d175715  Glyphs-MCP-2.0.0-beta.4.dmg
-0ef5b1eb17d3b0c67d9eb78ec0669ff91b0871629b6a7ace8f660dda8d50be35  Glyphs-MCP-2.0.0-beta.4.zip
-d5c33763a8d1439fc765d703c188e93117b81ade3a34287400cc78b6df9aa406  appcast.xml
+37376b15aab286b4afb4210e59be943e0861dcbbc14260d6739fd7a9be937208  Glyphs-MCP-2.0.0-beta.4.zip
+9b6136fc113514fc642646e08b32f9227e151c674f28129101d79268cb682e5a  appcast.xml
 ```
 
 ## Signed update and component migration
@@ -92,6 +94,14 @@ Acceptance ran in VirtualBuddy on macOS 26.6.2 arm64 with Glyphs 4.1 (4107).
 
 Physical Intel acceptance and the broader fresh/partial/removal, ownership
 conflict, absent-agent and every-client reload matrix remain unverified. These
-are beta limitations, not inferred passes. GitHub asset availability, the raw
-branch appcast and non-Latest prerelease state must be verified after
-publication and recorded in a follow-up branch commit.
+are beta limitations, not inferred passes.
+
+## Publication verification
+
+- [x] The [Beta 4 GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.4)
+  is public, marked prerelease and contains the DMG, Sparkle ZIP, appcast and
+  checksum file.
+- [x] GitHub's asset digests match the exact locally verified published files.
+- [x] The exact signed appcast was committed to `lit/v2-beta` after archive
+  verification.
+- [x] GitHub's stable Latest release remains v1.11.1.

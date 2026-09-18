@@ -1,8 +1,7 @@
 # Glyphs MCP 2.0.0 Beta 4
 
-**Status: Beta 4 is a signed and notarized release candidate and is not yet
-published. Beta 3 remains the latest public beta; stable Latest remains
-v1.11.1.**
+**Status: Beta 4 is published as a signed and notarized GitHub prerelease.
+Stable Latest remains v1.11.1.**
 
 Beta 4 hardens the Project visual glyph diff around one verified schema-3
 reader and completes component, quadratic-curve and open-path rendering.
@@ -24,10 +23,12 @@ installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-There is no public Beta 4 download yet. Until its GitHub publication gate
-passes, use the signed and notarized
-[Beta 3 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3).
-It remains a prerelease rather than the repository's Latest release.
+Download the signed and notarized
+[Beta 4 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.4/Glyphs-MCP-2.0.0-beta.4.dmg)
+from the [Beta 4 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.4).
+Its SHA-256 is
+`09c12429a49339627a167de7e3df040f7f6ece6495fea299942bb4671d175715`.
+Beta 4 remains a prerelease rather than the repository's Latest release.
 
 ## First session
 
@@ -87,7 +88,7 @@ component reconciliation are also separate operations; a migration failure
 must leave the manager available to retry or continue with the previous
 installation.
 
-## Help test the candidate
+## Help test Beta 4
 
 The remaining manual matrix covers fresh, partial, update, removal, ownership
 conflict, running-Glyphs, absent-agent and reload-required scenarios on Apple
@@ -107,4 +108,5 @@ selected master even when that master is unchanged; choose a layer without the
 “unchanged” suffix to display the available geometry difference. Physical
 Intel acceptance and the complete packaged manual scenario matrix remain
 unverified. The signed application update and component migration passed in an
-Apple-silicon VirtualBuddy guest; public download discovery remains pending.
+Apple-silicon VirtualBuddy guest. The four public release assets, raw beta feed
+and non-Latest prerelease state were verified after publication.

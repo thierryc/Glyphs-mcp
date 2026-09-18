@@ -142,7 +142,7 @@ feedback update, known issues and what is planned for Beta 5. Thank testers
 publicly only with their permission. Avoid a fixed update cadence until the
 first feedback volume is known.
 
-## Draft GitHub release notes
+## Published GitHub release notes
 
 **Glyphs MCP 2.0.0 Beta 4 · build 46**
 
@@ -169,12 +169,12 @@ migrated the components and Setup returned Ready. The previous Beta 3 app was
 retained as a timestamped backup. Physical Intel acceptance and the remaining
 manual scenario matrix are still open and are disclosed in BETA.md.
 
-Candidate SHA-256 values:
+Published SHA-256 values:
 
 ```text
 09c12429a49339627a167de7e3df040f7f6ece6495fea299942bb4671d175715  Glyphs-MCP-2.0.0-beta.4.dmg
-0ef5b1eb17d3b0c67d9eb78ec0669ff91b0871629b6a7ace8f660dda8d50be35  Glyphs-MCP-2.0.0-beta.4.zip
-d5c33763a8d1439fc765d703c188e93117b81ade3a34287400cc78b6df9aa406  appcast.xml
+37376b15aab286b4afb4210e59be943e0861dcbbc14260d6739fd7a9be937208  Glyphs-MCP-2.0.0-beta.4.zip
+9b6136fc113514fc642646e08b32f9227e151c674f28129101d79268cb682e5a  appcast.xml
 ```
 
 See BETA.md for open downloads, optional enrollment, known limitations and
