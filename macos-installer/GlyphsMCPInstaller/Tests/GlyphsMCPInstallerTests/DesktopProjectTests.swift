@@ -229,7 +229,7 @@ final class DesktopProjectTests: XCTestCase {
         let oversized = try await value("large.txt")
         let link = try await value("link.txt")
         XCTAssertEqual(binary, .binary)
-        XCTAssertEqual(invalidText, .binary)
+        XCTAssertEqual(invalidText, .invalidUTF8)
         XCTAssertEqual(oversized, .oversized(GitFileComparison.maximumBytes + 1))
         XCTAssertEqual(link, .symbolicLink(outside.appendingPathComponent("secret").path))
 
@@ -249,6 +249,74 @@ final class DesktopProjectTests: XCTestCase {
         }
         do { _ = try await cancelled.value; XCTFail("A pre-cancelled comparison must stop") }
         catch is CancellationError { }
+    }
+
+    func testLargeTrackedFileUsesBoundedCombinedPatchPreview() async throws {
+        let reader = ReadOnlyGit()
+        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let project = try temporary(), runner = ProcessRunner()
+        func command(_ args: [String]) throws {
+            let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
+            guard result.exitCode == 0 else { throw ProjectError(result.stderr) }
+        }
+        let file = project.appendingPathComponent("fontinfo.plist")
+        let unchanged = String(repeating: "unchanged\n", count: 240_000)
+        try Data(("appVersion = 4.0;\n" + unchanged + "tail = before;\n").utf8).write(to: file)
+        try command(["init"])
+        try command(["add", "fontinfo.plist"])
+        try command(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture"])
+
+        try Data(("appVersion = 4.1;\n" + unchanged + "tail = before;\n").utf8).write(to: file)
+        try command(["add", "fontinfo.plist"])
+        try Data(("appVersion = 4.1;\n" + unchanged + "tail = working;\n").utf8).write(to: file)
+
+        let observed = try await reader.inspect(project)
+        let change = try XCTUnwrap(observed.changes.first(where: { $0.path == "fontinfo.plist" }))
+        let comparison = try await reader.comparison(project, change: change, headRevision: observed.headRevision)
+        guard case let .oversized(oldBytes) = comparison.oldContent,
+              case let .oversized(newBytes) = comparison.newContent else {
+            return XCTFail("Both full-file sides should remain subject to the 2 MiB limit")
+        }
+        XCTAssertGreaterThan(oldBytes, GitFileComparison.maximumBytes)
+        XCTAssertGreaterThan(newBytes, GitFileComparison.maximumBytes)
+        guard case let .patch(patch, oldSize, newSize) = comparison.textPreview else {
+            return XCTFail("Expected a bounded patch preview, got \(comparison.textPreview)")
+        }
+        XCTAssertEqual(oldSize, oldBytes)
+        XCTAssertEqual(newSize, newBytes)
+        XCTAssertLessThan(patch.utf8.count, GitFileComparison.maximumBytes)
+        XCTAssertTrue(patch.contains("-appVersion = 4.0;"), patch)
+        XCTAssertTrue(patch.contains("+appVersion = 4.1;"), patch)
+        XCTAssertTrue(patch.contains("-tail = before;"), patch)
+        XCTAssertTrue(patch.contains("+tail = working;"), patch)
+    }
+
+    func testOversizedLargeFilePatchStopsAtCaptureLimit() async throws {
+        let reader = ReadOnlyGit()
+        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let project = try temporary(), runner = ProcessRunner()
+        func command(_ args: [String]) throws {
+            let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
+            guard result.exitCode == 0 else { throw ProjectError(result.stderr) }
+        }
+        let file = project.appendingPathComponent("huge.txt")
+        try command(["init"])
+        try Data((String(repeating: "a", count: GitFileComparison.maximumBytes + 1) + "\n").utf8).write(to: file)
+        try command(["add", "huge.txt"])
+        try command(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture"])
+        try Data((String(repeating: "b", count: GitFileComparison.maximumBytes + 1) + "\n").utf8).write(to: file)
+
+        let observed = try await reader.inspect(project)
+        let change = try XCTUnwrap(observed.changes.first(where: { $0.path == "huge.txt" }))
+        let comparison = try await reader.comparison(project, change: change, headRevision: observed.headRevision)
+        guard case let .unavailable(reason, oldSize, newSize) = comparison.textPreview,
+              case let .oversizedPatch(limit, observedAtLeast) = reason else {
+            return XCTFail("Expected an oversized-patch explanation, got \(comparison.textPreview)")
+        }
+        XCTAssertEqual(limit, GitFileComparison.maximumBytes)
+        XCTAssertGreaterThan(observedAtLeast, limit)
+        XCTAssertGreaterThan(oldSize ?? 0, limit)
+        XCTAssertGreaterThan(newSize ?? 0, limit)
     }
 
     func testNoCommitRepositoryTreatsTrackedAndUntrackedFilesAsAdditions() async throws {
@@ -274,11 +342,18 @@ final class DesktopProjectTests: XCTestCase {
 
     func testGlyphDiffLayerPairingSelectsFirstChangedLayer() throws {
         let metrics = GlyphMetrics(ascender: 800, capHeight: 700, xHeight: 500, descender: -200)
-        func layer(_ id: String, _ label: String, _ width: Double) -> GlyphLayerSnapshot {
-            GlyphLayerSnapshot(id: id, label: label, isMaster: true, outline: [], openOutline: [], anchors: [:], width: width, metrics: metrics)
+        func layer(_ id: String, _ label: String, _ width: Double,
+                   componentOutlines: [[GlyphPathElement]]? = nil) -> GlyphLayerSnapshot {
+            GlyphLayerSnapshot(id: id, label: label, isMaster: true, outline: [], openOutline: [], anchors: [:],
+                               width: width, metrics: metrics, componentOutlines: componentOutlines)
         }
         let before = GlyphFontSnapshot(missingGlyph: false, glyphName: "A", layers: [layer("one", "Regular", 600), layer("two", "Bold", 700)])
-        let after = GlyphFontSnapshot(missingGlyph: false, glyphName: "A", layers: [layer("one", "Regular", 600), layer("two", "Bold", 710)])
+        let component = [[GlyphPathElement(kind: 0, points: [[10, 20]]),
+                          GlyphPathElement(kind: 1, points: [[30, 40]]),
+                          GlyphPathElement(kind: 3, points: [])]]
+        let after = GlyphFontSnapshot(missingGlyph: false, glyphName: "A", layers: [
+            layer("one", "Regular", 600), layer("two", "Bold", 710, componentOutlines: component)
+        ])
         let difference = GlyphLayerDifference(
             id: "two", label: "Bold", outlineChanged: false,
             referenceOutline: [], currentOutline: [], referenceSegments: [], currentSegments: [], anchors: [],
@@ -286,11 +361,12 @@ final class DesktopProjectTests: XCTestCase {
             regions: [.init(id: "difference-1", kind: .width, bounds: [676, -224, 58, 1048])],
             hasVisibleDifference: true
         )
-        let document = GlyphDiffDocument(schemaVersion: 2, before: before, after: after,
+        let document = GlyphDiffDocument(schemaVersion: 3, before: before, after: after,
                                          changedLayerIDs: ["two"], differences: [difference])
         XCTAssertEqual(document.layers.map(\.changed), [false, true])
         XCTAssertEqual(document.initialLayerID, "two")
         XCTAssertEqual(document.layers[1].difference, difference)
+        XCTAssertEqual(document.layers[1].after?.componentOutlines, component)
         XCTAssertEqual(try JSONDecoder().decode(GlyphDiffDocument.self, from: JSONEncoder().encode(document)), document)
     }
 
@@ -346,60 +422,144 @@ final class DesktopProjectTests: XCTestCase {
         }
     }
 
-    func testGlyphDiffRuntimePrefersVersionMatchedApplicationPayload() throws {
-        let root = try temporary()
-        let resources = root.appendingPathComponent("Resources", isDirectory: true)
-        let bundledLean = resources.appendingPathComponent("Payload/Lean", isDirectory: true)
-        let bundledCLI = bundledLean.appendingPathComponent("runtimes/test/bin/glyphs")
-        let bundledWorker = bundledLean.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
-        try FileManager.default.createDirectory(at: bundledCLI.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: bundledWorker.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: bundledCLI)
-        try Data().write(to: bundledWorker)
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: bundledCLI.path)
-
-        let home = root.appendingPathComponent("home", isDirectory: true)
-        let installedRoot = home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2", isDirectory: true)
-        let installedCLI = installedRoot.appendingPathComponent("runtime/bin/glyphs")
-        let installedWorker = installedRoot.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
-        try FileManager.default.createDirectory(at: installedCLI.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: installedWorker.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: installedCLI)
-        try Data().write(to: installedWorker)
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: installedCLI.path)
-
-        let resolved = try GlyphDiffRuntime.resolve(
-            installation: DesktopInstallation(home: home),
-            resourceURL: resources,
-            architecture: "test"
-        )
-        XCTAssertEqual(resolved.glyphsCLI, bundledCLI)
-        XCTAssertEqual(resolved.sidecar, bundledLean.appendingPathComponent("sidecar", isDirectory: true))
+    private func readerContract(schema: Int = 3) -> [String: Any] {
+        ["schemaVersion": schema, "protocolAPIVersion": 1,
+         "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker"]
     }
 
-    func testGlyphDiffRuntimeUsesExtractedSignedApplicationPayload() throws {
-        let root = try temporary()
-        let resources = root.appendingPathComponent("Resources", isDirectory: true)
-        let payload = root.appendingPathComponent("extracted/Payload", isDirectory: true)
-        let bundledLean = payload.appendingPathComponent("Lean", isDirectory: true)
-        let bundledCLI = bundledLean.appendingPathComponent("runtimes/test/bin/glyphs")
-        let bundledWorker = bundledLean.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
-        try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: bundledCLI.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: bundledWorker.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: bundledCLI)
-        try Data().write(to: bundledWorker)
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: bundledCLI.path)
+    private func makeBundledReader(at payload: URL, schema: Int = 3) throws -> GlyphDiffRuntime {
+        let lean = payload.appendingPathComponent("Lean", isDirectory: true)
+        let cli = lean.appendingPathComponent("runtimes/test/bin/glyphs")
+        let worker = lean.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
+        let geometry = lean.appendingPathComponent("sidecar/glyphs_mcp_protocol/geometry.py")
+        for file in [cli, worker, geometry] {
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            try Data("fixture".utf8).write(to: file)
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        let manifest: [String: Any] = [
+            "glyphDiffReader": readerContract(schema: schema),
+            "runtimes": ["test": ["path": "runtimes/test", "glyphsCLI": "bin/glyphs"]],
+        ]
+        try JSONSerialization.data(withJSONObject: manifest).write(
+            to: lean.appendingPathComponent("manifest.json")
+        )
+        return GlyphDiffRuntime(glyphsCLI: cli, sidecar: lean.appendingPathComponent("sidecar"))
+    }
 
+    private func makeInstalledReader(home: URL, schema: Int = 3) throws -> GlyphDiffRuntime {
+        let root = home.appendingPathComponent(
+            "Library/Application Support/Glyphs MCP/lean-v2", isDirectory: true
+        )
+        let cli = root.appendingPathComponent("runtime/bin/glyphs")
+        let worker = root.appendingPathComponent("sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py")
+        let geometry = root.appendingPathComponent("sidecar/glyphs_mcp_protocol/geometry.py")
+        for file in [cli, worker, geometry] {
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            try Data("fixture".utf8).write(to: file)
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        let sidecar = root.appendingPathComponent("sidecar", isDirectory: true)
+        let runtime = root.appendingPathComponent("runtime", isDirectory: true)
+        let receipt: [String: Any] = [
+            "components": ["mcp"],
+            "sidecar": [
+                "identity": try InstallerPayloadManifestResolver.treeIdentity(sidecar),
+                "glyphDiffReader": readerContract(schema: schema),
+            ],
+            "runtime": ["identity": try InstallerPayloadManifestResolver.treeIdentity(runtime)],
+        ]
+        try JSONSerialization.data(withJSONObject: receipt).write(
+            to: root.appendingPathComponent("installation.json")
+        )
+        return GlyphDiffRuntime(glyphsCLI: cli, sidecar: sidecar, source: .installed)
+    }
+
+    private func resolvedPayloadFixture(_ payload: URL) -> InstallerPayload {
+        InstallerPayload(payloadDir: payload, pluginBundle: payload,
+                         requirementsTxt: payload, skillsDir: nil)
+    }
+
+    func testGlyphDiffRuntimePrefersValidatedBundledPayload() throws {
+        let root = try temporary()
+        let payload = root.appendingPathComponent("Payload", isDirectory: true)
+        let expected = try makeBundledReader(at: payload)
         let home = root.appendingPathComponent("home", isDirectory: true)
+        _ = try makeInstalledReader(home: home)
+
         let resolved = try GlyphDiffRuntime.resolve(
             installation: DesktopInstallation(home: home),
-            resourceURL: resources,
-            extractedPayloadURL: payload,
+            validatedPayload: resolvedPayloadFixture(payload),
             architecture: "test"
         )
-        XCTAssertEqual(resolved.glyphsCLI, bundledCLI)
-        XCTAssertEqual(resolved.sidecar, bundledLean.appendingPathComponent("sidecar", isDirectory: true))
+
+        XCTAssertEqual(resolved.glyphsCLI, expected.glyphsCLI)
+        XCTAssertEqual(resolved.sidecar, expected.sidecar)
+        XCTAssertEqual(resolved.source, .bundled)
+        XCTAssertNil(resolved.notice)
+    }
+
+    func testGlyphDiffRuntimeUsesIdentityVerifiedInstalledFallback() throws {
+        let root = try temporary(), home = root.appendingPathComponent("home", isDirectory: true)
+        let expected = try makeInstalledReader(home: home)
+
+        let resolved = try GlyphDiffRuntime.resolve(
+            installation: DesktopInstallation(home: home), validatedPayload: nil,
+            bundledPayloadError: "fixture payload rejected", architecture: "test"
+        )
+
+        XCTAssertEqual(resolved.glyphsCLI, expected.glyphsCLI)
+        XCTAssertEqual(resolved.sidecar, expected.sidecar)
+        XCTAssertEqual(resolved.source, .installed)
+        XCTAssertNotNil(resolved.notice)
+    }
+
+    func testGlyphDiffRuntimeRejectsTamperedInstalledReader() throws {
+        let root = try temporary(), home = root.appendingPathComponent("home", isDirectory: true)
+        let installed = try makeInstalledReader(home: home)
+        try Data("tampered".utf8).write(
+            to: installed.sidecar.appendingPathComponent("glyphs_mcp_protocol/geometry.py")
+        )
+
+        XCTAssertThrowsError(try GlyphDiffRuntime.resolve(
+            installation: DesktopInstallation(home: home), validatedPayload: nil,
+            bundledPayloadError: "fixture payload rejected", architecture: "test"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("does not match its receipt"))
+        }
+    }
+
+    func testGlyphDiffRuntimeRejectsInstalledReaderSymlink() throws {
+        let root = try temporary(), home = root.appendingPathComponent("home", isDirectory: true)
+        let installed = try makeInstalledReader(home: home)
+        let linked = installed.sidecar.deletingLastPathComponent().appendingPathComponent("sidecar-real")
+        try FileManager.default.moveItem(at: installed.sidecar, to: linked)
+        try FileManager.default.createSymbolicLink(at: installed.sidecar, withDestinationURL: linked)
+
+        XCTAssertThrowsError(try GlyphDiffRuntime.resolve(
+            installation: DesktopInstallation(home: home), validatedPayload: nil,
+            bundledPayloadError: "fixture payload rejected", architecture: "test"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("symbolic link"))
+        }
+    }
+
+    func testGlyphDiffRuntimeRejectsWrongSchemaAndMissingReceipt() throws {
+        let root = try temporary()
+        let payload = root.appendingPathComponent("Payload", isDirectory: true)
+        _ = try makeBundledReader(at: payload, schema: 2)
+        let home = root.appendingPathComponent("home", isDirectory: true)
+
+        XCTAssertThrowsError(try GlyphDiffRuntime.resolve(
+            installation: DesktopInstallation(home: home),
+            validatedPayload: resolvedPayloadFixture(payload),
+            architecture: "test"
+        )) { error in
+            XCTAssertTrue(error.localizedDescription.contains("out of sync"))
+            XCTAssertTrue(error.localizedDescription.contains("receipt"))
+        }
     }
 
     func testGitChangeTreeBuildsHierarchyAndFiltersCurrentOrOriginalPath() throws {

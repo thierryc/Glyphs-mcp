@@ -1,38 +1,30 @@
-# Glyphs MCP 2.0.0 Beta 3
+# Glyphs MCP 2.0.0 Beta 4
 
-**Status: Beta 3 is published as a signed and notarized GitHub prerelease. The
-stable Latest release remains v1.11.1.**
+**Status: Beta 4 is a local candidate under qualification and is not yet
+published. Beta 3 remains the latest public beta; stable Latest remains
+v1.11.1.**
 
-Beta 3 unifies installation, server controls and agent connections in a single
-native **Setup** page for Glyphs 4. The source target is `2.0.0-beta.3`, desktop
-build 45, on `lit/v2-beta`. Local qualification evidence and the remaining
-manual matrix are recorded in [BETA3-VALIDATION.md](BETA3-VALIDATION.md).
+Beta 4 fills resolved component references with 8% black in the Project visual
+glyph diff so component geometry is distinct from native paths. It retains the
+single native **Setup** page for Glyphs 4. The source target is
+`2.0.0-beta.4`, desktop build 46, on `lit/v2-beta`. Beta 4 qualification is
+pending; the published Beta 3 evidence remains in
+[BETA3-VALIDATION.md](BETA3-VALIDATION.md).
 
-Glyphs 3 is not included in the Beta 3 desktop payload. Its separate v1.11.0
+Glyphs 3 is not included in the Beta 4 desktop payload. Its separate v1.11.0
 release, source metadata and documentation remain unchanged.
 
 ## Requirements and availability
 
-Beta 3 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 4 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-Download the signed and notarized
-[Beta 3 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.3/Glyphs-MCP-2.0.0-beta.3.dmg),
-or review the complete
-[Beta 3 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3),
-including the signed Sparkle update archive, appcast and `SHA256SUMS`. Beta 3 is
-deliberately not the repository's Latest release; stable v1.11.1 remains the
-default stable download.
-
-Published SHA-256 values:
-
-```text
-f3e7af3a8dd4262258689803bca17f4d9b0a5c823218198eb76f712150c15900  Glyphs-MCP-2.0.0-beta.3.dmg
-17a94148ffc5de3b24fa7d16b4342b52e7310763f8b46547974bd43cdc1b2950  Glyphs-MCP-2.0.0-beta.3.zip
-c82e535612f2e954ba4158aa1e99c1abbd2c4b2f87ed6bb1db4fb54e3548239e  appcast.xml
-```
+There is no Beta 4 download or checksum yet. Until Beta 4 passes its release
+gates, use the signed and notarized
+[Beta 3 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.3).
+It remains a prerelease rather than the repository's Latest release.
 
 ## First session
 
@@ -112,5 +104,5 @@ selected master even when that master is unchanged; choose a layer without the
 “unchanged” suffix to display the available geometry difference. Physical Intel
 acceptance, signed-update migration and the complete packaged manual scenario
 matrix remain unverified. Developer ID signatures, Apple notarization,
-stapling, Gatekeeper acceptance, DMG extraction, published asset identity and
-the signed Sparkle feed are verified for the released candidate.
+stapling, Gatekeeper acceptance, DMG extraction, asset identity and the signed
+Sparkle feed have not yet been verified for the Beta 4 candidate.

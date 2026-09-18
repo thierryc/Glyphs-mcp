@@ -62,6 +62,7 @@ public enum GitFileContent: Equatable, Sendable {
     case text(String)
     case missing
     case binary
+    case invalidUTF8
     case oversized(Int)
     case symbolicLink(String)
 
@@ -72,6 +73,22 @@ public enum GitFileContent: Equatable, Sendable {
     }
 }
 
+public enum GitTextPreviewUnavailableReason: Equatable, Sendable {
+    case oversizedPatch(limit: Int, observedAtLeast: Int)
+    case binary
+    case invalidUTF8
+    case symbolicLink
+    case noTextualChanges
+    case timeout
+    case git(String)
+}
+
+public enum GitTextPreview: Equatable, Sendable {
+    case full
+    case patch(String, oldSize: Int?, newSize: Int?)
+    case unavailable(GitTextPreviewUnavailableReason, oldSize: Int?, newSize: Int?)
+}
+
 public struct GitFileComparison: Equatable, Sendable {
     public static let maximumBytes = 2 * 1024 * 1024
     public let path: String
@@ -79,22 +96,37 @@ public struct GitFileComparison: Equatable, Sendable {
     public let kind: GitObservation.Change.Kind
     public let oldContent: GitFileContent
     public let newContent: GitFileContent
+    public let textPreview: GitTextPreview
 
     public init(
         path: String,
         originalPath: String?,
         kind: GitObservation.Change.Kind,
         oldContent: GitFileContent,
-        newContent: GitFileContent
+        newContent: GitFileContent,
+        textPreview: GitTextPreview? = nil
     ) {
         self.path = path
         self.originalPath = originalPath
         self.kind = kind
         self.oldContent = oldContent
         self.newContent = newContent
+        self.textPreview = textPreview ?? ((oldContent.text != nil && newContent.text != nil)
+            ? .full : .unavailable(.noTextualChanges, oldSize: oldContent.byteCount, newSize: newContent.byteCount))
     }
 
     public var isTextDiffAvailable: Bool { oldContent.text != nil && newContent.text != nil }
+}
+
+private extension GitFileContent {
+    var byteCount: Int? {
+        switch self {
+        case .text(let value): return value.utf8.count
+        case .missing: return 0
+        case .oversized(let size): return size
+        case .binary, .invalidUTF8, .symbolicLink: return nil
+        }
+    }
 }
 
 public struct GitChangeTreeNode: Equatable, Identifiable, Sendable {
@@ -258,10 +290,77 @@ public struct ReadOnlyGit {
         }
         let newContent = try workingContent(project, path: change.path)
         try Task.checkCancellation()
+        let preview = try await textPreview(
+            project, change: change, headRevision: headRevision,
+            oldContent: oldContent, newContent: newContent
+        )
         let value = GitFileComparison(path: change.path, originalPath: change.originalPath, kind: change.kind,
-                                      oldContent: oldContent, newContent: newContent)
+                                      oldContent: oldContent, newContent: newContent, textPreview: preview)
         await GitComparisonCache.shared.insert(value, for: key)
         return value
+    }
+
+    private func textPreview(
+        _ project: URL,
+        change: GitObservation.Change,
+        headRevision: String?,
+        oldContent: GitFileContent,
+        newContent: GitFileContent
+    ) async throws -> GitTextPreview {
+        let oldSize = oldContent.byteCount, newSize = newContent.byteCount
+        if oldContent.text != nil, newContent.text != nil { return .full }
+        let values = [oldContent, newContent]
+        if values.contains(where: { if case .symbolicLink = $0 { true } else { false } }) {
+            return .unavailable(.symbolicLink, oldSize: oldSize, newSize: newSize)
+        }
+        if values.contains(where: { if case .binary = $0 { true } else { false } }) {
+            return .unavailable(.binary, oldSize: oldSize, newSize: newSize)
+        }
+        if values.contains(where: { if case .invalidUTF8 = $0 { true } else { false } }) {
+            return .unavailable(.invalidUTF8, oldSize: oldSize, newSize: newSize)
+        }
+        guard values.contains(where: { if case .oversized = $0 { true } else { false } }) else {
+            return .unavailable(.noTextualChanges, oldSize: oldSize, newSize: newSize)
+        }
+        let arguments: [String]
+        if let headRevision, change.kind != .untracked {
+            var paths = [change.path]
+            if let originalPath = change.originalPath, originalPath != change.path { paths.insert(originalPath, at: 0) }
+            arguments = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--submodule=short",
+                         "--find-renames", "--unified=3", headRevision, "--"] + paths
+        } else {
+            arguments = ["diff", "--no-index", "--no-ext-diff", "--no-textconv", "--no-color",
+                         "--unified=3", "--", "/dev/null", change.path]
+        }
+        do {
+            let result = try await run(
+                project, arguments, allowFailure: change.kind == .untracked || headRevision == nil,
+                maximumStandardOutputBytes: GitFileComparison.maximumBytes
+            )
+            guard result.exitCode == 0 || result.exitCode == 1 else {
+                return .unavailable(.git(String(result.stderr.prefix(1000))), oldSize: oldSize, newSize: newSize)
+            }
+            guard !result.stdoutData.isEmpty else {
+                return .unavailable(.noTextualChanges, oldSize: oldSize, newSize: newSize)
+            }
+            guard !result.stdoutData.contains(0), let patch = String(data: result.stdoutData, encoding: .utf8) else {
+                return .unavailable(.invalidUTF8, oldSize: oldSize, newSize: newSize)
+            }
+            if patch.contains("Binary files ") && patch.contains(" differ") {
+                return .unavailable(.binary, oldSize: oldSize, newSize: newSize)
+            }
+            return .patch(patch, oldSize: oldSize, newSize: newSize)
+        } catch let error as ProcessOutputLimitError {
+            return .unavailable(
+                .oversizedPatch(limit: error.limit, observedAtLeast: error.observedAtLeast),
+                oldSize: oldSize, newSize: newSize
+            )
+        } catch {
+            if error.localizedDescription.localizedCaseInsensitiveContains("timed out") {
+                return .unavailable(.timeout, oldSize: oldSize, newSize: newSize)
+            }
+            return .unavailable(.git(error.localizedDescription), oldSize: oldSize, newSize: newSize)
+        }
     }
 
     /// Retained for callers that need the literal Git patch rather than the content comparison.
@@ -362,14 +461,16 @@ public struct ReadOnlyGit {
     }
 
     private func classify(_ data: Data) -> GitFileContent {
-        guard !data.contains(0), let text = String(data: data, encoding: .utf8) else { return .binary }
+        guard !data.contains(0) else { return .binary }
+        guard let text = String(data: data, encoding: .utf8) else { return .invalidUTF8 }
         return .text(text)
     }
 
     private func run(
         _ project: URL,
         _ arguments: [String],
-        allowFailure: Bool = false
+        allowFailure: Bool = false,
+        maximumStandardOutputBytes: Int? = nil
     ) async throws -> ProcessRunner.Result {
         guard let executable else { throw ProjectError("Git is unavailable. Project creation and templates remain available.") }
         let args = ["--no-optional-locks", "--no-pager", "--literal-pathspecs", "-c", "core.fsmonitor=false",
@@ -378,7 +479,8 @@ public struct ReadOnlyGit {
         let result = try await runner.runCapturing(executable: executable, args: args,
             environment: ["PATH": "/usr/bin:/bin", "HOME": FileManager.default.homeDirectoryForCurrentUser.path,
                           "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_OPTIONAL_LOCKS": "0",
-                          "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"], timeout: 10)
+                          "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"], timeout: 10,
+            maximumStandardOutputBytes: maximumStandardOutputBytes)
         guard result.exitCode == 0 || allowFailure else {
             if result.stderr.contains("not a git repository") { throw ProjectError("This folder isn’t a Git repository.") }
             throw ProjectError(String(result.stderr.prefix(1000)).trimmingCharacters(in: .whitespacesAndNewlines))

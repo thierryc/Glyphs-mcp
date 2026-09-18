@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-from .geometry import path_elements
+from .geometry import resolved_layer_elements
 from .sources import resolve_reference
 
 
@@ -31,9 +31,9 @@ def snapshot(payload):
         layer = glyph.layers[matches[0].id]
     if layer is None:
         raise ValueError("The reference has no matching layer")
-    outline = path_elements(layer.completeBezierPath)
+    outline, open_outline = resolved_layer_elements(layer, context="reference layer")
     return {**reference, "missingGlyph": False, "outline": outline,
-            "openOutline": path_elements(layer.completeOpenBezierPath), "width": float(layer.width),
+            "openOutline": open_outline, "width": float(layer.width),
             "anchors": {str(a.name): [float(a.position.x), float(a.position.y)] for a in layer.anchors}}
 
 

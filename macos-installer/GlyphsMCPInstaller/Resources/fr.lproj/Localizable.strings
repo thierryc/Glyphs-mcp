@@ -238,11 +238,11 @@
 "The updater directory contains unrecognized data and will be preserved." = "Le dossier de mise à jour contient des données non reconnues et sera conservé.";
 "Managed helper, authorization receipts, and staged update data." = "Assistant géré, reçus d’autorisation et données de mise à jour préparées.";
 
-/* Configuration unifiée de la bêta 3 */
+/* Configuration unifiée de la bêta 4 */
 "Setup" = "Configuration";
 "Install and manage Glyphs MCP from one place." = "Installez et gérez Glyphs MCP depuis un seul endroit.";
 "Glyphs components and agent connections" = "Composants Glyphs et connexions aux agents";
-"Install the bundled Beta-3 components, then configure every supported agent." = "Installez les composants inclus dans la bêta 3, puis configurez chaque agent pris en charge.";
+"Install the bundled Beta-4 components, then configure every supported agent." = "Installez les composants inclus dans la bêta 4, puis configurez chaque agent pris en charge.";
 "Components" = "Composants";
 "Connections" = "Connexions";
 "Install All" = "Tout installer";
@@ -254,6 +254,8 @@
 "Updating…" = "Mise à jour…";
 "Removing…" = "Suppression…";
 "Installed" = "Installé";
+"Development link" = "Lien de développement";
+"Install bundled version" = "Installer la version intégrée";
 "Failed" = "Échec";
 "Install" = "Installer";
 "Update" = "Mettre à jour";

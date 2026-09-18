@@ -13,7 +13,7 @@ from PyObjCTools import AppHelper
 
 from glyphs_mcp_companions import publish, withdraw, visible_layer, invalidate_view, wake_reporter
 from reference_core.client import ReferenceReader
-from reference_core.geometry import comparison, path_elements
+from reference_core.geometry import comparison, resolved_layer_elements
 from glyphs_reference_inspector import drawing, menus
 
 
@@ -203,8 +203,9 @@ class GlyphsReferenceInspector(ReporterPlugin):
                 raise ValueError("Save this font before choosing a reference")
             glyph = _value(layer, "parent")
             master = _value(layer, "master")
-            live = {"outline": path_elements(layer.completeBezierPath), "width": float(layer.width),
-                    "openOutline": path_elements(layer.completeOpenBezierPath),
+            outline, open_outline = resolved_layer_elements(layer, context="current layer")
+            live = {"outline": outline, "width": float(layer.width),
+                    "openOutline": open_outline,
                     "anchors": {str(a.name): [float(a.position.x), float(a.position.y)] for a in layer.anchors}}
             request = {"source": source, "reference": self._spec(), "epoch": self._epoch,
                        "refresh": self._epoch > 0, "glyph": str(glyph.name), "layer": str(layer.layerId),

@@ -49,6 +49,15 @@ def source_digest(root=ROOT):
     return digest.hexdigest()
 
 
+def validate_embedded_payload(app):
+    """Validate the exact unarchived payload that the desktop app will publish."""
+    payload = Path(app) / 'Contents/Resources/Payload'
+    if not payload.is_dir():
+        raise ValueError('Missing validated desktop installer payload')
+    from build_installer_payload import validate_payload
+    return validate_payload(payload)
+
+
 def verify(app, root=ROOT):
     app = Path(app)
     info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
@@ -63,6 +72,7 @@ def verify(app, root=ROOT):
     for name in ('GlyphsMCPInstallerCore', 'Sparkle'):
         if not (app / 'Contents/Frameworks' / (name + '.framework') / name).is_file():
             raise ValueError(f'Missing linked framework: {name}')
+    validate_embedded_payload(app)
     pierre_lock = json.loads((root / 'third_party/pierre-diffs-swift.json').read_text())
     pierre_bundle = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle'
     if not pierre_bundle.is_dir():

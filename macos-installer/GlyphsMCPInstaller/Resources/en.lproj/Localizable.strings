@@ -89,11 +89,11 @@
 "The updater directory contains unrecognized data and will be preserved." = "The updater directory contains unrecognized data and will be preserved.";
 "Managed helper, authorization receipts, and staged update data." = "Managed helper, authorization receipts, and staged update data.";
 
-/* Beta 3 unified Setup */
+/* Beta 4 unified Setup */
 "Setup" = "Setup";
 "Install and manage Glyphs MCP from one place." = "Install and manage Glyphs MCP from one place.";
 "Glyphs components and agent connections" = "Glyphs components and agent connections";
-"Install the bundled Beta-3 components, then configure every supported agent." = "Install the bundled Beta-3 components, then configure every supported agent.";
+"Install the bundled Beta-4 components, then configure every supported agent." = "Install the bundled Beta-4 components, then configure every supported agent.";
 "Components" = "Components";
 "Connections" = "Connections";
 "Install All" = "Install All";
@@ -105,6 +105,8 @@
 "Updating…" = "Updating…";
 "Removing…" = "Removing…";
 "Installed" = "Installed";
+"Development link" = "Development link";
+"Install bundled version" = "Install bundled version";
 "Failed" = "Failed";
 "Install" = "Install";
 "Update" = "Update";

@@ -238,11 +238,11 @@
 "The updater directory contains unrecognized data and will be preserved." = "更新助手目录包含无法识别的数据，将予以保留。";
 "Managed helper, authorization receipts, and staged update data." = "受管理的助手、授权收据和暂存更新数据。";
 
-/* Beta 3 统一设置 */
+/* Beta 4 统一设置 */
 "Setup" = "设置";
 "Install and manage Glyphs MCP from one place." = "在一个页面中安装和管理 Glyphs MCP。";
 "Glyphs components and agent connections" = "Glyphs 组件与智能体连接";
-"Install the bundled Beta-3 components, then configure every supported agent." = "先安装 Beta 3 随附组件，再配置所有受支持的智能体。";
+"Install the bundled Beta-4 components, then configure every supported agent." = "先安装 Beta 4 随附组件，再配置所有受支持的智能体。";
 "Components" = "组件";
 "Connections" = "连接";
 "Install All" = "全部安装";
@@ -254,6 +254,8 @@
 "Updating…" = "正在更新…";
 "Removing…" = "正在移除…";
 "Installed" = "已安装";
+"Development link" = "开发链接";
+"Install bundled version" = "安装内置版本";
 "Failed" = "失败";
 "Install" = "安装";
 "Update" = "更新";

@@ -43,7 +43,7 @@ struct InstallationView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Glyphs components and agent connections")
                     .font(.title3.weight(.semibold))
-                Text("Install the bundled Beta-3 components, then configure every supported agent.")
+                Text("Install the bundled Beta-4 components, then configure every supported agent.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
@@ -238,13 +238,14 @@ private struct SetupStatus: View {
         case .notInstalled: return "circle"
         case .queued: return "clock"
         case .active: return "arrow.triangle.2.circlepath"
-        case .installed: return "checkmark.circle.fill"
+        case .installed, .developmentLinked: return "checkmark.circle.fill"
         case .failed: return "exclamationmark.triangle.fill"
         }
     }
     private var color: Color {
         switch state {
         case .installed: return .green
+        case .developmentLinked: return .accentColor
         case .failed: return .red
         default: return .secondary
         }
@@ -266,6 +267,9 @@ private struct SetupCardActions: View {
                 Button("Install", action: install).buttonStyle(.borderedProminent).disabled(disabled)
             case .installed:
                 Button("Update", action: update).disabled(disabled)
+                Button("Remove", role: .destructive, action: remove).disabled(disabled)
+            case .developmentLinked:
+                Button("Install bundled version", action: update).disabled(disabled)
                 Button("Remove", role: .destructive, action: remove).disabled(disabled)
             case .failed:
                 Button("Retry", action: retry).buttonStyle(.borderedProminent).disabled(disabled)

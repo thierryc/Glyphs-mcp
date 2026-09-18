@@ -6,9 +6,17 @@ import json
 import sys
 from pathlib import Path
 
-from glyphs_mcp_protocol.geometry import comparison, path_elements
+from glyphs_mcp_protocol.geometry import (
+    GLYPH_DIFF_PROTOCOL_API_VERSION,
+    GLYPH_DIFF_SCHEMA_VERSION,
+    comparison,
+    component_path_elements,
+    resolved_closed_layer_elements,
+    resolved_open_layer_elements,
+)
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = GLYPH_DIFF_SCHEMA_VERSION
+PROTOCOL_API_VERSION = GLYPH_DIFF_PROTOCOL_API_VERSION
 
 
 def _value(obj, name, default=None):
@@ -19,8 +27,36 @@ def _value(obj, name, default=None):
         return default
 
 
-def _path_elements(path):
-    return [{"kind": kind, "points": points} for kind, points in path_elements(path)]
+def _elements(values):
+    return [{"kind": kind, "points": points} for kind, points in values]
+
+
+def _component_outlines(layer):
+    """Return each referenced component as its own transformed closed outline."""
+    components = []
+    shapes = _value(layer, "shapes", None)
+    if shapes is not None:
+        try:
+            components = [shape for shape in shapes if _value(shape, "componentName")]
+        except Exception:
+            components = []
+    if not components:
+        components = _value(layer, "components", []) or []
+    try:
+        components = list(components)
+    except Exception:
+        return [], [{"scope": "components", "message": "Component geometry is unavailable."}]
+    outlines, warnings = [], []
+    for index, component in enumerate(components):
+        name = str(_value(component, "componentName", "") or index)
+        try:
+            values = component_path_elements(component, context="component {!r}".format(name))
+        except ValueError as error:
+            warnings.append({"scope": "component", "message": str(error)})
+            continue
+        if values:
+            outlines.append(_elements(values))
+    return outlines, warnings
 
 
 def _glyph_name(path):
@@ -60,14 +96,28 @@ def _layer(layer):
     anchors = {}
     for anchor in layer.anchors:
         anchors[str(anchor.name)] = [float(anchor.position.x), float(anchor.position.y)]
-    outline = _path_elements(layer.completeBezierPath)
-    open_outline = _path_elements(layer.completeOpenBezierPath)
+    context = "layer {!r}".format(label)
+    outline_values = resolved_closed_layer_elements(layer, context=context)
+    warnings = []
+    try:
+        open_values = resolved_open_layer_elements(layer, context=context)
+    except ValueError as error:
+        open_values = []
+        warnings.append({"scope": "openPaths", "message": str(error)})
+    outline = _elements(outline_values)
+    open_outline = _elements(open_values)
+    component_outlines, component_warnings = _component_outlines(layer)
+    warnings.extend(component_warnings)
     bounds = _value(layer, "bounds")
     try:
         serialized_bounds = [float(bounds.origin.x), float(bounds.origin.y),
                              float(bounds.size.width), float(bounds.size.height)]
     except Exception:
-        points = [point for element in outline + open_outline for point in element["points"]]
+        points = [
+            point
+            for element in outline + open_outline + [item for path in component_outlines for item in path]
+            for point in element["points"]
+        ]
         if points:
             xs, ys = [point[0] for point in points], [point[1] for point in points]
             serialized_bounds = [min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)]
@@ -79,6 +129,8 @@ def _layer(layer):
         "isMaster": is_master,
         "outline": outline,
         "openOutline": open_outline,
+        "componentOutlines": component_outlines,
+        "warnings": warnings,
         "anchors": anchors,
         "width": float(layer.width),
         "metrics": metrics,
@@ -99,7 +151,7 @@ def _snapshot(package_path, glyph_file):
     return {"missingGlyph": False, "glyphName": name, "layers": [_layer(layer) for layer in glyph.layers]}
 
 
-def _elements(values):
+def _difference_elements(values):
     return [{"kind": int(value[0]), "points": value[1]} for value in values]
 
 
@@ -110,10 +162,10 @@ def _difference(layer_id, label, before, after):
         "id": layer_id,
         "label": label,
         "outlineChanged": plan["outlineChanged"],
-        "referenceOutline": _elements(plan["referenceOutline"]),
-        "currentOutline": _elements(plan["currentOutline"]),
-        "referenceSegments": _elements(plan["referenceSegments"]),
-        "currentSegments": _elements(plan["currentSegments"]),
+        "referenceOutline": _difference_elements(plan["referenceOutline"]),
+        "currentOutline": _difference_elements(plan["currentOutline"]),
+        "referenceSegments": _difference_elements(plan["referenceSegments"]),
+        "currentSegments": _difference_elements(plan["currentSegments"]),
         "anchors": plan["anchors"],
         "width": plan["width"],
         "metricRange": plan["metricRange"],
@@ -139,6 +191,7 @@ def run(payload):
     changed = [value["id"] for value in differences if value["hasVisibleDifference"]]
     return {
         "schemaVersion": SCHEMA_VERSION,
+        "protocolAPIVersion": PROTOCOL_API_VERSION,
         "before": before,
         "after": after,
         "changedLayerIDs": changed,
@@ -152,7 +205,11 @@ def main():
     try:
         result = {"ok": True, "data": run(payload)}
     except Exception as error:
-        result = {"ok": False, "error": str(error) or type(error).__name__}
+        detail = str(error) or type(error).__name__
+        result = {"ok": False, "error": (
+            "Visual preview failed while reading Glyphs geometry ({}): {}. "
+            "The Text diff remains available."
+        ).format(type(error).__name__, detail)}
     Path(payload["output"]).write_text(json.dumps(result, separators=(",", ":")), encoding="utf-8")
 
 

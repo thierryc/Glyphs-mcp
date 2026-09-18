@@ -10,6 +10,42 @@ public struct GlyphPathElement: Codable, Equatable, Sendable {
     }
 }
 
+public struct GlyphDiffReaderContract: Codable, Equatable, Sendable {
+    public let schemaVersion: Int
+    public let protocolAPIVersion: Int
+    public let workerModule: String
+
+    public static let expected = GlyphDiffReaderContract(
+        schemaVersion: 3,
+        protocolAPIVersion: 1,
+        workerModule: "glyphs_mcp_sidecar.glyph_diff_worker"
+    )
+
+    public init(schemaVersion: Int, protocolAPIVersion: Int, workerModule: String) {
+        self.schemaVersion = schemaVersion
+        self.protocolAPIVersion = protocolAPIVersion
+        self.workerModule = workerModule
+    }
+
+    init?(dictionary: [String: Any]) {
+        guard let schemaVersion = dictionary["schemaVersion"] as? Int,
+              let protocolAPIVersion = dictionary["protocolAPIVersion"] as? Int,
+              let workerModule = dictionary["workerModule"] as? String else { return nil }
+        self.init(schemaVersion: schemaVersion, protocolAPIVersion: protocolAPIVersion,
+                  workerModule: workerModule)
+    }
+}
+
+public struct GlyphGeometryWarning: Codable, Equatable, Sendable {
+    public let scope: String
+    public let message: String
+
+    public init(scope: String, message: String) {
+        self.scope = scope
+        self.message = message
+    }
+}
+
 public struct GlyphMetrics: Codable, Equatable, Sendable {
     public let ascender: Double
     public let capHeight: Double
@@ -30,6 +66,8 @@ public struct GlyphLayerSnapshot: Codable, Equatable, Identifiable, Sendable {
     public let isMaster: Bool
     public let outline: [GlyphPathElement]
     public let openOutline: [GlyphPathElement]
+    public let componentOutlines: [[GlyphPathElement]]?
+    public let warnings: [GlyphGeometryWarning]?
     public let anchors: [String: [Double]]
     public let width: Double
     public let metrics: GlyphMetrics
@@ -44,13 +82,17 @@ public struct GlyphLayerSnapshot: Codable, Equatable, Identifiable, Sendable {
         anchors: [String: [Double]],
         width: Double,
         metrics: GlyphMetrics,
-        bounds: [Double]? = nil
+        bounds: [Double]? = nil,
+        componentOutlines: [[GlyphPathElement]]? = nil,
+        warnings: [GlyphGeometryWarning]? = nil
     ) {
         self.id = id
         self.label = label
         self.isMaster = isMaster
         self.outline = outline
         self.openOutline = openOutline
+        self.componentOutlines = componentOutlines
+        self.warnings = warnings
         self.anchors = anchors
         self.width = width
         self.metrics = metrics
@@ -154,23 +196,29 @@ public struct GlyphLayerPair: Equatable, Identifiable, Sendable {
 
 public struct GlyphDiffDocument: Codable, Equatable, Sendable {
     public let schemaVersion: Int
+    public let protocolAPIVersion: Int
     public let before: GlyphFontSnapshot
     public let after: GlyphFontSnapshot
     public let changedLayerIDs: [String]
     public let differences: [GlyphLayerDifference]
+    public let notices: [String]?
 
     public init(
         schemaVersion: Int,
+        protocolAPIVersion: Int = 1,
         before: GlyphFontSnapshot,
         after: GlyphFontSnapshot,
         changedLayerIDs: [String] = [],
-        differences: [GlyphLayerDifference] = []
+        differences: [GlyphLayerDifference] = [],
+        notices: [String]? = nil
     ) {
         self.schemaVersion = schemaVersion
+        self.protocolAPIVersion = protocolAPIVersion
         self.before = before
         self.after = after
         self.changedLayerIDs = changedLayerIDs
         self.differences = differences
+        self.notices = notices
     }
 
     public var layers: [GlyphLayerPair] {
@@ -195,6 +243,14 @@ public struct GlyphDiffDocument: Codable, Equatable, Sendable {
         changedLayerIDs.first(where: { changed in layers.contains(where: { $0.id == changed }) })
             ?? layers.first(where: \.changed)?.id
             ?? layers.first?.id
+    }
+
+    public func addingNotice(_ notice: String?) -> GlyphDiffDocument {
+        guard let notice, !notice.isEmpty else { return self }
+        return GlyphDiffDocument(schemaVersion: schemaVersion, protocolAPIVersion: protocolAPIVersion,
+                                 before: before, after: after,
+                                 changedLayerIDs: changedLayerIDs, differences: differences,
+                                 notices: (notices ?? []) + [notice])
     }
 }
 
@@ -283,12 +339,24 @@ public enum GlyphViewportMath {
 }
 
 public struct GlyphDiffRuntime: Equatable, Sendable {
+    public enum Source: String, Equatable, Sendable { case bundled, installed }
+
     public let glyphsCLI: URL
     public let sidecar: URL
+    public let source: Source
+    public let notice: String?
 
-    public init(glyphsCLI: URL, sidecar: URL) {
+    public init(glyphsCLI: URL, sidecar: URL, source: Source = .bundled, notice: String? = nil) {
         self.glyphsCLI = glyphsCLI
         self.sidecar = sidecar
+        self.source = source
+        self.notice = notice
+    }
+
+    private struct LeanManifest: Decodable {
+        struct Runtime: Decodable { let path: String; let glyphsCLI: String }
+        let glyphDiffReader: GlyphDiffReaderContract
+        let runtimes: [String: Runtime]
     }
 
     public static var processArchitecture: String {
@@ -301,46 +369,105 @@ public struct GlyphDiffRuntime: Equatable, Sendable {
         #endif
     }
 
-    /// Prefer the app's version-matched payload. An existing installation is
-    /// retained as a fallback for development builds that do not embed it.
+    /// Prefer the already-validated app payload. The installed fallback must
+    /// match its immutable receipt and the exact reader contract.
     public static func resolve(
         installation: DesktopInstallation = DesktopInstallation(),
-        resourceURL: URL? = Bundle.main.resourceURL,
-        extractedPayloadURL: URL? = nil,
+        validatedPayload: InstallerPayload?,
+        bundledPayloadError: String? = nil,
         architecture: String = processArchitecture,
         fileManager: FileManager = .default
     ) throws -> GlyphDiffRuntime {
-        var candidates: [GlyphDiffRuntime] = []
-        if let resourceURL {
-            let lean = resourceURL.appendingPathComponent("Payload/Lean", isDirectory: true)
-            candidates.append(.init(
-                glyphsCLI: lean.appendingPathComponent("runtimes/\(architecture)/bin/glyphs"),
-                sidecar: lean.appendingPathComponent("sidecar", isDirectory: true)
-            ))
+        var failures: [String] = []
+        if let validatedPayload {
+            do { return try bundled(payload: validatedPayload.payloadDir, architecture: architecture, fileManager: fileManager) }
+            catch { failures.append("Bundled reader: \(error.localizedDescription)") }
         }
-        if let extractedPayloadURL {
-            let lean = extractedPayloadURL.appendingPathComponent("Lean", isDirectory: true)
-            candidates.append(.init(
-                glyphsCLI: lean.appendingPathComponent("runtimes/\(architecture)/bin/glyphs"),
-                sidecar: lean.appendingPathComponent("sidecar", isDirectory: true)
-            ))
-        }
-        candidates.append(.init(
-            glyphsCLI: installation.root.appendingPathComponent("runtime/bin/glyphs"),
-            sidecar: installation.root.appendingPathComponent("sidecar", isDirectory: true)
-        ))
-        if let runtime = candidates.first(where: {
-            fileManager.isExecutableFile(atPath: $0.glyphsCLI.path)
-                && fileManager.isReadableFile(atPath: $0.sidecar.appendingPathComponent(
-                    "glyphs_mcp_sidecar/glyph_diff_worker.py"
-                ).path)
-        }) {
-            return runtime
+        if let bundledPayloadError { failures.append("Bundled payload: \(bundledPayloadError)") }
+        do {
+            return try installed(installation: installation, fileManager: fileManager)
+        } catch {
+            failures.append("Installed reader: \(error.localizedDescription)")
         }
         throw ProjectError(
-            "Install or update the Glyphs MCP component to enable visual glyph diffs. " +
-            "The text diff remains available."
+            "Visual preview components are out of sync. Rebuild or update Glyphs MCP. " +
+            "The text diff remains available. " + failures.joined(separator: " ")
         )
+    }
+
+    private static func bundled(
+        payload: URL,
+        architecture: String,
+        fileManager: FileManager
+    ) throws -> GlyphDiffRuntime {
+        let lean = payload.appendingPathComponent("Lean", isDirectory: true)
+        let manifest = try JSONDecoder().decode(
+            LeanManifest.self,
+            from: Data(contentsOf: lean.appendingPathComponent("manifest.json"))
+        )
+        guard manifest.glyphDiffReader == .expected,
+              let runtime = manifest.runtimes[architecture],
+              runtime.path == "runtimes/\(architecture)", runtime.glyphsCLI == "bin/glyphs" else {
+            throw ProjectError("The reader contract or architecture is unsupported.")
+        }
+        let candidate = GlyphDiffRuntime(
+            glyphsCLI: lean.appendingPathComponent(runtime.path).appendingPathComponent(runtime.glyphsCLI),
+            sidecar: lean.appendingPathComponent("sidecar", isDirectory: true),
+            source: .bundled
+        )
+        try validateFiles(candidate, fileManager: fileManager)
+        return candidate
+    }
+
+    private static func installed(
+        installation: DesktopInstallation,
+        fileManager: FileManager
+    ) throws -> GlyphDiffRuntime {
+        guard installation.glyphDiffReader == .expected,
+              let sidecarIdentity = installation.expectedSidecarIdentity,
+              let runtimeIdentity = installation.expectedRuntimeIdentity else {
+            throw ProjectError("The installation receipt has no compatible reader contract.")
+        }
+        let sidecar = installation.root.appendingPathComponent("sidecar", isDirectory: true)
+        let runtime = installation.root.appendingPathComponent("runtime", isDirectory: true)
+        try rejectSymbolicLink(installation.root, fileManager: fileManager)
+        try rejectSymbolicLink(sidecar, fileManager: fileManager)
+        try rejectSymbolicLink(runtime, fileManager: fileManager)
+        guard try InstallerPayloadManifestResolver.treeIdentity(sidecar) == sidecarIdentity,
+              try InstallerPayloadManifestResolver.treeIdentity(runtime) == runtimeIdentity else {
+            throw ProjectError("The installed sidecar or runtime does not match its receipt.")
+        }
+        let candidate = GlyphDiffRuntime(
+            glyphsCLI: runtime.appendingPathComponent("bin/glyphs"),
+            sidecar: sidecar,
+            source: .installed,
+            notice: "Using the verified installed visual reader because the bundled reader was unavailable."
+        )
+        try validateFiles(candidate, fileManager: fileManager)
+        return candidate
+    }
+
+    private static func rejectSymbolicLink(_ url: URL, fileManager: FileManager) throws {
+        let attributes = try fileManager.attributesOfItem(atPath: url.path)
+        guard attributes[.type] as? FileAttributeType != .typeSymbolicLink else {
+            throw ProjectError("The visual reader path contains a symbolic link.")
+        }
+    }
+
+    private static func validateFiles(_ runtime: GlyphDiffRuntime, fileManager: FileManager) throws {
+        let required = [
+            runtime.sidecar.appendingPathComponent("glyphs_mcp_sidecar/glyph_diff_worker.py"),
+            runtime.sidecar.appendingPathComponent("glyphs_mcp_protocol/geometry.py"),
+        ]
+        guard fileManager.isExecutableFile(atPath: runtime.glyphsCLI.path) else {
+            throw ProjectError("The Glyphs command-line runtime is unavailable.")
+        }
+        for file in required {
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isRegularFile == true, values.isSymbolicLink != true else {
+                throw ProjectError("The visual reader contains a missing or unsafe module.")
+            }
+        }
     }
 }
 
@@ -376,8 +503,20 @@ public struct GlyphDiffService {
         let afterLocation = try location(change.path)
         let beforeLocation = try location(change.originalPath ?? change.path)
         let runtime = try await ProjectFiles.perform {
-            let payload = try? InstallerPayload.resolve()
-            return try GlyphDiffRuntime.resolve(extractedPayloadURL: payload?.payloadDir)
+            let payload: InstallerPayload?
+            let payloadError: String?
+            do {
+                payload = try InstallerPayload.resolve()
+                payloadError = nil
+            } catch {
+                payload = nil
+                payloadError = error.localizedDescription
+            }
+            return try GlyphDiffRuntime.resolve(
+                installation: DesktopInstallation(),
+                validatedPayload: payload,
+                bundledPayloadError: payloadError
+            )
         }
         let installation = DesktopInstallation()
         var applications = GlyphsApplicationDetector.detect()
@@ -442,10 +581,12 @@ public struct GlyphDiffService {
                 ?? "The Glyphs geometry reader could not start.")
         }
         let response = try JSONDecoder().decode(WorkerResponse.self, from: Data(contentsOf: output))
-        guard response.ok, let document = response.data, document.schemaVersion == 2 else {
+        guard response.ok, let document = response.data,
+              document.schemaVersion == GlyphDiffReaderContract.expected.schemaVersion,
+              document.protocolAPIVersion == GlyphDiffReaderContract.expected.protocolAPIVersion else {
             throw ProjectError(response.error ?? "The Glyphs geometry reader returned an unsupported result.")
         }
-        return document
+        return document.addingNotice(runtime.notice)
     }
 
     public static func validateMaterializedPackage(_ package: URL) throws {

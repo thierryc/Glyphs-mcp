@@ -9,6 +9,9 @@ import importlib.util
 import json
 import plistlib
 import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 
@@ -20,6 +23,11 @@ BUNDLE = BRIDGE / "bundle" / "Glyphs MCP Bridge.glyphsPlugin"
 COMPANIONS = REPO / "src" / "companions"
 COMPANION_SDK = COMPANIONS / "sdk" / "glyphs_mcp_companions.py"
 CURVE = COMPANIONS / "curve-inspector"
+GLYPH_DIFF_READER_CONTRACT = {
+    "schemaVersion": 3,
+    "protocolAPIVersion": 1,
+    "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker",
+}
 
 
 def _ignore(_directory: str, names: list[str]) -> set[str]:
@@ -53,6 +61,61 @@ def _fingerprint_helper():
     return module
 
 
+def _geometry_contract():
+    spec = importlib.util.spec_from_file_location("glyph_diff_geometry_contract", PROTOCOL / "geometry.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    observed = {
+        "schemaVersion": module.GLYPH_DIFF_SCHEMA_VERSION,
+        "protocolAPIVersion": module.GLYPH_DIFF_PROTOCOL_API_VERSION,
+        "workerModule": module.GLYPH_DIFF_WORKER_MODULE,
+    }
+    if observed != GLYPH_DIFF_READER_CONTRACT:
+        raise ValueError("Source glyph diff reader contract must remain schema 3 / protocol API 1")
+    return dict(GLYPH_DIFF_READER_CONTRACT)
+
+
+def _smoke_test_glyph_diff_reader(sidecar: Path, contract: dict) -> None:
+    script = """
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(root))
+import glyphs_mcp_protocol.geometry as geometry
+import glyphs_mcp_sidecar.glyph_diff_worker as worker
+for module in (geometry, worker):
+    pathlib.Path(module.__file__).resolve().relative_to(root)
+print(json.dumps({"schemaVersion": worker.SCHEMA_VERSION,
+                  "protocolAPIVersion": worker.PROTOCOL_API_VERSION,
+                  "workerModule": worker.__name__}, sort_keys=True))
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-B", "-c", script, str(sidecar)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode:
+        raise ValueError("Glyph diff reader import failed: " + (result.stderr.strip() or "unknown error"))
+    try:
+        observed = json.loads(result.stdout)
+    except (TypeError, json.JSONDecodeError) as error:
+        raise ValueError("Glyph diff reader returned an invalid contract") from error
+    if observed != contract:
+        raise ValueError("Glyph diff reader contract mismatch")
+
+
+def validate_glyph_diff_contract(lean: Path) -> dict:
+    lean = Path(lean).resolve()
+    manifest = json.loads((lean / "manifest.json").read_text(encoding="utf-8"))
+    expected = _geometry_contract()
+    if manifest.get("glyphDiffReader") != expected:
+        raise ValueError("Lean glyph diff reader contract mismatch")
+    if manifest.get("sidecar", {}).get("glyphDiffReader") != expected:
+        raise ValueError("Sidecar glyph diff reader contract mismatch")
+    _smoke_test_glyph_diff_reader(lean / "sidecar", expected)
+    return expected
+
+
 def _set_version(bundle, version):
     path = bundle / "Contents/Info.plist"
     data = plistlib.loads(path.read_bytes())
@@ -60,13 +123,48 @@ def _set_version(bundle, version):
     path.write_bytes(plistlib.dumps(data, sort_keys=True))
 
 
-def build(output: Path, *, runtime_root: Path | None = None) -> dict:
+def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = True) -> dict:
     # The packaged installer imports only _identity; release configuration is build-time only.
     from desktop_release_identity import load as release_identity
+    output = output.resolve()
+    if _publish:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        development_receipt = None
+        receipt_path = output / "installation.dev.json"
+        if receipt_path.is_file():
+            candidate = json.loads(receipt_path.read_text(encoding="utf-8"))
+            if candidate.get("mode") == "development-links":
+                development_receipt = candidate
+        stage_root = Path(tempfile.mkdtemp(prefix="." + output.name + ".", dir=output.parent))
+        staged = stage_root / "next"
+        previous = stage_root / "previous"
+        try:
+            manifest = build(staged, runtime_root=runtime_root, _publish=False)
+            if development_receipt is not None:
+                development_receipt.update(
+                    schemaVersion=2,
+                    version=manifest["projectVersion"],
+                    build=str(output),
+                )
+                (staged / "installation.dev.json").write_text(
+                    json.dumps(development_receipt, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+            if output.exists():
+                output.rename(previous)
+            try:
+                staged.rename(output)
+            except BaseException:
+                if previous.exists() and not output.exists():
+                    previous.rename(output)
+                raise
+            return manifest
+        finally:
+            shutil.rmtree(stage_root, ignore_errors=True)
+
     release = release_identity(REPO)
     fingerprints = _fingerprint_helper()
     metadata = {key: release[key] for key in fingerprints.RELEASE_FIELDS}
-    output = output.resolve()
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
@@ -126,6 +224,7 @@ def build(output: Path, *, runtime_root: Path | None = None) -> dict:
     ):
         release_file.write_text(
             json.dumps(metadata, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    glyph_diff_reader = _geometry_contract()
     manifest = {
         "schemaVersion": 2,
         "projectVersion": project_version,
@@ -146,8 +245,10 @@ def build(output: Path, *, runtime_root: Path | None = None) -> dict:
         ],
         "bridge": {"bundle": BUNDLE.name, "identity": _identity(bundle),
                    "codeHash": fingerprints.payload_hash(bundle), "release": metadata},
+        "glyphDiffReader": glyph_diff_reader,
         "sidecar": {"identity": _identity(sidecar),
-                    "codeHash": fingerprints.payload_hash(sidecar), "release": metadata},
+                    "codeHash": fingerprints.payload_hash(sidecar), "release": metadata,
+                    "glyphDiffReader": glyph_diff_reader},
         "companions": companion_values,
     }
     if runtime_root is not None:
@@ -171,6 +272,7 @@ def build(output: Path, *, runtime_root: Path | None = None) -> dict:
         json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
         encoding="utf-8",
     )
+    validate_glyph_diff_contract(output)
     return manifest
 
 

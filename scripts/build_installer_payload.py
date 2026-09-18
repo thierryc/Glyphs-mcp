@@ -7,6 +7,7 @@ import argparse
 import json
 import plistlib
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -87,7 +88,7 @@ def _safe_payload_path(root: Path, relative: Any, expected: str) -> Path:
 
 
 def validate_payload(payload_root: Path, *, release_version: str | None = None) -> dict:
-    from build_simple_v2 import _identity
+    from build_simple_v2 import _identity, validate_glyph_diff_contract
     root = Path(payload_root).resolve()
     manifest = json.loads((root / "payload.json").read_text())
     if manifest.get("schemaVersion") != 4 or set(manifest.get("targets", {})) != {"4"}:
@@ -99,7 +100,7 @@ def validate_payload(payload_root: Path, *, release_version: str | None = None) 
             raise ValueError("Payload identity mismatch: " + name)
     target = manifest["targets"]["4"]
     if "baseline" in target:
-        raise ValueError("Glyphs 3 baseline metadata is not allowed in the Beta-3 payload")
+        raise ValueError("Glyphs 3 baseline metadata is not allowed in the Beta-4 payload")
     path = _safe_payload_path(root, target["pluginPath"], "Lean/Glyphs MCP Bridge.glyphsPlugin")
     info = plistlib.loads((path / "Contents/Info.plist").read_bytes())
     if info["CFBundleShortVersionString"] != manifest["version"] or target["pluginVersion"] != manifest["version"]:
@@ -112,13 +113,38 @@ def validate_payload(payload_root: Path, *, release_version: str | None = None) 
     if cursor_manifest.get("name") != "glyphs-mcp" or cursor_manifest.get("version") != manifest["version"]:
         raise ValueError("Cursor plugin metadata mismatch")
     if (root / "skills-v1").exists() or (root / "Plugins/Glyphs3").exists():
-        raise ValueError("Glyphs 3 content is not allowed in the Beta-3 payload")
+        raise ValueError("Glyphs 3 content is not allowed in the Beta-4 payload")
+    validate_glyph_diff_contract(root / "Lean")
     return manifest
 
 
-def build_payload(output_root=DEFAULT_OUTPUT_ROOT, *, allow_outside_worktree=False, runtime_root=None):
+def build_payload(output_root=DEFAULT_OUTPUT_ROOT, *, allow_outside_worktree=False, runtime_root=None,
+                  _publish=True):
     from build_simple_v2 import build, _identity
     output = _assert_output(Path(output_root), allow_outside_worktree)
+    if _publish:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        stage_root = Path(tempfile.mkdtemp(prefix="." + output.name + ".", dir=output.parent))
+        staged = stage_root / "next"
+        previous = stage_root / "previous"
+        try:
+            manifest = build_payload(
+                staged,
+                allow_outside_worktree=True,
+                runtime_root=runtime_root,
+                _publish=False,
+            )
+            if output.exists():
+                output.rename(previous)
+            try:
+                staged.rename(output)
+            except BaseException:
+                if previous.exists() and not output.exists():
+                    previous.rename(output)
+                raise
+            return manifest
+        finally:
+            shutil.rmtree(stage_root, ignore_errors=True)
     if output.exists(): shutil.rmtree(output)
     output.mkdir(parents=True)
     shutil.copy2(REQUIREMENTS, output / "requirements.txt")

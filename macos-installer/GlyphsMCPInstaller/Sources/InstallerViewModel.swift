@@ -83,12 +83,22 @@ final class InstallerViewModel: ObservableObject {
         let installation = DesktopInstallation()
         installed = installation.components
         let receipt = root.appendingPathComponent("installation.json")
-        receiptURL = fm.fileExists(atPath: receipt.path) ? receipt : nil
+        let receiptIsLink = (try? receipt.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
+        receiptURL = fm.fileExists(atPath: receipt.path) || receiptIsLink ? receipt : nil
         for component in DesktopComponent.all {
             let current = componentStates[component.id]
             if resetFailures || !Self.preservesDuringRefresh(current) {
-                componentStates[component.id] = installed.contains(component.id) ? .installed : .notInstalled
+                componentStates[component.id] = installation.developmentLinkedComponents.contains(component.id)
+                    ? .developmentLinked
+                    : installed.contains(component.id) ? .installed : .notInstalled
             }
+        }
+        if !installation.brokenDevelopmentLinkedComponents.isEmpty,
+           resetFailures || !notice.isFailure {
+            let names = DesktopComponent.all
+                .filter { installation.brokenDevelopmentLinkedComponents.contains($0.id) }
+                .map(\.title).joined(separator: ", ")
+            notice = .failure("Development links were found, but their build targets are missing: \(names). Rebuild the linked development payload, then refresh Setup.")
         }
         refreshConnectorDetection(resetFailures: resetFailures)
         refreshRunning()
@@ -141,7 +151,7 @@ final class InstallerViewModel: ObservableObject {
         }
         busy = true
         notice = .information("Preparing the setup queue…")
-        record("Queued \(plan.count) Beta-3 setup items.")
+        record("Queued \(plan.count) Beta-4 setup items.")
         task = Task { [weak self] in await self?.runBulkQueue(plan) }
     }
 
@@ -496,7 +506,7 @@ final class InstallerViewModel: ObservableObject {
         let componentResults = componentStates
         let connectorResults = connectorStates
         refresh()
-        for (id, state) in componentResults where state.failureMessage != nil || state == .installed || state == .notInstalled {
+        for (id, state) in componentResults where state.failureMessage != nil || state == .installed || state == .developmentLinked || state == .notInstalled {
             componentStates[id] = state
         }
         for (client, state) in connectorResults where state.failureMessage != nil || state == .installed || state == .notInstalled {
@@ -523,7 +533,7 @@ final class InstallerViewModel: ObservableObject {
         guard let state else { return false }
         switch state {
         case .queued, .active, .failed: return true
-        case .notInstalled, .installed: return false
+        case .notInstalled, .installed, .developmentLinked: return false
         }
     }
 }

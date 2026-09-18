@@ -43,6 +43,7 @@ final class DesktopProjectsModel: ObservableObject {
     private let glyphReader = GlyphDiffService()
     private var inspection: Task<Void, Never>?
     private var comparisonTask: Task<Void, Never>?
+    private var glyphRetryTask: Task<Void, Never>?
     var selectedProject: String? { navigation.selectedProject }
 
     init(defaults: UserDefaults = .standard) {
@@ -127,7 +128,8 @@ final class DesktopProjectsModel: ObservableObject {
     }
     func inspect() {
         let selectedPath = selectedChange?.path
-        inspection?.cancel(); comparisonTask?.cancel(); git = nil; gitMessage = ""; inspecting = false
+        inspection?.cancel(); comparisonTask?.cancel(); glyphRetryTask?.cancel()
+        git = nil; gitMessage = ""; inspecting = false
         comparison = nil; glyphDiff = nil; comparisonMessage = ""; glyphMessage = ""
         loadingComparison = false; loadingGlyphDiff = false
         guard let project = selectedProject else { return }
@@ -156,7 +158,7 @@ final class DesktopProjectsModel: ObservableObject {
     }
     func selectChange(_ change: GitObservation.Change) {
         guard let project = selectedProject, let git else { return }
-        comparisonTask?.cancel()
+        comparisonTask?.cancel(); glyphRetryTask?.cancel()
         selectedChange = change
         comparison = nil; glyphDiff = nil; comparisonMessage = ""; glyphMessage = ""
         loadingComparison = true; loadingGlyphDiff = change.isGlyphPackageGlyph
@@ -189,6 +191,31 @@ final class DesktopProjectsModel: ObservableObject {
             }
             if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
                 loadingComparison = false
+                loadingGlyphDiff = false
+            }
+        }
+    }
+    func retryGlyphPreview() {
+        guard let project = selectedProject, let git, let change = selectedChange,
+              change.isGlyphPackageGlyph else { return }
+        glyphRetryTask?.cancel()
+        glyphDiff = nil; glyphMessage = ""; loadingGlyphDiff = true; glyphMode = .visual
+        let headRevision = git.headRevision
+        glyphRetryTask = Task {
+            do {
+                let value = try await glyphReader.compare(
+                    project: URL(fileURLWithPath: project), change: change, headRevision: headRevision
+                )
+                guard !Task.isCancelled, selectedProject == project,
+                      selectedChange?.path == change.path else { return }
+                glyphDiff = value
+            } catch {
+                guard !Task.isCancelled, selectedProject == project,
+                      selectedChange?.path == change.path else { return }
+                glyphMessage = error.localizedDescription
+                glyphMode = .text
+            }
+            if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
                 loadingGlyphDiff = false
             }
         }

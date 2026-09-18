@@ -9,7 +9,7 @@
     "shiki": "4.4.1"
   },
   "resources": {
-    "pierre-diffs-bundle.js": "7343dfd142566cb0fbaa9a5fe6d6deae69c7143f61842b1b3ec6b3519e5a2a64",
+    "pierre-diffs-bundle.js": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2",
     "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
   }
 }

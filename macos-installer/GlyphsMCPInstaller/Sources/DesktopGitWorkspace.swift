@@ -16,6 +16,7 @@ struct DesktopGitWorkspace: View {
     @State private var viewportRequest = GlyphViewportRequest(id: 0, target: .fit)
     @State private var selectedDifferenceIndex: Int?
     @State private var viewportStore = GlyphViewportSessionStore()
+    @State private var showGlyphErrorDetails = false
 
     var body: some View {
         Group {
@@ -34,6 +35,7 @@ struct DesktopGitWorkspace: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: model.selectedChange?.path) { _, _ in
             selectedDifferenceIndex = nil
+            showGlyphErrorDetails = false
             viewportRequest = .init(id: viewportRequest.id + 1, target: .restore)
         }
     }
@@ -109,16 +111,16 @@ struct DesktopGitWorkspace: View {
                 Spacer()
                 statusBadge(change)
             }
-            if !model.glyphMessage.isEmpty {
-                Label(model.glyphMessage, systemImage: "info.circle").font(.caption).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
         }.padding(.horizontal, 12).padding(.vertical, 10)
     }
 
     @ViewBuilder private func comparisonView(_ change: GitObservation.Change, comparison: GitFileComparison) -> some View {
         if change.isGlyphPackageGlyph {
             VStack(spacing: 0) {
+                if !model.glyphMessage.isEmpty {
+                    visualPreviewWarning
+                    Divider()
+                }
                 glyphToolbar
                     .padding(10)
                 Divider()
@@ -140,6 +142,42 @@ struct DesktopGitWorkspace: View {
                 textDiff(comparison)
             }
         }
+    }
+
+    private var visualPreviewWarning: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Visual preview unavailable").font(.headline)
+                Text(glyphErrorCategory + " The Text diff remains available.")
+                    .font(.caption).foregroundStyle(.secondary)
+                DisclosureGroup("Technical details", isExpanded: $showGlyphErrorDetails) {
+                    Text(model.glyphMessage).font(.caption.monospaced()).foregroundStyle(.secondary)
+                        .textSelection(.enabled).padding(.top, 3)
+                }
+                .font(.caption)
+            }
+            Spacer(minLength: 0)
+            Button("Retry") { model.retryGlyphPreview() }
+                .disabled(model.loadingGlyphDiff)
+                .accessibilityLabel("Retry visual glyph preview")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .background(Color.orange.opacity(0.08))
+    }
+
+    private var glyphErrorCategory: String {
+        let message = model.glyphMessage.lowercased()
+        if message.contains("identity") || message.contains("receipt") || message.contains("out of sync") {
+            return "The installed preview components are out of sync."
+        }
+        if message.contains("schema") || message.contains("contract") || message.contains("protocol") {
+            return "The visual reader is incompatible with this app."
+        }
+        if message.contains("import") || message.contains("module") || message.contains("worker") {
+            return "The visual reader could not start."
+        }
+        return "Glyph geometry could not be read."
     }
 
     private var effectiveGlyphMode: DesktopGlyphDiffMode {
@@ -200,22 +238,102 @@ struct DesktopGitWorkspace: View {
     }
 
     @ViewBuilder private func textDiff(_ comparison: GitFileComparison) -> some View {
-        if let old = comparison.oldContent.text, let new = comparison.newContent.text {
-            PierreDiffView(
-                oldContent: old,
-                newContent: new,
-                fileName: comparison.path,
-                diffStyle: $diffStyle,
-                overflowMode: $overflow,
-                renderOptions: .init(theme: .pierreSoft, diffIndicators: .bars, hunkSeparators: .lineInfo,
-                                     lineDiffType: .wordAlt, disableLineNumbers: false, disableFileHeader: true),
-                isEditing: false,
-                annotations: nil
-            )
-        } else {
-            ContentUnavailableView("Text diff unavailable", systemImage: "doc.questionmark",
-                                   description: Text(contentMessage(comparison)))
+        switch comparison.textPreview {
+        case .full:
+            if let old = comparison.oldContent.text, let new = comparison.newContent.text {
+                PierreDiffView(
+                    oldContent: old,
+                    newContent: new,
+                    fileName: comparison.path,
+                    diffStyle: $diffStyle,
+                    overflowMode: $overflow,
+                    renderOptions: textRenderOptions,
+                    isEditing: false,
+                    annotations: nil
+                )
+            } else {
+                textUnavailable(title: "Text diff unavailable", message: "No readable text content is available.")
+            }
+        case .patch(let patch, let oldSize, let newSize):
+            VStack(spacing: 0) {
+                largeFileBanner(oldSize: oldSize, newSize: newSize)
+                Divider()
+                PierreDiffView(
+                    patch: patch,
+                    fileName: comparison.path,
+                    diffStyle: $diffStyle,
+                    overflowMode: $overflow,
+                    renderOptions: textRenderOptions
+                )
+            }
+        case .unavailable(let reason, let oldSize, let newSize):
+            textUnavailable(title: unavailableTitle(reason),
+                            message: unavailableMessage(reason, oldSize: oldSize, newSize: newSize))
         }
+    }
+
+    private var textRenderOptions: PierreDiffRenderOptions {
+        .init(theme: .pierreSoft, diffIndicators: .bars, hunkSeparators: .lineInfo,
+              lineDiffType: .wordAlt, disableLineNumbers: false, disableFileHeader: true)
+    }
+
+    private func largeFileBanner(oldSize: Int?, newSize: Int?) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "info.circle.fill").foregroundStyle(.blue)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Large file — showing changed sections only").font(.headline)
+                Text(sizeSummary(oldSize: oldSize, newSize: newSize)
+                     + "; full-file previews are limited to 2 MB per side.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .background(Color.blue.opacity(0.07))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func textUnavailable(title: String, message: String) -> some View {
+        ContentUnavailableView(title, systemImage: "doc.questionmark", description: Text(message))
+    }
+
+    private func unavailableTitle(_ reason: GitTextPreviewUnavailableReason) -> String {
+        if case .oversizedPatch = reason { return "Text diff too large" }
+        return "Text diff unavailable"
+    }
+
+    private func unavailableMessage(
+        _ reason: GitTextPreviewUnavailableReason,
+        oldSize: Int?,
+        newSize: Int?
+    ) -> String {
+        switch reason {
+        case .oversizedPatch(let limit, let observedAtLeast):
+            return "The changed sections exceed the \(bytes(limit)) preview limit (capture stopped after \(bytes(observedAtLeast))); \(sizeSummary(oldSize: oldSize, newSize: newSize)). Open the file in your editor to review the complete change."
+        case .binary:
+            return "This file is binary and cannot be shown as a text diff. Open it in your editor to review it."
+        case .invalidUTF8:
+            return "This file is not valid UTF-8 and cannot be shown safely as text. Open it in your editor to review it."
+        case .symbolicLink:
+            return "Symbolic links are shown only as file status and are never followed."
+        case .noTextualChanges:
+            return "Git reported no renderable text changes for this file."
+        case .timeout:
+            return "Git timed out while preparing the bounded preview. Open the file in your editor to review it."
+        case .git(let message):
+            return "Git could not prepare a bounded preview: \(message) Open the file in your editor to review it."
+        }
+    }
+
+    private func sizeSummary(oldSize: Int?, newSize: Int?) -> String {
+        if oldSize == newSize, let size = oldSize { return "The file is \(bytes(size))" }
+        let old = oldSize.map(bytes) ?? "unknown"
+        let new = newSize.map(bytes) ?? "unknown"
+        return "The original file is \(old) and the current file is \(new)"
+    }
+
+    private func bytes(_ value: Int) -> String {
+        ByteCountFormatter.string(fromByteCount: Int64(value), countStyle: .file)
     }
 
     private func glyphControls(_ document: GlyphDiffDocument) -> some View {
@@ -263,9 +381,23 @@ struct DesktopGitWorkspace: View {
     @ViewBuilder private func glyphVisual(_ document: GlyphDiffDocument) -> some View {
         if let pair = selectedPair(document) {
             VStack(spacing: 0) {
+                let notices = glyphNotices(document, pair: pair)
+                if !notices.isEmpty {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "info.circle.fill").foregroundStyle(.blue)
+                        Text(notices.joined(separator: " ")).font(.caption).foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(Color.blue.opacity(0.07))
+                    Divider()
+                }
                 HStack {
                     Text(pair.changed ? "Changed layer" : "No visual geometry difference; see Text").foregroundStyle(.secondary)
                     Spacer()
+                    legendSwatch(color: .orange, label: "Reference")
+                    legendSwatch(color: .blue, label: "Current")
                     if let before = pair.before, let after = pair.after {
                         Text("Width \(number(before.width)) → \(number(after.width))").foregroundStyle(.secondary)
                     }
@@ -295,6 +427,24 @@ struct DesktopGitWorkspace: View {
         } else {
             ContentUnavailableView("No glyph layers", systemImage: "character.cursor.ibeam")
         }
+    }
+
+    private func glyphNotices(_ document: GlyphDiffDocument, pair: GlyphLayerPair) -> [String] {
+        var messages = document.notices ?? []
+        messages += (pair.before?.warnings ?? []).map { "\($0.scope): \($0.message)" }
+        messages += (pair.after?.warnings ?? []).map { "\($0.scope): \($0.message)" }
+        return messages.reduce(into: []) { result, message in
+            if !result.contains(message) { result.append(message) }
+        }
+    }
+
+    private func legendSwatch(color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 1.5).fill(color).frame(width: 12, height: 3)
+            Text(label).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) glyph outline")
     }
 
     private func selectedPair(_ document: GlyphDiffDocument) -> GlyphLayerPair? {
@@ -373,16 +523,6 @@ struct DesktopGitWorkspace: View {
         if path.hasSuffix(".png") || path.hasSuffix(".jpg") || path.hasSuffix(".svg") { return "photo" }
         if path.hasSuffix(".md") { return "book.closed" }
         return "doc.text"
-    }
-
-    private func contentMessage(_ comparison: GitFileComparison) -> String {
-        let values = [comparison.oldContent, comparison.newContent]
-        if values.contains(where: { if case .symbolicLink = $0 { true } else { false } }) { return "Symbolic links are shown only as file status and are never followed." }
-        if values.contains(where: { if case .binary = $0 { true } else { false } }) { return "This file is binary or is not valid UTF-8." }
-        if let size = values.compactMap({ if case .oversized(let size) = $0 { size } else { nil } }).max() {
-            return "This file is \(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)); the preview limit is 2 MB per side."
-        }
-        return model.comparisonMessage.isEmpty ? "No readable text content is available." : model.comparisonMessage
     }
 
     private func number(_ value: Double) -> String {
@@ -642,19 +782,31 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         Presentation(overlay: overlay.rawValue.lowercased(), guides: guides,
                      background: colorScheme == .dark ? "#171717" : "#ffffff",
                      neutral: colorScheme == .dark ? "#e8e8e8" : "#242424",
+                     previewFill: colorScheme == .dark ? "#ffffff" : "#000000",
                      control: colorScheme == .dark ? "#a8a8a8" : "#858585",
                      handle: colorScheme == .dark ? "#707070" : "#b8b8b8",
                      guide: colorScheme == .dark ? "#66594d" : "#d7b28a",
+                     reference: colorScheme == .dark ? "#ff9f0a" : "#c93400",
+                     current: colorScheme == .dark ? "#0a84ff" : "#0066cc",
+                     delta: colorScheme == .dark ? "#0a84ff5c" : "#0066cc4d",
                      hasBefore: layer.before != nil, hasAfter: layer.after != nil)
     }
 
     private func canvasViewBox() -> CGRect {
         let snapshots = [layer.before, layer.after].compactMap { $0 }
-        let points = snapshots.flatMap { $0.outline + $0.openOutline }.flatMap(\.points).filter { $0.count >= 2 }
+        var elements: [GlyphPathElement] = []
+        for snapshot in snapshots {
+            elements.append(contentsOf: snapshot.outline)
+            elements.append(contentsOf: snapshot.openOutline)
+            for component in snapshot.componentOutlines ?? [] {
+                elements.append(contentsOf: component)
+            }
+        }
+        let points: [[Double]] = elements.flatMap(\.points).filter { $0.count >= 2 }
         let metrics = snapshots.first?.metrics ?? .init(ascender: 800, capHeight: 700, xHeight: 500, descender: -200)
         let widths = snapshots.map(\.width)
-        let minX = min(points.map { $0[0] }.min() ?? 0, 0) - 80
-        let maxX = max(points.map { $0[0] }.max() ?? 600, widths.max() ?? 600) + 80
+        let minX: Double = min(points.map { $0[0] }.min() ?? 0, 0) - 80
+        let maxX: Double = max(points.map { $0[0] }.max() ?? 600, widths.max() ?? 600) + 80
         let minY = min(points.map { $0[1] }.min() ?? metrics.descender, metrics.descender) - 80
         let maxY = max(points.map { $0[1] }.max() ?? metrics.ascender, metrics.ascender) + 80
         return CGRect(x: minX, y: -maxY, width: maxX - minX, height: maxY - minY)
@@ -676,13 +828,16 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         let pieces = layer.difference.map { deltaPieces($0, minY: minY, maxY: maxY) }
         return """
         <!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'none'">
-        <style>:root{--background:#fff;--neutral:#242424;--control:#858585;--handle:#b8b8b8;--guide:#d7b28a;--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;--inverse-zoom:1}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--background);user-select:none}svg{width:100%;height:100%;min-width:520px;min-height:420px}.guide{stroke:var(--guide);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.72}.label{fill:var(--guide);font:500 12px -apple-system;text-anchor:end}.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);fill-rule:evenodd;vector-effect:non-scaling-stroke}.neutral-node,.neutral-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.open{fill:none}.advance{stroke-dasharray:5 4;opacity:.55}.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;stroke-linecap:round;opacity:.9;vector-effect:non-scaling-stroke}.delta{fill:#3fd1e25c;stroke:none;fill-rule:evenodd}.width-change{fill:#3fd1e25c}.reference-change{fill:none;stroke:#3fe2a6;stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.current-change{fill:none;stroke:#3fd1e2;stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.reference-handle,.current-handle{stroke-width:var(--detail-stroke);opacity:.72;vector-effect:non-scaling-stroke}.reference-handle{stroke:#3fe2a6}.current-handle{stroke:var(--handle)}.reference-node,.reference-control{fill:none;stroke:#3fe2a6;stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.current-node,.current-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.anchor-link{stroke:#3fd1e2;stroke-width:var(--detail-stroke);opacity:.65;vector-effect:non-scaling-stroke}.anchor{stroke-width:var(--detail-stroke);fill:none;vector-effect:non-scaling-stroke}.anchor-label{font:12px -apple-system}.reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}.current-change.anchor-label{fill:#3fd1e2;stroke:none;text-anchor:start}.fixed-control{transform-box:fill-box;transform-origin:center;transform:scale(var(--inverse-zoom))}.fill-preview path.neutral:not(.open){fill:#000;stroke:#000}.fill-preview .neutral-node,.fill-preview .neutral-control,.fill-preview .neutral-handle,.fill-preview .advance,.fill-preview #delta-fill,.fill-preview #reference-changes,.fill-preview #current-changes{display:none}</style></head>
+        <style>:root{--background:#fff;--neutral:#242424;--preview-fill:#000;--control:#858585;--handle:#b8b8b8;--guide:#d7b28a;--reference:#c93400;--current:#0066cc;--delta:#0066cc4d;--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;--inverse-zoom:1}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--background);user-select:none}svg{width:100%;height:100%;min-width:520px;min-height:420px}.guide{stroke:var(--guide);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.72}.label{fill:var(--guide);font:500 12px -apple-system;text-anchor:end}.component-fill{fill:var(--neutral);fill-opacity:.08;stroke:none;fill-rule:nonzero}.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);fill-rule:evenodd;vector-effect:non-scaling-stroke}.neutral-node,.neutral-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.open{fill:none}.advance{stroke-dasharray:5 4;opacity:.55}.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;stroke-linecap:round;opacity:.9;vector-effect:non-scaling-stroke}.delta{fill:var(--delta);stroke:none;fill-rule:evenodd}.width-change{fill:var(--delta)}.reference-change{fill:none;stroke:var(--reference);stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.current-change{fill:none;stroke:var(--current);stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.reference-handle,.current-handle{stroke-width:var(--detail-stroke);opacity:.72;vector-effect:non-scaling-stroke}.reference-handle{stroke:var(--reference)}.current-handle{stroke:var(--current)}.reference-node,.reference-control{fill:none;stroke:var(--reference);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.current-node,.current-control{fill:none;stroke:var(--current);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.anchor-link{stroke:var(--current);stroke-width:var(--detail-stroke);opacity:.65;vector-effect:non-scaling-stroke}.anchor{stroke-width:var(--detail-stroke);fill:none;vector-effect:non-scaling-stroke}.anchor-label{font:12px -apple-system}.reference-change.anchor-label{fill:var(--reference);stroke:none;text-anchor:end}.current-change.anchor-label{fill:var(--current);stroke:none;text-anchor:start}.fixed-control{transform-box:fill-box;transform-origin:center;transform:scale(var(--inverse-zoom))}.fill-preview path.neutral:not(.open){fill:var(--preview-fill);stroke:var(--preview-fill)}.fill-preview .component-fill{fill:var(--preview-fill);fill-opacity:1}.fill-preview .neutral-node,.fill-preview .neutral-control,.fill-preview .neutral-handle,.fill-preview .advance,.fill-preview #delta-fill,.fill-preview #reference-changes,.fill-preview #current-changes{display:none}</style></head>
         <body><svg id="glyph-canvas" role="img" aria-label="Read-only glyph difference for \(escape(layer.label))" viewBox="\(viewBox.minX) \(viewBox.minY) \(viewBox.width) \(viewBox.height)" preserveAspectRatio="xMidYMid meet"><g id="camera"><g id="metric-guides" class="guide-dependent">\(metricGuides)</g><g id="before-neutral">\(before)</g><g id="after-neutral">\(after)</g><g id="delta-fill">\(pieces?.fill ?? "")</g><g id="reference-changes">\(pieces?.reference ?? "")</g><g id="current-changes">\(pieces?.current ?? "")</g></g></svg></body></html>
         """
     }
 
     private func neutralSnapshot(_ value: GlyphLayerSnapshot) -> String {
-        var result = "<path class='neutral' d='\(path(value.outline))'/><path class='neutral open' d='\(path(value.openOutline))'/>"
+        var result = (value.componentOutlines ?? []).map {
+            "<path class='component-fill' d='\(path($0))'/>"
+        }.joined()
+        result += "<path class='neutral' d='\(path(value.outline))'/><path class='neutral open' d='\(path(value.openOutline))'/>"
         result += "<line class='neutral advance guide-dependent' x1='\(value.width)' y1='\(-value.metrics.ascender)' x2='\(value.width)' y2='\(-value.metrics.descender)'/>"
         result += pathDetails(value.outline, css: "neutral")
         result += pathDetails(value.openOutline, css: "neutral")
@@ -743,6 +898,8 @@ private struct GlyphDiffWebView: NSViewRepresentable {
             return "M \(point(segment.points[0])) L \(point(segment.points[1]))"
         case 2 where segment.points.count >= 4:
             return "M \(point(segment.points[0])) C \(point(segment.points[1])) \(point(segment.points[2])) \(point(segment.points[3]))"
+        case 4 where segment.points.count >= 3:
+            return "M \(point(segment.points[0])) Q \(point(segment.points[1])) \(point(segment.points[2]))"
         default:
             return ""
         }
@@ -755,6 +912,10 @@ private struct GlyphDiffWebView: NSViewRepresentable {
             result += handle(from: segment.points[0], to: segment.points[1], css: css)
             result += handle(from: segment.points[3], to: segment.points[2], css: css)
             result += control(segment.points[1], css: css) + control(segment.points[2], css: css)
+        } else if segment.kind == 4, segment.points.count >= 3 {
+            result += handle(from: segment.points[0], to: segment.points[1], css: css)
+            result += handle(from: segment.points[2], to: segment.points[1], css: css)
+            result += control(segment.points[1], css: css)
         }
         return result
     }
@@ -765,6 +926,7 @@ private struct GlyphDiffWebView: NSViewRepresentable {
             case 0 where element.points.count >= 1: return "M \(point(element.points[0]))"
             case 1 where element.points.count >= 1: return "L \(point(element.points[0]))"
             case 2 where element.points.count >= 3: return "C \(point(element.points[0])) \(point(element.points[1])) \(point(element.points[2]))"
+            case 4 where element.points.count >= 2: return "Q \(point(element.points[0])) \(point(element.points[1]))"
             case 3: return "Z"
             default: return ""
             }
@@ -783,6 +945,12 @@ private struct GlyphDiffWebView: NSViewRepresentable {
                 if let cursor { result += handle(from: cursor, to: first, css: css) }
                 result += handle(from: end, to: second, css: css)
                 result += control(first, css: css) + control(second, css: css) + onCurve(end, css: css)
+                cursor = end
+            case 4 where element.points.count >= 2:
+                let controlPoint = element.points[0], end = element.points[1]
+                if let cursor { result += handle(from: cursor, to: controlPoint, css: css) }
+                result += handle(from: end, to: controlPoint, css: css)
+                result += control(controlPoint, css: css) + onCurve(end, css: css)
                 cursor = end
             default: break
             }
@@ -816,15 +984,21 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         let guides: Bool
         let background: String
         let neutral: String
+        let previewFill: String
         let control: String
         let handle: String
         let guide: String
+        let reference: String
+        let current: String
+        let delta: String
         let hasBefore: Bool
         let hasAfter: Bool
 
         var payload: [String: Any] {
             ["overlay": overlay, "guides": guides, "background": background,
-             "neutral": neutral, "control": control, "handle": handle, "guide": guide,
+             "neutral": neutral, "previewFill": previewFill,
+             "control": control, "handle": handle, "guide": guide,
+             "reference": reference, "current": current, "delta": delta,
              "hasBefore": hasBefore, "hasAfter": hasAfter]
         }
     }
@@ -909,9 +1083,13 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         });
         document.documentElement.style.setProperty('--background', payload.background);
         document.documentElement.style.setProperty('--neutral', payload.neutral);
+        document.documentElement.style.setProperty('--preview-fill', payload.previewFill);
         document.documentElement.style.setProperty('--control', payload.control);
         document.documentElement.style.setProperty('--handle', payload.handle);
         document.documentElement.style.setProperty('--guide', payload.guide);
+        document.documentElement.style.setProperty('--reference', payload.reference);
+        document.documentElement.style.setProperty('--current', payload.current);
+        document.documentElement.style.setProperty('--delta', payload.delta);
       };
       globalThis.glyphCamera = {
         command(name, payload) {
@@ -965,8 +1143,10 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         var fullViewBox = CGRect(x: 0, y: -880, width: 760, height: 1160)
         var viewportKey = ""
         var presentation = Presentation(overlay: "both", guides: true, background: "#fff",
-                                        neutral: "#242424", control: "#858585", handle: "#b8b8b8",
-                                        guide: "#d7b28a",
+                                        neutral: "#242424", previewFill: "#000000",
+                                        control: "#858585", handle: "#b8b8b8",
+                                        guide: "#d7b28a", reference: "#c93400", current: "#0066cc",
+                                        delta: "#0066cc4d",
                                         hasBefore: true, hasAfter: true)
         var sentPresentation: Presentation?
         var currentState = GlyphViewportState(centerX: 380, centerY: -300, magnification: 1)

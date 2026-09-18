@@ -1659,6 +1659,24 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		}
 	}
 
+	func testProcessRunnerRunCapturingStopsAtStandardOutputLimit() async {
+		let runner = ProcessRunner()
+		do {
+			_ = try await runner.runCapturing(
+				executable: URL(fileURLWithPath: "/usr/bin/yes"),
+				args: [],
+				timeout: 5,
+				maximumStandardOutputBytes: 1_024
+			)
+			XCTFail("Expected bounded output capture to stop the process.")
+		} catch let error as ProcessOutputLimitError {
+			XCTAssertEqual(error.limit, 1_024)
+			XCTAssertGreaterThan(error.observedAtLeast, error.limit)
+		} catch {
+			XCTFail("Expected ProcessOutputLimitError, got: \(type(of: error)) \(error)")
+		}
+	}
+
 	func testRuntimeProbeExecutorUsesExactPythonAndGlyphsTargetPath() async throws {
 		let root = FileManager.default.temporaryDirectory
 			.appendingPathComponent("glyphs-mcp-probe-executor-\(UUID().uuidString)", isDirectory: true)

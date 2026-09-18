@@ -61,6 +61,22 @@ public enum InstallerPayloadManifestResolver {
 		let cursorPlugin: CursorPlugin?
 	}
 
+    private struct LeanReaderManifest: Decodable {
+        struct Reader: Decodable, Equatable {
+            let schemaVersion: Int
+            let protocolAPIVersion: Int
+            let workerModule: String
+            static let expected = Reader(
+                schemaVersion: 3,
+                protocolAPIVersion: 1,
+                workerModule: "glyphs_mcp_sidecar.glyph_diff_worker"
+            )
+        }
+        struct Sidecar: Decodable { let glyphDiffReader: Reader }
+        let glyphDiffReader: Reader
+        let sidecar: Sidecar
+    }
+
 	public static func resolve(_ payloadDirectory: URL) throws -> ResolvedInstallerPayloadManifest {
 		let manifestURL = payloadDirectory.appendingPathComponent("payload.json")
 		let data = try Data(contentsOf: manifestURL)
@@ -89,6 +105,9 @@ public enum InstallerPayloadManifestResolver {
                     throw UpdateStagingError("payload_manifest", "Packaged component identity mismatch: " + directory)
                 }
             }
+            if manifest.schemaVersion == 4 {
+                try validateGlyphDiffReader(in: payloadDirectory.appendingPathComponent("Lean"))
+            }
         }
 		var targets: [Int: ResolvedInstallerTargetPayload] = [:]
 		for glyphsMajor in manifest.schemaVersion == 4 ? [4] : [3, 4] {
@@ -115,7 +134,7 @@ public enum InstallerPayloadManifestResolver {
 					throw UpdateStagingError("payload_manifest", "Glyphs 3 payload provenance is not the pinned v1.11 baseline.")
 				}
 			} else if manifest.schemaVersion == 4, target.baseline != nil {
-				throw UpdateStagingError("payload_manifest", "Glyphs 3 baseline metadata is not allowed in the Beta-3 payload.")
+				throw UpdateStagingError("payload_manifest", "Glyphs 3 baseline metadata is not allowed in the Beta-4 payload.")
 			}
 			let bundleURL = try resolveRelativePath(target.pluginPath, under: payloadDirectory)
 			let infoURL = bundleURL.appendingPathComponent("Contents/Info.plist")
@@ -186,6 +205,26 @@ public enum InstallerPayloadManifestResolver {
 			cursorPluginVersion: manifest.cursorPlugin?.version
 		)
 	}
+
+    private static func validateGlyphDiffReader(in lean: URL) throws {
+        let manifestURL = lean.appendingPathComponent("manifest.json")
+        guard let data = try? Data(contentsOf: manifestURL), data.count <= 256 * 1024,
+              let manifest = try? JSONDecoder().decode(LeanReaderManifest.self, from: data),
+              manifest.glyphDiffReader == LeanReaderManifest.Reader.expected,
+              manifest.sidecar.glyphDiffReader == LeanReaderManifest.Reader.expected else {
+            throw UpdateStagingError("payload_manifest", "Glyph diff reader contract is missing or incompatible.")
+        }
+        for relative in [
+            "sidecar/glyphs_mcp_sidecar/glyph_diff_worker.py",
+            "sidecar/glyphs_mcp_protocol/geometry.py",
+        ] {
+            let file = lean.appendingPathComponent(relative)
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isRegularFile == true, values.isSymbolicLink != true else {
+                throw UpdateStagingError("payload_manifest", "Glyph diff reader module is missing or unsafe.")
+            }
+        }
+    }
 
     public static func treeIdentity(_ root: URL) throws -> String {
         guard let enumerator = FileManager.default.enumerator(atPath: root.path) else {

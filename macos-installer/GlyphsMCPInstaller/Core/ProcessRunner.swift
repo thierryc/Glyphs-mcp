@@ -12,6 +12,36 @@ private final class ProcessTimeout {
 	}
 }
 
+public struct ProcessOutputLimitError: LocalizedError, Sendable {
+	public let limit: Int
+	public let observedAtLeast: Int
+
+	public var errorDescription: String? {
+		"Command output exceeded the \(limit)-byte capture limit."
+	}
+}
+
+private final class ProcessOutputLimit {
+	private let lock = NSLock()
+	private var observedAtLeast: Int?
+	let limit: Int?
+
+	init(_ limit: Int?) { self.limit = limit }
+
+	func exceeded(_ count: Int) {
+		lock.lock()
+		if observedAtLeast == nil { observedAtLeast = count }
+		lock.unlock()
+	}
+
+	func check() throws {
+		lock.lock(); let observed = observedAtLeast; lock.unlock()
+		if let observed, let limit {
+			throw ProcessOutputLimitError(limit: limit, observedAtLeast: observed)
+		}
+	}
+}
+
 public final class ProcessRunner {
 	public struct Result {
 		public let exitCode: Int32
@@ -63,10 +93,12 @@ public final class ProcessRunner {
 		executable: URL,
 		args: [String],
 		environment: [String: String]? = nil,
-		timeout: TimeInterval
+		timeout: TimeInterval,
+		maximumStandardOutputBytes: Int? = nil
 	) async throws -> Result {
 		if Task.isCancelled { throw CancellationError() }
 		let deadline = ProcessTimeout("Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent).")
+		let outputLimit = ProcessOutputLimit(maximumStandardOutputBytes)
 
 		let proc = Process()
 		proc.executableURL = executable
@@ -83,8 +115,16 @@ public final class ProcessRunner {
 		let outTask = Task {
 			var data = Data()
 			do {
-				for try await byte in outPipe.fileHandleForReading.bytes {
-					data.append(byte)
+				while let chunk = try outPipe.fileHandleForReading.read(upToCount: 64 * 1024), !chunk.isEmpty {
+					if let maximumStandardOutputBytes,
+					   data.count + chunk.count > maximumStandardOutputBytes {
+						let remaining = max(0, maximumStandardOutputBytes - data.count)
+						if remaining > 0 { data.append(chunk.prefix(remaining)) }
+						outputLimit.exceeded(data.count + max(1, chunk.count - remaining))
+						if proc.isRunning { proc.terminate() }
+						break
+					}
+					data.append(chunk)
 				}
 			} catch {
 				// A launch or exit error is reported separately below.
@@ -94,8 +134,8 @@ public final class ProcessRunner {
 		let errTask = Task {
 			var data = Data()
 			do {
-				for try await byte in errPipe.fileHandleForReading.bytes {
-					data.append(byte)
+				while let chunk = try errPipe.fileHandleForReading.read(upToCount: 64 * 1024), !chunk.isEmpty {
+					data.append(chunk)
 				}
 			} catch {
 				// A launch or exit error is reported separately below.
@@ -150,12 +190,14 @@ public final class ProcessRunner {
 			_ = await outTask.value
 			_ = await errTask.value
 			if Task.isCancelled { throw CancellationError() }
+			try outputLimit.check()
 			throw error
 		}
 
 		let stdout = await outTask.value
 		let stderr = await errTask.value
 		if Task.isCancelled { throw CancellationError() }
+		try outputLimit.check()
 		return Result(exitCode: status, stdoutData: stdout, stderrData: stderr)
 	}
 

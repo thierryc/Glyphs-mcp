@@ -1,8 +1,8 @@
-# Glyphs MCP 2.0.0 Beta 3 — release and launch plan
+# Glyphs MCP 2.0.0 Beta 4 — release and launch plan
 
 ## Decision
 
-Prepare **2.0.0 Beta 3**, tag `v2.0.0-beta.3`, build **45**, on `lit/v2-beta`.
+Prepare **2.0.0 Beta 4**, tag `v2.0.0-beta.4`, build **46**, on `lit/v2-beta`.
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -13,7 +13,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 3**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 4**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -30,7 +30,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
   restored settings and component receipts; do not market side-by-side server
-  isolation. The Beta 3 payload is Glyphs 4-only; Glyphs 3 remains on its
+  isolation. The Beta 4 payload is Glyphs 4-only; Glyphs 3 remains on its
   separate pinned v1.11.0 release.
 
 ## Release sequence
@@ -56,7 +56,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.3 --publish --confirm-publish v2.0.0-beta.3
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.4 --publish --confirm-publish v2.0.0-beta.4
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -66,9 +66,9 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 4 uses `--beta 4` and a higher installer build. Final 2.0.0 gets a new
+Beta 5 uses `--beta 5` and a higher installer build. Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
-`main`. Do not relabel Beta 3 as final or repoint its tag.
+`main`. Do not relabel Beta 4 as final or repoint its tag.
 
 ## Enrollment and feedback
 
@@ -115,7 +115,7 @@ verified public branch URL at posting time.
 
 Forum title: **Glyphs MCP 2.0.0 Beta — open for testing**
 
-> Glyphs MCP 2.0.0 Beta 3 is available to try. Setup now combines server status,
+> Glyphs MCP 2.0.0 Beta 4 is available to try. Setup now combines server status,
 > Glyphs components and Codex, Claude Code, Claude Desktop and Cursor
 > connections with inline progress. A dedicated window collects redacted
 > installer, server and sidecar diagnostics.
@@ -138,20 +138,19 @@ Social draft:
 
 **Three days later:** answer recurring setup questions in the guide and share
 one concrete workflow demonstration. **After one week:** publish a short
-feedback update, known issues and what is planned for Beta 4. Thank testers
+feedback update, known issues and what is planned for Beta 5. Thank testers
 publicly only with their permission. Avoid a fixed update cadence until the
 first feedback volume is known.
 
 ## Draft GitHub release notes
 
-**Glyphs MCP 2.0.0 Beta 3 · build 45**
+**Glyphs MCP 2.0.0 Beta 4 · build 46**
 
-This third beta replaces the separate Overview and Components destinations with
-one Setup page. Three Glyphs components and four agent connections have inline
-queued/install/update/remove/failure states, a serialized bulk action and
-independent card controls. Cursor receives a verified, installer-owned local
-plugin. A dedicated logs window combines bounded installer, server and sidecar
-events and copies a redacted diagnostic report.
+This fourth beta makes component references immediately distinguishable in the
+Project visual glyph diff: every resolved component outline receives an 8%
+black fill while native paths remain unfilled. It retains the unified Setup,
+serialized component and connection management, verified Cursor plugin and
+dedicated redacted troubleshooting logs introduced in Beta 3.
 
 The desktop requires macOS 14. Its payload is now Glyphs 4-only; Glyphs 3
 continues through the separate v1.11.0 release. The seven-tool MCP interface

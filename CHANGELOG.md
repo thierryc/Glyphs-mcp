@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0 Beta 4 — component-aware glyph diffs, build 46
+
+- Distinguish referenced components from native paths in the Project visual
+  glyph diff by filling each transformed component outline with 8% black.
+- Keep component references as separate snapshot geometry so counters and
+  overlapping components render correctly while outline comparison continues
+  to use Glyphs’ complete decomposed path.
+- Preserve compatibility with visual-diff snapshots produced before component
+  geometry was added.
+
 ## 2.0.0 Beta 3 — unified Setup, build 45
 
 - Merge the former Overview and Components destinations into one **Setup**

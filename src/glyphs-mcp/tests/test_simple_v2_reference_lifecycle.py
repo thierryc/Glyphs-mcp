@@ -79,7 +79,9 @@ def reporter():
            "NSBundle": SimpleNamespace(mainBundle=lambda: SimpleNamespace(bundlePath=lambda: "/Applications/Glyphs.app")),
            "NSPoint": lambda x, y: (x, y), "NSColor": SimpleNamespace(secondaryLabelColor=lambda: None),
            "AppHelper": SimpleNamespace(callAfter=lambda f, *args: later(0, f, *args), callLater=later),
-           "ReferenceReader": Reader, "path_elements": capture,
+           "ReferenceReader": Reader, "resolved_layer_elements": lambda layer, context=None: (
+               capture(layer.completeBezierPath), capture(layer.completeOpenBezierPath)
+           ),
            "comparison": lambda ref, live: {"width": [ref["width"], live["width"]], "live": live},
            "drawing": SimpleNamespace(prepare=deepcopy, paint=lambda paths, scale: paints.append(paths)),
            "withdraw": lambda _: None}

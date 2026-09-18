@@ -1,5 +1,33 @@
 --- a/Sources/PierreDiffsSwift/WebView/PierreDiffView.swift
 +++ b/Sources/PierreDiffsSwift/WebView/PierreDiffView.swift
+@@
+   let newContent: String
++  /// Optional unified patch used for bounded previews of large files.
++  var patch: String?
+@@
+     self.newContent = newContent
++    self.patch = nil
+@@
+-    if coordinator.lastEditedContent == newContent {
++    if patch == nil, coordinator.lastEditedContent == newContent {
+@@
+-                         coordinator.lastFileName != fileName
++                         coordinator.lastFileName != fileName ||
++                         coordinator.lastPatch != patch
+@@
+-      coordinator.renderDiff(
++      if let patch {
++        coordinator.renderPatch(patch: patch, fileName: fileName, theme: currentTheme,
++                                diffStyle: diffStyle, overflowMode: overflowMode,
++                                renderOptions: renderOptions)
++      } else {
++        coordinator.renderDiff(
+         oldContent: oldContent,
+@@
+         annotations: annotations
+-      )
++        )
++      }
 @@ -150,2 +150,3 @@
    public func makeNSView(context: Context) -> WKWebView {
      let configuration = WKWebViewConfiguration()
@@ -15,6 +43,41 @@
          <meta name="viewport" content="width=device-width, initial-scale=1.0">
 --- a/Sources/PierreDiffsSwift/WebView/DiffWebViewCoordinator.swift
 +++ b/Sources/PierreDiffsSwift/WebView/DiffWebViewCoordinator.swift
+@@
+ import WebKit
++
++private struct PierrePatchInput: Encodable {
++  let patch: String
++  let fileName: String
++  let options: PierreDiffInput.Options
++}
+@@
+   var lastNewContent: String?
++  var lastPatch: String?
+@@
+     setTheme(theme)
+   }
++
++  /// Renders a bounded unified patch while preserving its original line numbers.
++  func renderPatch(patch: String, fileName: String, theme: String, diffStyle: DiffStyle,
++                   overflowMode: OverflowMode = .scroll,
++                   renderOptions: PierreDiffRenderOptions = PierreDiffRenderOptions()) {
++    let input = PierrePatchInput(patch: patch, fileName: fileName, options: PierreDiffInput.Options(
++      theme: PierreDiffInput.ThemeConfig(renderOptions.theme), themeType: theme,
++      diffStyle: diffStyle.rawValue, overflow: overflowMode.rawValue, enableLineSelection: true,
++      renderOptions: renderOptions))
++    executeWhenReady { [weak self] in self?.callJavaScript("renderPatch", with: input) }
++    setTheme(theme)
++  }
+
+--- a/Sources/PierreDiffsSwift/Resources/pierre-diffs-bundle.js
++++ b/Sources/PierreDiffsSwift/Resources/pierre-diffs-bundle.js
+@@
+-window.pierreBridge={renderDiff(e){
++window.pierreBridge={renderPatch(e){/* bounded patch parser and renderer */},renderDiff(e){
+@@
+-window.PierreDiffs={FileDiff:hi,parseDiffFromFile:je};
++window.PierreDiffs={FileDiff:hi,parseDiffFromFile:je,parsePatchFile:Tp};
 @@ -561 +561,10 @@
  extension DiffWebViewCoordinator: WKNavigationDelegate {
 +

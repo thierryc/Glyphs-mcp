@@ -146,8 +146,14 @@ final class DesktopModel: ObservableObject {
                 status = observed
             }
             lastObserved = Date(); stale = false; serviceRunning = true
-            notice = observed.identityIssues(expectedSidecar: installation.expectedSidecarHash,
-                expectedBridge: installation.expectedBridgeHash).joined(separator: "\n")
+            // Development links are mutable by design and use a lightweight
+            // receipt without immutable payload fingerprints. Their explicit
+            // Setup status is the trust signal; managed installs still require
+            // the normal sidecar and bridge identity checks.
+            notice = installation.isDevelopmentLinked ? "" : observed.identityIssues(
+                expectedSidecar: installation.expectedSidecarHash,
+                expectedBridge: installation.expectedBridgeHash
+            ).joined(separator: "\n")
         } catch is CancellationError {
         } catch {
             guard !Task.isCancelled, !controlling else { return }

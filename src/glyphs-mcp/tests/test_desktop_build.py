@@ -41,6 +41,7 @@ def bundle(tmp_path, monkeypatch):
     for name in ['GlyphsMCPMenu', 'GitHubMark']:
         (catalog / (name + '.imageset')).mkdir(parents=True)
     monkeypatch.setattr(verifier, 'load', lambda root: {'version': '2.0.0', 'installerBuild': 43})
+    monkeypatch.setattr(verifier, 'validate_embedded_payload', lambda app: {'schemaVersion': 4})
     monkeypatch.setattr(verifier.subprocess, 'check_output', lambda command: json.dumps([
         {'Name': 'GlyphsMCPMenu'}, {'Name': 'GitHubMark'}]).encode())
     return app, tmp_path
@@ -77,6 +78,15 @@ def test_rejects_missing_linked_framework(bundle):
         verifier.verify(app, root)
 
 
+def test_rejects_invalid_embedded_glyph_reader_payload(bundle, monkeypatch):
+    app, root = bundle
+    def reject(_app):
+        raise ValueError('Glyph diff reader contract mismatch')
+    monkeypatch.setattr(verifier, 'validate_embedded_payload', reject)
+    with pytest.raises(ValueError, match='reader contract mismatch'):
+        verifier.verify(app, root)
+
+
 def test_rejects_missing_pierre_resource_bundle(bundle):
     app, root = bundle
     resource = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Resources/Resources/diff-core.js'
@@ -97,12 +107,34 @@ def test_pierre_hardening_patch_is_exact_and_idempotence_is_rejected(tmp_path):
     root = tmp_path / 'PierreDiffsSwift'
     files = {
         'Sources/PierreDiffsSwift/WebView/PierreDiffView.swift':
+            '  let newContent: String\n'
+            '    self.newContent = newContent\n'
+            '    self.onReady = onReady\n  }\n\n  // MARK: - NSViewRepresentable\n'
+            '    if coordinator.lastEditedContent == newContent {\n'
+            '                         coordinator.lastFileName != fileName\n'
+            '      coordinator.lastOldContent = oldContent\n      coordinator.lastNewContent = newContent\n'
+            '      coordinator.renderDiff(\n'
+            '        oldContent: oldContent,\n'
+            '        newContent: newContent,\n'
+            '        fileName: fileName,\n'
+            '        theme: currentTheme,\n'
+            '        diffStyle: diffStyle,\n'
+            '        overflowMode: overflowMode,\n'
+            '        renderOptions: renderOptions,\n'
+            '        annotations: annotations\n'
+            '      )\n'
             '    let configuration = WKWebViewConfiguration()\n'
             '    configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")\n',
         'Sources/PierreDiffsSwift/WebView/DiffHTMLTemplate.swift':
             '        <meta charset="UTF-8">\n',
         'Sources/PierreDiffsSwift/WebView/DiffWebViewCoordinator.swift':
+            'import WebKit\n'
+            '  var lastNewContent: String?\n'
+            '    setTheme(theme)\n  }\n\n  /// Sets the current theme\n'
             'extension DiffWebViewCoordinator: WKNavigationDelegate {\n\n',
+        'Sources/PierreDiffsSwift/Resources/pierre-diffs-bundle.js':
+            'window.pierreBridge={renderDiff(e){\n'
+            'window.PierreDiffs={FileDiff:hi,parseDiffFromFile:je};\n',
     }
     for relative, content in files.items():
         path = root / relative
@@ -114,6 +146,8 @@ def test_pierre_hardening_patch_is_exact_and_idempotence_is_rejected(tmp_path):
     assert 'developerExtrasEnabled")' in combined and 'setValue(false' in combined
     assert 'Content-Security-Policy' in combined
     assert 'scheme == nil || scheme == "about"' in combined
+    assert 'func renderPatch(' in combined
+    assert 'parsePatchFile:Tp' in combined
     with pytest.raises(ValueError, match='patch context changed'):
         dependencies.apply_pierre_local_only_patch(root)
 
@@ -145,6 +179,8 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert source.count("<path class='delta'") == 1
     assert "fill-rule:evenodd" in source
     assert ".neutral{fill:none;stroke:" in source
+    assert ".component-fill{fill:var(--neutral);fill-opacity:.08;stroke:none;fill-rule:nonzero}" in source
+    assert "<path class='component-fill' d='\\(path($0))'/>" in source
     assert "if value.outlineChanged" in source
     assert "visible('delta-fill', both)" in source
     assert "visible('after-neutral', payload.overlay === 'after' || (both && payload.hasAfter))" in source
@@ -153,22 +189,27 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert '.pan(CGPoint(x: -event.scrollingDeltaX, y: -event.scrollingDeltaY))' in source
     assert '--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;' in source
     assert '.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);' in source
-    assert '.reference-change{fill:none;stroke:#3fe2a6;stroke-width:var(--delta-stroke);' in source
-    assert '.delta{fill:#3fd1e25c;stroke:none;fill-rule:evenodd}' in source
-    assert '.width-change{fill:#3fd1e25c}' in source
-    assert '.current-change{fill:none;stroke:#3fd1e2;stroke-width:var(--delta-stroke);' in source
+    assert '.reference-change{fill:none;stroke:var(--reference);stroke-width:var(--delta-stroke);' in source
+    assert '.delta{fill:var(--delta);stroke:none;fill-rule:evenodd}' in source
+    assert '.width-change{fill:var(--delta)}' in source
+    assert '.current-change{fill:none;stroke:var(--current);stroke-width:var(--delta-stroke);' in source
     assert "class='origin-advance advance guide-dependent' x1='0'" in source
     assert '.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;' in source
     assert "class='neutral advance guide-dependent' x1='0'" not in source
     assert '.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);' in source
-    assert '.current-handle{stroke:var(--handle)}' in source
+    assert '.current-handle{stroke:var(--current)}' in source
     assert '.neutral-node,.neutral-control{fill:none;stroke:var(--control);' in source
-    assert '.current-node,.current-control{fill:none;stroke:var(--control);' in source
+    assert '.current-node,.current-control{fill:none;stroke:var(--current);' in source
     assert 'control: colorScheme == .dark ? "#a8a8a8" : "#858585"' in source
     assert 'handle: colorScheme == .dark ? "#707070" : "#b8b8b8"' in source
+    assert 'previewFill: colorScheme == .dark ? "#ffffff" : "#000000"' in source
     assert "style.setProperty('--control', payload.control)" in source
     assert "style.setProperty('--handle', payload.handle)" in source
-    assert '.fill-preview path.neutral:not(.open){fill:#000;stroke:#000}' in source
+    assert "style.setProperty('--preview-fill', payload.previewFill)" in source
+    assert "style.setProperty('--reference', payload.reference)" in source
+    assert "style.setProperty('--current', payload.current)" in source
+    assert '.fill-preview path.neutral:not(.open){fill:var(--preview-fill);stroke:var(--preview-fill)}' in source
+    assert '.fill-preview .component-fill{fill:var(--preview-fill);fill-opacity:1}' in source
     assert '.fill-preview #delta-fill' in source
     assert 'event.charactersIgnoringModifiers == " "' in source
     assert 'actionHandler?(.fillPreview(true))' in source
@@ -181,12 +222,18 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert ".current-node,.current-control{fill:none;" in source
     assert "class='fixed-position-label fixed-guide-label' data-x='\\(maxX)' data-y='\\(-value)'" in source
     assert "class='fixed-position-label fixed-anchor-label'" in source
-    assert 'let payload = try? InstallerPayload.resolve()' in service
-    assert 'GlyphDiffRuntime.resolve(extractedPayloadURL: payload?.payloadDir)' in service
+    assert 'payload = try InstallerPayload.resolve()' in service
+    assert 'validatedPayload: payload' in service
+    assert 'Bundle.main.resourceURL' not in service
+    assert 'Button("Retry") { model.retryGlyphPreview() }' in source
+    assert 'DisclosureGroup("Technical details"' in source
+    assert 'label: "Reference"' in source and 'label: "Current"' in source
+    assert 'for component in snapshot.componentOutlines ?? []' in source
+    assert 'elements.append(contentsOf: component)' in source
     assert 'let labelX = css == "reference" ? -8 : 8' in source
     assert 'let labelY = css == "reference" ? -8 : 14' in source
-    assert ".reference-change.anchor-label{fill:#3fe2a6;stroke:none;text-anchor:end}" in source
-    assert ".current-change.anchor-label{fill:#3fd1e2;stroke:none;text-anchor:start}" in source
+    assert ".reference-change.anchor-label{fill:var(--reference);stroke:none;text-anchor:end}" in source
+    assert ".current-change.anchor-label{fill:var(--current);stroke:none;text-anchor:start}" in source
     assert ".label{fill:var(--guide);font:500 12px -apple-system" in source
 
 

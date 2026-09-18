@@ -54,6 +54,11 @@ def test_bridge_only_then_optional_companions_preserve_previous_install(tmp_path
     assert len(first['installed']) == 2
     manifest = json.loads((output/'manifest.json').read_text())
     assert first['sidecar']['codeHash'] == manifest['sidecar']['codeHash']
+    assert first['sidecar']['glyphDiffReader'] == manifest['glyphDiffReader'] == {
+        'schemaVersion': 3,
+        'protocolAPIVersion': 1,
+        'workerModule': 'glyphs_mcp_sidecar.glyph_diff_worker',
+    }
     assert first['bridge']['codeHash'] == manifest['bridge']['codeHash']
     assert first['bridgeVersion'] == manifest['projectVersion']
     assert not (plugins/'Glyphs Reference Inspector.glyphsReporter').exists()

@@ -64,6 +64,7 @@ public enum SetupItemState: Equatable, Sendable {
     case queued(SetupOperation)
     case active(SetupOperation)
     case installed
+    case developmentLinked
     case failed(SetupOperation, String)
 
     public var statusLabel: String {
@@ -72,6 +73,7 @@ public enum SetupItemState: Equatable, Sendable {
         case .queued: return "Queued"
         case .active(let operation): return operation.progressLabel
         case .installed: return "Installed"
+        case .developmentLinked: return "Development link"
         case .failed: return "Failed"
         }
     }
@@ -79,7 +81,7 @@ public enum SetupItemState: Equatable, Sendable {
     public var operation: SetupOperation? {
         switch self {
         case .queued(let operation), .active(let operation), .failed(let operation, _): return operation
-        case .notInstalled, .installed: return nil
+        case .notInstalled, .installed, .developmentLinked: return nil
         }
     }
 
@@ -192,9 +194,15 @@ public struct DesktopInstallation: Equatable {
     public let hasLegacyInstallation: Bool
     public let expectedSidecarHash: String?
     public let expectedBridgeHash: String?
+    public let expectedSidecarIdentity: String?
+    public let expectedRuntimeIdentity: String?
+    public let glyphDiffReader: GlyphDiffReaderContract?
+    public let developmentLinkedComponents: Set<String>
+    public let brokenDevelopmentLinkedComponents: Set<String>
 
     public var hasInstallation: Bool { !components.isEmpty || hasLegacyInstallation }
     public var hasServer: Bool { components.contains("mcp") }
+    public var isDevelopmentLinked: Bool { !developmentLinkedComponents.isEmpty }
     public var endpoint: URL { URL(string: "http://127.0.0.1:\(port)/mcp/")! }
 
     public init(home: URL = FileManager.default.homeDirectoryForCurrentUser) {
@@ -205,6 +213,13 @@ public struct DesktopInstallation: Equatable {
         let bundles = ["mcp": "Glyphs MCP Bridge.glyphsPlugin",
                        "curve-inspector": "Glyphs Curve Inspector.glyphsReporter",
                        "reference-inspector": "Glyphs Reference Inspector.glyphsReporter"]
+        let linked = bundles.compactMap { id, name -> (String, Bool)? in
+            let bundle = plugins.appendingPathComponent(name)
+            guard (try? FileManager.default.destinationOfSymbolicLink(atPath: bundle.path)) != nil else { return nil }
+            return (id, FileManager.default.fileExists(atPath: bundle.path))
+        }
+        developmentLinkedComponents = Set(linked.compactMap { $0.1 ? $0.0 : nil })
+        brokenDevelopmentLinkedComponents = Set(linked.compactMap { $0.1 ? nil : $0.0 })
         if let selected = receipt["components"] as? [String] {
             components = Set(selected).intersection(bundles.keys)
         } else {
@@ -212,17 +227,27 @@ public struct DesktopInstallation: Equatable {
                 FileManager.default.fileExists(atPath: plugins.appendingPathComponent(name).path) ? key : nil
             })
         }
-        expectedSidecarHash = (receipt["sidecar"] as? [String: Any])?["codeHash"] as? String
+        let sidecarReceipt = receipt["sidecar"] as? [String: Any]
+        let runtimeReceipt = receipt["runtime"] as? [String: Any]
+        expectedSidecarHash = sidecarReceipt?["codeHash"] as? String
         expectedBridgeHash = (receipt["bridge"] as? [String: Any])?["codeHash"] as? String
+        expectedSidecarIdentity = sidecarReceipt?["identity"] as? String
+        expectedRuntimeIdentity = runtimeReceipt?["identity"] as? String
+        glyphDiffReader = (sidecarReceipt?["glyphDiffReader"] as? [String: Any])
+            .flatMap(GlyphDiffReaderContract.init(dictionary:))
         version = receipt["version"] as? String
-        python = (receipt["python"] as? String).map { URL(fileURLWithPath: $0) }
-        application = (receipt["application"] as? String).map { URL(fileURLWithPath: $0) }
         let agent = home.appendingPathComponent("Library/LaunchAgents/\(DesktopIdentity.serviceLabel).plist")
         let settings = (try? Data(contentsOf: agent)).flatMap {
             try? PropertyListSerialization.propertyList(from: $0, format: nil) as? [String: Any]
         } ?? [:]
         let args = settings["ProgramArguments"] as? [String] ?? []
         let environment = settings["EnvironmentVariables"] as? [String: String] ?? [:]
+        let fallbackPython = root.appendingPathComponent("runtime/bin/python3")
+        python = (receipt["python"] as? String).map { URL(fileURLWithPath: $0) }
+            ?? (FileManager.default.fileExists(atPath: fallbackPython.path) ? fallbackPython : nil)
+        let applicationIndex = args.firstIndex(of: "--glyphs-app")
+        let configuredApplication = applicationIndex.flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
+        application = ((receipt["application"] as? String) ?? configuredApplication).map { URL(fileURLWithPath: $0) }
         tokenURL = environment["GLYPHS_MCP_BRIDGE_TOKEN_FILE"].map { URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath) }
             ?? root.deletingLastPathComponent().appendingPathComponent("bridge-token")
         let index = args.firstIndex(of: "--port")

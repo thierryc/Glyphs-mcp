@@ -146,6 +146,8 @@ final class DesktopTests: XCTestCase {
         XCTAssertEqual(SetupItemState.failed(.remove, "blocked").failureMessage, "blocked")
         XCTAssertTrue(SetupItemState.active(.install).isActive)
         XCTAssertFalse(SetupItemState.installed.isActive)
+        XCTAssertEqual(SetupItemState.developmentLinked.statusLabel, "Development link")
+        XCTAssertNil(SetupItemState.developmentLinked.operation)
     }
 
     func testAdoptionPreservesReceiptChoicesAndUsesActualAgentPort() throws {
@@ -174,6 +176,56 @@ final class DesktopTests: XCTestCase {
         XCTAssertFalse(state.hasInstallation)
         XCTAssertFalse(state.hasServer)
         XCTAssertNil(state.python)
+    }
+
+    func testLinkedDevelopmentComponentsAreDetectedWithoutAReadableReceipt() throws {
+        let fm = FileManager.default
+        let home = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: home) }
+        let build = home.appendingPathComponent("development/simple-v2", isDirectory: true)
+        let plugins = home.appendingPathComponent("Library/Application Support/Glyphs 4/Plugins", isDirectory: true)
+        let root = home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2", isDirectory: true)
+        try fm.createDirectory(at: build, withIntermediateDirectories: true)
+        try fm.createDirectory(at: plugins, withIntermediateDirectories: true)
+        try fm.createDirectory(at: root.appendingPathComponent("runtime/bin"), withIntermediateDirectories: true)
+        try Data().write(to: root.appendingPathComponent("runtime/bin/python3"))
+        let bundles = ["mcp": "Glyphs MCP Bridge.glyphsPlugin",
+                       "curve-inspector": "Glyphs Curve Inspector.glyphsReporter",
+                       "reference-inspector": "Glyphs Reference Inspector.glyphsReporter"]
+        for name in bundles.values {
+            let target = build.appendingPathComponent(name, isDirectory: true)
+            try fm.createDirectory(at: target, withIntermediateDirectories: true)
+            try fm.createSymbolicLink(at: plugins.appendingPathComponent(name), withDestinationURL: target)
+        }
+        try fm.createSymbolicLink(
+            at: root.appendingPathComponent("installation.json"),
+            withDestinationURL: build.appendingPathComponent("missing-installation.dev.json")
+        )
+
+        let state = DesktopInstallation(home: home)
+        XCTAssertEqual(state.components, Set(bundles.keys))
+        XCTAssertEqual(state.developmentLinkedComponents, Set(bundles.keys))
+        XCTAssertTrue(state.brokenDevelopmentLinkedComponents.isEmpty)
+        XCTAssertTrue(state.isDevelopmentLinked)
+        XCTAssertEqual(state.python, root.appendingPathComponent("runtime/bin/python3"))
+        XCTAssertTrue(state.hasServer)
+    }
+
+    func testDanglingDevelopmentComponentLinksAreReportedButNotInstalled() throws {
+        let fm = FileManager.default
+        let home = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: home) }
+        let plugins = home.appendingPathComponent("Library/Application Support/Glyphs 4/Plugins", isDirectory: true)
+        try fm.createDirectory(at: plugins, withIntermediateDirectories: true)
+        try fm.createSymbolicLink(
+            at: plugins.appendingPathComponent("Glyphs MCP Bridge.glyphsPlugin"),
+            withDestinationURL: home.appendingPathComponent("missing/Glyphs MCP Bridge.glyphsPlugin")
+        )
+
+        let state = DesktopInstallation(home: home)
+        XCTAssertFalse(state.components.contains("mcp"))
+        XCTAssertEqual(state.brokenDevelopmentLinkedComponents, ["mcp"])
+        XCTAssertFalse(state.hasServer)
     }
 
     func testProgressUsesChangesAndPreparationDoesNotInventPercentage() throws {
