@@ -134,7 +134,7 @@ public enum InstallerPayloadManifestResolver {
 					throw UpdateStagingError("payload_manifest", "Glyphs 3 payload provenance is not the pinned v1.11 baseline.")
 				}
 			} else if manifest.schemaVersion == 4, target.baseline != nil {
-				throw UpdateStagingError("payload_manifest", "Glyphs 3 baseline metadata is not allowed in the Beta-4 payload.")
+				throw UpdateStagingError("payload_manifest", "Glyphs 3 baseline metadata is not allowed in the lean v2 payload.")
 			}
 			let bundleURL = try resolveRelativePath(target.pluginPath, under: payloadDirectory)
 			let infoURL = bundleURL.appendingPathComponent("Contents/Info.plist")

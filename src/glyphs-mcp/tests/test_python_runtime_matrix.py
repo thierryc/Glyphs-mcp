@@ -74,6 +74,8 @@ class PythonRequirementsTests(unittest.TestCase):
         self.assertIn("compatibility subset", runner)
         self.assertIn("PYTEST_DISABLE_PLUGIN_AUTOLOAD=1", runner)
         self.assertIn("-m unittest discover", runner)
+        self.assertIn('"fonttools": "fontTools"', runner)
+        self.assertIn('"Brotli": "brotli"', runner)
 
     def test_release_gate_enables_the_full_dependency_matrix(self) -> None:
         release_runner = (_repo_root() / "scripts" / "run_local_release_tests.sh").read_text(

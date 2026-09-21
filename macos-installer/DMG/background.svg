@@ -17,7 +17,7 @@
   <rect width="680" height="420" fill="url(#surface)"/>
   <rect width="680" height="420" fill="url(#glow)"/>
 
-  <!-- A restrained glyph-editing motif keeps the installer connected to Beta 4. -->
+  <!-- A restrained glyph-editing motif keeps the installer connected to Glyphs work. -->
   <path d="M-34 307 C47 266 83 205 139 136 C178 88 219 78 270 103"
         fill="none" stroke="#08c464" stroke-width="1.25" stroke-opacity="0.11"/>
   <path d="M710 302 C626 276 602 214 568 148 C540 94 496 73 446 96"

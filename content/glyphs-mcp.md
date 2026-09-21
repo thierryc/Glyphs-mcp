@@ -8,7 +8,7 @@ small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes the **signed and notarized local candidate**, desktop build **37**, bridge **(0.1.0)**. Public release is a separate step. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
+This guide describes the **2.0.0 Beta 5 candidate**, desktop build **47**, with coordinated sidecar and bridge product version **2.0.0**. Signing, notarization and public release evidence are recorded separately. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
 
 ## Start here
 

@@ -2,13 +2,13 @@
 title: Moving from v1 to v2
 ---
 
-Choose documentation by the **actual MCP interface and product release**. This source targets **2.0.0 Beta 4**, release `2.0.0-beta.4`, installer build **46**. The sidecar and bridge product versions are both `2.0.0`; the lean interface revision and bridge protocol are independently `1`. See [version and identity](../reference/version-identity.mdx).
+Choose documentation by the **actual MCP interface and product release**. This source targets **2.0.0 Beta 5**, release `2.0.0-beta.5`, installer build **47**. The sidecar and bridge product versions are both `2.0.0`; the lean interface revision and bridge protocol are independently `1`. See [version and identity](../reference/version-identity.mdx).
 
 | Area | v1 · 1.11.0 | v2 · 2.0.0 |
 | --- | --- | --- |
-| Distribution | Released compatibility payload; retained for Glyphs 3. | Private local candidate for Glyphs 4; signed distribution qualification remains separate. |
+| Distribution | Released compatibility payload; retained for Glyphs 3. | Signed and notarized private local candidate for Glyphs 4; publication remains separate. |
 | Server | MCP runs in the legacy Glyphs plugin. | MCP runs externally; a small native bridge handles live access. |
-| Tools | The [v1 command catalog](/docs/reference/command-set). | Exactly nine tools and seven capability-gated job kinds. |
+| Tools | The [v1 command catalog](/docs/reference/command-set). | Exactly nine tools and up to nine capability-gated job kinds. |
 | Installation | Legacy dependency setup. | One Setup page with inline cards, a serialized queue and a private sidecar runtime. |
 | Review | Legacy tool-specific review flows. | Prepare a job, inspect its report, apply it, review in Glyphs. |
 | Acceptance | Follow each v1 workflow, including legacy `save_font` where documented. | `accept_job` performs verified whole-document saving; native Undo/Redo and whole-job discard remain available before acceptance. |
@@ -26,7 +26,7 @@ The usual v2 client URL stays `http://127.0.0.1:9680/mcp/` unless you changed it
 
 ## Workflow differences
 
-V1 calls such as `list_open_fonts` do not carry over. Discover the intended font once with `list_documents`, retain its connection-specific `document_id`, and reuse it for fresh v2 reads. Rediscover after `document_not_found`, a known Glyphs/bridge restart or an explicit target change; never silently substitute another font. V2 does not expose arbitrary Python execution, export, master replacement, Unicode assignment or a complete optical-italic engine as MCP tools. Use native Glyphs features or reviewed workspace scripts for work outside the supported jobs.
+V1 calls such as `list_open_fonts` do not carry over. Discover the intended font once with `list_documents`, retain its connection-specific `document_id`, and reuse it for fresh v2 reads. Rediscover after `document_not_found`, a known Glyphs/bridge restart or an explicit target change; never silently substitute another font. V2 does not expose arbitrary Python execution, generic export selectors, master replacement, Unicode assignment or a complete optical-italic engine as MCP tools. Use the closed native compilation/export jobs or reviewed workspace scripts for work outside the supported jobs.
 
 V2 does not import or delegate to the legacy `save_font` implementation.
 `accept_job` and `save_document` share a new coordinator around the direct

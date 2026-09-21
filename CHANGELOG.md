@@ -1,5 +1,7 @@
 # Changelog
 
+## 2.0.0 Beta 5 — native jobs, compilation and export, build 47
+
 - Add capability-gated `feature_compile` diagnostics and verified `font_export`
   artifacts without increasing the nine-tool surface. Saved/live compilation
   calls `GSFont.compileFeatures()` behind persisted-state guards; exact static

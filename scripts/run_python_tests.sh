@@ -70,8 +70,8 @@ if not ((3, 11) <= sys.version_info[:2] <= (3, 14)):
 required = {
     "dulwich": "dulwich",
     "fastmcp": "fastmcp",
-    "fontTools": "fonttools",
-    "brotli": "Brotli",
+    "fonttools": "fontTools",
+    "Brotli": "brotli",
     "fontmake": "fontmake",
     "glyphsLib": "glyphsLib",
     "jsonschema": "jsonschema",

@@ -43,7 +43,7 @@ struct InstallationView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Glyphs components and agent connections")
                     .font(.title3.weight(.semibold))
-                Text("Install the bundled Beta-4 components, then configure every supported agent.")
+                Text("Install the bundled v2 components, then configure every supported agent.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()

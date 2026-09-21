@@ -151,7 +151,7 @@ final class InstallerViewModel: ObservableObject {
         }
         busy = true
         notice = .information("Preparing the setup queue…")
-        record("Queued \(plan.count) Beta-4 setup items.")
+        record("Queued \(plan.count) v2 setup items.")
         task = Task { [weak self] in await self?.runBulkQueue(plan) }
     }
 

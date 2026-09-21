@@ -100,7 +100,7 @@ def validate_payload(payload_root: Path, *, release_version: str | None = None) 
             raise ValueError("Payload identity mismatch: " + name)
     target = manifest["targets"]["4"]
     if "baseline" in target:
-        raise ValueError("Glyphs 3 baseline metadata is not allowed in the Beta-4 payload")
+        raise ValueError("Glyphs 3 baseline metadata is not allowed in the lean v2 payload")
     path = _safe_payload_path(root, target["pluginPath"], "Lean/Glyphs MCP Bridge.glyphsPlugin")
     info = plistlib.loads((path / "Contents/Info.plist").read_bytes())
     if info["CFBundleShortVersionString"] != manifest["version"] or target["pluginVersion"] != manifest["version"]:
@@ -113,7 +113,7 @@ def validate_payload(payload_root: Path, *, release_version: str | None = None) 
     if cursor_manifest.get("name") != "glyphs-mcp" or cursor_manifest.get("version") != manifest["version"]:
         raise ValueError("Cursor plugin metadata mismatch")
     if (root / "skills-v1").exists() or (root / "Plugins/Glyphs3").exists():
-        raise ValueError("Glyphs 3 content is not allowed in the Beta-4 payload")
+        raise ValueError("Glyphs 3 content is not allowed in the lean v2 payload")
     validate_glyph_diff_contract(root / "Lean")
     return manifest
 

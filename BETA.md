@@ -1,34 +1,31 @@
-# Glyphs MCP 2.0.0 Beta 4
+# Glyphs MCP 2.0.0 Beta 5
 
-**Status: Beta 4 is published as a signed and notarized GitHub prerelease.
-Stable Latest remains v1.11.1.**
+**Status: Beta 5 build 47 is signed, notarized, stapled and installed locally.
+Its signed Sparkle update and component migration passed in VirtualBuddy. It is
+not published. Stable Latest remains v1.11.1.**
 
-Beta 4 hardens the Project visual glyph diff around one verified schema-3
-reader and completes component, quadratic-curve and open-path rendering.
-Resolved component references receive an appearance-aware 8% neutral fill,
-while holding Space shows a black silhouette in light mode and a white
-silhouette in dark mode. It retains the single native **Setup** page for
-Glyphs 4. The source target is `2.0.0-beta.4`, desktop build 46, on
-`lit/v2-beta`. Candidate evidence is recorded in
-[BETA4-VALIDATION.md](BETA4-VALIDATION.md); the published Beta 3 evidence
-remains in [BETA3-VALIDATION.md](BETA3-VALIDATION.md).
+Beta 5 adds guarded outline editing, verified native saving, a closed catalog
+of native Glyphs actions, feature compilation diagnostics, and verified static,
+variable and web-font export while retaining the nine-tool MCP surface. The
+source target is `2.0.0-beta.5`, desktop build 47, on `lit/v2-beta`. The
+published Beta 4 evidence remains in
+[BETA4-VALIDATION.md](BETA4-VALIDATION.md); exact local Beta 5 evidence is in
+[BETA5-VALIDATION.md](BETA5-VALIDATION.md).
 
-Glyphs 3 is not included in the Beta 4 desktop payload. Its separate v1.11.0
+Glyphs 3 is not included in the Beta 5 desktop payload. Its separate v1.11.0
 release, source metadata and documentation remain unchanged.
 
 ## Requirements and availability
 
-Beta 4 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 5 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-Download the signed and notarized
-[Beta 4 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.4/Glyphs-MCP-2.0.0-beta.4.dmg)
-from the [Beta 4 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.4).
-Its SHA-256 is
-`09c12429a49339627a167de7e3df040f7f6ece6495fea299942bb4671d175715`.
-Beta 4 remains a prerelease rather than the repository's Latest release.
+The Beta 5 disk image and update archive remain private. Signing,
+notarization, Gatekeeper, local installation and signed-update acceptance have
+passed; tagging, upload and publication remain separate release operations.
+The published Beta 4 prerelease remains available.
 
 ## First session
 
@@ -88,13 +85,13 @@ component reconciliation are also separate operations; a migration failure
 must leave the manager available to retry or continue with the previous
 installation.
 
-## Help test Beta 4
+## Help test Beta 5
 
-The remaining manual matrix covers fresh, partial, update, removal, ownership
-conflict, running-Glyphs, absent-agent and reload-required scenarios on Apple
-silicon and Intel. It also verifies all four agent connections after reload or
-restart. Do not mark those rows complete without evidence from the exact
-candidate.
+Signed update and component migration passed on an Apple-silicon VirtualBuddy
+guest. The remaining manual matrix covers fresh, partial, removal, ownership
+conflict, running-Glyphs, absent-agent and reload-required scenarios, physical
+Intel, and all four agent connections after reload or restart. Do not mark
+those rows complete without evidence from the exact candidate.
 
 Useful reports include the beta/build number, macOS and processor, Glyphs
 version/build, affected card, operation state, client, exact reproduction and a
@@ -107,6 +104,6 @@ tool. In Project visual diffs, changing glyph files can retain the previously
 selected master even when that master is unchanged; choose a layer without the
 “unchanged” suffix to display the available geometry difference. Physical
 Intel acceptance and the complete packaged manual scenario matrix remain
-unverified. The signed application update and component migration passed in an
-Apple-silicon VirtualBuddy guest. The four public release assets, raw beta feed
-and non-Latest prerelease state were verified after publication.
+unverified. Exact build-47 signed application update and component migration
+evidence is recorded in [BETA5-VALIDATION.md](BETA5-VALIDATION.md); Beta 4
+results are not carried forward.

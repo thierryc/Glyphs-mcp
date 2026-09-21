@@ -1,8 +1,8 @@
-# Glyphs MCP 2.0.0 Beta 4 — release and launch plan
+# Glyphs MCP 2.0.0 Beta 5 — release and launch plan
 
 ## Decision
 
-Prepare **2.0.0 Beta 4**, tag `v2.0.0-beta.4`, build **46**, on `lit/v2-beta`.
+Prepare **2.0.0 Beta 5**, tag `v2.0.0-beta.5`, build **47**, on `lit/v2-beta`.
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -13,7 +13,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 4**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 5**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -30,7 +30,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
   restored settings and component receipts; do not market side-by-side server
-  isolation. The Beta 4 payload is Glyphs 4-only; Glyphs 3 remains on its
+  isolation. The Beta 5 payload is Glyphs 4-only; Glyphs 3 remains on its
   separate pinned v1.11.0 release.
 
 ## Release sequence
@@ -56,7 +56,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.4 --publish --confirm-publish v2.0.0-beta.4
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.5 --publish --confirm-publish v2.0.0-beta.5
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -66,9 +66,9 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 5 uses `--beta 5` and a higher installer build. Final 2.0.0 gets a new
+Beta 6 uses `--beta 6` and a higher installer build. Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
-`main`. Do not relabel Beta 4 as final or repoint its tag.
+`main`. Do not relabel Beta 5 as final or repoint its tag.
 
 ## Enrollment and feedback
 
@@ -115,7 +115,7 @@ verified public branch URL at posting time.
 
 Forum title: **Glyphs MCP 2.0.0 Beta — open for testing**
 
-> Glyphs MCP 2.0.0 Beta 4 is available to try. Setup now combines server status,
+> Glyphs MCP 2.0.0 Beta 5 is available to try. Setup now combines server status,
 > Glyphs components and Codex, Claude Code, Claude Desktop and Cursor
 > connections with inline progress. A dedicated window collects redacted
 > installer, server and sidecar diagnostics.
@@ -138,21 +138,20 @@ Social draft:
 
 **Three days later:** answer recurring setup questions in the guide and share
 one concrete workflow demonstration. **After one week:** publish a short
-feedback update, known issues and what is planned for Beta 5. Thank testers
+feedback update, known issues and what is planned for Beta 6. Thank testers
 publicly only with their permission. Avoid a fixed update cadence until the
 first feedback volume is known.
 
 ## Published GitHub release notes
 
-**Glyphs MCP 2.0.0 Beta 4 · build 46**
+**Glyphs MCP 2.0.0 Beta 5 · build 47**
 
-This fourth beta hardens and completes the Project visual glyph diff. It uses
-one identity-verified schema-3 reader, supports quadratic contours,
-decomposed components and open paths, and matches segments independently of
-contour order. Component references receive an appearance-aware 8% neutral
-fill while native paths remain unfilled. Holding Space shows a black silhouette
-in light mode and a white silhouette in dark mode. Per-layer warnings preserve
-usable previews, and fatal outline failures still fall back to Text.
+This fifth beta adds guarded outline editing, verified native saving, a closed
+catalog of capability-gated Glyphs actions, feature compilation diagnostics,
+and verified static, variable and web-font export. It keeps the public MCP
+surface at nine tools and routes these features through the existing job
+lifecycle with review, Undo/Redo, discard, verified acceptance and bounded
+artifact publication.
 
 The app retains the unified Setup, serialized component and connection
 management, verified Cursor plugin and dedicated redacted troubleshooting logs
@@ -162,23 +161,14 @@ The desktop requires macOS 14. Its payload is now Glyphs 4-only; Glyphs 3
 continues through the separate v1.11.0 release. The nine-tool MCP interface
 retains bridge protocol 1.
 
-Signed update acceptance passed on an Apple-silicon VirtualBuddy guest running
-macOS 26.6.2 and Glyphs 4.1 (4107): a notarized build-45 fixture discovered,
-downloaded, verified, installed and relaunched build 46, after which Update All
-migrated the components and Setup returned Ready. The previous Beta 3 app was
-retained as a timestamped backup. Physical Intel acceptance and the remaining
-manual scenario matrix are still open and are disclosed in BETA.md.
+Signed update acceptance, notarization submission identifiers and exact
+SHA-256 values are recorded in [BETA5-VALIDATION.md](BETA5-VALIDATION.md).
+Physical Intel acceptance and the remaining manual scenario matrix remain open
+until separately exercised.
 
-Published SHA-256 values:
-
-```text
-09c12429a49339627a167de7e3df040f7f6ece6495fea299942bb4671d175715  Glyphs-MCP-2.0.0-beta.4.dmg
-37376b15aab286b4afb4210e59be943e0861dcbbc14260d6739fd7a9be937208  Glyphs-MCP-2.0.0-beta.4.zip
-9b6136fc113514fc642646e08b32f9227e151c674f28129101d79268cb682e5a  appcast.xml
-```
-
-See BETA.md for open downloads, optional enrollment, known limitations and
-the issue-report template.
+See BETA.md for candidate status, optional enrollment, known limitations and
+the issue-report template. Do not publish these notes until the exact artifacts
+and download links have been verified.
 
 ## Beta 2 local preparation record — 16 September 2026
 

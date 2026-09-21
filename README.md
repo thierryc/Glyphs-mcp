@@ -1,4 +1,4 @@
-# Glyphs MCP Desktop 2.0.0 Beta 4
+# Glyphs MCP Desktop 2.0.0 Beta 5
 
 **Beta preparation — not yet available for public download.**
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
@@ -41,21 +41,23 @@ The nine tools are `get_status`, `list_documents`, `read_entities`,
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-The Beta 4 payload is Glyphs 4-only. Glyphs 3 remains available through the
+The Beta 5 payload is Glyphs 4-only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. This candidate is
-prepared locally; it has not been published as a release.
+signed, notarized and qualified locally; it has not been published as a
+release.
 
-Documentation sources: [v2 · 2.0.0 Beta 4](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 5](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
-Beta 4 qualification is pending; the published Beta 3 record remains in
-[BETA3-VALIDATION.md](BETA3-VALIDATION.md).
+Beta 5 local qualification is recorded in
+[BETA5-VALIDATION.md](BETA5-VALIDATION.md); the published Beta 4 record remains
+in [BETA4-VALIDATION.md](BETA4-VALIDATION.md).
 The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 `/docs/v2/`. Both are built together from `website/`.
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.4.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.5.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

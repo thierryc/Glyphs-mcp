@@ -208,6 +208,25 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                     installer_build=43,
                 )
 
+    def test_lean_candidate_reports_the_nine_tool_surface(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="glyphs-lean-candidate.") as temp:
+            root = Path(temp)
+            _candidate_tree(root)
+            source = root / "src/bridge/glyphs_mcp_bridge/__init__.py"
+            source.parent.mkdir(parents=True)
+            source.write_text('PROJECT_VERSION = "2.3.4"\n', encoding="utf-8")
+            manifest = root / "skills/manifest.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text('{"managedSkills": []}\n', encoding="utf-8")
+
+            result = self.security.validate_unsigned_candidate(
+                root,
+                expected_version="2.3.4",
+                installer_build=42,
+            )
+
+            self.assertEqual(result["publicToolCount"], 9)
+
     def test_knowledge_gate_fails_closed_on_vendored_hash_drift(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-knowledge-security.") as temp:
             root = Path(temp)

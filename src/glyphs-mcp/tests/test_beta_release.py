@@ -16,12 +16,24 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
-def test_current_checkout_is_beta_4_build_46():
+def test_current_checkout_is_beta_5_build_47():
     release = load(REPO)
     assert release['version'] == '2.0.0'
-    assert release['tag'] == 'v2.0.0-beta.4'
-    assert release['label'] == '2.0.0 Beta 4'
-    assert release['installerBuild'] == 46
+    assert release['tag'] == 'v2.0.0-beta.5'
+    assert release['label'] == '2.0.0 Beta 5'
+    assert release['installerBuild'] == 47
+
+
+def test_beta_5_validation_records_the_private_signed_candidate():
+    text = (REPO / 'BETA5-VALIDATION.md').read_text()
+    assert '`2.0.0-beta.5`' in text
+    assert 'desktop build 47' in text
+    assert 'not published' in text
+    assert 'No Beta 5 tag, GitHub release,' in text
+    assert 'asset upload, appcast publication or announcement was created' in text
+    assert 'cadfadac6779eeb0e2051f1c0b8c2feba1010ef4a8f43709594729f732e4c9eb' in text
+    assert 'a197164a39f2cbe9a882ba987e61a96233da00bea6767637708e8b49a7d03466' in text
+    assert '840d35b4d0dfe079b1b1a08234b25f71331c7be14620ddaccd004fb78ae24d31' in text
 
 
 def test_beta_identity_preserves_numeric_bundle_version_and_build():

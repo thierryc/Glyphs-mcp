@@ -22,6 +22,7 @@ MARKETING_VERSION_RE = re.compile(r"\bMARKETING_VERSION\s*=\s*(\d+\.\d+\.\d+)\s*
 BUILD_VERSION_RE = re.compile(r"\bCURRENT_PROJECT_VERSION\s*=\s*(\d+)\s*;")
 CHECKSUM_RE = re.compile(r"^([0-9a-f]{64})  (.+)$")
 CURRENT_V2_PUBLIC_TOOL_COUNT = 20
+CURRENT_LEAN_PUBLIC_TOOL_COUNT = 9
 CURRENT_V2_CANONICAL_SCHEMA_VERSION = 8
 
 
@@ -249,7 +250,7 @@ def validate_unsigned_candidate(
         "installerBuild": installer_build,
         "targets": {"4": version} if lean else {"3": PINNED_GLYPHS3_VERSION, "4": version},
         "canonicalSchemaVersion": None if lean else CURRENT_V2_CANONICAL_SCHEMA_VERSION,
-        "publicToolCount": 7 if lean else CURRENT_V2_PUBLIC_TOOL_COUNT,
+        "publicToolCount": CURRENT_LEAN_PUBLIC_TOOL_COUNT if lean else CURRENT_V2_PUBLIC_TOOL_COUNT,
         "managedSkillCount": len(json.loads((root / "skills/manifest.json").read_text())["managedSkills"]) if lean else 18,
         "runtimeIdentity": runtime_identity,
         "payloadValidated": payload_root is not None,

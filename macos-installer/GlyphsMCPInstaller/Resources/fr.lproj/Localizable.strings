@@ -242,7 +242,7 @@
 "Setup" = "Configuration";
 "Install and manage Glyphs MCP from one place." = "Installez et gérez Glyphs MCP depuis un seul endroit.";
 "Glyphs components and agent connections" = "Composants Glyphs et connexions aux agents";
-"Install the bundled Beta-4 components, then configure every supported agent." = "Installez les composants inclus dans la bêta 4, puis configurez chaque agent pris en charge.";
+"Install the bundled v2 components, then configure every supported agent." = "Installez les composants v2 inclus, puis configurez chaque agent pris en charge.";
 "Components" = "Composants";
 "Connections" = "Connexions";
 "Install All" = "Tout installer";

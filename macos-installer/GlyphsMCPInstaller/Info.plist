@@ -41,7 +41,7 @@
 	<key>GMCPReleaseChannel</key>
 	<string>beta</string>
 	<key>GMCPBetaNumber</key>
-	<integer>4</integer>
+	<integer>5</integer>
 	<key>GMCPTemplateRegistryURL</key>
 	<string>https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/templates/registry.json</string>
 </dict>
