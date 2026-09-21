@@ -44,7 +44,7 @@ def patch() -> dict:
     }
 
 
-def test_public_surface_is_exactly_seven_small_tools() -> None:
+def test_public_surface_is_exactly_nine_small_tools() -> None:
     assert TOOL_NAMES == (
         "get_status",
         "list_documents",
@@ -52,7 +52,9 @@ def test_public_surface_is_exactly_seven_small_tools() -> None:
         "start_job",
         "get_job",
         "apply_job",
+        "accept_job",
         "discard_job",
+        "save_document",
     )
 
 

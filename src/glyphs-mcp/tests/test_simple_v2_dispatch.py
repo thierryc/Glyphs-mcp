@@ -60,7 +60,8 @@ def test_callback_error_survives_dispatch():
 
 @pytest.mark.parametrize('execution', ['cancelled', 'uncertain'])
 @pytest.mark.parametrize('path,payload', [('/v1/apply', {'patch': {'jobId': 'job_existing'}}),
-                                        ('/v1/discard', {'jobId': 'job_existing'})])
+                                        ('/v1/discard', {'jobId': 'job_existing'}),
+                                        ('/v1/accept', {'jobId': 'job_existing', 'save': {'saveId': 'job_existing'}})])
 def test_http_timeout_error_keeps_job_identity(execution, path, payload):
     import io
     import json
@@ -79,4 +80,7 @@ def test_http_timeout_error_keeps_job_identity(execution, path, payload):
     handler.do_POST()
     status, body = replies[0]
     assert status == 503
-    assert body['error']['details'] == {'execution': execution, 'jobId': 'job_existing'}
+    expected = {'execution': execution, 'jobId': 'job_existing'}
+    if path == '/v1/accept':
+        expected['saveId'] = 'job_existing'
+    assert body['error']['details'] == expected

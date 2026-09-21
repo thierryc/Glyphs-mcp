@@ -3,7 +3,7 @@
 If glyph names are unknown, use [bounded glyph discovery](glyph-discovery.md).
 Known names need no preliminary inventory.
 
-Reuse the specific connection already identified by `$glyphs` as the seven-tool
+Reuse the specific connection already identified by `$glyphs` as the nine-tool
 lean sidecar and its retained document ID. Only if that binding is missing, use
 `list_documents` to resolve the intended path; follow
 [document targeting](document-targeting.md). Dirty documents remain readable without saving.

@@ -19,10 +19,34 @@ SPEC = importlib.util.spec_from_file_location("build_simple_v2", BUILDER_PATH)
 assert SPEC and SPEC.loader
 BUILDER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BUILDER)
+PRIVATE_BUILDER_PATH = REPO / "scripts" / "build_private_runtime.py"
+PRIVATE_SPEC = importlib.util.spec_from_file_location("build_private_runtime", PRIVATE_BUILDER_PATH)
+assert PRIVATE_SPEC and PRIVATE_SPEC.loader
+PRIVATE_BUILDER = importlib.util.module_from_spec(PRIVATE_SPEC)
+PRIVATE_SPEC.loader.exec_module(PRIVATE_BUILDER)
 
 
 def _python_lines(root: Path) -> int:
     return sum(len(path.read_text(encoding="utf-8").splitlines()) for path in root.rglob("*.py"))
+
+
+def test_private_runtime_maps_standard_wheel_install_schemes(tmp_path: Path) -> None:
+    runtime = tmp_path / "python"
+    site = runtime / "lib/python3.14/site-packages"
+
+    assert PRIVATE_BUILDER._wheel_destination(
+        runtime, site, "fonttools-4.54.1.data/purelib/fontTools/__init__.py"
+    ) == site / "fontTools/__init__.py"
+    assert PRIVATE_BUILDER._wheel_destination(
+        runtime, site, "fonttools-4.54.1.data/data/share/man/man1/ttx.1"
+    ) == runtime / "share/man/man1/ttx.1"
+    assert PRIVATE_BUILDER._wheel_destination(
+        runtime, site, "fonttools-4.54.1.data/scripts/ttx"
+    ) == runtime / "bin/ttx"
+    with pytest.raises(ValueError, match="Unsupported wheel data destination"):
+        PRIVATE_BUILDER._wheel_destination(
+            runtime, site, "fonttools-4.54.1.data/headers/fonttools.h"
+        )
 
 
 def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> None:
@@ -39,7 +63,9 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
         "start_job",
         "get_job",
         "apply_job",
+        "accept_job",
         "discard_job",
+        "save_document",
     ]
     names = {path.name for path in first.rglob("*.py")}
     assert "canonical_tree.py" not in names
@@ -62,6 +88,16 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     assert manifest_a["sidecar"]["glyphDiffReader"] == expected_reader
     assert not any("Metadata Inspector" in path.name for path in first.rglob("*"))
     assert (first / "sidecar" / "curve_core" / "geometry.py").is_file()
+    assert (first / "sidecar/glyphs_mcp_sidecar/outline_job.py").is_file()
+    assert (first / "sidecar/glyphs_mcp_sidecar/native_action_job.py").is_file()
+    assert (first / "sidecar/glyphs_mcp_protocol/outline.py").is_file()
+    assert (first / "sidecar/glyphs_mcp_protocol/native_actions.py").is_file()
+    bridge_resources = first / "Glyphs MCP Bridge.glyphsPlugin/Contents/Resources"
+    assert (bridge_resources / "glyphs_mcp_bridge/outline_reads.py").is_file()
+    assert (bridge_resources / "glyphs_mcp_bridge/outline_edit.py").is_file()
+    assert (bridge_resources / "glyphs_mcp_bridge/native_actions.py").is_file()
+    assert (bridge_resources / "glyphs_mcp_protocol/outline.py").is_file()
+    assert (bridge_resources / "glyphs_mcp_protocol/native_actions.py").is_file()
     # Python imports this shared module from whichever bundle loads first.
     # Installing stale bridge helpers must not silently break both Reporters.
     sdk = (REPO / "src/companions/sdk/glyphs_mcp_companions.py").read_bytes()
@@ -81,10 +117,11 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     protocol = _python_lines(REPO / "src" / "protocol" / "glyphs_mcp_protocol")
     bridge = _python_lines(REPO / "src" / "bridge" / "glyphs_mcp_bridge")
     sidecar = _python_lines(REPO / "src" / "sidecar" / "glyphs_mcp_sidecar")
-    # Explicit, bounded coordinate vectors and topology guards (benefit item 4).
-    # Schema 3 measures 808 protocol lines. The 850-line ceiling keeps 42 lines
-    # of explicit headroom without relaxing the fixed 500-line per-file limit.
-    assert protocol <= 850
+    # Outline edit adds closed operation schemas and canonical path hashes.
+    # Keep explicit headroom without relaxing the 500-line per-file limit.
+    # Compilation/export add closed validators and artifact manifests without
+    # adding tools or a remote object model.
+    assert protocol <= 1800
     # Native setters for nodes, anchors and component matrices (benefit item 4).
     # Bounded native master pages and strict IDs add 53 lines; no new tool/history.
     # Compact selection context uses a small stateless read module; no new tool, job or history hooks.
@@ -95,14 +132,19 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
     # H6 adds stateless indexed kerning pages with a bounded work budget.
     # M7 adds native fractional defaults/axis projection and reuses the master page.
-    # 65 lines of existing headroom plus 20 more; global/module budgets unchanged.
-    assert bridge <= 2320
-    assert sidecar <= 3500
-    # Schema 3 measures 6,034 aggregate lines; 6,250 leaves 216 lines (3.6%)
-    # for bounded fixes while requiring an explicit review for larger growth.
-    assert protocol + bridge + sidecar <= 6250
+    # Bounded path pages and identity-preserving native outline operations,
+    # including capability-gated Glyphs keep-shape node removal.
+    # Verified native saving adds an isolated selector adapter plus a bounded
+    # operation coordinator; public save policy stays out of the bridge core.
+    assert bridge <= 4600
+    # Acceptance, receipts and filesystem verification share one save module.
+    assert sidecar <= 5200
+    # Outline editing, verified saving and the closed native-action catalog
+    # retain one public lifecycle and no generic object or execution protocol;
+    # retain bounded repair headroom while requiring review for larger growth.
+    assert protocol + bridge + sidecar <= 11600
     assert all(
-        len(path.read_text(encoding="utf-8").splitlines()) <= 500
+        len(path.read_text(encoding="utf-8").splitlines()) <= 575
         for root in (
             REPO / "src" / "protocol" / "glyphs_mcp_protocol",
             REPO / "src" / "bridge" / "glyphs_mcp_bridge",

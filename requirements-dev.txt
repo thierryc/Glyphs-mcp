@@ -4,6 +4,5 @@
 # separate from the dependencies installed into Glyphs for the MCP runtime.
 glyphsLib==6.10.1
 fontmake==3.10.1
-uharfbuzz==0.56.0
 Pillow==12.0.0
 pytest==8.4.2

@@ -18,11 +18,14 @@ def _files(path: Path) -> list[Path]:
         return [path]
     if path.suffix.lower() != ".glyphspackage" or not path.is_dir() or path.is_symlink():
         raise SourceError("bulk jobs require a saved .glyphs or .glyphspackage source")
+    entries = list(path.rglob("*"))
+    if any(item.is_symlink() for item in entries):
+        raise SourceError("the .glyphspackage is empty or contains symbolic links")
     files = sorted(
-        (item for item in path.rglob("*") if item.is_file()),
+        (item for item in entries if item.is_file()),
         key=lambda item: item.relative_to(path).as_posix(),
     )
-    if not files or any(item.is_symlink() for item in files):
+    if not files:
         raise SourceError("the .glyphspackage is empty or contains symbolic links")
     return files
 

@@ -23,7 +23,18 @@ class BridgeClient:
         self.timeout = timeout
 
     def _post(self, path: str, value: dict[str, Any] | None = None) -> Any:
-        uncertain = {"execution": "uncertain", "jobId": (value or {}).get("jobId") or (value or {}).get("patch", {}).get("jobId")} if path in ("/v1/apply", "/v1/discard") else {}
+        request = value or {}
+        save = request.get("save") if isinstance(request.get("save"), dict) else {}
+        uncertain = {}
+        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save"):
+            patch = request.get("patch") if isinstance(request.get("patch"), dict) else {}
+            uncertain["execution"] = "uncertain"
+            job_id = request.get("jobId") or patch.get("jobId")
+            save_id = request.get("saveId") or save.get("saveId")
+            if job_id:
+                uncertain["jobId"] = job_id
+            if save_id:
+                uncertain["saveId"] = save_id
         body = json.dumps(value or {}, separators=(",", ":")).encode("utf-8")
         request = Request(
             self.base_url + path,
@@ -67,6 +78,9 @@ class BridgeClient:
             {"documentId": document_id, "entities": entities, "fields": fields},
         )
 
+    def compile_features(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/compile-features", {"compile": request})
+
     def apply(self, patch: dict[str, Any]) -> dict[str, Any]:
         return self._post("/v1/apply", {"patch": patch})
 
@@ -75,3 +89,30 @@ class BridgeClient:
 
     def discard(self, job_id: str) -> dict[str, Any]:
         return self._post("/v1/discard", {"jobId": job_id})
+
+    def accept(self, job_id: str, save: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/accept", {"jobId": job_id, "save": save})
+
+    def complete_accept(
+        self,
+        job_id: str,
+        *,
+        verified: bool,
+        receipt: dict[str, Any] | None = None,
+        error: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return self._post(
+            "/v1/accept/complete",
+            {
+                "jobId": job_id,
+                "verified": bool(verified),
+                "receipt": receipt,
+                "error": error,
+            },
+        )
+
+    def save(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/save", {"save": request})
+
+    def save_operation(self, save_id: str) -> dict[str, Any]:
+        return self._post("/v1/save-operation", {"saveId": save_id})

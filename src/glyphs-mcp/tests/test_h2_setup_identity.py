@@ -27,7 +27,7 @@ def test_identity_table_matches_release_source_protocol_and_inventory():
                 'Lean interface':'glyphs-mcp-sidecar', 'Interface revision':'1',
                 'Bridge protocol':str(protocol.PROTOCOL_VERSION),
                 'Managed skills':str(len(manifest['managedSkills'])),
-                'MCP tools':str(len(protocol.TOOL_NAMES)), 'Job kinds':'5',
+                'MCP tools':str(len(protocol.TOOL_NAMES)), 'Job kinds':'7',
                 'Desktop payload targets':'Glyphs 4 only',
                 'Separate pinned v1 release':legacy['CFBundleShortVersionString']}
     assert values == expected

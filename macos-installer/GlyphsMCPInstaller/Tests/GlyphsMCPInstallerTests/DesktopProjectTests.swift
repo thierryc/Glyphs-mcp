@@ -10,6 +10,19 @@ final class DesktopProjectTests: XCTestCase {
         return root
     }
 
+    private func requiredGit(
+        _ reader: ReadOnlyGit,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws -> URL {
+        try XCTUnwrap(
+            reader.executable,
+            "The macOS project workflow and its release gate require a Git executable.",
+            file: file,
+            line: line
+        )
+    }
+
     func testStarterUsesActualPortAndCreatesIndependentFolders() throws {
         let parent = try temporary()
         let files = ProjectFiles.starter(agents: StarterProjectCreator.builtinTemplate)
@@ -109,7 +122,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testGitInspectionPreservesIndexReferencesAndWorktreeAndDisablesHelpers() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let project = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
@@ -153,7 +166,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testCombinedHeadToWorkingTreeComparisonsCoverGitChangeKinds() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let project = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
@@ -206,7 +219,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testComparisonClassifiesUnsafeAndNonRenderingWorkingFiles() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let project = try temporary(), outside = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
@@ -253,7 +266,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testLargeTrackedFileUsesBoundedCombinedPatchPreview() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let project = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
@@ -293,7 +306,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testOversizedLargeFilePatchStopsAtCaptureLimit() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let project = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
@@ -321,7 +334,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testNoCommitRepositoryTreatsTrackedAndUntrackedFilesAsAdditions() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let project = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
@@ -581,7 +594,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testGitBranchLabelsDistinguishNoCommitsAndDetachedRevisionWithoutWrites() async throws {
         let reader = ReadOnlyGit()
-        guard let git = reader.executable else { throw XCTSkip("Git is not installed") }
+        let git = try requiredGit(reader)
         let root = try temporary(), runner = ProcessRunner()
         func command(_ args: [String]) throws -> String {
             let result = runner.runSyncWithStderr(executable: git, args: ["-C", root.path] + args)
@@ -616,7 +629,7 @@ final class DesktopProjectTests: XCTestCase {
 
     func testOrdinaryProjectNeedsNoGitRepository() async throws {
         let reader = ReadOnlyGit(), root = try temporary()
-        guard reader.executable != nil else { throw XCTSkip("Git is not installed") }
+        _ = try requiredGit(reader)
         do { _ = try await reader.inspect(root); XCTFail("An ordinary folder has no Git status") }
         catch { XCTAssertTrue(error.localizedDescription.contains("This folder isn’t a Git repository")) }
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path), [])

@@ -10,7 +10,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-The beta branch prepares product 2.0.0 Beta 4, release `2.0.0-beta.4`, installer build 46. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seven tools and five job kinds. See [version and identity](../content/reference/version-identity.mdx).
+The beta branch prepares product 2.0.0 Beta 4, release `2.0.0-beta.4`, installer build 46. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany nine tools and seven capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also

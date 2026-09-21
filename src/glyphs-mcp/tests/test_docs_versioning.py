@@ -26,7 +26,7 @@ def test_v1_snapshot_preserves_all_release_files_and_records_adaptations():
             assert 'Glyphs-mcp/blob/main/' not in text
 
 
-def test_v2_catalog_signatures_match_only_the_seven_native_server_tools():
+def test_v2_catalog_signatures_match_only_the_nine_native_server_tools():
     tree = ast.parse((REPO / 'src/sidecar/glyphs_mcp_sidecar/server.py').read_text())
     actual = {}
     for node in ast.walk(tree):
@@ -40,7 +40,7 @@ def test_v2_catalog_signatures_match_only_the_seven_native_server_tools():
     documented = {}
     for name, args in re.findall(r'^\| `([a-z_]+)` \| (.*?) \|', reference, re.M):
         documented[name] = re.findall(r'`([a-z_]+)`', args)
-    assert len(actual) == 7
+    assert len(actual) == 9
     assert documented == actual
 
 
@@ -59,4 +59,7 @@ def test_v2_json_job_examples_are_accepted_by_the_shipped_request_validator():
                 SidecarService._job_request(value['kind'], value.get('delta'),
                                             value.get('glyphs'), value.get('options'))
                 examples.append(value['kind'])
-    assert set(examples) == {'width_delta', 'spacing', 'kerning_collision', 'slant', 'start_nodes'}
+    assert set(examples) == {
+        'width_delta', 'spacing', 'kerning_collision', 'slant', 'start_nodes',
+        'outline_edit', 'native_action', 'feature_compile', 'font_export',
+    }

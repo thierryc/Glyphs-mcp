@@ -44,10 +44,15 @@ class NativeUndoScope:
             self.managers[identity] = (manager, automatic)
         return manager
 
-    def manager_for(self, layer):
-        manager = getattr(layer, "undoManager", None)
+    def manager_for(self, target, *, use_fallback=True):
+        manager = getattr(target, "undoManager", None)
         manager = manager() if callable(manager) else manager
-        return self._include(manager if manager is not None else self.fallback)
+        if manager is None and use_fallback:
+            manager = self.fallback
+        return self._include(manager)
+
+    def document_manager(self):
+        return self._include(self.fallback)
 
     def finish(self, name):
         first_error = None

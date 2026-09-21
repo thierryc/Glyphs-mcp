@@ -4,7 +4,7 @@ title: Version and identity
 
 Use the catalog of the **specific MCP connection** to select instructions. A
 product label, a skill name or the Glyphs display name cannot identify an MCP
-interface by itself. The current lean catalog has seven tools; the v1 catalog
+interface by itself. The current lean catalog has nine tools; the v1 catalog
 and its pinned Glyphs 3 skills remain separate.
 
 ## Current source target
@@ -24,15 +24,23 @@ and the Xcode project. The managed skill inventory comes from
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
-| MCP tools | `7` |
-| Job kinds | `5` |
+| MCP tools | `9` |
+| Job kinds | `7` |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
 `sidecarVersion` and `bridgeVersion` are coordinated product versions. The lean
-interface revision identifies the seven-tool contract; the bridge protocol
+interface revision identifies the nine-tool contract; the bridge protocol
 identifies the sidecar/native message contract. The dated MCP transport version
 is negotiated separately during initialization. These values need not match.
+The sixth job, `outline_edit`, is additive and appears only when the bridge
+advertises `outline.edit.v1`; an older coordinated installation reports five.
+Within that job, native shape-preserving `remove_node` is advertised separately
+through `outline.remove-node.v1`; older bridges retain the other outline
+operations but reject that operation before preparation.
+The seventh job, `native_action`, appears only with `native.action.v1` and a
+nonempty filtered `nativeActions` catalog. Its action list is negotiated with
+the exact Glyphs build rather than inferred from protocol or product version.
 Independent Curve Inspector and Reference Inspector versions do not determine
 the MCP product version.
 
@@ -43,7 +51,7 @@ manifest and receipt:
 
 - `release` identifies the product/release version, channel, beta number and build.
 - `interface` and `interfaceVersion` identify the lean interface. Check advertised
-  `readCapabilities` and `jobKinds` for the requested workflow.
+  `readCapabilities`, `writeCapabilities`, `jobKinds` and `nativeActions` for the requested workflow.
 - Sidecar `runtimeId` combines its release with a short file fingerprint;
   `codeHash` gives the complete fingerprint. Check `bridge.release`,
   `bridge.runtimeId` and `bridge.codeHash` independently.

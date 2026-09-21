@@ -14,6 +14,26 @@ from build_simple_v2 import _identity
 REPO = Path(__file__).resolve().parents[1]
 
 
+def _wheel_destination(runtime, site, member):
+    parts = Path(member).parts
+    if not parts or Path(member).is_absolute() or '..' in parts:
+        raise ValueError('Unsafe wheel member')
+    if not parts[0].endswith('.data'):
+        return site.joinpath(*parts)
+    if len(parts) < 3:
+        raise ValueError('Unsupported wheel data destination: '+member)
+    scheme, relative = parts[1], parts[2:]
+    if scheme in ('purelib', 'platlib'):
+        root = site
+    elif scheme == 'data':
+        root = runtime
+    elif scheme == 'scripts':
+        root = runtime/'bin'
+    else:
+        raise ValueError('Unsupported wheel data destination: '+member)
+    return root.joinpath(*relative)
+
+
 def build(architecture, output, downloads=None):
     lock = json.loads((REPO/'third_party/lean-runtime.json').read_text())
     downloads = Path(downloads or REPO/'build/runtime-downloads')
@@ -39,14 +59,7 @@ def build(architecture, output, downloads=None):
             with zipfile.ZipFile(wheels/name) as wheel:
                 for info in wheel.infolist():
                     if info.is_dir(): continue
-                    parts = Path(info.filename).parts
-                    if not parts or Path(info.filename).is_absolute() or '..' in parts:
-                        raise ValueError('Unsafe wheel member')
-                    if parts[0].endswith('.data'):
-                        if parts[1] not in ('purelib','platlib'):
-                            raise ValueError('Unsupported wheel data destination: '+info.filename)
-                        parts = parts[2:]
-                    destination = site.joinpath(*parts)
+                    destination = _wheel_destination(runtime, site, info.filename)
                     destination.parent.mkdir(parents=True,exist_ok=True)
                     destination.write_bytes(wheel.read(info))
                     destination.chmod(0o755 if info.external_attr >> 16 & 0o111 else 0o644)

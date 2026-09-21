@@ -1,4 +1,4 @@
 interface:
   display_name: "glyphs-mcp-maintainer-feedback"
   short_description: "Collect bounded reproduction evidence for a Glyphs MCP issue"
-  default_prompt: "Use the lean seven-tool Glyphs MCP workflow for this task."
+  default_prompt: "Use the lean nine-tool Glyphs MCP workflow for this task."

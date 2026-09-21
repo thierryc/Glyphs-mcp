@@ -3,7 +3,10 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.0.0** connects AI applications to Glyphs 4 through seven tools. A small bridge handles live font access; a separate server prepares supported jobs outside the editor. Native Save, Undo, Redo and Revert remain your editing workflow.
+Glyphs MCP **2.0.0** connects AI applications to Glyphs 4 through nine tools. A
+small bridge handles live font access; a separate server prepares supported
+jobs outside the editor and verifies explicit acceptance saves. Native Undo,
+Redo and Revert remain part of the editing workflow.
 
 This guide describes the **signed and notarized local candidate**, desktop build **37**, bridge **(0.1.0)**. Public release is a separate step. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
 
@@ -23,7 +26,7 @@ Both inspectors are optional and can be installed without the MCP server. The in
 
 ## Available work
 
-Prepare [spacing](spacing-tools.md), [collision kerning](kerning-workflow.md), a [first-pass slant](italic-first-pass.md), [start-node correspondence](workflows/start-node-correspondence.mdx), or a width adjustment. Review the report, apply the prepared result, then inspect it in Glyphs before saving.
+Prepare [spacing](spacing-tools.md), [collision kerning](kerning-workflow.md), a [first-pass slant](italic-first-pass.md), [start-node correspondence](workflows/start-node-correspondence.mdx), a width adjustment, closed native actions, compiler diagnostics or verified font exports. Review the typed result; apply mutations in Glyphs or publish artifact jobs only when the task authorizes it.
 
 The [tool reference](reference/command-set.mdx) explains exact signatures and limits. The [migration guide](getting-started/migrate-from-v1.mdx) explains which v1 workflows are different or unavailable.
 

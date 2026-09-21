@@ -22,7 +22,9 @@ TOOL_NAMES = (
     "start_job",
     "get_job",
     "apply_job",
+    "accept_job",
     "discard_job",
+    "save_document",
 )
 
 MAX_CHANGES = 100_000
@@ -198,19 +200,59 @@ def validate_patch(value: Any) -> dict[str, Any]:
     from .coordinates import validate as coordinate_change
     normalized = []
     targets = set()
+    outline_changes = 0
+    native_contract = None
+    native_layer_changes = 0
+    native_glyph_changes = 0
+    native_font_changes = 0
+    native_feature_changes = 0
     for index, raw in enumerate(changes):
         change = _object(raw, f"change {index}")
         kind = change.get("kind")
-        validator = {"set": _set_change, "translate": _translate_change, "kerning": _kerning_change, "start_node": _start_node_change, "coordinates": coordinate_change}.get(kind)
+        from .outline import validate_change as outline_change
+        from .native_actions import validate_change as native_action_change
+        validator = {"set": _set_change, "translate": _translate_change, "kerning": _kerning_change, "start_node": _start_node_change, "coordinates": coordinate_change, "outline": outline_change, "native_action": native_action_change}.get(kind)
         item = validator(change) if validator else None
         if item is None:
             raise ProtocolError("unsupported_change", f"unsupported change kind: {kind}")
-        target = ((kind, item["master"], item["direction"], item["left"], item["right"]) if kind == "kerning"
-                  else (kind, item["glyph"], item["layer"], item.get("field")))
+        if kind == "outline":
+            outline_changes += 1
+            if outline_changes > 4096:
+                raise ProtocolError("invalid_request", "outline patch exceeds 4,096 layer changes")
+        if kind == "kerning":
+            target = (kind, item["master"], item["direction"], item["left"], item["right"])
+        elif kind == "native_action":
+            target = (kind, item["scope"], item.get("glyph"), item.get("layer"), item.get("blockType"), item.get("id"))
+            contract = (item["action"], item["scope"], canonical_json(item["arguments"]))
+            if native_contract is None:
+                native_contract = contract
+            elif native_contract != contract:
+                raise ProtocolError("invalid_request", "a native_action patch must contain exactly one action")
+            if item["scope"] == "layer":
+                native_layer_changes += 1
+                if native_layer_changes > 4096:
+                    raise ProtocolError("invalid_request", "native_action patch exceeds 4,096 layers")
+            elif item["scope"] == "glyph":
+                native_glyph_changes += 1
+                if native_glyph_changes > 100:
+                    raise ProtocolError("invalid_request", "native_action patch exceeds 100 glyphs")
+            else:
+                if item["scope"] == "feature_block":
+                    native_feature_changes += 1
+                    if native_feature_changes > 100:
+                        raise ProtocolError("invalid_request", "native_action patch exceeds 100 feature blocks")
+                else:
+                    native_font_changes += 1
+                    if native_font_changes > 1:
+                        raise ProtocolError("invalid_request", "native_action patch contains duplicate font actions")
+        else:
+            target = (kind, item["glyph"], item["layer"], item.get("field"))
         if target in targets:
             raise ProtocolError("invalid_request", "patch contains a duplicate target")
         targets.add(target)
         normalized.append(item)
+    if native_contract is not None and len(normalized) != native_layer_changes + native_glyph_changes + native_font_changes + native_feature_changes:
+        raise ProtocolError("invalid_request", "native_action changes cannot be mixed with other change kinds")
     return {
         "version": PATCH_VERSION,
         "jobId": _text(patch.get("jobId"), "jobId", maximum=100),

@@ -45,4 +45,7 @@ This is a project comparison policy, not a universal minimum coordinate supporte
 
 Use `apply_job`, wait for completion with `get_job`, then review varied text in Glyphs. Enable [Changes Against Reference](workflows/visual-review.mdx) to inspect the active layer's geometry and width. It does not evaluate spacing quality for you.
 
-Use bounded `read_entities` for exact widths and outline hashes. Native displayed bearings can be rounded; coordinate or detached native measurements supply fractional evidence. To abandon the result use `discard_job`; to accept it use native Save.
+Use bounded `read_entities` for exact widths and outline hashes. Native displayed
+bearings can be rounded; coordinate or detached native measurements supply
+fractional evidence. To abandon the result use `discard_job`; when persistence
+is authorized, use `accept_job` to verify it and save the whole document.

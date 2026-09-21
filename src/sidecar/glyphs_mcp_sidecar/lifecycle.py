@@ -7,7 +7,7 @@ import os
 import time
 from uuid import uuid4
 
-BUSY = frozenset(("preparing", "cancelling", "applying", "discarding"))
+BUSY = frozenset(("preparing", "cancelling", "applying", "accepting", "discarding"))
 
 
 def mutation(method):
@@ -29,8 +29,8 @@ def activity(job):
         "kind": job["request"]["kind"], "phase": phase,
         "startedAt": job.get("phaseStartedAt", job["createdAt"]),
         "finishedAt": job.get("finishedAt"),
-        "completed": operation.get("completedChanges") if state in ("applying", "discarding", "applied", "discarded") else None,
-        "total": operation.get("totalChanges") if state in ("applying", "discarding", "applied", "discarded") else None,
+        "completed": operation.get("completedChanges") if state in ("applying", "accepting", "discarding", "applied", "accepted", "accept_uncertain", "discarded") else None,
+        "total": operation.get("totalChanges") if state in ("applying", "accepting", "discarding", "applied", "accepted", "accept_uncertain", "discarded") else None,
         "message": (job.get("error") or {}).get("message"),
     }
 
@@ -74,7 +74,7 @@ class ServiceLifecycle:
 
     def reconcile(self):
         for job in self.service.jobs.records():
-            if job["status"] in ("applying", "discarding"):
+            if job["status"] in ("applying", "accepting", "discarding"):
                 try:
                     self.service.get_job(job["id"])
                 except Exception:

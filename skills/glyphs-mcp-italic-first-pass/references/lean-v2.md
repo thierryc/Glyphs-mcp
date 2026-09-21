@@ -62,8 +62,9 @@ work. Check stored-data restoration and derived native bounds separately.
 If dependent bounds disagree with restored geometry, view that exact dependent
 layer in Glyphs and recheck. Report this native refresh limitation; stale bounds
 alone do not prove object damage. Do not substitute a different layer or master.
-Dirty-indicator restoration is not promised. Save is acceptance only when
-authorized; there is no implicit Save or font replacement.
+Dirty-indicator restoration is not promised. When the task authorizes
+persistence after review, `accept_job` verifies targets and saves the whole
+document; there is no implicit Save or font replacement.
 
 A clean font can still fail a later preparation/application with a saved/live
 precision conflict: native Save may serialize rounded coordinates while live

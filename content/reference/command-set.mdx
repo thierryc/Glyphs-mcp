@@ -1,21 +1,24 @@
 ---
-title: The seven v2 tools
+title: The nine v2 tools
 ---
 
 This is the current private **Glyphs MCP 2.0.0 Beta 4** tool contract. Product release
 `2.0.0-beta.4` is distinct from interface revision `1`, bridge protocol `1`, and
 the separately negotiated MCP transport version. Inspect `get_status` for
-independent sidecar/bridge identities and negotiated `readCapabilities`.
+independent sidecar/bridge identities and negotiated `readCapabilities`,
+`writeCapabilities`, `jobCapabilities` and closed `nativeActions`.
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
-| `get_status` | None | Read sidecar, worker and bridge availability. |
+| `get_status` | None | Read sidecar, worker and bridge availability plus negotiated read/write/job capabilities. |
 | `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job outside the editor. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
-| `apply_job` | `job_id`, optional `include_preview` | Apply the prepared result as a reversible live change. |
+| `apply_job` | `job_id`, optional `include_preview` | Apply a mutation result as a reversible live change. |
+| `accept_job` | `job_id`, optional `destination`, `include_preview` | Persist an applied mutation, or publish verified export artifacts to a new directory. |
 | `discard_job` | `job_id`, optional `include_preview` | Cancel preparation, discard a proposal or restore current affected live targets. |
+| `save_document` | `document_id`, optional `destination` | Save an explicitly identified unowned document. |
 
 ## Explicit reads
 
@@ -37,7 +40,14 @@ intent when the prior target may no longer be intended.
 | Layer inventory | `{"kind":"layers","glyph":"a"}`; optional `limit`, opaque `cursor` | `id`, `name`, `associatedMasterId`, `isMasterLayer`, `isSpecialLayer`, `isBraceLayer`, `isBracketLayer` |
 | Context | `{"kind":"context"}`; optional `glyphLimit` with `selectedGlyphs` | `view`, `master`, `selectedGlyphs` |
 | Selection | `{"kind":"selection"}`; optional `nodeLimit` only with `nodes` | `glyph`, `layer`, `selectedNodeCount`, `selectedAnchorCount`, `selectedComponentCount`, `selectedGuideCount`, `selectedOtherCount`, optional `nodes` |
+| Path inventory | `{"kind":"paths","glyph":"y","layer":"<layer ID>"}`; optional `limit`, opaque `cursor` | `items` only; summaries include path/shape indices, state, counts, bounds and `pathHash` |
+| Path nodes | `{"kind":"path","glyph":"y","layer":"<layer ID>","index":0}`; optional `limit`, opaque `cursor` | `nodes` only; normalized raw node records and `pathHash` |
+| Segment | `{"kind":"segment","glyph":"y","layer":"<layer ID>","path":0,"endNode":4}` | `type`, `startNode`, `endNode`, `controlNodes`, `points`, `length`, `pathHash` |
 | Kerning | `{"kind":"kerning","master":"<master ID>","direction":"LTR","left":"A","right":"V"}` | `value` only; `null` means absent. |
+| Feature-block inventory | `{"kind":"feature_blocks","blockType":"feature","limit":100}`; sole selector | `items` only; `blockType` is `prefix`, `class` or `feature`. |
+| Feature block | `{"kind":"feature_block","blockType":"feature","id":"<persistent ID>"}` | `id`, `name`, `code`, `automatic`, `disabled`, `canBeAutomated`, `notes`, `labels`, `errors`, `errorType`, `errorTooltip`, `filePath` |
+| Instance inventory | `{"kind":"instances","limit":100}`; sole selector | `items` only; persistent ID, name, static/variable type, export flag and outline format. |
+| Instance | `{"kind":"instance","id":"<persistent ID>"}` | `id`, `name`, `type`, `exports`, `outlineFormat`, `axisValues` |
 
 Resolve IDs from the document or selection data; do not guess a layer ID. Kerning selectors address stored keys. Supported directions are `LTR`, `RTL` and `vertical`; collision preparation is LTR only.
 
@@ -106,12 +116,28 @@ Indices use zero-based `layer.paths` (excluding components) and `path.nodes`
 (including off-curves). Null glyph/layer and `nodes:null` mean no active Edit View.
 See the shipped `glyphs/references/selection-reads.md` for exact semantics.
 
+Path geometry requires negotiated `paths.list.v1` and `path.geometry.v1`.
+Path pages contain at most 100 summaries; node pages contain at most 256 nodes.
+Pass opaque cursors unchanged. A cursor guards document generation, dirty state,
+target, count and exact path geometry; `stale_path_cursor` requires restarting
+without it. Reads work for dirty and unsaved fonts. `pathHash` is an opaque exact
+path guard. Segment `endNode` is an on-curve raw node index; line, cubic and
+quadratic geometry is normalized, while malformed or unknown segment types are
+rejected. These live pages are bounded, not an atomic snapshot.
+
 Stored kerning reads use exactly `fields:["value"]` and 1–100 explicit selectors.
 Use glyph names or established stored `@MMK_` group keys, not native glyph IDs.
 `null` means no entry for the exact keys/master/direction; zero is stored and
 fractions are retained. This does not compute effective class/exception kerning.
 Dirty and unsaved fonts need no Save or job for inspection. One bad selector
 rejects the request. See `glyphs/references/kerning-reads.md` for recovery.
+
+Feature-source reads require `features.read.v1`. Feature pages are live,
+native-order pages of one block type with opaque cursors and a 1–100 limit.
+Restart after `stale_feature_cursor`. Exact selectors use persistent IDs, never
+display names. Instance reads similarly require `instances.read.v1`; pages use
+opaque cursors and restart after `stale_instance_cursor`. Exact instance IDs
+feed export jobs. Both reads work on dirty documents without a Save.
 
 Example `read_entities` arguments:
 
@@ -132,28 +158,269 @@ Example `read_entities` arguments:
 | `kerning_collision` | Explicit `options.pairs`, optional master IDs and sampling options; no `glyphs`. [Kerning guide](../kerning-workflow.md). |
 | `start_nodes` | Explicit glyphs, contour index and master/reference selection. [Correspondence guide](../workflows/start-node-correspondence.mdx). |
 | `slant` | Optional glyphs, angle, pivot, master IDs and straight-stem preservation. [Slant guide](../italic-first-pass.md). |
+| `outline_edit` | Typed, ordered path operations on ordinary masters or explicit layer IDs; requires bridge `outline.edit.v1`. |
+| `native_action` | One closed Glyphs command over exact layer/glyph/font targets; requires bridge `native.action.v1` and the action in `nativeActions`. |
+| `feature_compile` | Closed saved-source or live-editor compiler diagnostic; requires the corresponding `feature.compile.*.v1` capability. |
+| `font_export` | One exact static/variable instance exported to private staging and structurally verified; requires export and verification capabilities. |
 
-Only `width_delta` accepts `delta`. The other jobs use `options`. A supplied `glyphs` list must contain unique nonempty names; use the workflow's narrower limits where specified. Missing or incompatible targets are reported, not silently substituted.
+Only `width_delta` accepts `delta`. The other jobs use `options`. `outline_edit`
+selects glyphs inside `options.targets`, not the top-level `glyphs` argument. A
+supplied glyph list must contain unique nonempty names; use the workflow's
+narrower limits where specified. Missing or incompatible targets are reported,
+not silently substituted.
+
+`outline_edit` is advertised in `jobKinds` only when the live bridge advertises
+`outline.edit.v1` in `writeCapabilities`. Each target supplies `glyph`,
+`referenceLayer`, path hash `guards`, an ordered `operations` list and either
+`layers:{"scope":"all_masters"}` or explicit IDs. `all_masters` excludes brace,
+bracket, other special and background layers. Operations are `split_segment`,
+`update_nodes`, `remove_node`, `delete_nodes`, `reverse_path`, `set_start_node`,
+`set_closed`, `add_path` and `delete_path`; subsequent indices refer to the evolving path.
+`remove_node` requires `outline.remove-node.v1`, targets one on-curve raw index,
+and uses Glyphs' native keep-shape operation. Its report lists the exact removed
+raw indices and surviving nodes adjusted by Glyphs. `delete_nodes` remains raw
+topology surgery and produces a contour-geometry risk warning.
+Arc length is the split default and `path_time` is explicit. The closed contract
+allows 1–32 unique split fractions, 256 total operations, 4,096 expanded layer
+changes and 4,096 nodes per path. Coordinates must be finite. Locked, malformed,
+degenerate, unsupported and hint-referenced destructive targets are rejected.
+`compatibilityPolicy:"preserve"` is the default; `allow_incompatible` requires
+an explicit user request and is highlighted in the report.
+
+```json
+{
+  "document_id": "<document ID>",
+  "kind": "outline_edit",
+  "options": {
+    "compatibilityPolicy": "preserve",
+    "targets": [{
+      "glyph": "y", "layers": {"scope": "all_masters"},
+      "referenceLayer": "<Thin Extended layer ID>",
+      "guards": [{"path": 0, "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"}],
+      "operations": [{"op": "split_segment", "path": 0,
+        "startNode": 3, "endNode": 4, "fractions": [0.10, 0.25, 0.82],
+        "measure": "arc_length"}]
+    }]
+  }
+}
+```
+
+Native shape-preserving removal is explicit:
+
+```json
+{"op":"remove_node","path":0,"node":25}
+```
+
+Preparation resolves this to the same operation plus ascending `removedNodes`.
+Multiple removals are separate ordered operations so every later index addresses
+the evolving path.
+
+### Closed native actions
+
+`native_action` is advertised only when the running bridge reports
+`native.action.v1` and at least one recognized action. `get_status.nativeActions`
+is the sorted live catalog; unknown bridge values are filtered. Check both the
+job kind and the requested action immediately before preparation. A missing
+action is unavailable on that Glyphs build and cannot be replaced with a menu
+name, selector, method name or Python payload.
+
+Each job contains exactly one action. Layer actions accept 1–100 explicit glyph
+targets, each with `layers:{"scope":"all_masters"}` or
+`layers:{"scope":"ids","ids":[...]}`. `all_masters` excludes brace, bracket,
+other special and background layers. Exact IDs can select stored special
+layers. Expansion is capped at 4,096 layers. Glyph actions use
+`targets:[{"glyph":"A"}]`; font actions forbid `targets`. Automatic block
+updates use `targets:[{"blockType":"feature","id":"<persistent ID>"}]` and
+require native `automatic` plus `canBeAutomated` evidence.
+
+```json
+{
+  "document_id": "<document ID>",
+  "kind": "native_action",
+  "options": {
+    "action": "update_metrics",
+    "targets": [{
+      "glyph": "h",
+      "layers": {"scope": "all_masters"}
+    }]
+  }
+}
+```
+
+The closed catalog is:
+
+| Action | Scope | Fixed behavior |
+|---|---|---|
+| `update_metrics` | layer | `syncMetrics()`; never `updateMetrics()` |
+| `correct_path_direction` | layer | `correctPathDirection()` |
+| `round_coordinates` | layer | `roundCoordinates()` |
+| `add_extremes` | layer | `addNodesAtExtremes(force, false)`; optional boolean `arguments.force`, default `false` |
+| `cleanup_paths` | layer | `cleanUpPaths()` |
+| `remove_overlap` | layer | `removeOverlap(false)`; never selection-dependent |
+| `add_missing_anchors` | layer | `addMissingAnchors()` |
+| `align_components` | layer | Qualified immediate component alignment |
+| `decompose_components` | layer | `decomposeComponents()` |
+| `decompose_corners` | layer | `decomposeCorners()` |
+| `make_components` | layer | `makeComponents()` |
+| `reinterpolate` | layer | `reinterpolate()` |
+| `connect_open_paths` | layer | `connectAllOpenPaths()` |
+| `swap_foreground_background` | layer pair | `swapForegroundWithBackground()` |
+| `update_glyph_info` | glyph | `updateGlyphInfo(false)`; never renames |
+| `update_features` | font | `updateFeatures()` |
+| `update_automatic_feature_block` | feature block | Native `update()` on one exact automatic, automatable prefix/class/feature |
+
+All other actions accept an empty/omitted `arguments` object. Top-level `delta`
+and `glyphs`, unknown fields, arbitrary selectors and selection-sensitive
+variants are rejected. Compiler-only work uses the separate `feature_compile`
+diagnostic job; binary generation uses the separate `font_export` artifact job.
+Generic menu invocation remains outside the contract.
+
+The external worker invokes the action on the saved snapshot without saving it.
+It hashes an action-specific Glyphs property-list projection and reports exact
+targets, changed/no-op counts, warnings, before/after summaries and the full
+report path. Encoded state is limited to 8 MiB per target and 64 MiB per job.
+The live bridge checks the prepared before hash, retains a bounded native
+snapshot, registers exact native Undo/Redo, invokes only the cataloged selector,
+checks the after hash, and immediately restores on exception or readback
+mismatch. Layer/glyph actions use glyph history; `update_features` uses document
+history. Native snapshots never cross the bridge or become a general object API.
+
+### Feature compilation
+
+`feature_compile` is advertised when either `feature.compile.saved.v1` or
+`feature.compile.live.v1` appears in `jobCapabilities`. Options contain only
+`mode`, defaulting to `saved`:
+
+```json
+{"document_id":"<document ID>","kind":"feature_compile","options":{"mode":"saved"}}
+```
+
+Saved mode opens the exact saved snapshot in the external Glyphs worker, calls
+`GSFont.compileFeatures()`, interprets its explicit success/error result and
+verifies that full persisted feature state did not change. Live mode performs
+the call on Glyphs' main thread against the clean open document, retains a deep
+feature snapshot, and restores on a persisted-state mismatch. Both modes use
+the common saved-clean start guard and never save.
+
+The terminal `resultKind` is `diagnostic` and status is `completed`. Compiler
+rejection is represented as `report.success:false` with normalized native and
+block diagnostics; it is not a worker failure. Diagnostic jobs cannot be
+applied, accepted or discarded. Compilation establishes compiler acceptance on
+that host, not exported shaping behavior.
+
+### Verified font export
+
+`font_export` is advertised only with `font.verify.tables.v1` and a static or
+variable export capability. Select one exact persistent `instanceId`; format is
+`otf` or `ttf`; containers are 1–3 unique values from `plain`, `woff`, `woff2`.
+Web containers require `font.export.web.v1`. Typed generation flags are
+`autoHint`, `removeOverlap`, `useSubroutines`, `useProductionNames` and
+`decomposeSmartComponents`. Variable export fixes overlap removal to false;
+TTF forbids subroutines.
+
+Optional `verification.shapingCases` contains at most 32 feature-on/off
+expectations with a four-character tag and optional unaffected control,
+direction, script, language and variation coordinates. Any case requires
+`font.verify.shaping.v1`.
+
+```json
+{
+  "document_id":"<document ID>",
+  "kind":"font_export",
+  "options":{
+    "instanceId":"<persistent ID>",
+    "format":"otf",
+    "containers":["plain","woff2"],
+    "verification":{"shapingCases":[]}
+  }
+}
+```
+
+The external worker calls typed `GSInstance.generate()` against the saved
+snapshot, never saves it, and keeps outputs in job-private staging. fontTools
+must parse every file and verify required tables, outline type, variable state
+and container. HarfBuzz verifies requested shaping samples. The exact manifest
+allows 1–3 regular files, at most 512 MiB each and 1 GiB total.
+
+The ready `resultKind` is `artifact`; `apply_job` is invalid. `discard_job`
+deletes private staging. Authorized publication calls `accept_job` with a new
+absolute destination directory. The sidecar rechecks the clean source and every
+staged hash, fsyncs a private sibling directory and publishes it by atomic
+rename without overwrite. A receipt binds destination, source hash and manifest.
+Interrupted publication is reconciled from the exact destination; it is never
+blindly replayed.
 
 ## Results and lifecycle
 
 Tool results use the existing envelope: `{"ok":true,"data":...}` or `{"ok":false,"error":...}`. Inspect the returned data rather than treating transport success as job success.
 
-A job starts as `preparing`, then becomes `ready`, `failed` or moves through `cancelling` to `cancelled`. Applying a ready job moves through `applying` to its reported outcome. Discarding an applied job moves through `discarding`. Use `get_job` until the operation is terminal; inspect errors and recovery details even when preparation initially succeeded.
+A job starts as `preparing`, then becomes `ready`, `completed`, `failed` or moves through
+`cancelling` to `cancelled`. Applying a ready job moves through `applying` to
+its reported outcome. Accepting an applied job moves through `accepting` to
+terminal `accepted`; an invoked but unverified native save becomes terminal
+`accept_uncertain`. Discarding an applied job moves through `discarding`. Use
+`get_job` until the operation is terminal; inspect errors and recovery details
+even when preparation initially succeeded. `resultKind` distinguishes
+`mutation`, terminal `diagnostic` and publishable `artifact` results.
 
-`include_preview` defaults to `true` on `get_job`, `apply_job` and `discard_job`. Set it to `false` to omit top-level `sample` and `report.sample`; the response explicitly returns `previewIncluded:false`. Counts, report metadata, progress, errors and operation state remain. Read the full report once before application and use the compact projection for subsequent polling.
+`include_preview` defaults to `true` on `get_job`, `apply_job`, `accept_job` and
+`discard_job`. Set it to `false` to omit top-level `sample` and `report.sample`;
+the response explicitly returns `previewIncluded:false`. Counts, report
+metadata, progress, errors and operation state remain. Read the full report
+once before application and use the compact projection for subsequent polling.
 
 `get_job` includes a compact sample and, where supplied, the path to the full external report. One glyph can produce several changes. A ready proposal with no changes is not evidence that a new spacing result was applied.
 
-Both preparation and application require a saved, clean baseline. Save accepts the reviewed result; native Undo/Redo use per-glyph history. Discard restores the entire job only where its affected targets remain current. See [Safety and recovery](../concepts/safety-model.mdx).
+All preparation currently requires a saved, clean baseline. Applying mutation jobs is
+always save-free. `accept_job` accepts the reviewed result; native Undo/Redo use
+per-glyph history before acceptance. Discard restores the entire job only where
+its affected targets remain current. See [Safety and recovery](../concepts/safety-model.mdx).
 
 For uncertain execution, retain the job ID and reconcile it with `get_job`. Do not automatically submit a replacement. Job IDs belong to the current service session, not a durable cross-restart queue.
+
+## Verified saving
+
+`accept_job` requires an `applied` job. Without `destination`, it saves to the
+document's current path. With a destination, it performs Save As to a new
+absolute `.glyphs` or `.glyphspackage` path. Before saving, the bridge validates
+the stored resolved targets against the live document in bounded chunks. This
+does not exclude unrelated edits: acceptance saves the entire document.
+
+`save_document` performs the same verified Save or Save As for an explicitly
+identified document only when no job for it is applying, applied, accepting or
+discarding. A pathless document requires Save As. Save As never overwrites an
+existing destination, follows an unsafe symlink or collides with another open
+document. Neither tool uses a save dialog, font index or frontmost-document
+inference. Calling either tool is the authorization to save; there is no
+separate `confirm` or `reason` argument.
+
+The persistence receipt reports the save and document/job identities, Save or
+Save As mode, old and new paths, dirty state, native success, source hashes
+before and after, whether the source changed since job preparation, and
+`verification:"native_and_source_hash"`. Save As additionally verifies that
+the original source hash did not change. A prior manual Save is recorded as a
+changed source where applicable, but `accept_job` invokes native Save again.
+Receipt hashes describe the persisted source; they do not prove that unrelated
+live edits outside a job's targets were absent.
+
+Preflight errors happen before the native selector and leave an applied job
+retryable and discardable. After selector invocation, any exception, false
+result, path/dirty mismatch or source-hash failure is uncertain and must not be
+replayed automatically. An accepted job is idempotent and cannot be discarded.
+Git diff and commit remain outside Glyphs MCP; use the receipt path and hash in
+that separate workflow.
 
 ## Precision and boundaries
 
 Spacing preparation and reference comparison use an inclusive absolute **0.001 font-unit** tolerance. Width changes are evaluated independently of negligible translations. Native write verification, recovery, Undo/Redo, topology and source hashes remain exact.
 
-There are no additional v2 MCP endpoints for arbitrary Python, export, master replacement, Unicode assignment or general font repair. Those tasks use native Glyphs operations or reviewed workspace scripts. The companions add native views, not extra MCP tools.
+There are no additional v2 MCP endpoints for arbitrary Python, master
+replacement, arbitrary Unicode assignment or untyped font repair. Typed path
+editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
+the negotiated closed `native_action` catalog. Compilation and export are
+closed job kinds over typed arguments, not generic compiler/export endpoints.
+None is a generic selector or object protocol. The companions add native views,
+not extra MCP tools; the public count remains nine.
 
 ### Kerning discovery
 
@@ -167,4 +434,4 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays seven tools.
+require a coordinated bridge/sidecar/skills update. The catalog stays nine tools.

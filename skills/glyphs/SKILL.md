@@ -49,7 +49,10 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 | Discover kerning groups or stored pairs | [Kerning discovery](references/kerning-discovery.md) |
 | Exact stored kerning | [Kerning reads](references/kerning-reads.md) |
 | Additive advance changes | [Widths](references/width-changes.md) |
-| Color, variable, icon/Unicode, production/export or LitSquare audit scope | [Specialized scope](references/specialized-scope.md) |
+| Glyphs-native metrics, outline/component/background, glyph-info or automatic-feature commands | [Closed native actions](references/native-actions.md), requiring `native.action.v1` and the action in `nativeActions` |
+| Feature source discovery and saved/live compiler diagnostics | [Feature compilation](references/feature-compilation.md), requiring `features.read.v1` and a compile capability |
+| Static, variable, WOFF/WOFF2 export and bounded shaping checks | [Font export](references/font-export.md), requiring `instances.read.v1` and export/verification capabilities |
+| Color, icon/Unicode, production or LitSquare audit scope beyond these jobs | [Specialized scope](references/specialized-scope.md) |
 | Connection failure | [Troubleshooting](references/connection-troubleshooting.md) |
 | Glyphs crashed or unexpectedly exited | [Crash recovery](references/crash-recovery.md); ask before any temporary autosave pause |
 
@@ -63,10 +66,17 @@ targets, with tighter detail limits specified in the focused references.
 
 ## Supported edits
 
-For an advertised job, use `start_job`, inspect `get_job` and its report before
-`apply_job`. Reconcile an uncertain write using that existing job ID; do not
-submit a duplicate. `discard_job` cancels or restores the whole job. Native Undo
-and Redo are grouped per glyph; native Save accepts changes. Inspect fresh source
-and dirty state for preparation. Never save, export, close or overwrite a font
-unless the user's task authorizes it. The seven tools provide no arbitrary
-Python execution or plugin reload; do not invent an MCP command.
+For an advertised mutation job, use `start_job`, inspect `get_job` and its report
+before `apply_job`. Diagnostic jobs finish without application; artifact jobs
+publish through `accept_job` to a new directory. Reconcile an uncertain write
+using that existing job ID; do not
+submit a duplicate. `discard_job` cancels or restores the whole job. Application
+is save-free. When the user's task authorizes persistence after review, call
+`accept_job`; it revalidates affected targets, saves the entire document and
+closes the rollback window. Use `save_document` only for a specifically
+identified document with no active or applied MCP job. Inspect fresh source and
+dirty state for preparation, and never save merely to satisfy `start_job`.
+Never save, publish an export, close or overwrite a font unless the user's task
+authorizes it. The nine tools provide no arbitrary Python execution or plugin reload; do
+not invent an MCP command. An advertised `native_action` is a closed typed job,
+not a general script or remote-object interface.

@@ -1,4 +1,4 @@
-"""Actual seven-tool MCP spacing/apply/discard gate on one disposable document."""
+"""Actual nine-tool MCP spacing/apply/discard gate on one disposable document."""
 
 import asyncio
 import json
@@ -31,7 +31,7 @@ async def run():
 
     async with Client('http://127.0.0.1:9680/mcp/') as client:
         catalog = await client.list_tools()
-        assert [item.name for item in catalog] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','discard_job']
+        assert [item.name for item in catalog] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document']
 
         async def tool(name, **arguments):
             result = await client.call_tool(name, arguments)

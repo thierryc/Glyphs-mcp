@@ -137,6 +137,61 @@ def test_layer_reference_and_focused_invocations_use_current_interface():
             if path.is_file(): assert path.read_bytes() == (mirror/path.relative_to(skill)).read_bytes()
 
 
+def test_outline_skill_routes_bounded_reads_and_typed_mutations_with_selection_precedence():
+    root = ROOT/'skills/glyphs-mcp-outlines-docs'
+    entry = (root/'SKILL.md').read_text()
+    reference = (root/'references/path-editing.md').read_text()
+    for phrase in ('first inspect the current Edit View', 'Explicit', 'selection informed',
+                   'path-editing.md', 'outline.edit.v1', 'outline.remove-node.v1',
+                   'remove_node', 'saved clean baseline'):
+        assert phrase in entry
+    for phrase in ('paths.list.v1', 'path.geometry.v1', 'fields:["items"]',
+                   'fields:["nodes"]', 'stale_path_cursor', 'all_masters',
+                   'allow_incompatible', 'split_segment', 'update_nodes',
+                   'remove_node', 'removedNodes', 'delete_nodes', 'raw topology',
+                   'reverse_path', 'set_start_node', 'set_closed',
+                   'add_path', 'delete_path', '4,096', 'hint-referenced'):
+        assert phrase in reference
+    mirror = ROOT/'plugins/glyphs-mcp/skills/glyphs-mcp-outlines-docs'
+    for path in root.rglob('*'):
+        if path.is_file(): assert path.read_bytes() == (mirror/path.relative_to(root)).read_bytes()
+
+
+def test_native_action_reference_and_focused_skills_route_the_closed_catalog():
+    reference = SKILL/'references/native-actions.md'
+    entry = (SKILL/'SKILL.md').read_text()
+    text = reference.read_text()
+    assert 'references/native-actions.md' in entry
+    for phrase in ('native.action.v1', 'nativeActions', 'all_masters', 'stored special layers',
+                   '8 MiB', '64 MiB', 'changed and no-op', 'feature_compile',
+                   'do not replace\nit with a script'):
+        assert phrase in text
+    actions = {
+        'update_metrics', 'correct_path_direction', 'round_coordinates', 'add_extremes',
+        'cleanup_paths', 'remove_overlap', 'add_missing_anchors', 'align_components',
+        'decompose_components', 'decompose_corners', 'make_components', 'reinterpolate',
+        'connect_open_paths', 'swap_foreground_background', 'update_glyph_info',
+        'update_features', 'update_automatic_feature_block',
+    }
+    assert actions <= set(re.findall(r'`([a-z_]+)`', text))
+    routes = {
+        'glyphs-mcp-spacing': 'update_metrics',
+        'glyphs-mcp-outlines-docs': 'swap_foreground_background',
+        'glyphs-mcp-master-compatibility': 'reinterpolate',
+        'glyphs-mcp-opentype-features': 'update_features',
+        'glyphs-mcp-scripting': 'Prefer the matching',
+    }
+    for skill, phrase in routes.items():
+        assert phrase in (ROOT/'skills'/skill/'SKILL.md').read_text()
+    api = (ROOT/'skills/glyphs-mcp-development/references/glyphs4-api-notes.md').read_text()
+    for phrase in ('all 17 actions', 'doAlignComponents()', 'syncMetrics()',
+                   'Undo → Redo → restoration', 'same after hash'):
+        assert phrase in api
+    mirror = ROOT/'plugins/glyphs-mcp/skills/glyphs'
+    for path in SKILL.rglob('*'):
+        if path.is_file(): assert path.read_bytes() == (mirror/path.relative_to(SKILL)).read_bytes()
+
+
 def test_private_read_skills_require_updates_instead_of_older_workflows():
     for name in ('master-reads.md', 'layer-reads.md', 'selection-reads.md'):
         text = ' '.join((SKILL/'references'/name).read_text().split())
@@ -147,7 +202,7 @@ def test_private_read_skills_require_updates_instead_of_older_workflows():
     assert 'use the same workflow; label missing identity' not in entry
     assert 'explicit known-ID reads can still' not in (SKILL/'references/master-reads.md').read_text()
     roadmap = (ROOT/'skills/ROADMAP.md').read_text()
-    assert 'permanent Python fallback' not in roadmap and 'seven tools' in roadmap
+    assert 'permanent Python fallback' not in roadmap and 'nine tools' in roadmap
 
 
 def test_document_targeting_reuses_ids_without_weakening_error_or_intent_guards():
@@ -202,6 +257,63 @@ def test_linked_command_contract_matches_current_private_selection_and_targeting
                    'nodeLimit', '1–256', 'complete', 'document_not_found',
                    'retain its `document_id`', 'bridge, sidecar and skills together'):
         assert phrase in text
+    for phrase in ('paths.list.v1', 'path.geometry.v1', 'outline.edit.v1',
+                   'outline.remove-node.v1', 'outline_edit', 'split_segment',
+                   'remove_node', 'removedNodes', 'allow_incompatible'):
+        assert phrase in text
+    for phrase in ('native.action.v1', 'nativeActions', 'native_action',
+                   'update_metrics', 'update_features', '64 MiB'):
+        assert phrase in text
+
+
+def test_compile_and_export_skills_define_closed_capability_gated_workflows():
+    entry = (SKILL/'SKILL.md').read_text()
+    compile_reference = SKILL/'references/feature-compilation.md'
+    export_reference = SKILL/'references/font-export.md'
+    assert 'references/feature-compilation.md' in entry
+    assert 'references/font-export.md' in entry
+    compilation = compile_reference.read_text()
+    for phrase in ('features.read.v1', 'feature.compile.saved.v1',
+                   'feature.compile.live.v1', '"kind":"feature_compile"',
+                   '"mode":"saved"', 'terminal diagnostic', 'compileFeatures()',
+                   'does not prove exported behavior', 'Do not call `apply_job`'):
+        assert phrase in compilation
+    export = export_reference.read_text()
+    for phrase in ('instances.read.v1', 'font.export.static.v1',
+                   'font.export.variable.v1', 'font.verify.tables.v1',
+                   'font.verify.shaping.v1', '"kind":"font_export"',
+                   'instanceId', 'WOFF2', 'new absolute destination directory',
+                   'Do not call `apply_job`', '512 MiB', '1 GiB'):
+        assert phrase in export
+    focused = (ROOT/'skills/glyphs-mcp-opentype-features/SKILL.md').read_text()
+    assert '../glyphs/references/feature-compilation.md' in focused
+    assert '../glyphs/references/font-export.md' in focused
+    scripting = (ROOT/'skills/glyphs-mcp-scripting/SKILL.md').read_text()
+    assert 'feature_compile' in scripting and 'font_export' in scripting
+    for path in (compile_reference, export_reference):
+        mirror = ROOT/'plugins/glyphs-mcp/skills/glyphs'/path.relative_to(SKILL)
+        assert path.read_bytes() == mirror.read_bytes()
+
+
+def test_compile_export_public_docs_and_tool_descriptions_match_the_nine_tool_contract():
+    command = (ROOT/'content/reference/command-set.mdx').read_text()
+    safety = (ROOT/'content/concepts/safety-model.mdx').read_text()
+    changelog = (ROOT/'CHANGELOG.md').read_text()
+    server = (ROOT/'src/sidecar/glyphs_mcp_sidecar/server.py').read_text()
+    for phrase in ('jobCapabilities', 'features.read.v1', 'instances.read.v1',
+                   'feature_compile', 'font_export', 'resultKind',
+                   'feature.compile.saved.v1', 'font.verify.tables.v1'):
+        assert phrase in command
+    for phrase in ('diagnostic jobs', 'artifact jobs', 'atomic rename',
+                   'private staging', 'never replayed'):
+        assert phrase in safety
+    for phrase in ('feature_compile', 'font_export', 'GSFont.compileFeatures()',
+                   'GSInstance.generate()', 'nine-tool surface'):
+        assert phrase in changelog
+    for phrase in ('jobCapabilities', 'feature_compile', 'font_export',
+                   'diagnostic or artifact', 'mutation jobs only',
+                   'publish verified export artifacts'):
+        assert phrase in server
 
 
 def test_collision_followup_explicit_options_sampling_and_compact_polling():

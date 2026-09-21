@@ -10,12 +10,14 @@ from threading import RLock
 from typing import Any, Callable, Mapping, Protocol
 
 from glyphs_mcp_protocol import PROTOCOL_VERSION, ProtocolError, validate_patch
+from glyphs_mcp_protocol.native_actions import MAX_JOB_STATE_BYTES
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
 
+from . import feature_compile, native_actions, outline_edit, saving
 from .companions import CompanionRegistry
 from .identity import IDENTITY, VERSION, host_identity
 
-ACTIVE = {"applying", "discarding", "rolling_back"}
+ACTIVE = {"applying", "accepting", "discarding", "rolling_back"}
 
 
 class BridgeError(RuntimeError):
@@ -38,6 +40,8 @@ class BridgeAdapter(Protocol):
     def capture_state(self, document_id: str, change: Mapping[str, Any]) -> Any: ...
     def begin_undo(self, document_id: str) -> None: ...
     def end_undo(self, document_id: str, name: str) -> None: ...
+    def save_document(self, document_id: str, target: str, mode: str) -> dict[str, Any]: ...
+    def compile_features(self, document_id: str) -> dict[str, Any]: ...
 
 
 class BridgeCore:
@@ -53,6 +57,7 @@ class BridgeCore:
         self.chunk_limit = max(1, min(int(chunk_limit), 500))
         self.companions = companions or CompanionRegistry()
         self._operations: dict[str, dict[str, Any]] = {}
+        self._saves: dict[str, dict[str, Any]] = {}
         self._lock = RLock()
         self.paused = False
 
@@ -76,10 +81,21 @@ class BridgeCore:
     def status(self) -> dict[str, Any]:
         with self._lock:
             active = sum(item["status"] in ACTIVE for item in self._operations.values())
+            active += sum(item["status"] == "saving" for item in self._saves.values())
+        write_capabilities = ["outline.edit.v1"]
+        if outline_edit.native_remove_available():
+            write_capabilities.append("outline.remove-node.v1")
+        actions = native_actions.available_actions()
+        if actions:
+            write_capabilities.append("native.action.v1")
+        job_capabilities = (["feature.compile.live.v1"] if feature_compile.available() else [])
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             **IDENTITY, "host": self.host,
             "readCapabilities": list(READ_CAPABILITIES),
+            "writeCapabilities": write_capabilities,
+            "nativeActions": actions,
+            "jobCapabilities": job_capabilities,
             "activity": "busy" if active else "ready", "activeOperations": active,
             "companions": self.companions.list(),
         }
@@ -94,6 +110,39 @@ class BridgeCore:
             raise BridgeError("invalid_request", "read_entities requires 1-32 fields")
         return self.adapter.read_entities(str(document_id), entities, [str(item) for item in fields])
 
+    def compile_features(self, value: Any) -> dict[str, Any]:
+        if self.paused:
+            raise BridgeError("server_stopped", "the Glyphs MCP server is stopped")
+        if not feature_compile.available():
+            raise BridgeError("unsupported_job", "live feature compilation is unavailable")
+        if not isinstance(value, Mapping):
+            raise BridgeError("invalid_request", "live compile request must be an object")
+        fields = {"jobId", "documentId", "sourcePath", "sourceHash", "generation"}
+        if set(value) != fields:
+            raise BridgeError("invalid_request", "live compile request fields are incomplete or unexpected")
+        document_id = str(value.get("documentId") or "")
+        with self._lock:
+            self._check_owner(document_id)
+        state = self.adapter.document_state(document_id)
+        if state.get("path") != value.get("sourcePath"):
+            raise BridgeError("stale_document", "the document path changed before compilation")
+        if state.get("dirty") is not False:
+            raise BridgeError("document_not_clean", "save the document before live compilation")
+        if state.get("generation") != value.get("generation"):
+            raise BridgeError("stale_document", "the document changed before live compilation")
+        try:
+            return self.adapter.compile_features(document_id)
+        except BridgeError:
+            raise
+        except Exception as exc:
+            raise BridgeError("native_compile_failed", str(exc) or type(exc).__name__) from exc
+
+    def begin_save(self, value: Any) -> dict[str, Any]:
+        return saving.begin_save(self, value, BridgeError)
+
+    def save_operation(self, save_id: str) -> dict[str, Any]:
+        return saving.operation(self, save_id, BridgeError)
+
     def begin_apply(self, value: Any) -> dict[str, Any]:
         if self.paused:
             raise BridgeError("server_stopped", "the Glyphs MCP server is stopped")
@@ -101,6 +150,26 @@ class BridgeCore:
             patch = validate_patch(value)
         except ProtocolError as exc:
             raise BridgeError(exc.code, exc.message) from exc
+        if (any(operation.get("op") == "remove_node"
+                for change in patch["changes"] if change.get("kind") == "outline"
+                for operation in change.get("operations", []))
+                and not outline_edit.native_remove_available()):
+            raise BridgeError(
+                "unsupported_change",
+                "remove_node requires bridge capability outline.remove-node.v1",
+            )
+        available_actions = set(native_actions.available_actions())
+        requested_actions = {
+            change["action"] for change in patch["changes"]
+            if change.get("kind") == "native_action"
+        }
+        unavailable_actions = sorted(requested_actions - available_actions)
+        if unavailable_actions:
+            raise BridgeError(
+                "unsupported_change",
+                "native action is unavailable in this Glyphs build",
+                details={"actions": unavailable_actions},
+            )
         job_id = patch["jobId"]
         with self._lock:
             existing = self._operations.get(job_id)
@@ -119,7 +188,7 @@ class BridgeCore:
         operation = dict(jobId=job_id, documentId=patch["documentId"], patch=patch,
                          status="applying", direction="forward", index=0, applied=[], resolved=[],
                          cancelRequested=False, rollbackReverse=True, error=None,
-                         startedAt=time.time(), finishedAt=None)
+                         nativeStateBytes=0, startedAt=time.time(), finishedAt=None)
         with self._lock:
             existing = self._operations.get(job_id)
             if existing is not None:
@@ -137,9 +206,12 @@ class BridgeCore:
         self._launch(operation)
         return self._public(operation)
 
-    def _check_owner(self, document_id):
+    def _check_owner(self, document_id, *, ignore_job_id=None):
         if any(item["documentId"] == document_id and item["status"] in ACTIVE
-               for item in self._operations.values()):
+               and item["jobId"] != ignore_job_id for item in self._operations.values()):
+            raise BridgeError("document_busy", "another operation is changing this document")
+        if any(item["documentId"] == document_id and item["status"] == "saving"
+               for item in self._saves.values()):
             raise BridgeError("document_busy", "another operation is changing this document")
 
     def _launch(self, operation):
@@ -155,6 +227,13 @@ class BridgeCore:
             self.schedule(lambda: self._run_chunk(operation["jobId"]))
         except Exception as exc:
             error = self._error(exc)
+            if operation["status"] == "accepting":
+                with self._lock:
+                    operation.update(
+                        status="applied", error=error.as_dict(), acceptIndex=0,
+                        saveRequest=None,
+                    )
+                return
             previous = (operation["error"] or {}).get("details", {}).get("recovery", {})
             error.details["recovery"] = {"complete": not operation["applied"] and previous.get("currentTargetRestored", True)}
             self._finish(operation, "failed", error)
@@ -177,6 +256,21 @@ class BridgeCore:
         self._launch(operation)
         return self._public(operation)
 
+    def begin_accept(self, job_id: str, value: Any) -> dict[str, Any]:
+        return saving.begin_accept(self, job_id, value, BridgeError)
+
+    def complete_accept(
+        self,
+        job_id: str,
+        *,
+        verified: bool,
+        receipt: Mapping[str, Any] | None = None,
+        error: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return saving.complete_accept(
+            self, job_id, BridgeError, verified=verified, receipt=receipt, error=error
+        )
+
     def operation(self, job_id: str) -> dict[str, Any]:
         with self._lock:
             operation = self._operations.get(str(job_id))
@@ -189,6 +283,22 @@ class BridgeCore:
             operation = self._operations.get(job_id)
             if operation is None or operation["status"] not in ACTIVE:
                 return
+        if operation["status"] == "accepting":
+            try:
+                if self._run_accept_chunk(operation):
+                    return
+            except Exception as exc:
+                error = self._error(exc)
+                with self._lock:
+                    operation.update(
+                        status="applied",
+                        error=error.as_dict(),
+                        acceptIndex=0,
+                        saveRequest=None,
+                    )
+                return
+            self._schedule(operation)
+            return
         if operation["cancelRequested"] and operation["status"] == "applying":
             self._start_rollback(operation, BridgeError("cancelled", "application was cancelled"), reverse=True)
         deadline = time.perf_counter() + self.chunk_seconds
@@ -229,10 +339,13 @@ class BridgeCore:
                 return
         self._schedule(operation)
 
+    def _run_accept_chunk(self, operation) -> bool:
+        return saving.run_accept_chunk(self, operation, BridgeError)
+
     def _apply_one(self, operation, change, *, reverse):
         target = {k: v for k, v in change.items()
                   if k not in ("before", "after", "beforeHash", "afterHash", "nativeBefore", "nativeAfter")}
-        if change["kind"] in ("translate", "start_node"):
+        if change["kind"] in ("translate", "start_node", "outline", "native_action"):
             expected = change["afterHash"] if reverse else change["beforeHash"]
             wanted = change["beforeHash"] if reverse else change["afterHash"]
         else:
@@ -249,9 +362,16 @@ class BridgeCore:
         else:
             resolved = dict(change)
         document_id = operation["documentId"]
-        hashed = change["kind"] in ("translate", "start_node")
+        hashed = change["kind"] in ("translate", "start_node", "outline", "native_action")
+        native_total = operation.get("nativeStateBytes", 0)
         if hashed:
-            resolved["nativeAfter" if reverse else "nativeBefore"] = self.adapter.capture_state(document_id, change)
+            snapshot = self.adapter.capture_state(document_id, change)
+            resolved["nativeAfter" if reverse else "nativeBefore"] = snapshot
+            if change["kind"] == "native_action" and not reverse:
+                operation["nativeStateBytes"] = native_total + int(snapshot.get("encodedBytes") or 0)
+                if operation["nativeStateBytes"] > MAX_JOB_STATE_BYTES:
+                    operation["nativeStateBytes"] = native_total
+                    raise BridgeError("native_state_too_large", "native action job state exceeds 64 MiB")
         else:
             resolved["after" if reverse else "before"] = observed
         try:
@@ -261,8 +381,19 @@ class BridgeCore:
                 raise BridgeError("readback_failed", "Glyphs did not retain the requested target value",
                                   details={"wanted": wanted, "observed": readback})
             if hashed:
-                resolved["nativeBefore" if reverse else "nativeAfter"] = self.adapter.capture_state(document_id, change)
+                snapshot = self.adapter.capture_state(document_id, change)
+                resolved["nativeBefore" if reverse else "nativeAfter"] = snapshot
+                if change["kind"] == "native_action" and not reverse:
+                    operation["nativeStateBytes"] = (
+                        native_total
+                        + int(resolved["nativeBefore"].get("encodedBytes") or 0)
+                        + int(snapshot.get("encodedBytes") or 0)
+                    )
+                    if operation["nativeStateBytes"] > MAX_JOB_STATE_BYTES:
+                        raise BridgeError("native_state_too_large", "native action job state exceeds 64 MiB")
         except Exception as exc:
+            if change["kind"] == "native_action" and not reverse:
+                operation["nativeStateBytes"] = native_total
             error = self._error(exc)
             error.details["target"] = target
             recovery = {"complete": False, "currentTargetRestored": False}
@@ -303,19 +434,27 @@ class BridgeCore:
                 operation.update(status=status, finishedAt=time.time(), applied=[])
                 if status != "applied":
                     operation["resolved"] = []
+                    operation["nativeStateBytes"] = 0
 
     @staticmethod
     def _public(operation: Mapping[str, Any]) -> dict[str, Any]:
         count = len(operation["patch"]["changes"])
+        completed = (
+            operation.get("acceptIndex", count)
+            if operation["status"] == "accepting"
+            else operation["index"]
+        )
         return {
             "jobId": operation["jobId"],
             "documentId": operation["documentId"],
             "status": operation["status"],
-            "completedChanges": max(0, min(count, int(operation["index"]))),
+            "completedChanges": max(0, min(count, int(completed))),
             "totalChanges": count,
             "error": copy.deepcopy(operation["error"]),
+            "nativeSave": copy.deepcopy(operation.get("nativeSave")),
+            "receipt": copy.deepcopy(operation.get("receipt")),
             "message": (
-                "Review the change in Glyphs. Save to accept; Undo restores each glyph. Revert or discard_job restores the whole job."
+                "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
                 if operation["status"] == "applied"
                 else None
             ),

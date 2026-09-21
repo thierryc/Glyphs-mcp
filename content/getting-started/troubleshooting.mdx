@@ -19,7 +19,11 @@ Start with `get_status` and the status in **Edit → Glyphs MCP Server…**. The
 
 ## Jobs and recovery
 
-`document_path_required` or `document_not_clean` means the baseline must first be saved in Glyphs. A stale document or source error means the prepared job no longer matches the font: discard the proposal and prepare again from the intended saved state.
+`document_path_required` or `document_not_clean` means the baseline is not
+eligible for preparation. Do not call `save_document` merely to satisfy that
+prerequisite; obtain authorization to save, or use a disposable saved copy. A
+stale document or source error means the prepared job no longer matches the
+font: discard the proposal and prepare again from the intended saved state.
 
 For a timeout with **uncertain execution**, keep the job ID and call `get_job`. Do not submit a replacement mutation or restart the server to guess the outcome. A callback that was still pending is cancelled; one that had already started needs reconciliation.
 

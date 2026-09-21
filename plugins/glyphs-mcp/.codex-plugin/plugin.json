@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Glyphs MCP",
     "shortDescription": "Review and control open Glyphs fonts from ChatGPT and Codex.",
-    "longDescription": "Connect to the Glyphs 4 seven-tool server for bounded reads and reviewed spacing, kerning, slant and start-node jobs. Native Save, Undo, Redo and Revert remain the editing workflow. Independent companion plugins inspect curves and references.",
+    "longDescription": "Connect to the Glyphs 4 nine-tool server for bounded reads and reviewed spacing, kerning, slant, outline and capability-gated closed native-action jobs. Verified acceptance, native Undo/Redo and whole-job discard preserve the lean editing workflow. Independent companion plugins inspect curves and references.",
     "developerName": "Thierry Charbonnel",
     "category": "Creativity",
     "capabilities": [

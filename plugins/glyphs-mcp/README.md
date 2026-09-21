@@ -14,8 +14,13 @@ Glyphs 3 uses the separate pinned 1.11.0 bundle and skills.
 
 Glyphs remains the editor. The native bridge panel displays its status and a
 heart button for Welcome & Support. The AI client receives reports and structured
-results from seven tools. Native Save accepts changes; Undo and Redo are grouped
-per glyph, and discard restores a complete job with conflict checks.
+results from nine tools. `accept_job` verifies targets and persists the whole
+document; Undo and Redo are grouped per glyph, and discard restores an
+unaccepted job with conflict checks.
+
+Glyphs-native commands use the capability-gated `native_action` job family, not
+additional tools. The running bridge publishes its filtered closed action
+catalog; requests never contain Python, menu names or arbitrary selectors.
 
 The Glyphs application and native Glyphs MCP plug-in must be installed and the
 server must be running before the host can connect. Installing this agent
@@ -26,7 +31,7 @@ See the repository documentation for the
 [plugin UI](../../content/getting-started/codex-chatgpt-plugin-ui.mdx) and
 [cross-client skill setup](../../content/getting-started/use-agent-skills.mdx).
 
-The lean Glyphs 4 package exposes seven tools: get_status, list_documents,
-read_entities, start_job, get_job, apply_job and discard_job. There is no
-arbitrary Python execution tool. Install the pinned Glyphs 3 skills separately
-when using the 1.11.0 server.
+The lean Glyphs 4 package exposes nine tools: get_status, list_documents,
+read_entities, start_job, get_job, apply_job, accept_job, discard_job and
+save_document. There is no arbitrary Python execution tool. Install the pinned
+Glyphs 3 skills separately when using the 1.11.0 server.

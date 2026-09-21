@@ -63,7 +63,7 @@ def test_public_mcp_rejects_boolean_and_never_publishes_partial_missing_scope(tm
 
     async def exercise():
         async with Client(create_server(value)) as client:
-            assert len(await client.list_tools()) == 7
+            assert len(await client.list_tools()) == 9
             for boolean in (True, False):
                 response = await client.call_tool_mcp("start_job", {"document_id": "doc_1", "kind": "width_delta", "glyphs": ["A"], "delta": boolean})
                 assert response.isError is True  # MCP schema rejection, not service error.code.

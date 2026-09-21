@@ -112,7 +112,7 @@ def test_large_patch_yields_and_has_one_human_acceptance() -> None:
     scheduler.drain()
     completed = core.operation("job_1")
     assert completed["status"] == "applied"
-    assert "Save to accept" in completed["message"]
+    assert "accept_job" in completed["message"]
     assert "approval" not in completed["message"].lower()
     assert set(adapter.values.values()) == {608}
     assert len([item for item in adapter.undo if item[0] == "begin"]) == 1

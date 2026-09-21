@@ -47,7 +47,7 @@ Beta 4 remains a prerelease rather than the repository's Latest release.
    `http://127.0.0.1:9680/mcp/`.
 6. In **Project**, create a disposable project, then exercise a small supported
    spacing or kerning job on the font copy. Review the report and verify native
-   Undo/Redo before Save.
+   Undo/Redo before an authorized `accept_job`.
 
 ## Setup cards
 
@@ -101,7 +101,7 @@ version/build, affected card, operation state, client, exact reproduction and a
 redacted diagnostic report. Share a disposable font only when it can be public.
 [Report a beta issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%202.0.0%5D%20&body=Beta%20and%20build%3A%0AmacOS%20and%20processor%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0ASteps%3A%0AExpected%3A%0AActual%3A).
 
-Known limitations: the welcome screen remains a placeholder; the seven-tool
+Known limitations: the welcome screen remains a placeholder; the nine-tool
 workflow is intentionally narrower than v1 and exposes no arbitrary Python
 tool. In Project visual diffs, changing glyph files can retain the previously
 selected master even when that master is unchanged; choose a layer without the

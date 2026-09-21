@@ -8,11 +8,24 @@ Continue from the last verified revision. Compare workspace bytes, installed
 bytes and loaded behavior when that evidence is missing or a revision changed;
 retain the result for this iteration. Choose the next action from the evidence:
 
+For a development-mode linked installation, keep the installed links pointed at
+the designated build target and rebuild the latest coherent source revision into
+that target immediately after the change. Before a live test or user handoff,
+verify that source, built payload and installed link agree, then query the live
+sidecar/bridge identity or expected capability. Never treat a source-only test,
+standalone native helper or stale linked build as evidence for the running MCP.
+Link the managed development skill destinations to the canonical workspace
+bundle and keep its packaged mirror synchronized; verify those links before
+handoff instead of testing with copied, stale guidance.
+Restart a changed sidecar after rebuilding. If Glyphs must relaunch to load a
+changed native bundle, ask the user first and account for unrelated unsaved work.
+
 | Current evidence | Next action |
 |---|---|
 | Only documentation/report changed; plugin bytes unchanged | No plugin installation or relaunch |
 | Requested artifact already installed and its loaded revision verified | Run only the newly needed native check |
-| Artifact missing or installed bytes differ | Validate the completed revision, install once into the intended app, then inspect the outcome |
+| Development link targets an older build | Rebuild the exact linked target from current source, restart the changed sidecar, and verify live identity; ask before a required Glyphs relaunch |
+| Artifact missing or a non-linked installation differs | Validate the completed revision, install once into the intended app, then inspect the outcome |
 | Installed bytes match but the old revision remains loaded | Relaunch safely within scope, then verify loaded behavior; no reinstall |
 | Install outcome or loaded revision unknown | Inspect the target path, pending prompt and native diagnostics; do not repeat Open/install while the first attempt is unresolved |
 

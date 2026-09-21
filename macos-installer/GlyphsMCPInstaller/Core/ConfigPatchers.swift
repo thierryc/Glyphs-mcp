@@ -440,7 +440,7 @@ public struct AgentSkillBundleInstaller {
             current.contains("`" + $0 + "`") || current.contains("`" + $0 + "(")
         }
         guard !retired.isEmpty else { return nil }
-        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean seven-tool interface."
+        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean nine-tool interface."
     }
 
 	private func itemExists(at url: URL) -> Bool {

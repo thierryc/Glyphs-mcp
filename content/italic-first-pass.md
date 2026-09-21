@@ -27,6 +27,9 @@ The optional `preserveStraightStems` pass conservatively restores perpendicular 
 
 Inspect `get_job` for coordinate changes, correction evidence and skipped-layer reasons. Apply only the reviewed proposal. Compare several masters and text samples, inspect curves with the [companions](workflows/visual-review.mdx), and try native Undo/Redo.
 
-Use `discard_job` to restore current affected targets or native Save to accept the experiment. Further design work, alternate forms and font metadata belong to the designer's native workflow.
+Use `discard_job` to restore current affected targets or, when persistence is
+authorized, `accept_job` to verify the targets and save the whole document.
+Further design work, alternate forms and font metadata belong to the designer's
+native workflow.
 
 Historical v1 optical-italic experiments and their sources remain in the [v1 italic guide](/docs/italic-first-pass); they are not promises of v2 functionality.

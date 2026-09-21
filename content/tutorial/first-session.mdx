@@ -41,7 +41,11 @@ For `get_job`, `apply_job` and `discard_job`, use `{ "job_id": "<returned job ID
 
 ## Finish the experiment
 
-To restore the complete job, use `discard_job` and wait for its terminal result. It checks that affected targets have not been changed independently. To keep the result, review it and use **Save in Glyphs**. Application itself does not save or accept changes.
+To restore the complete job, use `discard_job` and wait for its terminal result.
+It checks that affected targets have not been changed independently. To keep
+the result when the task authorizes persistence, review it and call
+`accept_job`. It verifies the targets, saves the whole document and closes the
+rollback window. Application itself does not save or accept changes.
 
 Do not submit the same idea as a new job to recover from a timeout. Retain the original ID and reconcile it with `get_job`; see [Safety and recovery](../concepts/safety-model.mdx).
 

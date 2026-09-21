@@ -52,7 +52,7 @@ The complete `scripts/run_local_release_tests.sh` passed with the repository's
   suite for Git comparison, safety, hierarchy, glyph-layer pairing and package
   validation.
 - ARM64 and Intel private runtimes started without downloads and exposed the
-  unchanged seven-tool catalog over HTTP and the stdio proxy.
+  unchanged then-current catalog over HTTP and the stdio proxy.
 - Two independently generated installer payloads were byte-for-byte identical.
 - The documentation production build, lean package validation, synchronized
   eleven-skill package, shell syntax and `git diff --check` passed.

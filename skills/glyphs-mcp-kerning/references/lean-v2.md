@@ -1,6 +1,6 @@
 # Lean kerning collision workflow
 
-Use this workflow when `get_status` advertises the seven-tool lean catalog.
+Use this workflow when `get_status` advertises the nine-tool lean catalog.
 For inspection alone, use the [stored kerning read reference](../../glyphs/references/kerning-reads.md);
 dirty and unsaved fonts are readable without a job or Save. Reuse the intended
 document ID. Stop after reporting when no repair was requested.
@@ -58,8 +58,9 @@ strings. Native Undo/Redo uses the left glyph's Edit-view history (all touched
 masters of that glyph); use `discard_job` for the whole job's still-current
 targets. It restores the exact prior presence and value. A disabled menu or
 conflicting target is not successful restoration; report it. Do not infer clean
-document indicators from restored values. The designer may Save in Glyphs to accept;
-do not save an applied design automatically.
+document indicators from restored values. Use `accept_job` only when the user's
+task authorizes persistence of the reviewed whole document; do not save an
+applied design merely to complete the workflow.
 
 A failed job naming missing saved-source glyphs or masters prepared no applicable
 edit. Keep the document ID and correct the pair names/master IDs; do not

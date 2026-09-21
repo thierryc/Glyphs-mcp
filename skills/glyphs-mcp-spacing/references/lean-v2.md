@@ -1,6 +1,6 @@
-## Lean v2 seven-tool workflow
+## Lean v2 nine-tool workflow
 
-Use this workflow with the seven-tool Glyphs 4 catalog. Prepare `start_job(kind="spacing")` on a
+Use this workflow with the nine-tool Glyphs 4 catalog. Prepare `start_job(kind="spacing")` on a
 saved, clean disposable or user-authorized font. Use `glyphs` and `options.masters`
 for scope; choose `options.reference` or per-glyph `options.references` explicitly
 when the design calls for them. Otherwise the external spacing workflow records
@@ -79,7 +79,8 @@ measurement accuracy or optical quality. Sampling can miss details between
 heights; use the reported measurement range/count and a native proof before
 acceptance. Finer sampling alone is not proof of correct optical spacing.
 Use native Edit View Undo/Redo for the relevant glyph and `discard_job` for
-whole-job restoration. Save remains
-the user's acceptance action. The job offers sampled suggestions and better
+whole-job restoration. When the user's task authorizes persistence, use
+`accept_job` after review; it saves the whole document and closes rollback. The
+job offers sampled suggestions and better
 reference selection, not universally optimal optical spacing. Do not introduce
 Tunni, compensated scaling, smoothness repair or a balanced italic engine here.

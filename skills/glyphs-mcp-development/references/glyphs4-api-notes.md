@@ -28,6 +28,12 @@ TTF was written. Inspect any returned error, verify a new output actually exists
 parse the binary and check the requested shaping behavior. A pre-existing file,
 truthy return or zero process exit does not prove a successful new export.
 
+The lean v2 `font_export` worker now fixes this to one exact persistent instance
+ID and typed OTF/TTF, PLAIN/WOFF/WOFF2 and generation arguments. It accepts only
+`None` or `True` as the native result, then independently parses every output,
+checks structural tables/container/variable state and optionally shapes bounded
+feature-on/off cases. Output stays private until create-only atomic publication.
+
 ## Native feature flags
 
 Official ID: `api-section-262` documents `GSFeature.automatic`. In the qualified
@@ -64,6 +70,71 @@ if not succeeded:
 Do not use `if result`: the failure tuple is also truthy. Preserve the native
 diagnostic; RV01's missing-glyph error named the feature and source line.
 Unexpected representations need qualified inspection, not an assumed success.
+
+Lean v2 exposes this only as `feature_compile`: saved mode runs in the external
+worker, while live mode runs on Glyphs' main thread. Both hash complete persisted
+prefix/class/feature state before and after. Compiler state is diagnostic and
+ephemeral; a failed compile is `report.success:false`, not an applicable patch.
+
+## Closed native-action selectors and restoration
+
+The v2 closed-catalog qualifier
+`scripts/qualify_simple_v2_native_actions.py` ran plugin-free in the exact
+**Glyphs 4.1 (4107)** application. Its startup probe qualified all 17 actions,
+canonical worker/bridge hashes matched, every fixture produced an observable
+state change, and native Undo → Redo → restoration returned the exact hashes.
+An `update_metrics` result saved to a new `.glyphspackage` reopened with the
+same after hash. The metrics-key proof changed an intentionally wrong RSB from
+1 to the referenced glyph's RSB of 45; this confirms `syncMetrics()` behavior,
+not generic bearing recalculation. `updateGlyphInfo(False)` retained the glyph
+name.
+
+Qualified selectors and fixed arguments:
+
+| Action | Selector / call |
+|---|---|
+| `update_metrics` | `syncMetrics()` |
+| `correct_path_direction` | `correctPathDirection()` |
+| `round_coordinates` | `roundCoordinates()` |
+| `add_extremes` | `addNodesAtExtremes(force, False)` |
+| `cleanup_paths` | `cleanUpPaths()` |
+| `remove_overlap` | `removeOverlap(False)` |
+| `add_missing_anchors` | `addMissingAnchors()` |
+| `align_components` | immediate `doAlignComponents()` |
+| `decompose_components` | `decomposeComponents()` |
+| `decompose_corners` | `decomposeCorners()` |
+| `make_components` | `makeComponents()` |
+| `reinterpolate` | `reinterpolate()` |
+| `connect_open_paths` | `connectAllOpenPaths()` |
+| `swap_foreground_background` | `swapForegroundWithBackground()` |
+| `update_glyph_info` | `updateGlyphInfo(False)` |
+| `update_features` | `updateFeatures()` |
+| `update_automatic_feature_block` | exact automatic/automatable block `update()` |
+
+Layer state used `propertyListValueFormat_error_(3, None)`. Restoration used a
+deep native layer copy plus `getCopyOfContentFromLayer_doSelection_`, explicit
+metric/scalar restoration and paired background restoration only when the
+persisted projection contained it. Glyph-info state combines its layer-free
+property list with normalized metadata; restoration retains typed metadata.
+Whole-font feature restoration retains original native block objects and their
+persistent IDs while restoring copied property-list state and exact order.
+Single-block restoration applies the same state in place; `update()` therefore
+keeps its exact target ID through Undo, Redo and discard.
+Do not generalize these snapshots into a public object protocol or treat this
+single-build qualification as universal compatibility; the bridge repeats a
+cached startup capability probe in every running build.
+
+## Closed compile/export qualification
+
+`scripts/qualify_simple_v2_compile_export.py` also ran plugin-free in exact
+**Glyphs 4.1 (4107)**. On a disposable source, saved `compileFeatures()` returned
+success with identical full feature hashes. Typed `GSInstance.generate()`
+produced parsed plain TTF, WOFF and WOFF2 from one exact static instance plus a
+parsed variable TTF from an exact variable setting. Required tables, container
+flavors and `fvar` were verified, a feature-on/off HarfBuzz ligature case changed
+as expected, its control remained unchanged, and the source file hash did not
+change. WOFF/WOFF2 shaping first decodes the verified web container to sfnt bytes;
+passing compressed bytes directly to HarfBuzz does not establish behavior.
 
 ## Evidence levels
 

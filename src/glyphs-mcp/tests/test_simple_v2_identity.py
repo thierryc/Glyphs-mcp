@@ -101,8 +101,25 @@ def test_status_does_not_rehash_or_read_receipt_or_fonts(tmp_path, monkeypatch):
     status = service.get_status()
     assert status['interface'] == 'glyphs-mcp-sidecar' and status['interfaceVersion'] == 1
     assert status['jobKinds'] == list(JOB_KINDS)
-    assert len(status['tools']) == 7 and status['protocol'] == 1
+    assert len(status['tools']) == 9 and status['protocol'] == 1
     assert status['codeHash'] is None  # unpackaged source cannot claim a release
+
+
+def test_outline_job_is_advertised_only_with_matching_bridge_capability(tmp_path):
+    bridge = SimpleNamespace(status=lambda: {'protocol': 1, 'writeCapabilities': ['outline.edit.v1']})
+    service = SidecarService(bridge, jobs=JobStore(tmp_path),
+                             worker=SimpleNamespace(status=lambda: {'available': True}))
+    status = service.get_status()
+    assert status['writeCapabilities'] == ['outline.edit.v1']
+    assert status['jobKinds'] == [*JOB_KINDS, 'outline_edit']
+    bridge.status = lambda: {'protocol': 1, 'writeCapabilities': [
+        'outline.edit.v1', 'outline.remove-node.v1']}
+    status = service.get_status()
+    assert status['writeCapabilities'] == ['outline.edit.v1', 'outline.remove-node.v1']
+    assert status['jobKinds'] == [*JOB_KINDS, 'outline_edit']
+    bridge.status = lambda: {'protocol': 1}
+    status = service.get_status()
+    assert status['writeCapabilities'] == [] and status['jobKinds'] == list(JOB_KINDS)
 
 
 def test_packaged_mcp_initialize_release_and_catalog(tmp_path):
@@ -115,14 +132,22 @@ async def main():
     async with Client(create_server(None)) as client:
         assert client.initialize_result.serverInfo.version == EXPECTED
         catalog = await client.list_tools()
-        assert set(t.name for t in catalog) == set(TOOL_NAMES) and len(catalog) == 7
+        assert set(t.name for t in catalog) == set(TOOL_NAMES) and len(catalog) == 9
         read = next(t for t in catalog if t.name == "read_entities")
         assert set(read.inputSchema["properties"]) == {"document_id", "entities", "fields"}
         assert set(read.inputSchema["required"]) == {"document_id", "entities", "fields"}
         assert read.inputSchema["properties"]["document_id"]["type"] == "string"
         assert read.inputSchema["properties"]["entities"]["type"] == "array"
         assert read.inputSchema["properties"]["fields"]["items"]["type"] == "string"
-        for text in ("Kerning uses", "exact native master ID", "LTR, RTL or vertical", "fields [value] only", "null means no entry", "Dirty and unsaved", "invalid_request"):
+        accept = next(t for t in catalog if t.name == "accept_job")
+        assert set(accept.inputSchema["properties"]) == {"job_id", "destination", "include_preview"}
+        assert set(accept.inputSchema["required"]) == {"job_id"}
+        save = next(t for t in catalog if t.name == "save_document")
+        assert set(save.inputSchema["properties"]) == {"document_id", "destination"}
+        assert set(save.inputSchema["required"]) == {"document_id"}
+        assert "confirm" not in accept.inputSchema["properties"] | save.inputSchema["properties"]
+        assert "reason" not in accept.inputSchema["properties"] | save.inputSchema["properties"]
+        for text in ("Kerning uses", "exact native master ID", "LTR, RTL or vertical", "fields [value] only", "null means no entry", "Dirty and unsaved", "paths.list.v1", "path.geometry.v1", "fields [items]", "fields [nodes]", "invalid_request"):
             assert text in read.description
 asyncio.run(main())
 '''.replace('EXPECTED',repr(load(ROOT)['releaseVersion']))

@@ -1,4 +1,4 @@
-"""Phased seven-tool slant acceptance, with time for a native visual check."""
+"""Phased nine-tool slant acceptance, with time for a native visual check."""
 
 import asyncio
 import json

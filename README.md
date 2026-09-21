@@ -25,14 +25,19 @@ The compact extension panel displays the project and bridge versions and
 "Ready". Its heart button reopens a placeholder welcome window.
 That window appears automatically once; its final design is in progress.
 
-Prepare supported spacing, kerning, slant and start-node jobs, review their
-reports, then apply the stored result. Native Save accepts it; native Undo/Redo
-or whole-job discard keeps experimentation reversible. Spacing proposals and
+Prepare supported spacing, kerning, slant, start-node, outline and negotiated
+closed native-action jobs; run feature compiler diagnostics; or stage verified
+static, variable and web-font exports. Review each typed result before applying
+a mutation or publishing an artifact.
+`accept_job` verifies the affected live
+targets, saves the whole document and closes the rollback window; native Undo/Redo
+or whole-job discard keeps an unaccepted experiment reversible. Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The seven tools are `get_status`, `list_documents`, `read_entities`,
-`start_job`, `get_job`, `apply_job`, and `discard_job`.
+The nine tools are `get_status`, `list_documents`, `read_entities`,
+`start_job`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
+`save_document`.
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 

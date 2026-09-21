@@ -1,7 +1,41 @@
 # Changelog
 
+- Add capability-gated `feature_compile` diagnostics and verified `font_export`
+  artifacts without increasing the nine-tool surface. Saved/live compilation
+  calls `GSFont.compileFeatures()` behind persisted-state guards; exact static
+  and variable instance export calls typed `GSInstance.generate()` only in the
+  external worker.
+- Add stale-checked feature-block and export-instance discovery, an exact
+  automatic-feature-block native action, structural fontTools verification,
+  optional bounded HarfBuzz checks, WOFF/WOFF2 packaging and hash manifests.
+- Publish artifacts from private staging only through create-only atomic
+  directory acceptance, with durable receipts and restart reconciliation.
+
+- Add the capability-gated closed `native_action` catalog without increasing
+  the nine-tool surface. Seventeen Glyphs commands now use saved-clean external
+  preparation, action-specific property-list hashes, bounded native snapshots,
+  exact Undo/Redo, rollback, discard and verified acceptance.
+- Publish filtered `nativeActions` negotiation, strict target/argument schemas,
+  detailed changed/no-op reports and coordinated routing in the canonical
+  skills. Arbitrary Python, menu invocation and selectors remain excluded.
+
 ## 2.0.0 Beta 4 — component-aware glyph diffs, build 46
 
+- Expand the lean contract to nine tools with `accept_job` and
+  `save_document`. Acceptance revalidates an applied job, saves the entire
+  document through the direct synchronous `NSDocument` selector, verifies the
+  resulting source hash and persists a receipt before closing rollback. Save As
+  is create-only; legacy v1 `save_font` remains isolated and unchanged.
+- Add capability-gated, typed outline editing through the nine MCP
+  tools. `outline_edit` jobs preserve the saved clean-source workflow,
+  preview, native Undo/Redo, rollback and whole-job discard while supporting
+  bounded path splitting, node edits and structural path operations.
+- Add stale-checked `paths`, `path` and `segment` reads for exact outline
+  inspection. The sixth job kind is advertised only when the coordinated
+  bridge exposes `outline.edit.v1`; older installations remain compatible.
+- Add capability-gated `remove_node` through Glyphs' native keep-shape removal.
+  Preparation records removed raw indices and adjusted surviving handles;
+  legacy `delete_nodes` remains raw and now reports its contour-geometry risk.
 - Distinguish referenced components from native paths in the Project visual
   glyph diff with an appearance-aware 8% neutral fill. Holding Space now uses
   a black silhouette in light mode and a white silhouette in dark mode.
@@ -133,7 +167,7 @@ retired; its local development changes are included in this beta.
 
 ## 2.0.0 — Milestone 6 local candidate, build 29
 
-- Package the lean seven-tool sidecar and bridge with private, locked Python runtimes.
+- Package the initial lean sidecar and bridge with private, locked Python runtimes.
 - Simplify installation to Choose, Install and Ready with optional companions and explicit removal.
 - Restore all managed installation files on replacement failure; retain recovery journals.
 - Add 0.001 font-unit proposal/display tolerance while preserving exact native history.

@@ -9,7 +9,7 @@ from glyphs_mcp_protocol import outline_hash
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
-from . import context, coordinates, glyph_inventory, layer_inventory, kerning, kerning_inventory, master_properties, selection, start_node
+from . import context, coordinates, feature_compile, feature_inventory, glyph_inventory, instance_inventory, layer_inventory, kerning, kerning_inventory, master_properties, native_actions, native_save, outline_edit, outline_reads, selection, start_node
 
 
 _MISSING = object()
@@ -140,6 +140,14 @@ class GlyphsAdapter:
     def document_state(self, document_id: str) -> dict[str, Any]:
         return self._document_state(self._font(document_id))
 
+    def save_document(
+        self, document_id: str, target: str, mode: str
+    ) -> dict[str, Any]:
+        return native_save.save_document(self, document_id, target, mode, BridgeError)
+
+    def compile_features(self, document_id: str) -> dict[str, Any]:
+        return feature_compile.compile(self._font(document_id))
+
     def _document_state(self, font: Any) -> dict[str, Any]:
         path = _value(font, "filepath", None)
         return {"id": self._id(font), "path": str(path) if path else None,
@@ -220,7 +228,7 @@ class GlyphsAdapter:
 
     @staticmethod
     def _requires_fractional_precision(change: Mapping[str, Any]) -> bool:
-        if change.get("kind") == "coordinates":
+        if change.get("kind") in ("coordinates", "outline"):
             return True
         for name in ("before", "after"):
             value = change.get(name)
@@ -267,6 +275,11 @@ class GlyphsAdapter:
 
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         font = self._font(document_id)
+        kinds = {str(item.get("kind") or "") for item in entities if isinstance(item, Mapping)}
+        if kinds & {"feature_blocks", "feature_block"}:
+            return feature_inventory.read(self, font, document_id, entities, fields)
+        if kinds & {"instances", "instance"}:
+            return instance_inventory.read(self, font, document_id, entities, fields)
         if any(isinstance(item, Mapping) and item.get("kind") == "context" for item in entities):
             return context.read(font, entities, fields, self._native_identity)
         if "nodes" in fields and any(isinstance(item, Mapping) and item.get("kind") == "selection"
@@ -277,6 +290,14 @@ class GlyphsAdapter:
                 raise BridgeError("invalid_request", "a master page must be the only entity selector")
             request = entities[0]
             return [{"entity": dict(request), "values": master_properties.page(self, font, document_id, request, fields)}]
+        outline_kinds = {str(item.get("kind") or "") for item in entities if isinstance(item, Mapping)} & {"paths", "path", "segment"}
+        if outline_kinds:
+            if len(entities) != 1 or len(outline_kinds) != 1:
+                raise BridgeError("invalid_request", "a path geometry read must be the only entity selector")
+            request = entities[0]
+            reader = {"paths": outline_reads.paths_page, "path": outline_reads.path_page,
+                      "segment": outline_reads.segment}[request["kind"]]
+            return reader(self, font, document_id, request, fields)
         result = []
         axis_owners = sum(isinstance(r, Mapping) and r.get("kind") == "master" for r in entities)
         if "axes" in fields and axis_owners:
@@ -362,19 +383,58 @@ class GlyphsAdapter:
     ) -> Any:
         if change["kind"] == "kerning":
             return kerning.read(self._operation_font(document_id), change)
+        if change["kind"] == "native_action":
+            owner = self._native_action_owner(document_id, change)
+            return native_actions.current_hash(owner, change["scope"], change)
         layer = self._target_layer(document_id, change["glyph"], change["layer"])
         if change["kind"] == "set":
             return _value(layer, change["field"], None)
         if change["kind"] == "coordinates":
             return coordinates.read(layer, change)
+        if change["kind"] == "outline":
+            return outline_edit.hash_layer(layer)
         return self._outline_hash(layer)
 
     def capture_state(self, document_id, change):
-        return coordinates.read_state(self._target_layer(document_id, change["glyph"], change["layer"]), change)
+        if change["kind"] == "native_action":
+            return native_actions.capture(
+                self._native_action_owner(document_id, change), change["scope"], change
+            )
+        layer = self._target_layer(document_id, change["glyph"], change["layer"])
+        return outline_edit.capture(layer, change) if change["kind"] == "outline" else coordinates.read_state(layer, change)
 
     def apply_change(self, document_id, change, *, reverse=False):
         if change["kind"] == "kerning":
             kerning.write_undo(self._operation_font(document_id), self._undo_managers.get(document_id), change, reverse=reverse)
+            return
+        if change["kind"] == "native_action":
+            owner = self._native_action_owner(document_id, change)
+            scope = self._undo_managers.get(document_id)
+            if scope is None:
+                manager = None
+            elif change["scope"] in ("font", "feature_block"):
+                manager = scope.document_manager()
+            else:
+                manager = scope.manager_for(owner, use_fallback=False)
+            if manager is None:
+                raise BridgeError(
+                    "native_undo_unavailable",
+                    "Glyphs did not expose the required native Undo manager",
+                )
+            key = {k: v for k, v in change.items()
+                   if k not in ("nativeBefore", "nativeAfter", "beforeHash", "afterHash")}
+            snapshot_key = "nativeBefore" if reverse else "nativeAfter"
+            if snapshot_key in change:
+                wanted = change[snapshot_key]
+            else:
+                wanted = lambda target: native_actions.invoke(
+                    target, key["action"], key["arguments"], key
+                )
+            write_value(
+                manager, owner, key, wanted,
+                lambda target, item: native_actions.capture(target, item["scope"], item),
+                self._write_native_action,
+            )
             return
         layer = self._target_layer(document_id, change["glyph"], change["layer"])
         scope = self._undo_managers.get(document_id)
@@ -386,6 +446,8 @@ class GlyphsAdapter:
             wanted = change["before"] if reverse else change["after"]
         elif ("nativeBefore" if reverse else "nativeAfter") in change:
             wanted = change["nativeBefore" if reverse else "nativeAfter"]
+        elif kind == "outline":
+            wanted = lambda owner: outline_edit.apply(owner, key)
         elif kind == "start_node":
             wanted = lambda owner: start_node.apply(owner, key, reverse=reverse)
         else:
@@ -395,6 +457,36 @@ class GlyphsAdapter:
         precision = change if kind != "translate" else {"before": key["dx"], "after": key["dy"]}
         self._protect_write(document_id, layer, precision)
         write_value(manager, layer, key, wanted, coordinates.read_state, self._write_exact)
+
+    def _native_action_owner(self, document_id: str, change: Mapping[str, Any]) -> Any:
+        scope = change["scope"]
+        if scope == "font":
+            return self._operation_font(document_id)
+        if scope == "feature_block":
+            return self._operation_font(document_id)
+        if scope == "glyph":
+            return self._glyph(self._operation_font(document_id), change["glyph"])
+        if scope == "layer":
+            return self._target_layer(document_id, change["glyph"], change["layer"])
+        raise BridgeError("unsupported_change", "unsupported native action scope")
+
+    @staticmethod
+    def _write_native_action(owner: Any, change: Mapping[str, Any], value: Any) -> None:
+        begin = getattr(owner, "beginChanges", None) if change["scope"] == "layer" else None
+        end = getattr(owner, "endChanges", None) if callable(begin) else None
+        try:
+            if callable(begin):
+                begin()
+            if callable(value):
+                value(owner)
+            else:
+                native_actions.restore(owner, value)
+            refresh = getattr(owner, "setNeedUpdateShapes", None)
+            if callable(refresh):
+                refresh()
+        finally:
+            if callable(end):
+                end()
 
     @classmethod
     def _write_exact(cls, layer, change, value):
@@ -410,6 +502,8 @@ class GlyphsAdapter:
                     begin()
                 if callable(value):
                     value(layer)
+                elif change["kind"] == "outline":
+                    outline_edit.restore(layer, value)
                 else:
                     coordinates.write_state(layer, change, value)
                 refresh = getattr(layer, "setNeedUpdateShapes", None) if change["kind"] != "set" else None
@@ -418,7 +512,7 @@ class GlyphsAdapter:
             finally:
                 if callable(end):
                     end()
-            if not callable(value) and coordinates.read_state(layer, change) != value:
+            if not callable(value) and change["kind"] != "outline" and coordinates.read_state(layer, change) != value:
                 raise BridgeError("readback_failed", "Glyphs did not retain exact target values")
         finally:
             if protected and not cls._set_rounding(layer, False):

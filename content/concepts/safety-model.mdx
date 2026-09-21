@@ -2,19 +2,76 @@
 title: Safety and recovery
 ---
 
-A prepared job is a proposal. Applying it changes the open font but does not save it. The designer reviews the result in Glyphs and uses native Save to accept it.
+A prepared job is a proposal. Applying it changes the open font but does not
+save it. After review, `accept_job` revalidates the affected live targets,
+saves the entire document, records a verified receipt and closes the job's
+rollback window. The call itself is authorization to save; do not call it only
+to make a font eligible for `start_job`.
+
+Compiler diagnostic jobs never enter the live mutation lifecycle: they verify
+persisted feature hashes and finish terminally. Export artifact jobs never
+apply to the open font: generation stays in private staging until an authorized
+publication to a new directory.
 
 ## Baseline and ownership
 
-Preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. An external edit or a stale source rejects the operation instead of silently overwriting it.
+Preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. Outline jobs add exact path guards during preparation and exact before/after outline-state hashes at application. An external edit or a stale source rejects the operation instead of silently overwriting it.
+
+Closed native-action jobs add action-specific persisted-state hashes. Layer
+actions hash the complete persisted layer property list, glyph-info updates hash
+glyph metadata without layers, and feature updates hash prefixes, classes and
+features. The bridge advertises only actions whose selector, state capture,
+restoration and Undo path pass its startup probe. Unknown actions and selectors
+never enter the patch contract.
 
 Apply, discard and rollback share one per-document exclusion mechanism. Ownership is reserved before opening native Undo scopes and released on terminal or failed-start paths. Use a disposable copy for broad experiments.
+
+Acceptance and generic saving use the same per-document exclusion mechanism.
+`save_document` is for a specifically identified document only when no active
+or applied MCP job owns it. It supports Save As for pathless documents, but a
+destination must be a new absolute `.glyphs` or `.glyphspackage` path. It never
+replaces an existing destination or infers the frontmost document.
+
+Artifact acceptance revalidates the saved-clean source plus every staged size
+and SHA-256 hash. It copies only regular manifest files into a private sibling,
+fsyncs the tree, and publishes by atomic rename. The destination must not exist;
+symlinks, special files and extra output are rejected. A durable receipt binds
+the destination, source and manifest. After a restart, an interrupted rename is
+verified exactly and never replayed; missing or mismatched evidence becomes
+`accept_uncertain`.
 
 ## Native Undo, Redo and discard
 
 Native Undo and Redo operate in each affected glyph's history, including fractional widths and grouped coordinates. Native rounding flags and Undo registration are restored after each exact operation. `discard_job` restores the entire job's still-current affected targets, subject to conflict checks.
 
+Native actions retain before/after native objects only in the bounded operation
+record. A target's canonical encoded state is capped at 8 MiB and a job at
+64 MiB. Layer/glyph actions register with the glyph Undo manager;
+`update_features` registers with the document manager. An exception, hash
+conflict or readback mismatch restores the current target immediately before
+earlier targets are rolled back.
+
+Outline writes capture native shape order, path and node objects, node
+properties, and open/closed state. Restoration preserves components, anchors,
+path metadata, arbitrary user data and surviving node identities. Deletion of
+hint-referenced paths or nodes is rejected; dependent hints are never silently
+removed. Default compatibility preservation compares ordinary master topology
+before and after detached simulation.
+
+`remove_node` delegates to Glyphs' native keep-shape removal and verifies the
+exact removed node identities plus the prepared outline hash. Raw
+`delete_nodes` is retained for explicit topology surgery, but it can reconnect
+surviving handles without preserving the contour and is highlighted in the
+preparation report.
+
 A conflict means a target has changed outside the operation. Discard does not overwrite that target to force a clean-looking result. Review the error, preserve subsequent edits and decide whether native history or Revert is appropriate.
+
+`accept_job` truthfully saves the whole document. Its source-hash receipt can
+show that the source changed after preparation, but it cannot claim that
+unrelated live edits outside the job targets were excluded. A prior manual Save
+does not complete acceptance: `accept_job` invokes native Save again and verifies
+the observed path, clean state and readable source hash. Equal before/after
+hashes are valid for a clean or repeated Save.
 
 ## Partial failures and timeouts
 
@@ -22,14 +79,28 @@ Before a native write, the bridge records the target's exact starting state. If 
 
 A main-thread callback can be pending, running, completed or cancelled. A timeout cancels a pending callback so it cannot run later. If execution has started, the outcome is **uncertain** until reconciled. Keep the job ID and call `get_job`; do not automatically submit a replacement or claim no changes occurred.
 
+Save preflight failures occur before native writing and leave an applied job
+retryable and discardable. Once the native save selector has been invoked, a
+false result, exception, path/dirty mismatch or source-verification failure is
+terminal `accept_uncertain`. Do not replay acceptance, restore source files or
+discard the job automatically. Reconcile the recorded operation and durable
+receipt with `get_job`; if evidence was lost after restart, report an
+interrupted, unverified save.
+
 ## Cancellation
 
 `discard_job` requests cancellation during preparation or reversal during live application. Cancellation and publication share the service lock: cancellation that wins prevents a later `ready` result; if publication wins first, discard handles the ready proposal normally. Temporary artifacts are released only after the worker stops using them; the terminal job record is retained for the session.
 
-Do not restart the sidecar to cancel or reconcile an operation. Job sessions do not continue across server restarts.
+Do not restart the sidecar to cancel or reconcile an operation. Native mutation
+sessions do not continue across server restarts. Durable artifact receipts and
+exactly matching published destinations can be reconciled without replay.
 
 ## Precision policy
 
 Spacing preparation and reference comparison treat absolute differences **at or below 0.001 font units** as insignificant. A skipped translation does not suppress an independently meaningful width change.
 
 This tolerance does not apply to native write verification, source hashes, topology, restoration or Undo/Redo. Those checks remain exact. Meaningful changes that a native setter cannot store exactly are reported as unavailable or failed rather than rounded into a different result.
+
+Arc-length segment splitting uses bounded adaptive measurement and fails after
+4,096 samples without convergence. Multiple native insertions run from highest
+to lowest path time so Glyphs preserves the original segment appearance.

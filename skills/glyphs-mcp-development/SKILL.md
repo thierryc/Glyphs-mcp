@@ -46,7 +46,15 @@ switching between coding and font work does not restart either workflow.
 5. Follow the [native install, verify and iterate loop](references/native-iteration.md)
    for authorised tests. Reuse the user's authorisation; preserve a working
    revision and compare workspace, installed and loaded evidence before taking
-   the next action. Unchanged installed/loaded code needs no reinstall or relaunch.
+   the next action. In a development-link installation, rebuild each coherent
+   runtime change into the exact linked payload before any live test or user
+   handoff; source-only tests do not prove that the installed code is current.
+   Keep the managed development skills linked to the canonical workspace skill
+   bundle, with its packaged mirror synchronized, so guidance and capabilities
+   cannot drift during testing.
+   Restart a changed sidecar, and ask before relaunching Glyphs when changed
+   native plug-in code must be loaded. Unchanged installed/loaded code needs no
+   reinstall or relaunch.
    Use the [verification record and recovery guidance](references/verification-and-recovery.md)
    when verifying a revision, diagnosing a failure or resuming interrupted work.
    Generated files alone are not a working plugin; report the tested revision
@@ -59,7 +67,7 @@ intended document ID. Only missing or invalid bindings need
 [document targeting](../glyphs/references/document-targeting.md). Reads are fresh;
 dirty fonts need no Save. Native relaunch invalidates old document IDs.
 
-The seven-tool MCP has no arbitrary Python execution or plugin reload tool.
+The nine-tool MCP has no arbitrary Python execution or plugin reload tool.
 Native development through files/UI does not add an MCP capability. A required
 missing private capability needs the bridge, sidecar and skills updated together.
 No earlier-private fallback or whole-font recovery is promised. Installation,

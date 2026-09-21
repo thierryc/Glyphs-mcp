@@ -10,7 +10,7 @@ using the repository's `.venv-v2` Python interpreter:
 
 - 1,238 Python tests passed; 2 skipped (Copilot CLI unavailable and the optional real-AppKit drawing context not enabled).
 - 167 macOS installer tests passed.
-- Both ARM64 and Intel private runtimes started, exposed the seven-tool HTTP
+- Both ARM64 and Intel private runtimes started, exposed the then-current HTTP
   catalog and supported the stdio proxy without package downloads.
 - The actual packaged installer entry point ran successfully on both runtimes
   from a temporary directory without the source checkout on `PYTHONPATH`.
@@ -57,7 +57,7 @@ The following checks passed using this corrected archive:
 - Desktop app removal of Curve Inspector, preserving MCP and Reference
   Inspector, followed by restoration of Curve Inspector.
 - All installed file identities matched their receipts after upgrade, removal
-  and restoration. The service started and exposed the exact seven-tool
+  and restoration. The service started and exposed the exact then-current
   catalog after each operation; `get_status` succeeded.
 - Port 9680 and automatic startup disabled were preserved across all three
   desktop operations. The previous receipt said automatic startup was enabled,

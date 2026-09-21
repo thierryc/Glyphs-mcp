@@ -187,7 +187,7 @@ async def measure(endpoint, expected, metadata=None):
             list_ms=(time.perf_counter_ns()-list_start)/1e6
             calls.append({'at':at,'phase':phase,'method':'tools/list','latencyMs':list_ms,'ok':True})
             catalog=[t.model_dump(mode='json') for t in tools]
-            assert {t.name for t in tools} == {'get_status','list_documents','read_entities','start_job','get_job','apply_job','discard_job'}
+            assert {t.name for t in tools} == {'get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document'}
             status, status_ms=await call(client,'get_status',phase)
             assert status['bridge']['reachable'] and status['worker']['available']
             trials.append({'phase':phase,'initializeMs':init_ms,'catalogMs':list_ms,'statusMs':status_ms,

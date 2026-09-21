@@ -2,26 +2,48 @@
 title: How v2 works
 ---
 
-V2 separates expensive preparation from live editing. The AI client uses seven MCP tools; the native bridge supplies bounded reads and applies explicit changes on Glyphs' main thread.
+V2 separates expensive preparation from live editing. The AI client uses nine MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
 
 | Part | Responsibility |
 | --- | --- |
 | AI client and skills | Choose a supported workflow, scope it and review its evidence with the designer. |
 | Sidecar | Serve MCP, manage jobs, copy saved sources and run external preparation. |
 | Private native worker | Use `glyphs-cli` with the selected Glyphs application to measure or prepare detached font data. |
-| Bridge | Read explicit targets, check preconditions, apply changes in chunks and manage exact recovery and native history. |
+| Bridge | Read explicit targets, check preconditions, apply changes in chunks, invoke direct native document saves and manage exact recovery and native history. |
 | Companions | Draw cached curve or reference overlays independently of the MCP client. |
 
-The bridge never saves a font. Source copying and whole-font preparation run outside the editor. Live writes yield to Cocoa between chunks so the canvas can remain responsive.
+`apply_job` never saves a font. Source copying, hashing and whole-font
+preparation run outside the editor. `accept_job` and `save_document` use the
+bridge only for the synchronous native `NSDocument` operation; filesystem
+preflight and source verification stay in the sidecar. Live writes yield to
+Cocoa between chunks so the canvas can remain responsive.
+
+The bridge can also negotiate the closed `native_action` catalog without adding
+tools. The sidecar exposes the job kind only when the bridge reports
+`native.action.v1` plus recognized actions. Preparation runs the same fixed
+native command on a disposable saved snapshot; live application compares its
+before/after hashes and retains native objects only for bounded Undo, rollback
+and discard.
 
 ## One job, one identity
 
-`start_job` prepares an external result and returns a job ID. `get_job` returns progress and evidence. `apply_job` applies the stored result to the matching saved document. `discard_job` cancels preparation or reverses still-current affected targets. Repeated apply or discard requests for the same ongoing operation do not create duplicate native operations.
+`start_job` prepares an external result and returns a job ID. `get_job` returns
+progress and evidence. `apply_job` applies the stored result to the matching
+saved document. `accept_job` verifies the applied targets, persists the whole
+document and makes the job terminal. `discard_job` cancels preparation or
+reverses still-current affected targets. Repeated calls reconcile the same
+recorded native operation instead of creating duplicate writes.
 
-The bridge shares per-document ownership across apply, discard and rollback. A competing operation cannot open a second Undo scope or alter the owner's state.
+The bridge shares per-document ownership across apply, accept, save, discard
+and rollback. A competing operation cannot open a second Undo scope or alter
+the owner's state.
 
 ## Native editing remains central
 
-Save accepts the reviewed result. Undo and Redo use native per-glyph history. Revert uses Glyphs' own saved-document workflow. The Reference Inspector compares against a selected source; it is not a log of tool calls or an acceptance interface.
+`accept_job` accepts the reviewed result by saving the entire document and
+returning path/hash evidence. Undo and Redo use native per-glyph history before
+acceptance. Revert uses Glyphs' own saved-document workflow. The Reference
+Inspector compares against a selected source; it is not a log of tool calls or
+an acceptance interface.
 
-Use the [seven-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
+Use the [nine-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.

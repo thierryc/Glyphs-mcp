@@ -159,8 +159,8 @@ management, verified Cursor plugin and dedicated redacted troubleshooting logs
 introduced in Beta 3.
 
 The desktop requires macOS 14. Its payload is now Glyphs 4-only; Glyphs 3
-continues through the separate v1.11.0 release. The seven-tool MCP interface
-and bridge protocol are unchanged.
+continues through the separate v1.11.0 release. The nine-tool MCP interface
+retains bridge protocol 1.
 
 Signed update acceptance passed on an Apple-silicon VirtualBuddy guest running
 macOS 26.6.2 and Glyphs 4.1 (4107): a notarized build-45 fixture discovered,

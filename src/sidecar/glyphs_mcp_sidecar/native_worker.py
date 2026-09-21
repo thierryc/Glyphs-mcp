@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from glyphs_mcp_protocol import PATCH_VERSION, validate_patch
+from glyphs_mcp_protocol import PATCH_VERSION, validate_patch, validate_worker_result
 from .worker import WORKER_ERROR_PREFIX, WorkerError
 
 
@@ -33,12 +33,14 @@ def _number(value: Any) -> float | int:
 
 def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
     request = payload["request"]
-    if request.get("kind") in ("spacing", "kerning_collision", "start_nodes", "slant"):
+    if request.get("kind") in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action"):
         from .spacing_job import prepare as spacing_prepare
         from .kerning_job import prepare as kerning_prepare
         from .start_node_job import prepare as start_prepare
         from .slant_job import prepare as slant_prepare
-        prepare = {"spacing": spacing_prepare, "kerning_collision": kerning_prepare, "start_nodes": start_prepare, "slant": slant_prepare}[request["kind"]]
+        from .outline_job import prepare as outline_prepare
+        from .native_action_job import prepare as native_action_prepare
+        prepare = {"spacing": spacing_prepare, "kerning_collision": kerning_prepare, "start_nodes": start_prepare, "slant": slant_prepare, "outline_edit": outline_prepare, "native_action": native_action_prepare}[request["kind"]]
         changes, report = prepare(_load_font(Path(payload["source"])), request)
         Path(payload["output"]).with_name("report.json").write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
         return validate_patch({"version": PATCH_VERSION, "jobId": payload["jobId"],
@@ -47,7 +49,9 @@ def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
                               "changes": changes, "summary": ("Spacing suggestions for {} master layers".format(len(report["layers"]))
                               if request["kind"] == "spacing" else "Start-node correspondence for {} master layers".format(len(report["layers"]))
                               if request["kind"] == "start_nodes" else "Slant suggestions for {} master layers".format(len(report["layers"]))
-                              if request["kind"] == "slant" else "Collision corrections for {} master pairs".format(len(report["pairs"])))})
+                              if request["kind"] == "slant" else "Outline edits for {} layers".format(len(report["layers"]))
+                              if request["kind"] == "outline_edit" else "Native {} action for {} targets".format(report["action"], report["targetCount"])
+                              if request["kind"] == "native_action" else "Collision corrections for {} master pairs".format(len(report["pairs"])))})
     if request.get("kind") != "width_delta":
         raise ValueError("unsupported external job kind")
     delta = float(request["delta"])
@@ -98,6 +102,52 @@ def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def build_result(payload: dict[str, Any]) -> dict[str, Any]:
+    request = payload.get("request") or {}
+    if request.get("kind") == "font_export":
+        from .font_export_job import prepare as export_prepare
+
+        manifest, report = export_prepare(
+            _load_font(Path(payload["source"])), request, Path(payload["output"]).parent
+        )
+        Path(payload["output"]).with_name("report.json").write_text(
+            json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        return validate_worker_result({
+            "version": PATCH_VERSION,
+            "resultKind": "artifact",
+            "jobId": payload["jobId"],
+            "documentId": payload["document"]["id"],
+            "sourcePath": payload["document"]["path"],
+            "sourceHash": payload["sourceHash"],
+            "generation": payload["document"]["generation"],
+            "summary": "Exported and verified {}".format(report["instanceName"] or report["instanceId"]),
+            "manifest": manifest,
+            "report": report,
+        })
+    if request.get("kind") != "feature_compile":
+        return build_patch(payload)
+    from .feature_compile_job import prepare
+
+    report = prepare(_load_font(Path(payload["source"])), request)
+    Path(payload["output"]).with_name("report.json").write_text(
+        json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    return validate_worker_result({
+        "version": PATCH_VERSION,
+        "resultKind": "diagnostic",
+        "jobId": payload["jobId"],
+        "documentId": payload["document"]["id"],
+        "sourcePath": payload["document"]["path"],
+        "sourceHash": payload["sourceHash"],
+        "generation": payload["document"]["generation"],
+        "summary": "OpenType compilation succeeded" if report["success"] else "OpenType compilation failed",
+        "report": report,
+    })
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = list(argv or sys.argv[1:])
     if not arguments:
@@ -105,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     request_path = Path(arguments[-1]).resolve()
     payload = json.loads(request_path.read_text(encoding="utf-8"))
     try:
-        patch = build_patch(payload)
+        result = build_result(payload)
     except WorkerError as error:
         # Expected target validation failures are user-facing evidence, not a
         # Python traceback. Unexpected failures retain the existing diagnostics.
@@ -113,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     output = Path(payload["output"]).resolve()
     output.write_text(
-        json.dumps(patch, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
         encoding="utf-8",
     )
     return 0

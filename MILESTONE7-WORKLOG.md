@@ -102,14 +102,14 @@ have been edited by the desktop implementation work.
 
 - Final production Python suite: **1,216 passed, 3 skipped**. Full local release gate passed, including the full Python runtime matrix, 133 Swift tests, documentation, skill checks, budgets and deterministic unsigned payloads. A subsequent focused Swift run passed all 9 project tests after improving the ordinary-folder Git message.
 - Closed two clean Glyphs documents normally and quit Glyphs. No source-font changes. Stopped the pre-desktop service using its existing helper; its old wrapper required its original non-isolated invocation, corrected by M7 entry wrappers.
-- The authoritative M6 temporary JobStore was identified through seven-tool get_job calls. All four jobs were cancelled/discarded. Copied it byte-for-byte into stable managed storage; evidence in `build/desktop-acceptance/job-migration.json`.
+- The authoritative M6 temporary JobStore was identified through the then-current `get_job` calls. All four jobs were cancelled/discarded. Copied it byte-for-byte into stable managed storage; evidence in `build/desktop-acceptance/job-migration.json`.
 - Installed signed M7 bridge, sidecar/runtime and both companions through verified payload installer transaction. Receipt: `build/desktop-acceptance/installation-result.json`. Authentication hash, port 9680 and startup preferences preserved. M7 service is running, private controlProtocol 1 responds, both companions registered after native Glyphs restart.
 - Developer ID/notarization complete for payload, app and DMG. Release verifier passed. App accepted by Gatekeeper, installed at `/Applications/Glyphs MCP.app`.
 - Release archive SHA256: `cff83afcb9d9f5809c99aa0d64609268051b2d73e041245edacea396dc938dbe`.
 - DMG SHA256: `b2cdf2830c4e728c117ec085a92084df4cb7342fea9bcfd8fe841dc7e5a2461b`.
 - Signed appcast SHA256: `f07142933e63a0d12d3567aef64a879695be763f4b5602b35ad678086290e895`.
 - Real Sparkle trial: signed/notarized lowered-version fixture 2.0.99/build29 upgraded through native UI to production 2.1.0/build30. Installed bundle identity equals release exactly; component receipt and all job records unchanged. Invalid feed, invalid archive signature and interrupted download each rejected with build29 preserved. Evidence: `build/update-trial/observations.json`.
-- Final signed runtime offline startup passed both architectures (HTTP + stdio seven-tool catalogs): arm64 5.139s, x86_64 13.118s.
+- Final signed runtime offline startup passed both architectures (HTTP + stdio then-current catalogs): arm64 5.139s, x86_64 13.118s.
 - Native UI verified welcome repeatedly opens, Settings defaults (menu on, desktop login off, sidecar startup preserved on, automatic updates off), receipt adoption and disposable starter creation. Starter project: `/private/tmp/Glyphs MCP Desktop Acceptance`.
 - Offscreen AppKit icon rendering verified light/dark 1x/2x with preserved mask and contours: `build/desktop-icon-acceptance/icon-rendering.png`.
 

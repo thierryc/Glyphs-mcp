@@ -234,7 +234,7 @@ class AgentPluginTests(unittest.TestCase):
         self.assertNotIn("tool profile", skill_text.lower())
         self.assertNotIn("Use Edit for this specialized workflow", skill_text)
         self.assertNotIn("Use Read-only for detached candidate preview", skill_text)
-        for tool in ("get_status", "list_documents", "read_entities", "start_job", "get_job", "apply_job", "discard_job"):
+        for tool in ("get_status", "list_documents", "read_entities", "start_job", "get_job", "apply_job", "accept_job", "discard_job", "save_document"):
             self.assertIn("`" + tool + "`", skill_text)
         self.assertIn("Native Undo and Redo", skill_text)
         self.assertNotIn("execute_code_with_context", skill_text)

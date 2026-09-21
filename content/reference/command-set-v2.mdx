@@ -2,8 +2,12 @@
 title: Glyphs 4 MCP tools
 ---
 
-The canonical v2 reference is now [The seven v2 tools](command-set.mdx). This page remains available for existing repository links.
+The canonical v2 reference is now [The nine v2 tools](command-set.mdx). This page remains available for existing repository links.
 
-The tools are `get_status`, `list_documents`, `read_entities`, `start_job`, `get_job`, `apply_job`, and `discard_job`.
+The tools are `get_status`, `list_documents`, `read_entities`, `start_job`,
+`get_job`, `apply_job`, `accept_job`, `discard_job`, and `save_document`.
 
-Start with the [first session](../tutorial/first-session.mdx) or read the [complete signatures, selectors and job kinds](command-set.mdx). Native Save is acceptance; application, recovery and native history retain exact values.
+Start with the [first session](../tutorial/first-session.mdx) or read the
+[complete signatures, selectors and job kinds](command-set.mdx). Application is
+save-free; `accept_job` performs verified whole-document persistence after
+review, while recovery and native history retain exact values.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import importlib.util
 import json
 import os
 import shutil
@@ -14,7 +15,7 @@ from threading import Event, RLock
 from typing import Any, Mapping
 
 import glyphs_mcp_protocol
-from glyphs_mcp_protocol import validate_patch
+from glyphs_mcp_protocol import validate_worker_result
 
 
 class WorkerError(RuntimeError):
@@ -61,13 +62,28 @@ class GlyphsCliWorker:
         executable = self.executable()
         with self._lock:
             executions = [dict(value) for value in self._executions.values()]
+        available = bool(executable and self.app)
+        capabilities = []
+        if available:
+            capabilities.extend((
+                "feature.compile.saved.v1",
+                "font.export.static.v1",
+                "font.export.variable.v1",
+            ))
+            if importlib.util.find_spec("fontTools") is not None:
+                capabilities.append("font.verify.tables.v1")
+            if importlib.util.find_spec("brotli") is not None:
+                capabilities.append("font.export.web.v1")
+            if importlib.util.find_spec("uharfbuzz") is not None:
+                capabilities.append("font.verify.shaping.v1")
         return {
-            "available": bool(executable and self.app),
+            "available": available,
             "executable": executable,
             "application": self.app or None,
             "plugins": "disabled",
             "processModel": "one_shot",
             "executions": executions,
+            "jobCapabilities": sorted(capabilities),
         }
 
     def prepare(
@@ -83,7 +99,7 @@ class GlyphsCliWorker:
         if executable is None or not self.app:
             raise WorkerError("glyphs-cli and an exact Glyphs application are required")
         request_path = job_root / "worker-request.json"
-        output_path = job_root / "patch.json"
+        output_path = job_root / "worker-result.json"
         payload = {
             "jobId": job_root.name,
             "document": dict(document),
@@ -130,7 +146,10 @@ class GlyphsCliWorker:
             )
             with self._lock:
                 self._executions[job_root.name].update(pid=process.pid, phase="running")
-            stdout, stderr = self._communicate(process, cancel)
+            if request.get("kind") == "font_export":
+                stdout, stderr = self._communicate(process, cancel, timeout=900.0)
+            else:
+                stdout, stderr = self._communicate(process, cancel)
         finally:
             with self._lock:
                 self._executions.pop(job_root.name, None)
@@ -148,11 +167,13 @@ class GlyphsCliWorker:
         try:
             value = json.loads(output_path.read_text(encoding="utf-8"))
         except (FileNotFoundError, json.JSONDecodeError) as exc:
-            raise WorkerError("glyphs-cli returned no valid patch") from exc
-        return validate_patch(value)
+            raise WorkerError("glyphs-cli returned no valid result") from exc
+        result = validate_worker_result(value)
+        return result["patch"] if result["resultKind"] == "mutation" else result
 
-    def _communicate(self, process, cancel):
+    def _communicate(self, process, cancel, *, timeout=None):
         started = time.monotonic()
+        timeout = self.timeout if timeout is None else max(1.0, float(timeout))
         while True:
             if cancel.is_set():
                 process.terminate()
@@ -162,7 +183,7 @@ class GlyphsCliWorker:
                     process.kill()
                     process.wait(timeout=2)
                 raise WorkerError("job cancelled")
-            if time.monotonic() - started > self.timeout:
+            if time.monotonic() - started > timeout:
                 process.kill()
                 process.wait(timeout=2)
                 raise WorkerError("glyphs-cli job timed out")

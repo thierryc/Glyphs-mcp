@@ -6,13 +6,18 @@ its negotiated capabilities before routing a task. Missing required capabilities
 mean the installation needs updating; do not maintain workflows for earlier
 private v2 builds. V1 has separate instructions and is not changed by this policy.
 
-The public interface remains seven tools: `get_status`, `list_documents`,
-`read_entities`, `start_job`, `get_job`, `apply_job` and `discard_job`.
+The public interface remains nine tools: `get_status`, `list_documents`,
+`read_entities`, `start_job`, `get_job`, `apply_job`, `accept_job`,
+`discard_job` and `save_document`.
 There is no typed-prototype, live Python or alternate history interface.
 
 Use explicit bounded reads, including `selection.context.v1` for compact
 selection counts and optional node evidence. Native jobs use external
 preparation, short native writes and the existing Undo/discard mechanisms.
+The negotiated `native_action` family is one closed `start_job` kind; it does
+not expose arbitrary selectors, menu commands, Python or another MCP endpoint.
+Closed `feature_compile` diagnostics and verified `font_export` artifacts use
+the same start/poll lifecycle and capability negotiation without adding tools.
 Support dirty reads without Save; report missing or incomplete evidence honestly.
 A separately authorized native development task is not a fallback for an old
 private installation and does not add a public MCP capability.

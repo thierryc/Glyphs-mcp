@@ -6,7 +6,7 @@ from time import monotonic
 
 import objc
 from AppKit import NSColor, NSEvent, NSGraphicsContext, NSPoint
-from Foundation import NSBundle
+from Foundation import NSBundle, NSClassFromString
 from GlyphsApp import DOCUMENTWASSAVED, DOCUMENTOPENED, DOCUMENTACTIVATED, TABDIDOPEN, UPDATEEDITVIEWFRAME, Glyphs, UPDATEINTERFACE
 from GlyphsApp.plugins import ReporterPlugin
 from PyObjCTools import AppHelper
@@ -19,6 +19,7 @@ from glyphs_reference_inspector import drawing, menus
 
 PREFERENCES = "com.ap.cx.glyphs-reference-inspector.references"
 QUIET_SECONDS = 0.15
+LABEL_GAP_POINTS = 12.0
 MANIFEST = {"protocol": 1, "id": "reference-inspector", "version": "0.1.0",
             "capabilities": ["reference.saved", "reference.file", "reference.git", "reference.github", "reference.overlay"]}
 
@@ -29,6 +30,14 @@ def _value(owner, key, default=None):
         return value() if callable(value) else value
     except Exception:
         return default
+
+
+def _label_point(layer, scale):
+    try:
+        descender = float(_value(_value(layer, "master"), "descender", -200.0))
+    except (TypeError, ValueError):
+        descender = -200.0
+    return NSPoint(0, descender - LABEL_GAP_POINTS / max(float(scale or 1), .01))
 
 
 class GlyphsReferenceInspector(ReporterPlugin):
@@ -267,17 +276,38 @@ class GlyphsReferenceInspector(ReporterPlugin):
         invalidate_view(Glyphs)
 
     @objc.python_method
+    def conditionsAreMetForDrawing(self):
+        """Hide the indication while Glyphs' text or temporary hand tool is active."""
+        try:
+            controller = self._controller.view().window().windowController()
+            if controller is None:
+                return True
+            tool = controller.toolDrawDelegate()
+            for class_name in ("GlyphsToolText", "GlyphsToolHand"):
+                tool_class = NSClassFromString(class_name)
+                if tool_class is not None and tool.isKindOfClass_(tool_class):
+                    return False
+        except Exception:
+            # Drawing may precede controller attachment during restored startup.
+            return True
+        return True
+
+    @objc.python_method
     def foreground(self, layer):
         # Only Glyphs' active-edit callback may draw the comparison. Inactive
         # occurrences can share this exact layer object with the edited glyph.
+        if layer is None or not self.conditionsAreMetForDrawing():
+            return
         NSGraphicsContext.saveGraphicsState()
         try:
             published = self._published
             if not published or int(objc.pyobjc_id(layer)) != published["identity"]:
                 return
+            scale = float(self.getScale() or 1)
             if published["paths"] is not None:
-                drawing.paint(published["paths"], float(self.getScale() or 1))
-            self.drawTextAtPoint(published["label"], NSPoint(0, -110), fontSize=10,
+                drawing.paint(published["paths"], scale)
+            self.drawTextAtPoint(published["label"], _label_point(layer, scale), fontSize=10,
+                                 align="topleft",
                                  fontColor=NSColor.secondaryLabelColor())
         finally:
             NSGraphicsContext.restoreGraphicsState()

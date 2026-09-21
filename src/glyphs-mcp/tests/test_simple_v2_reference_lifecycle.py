@@ -19,14 +19,16 @@ def reporter():
     source = Path(__file__).resolve().parents[3] / "src/companions/reference-inspector/glyphs_reference_inspector/plugin.py"
     tree = ast.parse(source.read_text())
     nodes = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.Assign))]
-    timers, workers, captures, reads, redraws, paints, labels = [], [], [], [], [], [], []
+    timers, workers, captures, reads, redraws, paints, labels, label_draws = [], [], [], [], [], [], [], []
     clock = SimpleNamespace(now=0.0, buttons=0)
+    mode = SimpleNamespace(tool="GlyphsToolSelect")
     callbacks = {}
     graphics = SimpleNamespace(depth=0)
     def save(): graphics.depth += 1
     def restore(): graphics.depth -= 1
     context = SimpleNamespace(saveGraphicsState=save, restoreGraphicsState=restore)
-    layer = SimpleNamespace(parent=SimpleNamespace(name="a"), layerId="regular", master=None,
+    layer = SimpleNamespace(parent=SimpleNamespace(name="a"), layerId="regular",
+                            master=SimpleNamespace(name="Regular", descender=-220),
                             isMasterLayer=True, completeBezierPath=[[0, [[0, 0]]], [1, [[100, 100]]]],
                             completeOpenBezierPath=None, width=510.25, anchors=[])
     host = SimpleNamespace(activeReporters=[], defaults={}, font=SimpleNamespace(
@@ -77,6 +79,7 @@ def reporter():
            "objc": SimpleNamespace(python_method=lambda f: f, typedSelector=lambda _: lambda f: f, pyobjc_id=id),
            "NSEvent": SimpleNamespace(pressedMouseButtons=lambda: clock.buttons),
            "NSBundle": SimpleNamespace(mainBundle=lambda: SimpleNamespace(bundlePath=lambda: "/Applications/Glyphs.app")),
+           "NSClassFromString": lambda name: name,
            "NSPoint": lambda x, y: (x, y), "NSColor": SimpleNamespace(secondaryLabelColor=lambda: None),
            "AppHelper": SimpleNamespace(callAfter=lambda f, *args: later(0, f, *args), callLater=later),
            "ReferenceReader": Reader, "resolved_layer_elements": lambda layer, context=None: (
@@ -93,7 +96,14 @@ def reporter():
     plugin = env["GlyphsReferenceInspector"]()
     plugin.settings()
     plugin.getScale = lambda: 1
-    plugin.drawTextAtPoint = lambda label, *_args, **_kwargs: labels.append(label)
+    tool = SimpleNamespace(isKindOfClass_=lambda tool_class: mode.tool == tool_class)
+    window_controller = SimpleNamespace(toolDrawDelegate=lambda: tool)
+    window = SimpleNamespace(windowController=lambda: window_controller)
+    plugin._controller = SimpleNamespace(view=lambda: SimpleNamespace(window=lambda: window))
+    def draw_text(label, point, **kwargs):
+        labels.append(label)
+        label_draws.append((point, kwargs))
+    plugin.drawTextAtPoint = draw_text
 
     def finish():
         while workers:
@@ -108,7 +118,9 @@ def reporter():
 
     return SimpleNamespace(plugin=plugin, host=host, layer=layer, clock=clock, timers=timers,
                            workers=workers, captures=captures, reads=reads, redraws=redraws, paints=paints, labels=labels,
-                           advance=advance, finish=finish, enable=enable, view=view, callbacks=callbacks, graphics=graphics, env=env)
+                           label_draws=label_draws,
+                           advance=advance, finish=finish, enable=enable, view=view, callbacks=callbacks, graphics=graphics,
+                           mode=mode, env=env)
 
 
 def test_activation_displays_without_touching_the_canvas(reporter):
@@ -135,6 +147,34 @@ def test_reference_indication_only_draws_on_the_edited_occurrence(reporter, labe
             callback(r.layer)
     assert r.labels == [label]
     assert len(r.paints) == 1
+    assert len(r.reads) == len(r.redraws) == 1
+    assert not r.timers and not r.workers and r.graphics.depth == 0
+
+
+def test_reference_indication_is_positioned_below_the_master_descender(reporter):
+    r = reporter
+    r.enable()
+    r.plugin.getScale = lambda: 0.5
+    r.plugin.foreground(r.layer)
+    assert r.label_draws == [((0, -244.0), {"fontSize": 10, "align": "topleft", "fontColor": None})]
+
+
+@pytest.mark.parametrize("tool", ["GlyphsToolText", "GlyphsToolHand"])
+def test_reference_indication_only_draws_in_edit_mode(reporter, tool):
+    r = reporter
+    r.enable()
+    published = r.plugin._published
+    r.mode.tool = tool
+    r.plugin.foreground(r.layer)
+    assert not r.paints and not r.labels and not r.label_draws
+    assert r.plugin._published is published
+    assert len(r.reads) == len(r.redraws) == 1
+    assert not r.timers and not r.workers and r.graphics.depth == 0
+
+    r.mode.tool = "GlyphsToolSelect"
+    r.plugin.foreground(r.layer)
+    assert len(r.paints) == len(r.labels) == len(r.label_draws) == 1
+    assert r.plugin._published is published
     assert len(r.reads) == len(r.redraws) == 1
     assert not r.timers and not r.workers and r.graphics.depth == 0
 

@@ -45,6 +45,6 @@ For native **Undo**, open an affected glyph in **Edit View**. Undo/Redo is
 grouped per glyph across its changed layers; Font View has different history
 context. Use `discard_job` for whole-job restoration or cancellation, then
 verify the result. Reapplying the same job is not a new delta. A new accepted
-width-delta job is additive; an explicitly authorized Save accepts the prior
-change. Never retry an uncertain write as a new job, silently switch fonts or
+width-delta job is additive; when persistence is authorized, `accept_job`
+verifies the prior change and saves the whole document. Never retry an uncertain write as a new job, silently switch fonts or
 save/export/close a document without authorization.

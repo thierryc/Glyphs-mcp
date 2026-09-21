@@ -42,8 +42,10 @@ For editor acceptance, use exactly one disposable saved font with curved paths:
 4. Repeat a glyph in the proof string and edit just one occurrence. The reference
    label and comparison paths must appear only on that edited occurrence, with
    no label on its repeated text occurrence or in the preview panel. Switch to
-   text mode and confirm the reference indications disappear. Return to editing
-   without toggling the Reporter and confirm the edited indication appears.
+   text mode and confirm the reference indications disappear. Return to editing,
+   hold Space to activate the temporary Hand tool, and confirm the indication is
+   hidden until Space is released. The cached indication must return in both cases
+   without toggling the Reporter.
 5. Save the restored disposable copy and compare its font-data files with the
    pre-test backup. Only UI state may differ. Verify the original source hash.
 

@@ -6,8 +6,8 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 or signed-release identity from each other.
 
 The current target is product **2.0.0**, release **2.0.0-beta.4**, beta number **4**,
-installer build **46**: **eleven managed skills**, seven MCP tools and five job
-kinds. Sidecar and bridge product versions are coordinated; their code hashes
+installer build **46**: **eleven managed skills**, nine MCP tools and six
+capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
 **1**, bridge protocol **1**. The dated MCP transport version is negotiated
 separately. Independent companions retain their own versions. The Beta 4

@@ -17,16 +17,21 @@ not inspect unsaved edits. Do not replace a known target with the frontmost font
    check referenced glyphs/classes, and modify only the explicit targets.
    Respect automatic generation; inspect generated changes rather than claiming
    that source stayed untouched after generation or compilation.
-4. Compile with `GSFont.compileFeatures()` when needed. Interpret the native
+4. Prefer the closed `feature_compile` job when advertised; it calls
+   `GSFont.compileFeatures()` and interprets the native
    success/error result explicitly. Retain the relevant feature, line, missing
    glyph and diagnostic text. Fix the source cause and rerun compilation; do not
    reinstall unchanged files to address a feature error.
-5. If export is part of the task, use a new output directory and the intended
+5. If export is part of the task, prefer the closed `font_export` job when
+   advertised, use a new output directory and the intended
    instance. Verify the actual binary and shape feature-on/off samples plus an
    unaffected control, with explicit script/language/direction when relevant.
    Compilation alone does not prove substitution, positioning or export behavior.
 
-Create/revise a workspace script with normal file tools; use the existing
+When the required closed capability is missing, report that the coordinated
+installation needs updating; do not substitute a script. Create/revise a
+workspace script only for genuinely unsupported or explicitly scripted work;
+use the existing
 development scaffolder only when a new artifact needs it. Native execution
 follows the user's authorized scope. No feature-editing or Python MCP tool is
 available. Native script changes do not acquire MCP job Undo/discard guarantees;

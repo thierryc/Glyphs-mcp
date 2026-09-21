@@ -7,7 +7,7 @@ The current candidate is Glyphs MCP Desktop 2.0.0 Beta 4 / build 46,
 with coordinated sidecar/bridge product version `2.0.0`, interface revision `1`
 and bridge protocol `1`. Follow [the beta release plan](../BETA-LAUNCH.md)
 for its prerelease tag, beta update feed and download names.
-The Glyphs 4-only payload has seven tools, eleven managed skills, two optional
+The Glyphs 4-only payload has nine tools, eleven managed skills, two optional
 companions, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Glyphs 3 remains available through its separate pinned v1.11.0 release
 at v1.11.0 / 13ca805; it is not packaged in Beta 4.

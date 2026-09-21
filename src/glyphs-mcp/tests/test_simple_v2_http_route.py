@@ -46,8 +46,14 @@ class Service:
     def apply_job(self, job_id, **options):
         return {'id': job_id, 'status': 'applying', **options}
 
+    def accept_job(self, job_id, **options):
+        return {'id': job_id, 'status': 'accepting', **options}
+
     def discard_job(self, job_id, **options):
         return {'id': job_id, 'status': 'cancelled', **options}
+
+    def save_document(self, document_id, **options):
+        return {'documentId': document_id, 'verification': 'native_and_source_hash', **options}
 
     def reserve_idle(self):
         return {'reservationId': 'reservation_1'}
@@ -107,7 +113,9 @@ def test_configured_route_preserves_handshake_catalog_all_tools_and_errors(tmp_p
                         ('start_job', {'document_id': 'doc_1', 'kind': 'width_delta', 'delta': .125}),
                         ('get_job', {'job_id': 'job_1', 'include_preview': False}),
                         ('apply_job', {'job_id': 'job_1', 'include_preview': False}),
+                        ('accept_job', {'job_id': 'job_1', 'destination': '/tmp/New.glyphs', 'include_preview': False}),
                         ('discard_job', {'job_id': 'job_1', 'include_preview': False}),
+                        ('save_document', {'document_id': 'doc_1', 'destination': '/tmp/Saved.glyphspackage'}),
                         ('read_entities', {'document_id': 'stale', 'entities': [{'kind': 'selection'}], 'fields': ['glyph']}),
                         ('read_entities', {}),  # Schema validation, without reaching native code.
                     ]],
@@ -137,7 +145,7 @@ def test_configured_route_preserves_handshake_catalog_all_tools_and_errors(tmp_p
     async def compare():
         baseline = await exercise(None, '/mcp/')
         candidate = await exercise(options['path'], '/mcp')
-        assert candidate == baseline  # Exact MCP JSON, including all seven schemas/errors.
+        assert candidate == baseline  # Exact MCP JSON, including all nine schemas/errors.
     asyncio.run(compare())
 
 

@@ -44,7 +44,7 @@ async def check(lean, architecture):
                     await asyncio.sleep(.1)
             else:
                 log.seek(0); raise TimeoutError('Private runtime did not start: '+log.read()[-2000:])
-            expected=['get_status','list_documents','read_entities','start_job','get_job','apply_job','discard_job']
+            expected=['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document']
             assert [t.name for t in catalog]==expected
             command=prefix+[str(python),'-B',str(lean/'sidecar/proxy.py'),url]
             async with Client(StdioTransport(command=command[0],args=command[1:],env=env)) as proxy:

@@ -223,7 +223,7 @@ def test_prepare_apply_and_single_acceptance_message(tmp_path: Path) -> None:
     bridge.operation_state = "applied"
     applied = value.get_job(started["id"])
     assert applied["status"] == "applied"
-    assert "Save to accept" in applied["message"]
+    assert "accept_job" in applied["message"]
     assert bridge.patch["sourcePath"].endswith("Disposable.glyphs")
     assert value.jobs.path(started["id"]).joinpath("source.glyphs").exists()
 

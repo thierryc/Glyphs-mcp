@@ -19,4 +19,6 @@ The reference node is a matching landmark. The reference contour keeps its exist
 
 Review `get_job` before applying. Ambiguous matches, incompatible topology, open contours and missing targets reject preparation before live writes. This supports correspondence; it does not repair arbitrary master incompatibility or replace a master.
 
-Native application preserves contour geometry, node objects, metadata and hints. Review the result across masters, use native Undo/Redo or `discard_job` to restore it, and Save only after acceptance.
+Native application preserves contour geometry, node objects, metadata and hints.
+Review the result across masters, use native Undo/Redo or `discard_job` to
+restore it, and call `accept_job` only when persistence is authorized.

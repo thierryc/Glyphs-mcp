@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import types
 import unittest
@@ -450,14 +451,38 @@ class CandidateReporterTests(unittest.TestCase):
 
         self.assertEqual(reporter.lastText, "No visible outline difference")
 
-    def test_real_appkit_contour_ribbons_change_only_exclusive_region_when_available(self):
-        if os.environ.get("GLYPHS_MCP_RUN_APPKIT_DRAWING_TESTS") != "1":
-            self.skipTest("real AppKit drawing requires an opted-in application context")
-        try:
-            import AppKit  # type: ignore[import-not-found]
-            import Quartz  # type: ignore[import-not-found]  # noqa: F401
-        except Exception:
-            self.skipTest("AppKit and Quartz drawing APIs are unavailable")
+    def test_real_appkit_contour_ribbons_change_only_exclusive_region(self):
+        # AppKit and Quartz ship with the supported macOS/PyObjC runtime.  This
+        # bitmap-backed context needs no running NSApplication, so keep the
+        # native drawing regression in the ordinary suite instead of hiding it
+        # behind an opt-in skip. Run it in a fresh process because other tests
+        # deliberately replace objc in sys.modules; PyObjC rejects reloads by
+        # design, and the shipped plug-in also starts in a clean process.
+        if os.environ.get("GLYPHS_MCP_APPKIT_DRAWING_CHILD") != "1":
+            env = dict(os.environ, GLYPHS_MCP_APPKIT_DRAWING_CHILD="1")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "-q",
+                    "-o",
+                    "addopts=",
+                    f"{Path(__file__).resolve()}::CandidateReporterTests::"
+                    "test_real_appkit_contour_ribbons_change_only_exclusive_region",
+                ],
+                cwd=Path(__file__).resolve().parents[3],
+                env=env,
+                text=True,
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            return
+
+        import AppKit  # type: ignore[import-not-found]
+        import Quartz  # type: ignore[import-not-found]  # noqa: F401
 
         spec = importlib.util.spec_from_file_location(
             "glyphs_mcp_real_appkit_candidate_reporter",

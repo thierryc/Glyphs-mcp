@@ -1,4 +1,4 @@
-"""Phased, actual seven-tool acceptance. Native UI actions occur between phases."""
+"""Phased, actual nine-tool acceptance. Native UI actions occur between phases."""
 import asyncio
 import json
 import sys
@@ -109,7 +109,7 @@ async def run(cycle, phase):
                 before=time.monotonic(); await asyncio.to_thread(bridge.status)
                 samples.append(time.monotonic()-before); await asyncio.sleep(.025)
             evidence['phases'][phase] = dict(_measurement(samples),errors=[])
-            assert [t.name for t in await client.list_tools()] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','discard_job']
+            assert [t.name for t in await client.list_tools()] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document']
         elif phase in {'spacing','fractional'}:
             job = await prepare('spacing' if phase=='spacing' else 'width_delta')
             await tool('apply_job',job_id=job['id'])

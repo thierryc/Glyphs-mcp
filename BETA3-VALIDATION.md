@@ -84,9 +84,9 @@ recorded.
 | Glyphs running with save prompt | Unverified | Unverified | Cancel and successful quit paths preserve work |
 | Agent absent during Install All | Unverified | Unverified | Connector is configured without host detection |
 | Reload/restart guidance | Unverified | Unverified | Each host discovers the new configuration after reload |
-| Codex MCP reachability | Unverified | Unverified | Seven-tool catalog and current `get_status` identity |
-| Claude Code MCP reachability | Unverified | Unverified | Seven-tool catalog and current `get_status` identity |
-| Claude Desktop MCP reachability | Unverified | Unverified | Seven-tool catalog and current `get_status` identity |
+| Codex MCP reachability | Unverified | Unverified | Nine-tool catalog and current `get_status` identity |
+| Claude Code MCP reachability | Unverified | Unverified | Nine-tool catalog and current `get_status` identity |
+| Claude Desktop MCP reachability | Unverified | Unverified | Nine-tool catalog and current `get_status` identity |
 | Cursor plugin reachability | Unverified | Unverified | Local plugin loads and reaches the MCP endpoint |
 | Troubleshooting log window | Unverified | Unverified | Sources, refresh, copy, redaction and Reveal in Finder |
 | Disk image at standard/Retina scale | Unverified | Unverified | Crisp copy, correct 680 × 420 point layout and icon positions |

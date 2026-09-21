@@ -18,6 +18,9 @@ The active layer shows reference geometry in mint and current changes in cyan,
 including outline changes, components, open paths, anchors, and width changes.
 The label identifies the pinned reference and any width delta. Missing glyphs,
 unmatched layers, unsaved fonts, or load failures get an explicit status.
+The complete indication is visible only while editing outlines. Text mode and
+the temporary Hand tool used while holding Space hide both geometry and label;
+returning to an editing tool immediately restores the cached indication.
 
 During a mouse drag, the last completed overlay stays visible while Glyphs
 continues drawing the editable outline normally. Geometry capture and comparison

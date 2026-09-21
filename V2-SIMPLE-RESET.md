@@ -97,7 +97,7 @@ with the external MCP server stopped. The public SDK reference was pinned to com
 `1c5a8639ba643dfd9d6379b8daad4173b67aab73`; lowercase a exercised visible outline
 and width differences. Neither local fonts nor font data were uploaded.
 
-The seven-tool Codex connector now also survives sidecar replacement: HTTP is
+The lean Codex connector now also survives sidecar replacement: HTTP is
 stateless, while job state remains in the service. A regression check sends an
 old session ID without reinitializing; the actual Codex connector was verified
 after restart. The full Python suite passes with 1,974 passed and 5 skipped;
@@ -418,7 +418,7 @@ runtime.
 ### Milestone 1 — Sidecar and protocol
 
 - Branch from `main` at `13ca8056`.
-- Define the seven tools, compact patch and companion manifest.
+- Define the initial lean tools, compact patch and companion manifest.
 - Start the MCP server outside Glyphs.
 - Use plain temporary files for jobs, cancellation and cleanup.
 
@@ -527,7 +527,7 @@ The native regression is `scripts/qualify_simple_v2_translation_native.py`.
 
 Preparation cancellation and ready publication share the service lock and
 recheck current state inside it. Abandoned artifacts are released after the
-worker returns; the terminal record remains available. The seven-tool contract,
+worker returns; the terminal record remains available. The lean tool contract,
 companion redraw behavior, window design, and 1,600-line bridge budget remain.
 
 Qualification passed with 2,121 tests and five skips, deterministic builds, and

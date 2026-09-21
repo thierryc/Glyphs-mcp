@@ -28,12 +28,14 @@ connection’s `jobKinds`. If unavailable, the installation needs updating: upda
 the bridge, sidecar and skills together; do not use an earlier private fallback.
 Prepare supported work with `start_job`, inspect `get_job` until ready, and
 review its report before `apply_job`. Application is a reversible live change;
-native Save is acceptance. Use `discard_job` for whole-job restoration or
-cancellation. For collision jobs, native Undo/Redo belongs to the left glyph's
+it does not save. Use `accept_job` only when the user's task authorizes saving
+the reviewed whole document; it closes the rollback window. Use `discard_job`
+for whole-job restoration or cancellation. For collision jobs, native Undo/Redo belongs to the left glyph's
 Edit-view history; it is not whole-job restoration. See the focused reference
-for the tested scope and sampling limits. Never save, export,
+for the tested scope and sampling limits. Never save merely to satisfy
+preparation, and never save, export,
 close, or overwrite a font unless the user's task authorizes it. Do not retry
-an uncertain write as a new job; reconcile the existing job identity first.
+an uncertain write or save as a new job; reconcile the existing job identity first.
 
 There is no arbitrary MCP Python or plugin reload. Unsupported edits require
 an explicitly authorised native workflow; do not invent an MCP command.

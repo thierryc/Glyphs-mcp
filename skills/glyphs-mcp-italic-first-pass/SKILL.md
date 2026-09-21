@@ -17,10 +17,12 @@ Each read is fresh; check source/dirty state when preparing edits.
 
 Prepare supported work with `start_job`, inspect `get_job` until ready, and
 review its report before `apply_job`. Application is a reversible live change;
-native Save is acceptance. Use `discard_job` for whole-job restoration or
-cancellation. Native Undo and Redo are grouped per glyph. Never save, export,
-close, or overwrite a font unless the user's task authorizes it. Do not retry
-an uncertain write as a new job; reconcile the existing job identity first.
+it does not save. Use `accept_job` only when the user's task authorizes saving
+the reviewed whole document; it closes the rollback window. Use `discard_job`
+for whole-job restoration or cancellation. Native Undo and Redo are grouped per
+glyph. Never save merely to satisfy preparation, and never save, export, close,
+or overwrite a font unless the user's task authorizes it. Do not retry an
+uncertain write or save as a new job; reconcile the existing job identity first.
 
 There is no arbitrary MCP Python or plugin reload. Unsupported edits require
 an explicitly authorised native workflow; do not invent an MCP command.

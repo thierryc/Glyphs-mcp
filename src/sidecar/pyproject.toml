@@ -7,7 +7,13 @@ name = "glyphs-mcp-sidecar"
 version = "0.1.0"
 description = "Standalone MCP sidecar for the lean Glyphs bridge"
 requires-python = ">=3.11,<3.15"
-dependencies = ["fastmcp==2.12.0", "glyphs-mcp-protocol==0.1.0"]
+dependencies = [
+    "Brotli==1.2.0",
+    "fastmcp==2.12.0",
+    "fonttools==4.54.1",
+    "glyphs-mcp-protocol==0.1.0",
+    "uharfbuzz==0.56.0",
+]
 
 [project.scripts]
 glyphs-mcp-sidecar = "glyphs_mcp_sidecar.server:main"

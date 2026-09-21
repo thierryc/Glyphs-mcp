@@ -49,6 +49,8 @@ urllib3==2.7.0
 uvicorn==0.35.0
 fonttools==4.54.1
 fontParts==0.9.11
+Brotli==1.2.0
+uharfbuzz==0.56.0
 
 # GlyphsApp is provided by Glyphs at runtime. PyObjC provides objc,
 # Foundation, and AppKit for external Python runtimes selected in Glyphs.

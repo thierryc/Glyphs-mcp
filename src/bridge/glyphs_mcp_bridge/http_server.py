@@ -89,7 +89,13 @@ class BridgeHTTPServer:
                 except TimeoutError as exc:
                     details = {"execution": getattr(exc, "execution", "uncertain")}
                     patch = payload.get("patch") if isinstance(payload.get("patch"), dict) else {}
-                    details["jobId"] = payload.get("jobId") or patch.get("jobId")
+                    job_id = payload.get("jobId") or patch.get("jobId")
+                    if job_id:
+                        details["jobId"] = job_id
+                    save = payload.get("save") if isinstance(payload.get("save"), dict) else {}
+                    save_id = payload.get("saveId") or save.get("saveId")
+                    if save_id:
+                        details["saveId"] = save_id
                     self._reply(503, {"ok": False, "error": {"code": "glyphs_busy", "message": str(exc), "details": details}})
                 except Exception as exc:
                     self._reply(500, {"ok": False, "error": {"code": "bridge_failed", "message": str(exc) or exc.__class__.__name__}})
@@ -107,12 +113,29 @@ class BridgeHTTPServer:
                         payload.get("entities"),
                         payload.get("fields"),
                     )
+                if self.path == "/v1/compile-features":
+                    return owner.core.compile_features(payload.get("compile"))
                 if self.path == "/v1/apply":
                     return owner.core.begin_apply(payload.get("patch"))
                 if self.path == "/v1/operation":
                     return owner.core.operation(str(payload.get("jobId") or ""))
                 if self.path == "/v1/discard":
                     return owner.core.discard(str(payload.get("jobId") or ""))
+                if self.path == "/v1/accept":
+                    return owner.core.begin_accept(
+                        str(payload.get("jobId") or ""), payload.get("save")
+                    )
+                if self.path == "/v1/accept/complete":
+                    return owner.core.complete_accept(
+                        str(payload.get("jobId") or ""),
+                        verified=payload.get("verified") is True,
+                        receipt=payload.get("receipt"),
+                        error=payload.get("error"),
+                    )
+                if self.path == "/v1/save":
+                    return owner.core.begin_save(payload.get("save"))
+                if self.path == "/v1/save-operation":
+                    return owner.core.save_operation(str(payload.get("saveId") or ""))
                 raise BridgeError("not_found", "unknown bridge route")
 
             def _reply(self, status: int, value: dict[str, Any]) -> None:

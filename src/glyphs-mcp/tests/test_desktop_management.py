@@ -17,7 +17,7 @@ def test_authenticated_private_routes_and_unchanged_public_tools(tmp_path):
     value, _, _ = service(tmp_path)
     async def check():
         mcp = create_server(value, control_token="x" * 32)
-        assert len(await mcp.get_tools()) == 7
+        assert len(await mcp.get_tools()) == 9
         app = mcp.http_app(stateless_http=True)
         async with app.lifespan(app):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://local") as client:

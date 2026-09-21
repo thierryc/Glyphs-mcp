@@ -8,10 +8,10 @@ Choose documentation by the **actual MCP interface and product release**. This s
 | --- | --- | --- |
 | Distribution | Released compatibility payload; retained for Glyphs 3. | Private local candidate for Glyphs 4; signed distribution qualification remains separate. |
 | Server | MCP runs in the legacy Glyphs plugin. | MCP runs externally; a small native bridge handles live access. |
-| Tools | The [v1 command catalog](/docs/reference/command-set). | Exactly seven tools and five supported job kinds. |
+| Tools | The [v1 command catalog](/docs/reference/command-set). | Exactly nine tools and seven capability-gated job kinds. |
 | Installation | Legacy dependency setup. | One Setup page with inline cards, a serialized queue and a private sidecar runtime. |
 | Review | Legacy tool-specific review flows. | Prepare a job, inspect its report, apply it, review in Glyphs. |
-| Acceptance | Follow each v1 workflow. | Native Save; native Undo/Redo and whole-job discard remain available. |
+| Acceptance | Follow each v1 workflow, including legacy `save_font` where documented. | `accept_job` performs verified whole-document saving; native Undo/Redo and whole-job discard remain available before acceptance. |
 | Inspectors | Legacy integration. | Independent optional Curve and Reference Inspectors. |
 
 ## Upgrade steps
@@ -19,7 +19,7 @@ Choose documentation by the **actual MCP interface and product release**. This s
 1. Finish current work and save accepted edits. Quit Glyphs normally.
 2. Install the candidate for Glyphs 4 from Setup. Existing components and preferences are preserved; component and connector removal is explicit.
 3. Reopen Glyphs and check **Edit → Glyphs MCP Server…**.
-4. Refresh the client's connection and use the matching v2 skills. Confirm the seven tools with the [tool reference](../reference/command-set.mdx).
+4. Refresh the client's connection and use the matching v2 skills. Confirm the nine tools with the [tool reference](../reference/command-set.mdx).
 5. Try the [first session](../tutorial/first-session.mdx) on a disposable font.
 
 The usual v2 client URL stays `http://127.0.0.1:9680/mcp/` unless you changed it. For a separate v1 connection, configure v1 on another free loopback port and keep each catalog and document ID separate. Two servers cannot share a port. Glyphs 3 and Glyphs 4 can share a display name; identify them by `com.GeorgSeifert.Glyphs3` and `com.GeorgSeifert.Glyphs4`. This does not create independent installations of two lean v2 builds.
@@ -27,6 +27,11 @@ The usual v2 client URL stays `http://127.0.0.1:9680/mcp/` unless you changed it
 ## Workflow differences
 
 V1 calls such as `list_open_fonts` do not carry over. Discover the intended font once with `list_documents`, retain its connection-specific `document_id`, and reuse it for fresh v2 reads. Rediscover after `document_not_found`, a known Glyphs/bridge restart or an explicit target change; never silently substitute another font. V2 does not expose arbitrary Python execution, export, master replacement, Unicode assignment or a complete optical-italic engine as MCP tools. Use native Glyphs features or reviewed workspace scripts for work outside the supported jobs.
+
+V2 does not import or delegate to the legacy `save_font` implementation.
+`accept_job` and `save_document` share a new coordinator around the direct
+native document selector, reject overwriting Save As destinations and return
+source-hash receipts. Git diff and commit remain outside Glyphs MCP.
 
 Spacing preparation and reference comparison use an absolute **0.001 font-unit** tolerance. That tolerance does not weaken exact application, rollback, native history, topology or source-hash checks.
 

@@ -3,18 +3,21 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 python_bin="${PYTHON_BIN:-python3}"
-runner="unittest"
+runner="pytest"
 
 usage() {
   cat <<'EOF'
 Run the Glyphs MCP Python test suite in a preflighted development environment.
 
 Usage:
-  ./scripts/run_python_tests.sh [--unittest] [unittest arguments...]
-  ./scripts/run_python_tests.sh --pytest [pytest arguments...]
+  ./scripts/run_python_tests.sh [--pytest] [pytest arguments...]
+  ./scripts/run_python_tests.sh --unittest [unittest arguments...]
 
 Environment:
   PYTHON_BIN   Python 3.11-3.14 interpreter to use (default: python3)
+
+Pytest output includes a product-area summary and writes build/test-report.md.
+The unittest mode is a compatibility subset and is not the complete release suite.
 
 Set up an isolated environment first when needed:
   python3.14 -m venv .venv-v2
@@ -29,6 +32,7 @@ case "${1:-}" in
     shift
     ;;
   --unittest)
+    runner="unittest"
     shift
     ;;
   -h|--help)
@@ -66,6 +70,8 @@ if not ((3, 11) <= sys.version_info[:2] <= (3, 14)):
 required = {
     "dulwich": "dulwich",
     "fastmcp": "fastmcp",
+    "fontTools": "fonttools",
+    "brotli": "Brotli",
     "fontmake": "fontmake",
     "glyphsLib": "glyphsLib",
     "jsonschema": "jsonschema",

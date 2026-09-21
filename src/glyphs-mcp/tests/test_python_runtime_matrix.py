@@ -26,6 +26,8 @@ IMPORT_MODULES = (
     "sse_starlette",
     "fontParts",
     "fontTools",
+    "brotli",
+    "uharfbuzz",
     "objc",
     "Foundation",
     "AppKit",
@@ -68,6 +70,8 @@ class PythonRequirementsTests(unittest.TestCase):
 
         self.assertIn("requirements-dev.txt", runner)
         self.assertIn("Python 3.11-3.14", runner)
+        self.assertIn('runner="pytest"', runner)
+        self.assertIn("compatibility subset", runner)
         self.assertIn("PYTEST_DISABLE_PLUGIN_AUTOLOAD=1", runner)
         self.assertIn("-m unittest discover", runner)
 

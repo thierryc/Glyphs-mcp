@@ -41,6 +41,7 @@ class JobStore:
             "request": copy.deepcopy(dict(request)),
             "sourceHash": None,
             "summary": None,
+            "resultKind": None,
             "changeCount": 0,
             "sample": [],
             "error": None,
@@ -78,7 +79,7 @@ class JobStore:
                 value.pop("finishedAt", None)
             value.update(copy.deepcopy(changes))
             value["updatedAt"] = time.time()
-            if value["status"] not in {"preparing", "cancelling", "applying", "discarding"}:
+            if value["status"] not in {"preparing", "cancelling", "applying", "accepting", "discarding"}:
                 value.setdefault("finishedAt", value["updatedAt"])
             self._write(value)
             return copy.deepcopy(value)

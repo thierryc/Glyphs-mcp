@@ -35,7 +35,7 @@ export default function Home(): React.JSX.Element {
             <article className={`${styles.versionCard} ${styles.currentCard}`}>
               <p className={styles.eyebrow}>Glyphs 4 · local candidate</p>
               <h2>v2 <small>{gmcpVersion}</small></h2>
-              <p>Seven tools, an external server, a private runtime and optional inspectors. The local installer is signed and notarized; public release is separate.</p>
+              <p>Nine tools, an external server, a private runtime and optional inspectors. The local installer is signed and notarized; public release is separate.</p>
               <Link className="button button--primary button--lg" to="/docs/v2/">Read the v2 guide</Link>
               <p className={styles.secondaryLink}><Link to="/docs/v2/getting-started/installation">v2 installation</Link></p>
             </article>

@@ -12,6 +12,20 @@ plugins and ongoing coding sessions use [$glyphs-mcp-development](../glyphs-mcp-
 Writing and statically validating a script need no running Glyphs, MCP,
 document discovery or Save. Unrelated Python needs no Glyphs skill.
 
+Before authoring a Glyphs script for metrics, geometry, components,
+foreground/background, glyph information, reinterpolation or automatic feature
+updates, check the retained `get_status.nativeActions`. Prefer the matching
+[closed native action](../glyphs/references/native-actions.md) when advertised.
+If the required action is missing, report the capability gap; do not silently
+use a script as a substitute. Continue with scripting only for genuinely
+unsupported work or when the user explicitly requested a script.
+
+Before scripting compilation or export, also check `jobKinds` and
+`jobCapabilities`. Prefer `feature_compile` for native compiler diagnostics and
+`font_export` for typed static/variable/web generation plus table or bounded
+shaping verification. A missing advertised capability is an installation gap,
+not permission to emulate it with arbitrary Python.
+
 Use the development skill's [offline documentation](../glyphs-mcp-development/references/development-docs.md)
 for unfamiliar APIs and its existing `scaffold.py create script` and
 `validate --target 4` commands. Separate pure logic from native access. State
@@ -33,7 +47,7 @@ to switch to scripting. Rediscover after document_not_found, a target change or
 bridge/Glyphs restart; never silently substitute another open font. Reads are fresh.
 Dirty documents can be inspected without saving.
 
-The seven public tools expose no arbitrary Python execution. Do not add a remote
+The nine public tools expose no arbitrary Python execution. Do not add a remote
 endpoint or emulate missing private capabilities with scripts. Required missing
 capabilities need the bridge, sidecar and skills updated together. A separately
 authorised native task does not establish MCP support. Existing job Undo/discard

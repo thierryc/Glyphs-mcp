@@ -24,4 +24,7 @@ The result only loosens a pair toward the sampled target. It does not generate a
 
 After `apply_job` completes, review the chosen pairs in Glyphs across the affected masters. Read the exact exception using `read_entities` with a `kind="kerning"` selector and `fields=["value"]`. An absent value is `null`; zero is a stored value and is not interchangeable with absence.
 
-Native Undo/Redo retains exact values and exception presence. `discard_job` restores the job's current targets; native Save accepts the reviewed changes. See [Safety and recovery](concepts/safety-model.mdx).
+Native Undo/Redo retains exact values and exception presence. `discard_job`
+restores the job's current targets; when persistence is authorized,
+`accept_job` verifies the targets and saves the whole document. See
+[Safety and recovery](concepts/safety-model.mdx).
