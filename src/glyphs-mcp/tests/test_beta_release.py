@@ -24,16 +24,15 @@ def test_current_checkout_is_beta_5_build_47():
     assert release['installerBuild'] == 47
 
 
-def test_beta_5_validation_records_the_private_signed_candidate():
+def test_beta_5_validation_records_the_published_signed_release():
     text = (REPO / 'BETA5-VALIDATION.md').read_text()
     assert '`2.0.0-beta.5`' in text
     assert 'desktop build 47' in text
-    assert 'not published' in text
-    assert 'No Beta 5 tag, GitHub release,' in text
-    assert 'asset upload, appcast publication or announcement was created' in text
+    assert 'published signed and notarized GitHub prerelease' in text
+    assert 'https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5' in text
     assert 'cadfadac6779eeb0e2051f1c0b8c2feba1010ef4a8f43709594729f732e4c9eb' in text
-    assert 'a197164a39f2cbe9a882ba987e61a96233da00bea6767637708e8b49a7d03466' in text
-    assert '840d35b4d0dfe079b1b1a08234b25f71331c7be14620ddaccd004fb78ae24d31' in text
+    assert '0756645c3675de7096761c07638d93bb1bc3d447fe89af9f34007c5d93c06fca' in text
+    assert 'd7b02fe610e343d085dfe9afb542e6091e745519d5c193ef8bc3e66655dcda0d' in text
 
 
 def test_beta_identity_preserves_numeric_bundle_version_and_build():

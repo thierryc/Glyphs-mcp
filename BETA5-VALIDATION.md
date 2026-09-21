@@ -3,16 +3,16 @@
 Candidate: Glyphs MCP `2.0.0-beta.5`, desktop build 47, branch
 `lit/v2-beta`.
 
-Status: **local signed and notarized candidate; signed update acceptance and
-component migration complete; not published**. No Beta 5 tag, GitHub release,
-asset upload, appcast publication or announcement was created. Stable Latest
-remains v1.11.1.
+Status: **published signed and notarized GitHub prerelease; signed update
+acceptance and component migration complete**. Signed tag `v2.0.0-beta.5`
+identifies qualification commit `7628c99c35ba7846de16c8803b45e7467d326b37`.
+Stable Latest remains v1.11.1.
 
 ## Automated qualification
 
 | Check | Result |
 | --- | --- |
-| Complete Python suite | 2,073 passed, 1 skipped; 5 warnings |
+| Complete Python suite | 2,075 passed, 1 skipped; 5 warnings |
 | Complete macOS/Xcode suite | 203 passed |
 | Deterministic Lean payloads | Passed for arm64 and x86_64 |
 | Signed private runtime startup | arm64 4.201 s; x86_64 9.465 s |
@@ -37,16 +37,17 @@ Undo/Redo, worker isolation and the nine-tool public contract.
   bundles.
 - [x] The Sparkle archive and appcast identify Beta 5/build 47.
 
-Local candidate SHA-256 values:
+Published SHA-256 values:
 
 ```text
 cadfadac6779eeb0e2051f1c0b8c2feba1010ef4a8f43709594729f732e4c9eb  Glyphs-MCP-2.0.0-beta.5.dmg
-a197164a39f2cbe9a882ba987e61a96233da00bea6767637708e8b49a7d03466  Glyphs-MCP-2.0.0-beta.5.zip
-840d35b4d0dfe079b1b1a08234b25f71331c7be14620ddaccd004fb78ae24d31  appcast.xml
+0756645c3675de7096761c07638d93bb1bc3d447fe89af9f34007c5d93c06fca  Glyphs-MCP-2.0.0-beta.5.zip
+d7b02fe610e343d085dfe9afb542e6091e745519d5c193ef8bc3e66655dcda0d  appcast.xml
 ```
 
-These files remain private local artifacts. The values above are not claims
-about a public download.
+Fresh unauthenticated downloads of all four release assets matched the
+published `SHA256SUMS` and the local verified files. GitHub reports the same
+asset digests.
 
 ## Host installation
 
@@ -88,10 +89,24 @@ Acceptance ran in VirtualBuddy on macOS 26.6.2 arm64 with Glyphs 4.1 (4107).
   signed candidate.
 - [x] The temporary guest and host update-feed processes were stopped. The
   upgraded Beta 5 app remains installed for font-work testing.
+- [x] The guarded publisher regenerated the ZIP container before upload. Its
+  extracted signed application tree is byte-identical to the update-tested
+  application; the public archive and its newly signed appcast passed the full
+  release verifier.
+
+## Publication verification
+
+- [x] The [Beta 5 GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5)
+  is public, marked prerelease and contains the DMG, Sparkle ZIP, appcast and
+  checksum file.
+- [x] The public asset digests and fresh downloads match the exact locally
+  verified files.
+- [x] The exact signed appcast is committed to `lit/v2-beta` after public
+  archive verification.
+- [x] GitHub's stable Latest release remains v1.11.1.
 
 ## Remaining manual coverage
 
 Physical Intel acceptance and the broader fresh/partial/removal, ownership
 conflict, absent-agent and every-client reload matrix remain unverified. These
-are beta limitations, not inferred passes. Publication remains a separately
-authorized release operation.
+are beta limitations, not inferred passes.

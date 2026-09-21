@@ -166,9 +166,20 @@ SHA-256 values are recorded in [BETA5-VALIDATION.md](BETA5-VALIDATION.md).
 Physical Intel acceptance and the remaining manual scenario matrix remain open
 until separately exercised.
 
-See BETA.md for candidate status, optional enrollment, known limitations and
-the issue-report template. Do not publish these notes until the exact artifacts
-and download links have been verified.
+See BETA.md for download guidance, optional enrollment, known limitations and
+the issue-report template. These notes were published only after the exact
+artifacts and download links were verified.
+
+## Beta 5 publication record — 21 September 2026
+
+- Signed tag `v2.0.0-beta.5` identifies qualification commit `7628c99c` on
+  `lit/v2-beta`.
+- The guarded publisher reran 2,075 Python tests (1 optional skip), all 203
+  macOS tests, deterministic private-runtime checks and complete signed
+  artifact verification before upload.
+- The versioned DMG, Sparkle ZIP, signed appcast and checksums were published as
+  a non-Latest prerelease. Fresh public downloads matched their exact checksums.
+- Stable Latest remains v1.11.1; `main` was not changed.
 
 ## Beta 2 local preparation record — 16 September 2026
 

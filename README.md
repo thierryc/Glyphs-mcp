@@ -1,6 +1,6 @@
 # Glyphs MCP Desktop 2.0.0 Beta 5
 
-**Beta preparation — not yet available for public download.**
+**Public beta — signed and notarized for testing.**
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
@@ -43,9 +43,9 @@ See [installation](content/getting-started/installation.mdx) and the
 
 The Beta 5 payload is Glyphs 4-only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. This candidate is
-signed, notarized and qualified locally; it has not been published as a
-release.
+documentation tracks describe these versions separately. Beta 5 is available
+as a signed and notarized
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5).
 
 Documentation sources: [v2 · 2.0.0 Beta 5](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).

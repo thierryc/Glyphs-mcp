@@ -1,8 +1,8 @@
 # Glyphs MCP 2.0.0 Beta 5
 
-**Status: Beta 5 build 47 is signed, notarized, stapled and installed locally.
-Its signed Sparkle update and component migration passed in VirtualBuddy. It is
-not published. Stable Latest remains v1.11.1.**
+**Status: Beta 5 build 47 is published as a signed and notarized GitHub
+prerelease. Its signed Sparkle update and component migration passed in
+VirtualBuddy. Stable Latest remains v1.11.1.**
 
 Beta 5 adds guarded outline editing, verified native saving, a closed catalog
 of native Glyphs actions, feature compilation diagnostics, and verified static,
@@ -22,10 +22,12 @@ installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
-The Beta 5 disk image and update archive remain private. Signing,
-notarization, Gatekeeper, local installation and signed-update acceptance have
-passed; tagging, upload and publication remain separate release operations.
-The published Beta 4 prerelease remains available.
+Download the signed and notarized
+[Beta 5 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.5/Glyphs-MCP-2.0.0-beta.5.dmg)
+from the [Beta 5 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5).
+Its SHA-256 is
+`cadfadac6779eeb0e2051f1c0b8c2feba1010ef4a8f43709594729f732e4c9eb`.
+Beta 5 remains a prerelease rather than the repository's Stable Latest.
 
 ## First session
 
