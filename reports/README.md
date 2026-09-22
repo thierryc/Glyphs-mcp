@@ -1,5 +1,15 @@
 # Lean v2 qualification records
 
+[Conversation workflow — September 22, 2026](edit-workflow-20260922/report.md)
+implements the shared MCP App, text contract and save/resume coordinator. Python,
+installer, packaging and transport gates pass. The authorized Beta 6/build 48
+installation and normal-editor Save and continue, Undo/Redo, discard, preview,
+and separate final Save As now pass. The subsequent
+[save UI retest](edit-workflow-20260922/retest/report.md) verifies real card saves
+in Claude and Cursor, but holds Beta 6 for a failing Claude text save fallback,
+Cursor stale-state/permission-timeout UX, and the still-blocked Codex inline
+check. Exact tested client versions and native evidence are recorded there.
+
 Latest full native-coding qualification: **RV02, September 14, 2026**, committed in
 `5666e289`. This is the private `2.0.0-beta.1` candidate, installer build 43,
 tested in Glyphs 4.1 (4107). These records are evidence from specific runs;

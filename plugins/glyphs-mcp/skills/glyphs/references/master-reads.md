@@ -4,7 +4,7 @@ Use this connection's verified `get_status` evidence and retained document ID;
 do not repeat either setup call for this reference. If the binding is absent,
 resolve it once with `list_documents`. Follow
 [document targeting](document-targeting.md) for stale IDs or a changed target. For live discovery, require `masters.list.v1` in
-the negotiated `readCapabilities`. The nine tools and protocol 1 alone do not prove
+the negotiated `readCapabilities`. The twelve tools and protocol 1 alone do not prove
 this newer read is available. A stopped bridge provides no verified capability.
 
 Enumerate masters when their IDs are unknown or a current inventory is requested;
@@ -92,3 +92,6 @@ a complete inventory. Keep the existing live cursor/edit rules above.
 Request only the properties needed: `fields=["id","italicAngle"]` does not read
 axes. Ordinary id/name discovery returns no unsolicited metrics or axis payload.
 Dirty and unsaved live changes are visible immediately without Save.
+
+Dimensions palette reference values use the separate [Dimensions workflow](dimensions.md):
+read/fill unset fields freely, ask in conversation before overwriting existing values.

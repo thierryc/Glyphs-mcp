@@ -1,5 +1,9 @@
 # Exact advance changes
 
+For conversation edits, use the [shared edit workflow](edit-workflow.md)
+with these same request fields when `edit.workflow.v1` is advertised. The
+low-level job examples below describe operation scope and existing guards.
+
 Reuse the specific connection's `$glyphs` context and verify `width_delta` in
 the retained `get_status.jobKinds`. A missing private capability requires updating the
 bridge, sidecar and skills together; do not substitute an older-build workflow.

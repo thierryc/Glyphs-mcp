@@ -1,6 +1,7 @@
-# Glyphs MCP Desktop 2.0.0 Beta 5
+# Glyphs MCP Desktop 2.0.0 Beta 6
 
-**Public beta — signed and notarized for testing.**
+**Beta 6 development — release `2.0.0-beta.6`, desktop build 48.**
+Beta 6 is not yet built or qualified; Beta 5 remains the published download.
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
@@ -18,7 +19,8 @@ popover, a dedicated troubleshooting-log window, local and public templates,
 and a read-only Git diff browser. Its
 native file tree opens source diffs in unified or split form and can compare
 individual `.glyphspackage` glyphs as visual overlays or source text. Automatic
-update checks and desktop launch at login are separate opt-in settings.
+update checks are enabled by default and can be disabled in Settings. Desktop
+launch at login is a separate opt-in setting.
 
 In Glyphs, **Edit → Glyphs MCP Server…** opens Start/Stop and port settings.
 The compact extension panel displays the project and bridge versions and
@@ -27,29 +29,36 @@ That window appears automatically once; its final design is in progress.
 
 Prepare supported spacing, kerning, slant, start-node, outline and negotiated
 closed native-action jobs; run feature compiler diagnostics; or stage verified
-static, variable and web-font exports. Review each typed result before applying
-a mutation or publishing an artifact.
+static, variable and web-font exports. Conversation edits apply complete results
+under the original request; previews, warnings and incomplete coverage wait for
+review. Artifact publication remains separately authorized.
 `accept_job` verifies the affected live
 targets, saves the whole document and closes the rollback window; native Undo/Redo
 or whole-job discard keeps an unaccepted experiment reversible. Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The nine tools are `get_status`, `list_documents`, `read_entities`,
+The twelve tools are `get_status`, `list_documents`, `read_entities`,
 `start_job`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
-`save_document`.
+`save_document`, `start_edit_workflow`, `get_edit_workflow`, and
+`respond_edit_workflow`. The shared MCP App supports preparation, saving and
+review where the host supports interactive Apps; every action also works in
+text. **Save and continue** saves existing work once and resumes the request.
+The resulting edit remains unsaved until separately authorized. See
+[conversation edits](content/tutorial/conversation-edits.mdx).
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-The Beta 5 payload is Glyphs 4-only. Glyphs 3 remains available through the
+The Beta 6 payload is Glyphs 4-only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. Beta 5 is available
 as a signed and notarized
 [GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5).
 
-Documentation sources: [v2 · 2.0.0 Beta 5](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 6](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
-Beta 5 local qualification is recorded in
+Beta 6 preparation is tracked in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
+Beta 5 qualification is recorded in
 [BETA5-VALIDATION.md](BETA5-VALIDATION.md); the published Beta 4 record remains
 in [BETA4-VALIDATION.md](BETA4-VALIDATION.md).
 The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
@@ -57,7 +66,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.5.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.6.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

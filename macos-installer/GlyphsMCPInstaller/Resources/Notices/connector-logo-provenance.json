@@ -1,0 +1,59 @@
+{
+  "source": "litsquare-symbols/sf-symbols/litsquare-brands.glyphspackage",
+  "repository": "https://github.com/thierryc/litsquare-symbols",
+  "author": "Thierry Charbonnel / LitSquare",
+  "license": "SIL Open Font License 1.1",
+  "master": "Regular",
+  "masterId": "74EE9863-DD0D-47A4-B98B-F1098734EDA9",
+  "fontInfoSHA256": "f7fd138341460a5db13eccc830b09777843466adff5fda6c7edf32f2a584debd",
+  "logos": [
+    {
+      "glyph": "litsquare.codex",
+      "asset": "CodexLogo",
+      "glyphSHA256": "1fc16fa0f565e656bde0e8ff15902a31b258e13e82962a1324422cf6b9ca23c3",
+      "assetSHA256": "eb442740401d7251b8167332207d48241e7498ea53e6beee851b1c824bc1e673",
+      "bounds": [
+        12.278640450004206,
+        -135,
+        987.4435483870968,
+        839.8448664935834
+      ]
+    },
+    {
+      "glyph": "litsquare.claudecode",
+      "asset": "ClaudeCodeLogo",
+      "glyphSHA256": "961021c4c15146fcd25146aa02f9c0619def65b2764ccd8d0a2c3f96d76b7c23",
+      "assetSHA256": "ad7bafe35e532ce876289ee21f881f2f1a41bf643be904a3939f747d40ba849c",
+      "bounds": [
+        12,
+        28,
+        988,
+        637
+      ]
+    },
+    {
+      "glyph": "litsquare.claude",
+      "asset": "ClaudeLogo",
+      "glyphSHA256": "de90727dac5fafb43b8f4401526d5accd17fa12f6f5b856b23c012b7f933e591",
+      "assetSHA256": "b559d051db139412d65c358742f89afb9eeb6f6ff132990ceef5d8a2fa449d9d",
+      "bounds": [
+        12,
+        -135,
+        988,
+        840
+      ]
+    },
+    {
+      "glyph": "litsquare.cursor",
+      "asset": "CursorLogo",
+      "glyphSHA256": "26c8740339dd49f2289e12f63d99a67fd31c4835f1683a329d1e5167f999fd5f",
+      "assetSHA256": "a39543e6c5ebe6cbf9ecdc33c6c79ffed9341b4f657467c35a27e2fa21f99bba",
+      "bounds": [
+        72,
+        -135.25,
+        928,
+        840.25
+      ]
+    }
+  ]
+}

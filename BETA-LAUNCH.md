@@ -1,8 +1,8 @@
-# Glyphs MCP 2.0.0 Beta 5 — release and launch plan
+# Glyphs MCP 2.0.0 Beta 6 — release and launch plan
 
 ## Decision
 
-Prepare **2.0.0 Beta 5**, tag `v2.0.0-beta.5`, build **47**, on `lit/v2-beta`.
+Prepare **2.0.0 Beta 6**, tag `v2.0.0-beta.6`, build **48**, on `lit/v2-beta`.
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -13,7 +13,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 5**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 6**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -25,12 +25,12 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
   pin archives to commits and SHA-256, then publish registry-only changes on
   that branch. Refresh loads the new list; installed projects are unchanged.
 - Use `lit/v2-beta/appcast.xml` only for beta updates. Keep build numbers
-  increasing: 45, 46, 47… even though the marketing version was renumbered.
+  increasing: 46, 47, 48… even though the marketing version was renumbered.
   Update signatures and build ordering follow the
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
   restored settings and component receipts; do not market side-by-side server
-  isolation. The Beta 5 payload is Glyphs 4-only; Glyphs 3 remains on its
+  isolation. The Beta 6 payload is Glyphs 4-only; Glyphs 3 remains on its
   separate pinned v1.11.0 release.
 
 ## Release sequence
@@ -56,7 +56,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.5 --publish --confirm-publish v2.0.0-beta.5
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.6 --publish --confirm-publish v2.0.0-beta.6
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -66,9 +66,10 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 6 uses `--beta 6` and a higher installer build. Final 2.0.0 gets a new
+Beta 6 uses `--beta 6 --installer-build 48`. It is in development; qualification
+is tracked in [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
-`main`. Do not relabel Beta 5 as final or repoint its tag.
+`main`. Do not relabel Beta 6 as final or repoint its tag.
 
 ## Enrollment and feedback
 
@@ -115,7 +116,7 @@ verified public branch URL at posting time.
 
 Forum title: **Glyphs MCP 2.0.0 Beta — open for testing**
 
-> Glyphs MCP 2.0.0 Beta 5 is available to try. Setup now combines server status,
+> Glyphs MCP 2.0.0 Beta 6 is available to try. Setup now combines server status,
 > Glyphs components and Codex, Claude Code, Claude Desktop and Cursor
 > connections with inline progress. A dedicated window collects redacted
 > installer, server and sidecar diagnostics.
@@ -138,11 +139,11 @@ Social draft:
 
 **Three days later:** answer recurring setup questions in the guide and share
 one concrete workflow demonstration. **After one week:** publish a short
-feedback update, known issues and what is planned for Beta 6. Thank testers
+feedback update, known issues and what is planned for the next beta. Thank testers
 publicly only with their permission. Avoid a fixed update cadence until the
 first feedback volume is known.
 
-## Published GitHub release notes
+## Published Beta 5 GitHub release notes
 
 **Glyphs MCP 2.0.0 Beta 5 · build 47**
 

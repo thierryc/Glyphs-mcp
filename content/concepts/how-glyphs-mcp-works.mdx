@@ -2,7 +2,7 @@
 title: How v2 works
 ---
 
-V2 separates expensive preparation from live editing. The AI client uses nine MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
+V2 separates expensive preparation from live editing. The AI client uses twelve MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
 
 | Part | Responsibility |
 | --- | --- |
@@ -46,4 +46,4 @@ acceptance. Revert uses Glyphs' own saved-document workflow. The Reference
 Inspector compares against a selected source; it is not a log of tool calls or
 an acceptance interface.
 
-Use the [nine-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
+Use the [twelve-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.

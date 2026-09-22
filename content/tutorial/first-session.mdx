@@ -2,51 +2,60 @@
 title: Your first v2 session
 ---
 
-Use a **disposable copy** of a font for this first session. Open it in Glyphs and save it. Preparation and application both require the same saved, clean baseline.
+Open a **disposable copy** of a font in Glyphs for this first session. The
+conversation will help with saving if necessary; preparation still requires
+an explicitly identified saved, clean font.
 
 ## Connect and identify the font
 
 Ask your connected client:
 
-> Check Glyphs MCP status, list the open documents and identify my disposable font. Do not change it yet.
+> Check Glyphs MCP status and identify my disposable font. Do not change it yet.
 
-The client should use `get_status` and `list_documents`. Check the font path, document ID and dirty state. Do not infer the target from whichever window happens to be in front.
+The client uses `get_status` and `list_documents` when the connection and target
+are not already known. Check the font name and distinguishing path. You do not
+need to enter document IDs or tool names.
 
-## Prepare a small change
+## Preview a small change
 
-Choose a glyph that exists in the test font. For example, ask:
+Choose a glyph that exists in the test font. For example:
 
-> Prepare a width increase of 8.125 font units for H only. Show me the report before applying it.
+> Preview a width increase of 8.125 font units for H only. Show me the proposal before applying it.
 
-The client calls `start_job` with the selected document ID, `kind="width_delta"`, `glyphs=["H"]` and `delta=8.125`. Preparation changes nothing in the open font. It targets the glyph's layers; omit the glyph list only when you intend a full-font operation.
+The client uses `start_edit_workflow` with `mode="preview"`, the retained document,
+`kind="width_delta"`, `glyphs=["H"]`, `delta=8.125`, and a stable idempotency key.
+If the font is dirty, choose **Save and continue** to save existing work once
+and prepare the preview. For a new font, choose **Save As…**, or save manually
+in Glyphs and reply **Check and continue**. Saving includes the whole font.
 
-Keep the returned job ID. Call `get_job` until it reaches `ready`, or a terminal error or cancellation state. Review `changeCount`, `sample`, warnings and any full report provided. Counts refer to changes, not necessarily distinct glyphs.
+Review the proposal's changes and any warnings. Preparation changes nothing
+in the open font. This width operation targets H's layers; an omitted glyph
+list means the full font. The shared card and ordinary text show the same
+workflow. See [conversation edits](conversation-edits.mdx) for client support.
 
 ## Apply and review
 
-Ask the client to apply that job ID. `apply_job` starts a reversible live operation; use `get_job` to follow it to completion. Inspect H in Glyphs, read its width through `read_entities` and try native Undo and Redo on the affected glyph.
+Choose **Apply changes**, or say it in the conversation. The assistant maps the
+reply to the current action without requiring IDs or JSON. Inspect H in Glyphs,
+read its width through the client, and try native Undo and Redo on that glyph.
+The card says **Changes applied. Save your font to keep them.**
 
-The example tool arguments are:
-
-```json
-{
-  "document_id": "<document ID from list_documents>",
-  "kind": "width_delta",
-  "delta": 8.125,
-  "glyphs": ["H"]
-}
-```
-
-For `get_job`, `apply_job` and `discard_job`, use `{ "job_id": "<returned job ID>" }`.
+An ordinary request such as “Increase H's width by 8.125” uses apply mode and
+applies a complete proposal automatically. Preview requests and proposals with
+warnings or incomplete coverage wait for review.
 
 ## Finish the experiment
 
-To restore the complete job, use `discard_job` and wait for its terminal result.
-It checks that affected targets have not been changed independently. To keep
-the result when the task authorizes persistence, review it and call
-`accept_job`. It verifies the targets, saves the whole document and closes the
-rollback window. Application itself does not save or accept changes.
+Choose **Undo these changes** to reverse this edit. Conflicts
+with later edits are reported. To keep the result, choose **Save font**
+or **Save As…**. This is a separate save authorization from Save and continue;
+it saves the whole current font. Once saved, the card says **Font saved.**
 
-Do not submit the same idea as a new job to recover from a timeout. Retain the original ID and reconcile it with `get_job`; see [Safety and recovery](../concepts/safety-model.mdx).
+If a call times out, check the existing workflow. Do not submit the same edit
+again under a new request. Closing the card does not cancel authorized work.
+Every choice remains usable through ordinary conversation when the UI is absent.
 
-Next, try a scoped [spacing proposal](../spacing-tools.md) or enable the [inspectors](../workflows/visual-review.mdx).
+The original low-level `start_job`, `get_job`, `apply_job`, `accept_job` and
+`discard_job` tools remain available with unchanged signatures and guards; see
+the [tool reference](../reference/command-set.mdx) and
+[Safety and recovery](../concepts/safety-model.mdx).

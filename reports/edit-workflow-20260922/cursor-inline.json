@@ -1,0 +1,16 @@
+{
+  "client": "Cursor",
+  "version": "3.21.18",
+  "existingConversation": "MCP read tools report",
+  "connection": "user-glyphs-mcp-server",
+  "transportConfigurationUnchanged": true,
+  "reloadRequiredForNewTools": true,
+  "tool": "get_edit_workflow",
+  "workflowId": "edit_ed89fd9dc6f940a4a45468ffc62968ad",
+  "textLookupVerified": true,
+  "standardInlineRenderVerified": true,
+  "displayLocation": "Expanded tool activity, then expanded Read edit workflow state without changing fonts",
+  "observedWebview": "MCP App > Glyphs edit workflow",
+  "observedState": "Saved",
+  "mutationButtonChecks": false
+}

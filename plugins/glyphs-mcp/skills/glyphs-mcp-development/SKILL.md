@@ -67,7 +67,7 @@ intended document ID. Only missing or invalid bindings need
 [document targeting](../glyphs/references/document-targeting.md). Reads are fresh;
 dirty fonts need no Save. Native relaunch invalidates old document IDs.
 
-The nine-tool MCP has no arbitrary Python execution or plugin reload tool.
+The twelve-tool MCP has no arbitrary Python execution or plugin reload tool.
 Native development through files/UI does not add an MCP capability. A required
 missing private capability needs the bridge, sidecar and skills updated together.
 No earlier-private fallback or whole-font recovery is promised. Installation,

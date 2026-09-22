@@ -29,7 +29,7 @@
 	<key>SUPublicEDKey</key>
 	<string>K5EkYQQZFhOWgsw2dtO2dPnCry+8VKhG0eHYeUd2iP8=</string>
 	<key>SUEnableAutomaticChecks</key>
-	<false/>
+	<true/>
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
 	<key>SUAllowsAutomaticUpdates</key>
@@ -41,7 +41,7 @@
 	<key>GMCPReleaseChannel</key>
 	<string>beta</string>
 	<key>GMCPBetaNumber</key>
-	<integer>5</integer>
+	<integer>6</integer>
 	<key>GMCPTemplateRegistryURL</key>
 	<string>https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/templates/registry.json</string>
 </dict>

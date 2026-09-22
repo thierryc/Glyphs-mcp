@@ -25,6 +25,9 @@ TOOL_NAMES = (
     "accept_job",
     "discard_job",
     "save_document",
+    "start_edit_workflow",
+    "get_edit_workflow",
+    "respond_edit_workflow",
 )
 
 MAX_CHANGES = 100_000
@@ -198,6 +201,7 @@ def validate_patch(value: Any) -> dict[str, Any]:
             "invalid_request", f"changes must contain 0-{MAX_CHANGES} entries"
         )
     from .coordinates import validate as coordinate_change
+    from .dimensions import validate_change as dimension_change
     normalized = []
     targets = set()
     outline_changes = 0
@@ -211,7 +215,7 @@ def validate_patch(value: Any) -> dict[str, Any]:
         kind = change.get("kind")
         from .outline import validate_change as outline_change
         from .native_actions import validate_change as native_action_change
-        validator = {"set": _set_change, "translate": _translate_change, "kerning": _kerning_change, "start_node": _start_node_change, "coordinates": coordinate_change, "outline": outline_change, "native_action": native_action_change}.get(kind)
+        validator = {"set": _set_change, "translate": _translate_change, "kerning": _kerning_change, "start_node": _start_node_change, "coordinates": coordinate_change, "outline": outline_change, "native_action": native_action_change, "dimension": dimension_change}.get(kind)
         item = validator(change) if validator else None
         if item is None:
             raise ProtocolError("unsupported_change", f"unsupported change kind: {kind}")
@@ -219,7 +223,11 @@ def validate_patch(value: Any) -> dict[str, Any]:
             outline_changes += 1
             if outline_changes > 4096:
                 raise ProtocolError("invalid_request", "outline patch exceeds 4,096 layer changes")
-        if kind == "kerning":
+        if kind == "dimension":
+            if len(changes) > 100 or any(not isinstance(c, Mapping) or c.get("kind") != "dimension" for c in changes):
+                raise ProtocolError("invalid_request", "Dimensions patches contain only 0-100 dimension changes")
+            target = (kind, item["master"], item["key"])
+        elif kind == "kerning":
             target = (kind, item["master"], item["direction"], item["left"], item["right"])
         elif kind == "native_action":
             target = (kind, item["scope"], item.get("glyph"), item.get("layer"), item.get("blockType"), item.get("id"))

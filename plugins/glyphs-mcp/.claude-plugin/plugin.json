@@ -2,7 +2,7 @@
   "name": "glyphs-mcp",
   "displayName": "Glyphs MCP",
   "version": "2.0.0",
-  "description": "Inspect and safely control open Glyphs fonts through the local Glyphs MCP server.",
+  "description": "Edit Glyphs fonts through a shared MCP App or conversation, with explicit saving and guarded recovery.",
   "author": {
     "name": "Thierry Charbonnel",
     "url": "https://github.com/thierryc"

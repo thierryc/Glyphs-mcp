@@ -81,8 +81,8 @@ class BridgeClient:
     def compile_features(self, request: dict[str, Any]) -> dict[str, Any]:
         return self._post("/v1/compile-features", {"compile": request})
 
-    def apply(self, patch: dict[str, Any]) -> dict[str, Any]:
-        return self._post("/v1/apply", {"patch": patch})
+    def apply(self, patch: dict[str, Any], *, approved_overwrites=None) -> dict[str, Any]:
+        return self._post("/v1/apply", {"patch": patch, **({"approvedOverwrites": approved_overwrites} if approved_overwrites is not None else {})})
 
     def operation(self, job_id: str) -> dict[str, Any]:
         return self._post("/v1/operation", {"jobId": job_id})

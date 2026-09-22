@@ -1,0 +1,79 @@
+{
+  "initialState": {
+    "id": "edit_89772c00982f4995b0b5db1dcb797253",
+    "revision": 3,
+    "document": {
+      "id": "doc_9ce12054c0ec4405ab455132f419def0",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/edit-workflow-native/disposable-1790105731619195000.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "MCP Conversation Disposable"
+    },
+    "mode": "apply",
+    "state": "preparing",
+    "jobId": "job_89d9fc70b61f4c25839993c165ec99b8",
+    "blockerId": null,
+    "job": {
+      "id": "job_89d9fc70b61f4c25839993c165ec99b8",
+      "status": "preparing",
+      "summary": null,
+      "resultKind": "mutation",
+      "changeCount": 0,
+      "sample": [],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "receipt": null,
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_89d9fc70b61f4c25839993c165ec99b8",
+        "document": "MCP Conversation Disposable",
+        "kind": "width_delta",
+        "phase": "preparing",
+        "startedAt": 1790105731.919189,
+        "finishedAt": null,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "A"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "actions": [
+      {
+        "action": "cancel",
+        "label": "Cancel preparation",
+        "token": "bbc727d9cbfaf2240d75cc883b5d02df7c294943a1d12d14c798095d515bd3db",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Preparing the adjustment. You can inspect the font; editing it will require preparing again.",
+    "text": "MCP Conversation Disposable \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/edit-workflow-native/disposable-1790105731619195000.glyphs\nPreparing the adjustment. You can inspect the font; editing it will require preparing again.\nOperation: width delta; glyphs: A\nAvailable choices: Cancel preparation. You can reply in ordinary language.",
+    "poll": true
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_edit_workflow_native.py\", line 116, in run\n    value=wait(value,'applied')\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_edit_workflow_native.py\", line 105, in wait\n    if value['state'] in {'failed','uncertain','outdated'}:raise AssertionError(value)\n                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: {'id': 'edit_89772c00982f4995b0b5db1dcb797253', 'revision': 9, 'document': {'id': 'doc_9ce12054c0ec4405ab455132f419def0', 'path': '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/edit-workflow-native/disposable-1790105731619195000.glyphs', 'dirty': False, 'generation': 0, 'isCurrent': False, 'familyName': 'MCP Conversation Disposable'}, 'mode': 'apply', 'state': 'failed', 'jobId': 'job_89d9fc70b61f4c25839993c165ec99b8', 'blockerId': None, 'job': {'id': 'job_89d9fc70b61f4c25839993c165ec99b8', 'status': 'failed', 'summary': 'Add 8 units to selected glyphs', 'resultKind': 'mutation', 'changeCount': 3, 'sample': [{'after': 608, 'before': 600, 'field': 'width', 'glyph': 'A', 'kind': 'set', 'layer': '9DC1AA76-101D-4E10-8642-5B33250DEF92'}, {'after': 608, 'before': 600, 'field': 'width', 'glyph': 'A', 'kind': 'set', 'layer': '70AF1FB6-D903-4EDD-B0FA-9355D1E203BF'}, {'after': 618, 'before': 610, 'field': 'width', 'glyph': 'A', 'kind': 'set', 'layer': '6459ED8E-047D-4817-B249-91B77B8A3EA1'}], 'report': None, 'manifest': None, 'error': {'code': 'native_write_failed', 'message': 'NSInternalInconsistencyException - _registerUndoObject:: GSUndoManager 0x8654c1b00 is in invalid state, must begin a group before registering undo\\n', 'details': {'recovery': {'complete': True}}}, 'receipt': None, 'bridgeOperation': {'jobId': 'job_89d9fc70b61f4c25839993c165ec99b8', 'documentId': 'doc_9ce12054c0ec4405ab455132f419def0', 'status': 'failed', 'completedChanges': 0, 'totalChanges': 3, 'error': {'code': 'native_write_failed', 'message': 'NSInternalInconsistencyException - _registerUndoObject:: GSUndoManager 0x8654c1b00 is in invalid state, must begin a group before registering undo\\n', 'details': {'recovery': {'complete': True}}}, 'nativeSave': None, 'receipt': None, 'message': None}, 'activity': {'jobId': 'job_89d9fc70b61f4c25839993c165ec99b8', 'document': 'MCP Conversation Disposable', 'kind': 'width_delta', 'phase': 'failed', 'startedAt': 1790105733.4622269, 'finishedAt': 1790105733.462237, 'completed': None, 'total': None, 'message': 'NSInternalInconsistencyException - _registerUndoObject:: GSUndoManager 0x8654c1b00 is in invalid state, must begin a group before registering undo\\n'}, 'message': None}, 'error': {'code': 'native_write_failed', 'message': 'NSInternalInconsistencyException - _registerUndoObject:: GSUndoManager 0x8654c1b00 is in invalid state, must begin a group before registering undo\\n', 'details': {'recovery': {'complete': True}}}, 'receipt': None, 'reviewInConversation': False, 'scope': {'kind': 'width_delta', 'glyphs': ['A'], 'glyphCount': 1, 'masters': None, 'targets': []}, 'actions': [], 'message': 'The request could not finish. Review the error and recovery details. NSInternalInconsistencyException - _registerUndoObject:: GSUndoManager 0x8654c1b00 is in invalid state, must begin a group before registering undo\\n', 'text': 'MCP Conversation Disposable \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/edit-workflow-native/disposable-1790105731619195000.glyphs\\nThe request could not finish. Review the error and recovery details. NSInternalInconsistencyException - _registerUndoObject:: GSUndoManager 0x8654c1b00 is in invalid state, must begin a group before registering undo\\n\\nOperation: width delta; glyphs: A', 'poll': False}\n",
+  "checks": [
+    {
+      "name": "native prerequisite state",
+      "passed": true
+    }
+  ],
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "scope": "isolated native helper, not installed client qualification",
+  "nativeSaveIncluded": false
+}

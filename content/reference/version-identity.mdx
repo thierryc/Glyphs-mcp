@@ -4,7 +4,7 @@ title: Version and identity
 
 Use the catalog of the **specific MCP connection** to select instructions. A
 product label, a skill name or the Glyphs display name cannot identify an MCP
-interface by itself. The current lean catalog has nine tools; the v1 catalog
+interface by itself. The current lean catalog has twelve tools; the v1 catalog
 and its pinned Glyphs 3 skills remain separate.
 
 ## Current source target
@@ -16,21 +16,21 @@ and the Xcode project. The managed skill inventory comes from
 | Item | Value |
 | --- | --- |
 | Product version | `2.0.0` |
-| Release version | `2.0.0-beta.5` |
+| Release version | `2.0.0-beta.6` |
 | Channel | `beta` |
-| Beta number | `5` |
-| Installer build | `47` |
+| Beta number | `6` |
+| Installer build | `48` |
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
-| MCP tools | `9` |
-| Job kinds | `up to 9` |
+| MCP tools | `12` |
+| Job kinds | `up to 10` |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
 `sidecarVersion` and `bridgeVersion` are coordinated product versions. The lean
-interface revision identifies the nine-tool contract; the bridge protocol
+interface revision identifies the twelve-tool contract; the bridge protocol
 identifies the sidecar/native message contract. The dated MCP transport version
 is negotiated separately during initialization. These values need not match.
 The sixth job, `outline_edit`, is additive and appears only when the bridge
@@ -45,6 +45,9 @@ The eighth and ninth jobs, `feature_compile` and `font_export`, appear only when
 their live/saved compiler or static/variable export and verification
 capabilities are advertised. They reuse the same job lifecycle and do not add
 MCP endpoints.
+The tenth job, `dimensions_edit`, appears only with `master.dimensions.edit.v1`.
+It edits per-master reference notes; existing values require conversational
+overwrite approval, while blank fills do not.
 Independent Curve Inspector and Reference Inspector versions do not determine
 the MCP product version.
 
@@ -60,7 +63,7 @@ manifest and receipt:
   `codeHash` gives the complete fingerprint. Check `bridge.release`,
   `bridge.runtimeId` and `bridge.codeHash` independently.
 - `bridge.host` identifies the native application by bundle identifier, version
-  and build. The Beta 5 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
+  and build. The Beta 6 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
   uses its separate v1.11.0 distribution.
 
 The fingerprint is computed from component files at initialization. It is not a
@@ -82,15 +85,19 @@ components' initialization-time fingerprints. Developer ID, notarization,
 Gatekeeper and signed-update acceptance require results for the exact final
 artifacts. None of these is established by a marketing label or a docs build.
 
+Beta 6 is in development and has no qualified release artifacts yet. The
+committed appcast continues to describe the published Beta 5 until a new signed
+release is verified.
+
 Beta 5 passed signing, notarization, installation and signed-update
 qualification and is published as a non-Latest GitHub prerelease. Verify its
 release state and asset digests; a configured URL alone does not prove that a
 feed or release is valid.
 
-Beta 5 uses tag `v2.0.0-beta.5` and branch `lit/v2-beta`. Its feed is
+Beta 6 targets tag `v2.0.0-beta.6` and branch `lit/v2-beta`. Its feed is
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.
-Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.5.dmg` and
-`Glyphs-MCP-2.0.0-beta.5.zip`. A beta is a prerelease with `make_latest=false`;
+Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.6.dmg` and
+`Glyphs-MCP-2.0.0-beta.6.zip`. A beta is a prerelease with `make_latest=false`;
 never publish `Glyphs-MCP-latest.dmg` for it. Stable releases use their separate
 feed and release process. Installer builds increase across beta and final
 releases; changing the label does not make an older build newer.

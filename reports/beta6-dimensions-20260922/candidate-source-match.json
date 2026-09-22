@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "checkedFiles": 81,
+  "candidate": "build/payload-check-a/Lean",
+  "scope": "All runtime Python source files match final deterministic candidate payload"
+}

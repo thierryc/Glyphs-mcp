@@ -1,0 +1,71 @@
+{
+  "client": "Cursor",
+  "label": "after-save-continue",
+  "document": {
+    "id": "doc_143e5db0eb4947208019ee8b5979ee77",
+    "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+    "dirty": true,
+    "generation": 4,
+    "isCurrent": true,
+    "familyName": "Cursor Save UI"
+  },
+  "layer": {
+    "width": 713.0,
+    "outlineHash": "sha256:80a0a65cc203a39b65a2f9bda89dd68e825045fb077601cfc37773774b0b1d76"
+  },
+  "userDocuments": [
+    {
+      "id": "doc_b4e9ddb557ca4b5c940594de9b4dd24d",
+      "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    }
+  ],
+  "sourceHash": "sha256:314878b993e9eca0b95317bd8c8d56df3abf8f9d9998dc7b273b2bf04985fa6b",
+  "savedWidths": [
+    710.0
+  ],
+  "workflow": {
+    "id": "edit_f858ddb9f7fd4c5e9dd7fec7b91396c0",
+    "state": "applied",
+    "revision": 16,
+    "jobId": "job_29b3458554ed4cee90ac206f6d780e97",
+    "receipt": {
+      "dirtyAfter": false,
+      "dirtyBefore": true,
+      "documentId": "doc_143e5db0eb4947208019ee8b5979ee77",
+      "jobId": null,
+      "nativeSaveSucceeded": true,
+      "originalSourceHashAfter": "sha256:314878b993e9eca0b95317bd8c8d56df3abf8f9d9998dc7b273b2bf04985fa6b",
+      "originalSourceUnchanged": null,
+      "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "previousPath": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "saveId": "save_b2b0fd8d0287495e9fa656b5f8f46b69",
+      "saveMode": "save",
+      "savedAt": 1790112339.089479,
+      "sourceChangedSinceJob": false,
+      "sourceHashAfter": "sha256:314878b993e9eca0b95317bd8c8d56df3abf8f9d9998dc7b273b2bf04985fa6b",
+      "sourceHashBefore": "sha256:7434e642489fca782f2a275e752cb784eba6fd6108952320e1f29d25469fe88b",
+      "verification": "native_and_source_hash",
+      "writeAttempted": true
+    },
+    "error": null,
+    "saveRequest": {
+      "dirtyBefore": true,
+      "documentId": "doc_143e5db0eb4947208019ee8b5979ee77",
+      "generationBefore": 3,
+      "jobId": null,
+      "jobSourceHash": null,
+      "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "previousPath": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "saveId": "save_b2b0fd8d0287495e9fa656b5f8f46b69",
+      "saveMode": "save",
+      "sourceChangedSinceJob": false,
+      "sourceHashBefore": "sha256:7434e642489fca782f2a275e752cb784eba6fd6108952320e1f29d25469fe88b"
+    },
+    "saveOperation": null,
+    "consumedActions": 1
+  }
+}

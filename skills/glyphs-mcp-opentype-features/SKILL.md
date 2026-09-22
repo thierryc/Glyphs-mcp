@@ -22,11 +22,11 @@ For compiler-only evidence, use the advertised closed `feature_compile` job and
 [feature-compilation workflow](../glyphs/references/feature-compilation.md).
 For a generated binary or feature-on/off behavior, use the advertised
 `font_export` job and [verified export workflow](../glyphs/references/font-export.md).
-These remain inside the same nine-tool surface and do not expose arbitrary code.
+These remain inside the same twelve-tool surface and do not expose arbitrary code.
 
 Author scripts with normal file tools for genuinely unsupported feature-source
 work and execute them through the existing native Glyphs route within the
-user's task. The nine MCP tools provide no arbitrary Python execution.
+user's task. The twelve MCP tools provide no arbitrary Python execution.
 Compilation, export and shaping remain separate evidence; MCP diagnostic and
 artifact lifecycles differ from scripts. Never replace a missing advertised
 `update_features` capability with an implicit script.

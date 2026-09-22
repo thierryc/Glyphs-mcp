@@ -1,0 +1,41 @@
+{
+  "client": "Claude",
+  "label": "before",
+  "document": {
+    "id": "doc_58c8428a5f5b4f8eb4bd58de8f6d9c95",
+    "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Claude Save UI.glyphs",
+    "dirty": true,
+    "generation": 11,
+    "isCurrent": false,
+    "familyName": "Claude Save UI"
+  },
+  "layer": {
+    "width": 610.0,
+    "outlineHash": "sha256:80a0a65cc203a39b65a2f9bda89dd68e825045fb077601cfc37773774b0b1d76"
+  },
+  "userDocuments": [
+    {
+      "id": "doc_b4e9ddb557ca4b5c940594de9b4dd24d",
+      "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    }
+  ],
+  "sourceHash": "sha256:bb87f03c673e17230727f9b4be8c74a289dc439209a1dd6af7c8c9d73986d7b9",
+  "savedWidths": [
+    600.0
+  ],
+  "workflow": {
+    "id": "edit_16fad014ea794aaca23a3be9538aa77a",
+    "state": "waiting_save",
+    "revision": 2,
+    "jobId": null,
+    "receipt": null,
+    "error": null,
+    "saveRequest": null,
+    "saveOperation": null,
+    "consumedActions": 0
+  }
+}

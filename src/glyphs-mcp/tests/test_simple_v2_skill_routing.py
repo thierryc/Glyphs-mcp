@@ -202,7 +202,7 @@ def test_private_read_skills_require_updates_instead_of_older_workflows():
     assert 'use the same workflow; label missing identity' not in entry
     assert 'explicit known-ID reads can still' not in (SKILL/'references/master-reads.md').read_text()
     roadmap = (ROOT/'skills/ROADMAP.md').read_text()
-    assert 'permanent Python fallback' not in roadmap and 'nine tools' in roadmap
+    assert 'permanent Python fallback' not in roadmap and 'twelve tools' in roadmap
 
 
 def test_document_targeting_reuses_ids_without_weakening_error_or_intent_guards():

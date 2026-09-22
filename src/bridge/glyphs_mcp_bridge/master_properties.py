@@ -76,6 +76,8 @@ def read(master, field):
 def page(adapter, font, document_id, request, fields):
     if set(request) - {"kind", "limit", "cursor"}:
         raise BridgeError("invalid_request", "master pages accept only kind, limit and cursor")
+    if "dimensions" in fields:
+        raise BridgeError("invalid_request", "Dimensions require exact master selectors, not master pages")
     if not fields or set(fields) - adapter.MASTER_FIELDS:
         raise BridgeError("unsupported_read", "unsupported master page fields: " + ", ".join(sorted(set(fields) - adapter.MASTER_FIELDS)))
     limit = request.get("limit", MASTER_PAGE_LIMIT)

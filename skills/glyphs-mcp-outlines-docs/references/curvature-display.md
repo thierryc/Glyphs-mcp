@@ -2,7 +2,7 @@
 
 Reuse the verified connection and intended document already in context. This
 native companion uses **View → Show Curve Inspector**; it has no MCP toggle,
-preparation job or Save requirement. Keep the nine-tool interface. If the
+preparation job or Save requirement. Keep the twelve-tool interface. If the
 companion or its coverage notice is missing from the private installation,
 explain that the installed candidate needs updating; do not invent an older
 private workflow or a live-Python command.

@@ -1,0 +1,34 @@
+{
+  "fixtures": {
+    "Claude": {
+      "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Claude Save UI.glyphs",
+      "initialHash": "sha256:bb87f03c673e17230727f9b4be8c74a289dc439209a1dd6af7c8c9d73986d7b9"
+    },
+    "Cursor": {
+      "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "initialHash": "sha256:7434e642489fca782f2a275e752cb784eba6fd6108952320e1f29d25469fe88b"
+    },
+    "Codex": {
+      "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Codex Save UI.glyphs",
+      "initialHash": "sha256:db6ccd6ffc4cf4f7b8f2ba972b72c5f8846b4f7dac599fcc20bc9fb7fc9ad70a"
+    }
+  },
+  "versions": {
+    "Claude": {
+      "CFBundleIdentifier": "com.anthropic.claudefordesktop",
+      "CFBundleShortVersionString": "2.2553.13",
+      "CFBundleVersion": "2.2553.13"
+    },
+    "Cursor": {
+      "CFBundleIdentifier": "com.todesktop.230313mzl4w4u92",
+      "CFBundleShortVersionString": "3.21.18",
+      "CFBundleVersion": "3.21.18"
+    },
+    "Codex": {
+      "CFBundleIdentifier": "com.openai.codex",
+      "CFBundleShortVersionString": "26.915.31945",
+      "CFBundleVersion": "9922"
+    }
+  },
+  "userFontHash": "sha256:2aa1127c71085fd6b923db72d6123d7df1f9a3e3fd23c45b90a7b3338f3d6854"
+}

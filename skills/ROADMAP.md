@@ -6,9 +6,10 @@ its negotiated capabilities before routing a task. Missing required capabilities
 mean the installation needs updating; do not maintain workflows for earlier
 private v2 builds. V1 has separate instructions and is not changed by this policy.
 
-The public interface remains nine tools: `get_status`, `list_documents`,
+The public interface remains twelve tools: `get_status`, `list_documents`,
 `read_entities`, `start_job`, `get_job`, `apply_job`, `accept_job`,
-`discard_job` and `save_document`.
+`discard_job`, `save_document`, `start_edit_workflow`, `get_edit_workflow` and
+`respond_edit_workflow`.
 There is no typed-prototype, live Python or alternate history interface.
 
 Use explicit bounded reads, including `selection.context.v1` for compact

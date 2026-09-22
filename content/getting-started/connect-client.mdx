@@ -11,9 +11,10 @@ The installer can optionally connect detected AI applications. The native compon
 3. Add that URL to a local client that supports **Streamable HTTP MCP**, or use the installer's supported connection option.
 4. Refresh the client's tools and call `get_status`, then `list_documents`.
 
-A correct v2 connection exposes exactly these nine tools: `get_status`,
+A current v2 connection exposes these twelve tools: `get_status`,
 `list_documents`, `read_entities`, `start_job`, `get_job`, `apply_job`,
-`accept_job`, `discard_job`, and `save_document`. If you see the older v1
+`accept_job`, `discard_job`, `save_document`, `start_edit_workflow`,
+`get_edit_workflow`, and `respond_edit_workflow`. If you see the older v1
 catalog, check which server and port the client is using.
 
 The bridge port 9681 is internal and is not an MCP endpoint. The loopback URL refers to this Mac: a remote cloud client cannot reach it directly. This guide does not configure a public tunnel.
@@ -22,10 +23,14 @@ The bridge port 9681 is internal and is not an MCP endpoint. The loopback URL re
 
 The matching 2.0.0 agent package adds workflow skills and connection metadata. It does not install the Glyphs components. For the local candidate, use the matching supplied package, not an older marketplace package. See [Skills and optional plugins](use-agent-skills.mdx).
 
-The v2 tools return structured results and reports. A v1 embedded feedback
-interface is not part of the nine-tool contract; review applied results in
-Glyphs and use `accept_job` to persist them. `save_document` is reserved for an
-explicit document that has no active or applied MCP job.
+The conversation tools return one standard MCP App plus text and structured
+results. Claude Desktop can use its existing local stdio connection; its proxy
+forwards resources and UI metadata. Cursor documents standard MCP Apps support.
+Codex must be checked against its actual host build; ChatGPT support alone is
+not evidence. CLI clients and hosts without interactive support use the same
+actions in text. Optional native choice controls can present these choices;
+separate client-specific cards are not required. See
+[conversation edits](../tutorial/conversation-edits.mdx). Installed-version qualification is recorded separately from documented support.
 
 ## After a change
 

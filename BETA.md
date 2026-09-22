@@ -1,4 +1,11 @@
-# Glyphs MCP 2.0.0 Beta 5
+# Glyphs MCP 2.0.0 Beta 6 development
+
+The source target is `2.0.0-beta.6`, desktop build 48, on `lit/v2-beta`.
+Beta 6 is in preparation and has no qualified release artifacts yet. Track
+its checks in [BETA6-VALIDATION.md](BETA6-VALIDATION.md). The download and
+installation guidance below apply to the published Beta 5.
+
+## Published Beta 5
 
 **Status: Beta 5 build 47 is published as a signed and notarized GitHub
 prerelease. Its signed Sparkle update and component migration passed in
@@ -6,8 +13,8 @@ VirtualBuddy. Stable Latest remains v1.11.1.**
 
 Beta 5 adds guarded outline editing, verified native saving, a closed catalog
 of native Glyphs actions, feature compilation diagnostics, and verified static,
-variable and web-font export while retaining the nine-tool MCP surface. The
-source target is `2.0.0-beta.5`, desktop build 47, on `lit/v2-beta`. The
+variable and web-font export while retaining the nine-tool MCP surface. Its
+published identity is `2.0.0-beta.5`, desktop build 47. The
 published Beta 4 evidence remains in
 [BETA4-VALIDATION.md](BETA4-VALIDATION.md); exact local Beta 5 evidence is in
 [BETA5-VALIDATION.md](BETA5-VALIDATION.md).

@@ -1,0 +1,50 @@
+[
+  {
+    "architecture": "arm64",
+    "privatePython": true,
+    "httpCatalog": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "accept_job",
+      "discard_job",
+      "save_document",
+      "start_edit_workflow",
+      "get_edit_workflow",
+      "respond_edit_workflow"
+    ],
+    "stdioProxy": true,
+    "mcpAppResourceAndCSP": true,
+    "structuredAndTextResults": true,
+    "packageDownloads": 0,
+    "packagedInstallerCLI": true,
+    "startupSeconds": 6.579
+  },
+  {
+    "architecture": "x86_64",
+    "privatePython": true,
+    "httpCatalog": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "accept_job",
+      "discard_job",
+      "save_document",
+      "start_edit_workflow",
+      "get_edit_workflow",
+      "respond_edit_workflow"
+    ],
+    "stdioProxy": true,
+    "mcpAppResourceAndCSP": true,
+    "structuredAndTextResults": true,
+    "packageDownloads": 0,
+    "packagedInstallerCLI": true,
+    "startupSeconds": 17.738
+  }
+]

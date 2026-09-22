@@ -116,7 +116,7 @@ class BridgeHTTPServer:
                 if self.path == "/v1/compile-features":
                     return owner.core.compile_features(payload.get("compile"))
                 if self.path == "/v1/apply":
-                    return owner.core.begin_apply(payload.get("patch"))
+                    return owner.core.begin_apply(payload.get("patch"), approved_overwrites=payload.get("approvedOverwrites"))
                 if self.path == "/v1/operation":
                     return owner.core.operation(str(payload.get("jobId") or ""))
                 if self.path == "/v1/discard":

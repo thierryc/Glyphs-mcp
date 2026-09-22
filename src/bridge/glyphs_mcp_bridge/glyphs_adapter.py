@@ -9,7 +9,8 @@ from glyphs_mcp_protocol import outline_hash
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
-from . import context, coordinates, feature_compile, feature_inventory, glyph_inventory, instance_inventory, layer_inventory, kerning, kerning_inventory, master_properties, native_actions, native_save, outline_edit, outline_reads, selection, start_node
+from glyphs_mcp_protocol import ProtocolError
+from . import dimensions, context, coordinates, feature_compile, feature_inventory, glyph_inventory, instance_inventory, layer_inventory, kerning, kerning_inventory, master_properties, native_actions, native_save, outline_edit, outline_reads, selection, start_node
 
 
 _MISSING = object()
@@ -56,7 +57,7 @@ class GlyphsAdapter:
     GLYPH_FIELDS = frozenset({"name", "unicode", "category", "subCategory", "export", *kerning_inventory.GROUP_FIELDS})
     LAYER_FIELDS = frozenset({"id", "name", "width", "vertWidth", "vertOrigin",
                               "leftMetricsKey", "rightMetricsKey", "widthMetricsKey", "bounds", "outlineHash"})
-    MASTER_FIELDS = frozenset({"id", "name", *master_properties.FIELDS})
+    MASTER_FIELDS = frozenset({"id", "name", *master_properties.FIELDS, "dimensions"})
     SELECTION_COUNTS = selection.COUNT_FIELDS
     SELECTION_FIELDS = frozenset({"glyph", "layer", "nodes", *SELECTION_COUNTS})
 
@@ -298,6 +299,8 @@ class GlyphsAdapter:
             reader = {"paths": outline_reads.paths_page, "path": outline_reads.path_page,
                       "segment": outline_reads.segment}[request["kind"]]
             return reader(self, font, document_id, request, fields)
+        if "dimensions" in fields and (len(entities) > 4 or any(not isinstance(r, Mapping) or r.get("kind") != "master" for r in entities)):
+            raise BridgeError("invalid_request", "Dimensions reads require 1-4 exact master selectors")
         result = []
         axis_owners = sum(isinstance(r, Mapping) and r.get("kind") == "master" for r in entities)
         if "axes" in fields and axis_owners:
@@ -367,6 +370,11 @@ class GlyphsAdapter:
 
     @classmethod
     def _read_field(cls, owner: Any, field: str, kind: str) -> Any:
+        if kind == "master" and field == "dimensions":
+            try:
+                return dimensions.read_master(owner)
+            except ProtocolError as exc:
+                raise BridgeError(exc.code, exc.message) from exc
         if kind == "master" and field in master_properties.FIELDS:
             return master_properties.read(owner, field)
         if kind == "layer" and field == "id":
@@ -381,6 +389,8 @@ class GlyphsAdapter:
     def current_value(
         self, document_id: str, change: Mapping[str, Any], *, reverse: bool = False
     ) -> Any:
+        if change["kind"] == "dimension":
+            return dimensions.read(self._operation_font(document_id), change)
         if change["kind"] == "kerning":
             return kerning.read(self._operation_font(document_id), change)
         if change["kind"] == "native_action":
@@ -404,6 +414,9 @@ class GlyphsAdapter:
         return outline_edit.capture(layer, change) if change["kind"] == "outline" else coordinates.read_state(layer, change)
 
     def apply_change(self, document_id, change, *, reverse=False):
+        if change["kind"] == "dimension":
+            dimensions.write_undo(self._operation_font(document_id), self._undo_managers.get(document_id), change, reverse=reverse)
+            return
         if change["kind"] == "kerning":
             kerning.write_undo(self._operation_font(document_id), self._undo_managers.get(document_id), change, reverse=reverse)
             return

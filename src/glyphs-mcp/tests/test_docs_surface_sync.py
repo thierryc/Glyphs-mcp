@@ -116,11 +116,12 @@ class DocsSurfaceSyncTests(unittest.TestCase):
 
     def test_lean_readme_and_reference_describe_exactly_the_shipped_catalog(self):
         import ast
-        tree = ast.parse((_repo_root()/"src/sidecar/glyphs_mcp_sidecar/server.py").read_text())
-        tools = {decorator.keywords[0].value.value for node in ast.walk(tree)
+        trees = [ast.parse((_repo_root()/"src/sidecar/glyphs_mcp_sidecar"/name).read_text())
+                 for name in ("server.py", "edit_workflow_ui.py")]
+        tools = {decorator.keywords[0].value.value for tree in trees for node in ast.walk(tree)
                  if isinstance(node, ast.FunctionDef) for decorator in node.decorator_list
                  if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr == "tool"}
-        self.assertEqual(len(tools), 9)
+        self.assertEqual(len(tools), 12)
         for name in ("README.md", "content/reference/command-set.mdx", "content/reference/command-set-v2.mdx"):
             text = (_repo_root()/name).read_text()
             self.assertTrue(all("`" + tool + "`" in text for tool in tools), name)

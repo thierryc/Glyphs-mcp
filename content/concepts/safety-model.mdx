@@ -13,6 +13,16 @@ persisted feature hashes and finish terminally. Export artifact jobs never
 apply to the open font: generation stays in private staging until an authorized
 publication to a new directory.
 
+## Conversation controls
+
+`edit.workflow.v1` adds request retention and one shared MCP App with text
+fallback. Save and continue authorizes one prerequisite whole-document save;
+it does not authorize saving the resulting edit. Ordinary complete requests
+apply automatically; preview and report-review gates remain explicit. Action
+revisions/tokens deduplicate repeated clicks and text replies. A closed card
+is not cancellation. Restarted workflows reconcile existing operations and
+never replay saves or mutations automatically.
+
 ## Baseline and ownership
 
 Preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. Outline jobs add exact path guards during preparation and exact before/after outline-state hashes at application. An external edit or a stale source rejects the operation instead of silently overwriting it.

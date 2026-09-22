@@ -37,3 +37,9 @@ Stop remains effective when another document opens. Closing a document does not
 stop the shared bridge. Stop refuses shutdown during an active native write;
 external preparation is cancelled on shutdown.
 The automatic-start setting applies to the external server at the next login.
+
+Dimensions metadata is read only on request for up to four exact masters. Its
+closed change type uses native document Undo, exact stored-value preconditions,
+readback, and restoration of absent containers. Approval records for overwrites
+are validated at the bridge boundary as well as in the sidecar. Other userData
+keys are outside this interface.

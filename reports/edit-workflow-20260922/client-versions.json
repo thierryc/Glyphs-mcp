@@ -1,0 +1,17 @@
+{
+  "Claude Desktop": {
+    "CFBundleIdentifier": "com.anthropic.claudefordesktop",
+    "CFBundleShortVersionString": "2.2553.13",
+    "CFBundleVersion": "2.2553.13"
+  },
+  "Cursor": {
+    "CFBundleIdentifier": "com.todesktop.230313mzl4w4u92",
+    "CFBundleShortVersionString": "3.21.18",
+    "CFBundleVersion": "3.21.18"
+  },
+  "Codex": {
+    "CFBundleIdentifier": "com.openai.codex",
+    "CFBundleShortVersionString": "26.915.31945",
+    "CFBundleVersion": "9922"
+  }
+}
