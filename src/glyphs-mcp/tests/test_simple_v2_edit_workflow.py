@@ -392,14 +392,37 @@ def test_full_text_only_mcp_without_skills(env):
     from glyphs_mcp_sidecar.server import create_server
     service, bridge, worker, source = env
     bridge.adapter.dirty = True
+    def text_control(result):
+        # Deliberately never read structured_content: Claude may omit it from
+        # the model's conversation even though the card receives it.
+        return json.loads(result.content[1].text)
+
     async def run():
         async with Client(create_server(service)) as client:
             result = await client.call_tool('start_edit_workflow', dict(document_id='doc_1', kind='width_delta', delta=8, idempotency_key='text'))
-            data = result.structured_content['data']
+            data = text_control(result)
             assert 'Save and continue' in result.content[0].text
             selected = next(a for a in data['actions'] if a['label'] == 'Save and continue')
-            result = await client.call_tool('respond_edit_workflow', dict(workflow_id=data['id'], expected_revision=data['revision'], action_token=selected['token']))
-            return result.structured_content['data']
-    value = wait(service, asyncio.run(run()), 'applied')
-    assert len(bridge.adapter.save_calls) == 1 and source.read_text() == '600'
-    assert 'Changes applied. Save your font to keep them.' in value['text']
+            result = await client.call_tool('respond_edit_workflow', dict(workflow_id=data['workflow_id'], expected_revision=data['expected_revision'], action_token=selected['action_token']))
+            deadline = time.monotonic() + 5
+            while text_control(result)['poll']:
+                assert time.monotonic() < deadline
+                await asyncio.sleep(.01)
+                result = await client.call_tool('get_edit_workflow', dict(workflow_id=data['workflow_id']))
+            assert text_control(result)['state'] == 'applied'
+            assert 'Changes applied. Save your font to keep them.' in result.content[0].text
+            assert len(bridge.adapter.save_calls) == 1 and source.read_text() == '600'
+            # A later plain "Save the font" uses the retained reference and a
+            # fresh offered action; no user-supplied identifier is necessary.
+            result = await client.call_tool('get_edit_workflow', dict(workflow_id=data['workflow_id']))
+            data = text_control(result)
+            selected = next(a for a in data['actions'] if a['label'] == 'Save font')
+            result = await client.call_tool('respond_edit_workflow', dict(workflow_id=data['workflow_id'], expected_revision=data['expected_revision'], action_token=selected['action_token']))
+            while text_control(result)['poll']:
+                assert time.monotonic() < deadline
+                await asyncio.sleep(.01)
+                result = await client.call_tool('get_edit_workflow', dict(workflow_id=data['workflow_id']))
+            assert text_control(result)['state'] == 'saved'
+            assert not text_control(result)['actions']
+    asyncio.run(run())
+    assert len(bridge.adapter.save_calls) == 2 and float(source.read_text()) == 608

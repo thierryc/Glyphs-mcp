@@ -3,14 +3,16 @@
 Source target: Glyphs MCP `2.0.0-beta.6`, desktop build 48, branch
 `lit/v2-beta`.
 
-Status: **unsigned Beta 6 candidate installed for local testing; release on hold
-after save-workflow UI retesting. Not signed, notarized or published.**
+Status: **corrected Beta 6 candidate installed and both requested client
+regressions requalified; signed-distribution preparation in progress. Not yet
+published.**
 
 The later conversation-workflow implementation and installation supersede the
 initial nine-tool/candidate-only state below. See
-[the save UI retest](reports/edit-workflow-20260922/retest/report.md): Claude and
-Cursor card saves work, but Claude's text fallback failed, Cursor needs stale
-state/permission-timeout fixes, and Codex's actual inline check remains blocked.
+[the original save UI retest](reports/edit-workflow-20260922/retest/report.md)
+for the historical failures and [the corrective retest](reports/beta6-workflow-fixes-20260922/README.md)
+for the passing Claude text-save and Cursor remount/slow-permission results.
+The broader client and signed-update matrix remains separately qualified.
 
 ## Repository preparation — September 22, 2026
 

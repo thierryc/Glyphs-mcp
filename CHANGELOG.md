@@ -8,6 +8,11 @@
   review, action deduplication, stale controls and restart recovery reuse the
   existing guarded job/save services. Live client qualification remains a release gate.
 
+- Retain workflow references and action tokens in model-visible text so a later
+  conversational save can refresh and complete the existing request. Reconcile
+  reopened cards before enabling choices, allow time for host permissions, and
+  clear superseded transport errors after a successful state read.
+
 - Expose per-master Dimensions reference notes through bounded live reads and
   a saved-source edit job. Fill unset values freely; require exact conversational
   approval before overwriting or clearing existing values. Apply without Save,

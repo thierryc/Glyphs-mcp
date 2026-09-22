@@ -44,13 +44,18 @@ to use the server's tool descriptions and returned choices.
 
 Map natural-language replies such as “save and continue”, “save it first”,
 “I'll do the save”, or “discard this proposal” to the matching offered action.
-Use its workflow ID, expected revision and server-issued token internally in
+Retain the compact JSON control reference in tool text and card context updates;
+it supplies the workflow ID, expected revision and server-issued action tokens
+even if the host omits structured data. Use these internally in
 `respond_edit_workflow`; never make users type identifiers, tool names or JSON.
-Refresh stale actions with `get_edit_workflow`, then revalidate the intended
+On a later reply such as “Save the font”, read `get_edit_workflow` first because
+the worker or card may have advanced, then revalidate the intended
 choice. Reuse existing scoped authorization; do not ask the same question twice.
 Ambiguous document, destination or save scope still requires clarification.
 
 Closing a card does not cancel authorized work. Poll an active workflow only
 when needed for the displayed conversation; the server itself continues work.
+When `poll` is true, read until the current choice or outcome before reporting
+completion. A Preparing result establishes progress, not application.
 Do not keep polling an unchanged waiting choice. Every response contains both
 useful text and structured state, so a failed UI cannot strand the request.

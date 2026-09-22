@@ -1,0 +1,28 @@
+{
+  "workflowId": "edit_01b94628c4894c08af807fb2027cc488",
+  "state": "saved",
+  "revision": 24,
+  "diskWidths": [
+    "612"
+  ],
+  "liveWidth": 612,
+  "receipt": {
+    "dirtyAfter": false,
+    "dirtyBefore": true,
+    "documentId": "doc_aead4336115d40adb39ae9871e54cf61",
+    "jobId": "job_8ab36bd4ff6b4055a9fafb2ef3942903",
+    "nativeSaveSucceeded": true,
+    "originalSourceHashAfter": "sha256:6f697773fb801b9998ba299e9fae9c6b3fc508cdfc59c51d0f1092365ad6312f",
+    "originalSourceUnchanged": null,
+    "path": "/private/tmp/B6Claude.glyphs",
+    "previousPath": "/private/tmp/B6Claude.glyphs",
+    "saveId": "job_8ab36bd4ff6b4055a9fafb2ef3942903",
+    "saveMode": "save",
+    "savedAt": 1790119318.231883,
+    "sourceChangedSinceJob": false,
+    "sourceHashAfter": "sha256:6f697773fb801b9998ba299e9fae9c6b3fc508cdfc59c51d0f1092365ad6312f",
+    "sourceHashBefore": "sha256:d4fe80b1dba72a2f622d5b852c716b64b18fe5a26c52c8b1855a7f1d85e91a55",
+    "verification": "native_and_source_hash",
+    "writeAttempted": true
+  }
+}

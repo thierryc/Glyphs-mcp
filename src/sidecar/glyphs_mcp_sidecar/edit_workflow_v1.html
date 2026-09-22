@@ -37,6 +37,7 @@
   const pending = new Map();
   let sequence = 0, current = null, host = {}, connected = false, busy = false;
   let disposed = false, visible = true, timer = null, formAction = null, origin = "*";
+  let verified = false, reading = false, reconcile = false, contextVersion = null;
   const setText = (id, text) => { byId(id).textContent = text || ""; };
   const pretty = value => JSON.stringify(value, null, 2);
   const excerpt = value => { const text = pretty(value) || ""; return text.length > 500 ? text.slice(0, 500) + "…" : text; };
@@ -62,7 +63,8 @@
     }
     return result;
   }
-  function useResult(raw) {
+  function useResult(raw, authoritative = false) {
+    if (disposed) return;
     const result = unwrap(raw);
     if (!result || result.ok === false) {
       const failure = new Error(result?.error?.message || "No workflow state was returned. Continue in the conversation.");
@@ -72,7 +74,15 @@
     const next = result.data;
     if (!next?.id) return;
     if (current && current.id === next.id && next.revision < current.revision) return;
+    if (formAction && (current.id !== next.id || current.revision !== next.revision)) {
+      formAction = null; byId("save-form").hidden = true;
+    }
     current = next;
+    verified = authoritative;
+    if (authoritative && current.modelContext && contextVersion !== current.modelContext) {
+      contextVersion = current.modelContext;
+      send("ui/update-model-context", {content:[{type:"text", text:current.text}, {type:"text", text:current.modelContext}]}).catch(() => {});
+    }
     render(); schedule();
   }
   function theme(context) {
@@ -125,7 +135,7 @@
     actions.replaceChildren();
     current.actions.forEach((action, index) => {
       const button = document.createElement("button"); button.type = "button"; button.textContent = action.label;
-      button.dataset.action = action.action; button.disabled = busy || !toolCallsAvailable() || action.action === "apply" && current.reviewInConversation === true;
+      button.dataset.action = action.action; button.disabled = busy || reading || !verified || !toolCallsAvailable() || action.action === "apply" && current.reviewInConversation === true;
       if (index === 0) button.className = "primary";
       button.addEventListener("click", () => choose(action)); actions.append(button);
       if (action.action === focusedAction) button.focus({preventScroll:true});
@@ -138,22 +148,26 @@
   }
   function setBusy(value) {
     busy = value; document.querySelector("main").setAttribute("aria-busy", String(value));
-    document.querySelectorAll("button").forEach(b => b.disabled = value || !toolCallsAvailable());
+    document.querySelectorAll("button").forEach(b => b.disabled = value || reading || !verified || !toolCallsAvailable());
   }
   async function call(name, args) {
     if (!toolCallsAvailable()) throw new Error("Use the same choice in the conversation; this host has no MCP Apps tool bridge.");
-    return send("tools/call", {name, arguments:args});
+    // Host approval dialogs routinely outlive the former 15-second deadline.
+    return send("tools/call", {name, arguments:args}, 120000);
   }
   async function refresh() {
-    if (!current || busy || disposed) return;
-    try { useResult(await call("get_edit_workflow", {workflow_id:current.id})); }
+    if (!current || busy || reading || disposed || !toolCallsAvailable()) return;
+    reading = true; verified = false; reconcile = false; setBusy(false); render();
+    try { useResult(await call("get_edit_workflow", {workflow_id:current.id}), true); setText("error", ""); }
     catch (error) { setText("error", error.message); clearTimeout(timer); }
+    finally { reading = false; setBusy(false); render(); if (reconcile) refresh(); else schedule(); }
   }
   function schedule() {
     clearTimeout(timer);
-    if (!disposed && visible && !document.hidden && current?.poll && toolCallsAvailable() && !busy && !formAction) timer = setTimeout(refresh, 1500);
+    if (!disposed && visible && !document.hidden && current?.poll && toolCallsAvailable() && !busy && !reading && !formAction) timer = setTimeout(refresh, 1500);
   }
   async function perform(action, destination) {
+    if (disposed || busy || reading || !verified || !current.actions.some(item => item.token === action?.token)) return;
     const overwrites = current.job?.report?.requiredOverwrites || [];
     if (action.action === "apply" && overwrites.length && byId("approvals").querySelectorAll("input:checked").length !== overwrites.length) {
       setText("error", "Approve every displayed existing-value change before applying, or discuss a reduced request in the conversation."); return;
@@ -165,15 +179,21 @@
     try {
       const raw = await call("respond_edit_workflow", args);
       formAction = null; byId("save-form").hidden = true;
-      useResult(raw);
-      send("ui/update-model-context", {content:[{type:"text", text:current.text}]}).catch(() => {});
+      useResult(raw, true); setText("error", "");
     } catch (error) {
       setText("error", error.message + " Continue in the conversation if needed.");
       // A read is safe after a lost response; never repeat the mutation automatically.
-      try { useResult(await call("get_edit_workflow", {workflow_id:args.workflow_id})); } catch (_) {}
-    } finally { setBusy(false); render(); schedule(); }
+      verified = false;
+      try {
+        useResult(await call("get_edit_workflow", {workflow_id:args.workflow_id}), true);
+        // Keep actionable server validation errors (for example a Save As
+        // collision). A successful read supersedes a transport timeout.
+        if (!error.code) setText("error", "");
+      } catch (_) {}
+    } finally { setBusy(false); render(); if (reconcile) refresh(); else schedule(); }
   }
   function choose(action) {
+    if (disposed || busy || reading || !verified || !toolCallsAvailable()) return;
     if (action.requiresDestination) {
       formAction = action; clearTimeout(timer);
       const path = current.document.path || "", slash = path.lastIndexOf("/");
@@ -209,7 +229,7 @@
       if (event.origin && event.origin !== "null") origin = event.origin;
       if (message.error) request.reject(new Error(message.error.message)); else request.resolve(message.result);
     } else if (message.method === "ui/notifications/tool-result") {
-      try { useResult(message.params); } catch (error) { setText("error", error.message); }
+      try { useResult(message.params); reconcile = true; refresh(); } catch (error) { setText("error", error.message); }
     } else if (message.method === "ui/notifications/host-context-changed") theme(message.params);
     else if (message.method === "ui/resource-teardown") {
       disposed = true; clearTimeout(timer);
@@ -217,11 +237,11 @@
       pending.clear(); window.parent.postMessage({jsonrpc:"2.0", id:message.id, result:{}}, origin);
     }
   });
-  document.addEventListener("visibilitychange", schedule);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); else clearTimeout(timer); });
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(resize).observe(document.querySelector("main"));
-  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { visible = entries.some(e => e.isIntersecting); schedule(); }).observe(document.querySelector("main"));
+  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { const wasVisible = visible; visible = entries.some(e => e.isIntersecting); if (visible && !wasVisible) refresh(); else schedule(); }).observe(document.querySelector("main"));
   send("ui/initialize", {protocolVersion:"2026-01-26", appInfo:{name:"Glyphs edit workflow", version:"1.0.0"}, appCapabilities:{}}, 5000)
-    .then(result => { host = result.hostCapabilities || {}; connected = true; theme(result.hostContext); notify("ui/notifications/initialized"); render(); schedule(); })
+    .then(result => { host = result.hostCapabilities || {}; connected = true; theme(result.hostContext); notify("ui/notifications/initialized"); render(); refresh(); })
     .catch(() => { setText("status", "Continue in the conversation"); setText("fallback", "Interactive MCP Apps are unavailable here. Reply with Save and continue, Save As, Check and continue, or another offered choice in the conversation."); render(); });
 })();
 </script>
