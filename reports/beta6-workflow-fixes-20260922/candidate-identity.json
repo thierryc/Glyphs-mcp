@@ -1,0 +1,51 @@
+{
+  "release": {
+    "betaNumber": 6,
+    "channel": "beta",
+    "installerBuild": 48,
+    "releaseVersion": "2.0.0-beta.6",
+    "version": "2.0.0"
+  },
+  "sidecar": {
+    "codeHash": "sha256:6fe1d1da74cafadc39720260e4eb7518f6e431abbfdf84dab9d7263e86e1fc4a",
+    "glyphDiffReader": {
+      "protocolAPIVersion": 1,
+      "schemaVersion": 3,
+      "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker"
+    },
+    "identity": "sha256:6fe1d1da74cafadc39720260e4eb7518f6e431abbfdf84dab9d7263e86e1fc4a",
+    "release": {
+      "betaNumber": 6,
+      "channel": "beta",
+      "installerBuild": 48,
+      "releaseVersion": "2.0.0-beta.6",
+      "version": "2.0.0"
+    }
+  },
+  "bridge": {
+    "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+    "codeHash": "sha256:c288fa8ec5bfe426168297dc192da457692ce77e61fa56901c46a5db06b40ebb",
+    "identity": "sha256:c288fa8ec5bfe426168297dc192da457692ce77e61fa56901c46a5db06b40ebb",
+    "release": {
+      "betaNumber": 6,
+      "channel": "beta",
+      "installerBuild": 48,
+      "releaseVersion": "2.0.0-beta.6",
+      "version": "2.0.0"
+    }
+  },
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "accept_job",
+    "discard_job",
+    "save_document",
+    "start_edit_workflow",
+    "get_edit_workflow",
+    "respond_edit_workflow"
+  ]
+}

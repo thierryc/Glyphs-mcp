@@ -172,4 +172,12 @@ def public_workflow(value):
     if value.get("error"):
         result["text"] += "\nDetails: " + str(value["error"].get("message", ""))
     result["poll"] = value["state"] in ACTIVE and (value["state"] != "uncertain" or bool(value.get("jobId")))
+    # Some hosts omit structuredContent from the model's conversation. Keep the
+    # same bounded control reference in tool text and App context updates.
+    result["modelContext"] = json.dumps({
+        "workflow_id": result["id"], "expected_revision": result["revision"],
+        "document_id": result["document"]["id"], "state": result["state"], "poll": result["poll"],
+        "actions": [dict(action=item["action"], label=item["label"], action_token=item["token"],
+                         requiresDestination=item["requiresDestination"]) for item in result["actions"]],
+    }, ensure_ascii=False, separators=(",", ":"))
     return result

@@ -208,7 +208,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                     installer_build=43,
                 )
 
-    def test_lean_candidate_reports_the_nine_tool_surface(self) -> None:
+    def test_lean_candidate_reports_the_twelve_tool_surface(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-lean-candidate.") as temp:
             root = Path(temp)
             _candidate_tree(root)
@@ -225,7 +225,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                 installer_build=42,
             )
 
-            self.assertEqual(result["publicToolCount"], 9)
+            self.assertEqual(result["publicToolCount"], 12)
 
     def test_knowledge_gate_fails_closed_on_vendored_hash_drift(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-knowledge-security.") as temp:
