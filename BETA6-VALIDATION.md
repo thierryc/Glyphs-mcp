@@ -78,3 +78,22 @@ Completion of installed MCP/client acceptance, signing, notarization, Gatekeeper
 update/component migration and publication verification remain pending for
 Beta 6. Beta 5 results in
 [BETA5-VALIDATION.md](BETA5-VALIDATION.md) describe that release only.
+
+## Source integration gate — September 22, 2026
+
+The accumulated Beta 6 changes were committed as `5cd5d667` and submitted in
+[PR #52](https://github.com/thierryc/Glyphs-mcp/pull/52), targeting `lit/v2-beta`.
+The complete local release gate passed against that source:
+
+- 2,149 Python tests passed, one skipped; five warnings.
+- All 203 macOS installer tests passed with zero failures.
+- Deterministic payload comparison, both private runtimes, twelve-tool package
+  inventory, eleven synchronized skills, and documentation production build passed.
+- The unsigned Debug app and build-48 payload verified successfully. This does
+  not establish signed, notarized, installed-client or update acceptance.
+
+The source integration does not lift the client-workflow release hold above.
+The attempted signed-release preparation was blocked before execution by
+automatic approval review, which requested explicit authorization for uploading
+the release payload to Apple's notarization service. No Beta 6 release tag,
+signed feed or public release assets were created by this integration pass.
