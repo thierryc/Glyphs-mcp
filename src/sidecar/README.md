@@ -3,10 +3,18 @@
 This process owns MCP, saved-source copies, hashes, temporary jobs, and
 `glyphs-cli`. It connects to the loopback-only Glyphs bridge on port 9681.
 
-The initial bulk operation is `width_delta`. A job changes nothing until the
-agent calls `apply_job`. Applying is reversible and is not user acceptance:
-the designer reviews the result in Glyphs, then uses Save to accept. Native
-Undo restores each glyph; Revert or `discard_job` restores the whole font/job.
+Conversation edits use `start_edit_workflow`, `get_edit_workflow` and
+`respond_edit_workflow` (`edit.workflow.v1`). One standard, self-contained MCP App
+is available through `ui://glyphs-mcp/edit-workflow-v1.html`; all actions also
+work through text. The coordinator owns request retention, idempotency and
+revisions, while existing job/save services retain native validation and recovery.
+Complete authorized edits apply automatically; previews and report warnings
+wait for review. A prerequisite Save and continue saves existing work once;
+the resulting edit remains unsaved until separately authorized.
+
+The original nine tools keep their signatures. Low-level jobs change nothing
+until `apply_job`; application is reversible and never saves. `accept_job`
+verifies and saves the whole font. Undo/Redo and guarded discard remain native.
 
 `start_job(kind="spacing", options={...})` adds external spacing suggestions
 without another tool. Options are `reference` (default `auto`; `*` means self),
@@ -101,3 +109,8 @@ The existing Codex connector uses `http://127.0.0.1:9680/mcp/`. HTTP requests ar
 stateless so clients keep working after a sidecar restart. Job IDs belong to the
 service; restarting the sidecar ends its in-memory job session. Restart Glyphs
 to load changed native bundles. The sidecar can also run with stdio and no LaunchAgent.
+
+`dimensions_edit` prepares up to 100 per-master reference-note changes. Blank fills
+need no confirmation; overwrites/clears require exact `approved_overwrites`
+entries after conversational approval. It retains the saved-clean-source workflow
+and never saves on apply. See the Dimensions skill reference for the full policy.

@@ -9,7 +9,7 @@ The current closed `font_export` job can generate one exact static or variable
 instance and verify its tables plus explicit shaping samples; that does not
 restore a general variable-font or production-audit API. Their old
 `apiMajor == 2` gate does not prove that a current lean runtime needs updating.
-State which requested evidence is unavailable through the nine tools; never claim that a partial read completes a full audit,
+State which requested evidence is unavailable through the twelve tools; never claim that a partial read completes a full audit,
 and never claim that a bounded export completes one either.
 
 - “Audit this icon font”: use the metadata reference for explicitly named glyphs
@@ -21,7 +21,7 @@ and never claim that a bounded export completes one either.
   not invoke retired tools or use another job to simulate an unsupported audit.
 - “Write a Glyphs 4 audit script”: use the development/scripting skill and its
   pinned documentation for the agreed scope. A native script is separate from
-  the MCP's nine tools. Writing it needs no document discovery; executing it
+  the MCP's twelve tools. Writing it needs no document discovery; executing it
   must use the intended live font and verify its results.
 - A separate v1 connection uses its available v1 skills after catalog and identity
   verification. It does not inherit the lean connection's document IDs or jobs.

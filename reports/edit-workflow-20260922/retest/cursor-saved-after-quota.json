@@ -1,0 +1,59 @@
+{
+  "client": "Cursor",
+  "label": "saved-after-quota",
+  "document": {
+    "id": "doc_143e5db0eb4947208019ee8b5979ee77",
+    "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+    "dirty": false,
+    "generation": 5,
+    "isCurrent": true,
+    "familyName": "Cursor Save UI"
+  },
+  "layer": {
+    "width": 714.0,
+    "outlineHash": "sha256:80a0a65cc203a39b65a2f9bda89dd68e825045fb077601cfc37773774b0b1d76"
+  },
+  "userDocuments": [
+    {
+      "id": "doc_b4e9ddb557ca4b5c940594de9b4dd24d",
+      "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    }
+  ],
+  "sourceHash": "sha256:3859dcdb3e3d524db9b1a5cc47ddef785093f9a6ccec5f7d85087c119d95aa2a",
+  "savedWidths": [
+    714.0
+  ],
+  "workflow": {
+    "id": "edit_7109c22a283c40b3a16c08f3c35964e9",
+    "state": "saved",
+    "revision": 19,
+    "jobId": "job_4eda83c20efd41cdb3d18e6cedf45e8a",
+    "receipt": {
+      "dirtyAfter": false,
+      "dirtyBefore": true,
+      "documentId": "doc_143e5db0eb4947208019ee8b5979ee77",
+      "jobId": "job_4eda83c20efd41cdb3d18e6cedf45e8a",
+      "nativeSaveSucceeded": true,
+      "originalSourceHashAfter": "sha256:3859dcdb3e3d524db9b1a5cc47ddef785093f9a6ccec5f7d85087c119d95aa2a",
+      "originalSourceUnchanged": null,
+      "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "previousPath": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-save-ui-retest-w5ah7qnb/Cursor Save UI.glyphs",
+      "saveId": "job_4eda83c20efd41cdb3d18e6cedf45e8a",
+      "saveMode": "save",
+      "savedAt": 1790112798.588542,
+      "sourceChangedSinceJob": false,
+      "sourceHashAfter": "sha256:3859dcdb3e3d524db9b1a5cc47ddef785093f9a6ccec5f7d85087c119d95aa2a",
+      "sourceHashBefore": "sha256:4bd59653ad8b015adc091f62d1b46057148c5bc412f0d06652aede7de0db2475",
+      "verification": "native_and_source_hash",
+      "writeAttempted": true
+    },
+    "error": null,
+    "saveRequest": null,
+    "saveOperation": null,
+    "consumedActions": 1
+  }
+}

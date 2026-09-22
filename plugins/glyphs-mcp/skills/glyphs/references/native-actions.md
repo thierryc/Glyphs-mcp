@@ -1,12 +1,16 @@
 # Closed native actions
 
+For conversation edits, use the [shared edit workflow](edit-workflow.md)
+with these same request fields when `edit.workflow.v1` is advertised. The
+low-level job examples below describe operation scope and existing guards.
+
 Use `native_action` only when `get_status.jobKinds` contains `native_action`,
 `writeCapabilities` contains `native.action.v1`, and the requested action is in
 the same response's sorted `nativeActions` array. The list is negotiated with
 the exact running Glyphs build. A missing action is unavailable; do not replace
 it with a script, menu invocation, guessed selector or arbitrary Python.
 
-Native actions use the existing nine-tool job lifecycle. They require a saved,
+Native actions use the existing twelve-tool job lifecycle. They require a saved,
 clean source. Call `start_job`, poll `get_job`, read the full report and its
 before/after summaries, then call `apply_job` only after review. Application is
 save-free and registers native Undo/Redo. `discard_job` restores the entire

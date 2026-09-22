@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.0 Beta 6 — unreleased, build 48
+
+- Add the shared MCP Apps conversation workflow and three additive tools, with
+  complete text fallback. Save and continue verifies one prerequisite save and
+  resumes the retained edit; the resulting edit remains unsaved. Preview, report
+  review, action deduplication, stale controls and restart recovery reuse the
+  existing guarded job/save services. Live client qualification remains a release gate.
+
+- Expose per-master Dimensions reference notes through bounded live reads and
+  a saved-source edit job. Fill unset values freely; require exact conversational
+  approval before overwriting or clearing existing values. Apply without Save,
+  with native document Undo/Redo and exact discard.
+
+- Enable automatic desktop update checks by default; users can disable them
+  in Settings. Launch at login remains a separate opt-in setting.
+
 ## 2.0.0 Beta 5 — native jobs, compilation and export, build 47
 
 - Add capability-gated `feature_compile` diagnostics and verified `font_export`

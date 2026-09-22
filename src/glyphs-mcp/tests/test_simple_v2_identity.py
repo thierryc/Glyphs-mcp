@@ -101,7 +101,8 @@ def test_status_does_not_rehash_or_read_receipt_or_fonts(tmp_path, monkeypatch):
     status = service.get_status()
     assert status['interface'] == 'glyphs-mcp-sidecar' and status['interfaceVersion'] == 1
     assert status['jobKinds'] == list(JOB_KINDS)
-    assert len(status['tools']) == 9 and status['protocol'] == 1
+    assert len(status['tools']) == 12 and status['protocol'] == 1
+    assert status['workflowCapabilities'] == ['edit.workflow.v1']
     assert status['codeHash'] is None  # unpackaged source cannot claim a release
 
 
@@ -132,7 +133,7 @@ async def main():
     async with Client(create_server(None)) as client:
         assert client.initialize_result.serverInfo.version == EXPECTED
         catalog = await client.list_tools()
-        assert set(t.name for t in catalog) == set(TOOL_NAMES) and len(catalog) == 9
+        assert set(t.name for t in catalog) == set(TOOL_NAMES) and len(catalog) == 12
         read = next(t for t in catalog if t.name == "read_entities")
         assert set(read.inputSchema["properties"]) == {"document_id", "entities", "fields"}
         assert set(read.inputSchema["required"]) == {"document_id", "entities", "fields"}

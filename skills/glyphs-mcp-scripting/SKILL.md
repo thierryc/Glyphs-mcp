@@ -47,7 +47,7 @@ to switch to scripting. Rediscover after document_not_found, a target change or
 bridge/Glyphs restart; never silently substitute another open font. Reads are fresh.
 Dirty documents can be inspected without saving.
 
-The nine public tools expose no arbitrary Python execution. Do not add a remote
+The twelve public tools expose no arbitrary Python execution. Do not add a remote
 endpoint or emulate missing private capabilities with scripts. Required missing
 capabilities need the bridge, sidecar and skills updated together. A separately
 authorised native task does not establish MCP support. Existing job Undo/discard

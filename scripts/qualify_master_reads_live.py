@@ -67,7 +67,7 @@ async def measure(args):
         async with Client(args.endpoint,timeout=30) as client:
             facts['handshake']=client.initialize_result.model_dump(mode='json')
             catalog=await client.list_tools();facts['catalog']=[t.model_dump(mode='json') for t in catalog]
-            check('nine tools',len(catalog)==9)
+            check('twelve tools',len(catalog)==12)
             status,_=await call(client,'get_status',{},'identity');check('reachable',status['ok'])
             facts['identity']=status['data']
             manifest=json.loads(Path(args.manifest).read_text())

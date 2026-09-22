@@ -39,10 +39,11 @@ def check():
         assert set(re.findall(r'--hash=sha256:([a-f0-9]{64})',lock)) == set(hashes.values())
         assert 'glyphs-cli==0.6.1' in lock and 'fastmcp==2.12.0' in lock
     for path in (ROOT/'src').glob('*/glyphs_mcp_*/*.py'): ast.parse(path.read_text())
-    server_tree = ast.parse((ROOT/'src/sidecar/glyphs_mcp_sidecar/server.py').read_text())
+    server_trees = [ast.parse((ROOT/'src/sidecar/glyphs_mcp_sidecar'/name).read_text())
+                    for name in ('server.py', 'edit_workflow_ui.py')]
     tools = {
         keyword.value.value
-        for node in ast.walk(server_tree) if isinstance(node, ast.FunctionDef)
+        for tree in server_trees for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
         for decorator in node.decorator_list
         if isinstance(decorator, ast.Call)
         and isinstance(decorator.func, ast.Attribute)
@@ -50,7 +51,7 @@ def check():
         for keyword in decorator.keywords
         if keyword.arg == 'name' and isinstance(keyword.value, ast.Constant)
     }
-    assert len(tools) == 9, f'Expected the nine-tool lean catalog, found {sorted(tools)}'
+    assert len(tools) == 12, f'Expected nine existing and three conversation tools, found {sorted(tools)}'
     return {'skills':len(names), 'runtimeArchitectures':['arm64','x86_64'], 'publicTools':len(tools)}
 
 

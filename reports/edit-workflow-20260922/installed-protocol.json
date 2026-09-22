@@ -1,0 +1,248 @@
+{
+  "toolCount": 12,
+  "workflowTools": [
+    {
+      "name": "start_edit_workflow",
+      "title": null,
+      "description": "Preferred conversational route for an authorized font edit. Reuse a unique idempotency_key on retries. Same typed scope as start_job; mutation kinds only. apply mode automatically prepares and applies complete results; preview mode waits. Never saves implicitly: dirty/new fonts return choices. Present the MCP App where supported and always retain the text choices. 'Save and continue' saves current work once, NOT the resulting edit. Ask for saving only if not already authorized. No user should type tool IDs, tokens or JSON. Existing Dimensions overwrite consent remains required. On warnings/skips review the full get_job report before selecting Apply; do not claim partial work as complete.",
+      "inputSchema": {
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "mode": {
+            "default": "apply",
+            "title": "Mode",
+            "type": "string"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Delta"
+          },
+          "glyphs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Glyphs"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Options"
+          }
+        },
+        "required": [
+          "document_id",
+          "kind",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "outputSchema": null,
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://glyphs-mcp/edit-workflow-v1.html",
+          "visibility": [
+            "model",
+            "app"
+          ]
+        },
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "get_edit_workflow",
+      "title": null,
+      "description": "Read the authoritative workflow, revision, action tokens and underlying job evidence. Show the standard MCP App when available; otherwise convey its text and choices. Reuse the workflow ID, never restart on a timeout. Poll only while poll is true, without narrating unchanged status. A missing card does not stop authorized work. Source and dirty checks still apply; editing during preparation requires preparing again.",
+      "inputSchema": {
+        "properties": {
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": null,
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://glyphs-mcp/edit-workflow-v1.html",
+          "visibility": [
+            "model",
+            "app"
+          ]
+        },
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    },
+    {
+      "name": "respond_edit_workflow",
+      "title": null,
+      "description": "Execute one offered workflow choice. Map natural-language replies to the latest returned action token and revision; never ask users to supply these. A save choice needs explicit or already-established scoped user authorization and saves the entire document. Save As additionally requires an absolute new destination shown to the user. The prerequisite save does not authorize saving the new result. Retrying the SAME token and arguments never repeats its effects. Refresh stale choices; never blindly replace uncertain actions. For Dimensions Apply, pass exact requiredOverwrites only after explicit approval of every shown old/new value. Other Apply actions use the original edit authorization, or the user's preview acceptance. Client permission dialogs still apply.",
+      "inputSchema": {
+        "properties": {
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "action_token": {
+            "title": "Action Token",
+            "type": "string"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Destination"
+          },
+          "approved_overwrites": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Approved Overwrites"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "expected_revision",
+          "action_token"
+        ],
+        "type": "object"
+      },
+      "outputSchema": null,
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "ui": {
+          "visibility": [
+            "model",
+            "app"
+          ]
+        },
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "execution": null
+    }
+  ],
+  "resource": [
+    {
+      "uri": "ui://glyphs-mcp/edit-workflow-v1.html",
+      "mimeType": "text/html;profile=mcp-app",
+      "_meta": {
+        "ui": {
+          "prefersBorder": true,
+          "csp": {
+            "connectDomains": [],
+            "resourceDomains": []
+          }
+        }
+      },
+      "bundledHtmlBytes": 16382
+    }
+  ],
+  "textFallbackProbe": {
+    "content": [
+      {
+        "type": "text",
+        "text": "This workflow is unavailable; do not infer another font.",
+        "annotations": null,
+        "_meta": null
+      }
+    ],
+    "structuredContent": {
+      "ok": false,
+      "error": {
+        "code": "workflow_not_found",
+        "message": "This workflow is unavailable; do not infer another font.",
+        "details": {}
+      }
+    }
+  }
+}

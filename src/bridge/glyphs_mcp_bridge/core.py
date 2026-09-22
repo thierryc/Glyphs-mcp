@@ -13,7 +13,7 @@ from glyphs_mcp_protocol import PROTOCOL_VERSION, ProtocolError, validate_patch
 from glyphs_mcp_protocol.native_actions import MAX_JOB_STATE_BYTES
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
 
-from . import feature_compile, native_actions, outline_edit, saving
+from . import dimensions, feature_compile, native_actions, outline_edit, saving
 from .companions import CompanionRegistry
 from .identity import IDENTITY, VERSION, host_identity
 
@@ -85,6 +85,8 @@ class BridgeCore:
         write_capabilities = ["outline.edit.v1"]
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
+        if dimensions.available():
+            write_capabilities.append("master.dimensions.edit.v1")
         actions = native_actions.available_actions()
         if actions:
             write_capabilities.append("native.action.v1")
@@ -143,11 +145,15 @@ class BridgeCore:
     def save_operation(self, save_id: str) -> dict[str, Any]:
         return saving.operation(self, save_id, BridgeError)
 
-    def begin_apply(self, value: Any) -> dict[str, Any]:
+    def begin_apply(self, value: Any, *, approved_overwrites=None) -> dict[str, Any]:
         if self.paused:
             raise BridgeError("server_stopped", "the Glyphs MCP server is stopped")
         try:
             patch = validate_patch(value)
+            from glyphs_mcp_protocol.dimensions import validate_approval
+            validate_approval(patch["changes"], approved_overwrites)
+            if any(c["kind"] == "dimension" for c in patch["changes"]) and not dimensions.available():
+                raise BridgeError("unsupported_change", "Dimensions writes are not qualified for this Glyphs build")
         except ProtocolError as exc:
             raise BridgeError(exc.code, exc.message) from exc
         if (any(operation.get("op") == "remove_node"
@@ -454,6 +460,8 @@ class BridgeCore:
             "nativeSave": copy.deepcopy(operation.get("nativeSave")),
             "receipt": copy.deepcopy(operation.get("receipt")),
             "message": (
+                "Dimensions changed without saving. Use native document Undo/Redo or discard_job; save separately when authorized."
+                if operation["status"] == "applied" and any(c["kind"] == "dimension" for c in operation["patch"]["changes"]) else
                 "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
                 if operation["status"] == "applied"
                 else None

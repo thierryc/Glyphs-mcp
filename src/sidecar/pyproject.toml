@@ -21,3 +21,6 @@ glyphs-mcp-sidecar = "glyphs_mcp_sidecar.server:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["glyphs_mcp_sidecar*"]
+
+[tool.setuptools.package-data]
+glyphs_mcp_sidecar = ["*.html"]

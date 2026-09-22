@@ -188,12 +188,12 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
-    func connectorSymbol(_ client: InstallerClientKind) -> String {
+    func connectorLogoAsset(_ client: InstallerClientKind) -> String {
         switch client {
-        case .codex: return "chevron.left.forwardslash.chevron.right"
-        case .claudeCode: return "terminal"
-        case .claudeDesktop: return "desktopcomputer"
-        case .cursor: return "cursorarrow.rays"
+        case .codex: return "CodexLogo"
+        case .claudeCode: return "ClaudeCodeLogo"
+        case .claudeDesktop: return "ClaudeLogo"
+        case .cursor: return "CursorLogo"
         }
     }
 

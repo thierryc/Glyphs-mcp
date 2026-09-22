@@ -26,8 +26,9 @@ def test_v1_snapshot_preserves_all_release_files_and_records_adaptations():
             assert 'Glyphs-mcp/blob/main/' not in text
 
 
-def test_v2_catalog_signatures_match_only_the_nine_native_server_tools():
-    tree = ast.parse((REPO / 'src/sidecar/glyphs_mcp_sidecar/server.py').read_text())
+def test_v2_catalog_signatures_match_the_base_and_workflow_tools():
+    tree = ast.parse('\n'.join((REPO / 'src/sidecar/glyphs_mcp_sidecar'/name).read_text()
+                               for name in ('server.py','edit_workflow_ui.py')))
     actual = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.FunctionDef):
@@ -40,7 +41,7 @@ def test_v2_catalog_signatures_match_only_the_nine_native_server_tools():
     documented = {}
     for name, args in re.findall(r'^\| `([a-z_]+)` \| (.*?) \|', reference, re.M):
         documented[name] = re.findall(r'`([a-z_]+)`', args)
-    assert len(actual) == 9
+    assert len(actual) == 12
     assert documented == actual
 
 

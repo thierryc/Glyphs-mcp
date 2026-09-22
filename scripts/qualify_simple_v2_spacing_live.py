@@ -31,7 +31,7 @@ async def run():
 
     async with Client('http://127.0.0.1:9680/mcp/') as client:
         catalog = await client.list_tools()
-        assert [item.name for item in catalog] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document']
+        assert [item.name for item in catalog] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document','start_edit_workflow','get_edit_workflow','respond_edit_workflow']
 
         async def tool(name, **arguments):
             result = await client.call_tool(name, arguments)

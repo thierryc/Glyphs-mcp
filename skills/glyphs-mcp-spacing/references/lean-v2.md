@@ -1,6 +1,10 @@
-## Lean v2 nine-tool workflow
+## Lean v2 twelve-tool workflow
 
-Use this workflow with the nine-tool Glyphs 4 catalog. Prepare `start_job(kind="spacing")` on a
+For conversation edits, use the [shared edit workflow](../../glyphs/references/edit-workflow.md)
+with these same request fields when `edit.workflow.v1` is advertised. The
+low-level job examples below describe operation scope and existing guards.
+
+Use this workflow with the twelve-tool Glyphs 4 catalog. Prepare `start_job(kind="spacing")` on a
 saved, clean disposable or user-authorized font. Use `glyphs` and `options.masters`
 for scope; choose `options.reference` or per-glyph `options.references` explicitly
 when the design calls for them. Otherwise the external spacing workflow records

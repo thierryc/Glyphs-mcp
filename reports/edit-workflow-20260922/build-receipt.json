@@ -1,0 +1,23 @@
+{
+  "sourceRoot": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2",
+  "sourceSHA256": "241818f3bac43e3d21c7d99b2363723cb3276ad1dce4be74c2ab48938e2d4f2d",
+  "bundle": {
+    "version": "2.0.0",
+    "build": "48",
+    "assets": [
+      "GitHubMark",
+      "GlyphsMCPMenu"
+    ],
+    "pierre": {
+      "version": "1.2.4",
+      "commit": "c2249d7890de957a96480711152d90a06fa1222b",
+      "bundleSHA256": "ae5aa8dd4fda867fa77510ac0390f5d5c144814f73f2f3f0c8cd6e4b95211fa8",
+      "resources": {
+        "pierre-diffs-bundle.js": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2",
+        "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+      }
+    },
+    "appSHA256": "5d5dcfcd0d737ba7d3f81c2895a4598df5c1be6608e79c550a7ac79575206448"
+  },
+  "builtAt": "2026-09-22T19:40:51.696583+00:00"
+}

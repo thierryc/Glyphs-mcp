@@ -96,7 +96,7 @@ struct InstallationView: View {
                         detected: model.detectedClients.contains(client),
                         version: model.connectorVersions[client],
                         guidance: model.connectorGuidance(client),
-                        symbol: model.connectorSymbol(client),
+                        logoAsset: model.connectorLogoAsset(client),
                         disabled: model.busy,
                         install: { model.installConnector(client) },
                         update: { model.updateConnector(client) },
@@ -152,7 +152,7 @@ private struct ConnectorSetupCard: View {
     let detected: Bool
     let version: String?
     let guidance: String
-    let symbol: String
+    let logoAsset: String
     let disabled: Bool
     let install: () -> Void
     let update: () -> Void
@@ -161,7 +161,11 @@ private struct ConnectorSetupCard: View {
 
     var body: some View {
         SetupCard(compact: true) {
-            Image(systemName: symbol).font(.system(size: 28)).foregroundStyle(Color.accentColor)
+            Image(logoAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
+                .foregroundStyle(Color.accentColor)
         } title: {
             HStack {
                 Text(client.displayName).font(.headline)

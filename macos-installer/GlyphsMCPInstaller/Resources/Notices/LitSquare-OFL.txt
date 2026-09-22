@@ -1,4 +1,4 @@
-LitSquare menu artwork by Thierry Charbonnel / LitSquare
+LitSquare menu artwork and connection logos by Thierry Charbonnel / LitSquare
 Source: https://github.com/thierryc/litsquare-symbols
 
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007

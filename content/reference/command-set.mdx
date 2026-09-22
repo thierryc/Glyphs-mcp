@@ -1,9 +1,9 @@
 ---
-title: The nine v2 tools
+title: The twelve v2 tools
 ---
 
-This is the current private **Glyphs MCP 2.0.0 Beta 5** tool contract. Product release
-`2.0.0-beta.5` is distinct from interface revision `1`, bridge protocol `1`, and
+This is the current private **Glyphs MCP 2.0.0 Beta 6** tool contract. Product release
+`2.0.0-beta.6` is distinct from interface revision `1`, bridge protocol `1`, and
 the separately negotiated MCP transport version. Inspect `get_status` for
 independent sidecar/bridge identities and negotiated `readCapabilities`,
 `writeCapabilities`, `jobCapabilities` and closed `nativeActions`.
@@ -15,10 +15,80 @@ independent sidecar/bridge identities and negotiated `readCapabilities`,
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job outside the editor. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
-| `apply_job` | `job_id`, optional `include_preview` | Apply a mutation result as a reversible live change. |
+| `apply_job` | `job_id`, optional `include_preview`, `approved_overwrites` | Apply a mutation result as a reversible live change. |
 | `accept_job` | `job_id`, optional `destination`, `include_preview` | Persist an applied mutation, or publish verified export artifacts to a new directory. |
 | `discard_job` | `job_id`, optional `include_preview` | Cancel preparation, discard a proposal or restore current affected live targets. |
 | `save_document` | `document_id`, optional `destination` | Save an explicitly identified unowned document. |
+| `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options` | Retain a requested edit and prepare/apply it after any authorized prerequisite save. |
+| `get_edit_workflow` | `workflow_id` | Read authoritative state, revision, linked job evidence, offered actions and text guidance. |
+| `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites` | Execute one offered action with duplicate protection. |
+
+## Conversation workflow
+
+`get_status.workflowCapabilities` advertises `edit.workflow.v1`. The three
+workflow tools wrap existing services; the original nine signatures and saved,
+clean source rules remain intact. They support every advertised mutation kind,
+including `dimensions_edit`, and exclude compilation and export.
+
+Use `apply` for requested edits and `preview` for preview-only requests. The
+coordinator validates scope, capabilities and worker availability before offering
+a prerequisite save. It binds the request to an explicit document ID. Ordinary
+complete results apply automatically; warnings, skipped/unavailable targets and
+required overwrites retain report review. Application never saves.
+
+The shared resource is `ui://glyphs-mcp/edit-workflow-v1.html`, with MIME type
+`text/html;profile=mcp-app`. Tool `_meta.ui.resourceUri` and standard host
+capabilities control rendering. The resource bundles its code and styles and
+uses only the host's MCP tool bridge. Every response also returns useful text
+and structured data. See [Editing in the conversation](../tutorial/conversation-edits.mdx).
+
+The assistant maps ordinary-language replies to server-issued actions; users
+never need IDs, tokens or JSON. A token is scoped to one workflow revision and
+action. Repeating a consumed token with identical arguments returns current
+state without another save/edit; conflicting arguments or stale choices fail.
+Retry `start_edit_workflow` with the same idempotency key and unchanged request.
+
+**Save and continue** saves existing work once, then starts the retained request.
+It does not authorize saving the resulting edit. Save As uses an absolute new
+destination and preserves non-overwrite checks. Manual save is followed by
+**Check and continue**. Previous applied work must be explicitly saved/discarded;
+one follow-up request can wait per document. Closing a card does not cancel work.
+
+Small workflow records live beside jobs. After restart they report interruption
+and reconcile existing operations on request, without replaying a save or edit.
+Uncertain execution offers outcome checking rather than a blind retry. Native
+source/target guards, Undo, discard and recovery remain authoritative.
+
+## Dimensions reference notes
+
+With `master.dimensions.read.v1`, request `dimensions` on 1–4 exact master
+selectors. Each response has `items`, `total`, `returned`, and `complete`.
+Entries contain `key`, `label`, `script`, `present`, numeric `value`, exact
+`storedValue`, `valid`, and `editable`. These are sidebar reference notes, not
+outlines, hinting stems or measurements computed from glyphs. Reads require no
+Save and do not create metadata. Zero is set; malformed data is not blank.
+Unknown fields are preserved and read-only. The native catalog has 60 fields.
+
+With `master.dimensions.edit.v1`, `dimensions_edit` accepts `options.changes`:
+1–100 entries containing exact `master`, `key`, and numeric `value` (`null` to
+clear). No `delta` or `glyphs`. Editing uses the existing saved-clean-source
+workflow. The complete report lists every master/field, exact before/after
+state and `fill`, `overwrite`, `clear`, or `no-op` classification.
+
+Fill unset fields using task-established values without confirmation. Before
+replacing or clearing an existing value, show the exact proposal and obtain
+explicit approval in the conversation. Pass the report's `requiredOverwrites`
+entries unchanged as `apply_job.approved_overwrites`; each contains `master`,
+`key`, `before`, and `after`, with `present` and exact stored `value` in each
+state. The sidecar and bridge reject mismatched or missing approval entries.
+This is assistant-reported conversational approval, not authenticated consent.
+
+Mixed batches wait for overwrite approval before any application. If a change
+is declined, prepare a reduced job. Stale values require a new proposal and
+fresh approval for any changed overwrite. Application never saves; document-level
+Undo/Redo and whole-job discard preserve exact metadata and originally absent
+containers. Save separately only when authorized. Writes are qualified for
+Glyphs 4.1 build 4107; other builds retain reads without advertising edits.
 
 ## Explicit reads
 
@@ -162,6 +232,14 @@ Example `read_entities` arguments:
 | `native_action` | One closed Glyphs command over exact layer/glyph/font targets; requires bridge `native.action.v1` and the action in `nativeActions`. |
 | `feature_compile` | Closed saved-source or live-editor compiler diagnostic; requires the corresponding `feature.compile.*.v1` capability. |
 | `font_export` | One exact static/variable instance exported to private staging and structurally verified; requires export and verification capabilities. |
+
+For example, the mutation fields for increasing H's layer widths by 8.125 units
+are shown below. Pass them with the explicit `document_id` to `start_job`, or
+with `document_id`, `mode`, and an `idempotency_key` to `start_edit_workflow`.
+
+```json
+{"kind": "width_delta", "delta": 8.125, "glyphs": ["H"]}
+```
 
 Only `width_delta` accepts `delta`. The other jobs use `options`. `outline_edit`
 selects glyphs inside `options.targets`, not the top-level `glyphs` argument. A
@@ -420,7 +498,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the public count remains nine.
+not extra MCP tools; the public count is twelve.
 
 ### Kerning discovery
 
@@ -434,4 +512,4 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays nine tools.
+require a coordinated bridge/sidecar/skills update. The catalog stays twelve tools.

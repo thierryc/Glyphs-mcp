@@ -44,12 +44,21 @@ async def check(lean, architecture):
                     await asyncio.sleep(.1)
             else:
                 log.seek(0); raise TimeoutError('Private runtime did not start: '+log.read()[-2000:])
-            expected=['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document']
+            expected=['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document',
+                      'start_edit_workflow','get_edit_workflow','respond_edit_workflow']
             assert [t.name for t in catalog]==expected
             command=prefix+[str(python),'-B',str(lean/'sidecar/proxy.py'),url]
             async with Client(StdioTransport(command=command[0],args=command[1:],env=env)) as proxy:
                 assert [t.name for t in await proxy.list_tools()]==expected
-            return {'architecture':architecture,'privatePython':True,'httpCatalog':expected,'stdioProxy':True,'packageDownloads':0,'packagedInstallerCLI':True,'startupSeconds':round(time.monotonic()-started,3)}
+                resources = await proxy.read_resource('ui://glyphs-mcp/edit-workflow-v1.html')
+                assert resources[0].mimeType == 'text/html;profile=mcp-app'
+                assert 'ui/initialize' in resources[0].text
+                assert resources[0].meta['ui']['csp']['connectDomains'] == []
+                response = await proxy.call_tool('get_edit_workflow', {'workflow_id':'not-a-workflow'})
+                assert response.structured_content['ok'] is False and response.content[0].text
+            return {'architecture':architecture,'privatePython':True,'httpCatalog':expected,'stdioProxy':True,
+                    'mcpAppResourceAndCSP':True,'structuredAndTextResults':True,'packageDownloads':0,
+                    'packagedInstallerCLI':True,'startupSeconds':round(time.monotonic()-started,3)}
         finally:
             process.terminate()
             try:process.wait(timeout=10)

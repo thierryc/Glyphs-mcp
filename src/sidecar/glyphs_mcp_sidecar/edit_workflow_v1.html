@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glyphs edit workflow</title>
+<style>
+:root{color-scheme:light dark;font:14px/1.5 var(--font-sans,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);--bg:var(--color-background-primary,light-dark(#fff,#212121));--fg:var(--color-text-primary,light-dark(#171717,#f1f1f1));--muted:var(--color-text-secondary,light-dark(#626262,#b8b8b8));--line:var(--color-border-secondary,light-dark(#ddd,#484848));--accent:var(--color-text-info,light-dark(#126947,#69d3a8))}
+*{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--fg)}main{max-width:720px;margin:auto}h1{font-size:18px;line-height:1.3;margin:6px 0}p{margin:8px 0}.muted{color:var(--muted)}.path,pre,output{overflow-wrap:anywhere;white-space:pre-wrap}.path{font-size:12px}.status{font-weight:600}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}button,input{font:inherit;border:1px solid var(--line);border-radius:7px;padding:8px 12px;color:var(--fg);background:var(--bg)}button{cursor:pointer;min-height:40px}button.primary{border-color:var(--accent);color:var(--accent);font-weight:600}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:3px}label{display:block;margin:12px 0 4px}input[type=text]{width:100%}input[type=checkbox]{margin-right:8px}fieldset{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:12px}pre{font:12px/1.5 ui-monospace,monospace}details{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}summary{cursor:pointer}.error{color:var(--color-text-danger,light-dark(#a32525,#ffaaa2))}[hidden]{display:none!important}.badge{font-size:12px;color:var(--muted)}#fallback{border-top:1px solid var(--line);padding-top:10px;font-size:12px}
+@media(max-width:400px){body{padding:10px}.actions button{width:100%}}
+</style>
+</head>
+<body>
+<main aria-busy="false">
+  <span class="badge">Glyphs MCP</span><h1 id="title">Font adjustment</h1>
+  <p id="path" class="path muted"></p><p id="scope" class="muted"></p>
+  <p id="status" class="status" role="status" aria-live="polite">Connecting to this conversation…</p>
+  <p id="message"></p><p id="progress" class="muted"></p>
+  <div id="warnings"></div><div id="proposal"></div><div id="approvals"></div>
+  <div id="actions" class="actions"></div>
+  <form id="save-form" hidden>
+    <fieldset><legend>Save As</legend>
+      <label for="folder">Destination folder</label><input id="folder" type="text" required placeholder="/absolute/folder" autocomplete="off">
+      <label for="filename">Filename</label><input id="filename" type="text" required placeholder="My Font.glyphs" autocomplete="off">
+      <p class="muted">This saves the whole font to a new file. Existing files are never replaced.</p>
+      <output id="destination" class="path"></output>
+      <div class="actions"><button type="submit" class="primary">Save As and continue</button><button id="cancel-form" type="button">Back</button></div>
+    </fieldset>
+  </form>
+  <p id="error" class="error" role="alert"></p>
+  <p id="fallback" class="muted">You can always continue in the conversation using ordinary language.</p>
+  <details><summary>Details</summary><pre id="details"></pre></details>
+</main>
+<script>
+(() => {
+  "use strict";
+  const byId = id => document.getElementById(id);
+  const pending = new Map();
+  let sequence = 0, current = null, host = {}, connected = false, busy = false;
+  let disposed = false, visible = true, timer = null, formAction = null, origin = "*";
+  const setText = (id, text) => { byId(id).textContent = text || ""; };
+  const pretty = value => JSON.stringify(value, null, 2);
+  const excerpt = value => { const text = pretty(value) || ""; return text.length > 500 ? text.slice(0, 500) + "…" : text; };
+  function send(method, params, timeout = 15000) {
+    const id = ++sequence;
+    return new Promise((resolve, reject) => {
+      const deadline = setTimeout(() => { pending.delete(id); reject(new Error("The host did not respond. Check the existing outcome in the conversation before retrying.")); }, timeout);
+      pending.set(id, {resolve, reject, deadline});
+      window.parent.postMessage({jsonrpc:"2.0", id, method, params:params || {}}, origin);
+    });
+  }
+  function notify(method, params) {
+    window.parent.postMessage({jsonrpc:"2.0", method, params:params || {}}, origin);
+  }
+  function resize() {
+    notify("ui/notifications/size-changed", {height:Math.ceil(document.querySelector("main").getBoundingClientRect().height) + 32});
+  }
+  function toolCallsAvailable() { return connected && !!host.serverTools; }
+  function unwrap(result) {
+    if (result?.structuredContent) return result.structuredContent;
+    for (const item of result?.content || []) {
+      if (item.type === "text") { try { const data = JSON.parse(item.text); if ("ok" in data) return data; } catch (_) {} }
+    }
+    return result;
+  }
+  function useResult(raw) {
+    const result = unwrap(raw);
+    if (!result || result.ok === false) {
+      const failure = new Error(result?.error?.message || "No workflow state was returned. Continue in the conversation.");
+      failure.code = result?.error?.code;
+      throw failure;
+    }
+    const next = result.data;
+    if (!next?.id) return;
+    if (current && current.id === next.id && next.revision < current.revision) return;
+    current = next;
+    render(); schedule();
+  }
+  function theme(context) {
+    if (["light", "dark"].includes(context?.theme)) document.documentElement.style.colorScheme = context.theme;
+    for (const [key,value] of Object.entries(context?.styles?.variables || {})) {
+      if (key.startsWith("--") && typeof value === "string") document.documentElement.style.setProperty(key,value);
+    }
+  }
+  function render() {
+    if (!current) return;
+    const doc = current.document || {}, job = current.job || {}, scope = current.scope || {};
+    const report = job.report || {}, names = scope.glyphs || [];
+    setText("title", doc.familyName || "Untitled font");
+    setText("path", doc.path || "Not saved yet");
+    setText("scope", [(scope.kind || "Font adjustment").replaceAll("_", " "), names.length ? names.join(", ") + (scope.glyphCount > names.length ? ` + ${scope.glyphCount-names.length} more` : "") : "Scope shown in request details", scope.masters ? `Masters: ${scope.masters.join(", ")}` : ""].filter(Boolean).join(" · "));
+    const [heading, ...guidance] = (current.message || "Checking your changes…").split("\n");
+    setText("status", heading);
+    setText("message", guidance.join("\n"));
+    byId("message").hidden = !guidance.length;
+    const progress = job.bridgeOperation || {};
+    const showProgress = ["preparing", "applying", "saving", "discarding", "resolving"].includes(current.state) && Number.isFinite(progress.totalChanges) && progress.totalChanges > 0 && (progress.completedChanges || 0) < progress.totalChanges;
+    setText("progress", showProgress ? `${progress.completedChanges || 0} / ${progress.totalChanges} changes` : "");
+    byId("progress").hidden = !showProgress;
+    const warnings = byId("warnings"); warnings.replaceChildren();
+    for (const warning of report.warnings || []) { const p = document.createElement("p"); p.textContent = warning; warnings.append(p); }
+    if (current.state === "needs_review" && current.reviewInConversation) {
+      const p = document.createElement("p"); p.textContent = "Ask in the conversation to review the complete report before applying these changes."; warnings.append(p);
+    }
+    const proposal = byId("proposal"); proposal.replaceChildren();
+    if (["ready", "needs_review", "applied"].includes(current.state)) {
+      const heading = document.createElement("p"); heading.textContent = `${job.changeCount || 0} ${job.changeCount === 1 ? "change" : "changes"}` + (report.unavailableCount ? ` · ${report.unavailableCount} could not be prepared` : ""); proposal.append(heading);
+      for (const change of (job.sample || []).slice(0, 10)) {
+        const row = document.createElement("pre");
+        row.textContent = [change.glyph, change.layer || change.master, change.field || change.key || change.kind].filter(Boolean).join(" · ") + ": " + excerpt(change.before) + " → " + excerpt(change.after); proposal.append(row);
+      }
+      if (job.changeCount > 10) { const more = document.createElement("p"); more.textContent = "Showing the first 10 changes. Ask in the conversation for the complete report."; proposal.append(more); }
+    }
+    const approvals = byId("approvals");
+    const existingChecks = new Set(Array.from(approvals.querySelectorAll("input:checked")).map(input => input.dataset.entry));
+    approvals.replaceChildren();
+    if (["ready", "needs_review"].includes(current.state)) {
+      for (const entry of report.requiredOverwrites || []) {
+        const label = document.createElement("label"), checkbox = document.createElement("input");
+        checkbox.type = "checkbox"; checkbox.dataset.entry = pretty(entry); checkbox.checked = existingChecks.has(checkbox.dataset.entry);
+        label.append(checkbox, document.createTextNode("Approve this existing-value change: " + pretty(entry))); approvals.append(label);
+      }
+    }
+    const actions = byId("actions");
+    const focusedAction = document.activeElement?.dataset?.action;
+    actions.replaceChildren();
+    current.actions.forEach((action, index) => {
+      const button = document.createElement("button"); button.type = "button"; button.textContent = action.label;
+      button.dataset.action = action.action; button.disabled = busy || !toolCallsAvailable() || action.action === "apply" && current.reviewInConversation === true;
+      if (index === 0) button.className = "primary";
+      button.addEventListener("click", () => choose(action)); actions.append(button);
+      if (action.action === focusedAction) button.focus({preventScroll:true});
+    });
+    actions.hidden = !current.actions.length;
+    byId("fallback").hidden = !current.actions.length;
+    setText("fallback", current.actions.length ? (toolCallsAvailable() ? "You can also reply in the conversation: " : "Interactive controls are unavailable here. Reply in the conversation: ") + current.actions.map(a => a.label).join("; ") + "." : "");
+    setText("details", pretty({scope:current.scope, job:current.job, receipt:current.receipt, error:current.error}));
+    resize();
+  }
+  function setBusy(value) {
+    busy = value; document.querySelector("main").setAttribute("aria-busy", String(value));
+    document.querySelectorAll("button").forEach(b => b.disabled = value || !toolCallsAvailable());
+  }
+  async function call(name, args) {
+    if (!toolCallsAvailable()) throw new Error("Use the same choice in the conversation; this host has no MCP Apps tool bridge.");
+    return send("tools/call", {name, arguments:args});
+  }
+  async function refresh() {
+    if (!current || busy || disposed) return;
+    try { useResult(await call("get_edit_workflow", {workflow_id:current.id})); }
+    catch (error) { setText("error", error.message); clearTimeout(timer); }
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!disposed && visible && !document.hidden && current?.poll && toolCallsAvailable() && !busy && !formAction) timer = setTimeout(refresh, 1500);
+  }
+  async function perform(action, destination) {
+    const overwrites = current.job?.report?.requiredOverwrites || [];
+    if (action.action === "apply" && overwrites.length && byId("approvals").querySelectorAll("input:checked").length !== overwrites.length) {
+      setText("error", "Approve every displayed existing-value change before applying, or discuss a reduced request in the conversation."); return;
+    }
+    setBusy(true); clearTimeout(timer); setText("error", "");
+    const args = {workflow_id:current.id, expected_revision:current.revision, action_token:action.token};
+    if (destination) args.destination = destination;
+    if (action.action === "apply" && overwrites.length) args.approved_overwrites = overwrites;
+    try {
+      const raw = await call("respond_edit_workflow", args);
+      formAction = null; byId("save-form").hidden = true;
+      useResult(raw);
+      send("ui/update-model-context", {content:[{type:"text", text:current.text}]}).catch(() => {});
+    } catch (error) {
+      setText("error", error.message + " Continue in the conversation if needed.");
+      // A read is safe after a lost response; never repeat the mutation automatically.
+      try { useResult(await call("get_edit_workflow", {workflow_id:args.workflow_id})); } catch (_) {}
+    } finally { setBusy(false); render(); schedule(); }
+  }
+  function choose(action) {
+    if (action.requiresDestination) {
+      formAction = action; clearTimeout(timer);
+      const path = current.document.path || "", slash = path.lastIndexOf("/");
+      byId("folder").value = slash >= 0 ? path.slice(0, slash) || "/" : "";
+      const filename = slash >= 0 ? path.slice(slash+1) : "Untitled.glyphs";
+      byId("filename").value = filename.replace(/\.(glyphs|glyphspackage)$/, "-copy.$1");
+      byId("save-form").querySelector("button[type=submit]").textContent = action.action === "save_result_as" ? "Save font as…" : "Save As and continue";
+      byId("save-form").hidden = false; updateDestination(); resize(); byId("folder").focus();
+    } else perform(action);
+  }
+  function updateDestination() {
+    const folder = byId("folder").value.trim(), name = byId("filename").value.trim();
+    setText("destination", folder.replace(/\/$/, "") + "/" + name);
+  }
+  byId("folder").addEventListener("input", updateDestination);
+  byId("filename").addEventListener("input", updateDestination);
+  byId("cancel-form").addEventListener("click", () => { formAction = null; byId("save-form").hidden = true; resize(); schedule(); });
+  byId("save-form").addEventListener("submit", event => {
+    event.preventDefault();
+    const folder = byId("folder").value.trim(), name = byId("filename").value.trim();
+    if (!folder.startsWith("/") || /[/\\]/.test(name) || !/\.(glyphs|glyphspackage)$/.test(name)) {
+      setText("error", "Choose an absolute folder and a .glyphs or .glyphspackage filename."); return;
+    }
+    perform(formAction, folder.replace(/\/$/, "") + "/" + name);
+  });
+  window.addEventListener("message", event => {
+    if (event.source !== window.parent || disposed) return;
+    if (origin !== "*" && event.origin !== origin) return;
+    const message = event.data;
+    if (!message || message.jsonrpc !== "2.0") return;
+    if (message.id && pending.has(message.id)) {
+      const request = pending.get(message.id); pending.delete(message.id); clearTimeout(request.deadline);
+      if (event.origin && event.origin !== "null") origin = event.origin;
+      if (message.error) request.reject(new Error(message.error.message)); else request.resolve(message.result);
+    } else if (message.method === "ui/notifications/tool-result") {
+      try { useResult(message.params); } catch (error) { setText("error", error.message); }
+    } else if (message.method === "ui/notifications/host-context-changed") theme(message.params);
+    else if (message.method === "ui/resource-teardown") {
+      disposed = true; clearTimeout(timer);
+      for (const item of pending.values()) { clearTimeout(item.deadline); item.reject(new Error("View closed; authorized work continues.")); }
+      pending.clear(); window.parent.postMessage({jsonrpc:"2.0", id:message.id, result:{}}, origin);
+    }
+  });
+  document.addEventListener("visibilitychange", schedule);
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(resize).observe(document.querySelector("main"));
+  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { visible = entries.some(e => e.isIntersecting); schedule(); }).observe(document.querySelector("main"));
+  send("ui/initialize", {protocolVersion:"2026-01-26", appInfo:{name:"Glyphs edit workflow", version:"1.0.0"}, appCapabilities:{}}, 5000)
+    .then(result => { host = result.hostCapabilities || {}; connected = true; theme(result.hostContext); notify("ui/notifications/initialized"); render(); schedule(); })
+    .catch(() => { setText("status", "Continue in the conversation"); setText("fallback", "Interactive MCP Apps are unavailable here. Reply with Save and continue, Save As, Check and continue, or another offered choice in the conversation."); render(); });
+})();
+</script>
+</body>
+</html>

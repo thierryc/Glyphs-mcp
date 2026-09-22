@@ -109,7 +109,7 @@ async def run(cycle, phase):
                 before=time.monotonic(); await asyncio.to_thread(bridge.status)
                 samples.append(time.monotonic()-before); await asyncio.sleep(.025)
             evidence['phases'][phase] = dict(_measurement(samples),errors=[])
-            assert [t.name for t in await client.list_tools()] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document']
+            assert [t.name for t in await client.list_tools()] == ['get_status','list_documents','read_entities','start_job','get_job','apply_job','accept_job','discard_job','save_document','start_edit_workflow','get_edit_workflow','respond_edit_workflow']
         elif phase in {'spacing','fractional'}:
             job = await prepare('spacing' if phase=='spacing' else 'width_delta')
             await tool('apply_job',job_id=job['id'])

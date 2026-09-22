@@ -1,4 +1,4 @@
 interface:
   display_name: "glyphs-mcp-scripting"
   short_description: "Write focused native Glyphs Python scripts when the lean too"
-  default_prompt: "Use the lean nine-tool Glyphs MCP workflow for this task."
+  default_prompt: "Use the lean twelve-tool Glyphs MCP workflow for this task."

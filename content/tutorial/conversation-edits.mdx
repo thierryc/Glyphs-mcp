@@ -1,0 +1,57 @@
+---
+title: Edit fonts in the conversation
+---
+
+Ask for a supported adjustment and specify its glyphs and masters. A saved,
+clean font begins preparation immediately. The conversation shows the intended
+font and full path so similarly named documents remain distinguishable.
+
+When the font has unsaved work, choose **Save and continue**. This saves the
+whole font once, including your existing work, then prepares and applies the
+requested adjustment. **The resulting edit remains unsaved.** A prerequisite
+save and saving the result are separate choices.
+
+For a new font, choose **Save As…** and enter an absolute destination folder and
+filename. The card shows the destination before saving; existing files are
+never replaced. You can instead choose **I'll save in Glyphs**, save there,
+then reply **Check and continue**. The original request is retained.
+
+You can inspect the font during preparation. Editing it makes the preparation
+outdated and requires preparing again. Cancellation stops the retained request;
+closing a card alone does not cancel authorized work. Progress reflects the
+current activity and change counts where available.
+
+Complete results apply automatically. A preview says **Changes ready to review.** Choose
+**Apply changes** to use it or **Discard preview** to leave the font as it is. Warnings, skipped targets or unavailable
+targets are reviewed in the conversation first. Existing Dimensions values
+still require approval of the exact proposed replacements.
+
+After application the card says **Changes applied. Save your font to keep them.**
+Review the result in Glyphs, then choose **Save font**, **Save As…**, or **Undo
+these changes**. Saving includes the entire current font. Undo checks for
+conflicts with later edits instead of overwriting them.
+
+A successful save says **Font saved.** Discarding a preview or undoing the
+changes says **Changes discarded.** A cancelled request says **Request cancelled.**
+Technical information is available under **Details**; warnings that need your
+attention stay visible.
+
+If a previous edit blocks another request, choose **Save earlier changes and continue**
+or **Undo earlier changes and continue**. One next request can wait. If a connection drops or an operation's
+outcome is uncertain, choose **Check result**; do not repeat the edit.
+After a service restart the workflow reports interruption and does not replay
+a save or mutation.
+
+Every action also works as an ordinary-language reply, including **save and
+continue**. No tool names, identifiers or JSON are needed. Existing scoped
+authorization is reused. If a card fails to load, or interactive tool calls are
+unavailable, continue through the same choices in text.
+
+The implementation follows the [MCP Apps standard](https://apps.extensions.modelcontextprotocol.io/api/documents/overview.html).
+[Cursor documents MCP Apps support](https://cursor.com/docs/mcp), and
+[Claude supports Apps through local desktop connections](https://apps.extensions.modelcontextprotocol.io/api/documents/quickstart.html).
+Codex rendering depends on its actual host capabilities, following
+[capability detection guidance](https://developers.openai.com/plugins/build/chatgpt-ui).
+Client names do not decide which interface is rendered. Installed-version
+qualification is recorded separately from documented support; text is always
+available.

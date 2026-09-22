@@ -424,7 +424,7 @@ def complete_acceptance(service, job, operation, *, include_preview=True):
     return service._public(accepted, include_preview=include_preview)
 
 
-def save_document(service, error_type, document_id, *, destination=None):
+def save_document(service, error_type, document_id, *, destination=None, on_prepared=None):
     identity = str(document_id)
     for job in service.jobs.records():
         if job.get("document", {}).get("id") != identity:
@@ -448,6 +448,8 @@ def save_document(service, error_type, document_id, *, destination=None):
         save_request = prepare_save(save_id, document, destination, documents)
     except SaveError as exc:
         raise service_error(exc, error_type) from exc
+    if on_prepared is not None:
+        on_prepared(save_request)
     try:
         operation = service.bridge.save(bridge_request(save_request))
     except Exception as exc:

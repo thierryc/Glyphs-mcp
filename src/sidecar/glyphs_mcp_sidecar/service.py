@@ -1,4 +1,4 @@
-"""Nine-tool application service for the standalone sidecar."""
+"""Guarded job/save service and conversational workflow facade."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from glyphs_mcp_protocol import (
     validate_patch,
 )
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
+from glyphs_mcp_protocol import dimensions
 
 from .bridge_client import BridgeClientError
 from .jobs import JobStore
@@ -82,6 +83,14 @@ class SidecarService:
                     saving.reconcile_accepted(self, self.jobs.get(job["id"]))
                     self.jobs.release_bulk_artifacts(job["id"])
 
+    @property
+    def edit_workflows(self):
+        from .edit_workflow import EditWorkflows
+        with self._lock:
+            if not hasattr(self, "_edit_workflows"):
+                self._edit_workflows = EditWorkflows(self, ServiceError)
+            return self._edit_workflows
+
     def reserve_idle(self):
         return self.lifecycle.reserve()
 
@@ -89,6 +98,8 @@ class SidecarService:
         return self.lifecycle.release(reservation_id)
 
     def close(self):
+        if hasattr(self, "_edit_workflows"):
+            self._edit_workflows.close()
         # Release external preparation processes during a native Stop action.
         with self._lock:
             for cancel in self._cancellations.values():
@@ -124,6 +135,7 @@ class SidecarService:
             "jobKinds": list(JOB_KINDS)
                         + (["outline_edit"] if "outline.edit.v1" in advertised_writes else [])
                         + (["native_action"] if native_actions else [])
+                        + (["dimensions_edit"] if dimensions.WRITE_CAPABILITY in advertised_writes else [])
                         + (["feature_compile"] if any(
                             name in job_capabilities for name in (
                                 "feature.compile.saved.v1", "feature.compile.live.v1"
@@ -136,7 +148,7 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY)
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY)
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
@@ -144,6 +156,7 @@ class SidecarService:
             "bridge": bridge,
             "worker": worker,
             "controlProtocol": 1,
+            "workflowCapabilities": ["edit.workflow.v1"],
             "activity": self.lifecycle.snapshot(),
             "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves.",
         }
@@ -179,14 +192,33 @@ class SidecarService:
             raise ServiceError("document_not_clean", "Save the font before starting a large job")
         if not isinstance(document.get("generation"), int):
             raise ServiceError("generation_unavailable", "Glyphs did not expose a bounded edit generation")
+        request = self.validate_job_request(kind, delta, glyphs, options)
+        job = self.jobs.create(document, request)
+        cancel = Event()
+        with self._lock:
+            self._cancellations[job["id"]] = cancel
+        live_compile = kind == "feature_compile" and request["options"]["mode"] == "live"
+        thread = Thread(
+            target=job_preparation.prepare_live_compile if live_compile else job_preparation.prepare_external,
+            args=(self, job["id"], cancel),
+            name="glyphs-mcp-" + job["id"],
+            daemon=True,
+        )
+        thread.start()
+        return self._public(job)
+
+    def validate_job_request(self, kind, delta=None, glyphs=None, options=None):
+        """Shared nonmutating preflight, including dirty/pathless workflow requests."""
         request = self._job_request(kind, delta, glyphs, options)
-        if kind in ("outline_edit", "native_action", "feature_compile", "font_export"):
+        if kind in ("outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit"):
             try:
                 bridge_status = self.bridge.status()
                 advertised = bridge_status.get("writeCapabilities") or []
             except Exception:
                 bridge_status = {}
                 advertised = []
+            if kind == "dimensions_edit" and dimensions.WRITE_CAPABILITY not in advertised:
+                raise ServiceError("unsupported_job", "Dimensions writes are not qualified by the live bridge")
             if kind == "outline_edit" and "outline.edit.v1" not in advertised:
                 raise ServiceError("unsupported_job", "outline_edit requires bridge capability outline.edit.v1")
             if kind == "outline_edit" and _uses_native_remove(request) and "outline.remove-node.v1" not in advertised:
@@ -225,19 +257,7 @@ class SidecarService:
         needs_worker = not (kind == "feature_compile" and request["options"]["mode"] == "live")
         if needs_worker and callable(status) and not status().get("available"):
             raise ServiceError("worker_unavailable", "the external Glyphs worker is unavailable")
-        job = self.jobs.create(document, request)
-        cancel = Event()
-        with self._lock:
-            self._cancellations[job["id"]] = cancel
-        live_compile = kind == "feature_compile" and request["options"]["mode"] == "live"
-        thread = Thread(
-            target=job_preparation.prepare_live_compile if live_compile else job_preparation.prepare_external,
-            args=(self, job["id"], cancel),
-            name="glyphs-mcp-" + job["id"],
-            daemon=True,
-        )
-        thread.start()
-        return self._public(job)
+        return request
 
     def get_job(self, job_id: str, *, include_preview: bool = True) -> dict[str, Any]:
         job = self._job(job_id)
@@ -333,7 +353,7 @@ class SidecarService:
             raise ServiceError(error["code"], error["message"], details=error.get("details"))
 
     @mutation
-    def apply_job(self, job_id: str, *, include_preview: bool = True) -> dict[str, Any]:
+    def apply_job(self, job_id: str, *, include_preview: bool = True, approved_overwrites=None) -> dict[str, Any]:
         job = self._job(job_id)
         self._require_available_operation(job)
         if job.get("resultKind") not in (None, "mutation"):
@@ -356,9 +376,14 @@ class SidecarService:
         if observed_hash != job.get("sourceHash"):
             raise ServiceError("stale_source", "the saved source changed while the job was prepared")
         patch = validate_patch(self.jobs.read_json(job["id"], "patch.json"))
-        self.jobs.update(job["id"], status="applying")
         try:
-            operation = self.bridge.apply(patch)
+            approved = dimensions.validate_approval(patch["changes"], approved_overwrites)
+        except ProtocolError as exc:
+            raise ServiceError(exc.code, exc.message) from exc
+        self.jobs.update(job["id"], status="applying", overwriteApproval=approved)
+        try:
+            operation = (self.bridge.apply(patch, approved_overwrites=approved)
+                         if job["request"]["kind"] == "dimensions_edit" else self.bridge.apply(patch))
         except Exception as exc:
             certain = isinstance(exc, BridgeClientError) and exc.details.get("execution") != "uncertain"
             self.jobs.update(job["id"], status="ready" if certain else "applying", error=self._error(exc).as_dict())
@@ -392,10 +417,10 @@ class SidecarService:
 
     @mutation
     def save_document(
-        self, document_id: str, *, destination: str | None = None
+        self, document_id: str, *, destination: str | None = None, _on_prepared=None
     ) -> dict[str, Any]:
         return saving.save_document(
-            self, ServiceError, document_id, destination=destination
+            self, ServiceError, document_id, destination=destination, on_prepared=_on_prepared
         )
 
     @mutation
@@ -445,7 +470,7 @@ class SidecarService:
 
     @staticmethod
     def _job_request(kind: str, delta: float | None, glyphs: list[str] | None, options=None) -> dict[str, Any]:
-        available = list(JOB_KINDS) + ["outline_edit", "native_action", "feature_compile", "font_export"]
+        available = list(JOB_KINDS) + ["outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit"]
         if str(kind) not in available:
             raise ServiceError("unsupported_job", "supported jobs: " + ", ".join(available))
         if kind == "width_delta" and (isinstance(delta, bool) or not isinstance(delta, (int, float)) or not math.isfinite(float(delta)) or delta == 0):
@@ -457,7 +482,7 @@ class SidecarService:
             names = [str(value).strip() for value in glyphs]
             if any(not value for value in names) or len(names) != len(set(names)):
                 raise ServiceError("invalid_request", "glyph names must be non-empty and unique")
-        if kind in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action", "feature_compile", "font_export"):
+        if kind in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit"):
             from .spacing import validate_options as spacing_options
             from .collision import validate_options as collision_options
             from .start_node_job import validate_options as start_options
@@ -476,6 +501,7 @@ class SidecarService:
                 "native_action": native_action_options,
                 "feature_compile": validate_compile_options,
                 "font_export": validate_export_options,
+                "dimensions_edit": dimensions.validate_options,
             }[kind]
             try:
                 if delta is not None:
@@ -486,7 +512,7 @@ class SidecarService:
                     raise ValueError("start_nodes requires 1-100 explicit glyphs")
                 if kind == "outline_edit" and names:
                     raise ValueError("outline_edit selects glyphs inside options.targets")
-                if kind in ("native_action", "feature_compile", "font_export") and names:
+                if kind in ("native_action", "feature_compile", "font_export", "dimensions_edit") and glyphs is not None:
                     raise ValueError(f"{kind} does not use top-level glyphs")
                 return {"kind": kind, "glyphs": names, "options": validate_options({} if options is None else options)}
             except ProtocolError as error:
@@ -535,6 +561,8 @@ class SidecarService:
                 else None
             ),
         }
+        if status == "applied" and job.get("request", {}).get("kind") == "dimensions_edit":
+            result["message"] = "Dimensions changed without saving. Native document Undo/Redo or discard_job restores the notes. Save separately when authorized."
         if not include_preview:
             result.pop("sample")
             if isinstance(result["report"], dict):

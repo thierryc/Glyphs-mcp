@@ -14,7 +14,7 @@ Glyphs 3 uses the separate pinned 1.11.0 bundle and skills.
 
 Glyphs remains the editor. The native bridge panel displays its status and a
 heart button for Welcome & Support. The AI client receives reports and structured
-results from nine tools. `accept_job` verifies targets and persists the whole
+results from twelve tools. `accept_job` verifies targets and persists the whole
 document; Undo and Redo are grouped per glyph, and discard restores an
 unaccepted job with conflict checks.
 
@@ -31,7 +31,19 @@ See the repository documentation for the
 [plugin UI](../../content/getting-started/codex-chatgpt-plugin-ui.mdx) and
 [cross-client skill setup](../../content/getting-started/use-agent-skills.mdx).
 
-The lean Glyphs 4 package exposes nine tools: get_status, list_documents,
-read_entities, start_job, get_job, apply_job, accept_job, discard_job and
-save_document. There is no arbitrary Python execution tool. Install the pinned
+The lean Glyphs 4 package exposes twelve tools: get_status, list_documents,
+read_entities, start_job, get_job, apply_job, accept_job, discard_job,
+save_document, start_edit_workflow, get_edit_workflow and respond_edit_workflow. There is no arbitrary Python execution tool. Install the pinned
 Glyphs 3 skills separately when using the 1.11.0 server.
+
+## Conversation interface
+
+Use one standard MCP App in compatible hosts, including the existing local
+Claude Desktop transport and Cursor's documented MCP Apps support. Detect
+Codex's actual host capabilities; do not infer them from ChatGPT. CLI clients
+and failed/missing UI bridges retain the full text workflow. The shared skills
+and server descriptions map natural-language choices to retained actions.
+
+Save and continue saves existing work once and resumes the request. Complete
+results apply automatically; previews, warnings and required overwrites wait
+for review. The resulting edit is not saved without separate authorization.

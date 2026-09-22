@@ -41,6 +41,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 |---|---|
 | Discover glyph names | [Glyph discovery](references/glyph-discovery.md), requiring `glyphs.list.v1` |
 | Glyph metadata | [Metadata](references/metadata-reads.md) |
+| Dimensions palette reference notes: read/fill freely, approve overwrites in conversation | [Dimensions](references/dimensions.md) |
 | Native master IDs, metrics, axis positions or italic angle | [Masters](references/master-reads.md) |
 | Discover a glyph's exact layer IDs and native types | [Layer discovery](references/layer-discovery.md), requiring `layers.list.v1` |
 | Exact layers, fractional metrics and bounds | [Layers](references/layer-reads.md) |
@@ -66,8 +67,18 @@ targets, with tighter detail limits specified in the focused references.
 
 ## Supported edits
 
-For an advertised mutation job, use `start_job`, inspect `get_job` and its report
-before `apply_job`. Diagnostic jobs finish without application; artifact jobs
+For an advertised mutation job, prefer the shared [conversation workflow](references/edit-workflow.md)
+when `workflowCapabilities` includes `edit.workflow.v1`. Use `start_edit_workflow`
+with the same operation and scope and a retained idempotency key. An edit request
+uses `apply`; an explicit preview uses `preview`. Ordinary complete results apply
+automatically without saving. Warnings, skipped targets and overwrite approvals
+require report review before application. Present the standard MCP App wherever
+supported; every choice also works in ordinary conversation. “Save and continue”
+authorizes one prerequisite whole-font save, then preparation and application;
+the resulting edit remains unsaved. Reuse scoped authorization already given.
+
+The existing `start_job`, `get_job`, `apply_job` lifecycle remains available for
+explicit low-level job work. Diagnostic jobs finish without application; artifact jobs
 publish through `accept_job` to a new directory. Reconcile an uncertain write
 using that existing job ID; do not
 submit a duplicate. `discard_job` cancels or restores the whole job. Application
@@ -77,6 +88,6 @@ closes the rollback window. Use `save_document` only for a specifically
 identified document with no active or applied MCP job. Inspect fresh source and
 dirty state for preparation, and never save merely to satisfy `start_job`.
 Never save, publish an export, close or overwrite a font unless the user's task
-authorizes it. The nine tools provide no arbitrary Python execution or plugin reload; do
+authorizes it. The twelve tools provide no arbitrary Python execution or plugin reload; do
 not invent an MCP command. An advertised `native_action` is a closed typed job,
 not a general script or remote-object interface.

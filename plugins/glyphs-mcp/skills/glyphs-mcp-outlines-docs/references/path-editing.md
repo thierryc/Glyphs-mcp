@@ -1,10 +1,14 @@
 # Typed path editing
 
+For conversation edits, use the [shared edit workflow](../../glyphs/references/edit-workflow.md)
+with these same request fields when `edit.workflow.v1` is advertised. The
+low-level job examples below describe operation scope and existing guards.
+
 Require `paths.list.v1` and `path.geometry.v1` in negotiated
 `readCapabilities`, plus `outline.edit.v1` in bridge `writeCapabilities` and
 `outline_edit` in sidecar `jobKinds`. A missing capability means the bridge,
 sidecar and skills must be updated together. The public tool count remains
-nine; never substitute arbitrary Python or direct font-file editing.
+twelve; never substitute arbitrary Python or direct font-file editing.
 Shape-preserving removal additionally requires `outline.remove-node.v1`.
 
 Always read compact `context` and `selection` first. State whether selection

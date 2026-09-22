@@ -116,6 +116,10 @@ def _mutation_report(report, path):
     for name in ("action", "scope", "targetCount", "changedCount", "noChangeCount"):
         if name in report:
             summary[name] = report[name]
+    if report.get("kind") == "dimensions_edit":
+        # At most 100 entries: never hide an overwrite behind the sample limit.
+        summary["targets"] = rows
+        summary["requiredOverwrites"] = report["requiredOverwrites"]
     if report.get("warnings"):
         summary["warnings"] = list(report["warnings"])
     elif report.get("warning"):

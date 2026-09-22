@@ -33,14 +33,15 @@ def _number(value: Any) -> float | int:
 
 def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
     request = payload["request"]
-    if request.get("kind") in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action"):
+    if request.get("kind") in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action", "dimensions_edit"):
         from .spacing_job import prepare as spacing_prepare
         from .kerning_job import prepare as kerning_prepare
         from .start_node_job import prepare as start_prepare
         from .slant_job import prepare as slant_prepare
         from .outline_job import prepare as outline_prepare
         from .native_action_job import prepare as native_action_prepare
-        prepare = {"spacing": spacing_prepare, "kerning_collision": kerning_prepare, "start_nodes": start_prepare, "slant": slant_prepare, "outline_edit": outline_prepare, "native_action": native_action_prepare}[request["kind"]]
+        from .dimensions_job import prepare as dimensions_prepare
+        prepare = {"spacing": spacing_prepare, "kerning_collision": kerning_prepare, "start_nodes": start_prepare, "slant": slant_prepare, "outline_edit": outline_prepare, "native_action": native_action_prepare, "dimensions_edit": dimensions_prepare}[request["kind"]]
         changes, report = prepare(_load_font(Path(payload["source"])), request)
         Path(payload["output"]).with_name("report.json").write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
         return validate_patch({"version": PATCH_VERSION, "jobId": payload["jobId"],
@@ -51,7 +52,8 @@ def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
                               if request["kind"] == "start_nodes" else "Slant suggestions for {} master layers".format(len(report["layers"]))
                               if request["kind"] == "slant" else "Outline edits for {} layers".format(len(report["layers"]))
                               if request["kind"] == "outline_edit" else "Native {} action for {} targets".format(report["action"], report["targetCount"])
-                              if request["kind"] == "native_action" else "Collision corrections for {} master pairs".format(len(report["pairs"])))})
+                              if request["kind"] == "native_action" else "Dimensions reference edits for {} fields".format(len(report["targets"]))
+                              if request["kind"] == "dimensions_edit" else "Collision corrections for {} master pairs".format(len(report["pairs"])))})
     if request.get("kind") != "width_delta":
         raise ValueError("unsupported external job kind")
     delta = float(request["delta"])

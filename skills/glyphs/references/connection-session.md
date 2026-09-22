@@ -4,8 +4,9 @@ Inspect the tool catalog of the **specific MCP connection** when this connection
 configured endpoint with the result; never merge catalogs from simultaneous
 connections or infer an interface from the host app name or skill location.
 
-- Exactly `get_status`, `list_documents`, `read_entities`, `start_job`, `get_job`,
-  `apply_job`, `discard_job`: call that connection’s `get_status`. Use this lean
+- The nine base tools `get_status`, `list_documents`, `read_entities`, `start_job`,
+  `get_job`, `apply_job`, `accept_job`, `discard_job`, `save_document`, plus
+  `start_edit_workflow`, `get_edit_workflow`, `respond_edit_workflow`: call that connection’s `get_status`. Use this lean
   workflow when `interface` is `glyphs-mcp-sidecar` and `interfaceVersion` is `1`.
   A private sidecar missing current interface/identity fields needs updating;
   do not route an earlier private build into a substitute workflow.
