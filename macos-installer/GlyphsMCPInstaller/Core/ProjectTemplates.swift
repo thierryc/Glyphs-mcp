@@ -12,15 +12,33 @@ public struct ProjectTemplate: Codable, Equatable, Identifiable {
     public let templateDirectory: String
     public let revision: String
     public let archiveSHA256: String
-    public var archiveURL: URL? {
+    public var repositoryURL: URL? {
         guard let url = URL(string: repository), url.scheme == "https", url.host == "github.com",
-              url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return nil }
+              url.port == nil, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return nil }
         let parts = url.path.split(separator: "/")
-        guard parts.count == 2, parts.allSatisfy({ $0.range(of: #"^[A-Za-z0-9_.-]+$"#, options: .regularExpression) != nil }),
+        guard parts.count == 2, parts.allSatisfy({ $0 != "." && $0 != ".." && $0.range(of: #"^[A-Za-z0-9_.-]+$"#, options: .regularExpression) != nil }) else { return nil }
+        return URL(string: "https://github.com/\(parts[0])/\(parts[1])")
+    }
+    public var archiveURL: URL? {
+        guard let repositoryURL,
               revision.range(of: #"^[a-f0-9]{40}$"#, options: .regularExpression) != nil,
               archiveSHA256.range(of: #"^[a-f0-9]{64}$"#, options: .regularExpression) != nil else { return nil }
-        return URL(string: "https://codeload.github.com/\(parts[0])/\(parts[1])/zip/\(revision)")
+        return URL(string: "https://codeload.github.com\(repositoryURL.path)/zip/\(revision)")
     }
+    public var githubTemplateURL: URL? {
+        guard let repositoryURL, archiveURL != nil else { return nil }
+        var url = repositoryURL.appendingPathComponent("tree").appendingPathComponent(revision)
+        if templateDirectory != "." {
+            guard (try? ProjectFiles.validateRelativePath(templateDirectory)) != nil else { return nil }
+            for component in templateDirectory.split(separator: "/") {
+                url.appendPathComponent(String(component))
+            }
+        }
+        return url
+    }
+    public var issuesURL: URL? { repositoryURL?.appendingPathComponent("issues") }
+    // GitHub restricts /stargazers; the repository page retains its public Star control.
+    public var starURL: URL? { repositoryURL }
 }
 
 public struct TemplateRegistry: Codable {

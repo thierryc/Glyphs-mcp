@@ -1,4 +1,8 @@
-# Glyphs MCP 2.0.0 Beta 6
+# Glyphs MCP 2.0.0 Beta
+
+**Next candidate: Beta 7/build 49 is in preparation.**
+See [the preparation record](BETA7-VALIDATION.md). The download and qualification
+below remain Beta 6 until Beta 7 is separately qualified and published.
 
 **Beta 6/build 48 is published as a signed and notarized GitHub prerelease.
 Its signed desktop update and component migration passed in VirtualBuddy.

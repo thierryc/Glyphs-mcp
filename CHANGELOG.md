@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.0 Beta 7 — unreleased, build 49
+
+- Add per-template menus with persistent favorites, pinned GitHub source,
+  Issues and Star on GitHub links, and Reveal in Finder for local templates.
+  Show favorites alphabetically first, followed by all other templates
+  alphabetically across built-in, GitHub and local sources.
+- Prepare Beta 7 release identity and documentation while retaining the signed
+  Beta 6 update feed and download links.
+- Remove obsolete generated application and payload copies, preserving release
+  archives, source worktrees, dependencies and historical qualification evidence.
+
 ## 2.0.0 Beta 6 — 2026-09-22, build 48
 
 - Add the shared MCP Apps conversation workflow and three additive tools, with

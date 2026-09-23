@@ -55,16 +55,8 @@ struct DesktopProjectCatalog: View {
                             Label(model.message, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.red)
                         }
                         LazyVGrid(columns: columns, alignment: .center, spacing: 16) {
-                            DesktopTemplateCard(title: "Font Project Starter", source: "Built-in", symbol: "folder.fill",
-                                description: "Folders for font sources, proofs, exports, and documentation.") { model.create(.starter) }
-                            ForEach(model.templates) { template in
-                                DesktopTemplateCard(title: template.name, source: "GitHub", symbol: "square.stack.3d.up.fill",
-                                    description: template.description, author: template.author) { model.create(.registry(template.id)) }
-                            }
-                            ForEach(model.localTemplates, id: \.self) { path in
-                                DesktopTemplateCard(title: URL(fileURLWithPath: path).lastPathComponent, source: "Local", symbol: "folder.fill",
-                                    description: "Create a project from your editable template folder.") { model.create(.local(path)) }
-                                    .help(path)
+                            ForEach(model.templateCatalog) { entry in
+                                DesktopTemplateCard(model: model, entry: entry)
                             }
                         }
                     }.frame(maxWidth: 760)
@@ -76,28 +68,55 @@ struct DesktopProjectCatalog: View {
 }
 
 private struct DesktopTemplateCard: View {
-    let title: String
-    let source: String
-    let symbol: String
-    let description: String
-    var author: String? = nil
-    let create: () -> Void
+    @ObservedObject var model: DesktopProjectsModel
+    let entry: DesktopTemplateEntry
+    private var isFavorite: Bool { model.templateFavorites.contains(entry.choice) }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: symbol).font(.title2).foregroundStyle(Color.accentColor)
+                Image(systemName: entry.template == nil ? "folder.fill" : "square.stack.3d.up.fill")
+                    .font(.title2).foregroundStyle(Color.accentColor)
                 Spacer()
-                Text(source).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                if isFavorite {
+                    Image(systemName: "star.fill").foregroundStyle(Color.accentColor)
+                        .accessibilityLabel("Favorite template").help("Favorite")
+                }
+                Text(entry.source).font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Color.primary.opacity(0.04), in: Capsule())
+                Menu {
+                    Button { model.toggleFavorite(entry.choice) } label: {
+                        Label(isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                              systemImage: isFavorite ? "star.slash" : "star")
+                    }
+                    if let template = entry.template {
+                        Divider()
+                        if let url = template.githubTemplateURL {
+                            Button("Open on GitHub") { model.openTemplateLink(url) }
+                        }
+                        if let url = template.issuesURL {
+                            Button("Issues") { model.openTemplateLink(url) }
+                        }
+                        if let url = template.starURL {
+                            Button("Star on GitHub…") { model.openTemplateLink(url) }
+                        }
+                    }
+                    if let url = entry.localURL {
+                        Divider()
+                        Button("Reveal in Finder") { model.revealTemplate(url) }
+                    }
+                } label: { Image(systemName: "ellipsis").frame(width: 20, height: 18) }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .help("More for \(entry.name)").accessibilityLabel("More for \(entry.name) template")
             }
-            Text(title).font(.headline)
-            Text(description).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            if let author { Text(author).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            Text(entry.name).font(.headline)
+            Text(entry.description).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if let author = entry.template?.author { Text(author).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
             Spacer(minLength: 4)
-            Button("Use Template", action: create).accessibilityLabel("Use \(title) template")
+            Button("Use Template") { model.create(entry.choice) }.accessibilityLabel("Use \(entry.name) template")
         }.padding(20).frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.08)))
+            .help(entry.localURL?.path ?? entry.name)
     }
 }

@@ -61,7 +61,9 @@
 		12B887EC93C336A12F5525CF /* DesktopProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */; };
 		BB8FED442C37149356C19DC9 /* DesktopProjectWizard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */; };
 		0B32DBB6D0B856B5E6F921FE /* DesktopProjectNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */; };
+		7DD0EBB293F1D78408B15D9C /* DesktopTemplateCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 539F5D88BEEFE4B6685E8438 /* DesktopTemplateCatalog.swift */; };
 		F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */; };
+		222E1FD38019AA402B7856A5 /* DesktopTemplateCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */; };
 		236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */; };
 		B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000001 /* DesktopGitWorkspace.swift */; };
 		B20000000000000000000002 /* GlyphDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* GlyphDiff.swift */; };
@@ -169,7 +171,9 @@
 		79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectCatalog.swift"; sourceTree = "<group>"; };
 		51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectWizard.swift"; sourceTree = "<group>"; };
 		611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectNavigation.swift"; sourceTree = "<group>"; };
+		539F5D88BEEFE4B6685E8438 /* DesktopTemplateCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopTemplateCatalog.swift"; sourceTree = "<group>"; };
 		742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectNavigationTests.swift"; sourceTree = "<group>"; };
+		F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopTemplateCatalogTests.swift"; sourceTree = "<group>"; };
 		0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectSettings.swift"; sourceTree = "<group>"; };
 		B30000000000000000000001 /* DesktopGitWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopGitWorkspace.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* GlyphDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphDiff.swift; sourceTree = "<group>"; };
@@ -288,6 +292,7 @@
 			isa = PBXGroup;
 			children = (
 				742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */,
+				F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */,
 				B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */,
 				C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */,
 				07D2D62E1F5AA9456A113CB3 /* DesktopTests.swift */,
@@ -301,6 +306,7 @@
 			children = (
 				B30000000000000000000002 /* GlyphDiff.swift */,
 				611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */,
+				539F5D88BEEFE4B6685E8438 /* DesktopTemplateCatalog.swift */,
 				60EC656C5A910DCFFD852637 /* DesktopMenuImage.swift */,
 				AA8D0B383F3BAC6C5D8F4640 /* DesktopJobEvents.swift */,
 				95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */,
@@ -532,6 +538,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */,
+				222E1FD38019AA402B7856A5 /* DesktopTemplateCatalogTests.swift in Sources */,
 				3F59FD997BDD3F90653A6CF7 /* DesktopActivityTests.swift in Sources */,
 				E3E54D6F7E263E4FE22AB626 /* DesktopProjectTests.swift in Sources */,
 				0AC9B1F44B12D38D9172EEA8 /* DesktopTests.swift in Sources */,
@@ -545,6 +552,7 @@
 			files = (
 				B20000000000000000000002 /* GlyphDiff.swift in Sources */,
 				0B32DBB6D0B856B5E6F921FE /* DesktopProjectNavigation.swift in Sources */,
+				7DD0EBB293F1D78408B15D9C /* DesktopTemplateCatalog.swift in Sources */,
 				C77B301FEBD51A7A40A91B94 /* DesktopMenuImage.swift in Sources */,
 				E84CC28818E4CC99FCCB10CA /* DesktopJobEvents.swift in Sources */,
 				3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */,
@@ -726,7 +734,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -762,7 +770,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;

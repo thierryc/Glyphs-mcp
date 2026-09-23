@@ -2,7 +2,7 @@
 title: Packaging and release discovery
 ---
 
-This checkout identifies the published Glyphs MCP **2.0.0 Beta 6**, release `2.0.0-beta.6`, desktop build **48**. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, twelve tools and up to ten capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The published payload includes the lean Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes. It contains no Glyphs 3 target or v1 skills; the pinned v1.11.0 source metadata and separate release remain unchanged.
+This checkout prepares Glyphs MCP **2.0.0 Beta 7**, release `2.0.0-beta.7`, desktop build **49**. A local Beta 7 app has been built for template-menu and favorites validation; it has not been installed, signed for distribution, notarized or published. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, twelve tools and up to ten capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The candidate payload includes the lean Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes. It contains no Glyphs 3 target or v1 skills; the pinned v1.11.0 source metadata and separate release remain unchanged.
 
 Build, sign, notarize and verify on the maintainer's Mac. No GitHub Actions are required or used for release publishing. The full maintained procedure is in `macos-installer/RELEASING.md` in the candidate repository.
 
@@ -14,8 +14,8 @@ recovery, and component migration checks. See the exact evidence in
 
 ## Deliverables
 
-- `Glyphs-MCP-2.0.0-beta.6.dmg`: signed and notarized Beta 6 installer.
-- `Glyphs-MCP-2.0.0-beta.6.zip`: Sparkle-signed desktop application archive.
+- `Glyphs-MCP-2.0.0-beta.7.dmg`: planned signed and notarized Beta 7 installer.
+- `Glyphs-MCP-2.0.0-beta.7.zip`: planned Sparkle-signed desktop application archive.
 - No `Glyphs-MCP-latest.dmg` for a beta. That byte-identical alias is reserved for stable releases.
 - `appcast.xml`: the exact signed Beta 6 feed, published after public archive verification.
 - Checksums, source manifest, installation receipt and acceptance report associated with the exact candidate.
@@ -27,9 +27,9 @@ Keep local acceptance evidence containing private font paths out of public relea
 The desktop uses checksum-pinned Sparkle and PierreDiffsSwift packages. Build
 receipts verify the Pierre package resource bundle and the exact bundled
 `@pierre/diffs` and Shiki JavaScript identities. **Check for Updates** runs on
-demand; automatic checking is enabled by default and can be disabled in Settings. Beta 6 uses
+demand; automatic checking is enabled by default and can be disabled in Settings. Beta 7 uses
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`
-and archives under its exact `v2.0.0-beta.6` prerelease tag. Stable builds use
+and archives under its planned `v2.0.0-beta.7` prerelease tag. Stable builds use
 their separate stable feed. Sparkle update ordering uses increasing installer
 builds, not the marketing-version label. A configured feed is not proof that
 it is publicly available.

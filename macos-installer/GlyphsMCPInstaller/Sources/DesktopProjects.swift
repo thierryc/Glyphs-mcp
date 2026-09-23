@@ -22,6 +22,7 @@ final class DesktopProjectsModel: ObservableObject {
     @Published private(set) var navigation: DesktopProjectNavigation
     @Published private(set) var localTemplates: [String]
     @Published private(set) var templates: [ProjectTemplate] = []
+    @Published private(set) var templateFavorites: DesktopTemplateFavorites
     @Published var creation: DesktopProjectCreation?
     @Published var editing: DesktopProjectEditing?
     @Published private(set) var git: GitObservation?
@@ -50,6 +51,25 @@ final class DesktopProjectsModel: ObservableObject {
         self.defaults = defaults
         navigation = DesktopProjectNavigation(defaults: defaults, hasInstallation: DesktopInstallation().hasInstallation)
         localTemplates = defaults.stringArray(forKey: "localTemplates") ?? []
+        templateFavorites = DesktopTemplateFavorites(defaults: defaults)
+    }
+    var templateCatalog: [DesktopTemplateEntry] {
+        DesktopTemplateEntry.catalog(templates: templates, localPaths: localTemplates, favorites: templateFavorites)
+    }
+    func toggleFavorite(_ choice: DesktopTemplateChoice) {
+        templateFavorites.toggle(choice)
+        templateFavorites.save(to: defaults)
+    }
+    func revealTemplate(_ url: URL) {
+        guard folderExists(url.path) else {
+            message = "Template folder not found: \(url.path). Add its new location using Add Local Template…."
+            return
+        }
+        message = ""
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+    func openTemplateLink(_ url: URL) {
+        if !NSWorkspace.shared.open(url) { message = "Could not open \(url.absoluteString)." }
     }
     func select(_ destination: DesktopDestination?) {
         let previous = selectedProject

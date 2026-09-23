@@ -28,6 +28,19 @@ Templates are independent copies. Updating a template never changes a project cr
 
 ## Public templates and offline use
 
+Each template card has a three-dot menu. Choose **Add to Favorites** to keep it
+at the top, or **Remove from Favorites** to return it to the rest of the list.
+Favorites display a filled star. Both groups are sorted alphabetically across
+all template sources, and favorites are remembered after restarting the app.
+
+For GitHub templates, **Open on GitHub** opens the template directory at its
+pinned revision; **Issues** opens the issue tracker. **Star on GitHub…** opens
+the repository page, where you can view its star count and use GitHub’s Star
+button. The restricted Stargazers page is not used.
+Favorites are local preferences and do not star a repository on GitHub.
+For local templates, **Reveal in Finder** selects the original template folder.
+The generated built-in starter has only the favorite action.
+
 The official registry lives in `templates/registry.json` in the project repository. Entries identify the author, license, public repository, template directory, pinned revision and archive SHA-256. **Refresh** checks for catalog changes; the bundled catalog remains available if the network is unavailable.
 
 Public templates download as archives. Verified downloads are cached for offline reuse. Git is not needed for scaffolding. The app does not execute template programs and excludes `.git` databases from copied projects. Unsafe paths, links, duplicate names, oversized archives and checksum failures are rejected.
