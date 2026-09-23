@@ -1,0 +1,888 @@
+{
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "scope": "Actual native palette, document, metadata and Undo in isolated glyphs-cli process; installed MCP not changed",
+  "fields": [
+    "BurmeseHRound",
+    "BurmeseHStem",
+    "BurmeseThin",
+    "BurmeseVRound",
+    "BurmeseVStem",
+    "HH",
+    "HV",
+    "OH",
+    "OV",
+    "VThick",
+    "VThin",
+    "arAlef",
+    "arBar",
+    "arRoundThick",
+    "arRoundThin",
+    "cyDeVthin",
+    "cyHook",
+    "cydeH",
+    "cydeVthin",
+    "cyhook",
+    "han1",
+    "han2",
+    "han3",
+    "han4",
+    "han5",
+    "han6",
+    "han7",
+    "han8",
+    "kanada1",
+    "kanada2",
+    "kanada3",
+    "kanada4",
+    "kanada5",
+    "kanada6",
+    "kanada7",
+    "kanada8",
+    "khmer1",
+    "khmer2",
+    "khmer3",
+    "khmer4",
+    "khmer5",
+    "khmer6",
+    "khmer7",
+    "laoHBall",
+    "laoHRound",
+    "laoHStem",
+    "laoVBall",
+    "laoVStem",
+    "nV",
+    "nd",
+    "oH",
+    "oV",
+    "tH",
+    "thaiHBall",
+    "thaiHRound",
+    "thaiHStem",
+    "thaiVBall",
+    "thaiVStem",
+    "vThick",
+    "vThin"
+  ],
+  "checks": [
+    {
+      "name": "native palette loads",
+      "passed": true
+    },
+    {
+      "name": "catalog exactly matches all palette identifiers",
+      "passed": true
+    },
+    {
+      "name": "qualified write capability",
+      "passed": true
+    },
+    {
+      "name": "BurmeseHRound palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "BurmeseHRound palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "BurmeseHStem palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "BurmeseHStem palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "BurmeseThin palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "BurmeseThin palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "BurmeseVRound palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "BurmeseVRound palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "BurmeseVStem palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "BurmeseVStem palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "HH palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "HH palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "HV palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "HV palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "OH palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "OH palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "OV palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "OV palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "VThick palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "VThick palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "VThin palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "VThin palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "arAlef palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "arAlef palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "arBar palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "arBar palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "arRoundThick palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "arRoundThick palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "arRoundThin palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "arRoundThin palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "cyDeVthin palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "cyDeVthin palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "cyHook palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "cyHook palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "cydeH palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "cydeH palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "cydeVthin palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "cydeVthin palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "cyhook palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "cyhook palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han1 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han1 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han2 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han2 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han3 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han3 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han4 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han4 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han5 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han5 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han6 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han6 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han7 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han7 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "han8 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "han8 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada1 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada1 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada2 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada2 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada3 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada3 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada4 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada4 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada5 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada5 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada6 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada6 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada7 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada7 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "kanada8 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "kanada8 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer1 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer1 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer2 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer2 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer3 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer3 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer4 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer4 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer5 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer5 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer6 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer6 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "khmer7 palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "khmer7 palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "laoHBall palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "laoHBall palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "laoHRound palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "laoHRound palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "laoHStem palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "laoHStem palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "laoVBall palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "laoVBall palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "laoVStem palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "laoVStem palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "nV palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "nV palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "nd palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "nd palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "oH palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "oH palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "oV palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "oV palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "tH palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "tH palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "thaiHBall palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "thaiHBall palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "thaiHRound palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "thaiHRound palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "thaiHStem palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "thaiHStem palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "thaiVBall palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "thaiVBall palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "thaiVStem palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "thaiVStem palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "vThick palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "vThick palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": "vThin palette setter stores exact text",
+      "passed": true
+    },
+    {
+      "name": "vThin palette clear removes key",
+      "passed": true
+    },
+    {
+      "name": ".glyphs exact metadata survives reopening",
+      "passed": true
+    },
+    {
+      "name": ".glyphs unrelated data persists",
+      "passed": true
+    },
+    {
+      "name": ".glyphspackage exact metadata survives reopening",
+      "passed": true
+    },
+    {
+      "name": ".glyphspackage unrelated data persists",
+      "passed": true
+    },
+    {
+      "name": "native document clean before job",
+      "passed": true
+    },
+    {
+      "name": "blank reads do not create metadata",
+      "passed": true
+    },
+    {
+      "name": "saved-source worker agrees with live metadata",
+      "passed": true
+    },
+    {
+      "name": "all fields applied through actual bridge core",
+      "passed": true
+    },
+    {
+      "name": "native document marked dirty",
+      "passed": true
+    },
+    {
+      "name": "BurmeseHRound palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "BurmeseHStem palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "BurmeseThin palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "BurmeseVRound palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "BurmeseVStem palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "HH palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "HV palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "OH palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "OV palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "VThick palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "VThin palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "arAlef palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "arBar palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "arRoundThick palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "arRoundThin palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "cyDeVthin palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "cyHook palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "cydeH palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "cydeVthin palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "cyhook palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han1 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han2 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han3 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han4 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han5 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han6 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han7 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "han8 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada1 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada2 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada3 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada4 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada5 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada6 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada7 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "kanada8 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer1 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer2 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer3 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer4 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer5 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer6 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "khmer7 palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "laoHBall palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "laoHRound palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "laoHStem palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "laoVBall palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "laoVStem palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "nV palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "nd palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "oH palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "oV palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "tH palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "thaiHBall palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "thaiHRound palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "thaiHStem palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "thaiVBall palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "thaiVStem palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "vThick palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "vThin palette reads bridge value",
+      "passed": true
+    },
+    {
+      "name": "native Undo restores absent namespace",
+      "passed": true
+    },
+    {
+      "name": "native Redo restores all values",
+      "passed": true
+    },
+    {
+      "name": "discard restores exact absent namespace",
+      "passed": true
+    },
+    {
+      "name": "application and discard never save",
+      "passed": true
+    },
+    {
+      "name": "unrelated metadata preserved",
+      "passed": true
+    },
+    {
+      "name": "native boundary rejects unapproved overwrite",
+      "passed": true
+    },
+    {
+      "name": "approved overwrite and clear apply",
+      "passed": true
+    },
+    {
+      "name": "native palette refreshes overwrite and clear",
+      "passed": true
+    },
+    {
+      "name": "native overwrite Undo restores exact strings",
+      "passed": true
+    },
+    {
+      "name": "native overwrite Redo preserves clear",
+      "passed": true
+    },
+    {
+      "name": "native overwrite discard preserves unknown other master",
+      "passed": true
+    },
+    {
+      "name": "overwrite and clear never save",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,112 @@
+{
+  "bridge": {
+    "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+    "codeHash": "sha256:54c06f5f0ee25c28d6b76f675e7ea9f679074fc83c8df1a4f0876504598b8e38",
+    "identity": "sha256:54c06f5f0ee25c28d6b76f675e7ea9f679074fc83c8df1a4f0876504598b8e38",
+    "release": {
+      "betaNumber": 6,
+      "channel": "beta",
+      "installerBuild": 48,
+      "releaseVersion": "2.0.0-beta.6",
+      "version": "2.0.0"
+    }
+  },
+  "companions": [
+    {
+      "bundle": "Glyphs Curve Inspector.glyphsReporter",
+      "id": "curve-inspector",
+      "identity": "sha256:34d0c2a7895244f96b667a5676bf7b7e4a73ecb7cdc76dc7f8c78b89ca290add"
+    },
+    {
+      "bundle": "Glyphs Reference Inspector.glyphsReporter",
+      "id": "reference-inspector",
+      "identity": "sha256:c7030f4ef9a8a5506e8a22ba72b0ddf1eab2bc547777d2039e37f8fe1103be15"
+    }
+  ],
+  "components": {
+    "curve-inspector": {
+      "requires": []
+    },
+    "mcp": {
+      "requires": [
+        "runtime",
+        "sidecar",
+        "bridge"
+      ]
+    },
+    "reference-inspector": {
+      "requires": [
+        "runtime"
+      ]
+    }
+  },
+  "glyphDiffReader": {
+    "protocolAPIVersion": 1,
+    "schemaVersion": 3,
+    "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker"
+  },
+  "installerBuild": 48,
+  "projectVersion": "2.0.0",
+  "protocol": 1,
+  "release": {
+    "betaNumber": 6,
+    "channel": "beta",
+    "installerBuild": 48,
+    "releaseVersion": "2.0.0-beta.6",
+    "version": "2.0.0"
+  },
+  "releaseChannel": "beta",
+  "releaseVersion": "2.0.0-beta.6",
+  "runtimes": {
+    "arm64": {
+      "dependencyLockSHA256": "d4114c8599f0aee807483ba9f4aa37c3de13432666498d0d337435c75c2d9e65",
+      "glyphsCLI": "bin/glyphs",
+      "glyphsCLIVersion": "0.6.1",
+      "identity": "sha256:3f154ca89fc19d73b7de515d8319bea2f110356b9aa948be744525958cc4c061",
+      "path": "runtimes/arm64",
+      "python": "bin/python3",
+      "pythonVersion": "3.14.7"
+    },
+    "x86_64": {
+      "dependencyLockSHA256": "c11f0ca62d2b188b4f61753befc02b3b0fb8680a2784ea3b3f11a04fdbc23b9d",
+      "glyphsCLI": "bin/glyphs",
+      "glyphsCLIVersion": "0.6.1",
+      "identity": "sha256:1fc3524cf8ec627bfe40c55a78cb037108f04e693d8480bc88cda17fb4e2ff07",
+      "path": "runtimes/x86_64",
+      "python": "bin/python3",
+      "pythonVersion": "3.14.7"
+    }
+  },
+  "schemaVersion": 2,
+  "sidecar": {
+    "codeHash": "sha256:6fe1d1da74cafadc39720260e4eb7518f6e431abbfdf84dab9d7263e86e1fc4a",
+    "glyphDiffReader": {
+      "protocolAPIVersion": 1,
+      "schemaVersion": 3,
+      "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker"
+    },
+    "identity": "sha256:6fe1d1da74cafadc39720260e4eb7518f6e431abbfdf84dab9d7263e86e1fc4a",
+    "release": {
+      "betaNumber": 6,
+      "channel": "beta",
+      "installerBuild": 48,
+      "releaseVersion": "2.0.0-beta.6",
+      "version": "2.0.0"
+    }
+  },
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "accept_job",
+    "discard_job",
+    "save_document",
+    "start_edit_workflow",
+    "get_edit_workflow",
+    "respond_edit_workflow"
+  ],
+  "version": "2.0.0"
+}

@@ -1,0 +1,290 @@
+{
+  "Contents/CodeResources": {
+    "sha256": "93c5b4e2c0877f7b5eba7f818275d1525b8119fafe1df0bcaa0a9b096d901f59"
+  },
+  "Contents/Frameworks/GlyphsMCPInstallerCore.framework/GlyphsMCPInstallerCore": {
+    "symlink": "Versions/Current/GlyphsMCPInstallerCore"
+  },
+  "Contents/Frameworks/GlyphsMCPInstallerCore.framework/Resources": {
+    "symlink": "Versions/Current/Resources"
+  },
+  "Contents/Frameworks/GlyphsMCPInstallerCore.framework/Versions/A/GlyphsMCPInstallerCore": {
+    "sha256": "4c485dec379db831ca160f7d6f6c40f010c2ff0d05b30331a9a6e83995b255bb"
+  },
+  "Contents/Frameworks/GlyphsMCPInstallerCore.framework/Versions/A/Resources/Info.plist": {
+    "sha256": "178624f1a6f75ff3bca26580e1f3c0de930e0b6369f8129481b7ce1267021672"
+  },
+  "Contents/Frameworks/GlyphsMCPInstallerCore.framework/Versions/A/_CodeSignature/CodeResources": {
+    "sha256": "6a1773e92e09649f7cc17b3115333a4af62aab4c2ba4e2d939e5e7556c7f4f26"
+  },
+  "Contents/Frameworks/GlyphsMCPInstallerCore.framework/Versions/Current": {
+    "symlink": "A"
+  },
+  "Contents/Frameworks/Sparkle.framework/Autoupdate": {
+    "symlink": "Versions/Current/Autoupdate"
+  },
+  "Contents/Frameworks/Sparkle.framework/Resources": {
+    "symlink": "Versions/Current/Resources"
+  },
+  "Contents/Frameworks/Sparkle.framework/Sparkle": {
+    "symlink": "Versions/Current/Sparkle"
+  },
+  "Contents/Frameworks/Sparkle.framework/Updater.app": {
+    "symlink": "Versions/Current/Updater.app"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate": {
+    "sha256": "13d6d438e04104fe2a6f487a73b04ac0750e5f1602e75f35b395da1f15b26430"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/Base.lproj/Sparkle.strings": {
+    "sha256": "bf93bdde8ad020f2ba210ecfa0e84b5365d0342355a3ca39d88fec0acb1e4a40"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/Info.plist": {
+    "sha256": "266d38e5b075d8641d2ccc4613de81c53904ef8ca3c16c5abb661072b1b914bd"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ReleaseNotesColorStyle.css": {
+    "sha256": "76bd6999758fd8e51d17e6b482db434f9b4768c02b037af6bd2e3a000ce8cbc1"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/SUStatus.nib": {
+    "sha256": "bba15dd37a26af87476214b68b06d6455118ce507fd77863f4947d654a6045af"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/SUUpdateAlert.nib": {
+    "sha256": "3987a333da7c2728ef2cb9656e5eeaf0832884873cabf78353fcb9099c5d8fbe"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/SUUpdatePermissionPrompt.nib/keyedobjects-101300.nib": {
+    "sha256": "ce6097171a1c2aeb13336b32f52b4051ace3c9700706b8eff95193b2a52283d4"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/SUUpdatePermissionPrompt.nib/keyedobjects-110000.nib": {
+    "sha256": "64b752f1632c719d2994746c71672d0b603076c0268256effb5edce6b6fcbe23"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ar.lproj/Sparkle.strings": {
+    "sha256": "441182787471a3998908044515fe13e92230edaa7e2730638e72a49610f56cba"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ca.lproj/Sparkle.strings": {
+    "sha256": "7ed0d5ca300649a7f13304015008f2dede98ad743a625c17d5a5fedacc1a3b1a"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/cs.lproj/Sparkle.strings": {
+    "sha256": "99e66decf9bc46cf5622eead4e65b3b502e3775a4e8e0f03ef1b41683ea8d518"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/da.lproj/Sparkle.strings": {
+    "sha256": "8d0ff69b79460185f941372655433bad3934f49e63bef0b4171bd66da71e55f0"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/de.lproj/Sparkle.strings": {
+    "sha256": "311035a15227fb12e85eba2a46f3f6198d98ac5590d1d38c43c4ff7430d06599"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/el.lproj/Sparkle.strings": {
+    "sha256": "638981a4f095d8b1dabb6230d452e470359711b81803bc5df8c21e1211fd3757"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/es.lproj/Sparkle.strings": {
+    "sha256": "047b9affd0e995039072c24b8d7aa830624d03c89c524e4f58d7d6f13eca8352"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/fa.lproj/Sparkle.strings": {
+    "sha256": "ed9dda9e271f7a97b8a7f327e71a1b6d06e5e061b367e7da3d153e47dc319263"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/fi.lproj/Sparkle.strings": {
+    "sha256": "c14af9bac3fce436222a4ea277a7a6c0f9b42b2d84aceea75e758ce7538acae2"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/fr.lproj/Sparkle.strings": {
+    "sha256": "3d554dcd167b085e25a75248533f21f389593aeace912ab9952c825ffe141ce1"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/he.lproj/Sparkle.strings": {
+    "sha256": "1d795bd7329d04b7ce84b6bdc845f917369e858b2b292f117b89a6666a185723"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/hr.lproj/Sparkle.strings": {
+    "sha256": "920041380a08b3ba50d44e8a83f59de551139845a72748d58f2387c65920b33a"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/hu.lproj/Sparkle.strings": {
+    "sha256": "cc2a16e4d487c6fab357b4f7d0fbbf7ec882371b2130413ffcb1b69cd540d2cf"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/is.lproj/Sparkle.strings": {
+    "sha256": "403feba503410e9455cd0eaafe592a2576eedb24130ccf2cdb13dda4b101f87e"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/it.lproj/Sparkle.strings": {
+    "sha256": "56a7445c1b68d76849ac59b98aa5c20c9002d5e07e9f0a2720486160f85b7366"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ja.lproj/Sparkle.strings": {
+    "sha256": "e404910028af70579cfa208bb4fadd9e3592505fc89af208f4071f2309553fb2"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ko.lproj/Sparkle.strings": {
+    "sha256": "a6269eb3f5a07d0c4f5d7467d5065372085aef7484c518a9d784ffd6c8f5aae4"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/nb.lproj/Sparkle.strings": {
+    "sha256": "ef6f0dcae90c440b47ece09909e9cdf35f3383f34e72a614c8c5c0752ecbffe0"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/nl.lproj/Sparkle.strings": {
+    "sha256": "ca9adf34fb93fe3f394ccc92114bf6a6b1f8a128bb5f362cb9f3247d7c26c77d"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/nn.lproj/Sparkle.strings": {
+    "sha256": "1db8c6853a550aa25382da2d55431a1c1d308d6a37676c4f8593cc1633f8a5ae"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/pl.lproj/Sparkle.strings": {
+    "sha256": "5c54b3f8e1eb3026e142e710e2167f2f839b73ab5ad7f18719230f33ae682aa9"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/pt-BR.lproj/Sparkle.strings": {
+    "sha256": "0292cadc2acfc34875c1e0b54e2d50de3833cd5e20c8660c8effe2b859aac84c"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/pt-PT.lproj/Sparkle.strings": {
+    "sha256": "fc958532d26a8e1e74622d3f558fc26a12800e8c49fb614afd0e1883acce4700"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ro.lproj/Sparkle.strings": {
+    "sha256": "b2bf064222c38a3672b01fe09406f799718cb0fc4e715121662639d6fdfea6ed"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/ru.lproj/Sparkle.strings": {
+    "sha256": "7193af28eb2a09b9fe7119cf6065a2150c6590971b22f98c56f356cd90851923"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/sk.lproj/Sparkle.strings": {
+    "sha256": "e158daaa4f3f91b57cee05ab896f2c1bc467317932cc53bb7c01e7daee9e5238"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/sl.lproj/Sparkle.strings": {
+    "sha256": "c62770c604a6c8c89e283357c8b322d8ce6a85f4d85c09002048331f65f8d980"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/sv.lproj/Sparkle.strings": {
+    "sha256": "4a21ad5bcf8d836d265710c2e4a0a64f07c9551f1c49694d6734a931d23efd39"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/th.lproj/Sparkle.strings": {
+    "sha256": "4b6c8dc2ab69a0425de3aa9dc386c6539348e3983e47aa10f94c17e345a157a5"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/tr.lproj/Sparkle.strings": {
+    "sha256": "b040d3f02d341eba047c15dfcafb60406d0847096a94466ecab512dcfb16abb5"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/uk.lproj/Sparkle.strings": {
+    "sha256": "ff44d58635b3e8409d54b42b72c876a43e17fa98f6ea96b32583b9e88c747ab6"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/vi.lproj/Sparkle.strings": {
+    "sha256": "2b3b4acbadf534cd0e812b97e589f80a4e1655b07c8907e98cc31df458ffd8b7"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/zh_CN.lproj/Sparkle.strings": {
+    "sha256": "e7f543b92977e9abc907241c411d8db0f59c4fee480859b3e88e4b495e0976c8"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/zh_HK.lproj/Sparkle.strings": {
+    "sha256": "3fc210132f33d89af3d25d27c7ea19426cf6d304be50254538456e0ec4fb7858"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Resources/zh_TW.lproj/Sparkle.strings": {
+    "sha256": "76321e1dd844c9b6568cb4af7c63bb57d9d1b700109aeedd7e5721d78727b12d"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Sparkle": {
+    "sha256": "5153d40e7410cd9b6867fc82474c6191b7d47a76c8844248d8d3bc41a02a1510"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/Info.plist": {
+    "sha256": "b4149c93ca37cfd4bb31eeb1cdcd88ef9d129058434187c86841f89eadc19b0b"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater": {
+    "sha256": "1d8437998c6099f162dd9ed659a1ba649084bd15259ae163aa1300908f06cd8b"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/PkgInfo": {
+    "sha256": "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/Resources/SUStatus.nib": {
+    "sha256": "bba15dd37a26af87476214b68b06d6455118ce507fd77863f4947d654a6045af"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/_CodeSignature/CodeResources": {
+    "sha256": "25328c7eccf8a37f15b84aaa7ee766c3ac7dc091baaac7318d4de6221407e60e"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/Info.plist": {
+    "sha256": "ce59d16b9b572dfc70fc6b5ea9724ec49e63b1a030563a08098793139335790a"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader": {
+    "sha256": "8d4a5b6fdb6046000e9571100e3afc4ac80e5168d1404df04ab909346731d168"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/_CodeSignature/CodeResources": {
+    "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/Info.plist": {
+    "sha256": "4960a8760c14af71ebac852b7398adeb8ddc7255aa35b4dcc5e34e6508d9734d"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer": {
+    "sha256": "f21a590637e1ab2a85ea58f305e1792165a5b4f146493e3b9707ae776e91ec1d"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/_CodeSignature/CodeResources": {
+    "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/B/_CodeSignature/CodeResources": {
+    "sha256": "16d054d48e402d63a10ba7f47b3303180d39360a81c34a51d4203593a8b8ca3e"
+  },
+  "Contents/Frameworks/Sparkle.framework/Versions/Current": {
+    "symlink": "B"
+  },
+  "Contents/Frameworks/Sparkle.framework/XPCServices": {
+    "symlink": "Versions/Current/XPCServices"
+  },
+  "Contents/Info.plist": {
+    "sha256": "a59c3423e2840b115efe6ed258fd3e23534e2206307806c699d5516415463f0d"
+  },
+  "Contents/MacOS/Glyphs MCP": {
+    "sha256": "91b5cf8899fab8929331bc10fa8f341418314f3492689babf713997a3aac9ea3"
+  },
+  "Contents/PkgInfo": {
+    "sha256": "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0"
+  },
+  "Contents/Resources/AGENTS.md": {
+    "sha256": "a1c874576bdb663d26571224718fe1acc9a6b65c75f84a7d85485c65c37edf4b"
+  },
+  "Contents/Resources/AppIcon.icns": {
+    "sha256": "c11acc9078dc9a89a5fd1cc47417e18bf94a315959e318bdfa679b6f3810ae96"
+  },
+  "Contents/Resources/Assets.car": {
+    "sha256": "19d5631ebaff8251fa0257adabbb53053f30bcfcdc2c76b40b1c5541eb212aa3"
+  },
+  "Contents/Resources/GlyphsMCPUpdater": {
+    "sha256": "c122483a021ae60378cbf40007dd7399c0511bd52591d718ccae42319511d05c"
+  },
+  "Contents/Resources/Notices/GitHub-Mark.txt": {
+    "sha256": "25ca30412f4bb3820c181e5f3ac4e9df068d7142db99f8406e8665aa56c7fa43"
+  },
+  "Contents/Resources/Notices/LitSquare-OFL.txt": {
+    "sha256": "e0700e32d6f2925e383af762fe1da4b2ae63c243c1444d42843ae2ec92a68f46"
+  },
+  "Contents/Resources/Notices/PierreDiffsSwift-LICENSE.txt": {
+    "sha256": "15717f3b2688de104c2350ca9a8e8674aa741d4802484459fc489076696820a8"
+  },
+  "Contents/Resources/Notices/README.txt": {
+    "sha256": "b6812b8171bb52a9ef6d88a28656d1881da2b5915f58d6c08f16e7a1bfef46fb"
+  },
+  "Contents/Resources/Notices/Sparkle-LICENSE.txt": {
+    "sha256": "389a4e4e9a32f059775b13a06e25a591445ba229d2838d26dd3e7c0c45127cfe"
+  },
+  "Contents/Resources/Notices/connector-logo-provenance.json": {
+    "sha256": "2ce221ecc25074070bb87e4c4fae5538742cd7f839dc8557c267f18890ef136b"
+  },
+  "Contents/Resources/Notices/menu-icon-provenance.json": {
+    "sha256": "960f833ddabf2a2826a5b9ed62cecfbb2b9bdad28fd49f7f2ca59e8b72af62bb"
+  },
+  "Contents/Resources/Payload.gmcparchive": {
+    "sha256": "0369966303eb1f8f00c4516729a092cd912a5b0b2c55cca48a3270405220976a"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Info.plist": {
+    "sha256": "608b2d480d1085ad1860b21471d63f155c93a1172e006d34f4ebe9a260ec5895"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Resources/Resources/pierre-diffs-bundle.js": {
+    "sha256": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/Resources/Resources/pierre-diffs-edit-bundle.js": {
+    "sha256": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/_CodeSignature/CodeDirectory": {
+    "sha256": "0e6cc1b820276f4906714310bcc6630238de42bf31b1bf51d2caed60003e5728"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/_CodeSignature/CodeRequirements": {
+    "sha256": "b386fcbe24e065d70dd2d4ac4e98dad4b26b07bf02cb29e8603b8889d1570c5e"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/_CodeSignature/CodeResources": {
+    "sha256": "350a5508da58047e0b896fbfd52523ba48a2ea6daca4f7acc2f7991cc3b4dfc1"
+  },
+  "Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle/Contents/_CodeSignature/CodeSignature": {
+    "sha256": "82b9c7975d6ab2efc20a66f82d7bf09ab211c952f7935d5a8cac938cda747f66"
+  },
+  "Contents/Resources/Templates/registry.json": {
+    "sha256": "cb515cdf1db0d1f077104cdaa0035e980a373709a94adbedf01e2ba5dd159cd5"
+  },
+  "Contents/Resources/en.lproj/Localizable.strings": {
+    "sha256": "94fd9d4bb511d3d0b2046399edf3915f3d12de1dad7af26a9deaf7a9c3d76af7"
+  },
+  "Contents/Resources/fr.lproj/Localizable.strings": {
+    "sha256": "12ee175cefb546212079a4549af3b3f67cbcb8f18f8d5ffe6ad40b34e9a15881"
+  },
+  "Contents/Resources/zh-Hans.lproj/Localizable.strings": {
+    "sha256": "f422cee8d893a65af9c74027150141d150326e21b2dd02b632253bbef04d106d"
+  },
+  "Contents/_CodeSignature/CodeResources": {
+    "sha256": "e13f865e36de82dec3ac7f33f8acdde66c2d809047416f0c8c7cac2ae4f0ffde"
+  }
+}

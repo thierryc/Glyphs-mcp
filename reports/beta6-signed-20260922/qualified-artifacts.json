@@ -1,0 +1,21 @@
+{
+  "phase": "qualified-local-before-publisher-repack",
+  "artifacts": {
+    "dist/Glyphs-MCP-2.0.0-beta.6.dmg": {
+      "sha256": "578c7d9f362826dd7da6cc21118d35c8684ef2ab09f6bf231f7723685dc81ac1",
+      "size": 155508972
+    },
+    "build/update-trial-beta6-20260922/new.zip": {
+      "sha256": "18b4aded62f43f1c9c33655d0f53c086805efb14e58c31c5d10836a51413232d",
+      "size": 153620227
+    },
+    "dist/desktop-update/Glyphs-MCP-2.0.0-beta.6.zip": {
+      "sha256": "18b4aded62f43f1c9c33655d0f53c086805efb14e58c31c5d10836a51413232d",
+      "size": 153620227
+    },
+    "dist/desktop-update/appcast.xml": {
+      "sha256": "a902bd1421b944007c32e90688291f10a3703ee77152fd9b76be054335e71398",
+      "size": 1377
+    }
+  }
+}

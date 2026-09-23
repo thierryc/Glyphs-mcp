@@ -1,0 +1,8 @@
+{
+  "olderBuild": 46,
+  "olderNotarySubmission": "df81297a-e3c2-411c-ba54-8be4a57681f1",
+  "newerBuild": 48,
+  "newerRelease": "2.0.0-beta.6",
+  "port": 18473,
+  "scope": "Reused verified signed/notarized older desktop fixture; existing guest Beta 5 components migrate after the full-archive update"
+}

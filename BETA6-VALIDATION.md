@@ -3,9 +3,9 @@
 Source target: Glyphs MCP `2.0.0-beta.6`, desktop build 48, branch
 `lit/v2-beta`.
 
-Status: **corrected Beta 6 candidate installed and both requested client
-regressions requalified; signed-distribution preparation in progress. Not yet
-published.**
+Status: **both requested client regressions fixed and requalified; signed,
+notarized artifacts, signed-update rejection/recovery, successful desktop
+upgrade and component migration passed. GitHub publication is next.**
 
 The later conversation-workflow implementation and installation supersede the
 initial nine-tool/candidate-only state below. See
@@ -74,7 +74,7 @@ Evidence, candidate manifest and source fingerprints are retained in
 [reports/beta6-dimensions-20260922](reports/beta6-dimensions-20260922).
 The repeatable native check is `scripts/qualify_dimensions_native.py`.
 
-## Pending release qualification
+## Original pending release qualification (superseded below)
 
 Completion of installed MCP/client acceptance, signing, notarization, Gatekeeper, signed
 update/component migration and publication verification remain pending for
@@ -99,3 +99,43 @@ The attempted signed-release preparation was blocked before execution by
 automatic approval review, which requested explicit authorization for uploading
 the release payload to Apple's notarization service. No Beta 6 release tag,
 signed feed or public release assets were created by this integration pass.
+
+## Corrected workflow and signed payload — September 22, 2026
+
+[PR #53](https://github.com/thierryc/Glyphs-mcp/pull/53) merged the requested
+Claude text-save and Cursor stale-card fixes at `67b70ae3`. The complete local
+release gate again passed 2,149 Python tests (one skipped), 203 macOS installer
+tests, deterministic payloads, both private runtimes, all eleven skills and
+the documentation build. The release report now correctly records twelve tools.
+
+The [corrective client retest](reports/beta6-workflow-fixes-20260922/README.md)
+passed Claude's natural-language prerequisite and final saves, including native
+state and source-file verification, and Cursor's stale-card remount and delayed
+permission cases. The user explicitly authorized Apple notarization after the
+original automatic approval rejection.
+
+The final signed, stapled payload passes packaged HTTP and stdio discovery on
+arm64 and x86_64, including all twelve tools, the MCP App resource/CSP, and text
+plus structured error results. Its native Dimensions regression passes all
+204 checks against Glyphs 4.1 (4107), using the packaged bridge/protocol/sidecar
+and packaged CLI with disposable fonts. See
+[the signed-payload evidence](reports/beta6-signed-20260922).
+
+Apple accepted and stapled the expanded payload, desktop app and final DMG.
+The artifact verifier passed Developer ID/team, hardened runtime, timestamps,
+Gatekeeper, nested payload seals, installed copies and Sparkle signatures.
+The corrected DMG layout was verified from its immutable image and visually
+checked in Finder.
+
+The VirtualBuddy guest (macOS 26.6.2 arm64, Glyphs 4.1/4107) rejected an invalid
+feed signature, an invalid archive signature and an interrupted download, then
+successfully upgraded the signed build-46 fixture to Beta 6/build 48. Update All
+migrated the existing Beta 5 components; reopening Glyphs restored Ready.
+The guest's installation receipt and both live component identities match the
+signed payload, with twelve tools and the production beta feed restored.
+Temporary test servers were stopped. Exact evidence and local qualified hashes
+are in [reports/beta6-signed-20260922](reports/beta6-signed-20260922/README.md).
+
+Publication and verification of public download bytes follow this qualification
+commit. Physical Intel and the broader manual/client matrix remain unverified
+beta coverage; historical acceptance is not claimed as a fresh run.
