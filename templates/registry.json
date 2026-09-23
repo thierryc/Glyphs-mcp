@@ -2,6 +2,17 @@
   "schemaVersion": 1,
   "templates": [
     {
+      "id": "glyphs-mcp-workshop",
+      "name": "Glyphs MCP Workshop",
+      "description": "Workshop demo font, checkpoints, prompts and a read-only reporting script. 8 October 2026; preparation draft.",
+      "author": "Thierry Charbonnel and Rainer Erich Scheichelbauer",
+      "license": "MIT; script scaffold includes Apache-2.0 notices",
+      "repository": "https://github.com/thierryc/glyphs-mcp-workshop",
+      "templateDirectory": "template",
+      "revision": "e9589bc01c56b0a8a5d0edeb5be117e8b7f833b8",
+      "archiveSHA256": "89f6989eea54018ca1b8857bcf8e507e8618ffaf583ec64ad8de7c929e5b1b03"
+    },
+    {
       "id": "googlefonts-project-template",
       "name": "Google Fonts project",
       "description": "A project layout with font sources and build scripts.",
