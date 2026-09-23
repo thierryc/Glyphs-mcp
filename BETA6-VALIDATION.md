@@ -1,18 +1,19 @@
-# Beta 6 preparation record
+# Beta 6 release qualification record
 
 Source target: Glyphs MCP `2.0.0-beta.6`, desktop build 48, branch
 `lit/v2-beta`.
 
-Status: **both requested client regressions fixed and requalified; signed,
-notarized artifacts, signed-update rejection/recovery, successful desktop
-upgrade and component migration passed. GitHub publication is next.**
+Status: **published signed and notarized GitHub prerelease. Both requested
+client regressions, signed-update rejection/recovery, desktop upgrade,
+component migration and public-download verification passed.**
 
 The later conversation-workflow implementation and installation supersede the
 initial nine-tool/candidate-only state below. See
 [the original save UI retest](reports/edit-workflow-20260922/retest/report.md)
 for the historical failures and [the corrective retest](reports/beta6-workflow-fixes-20260922/README.md)
 for the passing Claude text-save and Cursor remount/slow-permission results.
-The broader client and signed-update matrix remains separately qualified.
+Signed-distribution and update acceptance are recorded below; the broader
+manual/client matrix remains unverified beta coverage.
 
 ## Repository preparation — September 22, 2026
 
@@ -139,3 +140,27 @@ are in [reports/beta6-signed-20260922](reports/beta6-signed-20260922/README.md).
 Publication and verification of public download bytes follow this qualification
 commit. Physical Intel and the broader manual/client matrix remain unverified
 beta coverage; historical acceptance is not claimed as a fresh run.
+
+
+## Publication verification — September 22, 2026
+
+- [Beta 6](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.6)
+  is public and marked prerelease. Signed tag `v2.0.0-beta.6` points to
+  qualification commit `26d2409edc8abd6d366e2e35f6d6058009a855d4`.
+- The guarded publisher reran 2,149 Python tests (one skipped), all 203 macOS
+  tests, deterministic payloads, both private runtimes, docs/skills and signed
+  artifact verification. GitHub's four asset digests matched before publication.
+- Independent unauthenticated downloads matched the local verified files and
+  public SHA256SUMS. The public ZIP's signed/stapled app is identical to the
+  VM update-tested app, across all 96 files and symlinks.
+- The exact signed public appcast is committed to `lit/v2-beta` after archive
+  verification. Stable Latest remains `v1.11.1`; `main` and Glyphs 3 are unchanged.
+- Exact release metadata and checksums are in
+  [publication.json](reports/beta6-signed-20260922/publication.json).
+
+| Public artifact | SHA-256 |
+| --- | --- |
+| `Glyphs-MCP-2.0.0-beta.6.dmg` | `578c7d9f362826dd7da6cc21118d35c8684ef2ab09f6bf231f7723685dc81ac1` |
+| `Glyphs-MCP-2.0.0-beta.6.zip` | `8cbde8127e4c78360f1cfc9380a31cd0e91efff326428eb177ae95aef65e2c64` |
+| `appcast.xml` | `a850389371ace5e8259d659497184897dd180e50dfbceb298703918a2e48afd7` |
+| `SHA256SUMS` | `1dc31752ba60451d799de7550ee18dffee7ea225418e12273ee05baff89a41d2` |

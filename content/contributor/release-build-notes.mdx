@@ -2,21 +2,22 @@
 title: Packaging and release discovery
 ---
 
-This checkout prepares Glyphs MCP **2.0.0 Beta 6**, release `2.0.0-beta.6`, desktop build **48**. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, twelve tools and up to ten capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The local candidate includes the lean Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes. It contains no Glyphs 3 target or v1 skills; the pinned v1.11.0 source metadata and separate release remain unchanged.
+This checkout identifies the published Glyphs MCP **2.0.0 Beta 6**, release `2.0.0-beta.6`, desktop build **48**. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, twelve tools and up to ten capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The published payload includes the lean Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes. It contains no Glyphs 3 target or v1 skills; the pinned v1.11.0 source metadata and separate release remain unchanged.
 
 Build, sign, notarize and verify on the maintainer's Mac. No GitHub Actions are required or used for release publishing. The full maintained procedure is in `macos-installer/RELEASING.md` in the candidate repository.
 
-The installer manifest and receipt describe the runtime, bridge and companions independently, with dependencies and verified identities. Signing changes file identities; regenerate and verify manifests after signing and stapling, before packaging the final installer. Current unsigned/local checks do not establish Developer ID, notarization or signed-update acceptance; record those results for the exact final artifacts.
+The installer manifest and receipt describe the runtime, bridge and companions independently, with dependencies and verified identities. Signing changes file identities; regenerate and verify manifests after signing and stapling, before packaging the final installer. Unsigned/local checks alone do not establish Developer ID, notarization or signed-update acceptance; record those results for the exact final artifacts.
 
-Beta 6 is in preparation; signing, notarization and signed-update acceptance
-remain pending for its exact artifacts.
+Beta 6 passed signing, notarization, Gatekeeper, signed-update rejection and
+recovery, and component migration checks. See the exact evidence in
+[BETA6-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA6-VALIDATION.md).
 
 ## Deliverables
 
-- `Glyphs-MCP-2.0.0-beta.6.dmg`: planned Beta 6 installer.
-- `Glyphs-MCP-2.0.0-beta.6.zip`: planned Sparkle-signed desktop application archive.
+- `Glyphs-MCP-2.0.0-beta.6.dmg`: signed and notarized Beta 6 installer.
+- `Glyphs-MCP-2.0.0-beta.6.zip`: Sparkle-signed desktop application archive.
 - No `Glyphs-MCP-latest.dmg` for a beta. That byte-identical alias is reserved for stable releases.
-- `appcast.xml`: keep the published Beta 5 feed until the exact signed Beta 6 archive is verified.
+- `appcast.xml`: the exact signed Beta 6 feed, published after public archive verification.
 - Checksums, source manifest, installation receipt and acceptance report associated with the exact candidate.
 
 Keep local acceptance evidence containing private font paths out of public release assets unless reviewed for sharing. Store notarization credentials in Keychain.

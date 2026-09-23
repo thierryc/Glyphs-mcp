@@ -85,14 +85,13 @@ components' initialization-time fingerprints. Developer ID, notarization,
 Gatekeeper and signed-update acceptance require results for the exact final
 artifacts. None of these is established by a marketing label or a docs build.
 
-Beta 6 is in development and has no qualified release artifacts yet. The
-committed appcast continues to describe the published Beta 5 until a new signed
-release is verified.
-
-Beta 5 passed signing, notarization, installation and signed-update
-qualification and is published as a non-Latest GitHub prerelease. Verify its
-release state and asset digests; a configured URL alone does not prove that a
-feed or release is valid.
+Beta 6 passed signing, notarization, Gatekeeper, signed desktop update and
+component migration checks and is published as a non-Latest GitHub prerelease.
+The committed signed appcast describes the verified Beta 6 archive. Exact
+receipts, client regressions and public-download verification are recorded in
+[BETA6-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA6-VALIDATION.md).
+Physical Intel hardware and the broader manual/client matrix remain unverified
+beta coverage. A configured URL alone does not prove a feed or release is valid.
 
 Beta 6 targets tag `v2.0.0-beta.6` and branch `lit/v2-beta`. Its feed is
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.

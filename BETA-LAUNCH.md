@@ -2,7 +2,7 @@
 
 ## Decision
 
-Prepare **2.0.0 Beta 6**, tag `v2.0.0-beta.6`, build **48**, on `lit/v2-beta`.
+Published **2.0.0 Beta 6**, tag `v2.0.0-beta.6`, build **48**, on `lit/v2-beta`.
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -66,8 +66,8 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 6 uses `--beta 6 --installer-build 48`. It is in development; qualification
-is tracked in [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new
+Beta 6 uses `--beta 6 --installer-build 48`. It is published; qualification
+and public artifact verification are recorded in [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
 `main`. Do not relabel Beta 6 as final or repoint its tag.
 
@@ -142,6 +142,19 @@ one concrete workflow demonstration. **After one week:** publish a short
 feedback update, known issues and what is planned for the next beta. Thank testers
 publicly only with their permission. Avoid a fixed update cadence until the
 first feedback volume is known.
+
+## Beta 6 publication record — 22 September 2026
+
+- Signed tag `v2.0.0-beta.6` identifies qualification commit `26d2409e` on
+  `lit/v2-beta`, after PRs #52 and #53 merged the feature and client fixes.
+- The guarded publisher reran 2,149 Python tests (one optional skip), all 203
+  macOS tests, deterministic private-runtime checks and signed artifact gates.
+- The public DMG, Sparkle ZIP, signed appcast and checksums were downloaded and
+  verified before the exact signed beta feed was committed.
+- Apple notarization, invalid-signature/interrupted-download rejection,
+  the signed desktop update and component migration passed for this candidate.
+- Stable Latest remains v1.11.1; `main` and frozen Glyphs 3 documentation were
+  not changed. No email, forum or social announcement was sent.
 
 ## Published Beta 5 GitHub release notes
 

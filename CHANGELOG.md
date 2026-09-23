@@ -1,12 +1,13 @@
 # Changelog
 
-## 2.0.0 Beta 6 — unreleased, build 48
+## 2.0.0 Beta 6 — 2026-09-22, build 48
 
 - Add the shared MCP Apps conversation workflow and three additive tools, with
   complete text fallback. Save and continue verifies one prerequisite save and
   resumes the retained edit; the resulting edit remains unsaved. Preview, report
   review, action deduplication, stale controls and restart recovery reuse the
-  existing guarded job/save services. Live client qualification remains a release gate.
+  existing guarded job/save services. Claude text-save and Cursor stale-card
+  regressions passed in the actual clients.
 
 - Retain workflow references and action tokens in model-visible text so a later
   conversational save can refresh and complete the existing request. Reconcile

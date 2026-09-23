@@ -1,7 +1,7 @@
 # Glyphs MCP Desktop 2.0.0 Beta 6
 
-**Beta 6 development — release `2.0.0-beta.6`, desktop build 48.**
-Beta 6 is not yet built or qualified; Beta 5 remains the published download.
+**Beta 6 available — release `2.0.0-beta.6`, desktop build 48.**
+The signed and notarized GitHub prerelease is ready to download.
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
@@ -51,13 +51,13 @@ See [installation](content/getting-started/installation.mdx) and the
 
 The Beta 6 payload is Glyphs 4-only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. Beta 5 is available
+documentation tracks describe these versions separately. Beta 6 is available
 as a signed and notarized
-[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5).
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.6).
 
 Documentation sources: [v2 · 2.0.0 Beta 6](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
-Beta 6 preparation is tracked in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
+Beta 6 qualification and publication are recorded in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
 Beta 5 qualification is recorded in
 [BETA5-VALIDATION.md](BETA5-VALIDATION.md); the published Beta 4 record remains
 in [BETA4-VALIDATION.md](BETA4-VALIDATION.md).
@@ -66,7 +66,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta artifacts, when released, use `Glyphs-MCP-2.0.0-beta.6.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta artifacts use `Glyphs-MCP-2.0.0-beta.6.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

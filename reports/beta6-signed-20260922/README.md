@@ -13,8 +13,9 @@ module search roots redirected to the extracted signed payload and its output
 redirected to `build/beta6-signed-dimensions`. The installed host MCP and the
 user's font were not touched by this isolated check.
 
-Desktop update and component migration passed. Local artifact verification
-passed; GitHub publication follows this qualification commit.
+Desktop update, component migration, artifact verification and GitHub
+publication passed. `publication.json` records unauthenticated public downloads
+and their checksums; stable Latest remains v1.11.1.
 
 
 ## Signed update rejection checks
@@ -71,3 +72,16 @@ Physical Intel hardware and the broader manual/client scenario matrix remain
 unverified beta coverage. x86_64 runtime qualification ran under Rosetta on the
 Apple-silicon host. Cancellation of a dirty-font closure and deliberate failed
 component migration were not newly exercised in this VM session.
+
+
+## Publication
+
+The guarded publisher reran the complete local gate and verified all four
+GitHub asset digests before publishing the prerelease. Independent
+unauthenticated downloads match the verified local bytes and published
+SHA256SUMS. The public ZIP's extracted signed/stapled application matches all
+96 files and links in the update-tested application. The exact signed appcast
+was copied to the beta branch only after those download checks passed.
+
+The updated publication documentation passed its production build;
+`publication-docs-build.log.gz` records the result.
