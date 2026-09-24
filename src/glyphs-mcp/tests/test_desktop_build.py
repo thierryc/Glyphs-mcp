@@ -185,7 +185,7 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
     assert "visible('delta-fill', both)" in source
     assert "visible('after-neutral', payload.overlay === 'after' || (both && payload.hasAfter))" in source
     assert "guard zoomToolActive else" in source
-    assert '.smoothZoom(-delta, canvasPoint(event))' in source
+    assert '.smoothZoom(delta, canvasPoint(event))' in source
     assert '.pan(CGPoint(x: -event.scrollingDeltaX, y: -event.scrollingDeltaY))' in source
     assert '--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;' in source
     assert '.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);' in source

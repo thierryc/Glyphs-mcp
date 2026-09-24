@@ -120,5 +120,29 @@ Validation:
   `build/reports/beta7-template-python-tests-unsandboxed.log`.
 
 The locally built app is `dist/local/Glyphs MCP.app` (Beta 7/build 49). It is a
-local test artifact, not a signed distribution candidate. The installed app and
-Glyphs components remain the published Beta 6/build 48 release.
+local test artifact, not a signed distribution candidate.
+
+## September 24, 2026 — local installation and push preparation
+
+- Closed both running Glyphs MCP app copies. Replaced the installed Beta 6
+  manager with the receipt-verified local Beta 7/build 49 app, launched it from
+  `/Applications/Glyphs MCP.app`, then removed the replaced Beta 6 app copy.
+- Ran **Install All** while Glyphs 4 was closed. The installation receipt records
+  installer build 49, Beta 7 bridge identity, and all three Glyphs components.
+  Glyphs has not been relaunched to verify the new bridge in a live font session.
+- Codex, Claude Desktop and Cursor configuration completed. Claude Code
+  configuration preserved four existing modified or unowned skills and reports
+  that connection as needing attention. Those user files were left intact.
+- The full macOS installer suite passed **210 tests** after the Option-scroll
+  direction and equal-height Setup card changes. The focused desktop Python
+  checks passed **20 tests**; lean package and skill synchronization checks
+  passed. The current app still passes its source-bound build receipt check.
+- Removed the replaced build 48 app and obsolete build 43 and 47 app backups.
+  Removed the temporary Xcode test DerivedData after the suite passed. The
+  repository cleanup inspection found no remaining generated outputs on its
+  removal list. Checkout-only guidance remains untracked and unstaged.
+- Fetched `origin/lit/v2-beta` and confirmed the local branch contains the
+  remote branch with no incoming commits. No source changes were pushed.
+- The local app is an unsigned Debug build. Developer ID signing, notarization,
+  full release qualification, signed update and publication remain pending.
+  The source branch can be pushed independently of those distribution gates.

@@ -65,7 +65,7 @@ struct InstallationView: View {
     private var components: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Components").font(.title3.bold())
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 16)], spacing: 16) {
+            SetupCardGrid {
                 ForEach(DesktopComponent.all) { component in
                     ComponentSetupCard(
                         component: component,
@@ -88,7 +88,7 @@ struct InstallationView: View {
                 Text("Install All configures every connection, even when its host app is not detected.")
                     .font(.callout).foregroundStyle(.secondary)
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 16)], spacing: 16) {
+            SetupCardGrid {
                 ForEach(InstallerClientKind.allCases) { client in
                     ConnectorSetupCard(
                         client: client,
@@ -105,6 +105,44 @@ struct InstallationView: View {
                     )
                 }
             }
+        }
+    }
+}
+
+// Measure each adaptive row before placing cards so shorter content fills its row.
+private struct SetupCardGrid: Layout {
+    private let minimumWidth: CGFloat = 230
+    private let spacing: CGFloat = 16
+
+    private func metrics(width: CGFloat?, subviews: Subviews) -> (width: CGFloat, columns: Int, cardWidth: CGFloat, heights: [CGFloat]) {
+        let width = max(0, width.flatMap { $0.isFinite ? $0 : nil } ?? minimumWidth)
+        let columns = max(1, Int((width + spacing) / (minimumWidth + spacing)))
+        let cardWidth = max(0, (width - CGFloat(columns - 1) * spacing) / CGFloat(columns))
+        var heights: [CGFloat] = []
+        for index in subviews.indices {
+            let height = subviews[index].sizeThatFits(ProposedViewSize(width: cardWidth, height: nil)).height
+            if index % columns == 0 { heights.append(height) }
+            else { heights[heights.count - 1] = max(heights[heights.count - 1], height) }
+        }
+        return (width, columns, cardWidth, heights)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let grid = metrics(width: proposal.width, subviews: subviews)
+        return CGSize(width: grid.width,
+                      height: grid.heights.reduce(0, +) + CGFloat(max(0, grid.heights.count - 1)) * spacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let grid = metrics(width: bounds.width, subviews: subviews)
+        var y = bounds.minY
+        for index in subviews.indices {
+            let column = index % grid.columns
+            let row = index / grid.columns
+            if column == 0 && row > 0 { y += grid.heights[row - 1] + spacing }
+            subviews[index].place(at: CGPoint(x: bounds.minX + CGFloat(column) * (grid.cardWidth + spacing), y: y),
+                                  anchor: .topLeading,
+                                  proposal: ProposedViewSize(width: grid.cardWidth, height: grid.heights[row]))
         }
     }
 }
@@ -209,12 +247,13 @@ private struct SetupCard<Preview: View, Title: View, Detail: View, Status: View,
             detail().font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: compact ? 48 : 64, alignment: .topLeading)
+            Spacer(minLength: 0)
             status()
             actions()
             footer()
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08)))
     }

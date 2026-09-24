@@ -645,9 +645,7 @@ private final class GlyphDiffCanvasWebView: WKWebView {
         window?.makeFirstResponder(self)
         if event.modifierFlags.contains(.option) {
             let delta = event.scrollingDeltaY == 0 ? event.scrollingDeltaX : event.scrollingDeltaY
-            // AppKit reports wheel deltas in the opposite direction from the
-            // zoom convention used by Glyphs' edit view.
-            if delta != 0 { actionHandler?(.smoothZoom(-delta, canvasPoint(event))) }
+            if delta != 0 { actionHandler?(.smoothZoom(delta, canvasPoint(event))) }
         } else {
             // Move the canvas opposite to the physical scroll gesture, matching
             // the directional convention requested for the Glyphs diff view.

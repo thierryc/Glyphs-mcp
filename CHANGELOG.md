@@ -2,6 +2,9 @@
 
 ## 2.0.0 Beta 7 — unreleased, build 49
 
+- Align Setup cards to the tallest card in each row, with actions at the bottom.
+- Reverse Option-scroll zoom direction in the visual glyph diff view to match
+  the requested Mac and Glyphs interaction.
 - Add per-template menus with persistent favorites, pinned GitHub source,
   Issues and Star on GitHub links, and Reveal in Finder for local templates.
   Show favorites alphabetically first, followed by all other templates
