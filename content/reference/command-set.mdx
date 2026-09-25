@@ -187,6 +187,10 @@ Indices use zero-based `layer.paths` (excluding components) and `path.nodes`
 See the shipped `glyphs/references/selection-reads.md` for exact semantics.
 
 Path geometry requires negotiated `paths.list.v1` and `path.geometry.v1`.
+With `outline.background.read.v1`, exact `layer`, `paths`, `path` and `segment`
+selectors also accept `surface:"background"`; omission means foreground. IDs
+always identify the owning foreground layer. Missing backgrounds are rejected
+without creating one. Paging cursors are bound to the selected surface.
 Path pages contain at most 100 summaries; node pages contain at most 256 nodes.
 Pass opaque cursors unchanged. A cursor guards document generation, dirty state,
 target, count and exact path geometry; `stale_path_cursor` requires restarting
@@ -251,7 +255,13 @@ not silently substituted.
 `outline.edit.v1` in `writeCapabilities`. Each target supplies `glyph`,
 `referenceLayer`, path hash `guards`, an ordered `operations` list and either
 `layers:{"scope":"all_masters"}` or explicit IDs. `all_masters` excludes brace,
-bracket, other special and background layers. Operations are `split_segment`,
+bracket and other special layers. Add `surface:"background"` to a target to edit
+its owning layers’ existing backgrounds; this requires
+`outline.background.edit.v1`. The reference guard and all operations then address
+that same surface. Foreground is the default. Both surfaces support the same
+path operations and Undo/discard lifecycle; background images are outside this
+contract. Background topology is excluded from foreground interpolation checks,
+and report rows identify their surface. Operations are `split_segment`,
 `update_nodes`, `remove_node`, `delete_nodes`, `reverse_path`, `set_start_node`,
 `set_closed`, `add_path` and `delete_path`; subsequent indices refer to the evolving path.
 `remove_node` requires `outline.remove-node.v1`, targets one on-curve raw index,

@@ -227,6 +227,8 @@ def validate_patch(value: Any) -> dict[str, Any]:
             if len(changes) > 100 or any(not isinstance(c, Mapping) or c.get("kind") != "dimension" for c in changes):
                 raise ProtocolError("invalid_request", "Dimensions patches contain only 0-100 dimension changes")
             target = (kind, item["master"], item["key"])
+        elif kind == "outline":
+            target = (kind, item["glyph"], item["layer"], item.get("surface", "foreground"))
         elif kind == "kerning":
             target = (kind, item["master"], item["direction"], item["left"], item["right"])
         elif kind == "native_action":

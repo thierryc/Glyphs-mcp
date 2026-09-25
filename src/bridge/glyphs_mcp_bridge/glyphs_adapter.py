@@ -332,6 +332,8 @@ class GlyphsAdapter:
             owner = self._entity(font, kind, request)
             values = (self._selection_values(owner, request, fields) if kind == "selection" else
                       {field: self._read_field(owner, field, kind) for field in dict.fromkeys(fields)})
+            if kind == "layer" and request.get("surface") == "background" and "id" in fields:
+                values["id"] = request["id"]  # Backgrounds use their owning foreground ID.
             result.append({"entity": dict(request), "values": values})
         return result
     @classmethod
@@ -352,7 +354,7 @@ class GlyphsAdapter:
                 layer = None
             if layer is None or _value(layer, "layerId") != identity:
                 raise BridgeError("target_not_found", f"layer {identity!r} in glyph {name!r} is unavailable")
-            return layer
+            return outline_reads.surface_layer(layer, request.get("surface", "foreground"))
         if kind == "master":
             identity = request.get("id")
             if not isinstance(identity, str) or not identity:
@@ -386,6 +388,12 @@ class GlyphsAdapter:
         value = _value(owner, field, None)
         return _rect(value) if field == "bounds" else value
 
+    def _change_layer(self, document_id, change):
+        layer = self._target_layer(document_id, change["glyph"], change["layer"])
+        if change["kind"] == "outline":
+            return outline_reads.surface_layer(layer, change.get("surface", "foreground"))
+        return layer
+
     def current_value(
         self, document_id: str, change: Mapping[str, Any], *, reverse: bool = False
     ) -> Any:
@@ -396,7 +404,7 @@ class GlyphsAdapter:
         if change["kind"] == "native_action":
             owner = self._native_action_owner(document_id, change)
             return native_actions.current_hash(owner, change["scope"], change)
-        layer = self._target_layer(document_id, change["glyph"], change["layer"])
+        layer = self._change_layer(document_id, change)
         if change["kind"] == "set":
             return _value(layer, change["field"], None)
         if change["kind"] == "coordinates":
@@ -410,7 +418,7 @@ class GlyphsAdapter:
             return native_actions.capture(
                 self._native_action_owner(document_id, change), change["scope"], change
             )
-        layer = self._target_layer(document_id, change["glyph"], change["layer"])
+        layer = self._change_layer(document_id, change)
         return outline_edit.capture(layer, change) if change["kind"] == "outline" else coordinates.read_state(layer, change)
 
     def apply_change(self, document_id, change, *, reverse=False):
@@ -449,9 +457,11 @@ class GlyphsAdapter:
                 self._write_native_action,
             )
             return
-        layer = self._target_layer(document_id, change["glyph"], change["layer"])
+        layer = self._change_layer(document_id, change)
         scope = self._undo_managers.get(document_id)
-        manager = scope.manager_for(layer) if scope is not None else None
+        undo_owner = (self._target_layer(document_id, change["glyph"], change["layer"])
+                      if change.get("surface") == "background" else layer)
+        manager = scope.manager_for(undo_owner) if scope is not None else None
         kind = change["kind"]
         key = {k: v for k, v in change.items()
                if k not in ("nativeBefore", "nativeAfter", "before", "after", "beforeHash", "afterHash")}
@@ -469,7 +479,8 @@ class GlyphsAdapter:
                       for x, y in coordinates.read_state(layer, key)]
         precision = change if kind != "translate" else {"before": key["dx"], "after": key["dy"]}
         self._protect_write(document_id, layer, precision)
-        write_value(manager, layer, key, wanted, coordinates.read_state, self._write_exact)
+        reader = outline_edit.capture if kind == "outline" else coordinates.read_state
+        write_value(manager, layer, key, wanted, reader, self._write_exact)
 
     def _native_action_owner(self, document_id: str, change: Mapping[str, Any]) -> Any:
         scope = change["scope"]

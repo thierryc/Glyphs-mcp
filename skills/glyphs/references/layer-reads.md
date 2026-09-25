@@ -7,6 +7,12 @@ skills together and verify fresh status. Do not substitute older lookup behavior
 or accept unverified identity. Layer reads require a nonempty exact native layer
 ID and return `id` from native `layerId`.
 
+With `outline.background.read.v1`, add `"surface":"background"` to an exact
+layer selector to read its background bounds, metrics and outline hash. Omission
+means foreground. The supplied and returned `id` still identifies the owning
+foreground layer; backgrounds have no separate inventory ID. A missing background
+is rejected without creating one. This is outline-layer data, not a background image.
+
 Reuse the retained document ID; call `list_documents` only if it needs resolving,
 following [document targeting](document-targeting.md). Reuse known ordinary master
 IDs; otherwise discover them using the [master reference](master-reads.md). Their ordinary layers use those

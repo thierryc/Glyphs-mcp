@@ -8,7 +8,7 @@ Require `paths.list.v1` and `path.geometry.v1` in negotiated
 `readCapabilities`, plus `outline.edit.v1` in bridge `writeCapabilities` and
 `outline_edit` in sidecar `jobKinds`. A missing capability means the bridge,
 sidecar and skills must be updated together. The public tool count remains
-twelve; never substitute arbitrary Python or direct font-file editing.
+twelve; never substitute arbitrary Python or direct font-file editing for this typed workflow.
 Shape-preserving removal additionally requires `outline.remove-node.v1`.
 
 Always read compact `context` and `selection` first. State whether selection
@@ -37,7 +37,25 @@ names an explicit glyph, `referenceLayer`, initial path-hash guards, operations,
 and either `layers:{"scope":"all_masters"}` or
 `layers:{"scope":"ids","ids":[...]}`. `all_masters` selects ordinary masters
 only; brace, bracket and other special layers require exact explicit IDs.
-Backgrounds are excluded. Default `compatibilityPolicy` is `preserve`; use
+Foreground is the default. To read or edit background outlines, require
+`outline.background.read.v1` and `outline.background.edit.v1` respectively.
+Add `"surface":"background"` to each `paths`, `path`, `segment` or exact `layer`
+read selector and to each outline-edit target. `layer`, `referenceLayer` and
+`layers.ids` still identify the owning foreground layers; do not invent background
+IDs. `all_masters` with this surface targets each ordinary master's background.
+Path guards and indices belong to that same surface. Missing backgrounds fail
+explicitly; this workflow does not create a background or edit background images.
+Do not reuse a paging cursor across surfaces. Exact layer reads return the owner
+ID and the selected surface's requested bounds/metrics.
+
+The same path operations, limits, precision and Undo/discard lifecycle apply to
+both surfaces. Foreground components, anchors and outlines are not transformed
+by a background edit. Background topology does not participate in ordinary-master
+interpolation compatibility checks. Reports identify the surface of each target.
+For scaling or centering outlines, compute the desired coordinates and use
+`update_nodes`; this is not a whole-layer component/image transform.
+
+Default `compatibilityPolicy` is `preserve`; use
 `allow_incompatible` only when the user explicitly requested incompatible
 topology and highlight the report warning.
 

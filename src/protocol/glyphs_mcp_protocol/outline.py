@@ -210,6 +210,12 @@ def validate_operation(value: Any, *, resolved: bool = False) -> dict[str, Any]:
     raise ProtocolError("invalid_request", "unsupported outline operation: " + str(op))
 
 
+def validate_surface(value: Any = "foreground") -> str:
+    if value not in ("foreground", "background"):
+        raise ProtocolError("invalid_request", "surface must be foreground or background")
+    return value
+
+
 def validate_options(value: Any) -> dict[str, Any]:
     options = _object(value, "outline_edit options")
     _closed(options, {"compatibilityPolicy", "targets"}, "outline_edit options")
@@ -222,8 +228,8 @@ def validate_options(value: Any) -> dict[str, Any]:
     total, normalized_targets = 0, []
     for target_number, raw in enumerate(targets):
         target = _object(raw, f"target {target_number}")
-        _closed(target, {"glyph", "layers", "referenceLayer", "guards", "operations"}, "outline target")
-        if set(target) != {"glyph", "layers", "referenceLayer", "guards", "operations"}:
+        _closed(target, {"glyph", "layers", "referenceLayer", "guards", "operations", "surface"}, "outline target")
+        if set(target) - {"surface"} != {"glyph", "layers", "referenceLayer", "guards", "operations"}:
             raise ProtocolError("invalid_request", "outline target fields are incomplete")
         layers = _object(target["layers"], "layer scope")
         _closed(layers, {"scope", "ids"}, "layer scope")
@@ -260,6 +266,7 @@ def validate_options(value: Any) -> dict[str, Any]:
             raise ProtocolError("invalid_request", "outline job must contain 1-256 operations")
         total += len(operations)
         normalized_targets.append({"glyph": _text(target["glyph"], "glyph"),
+                                   **({"surface": validate_surface(target["surface"])} if "surface" in target else {}),
                                    "layers": normalized_layers,
                                    "referenceLayer": _text(target["referenceLayer"], "referenceLayer"),
                                    "guards": normalized_guards,
@@ -269,14 +276,15 @@ def validate_options(value: Any) -> dict[str, Any]:
 
 def validate_change(value: Mapping[str, Any]) -> dict[str, Any]:
     fields = {"kind", "glyph", "layer", "beforeHash", "afterHash", "operations"}
-    _closed(value, fields, "outline change")
-    if set(value) != fields:
+    _closed(value, fields | {"surface"}, "outline change")
+    if set(value) - {"surface"} != fields:
         raise ProtocolError("invalid_request", "outline change fields are incomplete")
     operations = value["operations"]
     if not isinstance(operations, list) or not 1 <= len(operations) <= MAX_OPERATIONS:
         raise ProtocolError("invalid_request", "outline change requires 1-256 operations")
     return {"kind": "outline", "glyph": _text(value["glyph"], "outline glyph"),
             "layer": _text(value["layer"], "outline layer"),
+            **({"surface": validate_surface(value["surface"])} if "surface" in value else {}),
             "beforeHash": _hash(value["beforeHash"], "outline beforeHash"),
             "afterHash": _hash(value["afterHash"], "outline afterHash"),
             "operations": [validate_operation(op, resolved=True) for op in operations]}

@@ -82,7 +82,7 @@ class BridgeCore:
         with self._lock:
             active = sum(item["status"] in ACTIVE for item in self._operations.values())
             active += sum(item["status"] == "saving" for item in self._saves.values())
-        write_capabilities = ["outline.edit.v1"]
+        write_capabilities = ["outline.edit.v1", "outline.background.edit.v1"]
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
         if dimensions.available():

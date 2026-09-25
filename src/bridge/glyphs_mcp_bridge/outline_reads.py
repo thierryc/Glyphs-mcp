@@ -5,7 +5,8 @@ import binascii
 import json
 import math
 
-from glyphs_mcp_protocol.outline import path_hash
+from glyphs_mcp_protocol.outline import path_hash, validate_surface
+from glyphs_mcp_protocol import ProtocolError
 from glyphs_mcp_protocol.reads import PATH_NODE_PAGE_LIMIT, PATH_PAGE_LIMIT
 
 from .core import BridgeError
@@ -35,13 +36,30 @@ def path_state(path):
             "nodes": [_node(node) for node in nodes]}
 
 
+def surface_layer(layer, surface="foreground"):
+    try:
+        validate_surface(surface)
+    except ProtocolError as exc:
+        raise BridgeError(exc.code, exc.message) from exc
+    if surface == "foreground":
+        return layer
+    # Some native hosts lazily create backgrounds. Do not create one on reads.
+    if value(layer, "hasBackground", None) is False:
+        raise BridgeError("target_not_found", "the selected layer has no background")
+    background = value(layer, "background", None)
+    if background is None:
+        raise BridgeError("target_not_found", "the selected layer has no background")
+    return background
+
+
 def _layer(adapter, font, request):
-    if set(request) - {"kind", "glyph", "layer", "index", "path", "endNode", "limit", "cursor"}:
+    if set(request) - {"kind", "glyph", "layer", "index", "path", "endNode", "limit", "cursor", "surface"}:
         raise BridgeError("invalid_request", "path selectors contain unsupported fields")
     name, identity = request.get("glyph"), request.get("layer")
     if not isinstance(name, str) or not name or not isinstance(identity, str) or not identity:
         raise BridgeError("invalid_request", "path selectors require glyph and exact layer ID")
-    return adapter._entity(font, "layer", {"glyph": name, "id": identity})
+    return surface_layer(adapter._entity(font, "layer", {"glyph": name, "id": identity}),
+                         request.get("surface", "foreground"))
 
 
 def _paths(layer):
@@ -102,6 +120,7 @@ def _page_guard(adapter, font, document_id, request, total, fingerprint, prefix)
     cursor = _decode(request["cursor"], prefix) if "cursor" in request else None
     offset = cursor.get("offset") if cursor else 0
     expected = {"document": document_id, "glyph": request["glyph"], "layer": request["layer"],
+                "surface": request.get("surface", "foreground"),
                 "total": total, "generation": adapter._generation(font), "dirty": adapter._dirty(font),
                 "hash": fingerprint, "selector": [request["kind"], request.get("index")]}
     if (type(offset) is not int or offset < 0 or offset > total
@@ -112,7 +131,7 @@ def _page_guard(adapter, font, document_id, request, total, fingerprint, prefix)
 
 
 def paths_page(adapter, font, document_id, request, fields):
-    if set(request) - {"kind", "glyph", "layer", "limit", "cursor"}:
+    if set(request) - {"kind", "glyph", "layer", "limit", "cursor", "surface"}:
         raise BridgeError("invalid_request", "path pages accept only kind, glyph, layer, limit and cursor")
     if fields != ["items"]:
         raise BridgeError("unsupported_read", "path pages use fields [items]")
@@ -123,6 +142,7 @@ def paths_page(adapter, font, document_id, request, fields):
     total = len(paths)
     cursor = _decode(request["cursor"], "ps1.") if "cursor" in request else None
     guard = {"document": document_id, "glyph": request["glyph"], "layer": request["layer"],
+                "surface": request.get("surface", "foreground"),
              "total": total, "generation": adapter._generation(font), "dirty": adapter._dirty(font)}
     offset = cursor.get("offset") if cursor else 0
     if (type(offset) is not int or offset < 0 or offset > total
@@ -144,7 +164,7 @@ def paths_page(adapter, font, document_id, request, fields):
 
 
 def path_page(adapter, font, document_id, request, fields):
-    if set(request) - {"kind", "glyph", "layer", "index", "limit", "cursor"}:
+    if set(request) - {"kind", "glyph", "layer", "index", "limit", "cursor", "surface"}:
         raise BridgeError("invalid_request", "path reads accept only kind, glyph, layer, index, limit and cursor")
     if fields != ["nodes"]:
         raise BridgeError("unsupported_read", "path reads use fields [nodes]")
@@ -242,7 +262,7 @@ def converged_samples(kind, points):
 
 
 def segment(adapter, font, document_id, request, fields):
-    if set(request) != {"kind", "glyph", "layer", "path", "endNode"}:
+    if set(request) - {"surface"} != {"kind", "glyph", "layer", "path", "endNode"}:
         raise BridgeError("invalid_request", "segment reads require exact kind, glyph, layer, path and endNode fields")
     allowed = {"type", "startNode", "endNode", "controlNodes", "points", "length", "pathHash"}
     if not fields or set(fields) - allowed:

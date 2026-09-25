@@ -30,7 +30,7 @@ from .worker import GlyphsCliWorker
 from . import job_preparation
 
 JOB_KINDS = ("width_delta", "spacing", "kerning_collision", "start_nodes", "slant")
-OUTLINE_WRITE_CAPABILITIES = ("outline.edit.v1", "outline.remove-node.v1")
+OUTLINE_WRITE_CAPABILITIES = ("outline.edit.v1", "outline.remove-node.v1", "outline.background.edit.v1")
 NATIVE_WRITE_CAPABILITY = "native.action.v1"
 
 
@@ -221,6 +221,10 @@ class SidecarService:
                 raise ServiceError("unsupported_job", "Dimensions writes are not qualified by the live bridge")
             if kind == "outline_edit" and "outline.edit.v1" not in advertised:
                 raise ServiceError("unsupported_job", "outline_edit requires bridge capability outline.edit.v1")
+            if (kind == "outline_edit"
+                    and any(t.get("surface") == "background" for t in request["options"]["targets"])
+                    and "outline.background.edit.v1" not in advertised):
+                raise ServiceError("unsupported_job", "background edits require bridge capability outline.background.edit.v1")
             if kind == "outline_edit" and _uses_native_remove(request) and "outline.remove-node.v1" not in advertised:
                 raise ServiceError(
                     "unsupported_job",

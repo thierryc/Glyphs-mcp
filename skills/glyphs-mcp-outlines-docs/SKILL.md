@@ -46,7 +46,10 @@ uncertain write or save as a new job; reconcile the existing job identity first.
 For general path reads and `kind="outline_edit"`, follow the
 [typed path-editing workflow](references/path-editing.md). Require
 `paths.list.v1`, `path.geometry.v1`, and bridge `writeCapabilities` containing
-`outline.edit.v1` before mutation. Resolve explicit native layer IDs, path and
+`outline.edit.v1` before mutation. Background reads/edits additionally require
+`outline.background.read.v1` / `outline.background.edit.v1` and explicit
+`surface:"background"`; layer IDs always identify the owning foreground.
+Resolve explicit native layer IDs, path and
 raw node indices, then retain exact returned `pathHash` guards. Reads remain
 available on dirty or unsaved fonts; jobs still require a saved clean baseline.
 For ordinary node removal, also require `outline.remove-node.v1` and use

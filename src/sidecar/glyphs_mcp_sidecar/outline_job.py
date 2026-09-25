@@ -364,6 +364,17 @@ def _layer(glyph, identity):
     return layer
 
 
+def _surface_layer(layer, surface):
+    if surface == "foreground":
+        return layer
+    if _value(layer, "hasBackground", None) is False:
+        raise WorkerError("the selected layer has no background")
+    background = _value(layer, "background", None)
+    if background is None:
+        raise WorkerError("the selected layer has no background")
+    return background
+
+
 def _copy(layer):
     clone = layer.copy()
     if clone is None: raise WorkerError("Glyphs could not copy an outline layer")
@@ -390,12 +401,13 @@ def prepare(font, request):
     changes, rows, expanded, edits, glyph_states = [], [], 0, {}, {}
     for target in options["targets"]:
         glyph = _glyph(font, target["glyph"])
+        surface = target.get("surface", "foreground")
         if target["glyph"] not in glyph_states:
             ordinary = _ordinary(font, glyph)
             glyph_states[target["glyph"]] = {"ordinary": ordinary,
                 "simulations": {identity: layer for identity, layer in ordinary}}
         state = glyph_states[target["glyph"]]; ordinary = state["ordinary"]
-        reference = _layer(glyph, target["referenceLayer"])
+        reference = _surface_layer(_layer(glyph, target["referenceLayer"]), surface)
         reference_paths = _paths(reference)
         for guard in target["guards"]:
             if guard["path"] >= len(reference_paths) or path_hash(_path_state(reference_paths[guard["path"]])) != guard["hash"]:
@@ -409,14 +421,15 @@ def prepare(font, request):
         expanded += len(selected)
         if expanded > 4096: raise WorkerError("outline job expands beyond 4,096 layer changes")
         for identity, layer in selected:
-            key = (target["glyph"], identity)
+            layer = _surface_layer(layer, surface)
+            key = (target["glyph"], identity, surface)
             if key not in edits:
                 clone = _copy(layer)
                 edits[key] = {"layer": layer, "clone": clone,
                     "beforeHash": outline_state_hash(_shape_state(layer)),
                     "beforeNodes": sum(len(path.nodes) for path in _paths(layer)),
                     "operations": [], "inserted": [], "removals": [], "rawDeletions": 0}
-                if identity in state["simulations"]:
+                if surface == "foreground" and identity in state["simulations"]:
                     state["simulations"][identity] = clone
             edit = edits[key]; clone = edit["clone"]
             for operation in target["operations"]:
@@ -428,19 +441,22 @@ def prepare(font, request):
                     edit["rawDeletions"] += 1
     if not edits:
         raise WorkerError("outline job selected no writable layers")
-    for (glyph_name, identity), edit in edits.items():
+    for (glyph_name, identity, surface), edit in edits.items():
+        surface_fields = {"surface": surface} if surface == "background" else {}
         after_hash = outline_state_hash(_shape_state(edit["clone"]))
         after_nodes = sum(len(path.nodes) for path in _paths(edit["clone"]))
         if edit["beforeHash"] == after_hash: raise WorkerError("outline operations have no effect")
-        changes.append({"kind": "outline", "glyph": glyph_name, "layer": identity,
+        changes.append({"kind": "outline", "glyph": glyph_name, "layer": identity, **surface_fields,
                         "beforeHash": edit["beforeHash"], "afterHash": after_hash,
                         "operations": edit["operations"]})
-        rows.append({"glyph": glyph_name, "layer": identity, "status": "ready",
+        rows.append({"glyph": glyph_name, "layer": identity, "surface": surface, "status": "ready",
                      "rawNodeDelta": after_nodes-edit["beforeNodes"], "insertedNodes": edit["inserted"],
                      "nativeRemovals": edit["removals"], "rawDeletionCount": edit["rawDeletions"],
                      "beforeHash": edit["beforeHash"], "afterHash": after_hash})
     incompatible = []
     for glyph_name, state in glyph_states.items():
+        if not any(name == glyph_name and surface == "foreground" for name, _, surface in edits):
+            continue
         before = {identity: _compare(layer) for identity, layer in state["ordinary"]}
         after = {identity: _compare(state["simulations"][identity])
                  for identity, _ in state["ordinary"]}

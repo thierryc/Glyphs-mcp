@@ -283,9 +283,9 @@ def test_remove_node_job_requires_its_negotiated_bridge_capability(tmp_path):
 def test_bridge_advertises_native_remove_only_when_selector_is_available(monkeypatch):
     core = BridgeCore(NS(), lambda _callback: None)
     monkeypatch.setattr("glyphs_mcp_bridge.core.outline_edit.native_remove_available", lambda: False)
-    assert core.status()["writeCapabilities"] == ["outline.edit.v1"]
+    assert core.status()["writeCapabilities"] == ["outline.edit.v1", "outline.background.edit.v1"]
     monkeypatch.setattr("glyphs_mcp_bridge.core.outline_edit.native_remove_available", lambda: True)
-    assert core.status()["writeCapabilities"] == ["outline.edit.v1", "outline.remove-node.v1"]
+    assert core.status()["writeCapabilities"] == ["outline.edit.v1", "outline.background.edit.v1", "outline.remove-node.v1"]
 
 
 def test_prepared_outline_patch_applies_rolls_back_and_discards_without_replacing_survivors():
@@ -369,3 +369,110 @@ def test_cubic_and_quadratic_arc_length_mapping_and_degenerate_rejection():
     assert outline_job._path_times("curve", cubic, [.2], "path_time") == [.2]
     with pytest.raises(Exception, match="degenerate"):
         outline_job._path_times("line", [[1, 1], [1, 1]], [.5], "arc_length")
+
+
+def background_fixture():
+    font, layers = fixture()
+    for layer in layers:
+        layer.background = Layer("internal-background", 100)
+    job = request(layers[0].background)
+    job["options"]["targets"][0]["surface"] = "background"
+    return font, layers, job
+
+
+def background_patch(adapter, changes, job_id="background-edit"):
+    document = adapter.list_documents()[0]
+    return validate_patch({"version": 1, "jobId": job_id, "documentId": document["id"],
+        "sourcePath": document["path"], "sourceHash": "sha256:"+"a"*64,
+        "generation": document["generation"], "changes": changes, "summary": "Background edit"})
+
+
+def test_background_apply_native_undo_redo_and_discard_preserve_foreground():
+    from test_simple_v2_native_actions import UndoManager
+    font, layers, job = background_fixture()
+    # Deliberately different topology from the foreground; no interpolation coupling.
+    job["options"]["targets"][0]["layers"] = {"scope": "ids", "ids": ["M0"]}
+    changes, report = outline_job.prepare(font, job)
+    assert changes[0]["surface"] == report["layers"][0]["surface"] == "background"
+    assert not report["compatibilityChanges"]
+    layer = layers[0]; background = layer.background
+    foreground_ids = [id(n) for n in layer.paths[0].nodes]
+    background_ids = [id(n) for n in background.paths[0].nodes]
+    manager = UndoManager(); layer.undoManager = lambda: manager
+    adapter = GlyphsAdapter(NS(fonts=[font])); patch = background_patch(adapter, changes)
+    queue = []; core = BridgeCore(adapter, queue.append); core.begin_apply(patch)
+    while queue: queue.pop(0)()
+    assert core.operation(patch["jobId"])["status"] == "applied"
+    assert len(background.paths[0].nodes) == 8
+    manager.undo()
+    assert [id(n) for n in background.paths[0].nodes] == background_ids
+    manager.redo()
+    assert len(background.paths[0].nodes) == 8
+    core.discard(patch["jobId"])
+    while queue: queue.pop(0)()
+    assert [id(n) for n in background.paths[0].nodes] == background_ids
+    assert [id(n) for n in layer.paths[0].nodes] == foreground_ids
+    assert all(len(l.background.paths[0].nodes) == 5 for l in layers)
+    assert not background.temporarilyDisableRounding
+
+
+def test_background_conflict_rolls_back_preceding_backgrounds_only():
+    font, layers, job = background_fixture()
+    changes, _ = outline_job.prepare(font, job)
+    layers[1].background.paths[0].nodes[0].position = (99, 88)
+    adapter = GlyphsAdapter(NS(fonts=[font])); patch = background_patch(adapter, changes)
+    queue = []; core = BridgeCore(adapter, queue.append); core.begin_apply(patch)
+    while queue: queue.pop(0)()
+    assert core.operation(patch["jobId"])["status"] == "failed"
+    assert all(len(l.background.paths[0].nodes) == 5 for l in layers)
+    assert all(len(l.paths[0].nodes) == 5 for l in layers)
+    assert layers[1].background.paths[0].nodes[0].position.x == 99
+
+
+def test_background_missing_invalid_and_stale_guards_are_rejected():
+    font, layers, job = background_fixture()
+    job["options"]["targets"][0]["guards"][0]["hash"] = path_hash(outline_job._path_state(layers[0].paths[0]))
+    with pytest.raises(Exception, match="guard is stale"):
+        outline_job.prepare(font, job)
+    job = request(layers[0].background)
+    job["options"]["targets"][0]["surface"] = "background"
+    layers[1].background = None
+    with pytest.raises(Exception, match="no background"):
+        outline_job.prepare(font, job)
+    job["options"]["targets"][0]["surface"] = "both"
+    with pytest.raises(ProtocolError, match="surface"):
+        validate_outline_options(job["options"])
+
+
+def test_mixed_surface_changes_have_distinct_patch_targets():
+    font, layers, job = background_fixture()
+    job["options"]["targets"].extend(request(layers[0])["options"]["targets"])
+    changes, report = outline_job.prepare(font, job)
+    assert len(changes) == 18
+    adapter = GlyphsAdapter(NS(fonts=[font]))
+    patch = background_patch(adapter, changes)
+    assert len(patch["changes"]) == 18
+    assert {row["surface"] for row in report["layers"]} == {"foreground", "background"}
+
+
+def test_background_job_requires_negotiated_capability(tmp_path):
+    _, _, job = background_fixture()
+    bridge = NS(status=lambda: {"writeCapabilities": ["outline.edit.v1"]})
+    service = SidecarService(bridge, jobs=JobStore(tmp_path), worker=NS(status=lambda: {"available": True}))
+    with pytest.raises(ServiceError, match="outline.background.edit.v1"):
+        service.validate_job_request("outline_edit", options=job["options"])
+    bridge.status = lambda: {"writeCapabilities": ["outline.edit.v1", "outline.background.edit.v1"]}
+    assert service.validate_job_request("outline_edit", options=job["options"])
+
+
+def test_background_capabilities_are_negotiated_by_sidecar(tmp_path):
+    bridge = NS(status=lambda: {"readCapabilities": ["outline.background.read.v1"],
+                                "writeCapabilities": ["outline.edit.v1", "outline.background.edit.v1"]})
+    service = SidecarService(bridge, jobs=JobStore(tmp_path), worker=NS(status=lambda: {"available": True}))
+    status = service.get_status()
+    assert "outline.background.read.v1" in status["readCapabilities"]
+    assert "outline.background.edit.v1" in status["writeCapabilities"]
+    bridge.status = lambda: {"writeCapabilities": ["outline.edit.v1"]}
+    status = service.get_status()
+    assert "outline.background.read.v1" not in status["readCapabilities"]
+    assert "outline.background.edit.v1" not in status["writeCapabilities"]
