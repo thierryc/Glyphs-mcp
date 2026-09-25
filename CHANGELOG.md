@@ -9,6 +9,13 @@
   Issues and Star on GitHub links, and Reveal in Finder for local templates.
   Show favorites alphabetically first, followed by all other templates
   alphabetically across built-in, GitHub and local sources.
+- Add explicit background-outline reads and edits. Path and layer requests select
+  the owning layer's background surface; missing backgrounds fail clearly.
+  Existing path guards, previews, native Undo/Redo and whole-job discard apply.
+- Add a closed glyph-color action for explicit glyph lists, including orange
+  review tags and clearing tags. Preview old and new colors, verify application
+  with native Undo, and leave the font unsaved. Custom color labels are preserved
+  for manual review.
 - Prepare Beta 7 release identity and documentation while retaining the signed
   Beta 6 update feed and download links.
 - Remove obsolete generated application and payload copies, preserving release

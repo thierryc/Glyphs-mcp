@@ -146,3 +146,16 @@ local test artifact, not a signed distribution candidate.
 - The local app is an unsigned Debug build. Developer ID signing, notarization,
   full release qualification, signed update and publication remain pending.
   The source branch can be pushed independently of those distribution gates.
+
+## September 25, 2026 — additional source changes
+
+- `cfa8fd3d` adds capability-gated background-outline reads and edits with
+  explicit surface targeting, guarded application and native Undo/discard.
+- `f9746218` adds a closed glyph-color action and skill guidance for named
+  review tags; applying a color does not save the font.
+- The complete source Python suite passed **2,166 tests** with **2 skipped**.
+  A fresh lean package build, package contract and skill synchronization checks
+  passed after these commits.
+- The locally installed Beta 7/build 49 app predates these source changes.
+  Rebuild, coordinated installation and live Glyphs qualification are still
+  needed before these additions are treated as release-verified.
