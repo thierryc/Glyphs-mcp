@@ -41,6 +41,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 |---|---|
 | Discover glyph names | [Glyph discovery](references/glyph-discovery.md), requiring `glyphs.list.v1` |
 | Glyph metadata | [Metadata](references/metadata-reads.md) |
+| Read or set glyph color tags, including orange review markers | [Glyph colors](references/glyph-colors.md), requiring `native.action.v1` and `set_glyph_color` for edits |
 | Dimensions palette reference notes: read/fill freely, approve overwrites in conversation | [Dimensions](references/dimensions.md) |
 | Native master IDs, metrics, axis positions or italic angle | [Masters](references/master-reads.md) |
 | Discover a glyph's exact layer IDs and native types | [Layer discovery](references/layer-discovery.md), requiring `layers.list.v1` |

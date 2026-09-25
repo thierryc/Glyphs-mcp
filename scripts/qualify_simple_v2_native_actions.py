@@ -97,6 +97,9 @@ def setup(action):
     if action == "update_glyph_info":
         glyph = font.glyphs["A"]; glyph.category = "Symbol"; glyph.storeCategory = False
         return font, glyph, arguments
+    if action == "set_glyph_color":
+        glyph = font.glyphs["A"]; glyph.color = None
+        return font, glyph, {"color": "orange"}
     if action == "update_features":
         feature = next((item for item in font.features if str(item.name) == "liga"), None)
         if feature is None:
@@ -129,6 +132,8 @@ def qualify(action):
         assert action_evidence["beforeRSB"] != action_evidence["metricsKeyRSB"]
     if action == "update_glyph_info":
         action_evidence["nameBefore"] = str(owner.name)
+    if action == "set_glyph_color":
+        action_evidence["colorBefore"] = owner.color
     manager = NSUndoManager.alloc().init(); manager.setGroupsByEvent_(False); manager.beginUndoGrouping()
     key = {"kind": "native_action", "action": action, "scope": scope, "arguments": arguments}
     if change is not None: key.update(change)
@@ -149,6 +154,9 @@ def qualify(action):
     if action == "update_glyph_info":
         action_evidence["nameAfter"] = str(owner.name)
         assert action_evidence["nameAfter"] == action_evidence["nameBefore"]
+    if action == "set_glyph_color":
+        action_evidence["colorAfter"] = owner.color
+        assert action_evidence["colorAfter"] == 1
     manager.undo(); undo_hash = state_hash(owner, scope, change)
     manager.redo(); redo_hash = state_hash(owner, scope, change)
     assert undo_hash == before_hash and redo_hash == after_hash
@@ -157,7 +165,10 @@ def qualify(action):
     return {
         "action": action,
         "scope": scope,
-        "selector": next(name for name in ACTION_SPECS[action]["selectors"] if callable(getattr(selector_owner, name, None))),
+        "selector": "GSGlyph.color" if action == "set_glyph_color" else next(
+            name for name in ACTION_SPECS[action]["selectors"]
+            if callable(getattr(selector_owner, name, None))
+        ),
         "changed": changed,
         "beforeHash": before_hash,
         "afterHash": after_hash,

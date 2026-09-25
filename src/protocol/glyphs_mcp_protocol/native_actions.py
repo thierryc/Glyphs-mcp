@@ -19,7 +19,7 @@ MAX_JOB_STATE_BYTES = 64 * 1024 * 1024
 
 
 _LAYER_REPORT_FIELDS = ("width", "paths", "components", "anchors")
-_GLYPH_REPORT_FIELDS = ("name", "unicode", "category", "subCategory", "script")
+_GLYPH_REPORT_FIELDS = ("name", "unicode", "category", "subCategory", "script", "color")
 _FONT_REPORT_FIELDS = ("featurePrefixes", "classes", "features")
 _FEATURE_BLOCK_REPORT_FIELDS = ("name", "codeLength", "automatic", "disabled")
 
@@ -42,7 +42,22 @@ def _spec(
     }
 
 
-# This is the only native selector registry. Requests cannot extend it.
+# Closed native operation registry. Requests cannot supply selectors or properties.
+GLYPH_COLOR_INDEX = {
+    "red": 0, "orange": 1, "brown": 2, "yellow": 3,
+    "light_green": 4, "dark_green": 5, "light_blue": 6,
+    "dark_blue": 7, "purple": 8, "magenta": 9,
+    "light_gray": 10, "charcoal": 11, "none": None,
+}
+
+
+def has_custom_glyph_color(state: Mapping[str, Any]) -> bool:
+    """Custom Glyphs 4 color labels are stored as color arrays, not palette IDs."""
+    properties = state.get("propertyList")
+    if not isinstance(properties, Mapping):
+        return False
+    return any(isinstance(properties.get(key), (list, dict)) for key in ("color", "colorLabel"))
+
 ACTION_SPECS = {
     "update_metrics": _spec("layer", "syncMetrics"),
     "correct_path_direction": _spec("layer", "correctPathDirection"),
@@ -63,6 +78,10 @@ ACTION_SPECS = {
     "connect_open_paths": _spec("layer", "connectAllOpenPaths"),
     "swap_foreground_background": _spec("layer", "swapForegroundWithBackground"),
     "update_glyph_info": _spec("glyph", "updateGlyphInfo", call_arguments=(False,)),
+    "set_glyph_color": _spec(
+        "glyph", "color",
+        arguments={"color": {"type": "enum", "values": tuple(GLYPH_COLOR_INDEX)}},
+    ),
     "update_features": _spec("font", "updateFeatures"),
     "update_automatic_feature_block": _spec("feature_block", "update"),
 }
@@ -112,9 +131,13 @@ def normalize_arguments(action: str, value: Any = None) -> dict[str, Any]:
     _closed(arguments, set(accepted), f"{action} arguments")
     normalized = {}
     for name, contract in accepted.items():
-        item = arguments.get(name, contract["default"])
+        if name not in arguments and "default" not in contract:
+            raise ProtocolError("invalid_request", f"{action} requires {name}")
+        item = arguments.get(name, contract.get("default"))
         if contract["type"] == "boolean" and not isinstance(item, bool):
             raise ProtocolError("invalid_request", f"{action} {name} must be a boolean")
+        if contract["type"] == "enum" and (not isinstance(item, str) or item not in contract["values"]):
+            raise ProtocolError("invalid_request", f"{action} {name} must be one of: {', '.join(contract['values'])}")
         normalized[name] = item
     if not accepted and arguments:
         raise ProtocolError("invalid_request", f"{action} does not accept arguments")

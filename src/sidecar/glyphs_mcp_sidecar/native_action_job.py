@@ -9,6 +9,8 @@ from typing import Any
 
 from glyphs_mcp_protocol.native_actions import (
     ACTION_SPECS,
+    GLYPH_COLOR_INDEX,
+    has_custom_glyph_color,
     MAX_JOB_STATE_BYTES,
     MAX_LAYER_CHANGES,
     MAX_TARGET_STATE_BYTES,
@@ -128,6 +130,11 @@ def _method(owner: Any, action: str):
 
 
 def invoke(owner: Any, action: str, arguments: Mapping[str, Any]) -> None:
+    if action == "set_glyph_color":
+        if has_custom_glyph_color(persistent_state(owner, "glyph")):
+            raise WorkerError("custom glyph color labels require manual review")
+        owner.color = GLYPH_COLOR_INDEX[arguments["color"]]
+        return
     method = _method(owner, action)
     result = method(*native_call_arguments(action, arguments))
     if isinstance(result, tuple) and len(result) > 1 and result[1] is not None:

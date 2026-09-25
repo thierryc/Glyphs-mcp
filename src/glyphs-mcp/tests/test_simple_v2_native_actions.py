@@ -192,7 +192,7 @@ def patch(changes, job="native-1"):
 
 
 def test_registry_is_closed_complete_and_describes_every_runtime_concern():
-    assert len(NATIVE_ACTIONS) == 17
+    assert len(NATIVE_ACTIONS) == 18
     assert set(NATIVE_ACTIONS) == set(ACTION_SPECS)
     for spec in ACTION_SPECS.values():
         assert set(spec) == {"scope", "selectors", "arguments", "callArguments", "projection", "reportFields", "target"}
@@ -201,10 +201,72 @@ def test_registry_is_closed_complete_and_describes_every_runtime_concern():
 
 @pytest.mark.parametrize("action", NATIVE_ACTIONS)
 def test_every_action_has_one_valid_closed_option_shape(action):
-    normalized = validate_options(request(action)["options"])
+    arguments = {"color": "orange"} if action == "set_glyph_color" else None
+    normalized = validate_options(request(action, arguments=arguments)["options"])
     assert normalized["action"] == action
     assert normalized["scope"] == ACTION_SPECS[action]["scope"]
-    assert normalized["arguments"] == ({"force": False} if action == "add_extremes" else {})
+    assert normalized["arguments"] == ({"force": False} if action == "add_extremes" else arguments or {})
+
+
+def test_glyph_color_contract_is_named_closed_and_requires_explicit_targets():
+    assert validate_options(request("set_glyph_color", arguments={"color": "orange"})["options"])["arguments"] == {"color": "orange"}
+    for arguments in (None, {"color": 1}, {"color": "Orange"}, {"color": "blue"}, {"color": "none", "property": "name"}):
+        with pytest.raises(ProtocolError):
+            validate_options(request("set_glyph_color", arguments=arguments)["options"])
+    with pytest.raises(ProtocolError, match="unique"):
+        validate_options({"action": "set_glyph_color", "arguments": {"color": "none"},
+                          "targets": [{"glyph": "h"}, {"glyph": "h"}]})
+
+
+def test_glyph_color_previews_old_new_noops_and_clearing():
+    font, *_ = fixture()
+    second = NativeGlyph("A", [], None)
+    second.color = 1
+    font.glyphs.append(second)
+    options = {"action": "set_glyph_color", "arguments": {"color": "orange"},
+               "targets": [{"glyph": "h"}, {"glyph": "A"}]}
+    changes, report = worker_actions.prepare(font, {"options": options})
+    assert [(row["target"]["glyph"], row["before"]["color"], row["after"]["color"], row["status"])
+            for row in report["targets"]] == [("h", None, 1, "changed"), ("A", 1, 1, "no_change")]
+    assert len(changes) == 1 and changes[0]["glyph"] == "h"
+    clear = {**options, "arguments": {"color": "none"}}
+    changes, report = worker_actions.prepare(font, {"options": clear})
+    assert len(changes) == 2
+    assert all(row["after"]["color"] is None for row in report["targets"])
+
+
+def test_glyph_color_refuses_custom_labels_that_cannot_be_restored_from_an_index():
+    font, *_ = fixture()
+    glyph = font.glyphs["h"]
+    glyph.info["color"] = [0.2, 0.3, 0.4, 1.0]
+    orange = request("set_glyph_color", arguments={"color": "orange"})
+    with pytest.raises(WorkerError, match="custom glyph color"):
+        worker_actions.prepare(font, orange)
+    with pytest.raises(ValueError, match="custom glyph color"):
+        bridge_actions.invoke(glyph, "set_glyph_color", {"color": "orange"})
+    assert glyph.color is None
+
+
+def test_glyph_color_bridge_apply_undo_discard_readback_and_no_save(monkeypatch):
+    monkeypatch.setattr("glyphs_mcp_bridge.core.native_actions.available_actions", lambda: ["set_glyph_color"])
+    worker_font, *_ = fixture()
+    changes, _report = worker_actions.prepare(worker_font, request("set_glyph_color", arguments={"color": "orange"}))
+    live_font, *_items, manager = fixture()
+    adapter = GlyphsAdapter(NS(fonts=[live_font])); document = adapter.list_documents()[0]
+    adapter.save_document = lambda *_args: pytest.fail("applying a color must not save")
+    value = validate_patch({**patch(changes, job="color-apply"), "documentId": document["id"]})
+    queue = []; core = BridgeCore(adapter, queue.append)
+    assert adapter.read_entities(document["id"], [{"kind": "glyph", "id": "h"}], ["color"])[0]["values"]["color"] is None
+    core.begin_apply(value)
+    while queue: queue.pop(0)()
+    assert core.operation("color-apply")["status"] == "applied"
+    assert adapter.read_entities(document["id"], [{"kind": "glyph", "id": "h"}], ["color"])[0]["values"]["color"] == 1
+    manager.undo(); assert live_font.glyphs["h"].color is None
+    manager.redo(); assert live_font.glyphs["h"].color == 1
+    core.discard("color-apply")
+    while queue: queue.pop(0)()
+    assert core.operation("color-apply")["status"] == "discarded"
+    assert live_font.glyphs["h"].color is None
 
 
 @pytest.mark.parametrize("field", ["selector", "menu", "python", "method", "delta", "glyphs"])

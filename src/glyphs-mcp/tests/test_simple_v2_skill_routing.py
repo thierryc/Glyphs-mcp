@@ -63,6 +63,21 @@ def test_width_route_states_scope_preview_and_native_undo_context():
         assert phrase in text
 
 
+def test_glyph_color_route_uses_closed_action_and_never_autosaves():
+    sys.path.insert(0, str(ROOT/'src/protocol'))
+    from glyphs_mcp_protocol.native_actions import validate_options
+    entry = (SKILL/'SKILL.md').read_text()
+    reference = SKILL/'references/glyph-colors.md'
+    text = reference.read_text()
+    example = json.loads(re.search(r'```json\n(.*?)\n```', text, re.S).group(1))
+    assert 'references/glyph-colors.md' in entry
+    assert validate_options(example['options'])['arguments'] == {'color': 'orange'}
+    assert example['document_id'] and example['kind'] == 'native_action'
+    assert '`none`' in text and 'start_edit_workflow' in text
+    assert 'without saving' in text or 'stays unsaved' in text
+    assert reference.read_bytes() == (ROOT/'plugins/glyphs-mcp/skills/glyphs/references/glyph-colors.md').read_bytes()
+
+
 def test_entry_routes_per_connection_and_requires_current_private_build():
     entry = (SKILL/'SKILL.md').read_text()
     assert 'references/connection-session.md' in entry

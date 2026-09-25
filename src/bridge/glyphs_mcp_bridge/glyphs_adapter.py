@@ -10,7 +10,7 @@ from glyphs_mcp_protocol import outline_hash
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
 from glyphs_mcp_protocol import ProtocolError
-from . import dimensions, context, coordinates, feature_compile, feature_inventory, glyph_inventory, instance_inventory, layer_inventory, kerning, kerning_inventory, master_properties, native_actions, native_save, outline_edit, outline_reads, selection, start_node
+from . import dimensions, context, coordinates, feature_compile, feature_inventory, glyph_inventory, instance_inventory, layer_inventory, kerning, kerning_inventory, master_properties, native_actions, native_save, native_values, outline_edit, outline_reads, selection, start_node
 
 
 _MISSING = object()
@@ -28,33 +28,10 @@ def _value(owner: Any, name: str, default: Any = None) -> Any:
         return default
 
 
-def _point(value: Any) -> tuple[float, float]:
-    x = _value(value, "x", None)
-    y = _value(value, "y", None)
-    if x is None or y is None:
-        origin = _value(value, "origin", None)
-        x = _value(origin, "x", 0)
-        y = _value(origin, "y", 0)
-    return float(x or 0), float(y or 0)
-
-
-def _rect(value: Any) -> dict[str, float] | None:
-    if value is None:
-        return None
-    origin = _value(value, "origin", None)
-    size = _value(value, "size", None)
-    return {
-        "x": float(_value(origin, "x", 0) or 0),
-        "y": float(_value(origin, "y", 0) or 0),
-        "width": float(_value(size, "width", 0) or 0),
-        "height": float(_value(size, "height", 0) or 0),
-    }
-
-
 class GlyphsAdapter:
     """Thin native adapter; no method intentionally walks a complete font."""
 
-    GLYPH_FIELDS = frozenset({"name", "unicode", "category", "subCategory", "export", *kerning_inventory.GROUP_FIELDS})
+    GLYPH_FIELDS = frozenset({"name", "unicode", "category", "subCategory", "export", "color", *kerning_inventory.GROUP_FIELDS})
     LAYER_FIELDS = frozenset({"id", "name", "width", "vertWidth", "vertOrigin",
                               "leftMetricsKey", "rightMetricsKey", "widthMetricsKey", "bounds", "outlineHash"})
     MASTER_FIELDS = frozenset({"id", "name", *master_properties.FIELDS, "dimensions"})
@@ -386,7 +363,7 @@ class GlyphsAdapter:
         if kind == "selection":
             return cls._selection_values(owner, {"kind": "selection"}, [field])[field]
         value = _value(owner, field, None)
-        return _rect(value) if field == "bounds" else value
+        return native_values.rect(value) if field == "bounds" else value
 
     def _change_layer(self, document_id, change):
         layer = self._target_layer(document_id, change["glyph"], change["layer"])
@@ -547,15 +524,15 @@ class GlyphsAdapter:
         points: list[tuple[float, float, str]] = []
         for path_index, path in enumerate(list(_value(layer, "paths", []) or [])):
             for node_index, node in enumerate(list(_value(path, "nodes", []) or [])):
-                x, y = _point(_value(node, "position", node))
+                x, y = native_values.point(_value(node, "position", node))
                 node_type = str(_value(node, "type", "node"))
                 points.append((x, y, f"path:{path_index}:{node_index}:{node_type}"))
         for index, component in enumerate(list(_value(layer, "components", []) or [])):
-            x, y = _point(_value(component, "position", component))
+            x, y = native_values.point(_value(component, "position", component))
             name = str(_value(component, "componentName", "component"))
             points.append((x, y, f"component:{index}:{name}"))
         for index, anchor in enumerate(list(_value(layer, "anchors", []) or [])):
-            x, y = _point(_value(anchor, "position", anchor))
+            x, y = native_values.point(_value(anchor, "position", anchor))
             name = str(_value(anchor, "name", "anchor"))
             points.append((x, y, f"anchor:{index}:{name}"))
         return outline_hash(points)

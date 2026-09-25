@@ -44,8 +44,9 @@ IDs come from layer discovery and may not be names or arbitrary selectors.
 font-scoped and forbids `targets`. `update_automatic_feature_block` uses exact
 targets such as `{"blockType":"feature","id":"<persistent ID>"}` and is
 restricted to native blocks that report both `automatic` and `canBeAutomated`.
-Only `add_extremes` accepts arguments:
-`"arguments":{"force":true}`; `force` defaults to `false`. Do not send top-level
+`add_extremes` accepts `"arguments":{"force":true}`; `force` defaults to
+`false`. `set_glyph_color` accepts a required named `color` argument; see
+[Glyph colors](glyph-colors.md) for its closed palette and workflow. Do not send top-level
 `delta` or `glyphs`, action-specific unknown fields, selector names or menu names.
 
 ## Catalog and risks
@@ -67,6 +68,7 @@ Only `add_extremes` accepts arguments:
 | `connect_open_paths` | layer | Connect all eligible open paths | Endpoint pairing and contour order. |
 | `swap_foreground_background` | layer | Swap the complete foreground/background pair | Both sides of the swap; background is retained for restoration. |
 | `update_glyph_info` | glyph | Update metadata with renaming disabled | Unicode/category/script/production metadata; names must not change. |
+| `set_glyph_color` | glyph | Set the named Glyphs color tag, or clear it with `none` | Confirm the explicit glyph list and each before/after color. |
 | `update_features` | font | Update automatic prefixes, classes and features | Generated source and compiler diagnostics. |
 | `update_automatic_feature_block` | feature block | Call native `update()` on one exact automatic, automatable prefix/class/feature | Generated source, block identity and diagnostics. |
 

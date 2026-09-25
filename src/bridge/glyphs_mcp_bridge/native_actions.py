@@ -10,6 +10,8 @@ from typing import Any
 
 from glyphs_mcp_protocol.native_actions import (
     ACTION_SPECS,
+    GLYPH_COLOR_INDEX,
+    has_custom_glyph_color,
     GLYPH_ACTIONS,
     LAYER_ACTIONS,
     MAX_TARGET_STATE_BYTES,
@@ -326,6 +328,11 @@ def _method(owner: Any, action: str):
 
 def invoke(owner: Any, action: str, arguments: Mapping[str, Any], change: Mapping[str, Any] | None = None) -> None:
     target = _feature_block(owner, change)[2] if ACTION_SPECS[action]["scope"] == "feature_block" and change is not None else owner
+    if action == "set_glyph_color":
+        if has_custom_glyph_color(persistent_state(target, "glyph")):
+            raise ValueError("custom glyph color labels require manual review")
+        target.color = GLYPH_COLOR_INDEX[arguments["color"]]
+        return
     method = _method(target, action)
     result = method(*native_call_arguments(action, arguments))
     if isinstance(result, tuple) and len(result) > 1 and result[1] is not None:
@@ -371,7 +378,19 @@ def _probed_actions() -> tuple[str, ...]:
         selector_owner = feature if scope == "feature_block" else owner
         if not feature_id and scope == "feature_block":
             continue
-        if not any(callable(getattr(selector_owner, selector, None)) for selector in ACTION_SPECS[action]["selectors"]):
+        if action == "set_glyph_color":
+            try:
+                original_hash = current_hash(glyph, "glyph")
+                original = _value(glyph, "color", None)
+                glyph.color = 1
+                if _value(glyph, "color", None) != 1:
+                    continue
+                glyph.color = original
+                if current_hash(glyph, "glyph") != original_hash:
+                    continue
+            except Exception:
+                continue
+        elif not any(callable(getattr(selector_owner, selector, None)) for selector in ACTION_SPECS[action]["selectors"]):
             continue
         try:
             before = current_hash(owner, scope, change)
