@@ -2,6 +2,21 @@
 
 ## 2.0.0 Beta 7 — unreleased, build 49
 
+- Add native Python scripting through the existing job and conversation tools.
+  Resolve exact targets, validate without executing, establish a saved baseline,
+  run once, then verify results. Whole-font saved-version restoration replaces
+  subsequent unsaved edits; external effects are outside its coverage.
+- Unify successful typed and script results with Keep changes without saving,
+  Save font and the appropriate recovery action. Visible connected result cards
+  offer a 30-second automatic Keep countdown and Wait for my answer; text-only
+  clients remain manual. Keep preserves native Undo/Redo and does not save.
+- Prepare width deltas, Dimensions, glyph colors and coordinate-only outline
+  edits from detached native data, avoiding a full-font copy and worker launch.
+  Keep guarded application, selective recovery, existing limits and the worker
+  routes for complex algorithms, analysis and export.
+- Improve eligibility counting, background content detection, compact script
+  details, baseline validation reads, immediate readiness and blocked-job
+  resolution. Retain twelve public tools and eleven managed skills.
 - Align Setup cards to the tallest card in each row, with actions at the bottom.
 - Reverse Option-scroll zoom direction in the visual glyph diff view to match
   the requested Mac and Glyphs interaction.

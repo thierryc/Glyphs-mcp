@@ -3,7 +3,7 @@
 Source target: Glyphs MCP `2.0.0-beta.7`, desktop build 49, branch
 `lit/v2-beta`.
 
-Status: **local feature candidate verified; unreleased.**
+Status: **complete local release gate passed; signed distribution in progress.**
 
 ## September 23, 2026
 
@@ -159,3 +159,17 @@ local test artifact, not a signed distribution candidate.
 - The locally installed Beta 7/build 49 app predates these source changes.
   Rebuild, coordinated installation and live Glyphs qualification are still
   needed before these additions are treated as release-verified.
+
+## September 27 release candidate
+
+The native scripting and unified-result milestones are committed, including
+native preparation for selected typed edits, saved-version script restoration,
+selective typed recovery and the result-card timer. The complete local release
+gate passed: 2,262 Python tests (one skip), 210 macOS tests, deterministic
+payloads, both private runtimes, synchronized skills and documentation build.
+
+See [release qualification](reports/beta7-release-20260927/README.md) for current
+release evidence and remaining platform/card qualification limits. See
+[installed native qualification](reports/unified-results-20260926/installed-20260927/README.md)
+for actual editor Save, Save As, Keep, Undo/Redo, restoration and reconnect tests.
+Earlier sections retain historical state and are not current installation claims.
