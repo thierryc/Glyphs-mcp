@@ -1,6 +1,7 @@
 # Beta 7 release qualification — September 27, 2026
 
-Candidate: `2.0.0-beta.7`, desktop build **49**, branch `lit/v2-beta`.
+Published prerelease: [`2.0.0-beta.7`](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7),
+desktop build **49**, branch `lit/v2-beta`.
 
 The complete local release gate passed with **2,262 Python tests passed,
 one skipped and five warnings**, and **210 macOS tests passed**. It also
@@ -49,23 +50,39 @@ the same DS_Store procedure as Beta 6. No alternative UI automation was used.
 The guarded publisher reran the complete local gate and passed final signed
 artifact verification before completing and verifying the four-asset draft upload.
 
-The older-build update fixture is signed, notarized and ready. The Mac locked
-before VM setup; signed-update acceptance and public publication are pending.
-The exact signed feed has not replaced the published Beta 6 feed.
+The Mac locked before the older-to-newer signed update/component-migration
+trial. That test remains **unperformed**. The maintainer explicitly requested
+publication after this gap was disclosed; release notes retain it. No signature,
+notarization or artifact verification failure was overridden.
 
-## Cleanup so far
+The prerelease is now public. All four assets were downloaded without
+authentication and match the verified local identities. Both Sparkle signatures
+passed; the exact signed Beta 7 appcast replaces the Beta 6 feed. See
+[GitHub publication evidence](github-published.json) and
+[public-download verification](public-download-verification.json).
+Stable Latest remains v1.11.1; stable `main` was not changed.
+
+## Cleanup
 
 Thirty obsolete build directories were removed, totaling 2,140,310,223 bytes
 (sum of file sizes; not a physical-space measurement). Historical build
 evidence was retained in the excluded local release archive. The current
-release/update fixture and dependencies remain until distribution is complete.
+release/update fixture and dependencies were retained until public verification.
 The installed runtime is copied independently; fresh status showed no open
 fonts or active jobs. Dactylotype and installed plugin caches were untouched.
 Beta 8/build 50 metadata changes are applied separately; they do not change
 the frozen Beta 7 tag or distribution assets.
 
 A second cleanup removed 97 unused outputs and dependency caches.
-Total removed file sizes across both passes: **4,229,212,167 bytes**. Only the
-current `dist/` release assets, `build/desktop-dependencies` signature utilities
-and `build/update-trial-beta7-20260927` fixture remain pending distribution.
-Website build output and generated documentation caches were also removed.
+Those first two passes removed **4,229,212,167 bytes**. After public verification,
+a final pass removed the remaining release assets, update fixture, signature
+utilities and regenerated documentation output: **1,496,294,747 bytes**.
+All repository `build/` and `dist/` outputs and documentation build caches are
+removed. The combined logical file size is **5,725,506,914 bytes**, not a
+measurement of physical disk space freed. See [final cleanup](final-build-cleanup.json).
+The temporary public-download verification copies were also deleted.
+
+Publication documentation checks passed: 30 focused tests, eleven synchronized
+skills, the documentation production build and patch-whitespace validation.
+Beta 8 remains metadata only, build 50. No installed runtime, plugin cache,
+other worktree or user font was changed during publication and final cleanup.

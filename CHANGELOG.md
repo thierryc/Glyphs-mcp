@@ -2,11 +2,11 @@
 
 ## 2.0.0 Beta 8 — unreleased, build 50
 
-- Advance development metadata after freezing the signed Beta 7 candidate.
-  Beta 7 assets are verified in a private draft; its final signed-update test
-  and publication remain pending. The published feed is unchanged.
+- Advance development metadata after freezing Beta 7. The signed Beta 7
+  prerelease and update feed are published; its exact signed-update and
+  component-migration acceptance test remains open.
 
-## 2.0.0 Beta 7 — unreleased, build 49
+## 2.0.0 Beta 7 — 2026-09-27, build 49
 
 - Add native Python scripting through the existing job and conversation tools.
   Resolve exact targets, validate without executing, establish a saved baseline,
@@ -37,10 +37,11 @@
   review tags and clearing tags. Preview old and new colors, verify application
   with native Undo, and leave the font unsaved. Custom color labels are preserved
   for manual review.
-- Prepare Beta 7 release identity and documentation while retaining the signed
-  Beta 6 update feed and download links.
-- Remove obsolete generated application and payload copies, preserving release
-  archives, source worktrees, dependencies and historical qualification evidence.
+- Publish the signed, notarized Beta 7 prerelease and signed beta feed, with
+  verified public downloads. Keep stable Latest at v1.11.1. Disclose the
+  unperformed exact-release signed-update/component-migration test.
+- Remove generated build outputs after publication, preserving source worktrees,
+  installed components and historical qualification evidence.
 
 ## 2.0.0 Beta 6 — 2026-09-22, build 48
 

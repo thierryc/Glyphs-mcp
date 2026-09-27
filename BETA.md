@@ -1,44 +1,45 @@
 # Glyphs MCP 2.0.0 Beta
 
-**Beta 7/build 49 is signed and notarized, with verified assets in a private draft.**
-Its final signed-update test and publication are pending; see
-[the qualification record](BETA7-VALIDATION.md). Development metadata has
-advanced to [Beta 8/build 50](BETA8-VALIDATION.md). The download and qualification
-below remain Beta 6 until Beta 7 is published.
+**Beta 7/build 49 is published as a signed and notarized GitHub prerelease.
+Stable Latest remains v1.11.1.** Development metadata has advanced to
+[Beta 8/build 50](BETA8-VALIDATION.md); there is no Beta 8 build yet.
 
-**Beta 6/build 48 is published as a signed and notarized GitHub prerelease.
-Its signed desktop update and component migration passed in VirtualBuddy.
-Stable Latest remains v1.11.1.**
+Beta 7 adds native Python scripting, unified edit results and faster native
+preparation for selected typed edits. It retains twelve tools, eleven managed
+skills and the 4,096 eligible-surface limit. Exact targets and a verified saved
+baseline precede script execution; preparation and polling never run Python.
 
-Beta 6 adds per-master Dimensions reference reads and guarded edits, plus a
-shared conversation workflow for preparing, applying, saving and discarding
-font changes. The interface exposes twelve tools and eleven managed skills.
-Claude's text save follow-ups retain their workflow reference; reopened cards
-refresh their state before enabling actions and tolerate host permission delays.
-**Save and continue** saves existing work once and resumes the requested edit;
-the resulting changes remain unsaved until a separate save.
+Finish an edit with **Keep changes without saving**, **Save font**, or its
+recovery action. Typed **Undo these changes** covers the recorded edit.
+Script **Restore saved version** reloads the whole font and discards later
+unsaved edits; external effects are not restored. Visible, connected successful
+result cards offer a 30-second automatic Keep countdown and **Wait for my
+answer**. Text-only clients remain manual. Saving requires authorization;
+**Save and continue** saves existing work once, then leaves the new edit unsaved.
 
-The published identity is `2.0.0-beta.6`, desktop build 48, on `lit/v2-beta`.
-Exact qualification and artifact evidence is in
-[BETA6-VALIDATION.md](BETA6-VALIDATION.md). Historical Beta 5 evidence remains in
-[BETA5-VALIDATION.md](BETA5-VALIDATION.md).
+The published identity is `2.0.0-beta.7`, desktop build 49, on `lit/v2-beta`.
+See [qualification](BETA7-VALIDATION.md) and the
+[release report](reports/beta7-release-20260927/README.md). The exact-release
+signed desktop-update/component-migration test remains unperformed and is
+explicitly disclosed; signing, notarization and public asset verification passed.
+Beta 6’s earlier update test is historical evidence, not Beta 7 acceptance.
 
-Glyphs 3 is not included in the Beta 6 desktop payload. Its separate v1.11.0
+Glyphs 3 is not included in the Beta 7 desktop payload. Its separate v1.11.0
 release, source metadata and documentation remain unchanged.
 
 ## Requirements and availability
 
-Beta 6 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 7 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
 required for an end-user installation. Glyphs still needs its own **Python
 (Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
 
 Download the signed and notarized
-[Beta 6 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.6/Glyphs-MCP-2.0.0-beta.6.dmg)
-from the [Beta 6 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.6).
+[Beta 7 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.7/Glyphs-MCP-2.0.0-beta.7.dmg)
+from the [Beta 7 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7).
 Its SHA-256 is
-`578c7d9f362826dd7da6cc21118d35c8684ef2ab09f6bf231f7723685dc81ac1`.
-Beta 6 remains a prerelease rather than the repository's Stable Latest.
+`0bb76ec30f0edbdd9d1a439d3f87c3c6cadab0a278d460dd08522c18369cfa55`.
+Beta 7 remains a prerelease rather than the repository's Stable Latest.
 
 ## First session
 
@@ -57,7 +58,7 @@ Beta 6 remains a prerelease rather than the repository's Stable Latest.
    `http://127.0.0.1:9680/mcp/`.
 6. In **Project**, create a disposable project, then exercise a small supported
    spacing or kerning job on the font copy. Review the report and verify native
-   Undo/Redo before an authorized `accept_job`.
+   Undo/Redo, then choose Keep changes without saving, Save font, or recovery.
 
 ## Setup cards
 
@@ -98,26 +99,24 @@ component reconciliation are also separate operations; a migration failure
 must leave the manager available to retry or continue with the previous
 installation.
 
-## Help test Beta 6
+## Help test Beta 7
 
-Signed update and component migration passed on an Apple-silicon VirtualBuddy
-guest. The remaining manual matrix covers fresh, partial, removal, ownership
-conflict, running-Glyphs, absent-agent and reload-required scenarios, physical
-Intel, and all four agent connections after reload or restart. Do not mark
-those rows complete without evidence from the exact candidate.
+The signed desktop-update/component-migration test for this exact release
+remains open. Installed visual card countdown/Details, physical Intel,
+minimum-macOS, the complete manual client matrix and some fault-injection
+cases also remain unqualified. Automated checks and installed text workflows
+are separate evidence; do not mark manual rows complete without testing them.
 
 Useful reports include the beta/build number, macOS and processor, Glyphs
 version/build, affected card, operation state, client, exact reproduction and a
 redacted diagnostic report. Share a disposable font only when it can be public.
 [Report a beta issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%202.0.0%5D%20&body=Beta%20and%20build%3A%0AmacOS%20and%20processor%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0ASteps%3A%0AExpected%3A%0AActual%3A).
 
-Known limitations: the welcome screen remains a placeholder. The published
-Beta 6 offers typed operations; the Beta 7 candidate adds native Python through
-the existing job tools, with saved-version recovery. Use the installed
-connection's advertised capabilities. In Project visual diffs, changing glyph files can retain the previously
-selected master even when that master is unchanged; choose a layer without the
-“unchanged” suffix to display the available geometry difference. Physical
-Intel acceptance and the complete packaged manual scenario matrix remain
-unverified. Exact build-48 signed application update and component migration
-evidence is recorded in [BETA6-VALIDATION.md](BETA6-VALIDATION.md); Beta 4
-results are not carried forward.
+Known limitations: the welcome screen remains a placeholder. Native Python
+uses the existing job tools and saved-version recovery; use the installed
+connection’s advertised capabilities. In Project visual diffs, changing glyph
+files can retain the previously selected master even when it is unchanged;
+choose a layer without the “unchanged” suffix to display the available geometry
+difference. Native unnamed-node null-to-empty normalization is a separate
+selective-recovery follow-up. Historical build-48 update/migration evidence is
+in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).

@@ -3,9 +3,9 @@
 ## Decision
 
 Prepare **2.0.0 Beta 8**, tag `v2.0.0-beta.8`, build **50**, on `lit/v2-beta`.
-Beta 7/build 49 has verified signed assets in a private draft; its update test
-and publication are pending. Beta 6/build 48 remains the published download
-and signed update feed.
+Beta 7/build 49 is the published signed and notarized prerelease and beta
+update feed. Its exact signed-update/component-migration acceptance test
+remains incomplete and is disclosed in its release notes.
 Beta 8 is metadata-only development preparation; no Beta 8 application has been built. See [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
@@ -71,7 +71,8 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    release. Publish the communication below only after the beta download works.
 
 Beta 8 uses `--beta 8 --installer-build 50`. Its qualification is pending.
-Published Beta 6 qualification and public artifact verification remain in
+Published Beta 7 evidence and its open qualification limits are recorded in
+[BETA7-VALIDATION.md](BETA7-VALIDATION.md). Historical Beta 6 evidence remains in
 [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
 `main`. Do not relabel a beta as final or repoint its tag.
@@ -239,10 +240,12 @@ artifacts and download links were verified.
   Full release qualification, signed updates, cross-machine testing and public
   registry/feed verification remain before distribution.
 
-## Beta 7 signed candidate — 27 September 2026
+## Beta 7 publication — 27 September 2026
 
-Signed tag `v2.0.0-beta.7` remains on commit `190d25c5`. All four assets are
-verified in a private draft. The Mac locked before the final signed-update
-test; no public publication or beta feed update has occurred. See
+Signed tag `v2.0.0-beta.7` remains on commit `190d25c5`. The prerelease is public;
+all four download identities and the signed beta feed are verified. Stable
+Latest remains v1.11.1. Publication was explicitly requested after the Mac
+locked before the signed-update/component-migration trial; that acceptance
+gate remains incomplete and is disclosed in the release notes. See
 [the qualification record](BETA7-VALIDATION.md). Beta 8 metadata development
-can proceed independently without rebuilding or retagging those frozen assets.
+proceeds independently without rebuilding or retagging those frozen assets.

@@ -1,9 +1,9 @@
 # Glyphs MCP Desktop 2.0.0 Beta 8
 
 **Beta 8 development metadata — release `2.0.0-beta.8`, desktop build 50.**
-Beta 7/build 49 is signed, notarized and uploaded to a private draft; its final
-signed-update test and publication are pending. Beta 8 has no built release.
-Beta 6/build 48 remains the signed and notarized download.
+Beta 7/build 49 is published as a signed and notarized prerelease. Its final
+signed-update and component-migration test remains unperformed. Beta 8 has no
+built release. Stable Latest remains v1.11.1.
 See [Beta 8 preparation](BETA8-VALIDATION.md) and [Beta 7 qualification](BETA7-VALIDATION.md).
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
 
@@ -54,13 +54,14 @@ See [installation](content/getting-started/installation.mdx) and the
 
 The Beta 8 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. Beta 6 is available
+documentation tracks describe these versions separately. Beta 7 is available
 as a signed and notarized
-[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.6).
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7).
 
 Documentation sources: [v2 · 2.0.0 Beta 8](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
-Beta 6 qualification and publication are recorded in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
+Beta 7 qualification and publication are recorded in [BETA7-VALIDATION.md](BETA7-VALIDATION.md).
+Historical Beta 6 evidence remains in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
 Beta 5 qualification is recorded in
 [BETA5-VALIDATION.md](BETA5-VALIDATION.md); the published Beta 4 record remains
 in [BETA4-VALIDATION.md](BETA4-VALIDATION.md).

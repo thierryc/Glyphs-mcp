@@ -1,13 +1,17 @@
-# Beta 7 preparation record
+# Beta 7 preparation and publication record
 
 Source target: Glyphs MCP `2.0.0-beta.7`, desktop build 49, branch
 `lit/v2-beta`.
 
-Status: **signed and notarized; verified assets uploaded to a private draft.**
+Status: **published as a signed and notarized GitHub prerelease.**
 
-The signed-update acceptance test is blocked because the Mac is locked. Public
-publication and the signed feed update remain pending. Development metadata
-has advanced separately to Beta 8/build 50; the Beta 7 tag remains `190d25c5`.
+[Beta 7/build 49](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7)
+was published on September 27 at the maintainer’s explicit request with the
+unperformed signed-update/component-migration test disclosed. The Mac locked
+before that test; it remains incomplete. Public asset and signature verification
+is recorded in the release report. Development metadata has advanced separately
+to Beta 8/build 50; the Beta 7 tag remains `190d25c5`. Earlier sections below
+retain their dated historical state.
 
 ## September 23, 2026
 
@@ -177,3 +181,15 @@ release evidence and remaining platform/card qualification limits. See
 [installed native qualification](reports/unified-results-20260926/installed-20260927/README.md)
 for actual editor Save, Save As, Keep, Undo/Redo, restoration and reconnect tests.
 Earlier sections retain historical state and are not current installation claims.
+
+## September 27 publication
+
+Published the existing signed tag and four verified assets as a prerelease,
+with `make_latest=false`. Unauthenticated public downloads match their recorded
+hashes; both Sparkle feed and archive signatures pass. The exact signed
+appcast is published on the beta branch. Stable Latest remains v1.11.1.
+No rebuild, retag or asset replacement occurred.
+
+The signed-update/component-migration trial remains incomplete because the
+Mac locked before VM setup. Publication was explicitly requested with this gap
+disclosed in the release notes. This does not change its qualification status.

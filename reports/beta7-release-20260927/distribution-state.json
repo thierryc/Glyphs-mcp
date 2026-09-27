@@ -21,19 +21,27 @@
       "glyphspackage"
     ]
   },
-  "publicRelease": false,
-  "updateTrial": "pending: Mac locked before VM setup",
+  "publicRelease": true,
+  "updateTrial": "unperformed: Mac locked before VM setup; publication explicitly requested with this qualification gap disclosed",
   "cleanup": {
     "obsoleteDirectories": 30,
-    "bytes": 4229212167,
-    "allBuildsRemoved": false,
+    "bytes": 5725506914,
+    "allBuildsRemoved": true,
     "unusedOutputs": 97,
-    "remaining": [
-      "build/desktop-dependencies",
-      "build/update-trial-beta7-20260927",
-      "dist"
-    ]
+    "remaining": [],
+    "finalPassBytes": 1496294747,
+    "measurement": "sum of regular-file sizes; not physical space freed"
   },
   "draftAssetsVerified": true,
-  "developmentMetadata": "2.0.0-beta.8, build 50"
+  "developmentMetadata": "2.0.0-beta.8, build 50",
+  "releaseURL": "https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7",
+  "publicAssetsVerified": true,
+  "sparkleSignaturesVerified": true,
+  "signedFeedSha256": "cf92f39fe07eeadfbeb881ff85b31fae137ba94dded67c814827d0e92fc7f2d6",
+  "stableLatest": "v1.11.1",
+  "publicationChecks": {
+    "focusedTestsPassed": 30,
+    "docsProductionBuild": "passed",
+    "synchronizedSkills": 11
+  }
 }

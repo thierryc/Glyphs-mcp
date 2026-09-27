@@ -1,0 +1,8 @@
+..............................                                           [100%]
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Installer and release                   27     0     0     3    0.21s
+Docs, skills, and host plugins           3     0     0     1    0.05s
+Markdown test report: build/test-report.md
+30 passed in 0.44s

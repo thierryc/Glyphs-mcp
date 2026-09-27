@@ -1,0 +1,29 @@
+{
+  "removedAt": "2026-09-27T13:47:24.141206+00:00",
+  "reason": "Authorized deletion of remaining generated builds after public release verification",
+  "paths": [
+    {
+      "path": "build",
+      "files": 266,
+      "bytes": 835674012
+    },
+    {
+      "path": "dist",
+      "files": 94,
+      "bytes": 634738438
+    },
+    {
+      "path": "website/build",
+      "files": 183,
+      "bytes": 25706559
+    },
+    {
+      "path": "website/.docusaurus",
+      "files": 82,
+      "bytes": 175738
+    }
+  ],
+  "bytes": 1496294747,
+  "measurement": "sum of regular-file sizes, excluding symlinks; not physical space freed",
+  "remainingBuildRoots": []
+}

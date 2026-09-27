@@ -2,7 +2,7 @@
 title: Packaging and release discovery
 ---
 
-This checkout prepares Glyphs MCP **2.0.0 Beta 8**, release `2.0.0-beta.8`, desktop build **50**. Beta 8 is metadata-only development preparation; it has not been built, installed, signed, notarized or published. Beta 7/build 49 has verified signed assets in a private draft, pending its final update test and publication. The published download and signed feed remain Beta 6/build 48. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, twelve tools and up to eleven capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The candidate payload includes the lean Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes. It contains no Glyphs 3 target or v1 skills; the pinned v1.11.0 source metadata and separate release remain unchanged.
+This checkout prepares Glyphs MCP **2.0.0 Beta 8**, release `2.0.0-beta.8`, desktop build **50**. Beta 8 is metadata-only development preparation; it has not been built, installed, signed, notarized or published. Beta 7/build 49 is the published signed and notarized prerelease and beta feed. Its exact signed-update/component-migration acceptance test remains open and is disclosed in the release notes. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, twelve tools and up to eleven capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The candidate payload includes the lean Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes. It contains no Glyphs 3 target or v1 skills; the pinned v1.11.0 source metadata and separate release remain unchanged.
 
 Build, sign, notarize and verify on the maintainer's Mac. No GitHub Actions are required or used for release publishing. The full maintained procedure is in `macos-installer/RELEASING.md` in the candidate repository.
 
@@ -17,7 +17,7 @@ recovery, and component migration checks. See the exact evidence in
 - `Glyphs-MCP-2.0.0-beta.8.dmg`: planned signed and notarized Beta 8 installer.
 - `Glyphs-MCP-2.0.0-beta.8.zip`: planned Sparkle-signed desktop application archive.
 - No `Glyphs-MCP-latest.dmg` for a beta. That byte-identical alias is reserved for stable releases.
-- `appcast.xml`: the exact signed Beta 6 feed, published after public archive verification.
+- `appcast.xml`: the exact signed Beta 7 feed, published after public archive verification; Beta 8 has no feed item yet.
 - Checksums, source manifest, installation receipt and acceptance report associated with the exact candidate.
 
 Keep local acceptance evidence containing private font paths out of public release assets unless reviewed for sharing. Store notarization credentials in Keychain.
