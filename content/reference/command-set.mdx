@@ -19,9 +19,9 @@ independent sidecar/bridge identities and negotiated `readCapabilities`,
 | `accept_job` | `job_id`, optional `destination`, `include_preview` | Persist an applied mutation, or publish verified export artifacts to a new directory. |
 | `discard_job` | `job_id`, optional `include_preview` | Cancel preparation, discard a proposal or restore current affected live targets. |
 | `save_document` | `document_id`, optional `destination` | Save an explicitly identified unowned document. |
-| `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options` | Retain a requested edit and prepare/apply it after any authorized prerequisite save. |
-| `get_edit_workflow` | `workflow_id` | Read authoritative state, revision, linked job evidence, offered actions and text guidance. |
-| `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites` | Execute one offered action with duplicate protection. |
+| `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options`, `auto_keep` (default true) | Retain a requested edit; successful edit cards may Keep after 30 seconds. Honor “wait for my answer” with `auto_keep=false`. |
+| `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance. |
+| `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false) | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. |
 
 ## Conversation workflow
 
@@ -32,7 +32,7 @@ including `dimensions_edit`, and exclude compilation and export.
 
 Use `apply` for requested edits and `preview` for preview-only requests. The
 coordinator validates scope, capabilities and worker availability before offering
-a prerequisite save. It binds the request to an explicit document ID. Ordinary
+a prerequisite save. It binds the request to an explicit document ID. Ordinary typed
 complete results apply automatically; warnings, skipped/unavailable targets and
 required overwrites retain report review. Application never saves.
 
@@ -363,7 +363,7 @@ variants are rejected. Compiler-only work uses the separate `feature_compile`
 diagnostic job; binary generation uses the separate `font_export` artifact job.
 Generic menu invocation remains outside the contract.
 
-The external worker invokes the action on the saved snapshot without saving it.
+Most actions run on a private saved snapshot in the worker. Glyph colors may prepare on detached target copies inside Glyphs without a worker or live edits.
 It hashes an action-specific Glyphs property-list projection and reports exact
 targets, changed/no-op counts, warnings, before/after summaries and the full
 report path. Encoded state is limited to 8 MiB per target and 64 MiB per job.
@@ -502,8 +502,9 @@ that separate workflow.
 
 Spacing preparation and reference comparison use an inclusive absolute **0.001 font-unit** tolerance. Width changes are evaluated independently of negligible translations. Native write verification, recovery, Undo/Redo, topology and source hashes remain exact.
 
-There are no additional v2 MCP endpoints for arbitrary Python, master
-replacement, arbitrary Unicode assignment or untyped font repair. Typed path
+Native Python uses `kind="python_script"` through `start_edit_workflow` with
+capability `script.native.v1`, without adding tools. Dedicated master replacement,
+Unicode allocation and untyped repair endpoints remain absent. Typed path
 editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
@@ -523,3 +524,55 @@ native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
 require a coordinated bridge/sidecar/skills update. The catalog stays twelve tools.
+
+
+## Native scripts
+
+Use `python_script` with `source`, JSON `params`, `entrypoint="per_target"|"script"`,
+`targets`, and optional intended-effect `summary` (500 characters). `executionMode`
+and `recovery` are retired and rejected. Target selectors are explicit glyph/layer/
+surface entries or all/named glyphs in one exact master; background IDs identify
+owning foreground layers. Whole scripts may use an empty target list; callbacks
+require eligible surfaces. Limits: 4,096 surfaces, 128 KiB source, 64 KiB params.
+
+A requested font task authorizes in-scope Run without a separate code review or
+human click. Write-only/review-only requests do not execute; writing includes code
+review, while explicit previews wait. Preparation and polling never run module
+code. A clean saved baseline skips Save. Dirty fonts require authorized saving;
+new fonts use existing Save As/manual choices. Failed/uncertain saves never run.
+
+`get_edit_workflow` defaults `include_review=false` for compact progress and action
+state. Set it true for optional Script details/Show script. Scripts run on Glyphs'
+main thread; callbacks yield between batches. Cancellation stops remaining calls,
+not the current invocation. Successful execution does not verify intended changes.
+
+`auto_keep=true` on new workflows enables a visible card countdown: after a
+successful edit, **Keep changes without saving** is selected in 30 seconds.
+Pass `auto_keep=false` for **“wait for my answer”**, or dispatch the existing
+`wait_for_answer` action. This disables the countdown without cancelling work.
+Only cards use `automatic=true` when dispatching the timed Keep; the server rejects
+that flag for other actions or outcomes. Hidden cards, open Script details and
+reconnects require a fresh read and countdown. Text-only clients remain manual.
+
+Restore saved version reloads the whole unchanged baseline, discards later unsaved
+edits and clears Undo history, returning a fresh document binding. Keep or Save ends
+that offer. Failures can leave partial edits; reload is never automatic. External
+effects are not restored. Reconcile uncertain outcomes without replaying code.
+
+### Unified edit results
+
+The existing `respond_edit_workflow` tool offers `finish_edit` for successful typed
+results and retains `finish_script` for scripts. Both Keep without saving and end
+the workflow recovery offer. Typed Keep preserves native Undo/Redo; selective
+**Undo these changes** remains available until Keep or Save. Script recovery uses
+whole-font **Restore saved version**. Typed blockers offer manual Keep, including
+jobs without an originating workflow; `blockingWorkflowId` identifies one when present.
+
+New successful typed cards share the 30-second Keep countdown with scripts.
+Existing typed records remain manual. Failed or uncertain Wait requests pause the
+local countdown; no result timer runs for unresolved, partial or blocked outcomes.
+
+The private `edit.prepare.native.v1` capability selects bounded native preparation
+for width deltas, Dimensions, glyph colors and coordinate-only node updates. It
+adds no public tool or user mode. Saved/clean prerequisites, limits and selective
+recovery remain unchanged. Other requests retain their existing worker route.

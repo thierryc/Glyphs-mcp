@@ -2,7 +2,7 @@
 title: Safety and recovery
 ---
 
-A prepared job is a proposal. Applying it changes the open font but does not
+A prepared typed mutation job is a proposal. Applying it changes the open font but does not
 save it. After review, `accept_job` revalidates the affected live targets,
 saves the entire document, records a verified receipt and closes the job's
 rollback window. The call itself is authorization to save; do not call it only
@@ -17,7 +17,7 @@ publication to a new directory.
 
 `edit.workflow.v1` adds request retention and one shared MCP App with text
 fallback. Save and continue authorizes one prerequisite whole-document save;
-it does not authorize saving the resulting edit. Ordinary complete requests
+it does not authorize saving the resulting edit. Ordinary complete typed requests
 apply automatically; preview and report-review gates remain explicit. Action
 revisions/tokens deduplicate repeated clicks and text replies. A closed card
 is not cancellation. Restarted workflows reconcile existing operations and
@@ -25,7 +25,7 @@ never replay saves or mutations automatically.
 
 ## Baseline and ownership
 
-Preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. Outline jobs add exact path guards during preparation and exact before/after outline-state hashes at application. An external edit or a stale source rejects the operation instead of silently overwriting it.
+Typed preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. Outline jobs add exact path guards during preparation and exact before/after outline-state hashes at application. An external edit or a stale source rejects the operation instead of silently overwriting it.
 
 Closed native-action jobs add action-specific persisted-state hashes. Layer
 actions hash the complete persisted layer property list, glyph-info updates hash
@@ -49,6 +49,40 @@ symlinks, special files and extra output are rejected. A durable receipt binds
 the destination, source and manifest. After a restart, an interrupted rename is
 verified exactly and never replayed; missing or mismatched evidence becomes
 `accept_uncertain`.
+
+## Native scripts
+
+`python_script` with `script.native.v1` uses one direct native route. Preparation
+checks syntax and resolves exact targets without executing module code. Original
+task authorization permits Run without separate code review or a human click;
+explicit previews wait, and write-only/review-only requests never execute.
+Script details are optional; `get_edit_workflow(include_review=true)` retrieves
+exact source and parameters. Compact polling never repeats or replays execution.
+
+Clean saved fonts use the unchanged baseline without another Save. Dirty fonts
+require an authorized verified save; new fonts use Save As/manual saving. Saving
+before Run does not authorize saving its result. Native scripts can access Glyphs
+and the computer; external effects cannot be restored by reloading the font.
+
+Callbacks yield between bounded batches; whole scripts run once. Cancellation
+stops remaining callbacks, not a running invocation. Failures can leave partial
+edits; restoration is never automatic. Successful execution does not establish
+that the intended result was verified.
+
+Successful new typed-edit and script cards default to keeping changes without saving after a
+visible 30-second countdown. This ends their workflow recovery offer. **Wait for my
+answer** disables the timer for that workflow; agents honor the same directive
+with `auto_keep=false` on later requests. Hidden cards and open Details
+stop the timer; returning starts a fresh countdown after reconciliation. Older
+records, failed/cancelled outcomes and text-only clients remain manual. The
+countdown never authorizes Run, Save or Restore, and never verifies the result.
+
+**Restore saved version** reloads the unchanged baseline, replaces all later
+unsaved edits throughout the font, clears Undo history and returns a fresh binding.
+It never saves or reruns Python. Keep or Save ends the restoration offer. An
+overwritten baseline or closed document cannot provide this restoration. There is
+no backup or crash-recovery system. The typed snapshot/Undo rules below do not
+apply to scripts.
 
 ## Native Undo, Redo and discard
 
@@ -85,7 +119,7 @@ hashes are valid for a clean or repeated Save.
 
 ## Partial failures and timeouts
 
-Before a native write, the bridge records the target's exact starting state. If a setter partially fails, it restores that current target before yielding, then reverses earlier writes through chunked rollback. Recovery is verified. An incomplete restoration is reported explicitly inside the existing error details.
+Before a typed native write, the bridge records the target's exact starting state. If a setter partially fails, it restores that current target before yielding, then reverses earlier writes through chunked rollback. Recovery is verified. An incomplete restoration is reported explicitly inside the existing error details.
 
 A main-thread callback can be pending, running, completed or cancelled. A timeout cancels a pending callback so it cannot run later. If execution has started, the outcome is **uncertain** until reconciled. Keep the job ID and call `get_job`; do not automatically submit a replacement or claim no changes occurred.
 

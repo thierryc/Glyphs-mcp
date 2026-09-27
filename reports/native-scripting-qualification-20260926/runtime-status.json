@@ -1,0 +1,279 @@
+{
+  "ok": true,
+  "data": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.7",
+      "channel": "beta",
+      "betaNumber": 7,
+      "installerBuild": 49
+    },
+    "runtimeId": "2.0.0-beta.7+c5fdc08d1557",
+    "codeHash": "sha256:c5fdc08d1557a0021c7a4443a3bfb93c7ddca31b3a9dcbc4e2d835c89e311817",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant",
+      "python_script",
+      "outline_edit",
+      "native_action",
+      "dimensions_edit",
+      "feature_compile",
+      "font_export"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1",
+      "layers.list.v1",
+      "kerning.groups.v1",
+      "kerning.pairs.v1",
+      "master.properties.v1",
+      "paths.list.v1",
+      "path.geometry.v1",
+      "outline.background.read.v1",
+      "features.read.v1",
+      "instances.read.v1",
+      "master.dimensions.read.v1"
+    ],
+    "writeCapabilities": [
+      "outline.edit.v1",
+      "outline.remove-node.v1",
+      "outline.background.edit.v1",
+      "native.action.v1",
+      "master.dimensions.edit.v1"
+    ],
+    "nativeActions": [
+      "add_extremes",
+      "add_missing_anchors",
+      "align_components",
+      "cleanup_paths",
+      "connect_open_paths",
+      "correct_path_direction",
+      "decompose_components",
+      "decompose_corners",
+      "make_components",
+      "reinterpolate",
+      "remove_overlap",
+      "round_coordinates",
+      "set_glyph_color",
+      "swap_foreground_background",
+      "update_automatic_feature_block",
+      "update_features",
+      "update_glyph_info",
+      "update_metrics"
+    ],
+    "jobCapabilities": [
+      "feature.compile.live.v1",
+      "feature.compile.saved.v1",
+      "font.export.static.v1",
+      "font.export.variable.v1",
+      "font.export.web.v1",
+      "font.verify.shaping.v1",
+      "font.verify.tables.v1",
+      "script.native.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "accept_job",
+      "discard_job",
+      "save_document",
+      "start_edit_workflow",
+      "get_edit_workflow",
+      "respond_edit_workflow"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.7",
+        "channel": "beta",
+        "betaNumber": 7,
+        "installerBuild": 49
+      },
+      "runtimeId": "2.0.0-beta.7+ff5f9e0e962b",
+      "codeHash": "sha256:ff5f9e0e962bca7aaf2bbf73783417dc1c79e5caa87983024ce545db900bc24e",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.background.edit.v1",
+        "outline.remove-node.v1",
+        "master.dimensions.edit.v1",
+        "native.action.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "script.native.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": [],
+      "jobCapabilities": [
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1"
+      ]
+    },
+    "controlProtocol": 1,
+    "workflowCapabilities": [
+      "edit.workflow.v1"
+    ],
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_486982f8c7a24e3597134181044e90a8",
+          "document": "Dactylotype Editor Test glyphspackage",
+          "kind": "python_script",
+          "phase": "discarded",
+          "startedAt": 1790449528.35671,
+          "finishedAt": 1790449528.356745,
+          "completed": 423,
+          "total": 423,
+          "message": null
+        },
+        {
+          "jobId": "job_741711b0f5a14e87a90a87c238c670e1",
+          "document": "Dactylotype Editor Test glyphspackage",
+          "kind": "python_script",
+          "phase": "discarded",
+          "startedAt": 1790449381.7293499,
+          "finishedAt": 1790449381.729388,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_63ccd14ed0744cf7b422cd4b4be44ddd",
+          "document": "Dactylotype Editor Test glyphspackage",
+          "kind": "python_script",
+          "phase": "completed",
+          "startedAt": 1790449262.22623,
+          "finishedAt": 1790449262.226264,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_9a28b566c6a74adab3d53c21ccedfc93",
+          "document": "Dactylotype Editor Test glyphspackage",
+          "kind": "python_script",
+          "phase": "completed",
+          "startedAt": 1790449188.64919,
+          "finishedAt": 1790449188.649227,
+          "completed": null,
+          "total": null,
+          "message": "Deliberate disposable qualification failure"
+        },
+        {
+          "jobId": "job_1f98aa3dcb5d4b1ebfaedfda61c7003f",
+          "document": "Dactylotype Editor Test glyphspackage",
+          "kind": "python_script",
+          "phase": "discarded",
+          "startedAt": 1790449168.136669,
+          "finishedAt": 1790449168.136705,
+          "completed": null,
+          "total": null,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+  }
+}

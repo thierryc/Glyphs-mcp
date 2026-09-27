@@ -37,8 +37,15 @@ preparation, and never save, export,
 close, or overwrite a font unless the user's task authorizes it. Do not retry
 an uncertain write or save as a new job; reconcile the existing job identity first.
 
-There is no arbitrary MCP Python or plugin reload. Unsupported edits require
-an explicitly authorised native workflow; do not invent an MCP command.
+For applying an approved pair map, a numeric transformation of selected stored
+values or a coordinated group reassignment, offer **direct native scripting**
+under the [shared route and recovery guide](../glyphs/references/python-scripts.md#choose-the-route).
+Use one whole script with exact master IDs, direction and pair/group keys in
+`params`; preserve untargeted exceptions and check for collisions when renaming
+groups. Saved-version recovery reloads the
+whole font's pre-run kerning along with its other persisted contents. Read back
+representative and boundary pairs and review proofs. Keep `kerning_collision`
+for its analysis and suggestions; a scripted value change is not optical repair.
 
 Prepare kind="kerning_collision" with explicit pairs and master scope. Inspect
 pair clearance, existing kerning and the suggested corrections in the report.

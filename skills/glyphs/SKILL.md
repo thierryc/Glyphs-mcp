@@ -55,6 +55,7 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 | Feature source discovery and saved/live compiler diagnostics | [Feature compilation](references/feature-compilation.md), requiring `features.read.v1` and a compile capability |
 | Static, variable, WOFF/WOFF2 export and bounded shaping checks | [Font export](references/font-export.md), requiring `instances.read.v1` and export/verification capabilities |
 | Color, icon/Unicode, production or LitSquare audit scope beyond these jobs | [Specialized scope](references/specialized-scope.md) |
+| Direct native bulk edits or custom font-level changes | [Python script jobs](references/python-scripts.md), requiring `script.native.v1` and a verified saved baseline |
 | Connection failure | [Troubleshooting](references/connection-troubleshooting.md) |
 | Glyphs crashed or unexpectedly exited | [Crash recovery](references/crash-recovery.md); ask before any temporary autosave pause |
 
@@ -68,10 +69,20 @@ targets, with tighter detail limits specified in the focused references.
 
 ## Supported edits
 
+Prefer typed jobs for their supported algorithms and ordinary edits. For large
+or composed modifications, offer [direct native scripting](references/python-scripts.md#choose-the-route)
+with a verified saved baseline and whole-font **Restore saved version**.
+Original task authorization permits the Run action without code review or another
+Run question. Saving requires existing or explicit authorization. There is one
+script route at every target count. Reads remain save-free. A missing advertised capability remains an installation
+gap, not permission to bypass that workflow with a script.
+
 For an advertised mutation job, prefer the shared [conversation workflow](references/edit-workflow.md)
 when `workflowCapabilities` includes `edit.workflow.v1`. Use `start_edit_workflow`
 with the same operation and scope and a retained idempotency key. An edit request
-uses `apply`; an explicit preview uses `preview`. Ordinary complete results apply
+uses `apply`; an explicit preview uses `preview`. Script-specific Run and recovery
+rules are in [the execution contract](references/python-scripts.md); agents dispatch
+Run under task authorization, while preparation and polling never execute code. For typed edits, ordinary complete results apply
 automatically without saving. Warnings, skipped targets and overwrite approvals
 require report review before application. Present the standard MCP App wherever
 supported; every choice also works in ordinary conversation. “Save and continue”
@@ -82,13 +93,19 @@ The existing `start_job`, `get_job`, `apply_job` lifecycle remains available for
 explicit low-level job work. Diagnostic jobs finish without application; artifact jobs
 publish through `accept_job` to a new directory. Reconcile an uncertain write
 using that existing job ID; do not
-submit a duplicate. `discard_job` cancels or restores the whole job. Application
-is save-free. When the user's task authorizes persistence after review, call
+submit a duplicate. For typed jobs, `discard_job` cancels or restores
+the whole job; native scripts use the explicit **Restore saved version**
+conversation action. Application
+is save-free. Successful edits offer Keep without saving, Save and their recovery
+action. Keep ends wrapper recovery while preserving native Undo/Redo. New cards
+automatically Keep after 30 seconds; honor “wait for my answer” with `auto_keep=false`
+or the offered opt-out action. Text-only clients remain manual. When the user's task authorizes persistence after review, call
 `accept_job`; it revalidates affected targets, saves the entire document and
 closes the rollback window. Use `save_document` only for a specifically
 identified document with no active or applied MCP job. Inspect fresh source and
 dirty state for preparation, and never save merely to satisfy `start_job`.
 Never save, publish an export, close or overwrite a font unless the user's task
-authorizes it. The twelve tools provide no arbitrary Python execution or plugin reload; do
-not invent an MCP command. An advertised `native_action` is a closed typed job,
+authorizes it. The twelve tools expose trusted Python through the separate advertised
+`python_script` job; follow [its execution contract](references/python-scripts.md).
+There is no plugin reload tool; do not invent an MCP command. An advertised `native_action` is a closed typed job,
 not a general script or remote-object interface.

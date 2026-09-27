@@ -13,7 +13,7 @@ not inspect unsaved edits. Do not replace a known target with the frontmost font
 2. Use the development skill's [offline corpus](../../glyphs-mcp-development/references/development-docs.md)
    for unfamiliar native APIs. Read [qualified Glyphs 4 API notes](../../glyphs-mcp-development/references/glyphs4-api-notes.md)
    for native flags, compilation and export. Reuse excerpts already in context.
-3. For an authorized change, show the exact source diff and intended effect,
+3. For an authorized change, state the intended effect, make the source diff available,
    check referenced glyphs/classes, and modify only the explicit targets.
    Respect automatic generation; inspect generated changes rather than claiming
    that source stayed untouched after generation or compilation.
@@ -30,12 +30,23 @@ not inspect unsaved edits. Do not replace a known target with the frontmost font
 
 When the required closed capability is missing, report that the coordinated
 installation needs updating; do not substitute a script. Create/revise a
-workspace script only for genuinely unsupported or explicitly scripted work;
+workspace script for custom source edits or a reviewed composed operation;
 use the existing
 development scaffolder only when a new artifact needs it. Native execution
-follows the user's authorized scope. No feature-editing or Python MCP tool is
-available. Native script changes do not acquire MCP job Undo/discard guarantees;
-use the existing host behavior and verify preservation in the tested scope.
+follows the user's authorized scope. An advertised `python_script` job provides
+the shared [script execution contract](../../glyphs/references/python-scripts.md).
+For feature-source changes, use native `entrypoint="script"` when
+`script.native.v1` is advertised, under original task authorization. Supply exact block identities, expected old source and new source in
+`params`; `targets:[]` is appropriate for these font-level collections. One
+invocation can update related prefixes, classes and features in their required
+order. Validate all expected source before starting writes.
+Clean saved fonts use the baseline without another Save. Authorized **Save and run** saves a dirty font once. **Restore saved version** reloads
+that unchanged saved file, including feature source and all other in-font data;
+it discards later unsaved edits and clears Undo history. Verify source via fresh reads, then use the existing compile/export
+workflows when those checks are requested; script completion is not compiler or
+shaping evidence. A result save for those later jobs remains explicit.
+Native scripts run outside that job have their own host recovery behavior; verify
+preservation in the tested scope.
 
 Report authored source, native compilation, exported binary and shaping results
 separately, with script revision and host build. Missing binary or shaping

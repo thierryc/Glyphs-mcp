@@ -77,7 +77,9 @@ Use the [compact verification record and failure-specific recovery steps](verifi
 to report a revision or resume an interrupted test. These are project guidance;
 the qualified menu observations above apply to Glyphs 4.1 (4107).
 
-Supported MCP jobs have existing Undo/discard behavior. That is not recovery
+Supported MCP jobs have separate recovery contracts: typed jobs use existing
+Undo/discard; native scripting uses explicit whole-font saved reload.
+Follow the [script contract](../../glyphs/references/python-scripts.md). That is not recovery
 for arbitrary plugin code. Identify public task calls and independent proofs
 separately in the report.
 

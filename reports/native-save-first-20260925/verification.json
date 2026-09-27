@@ -1,0 +1,21 @@
+{
+  "fullRegression": {
+    "passed": 2203,
+    "skipped": 2,
+    "deselected": 2
+  },
+  "loopbackFollowup": {
+    "passed": 2
+  },
+  "finalTargeted": {
+    "passed": 69
+  },
+  "managedSkills": 11,
+  "publicTools": 12,
+  "installedRuntimeChanged": false,
+  "editorNSDocumentSaveVerified": false,
+  "standaloneNativeFontWriterVerified": true,
+  "builtPythonFileMatches": 102,
+  "nativeCandidateSuites": 5,
+  "nativeSavedFileChecksPerFormat": 26
+}

@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "evidence": {
+    "scopedFlipUndoRedoDiscard": true,
+    "metadataAddRemoveFractionalWidth": true,
+    "hintsGuidesAnnotationsAttributesComponentsImagesPreserved": true,
+    "outsideScopeAndRuntimeFailureRejected": true,
+    "liveOnceUndoRedoDiscard": true,
+    "wholeScriptAndFailureRecovery": true,
+    "explicitNoRecovery": true
+  }
+}

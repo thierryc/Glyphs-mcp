@@ -1,0 +1,382 @@
+[
+  {
+    "targets": 100,
+    "contours": 1,
+    "mode": "direct",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.009465374998399056,
+        "min": 0.009334582995506935,
+        "max": 0.010177332995226607
+      },
+      "callbackSeconds": {
+        "median": 0.009465374998399056,
+        "min": 0.009334582995506935,
+        "max": 0.010177332995226607
+      },
+      "peakRSSBytes": {
+        "median": 174096384,
+        "min": 172998656,
+        "max": 175144960
+      }
+    }
+  },
+  {
+    "targets": 100,
+    "contours": 1,
+    "mode": "native",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.5771817499917233,
+        "min": 0.5708097919996362,
+        "max": 0.5875916250079172
+      },
+      "preparationSeconds": {
+        "median": 0.3109667919925414,
+        "min": 0.3059900829975959,
+        "max": 0.3193960830103606
+      },
+      "saveSeconds": {
+        "median": 0.054629749996820465,
+        "min": 0.04771379199519288,
+        "max": 0.0632119999936549
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.2668940000003204,
+        "min": 0.26056183301261626,
+        "max": 0.2704664170014439
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.018445167006575502,
+        "min": 0.018210165988421068,
+        "max": 0.018850417007342912
+      },
+      "longestChunkSeconds": {
+        "median": 0.0079072500084294,
+        "min": 0.007471999997505918,
+        "max": 0.008037666004383937
+      },
+      "scheduledChunks": {
+        "median": 7,
+        "min": 7,
+        "max": 7
+      },
+      "peakRSSBytes": {
+        "median": 175734784,
+        "min": 175325184,
+        "max": 175931392
+      },
+      "restoreSeconds": {
+        "median": 0.009846000000834465,
+        "min": 0.007060458010528237,
+        "max": 0.011000124999554828
+      }
+    }
+  },
+  {
+    "targets": 1000,
+    "contours": 1,
+    "mode": "direct",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.09743279199756216,
+        "min": 0.09597445798863191,
+        "max": 0.14576995800598525
+      },
+      "callbackSeconds": {
+        "median": 0.09743279199756216,
+        "min": 0.09597445798863191,
+        "max": 0.14576995800598525
+      },
+      "peakRSSBytes": {
+        "median": 197853184,
+        "min": 196673536,
+        "max": 198377472
+      }
+    }
+  },
+  {
+    "targets": 1000,
+    "contours": 1,
+    "mode": "native",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.8426881250052247,
+        "min": 0.833709042010014,
+        "max": 0.8498564170004101
+      },
+      "preparationSeconds": {
+        "median": 0.3128491249954095,
+        "min": 0.30799341600504704,
+        "max": 0.3201605420035776
+      },
+      "saveSeconds": {
+        "median": 0.058023624995257705,
+        "min": 0.05529512499924749,
+        "max": 0.05884275000425987
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.5296922499983339,
+        "min": 0.5221379589929711,
+        "max": 0.5304295420064591
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.1602044199971715,
+        "min": 0.15856278900173493,
+        "max": 0.16097687190631405
+      },
+      "longestChunkSeconds": {
+        "median": 0.010028125005192123,
+        "min": 0.010012957995058969,
+        "max": 0.010129125003004447
+      },
+      "scheduledChunks": {
+        "median": 61,
+        "min": 61,
+        "max": 61
+      },
+      "peakRSSBytes": {
+        "median": 200523776,
+        "min": 200294400,
+        "max": 200622080
+      },
+      "restoreSeconds": {
+        "median": 0.02702504199987743,
+        "min": 0.02479133300948888,
+        "max": 0.02776483300840482
+      }
+    }
+  },
+  {
+    "targets": 4096,
+    "contours": 1,
+    "mode": "direct",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.38550487499742303,
+        "min": 0.37755937498877756,
+        "max": 0.41349987499415874
+      },
+      "callbackSeconds": {
+        "median": 0.38550487499742303,
+        "min": 0.37755937498877756,
+        "max": 0.41349987499415874
+      },
+      "peakRSSBytes": {
+        "median": 329318400,
+        "min": 328302592,
+        "max": 330088448
+      }
+    }
+  },
+  {
+    "targets": 4096,
+    "contours": 1,
+    "mode": "native",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 1.6810817500081612,
+        "min": 1.6260513339948375,
+        "max": 1.8994689999963157
+      },
+      "preparationSeconds": {
+        "median": 0.32038054199074395,
+        "min": 0.3071748749935068,
+        "max": 0.3236909999977797
+      },
+      "saveSeconds": {
+        "median": 0.049535750003997236,
+        "min": 0.04777445801300928,
+        "max": 0.09661224999581464
+      },
+      "dispatchToResultSeconds": {
+        "median": 1.3578053749952232,
+        "min": 1.311248166995938,
+        "max": 1.5828400000027614
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.6824113661423326,
+        "min": 0.6618565839889925,
+        "max": 0.6894034451834159
+      },
+      "longestChunkSeconds": {
+        "median": 0.013112291999277659,
+        "min": 0.012808792002033442,
+        "max": 0.01931716599210631
+      },
+      "scheduledChunks": {
+        "median": 246,
+        "min": 246,
+        "max": 246
+      },
+      "peakRSSBytes": {
+        "median": 337313792,
+        "min": 288358400,
+        "max": 339263488
+      },
+      "restoreSeconds": {
+        "median": 0.0703065000125207,
+        "min": 0.05504424999526236,
+        "max": 0.07218341701081954
+      }
+    }
+  },
+  {
+    "targets": 100,
+    "contours": 12,
+    "mode": "direct",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.0996451669925591,
+        "min": 0.09653687498939689,
+        "max": 0.10099616700608749
+      },
+      "callbackSeconds": {
+        "median": 0.0996451669925591,
+        "min": 0.09653687498939689,
+        "max": 0.10099616700608749
+      },
+      "peakRSSBytes": {
+        "median": 178094080,
+        "min": 177553408,
+        "max": 179699712
+      }
+    }
+  },
+  {
+    "targets": 100,
+    "contours": 12,
+    "mode": "native",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.5756751659937436,
+        "min": 0.5710974170069676,
+        "max": 0.5876842500001658
+      },
+      "preparationSeconds": {
+        "median": 0.316639041993767,
+        "min": 0.3071330829989165,
+        "max": 0.32272774999728426
+      },
+      "saveSeconds": {
+        "median": 0.038471457999548875,
+        "min": 0.03543816700403113,
+        "max": 0.042358500009868294
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.26396300000487827,
+        "min": 0.2570708330022171,
+        "max": 0.27381795799010433
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.10960441398492549,
+        "min": 0.10398753998742905,
+        "max": 0.11640296000405215
+      },
+      "longestChunkSeconds": {
+        "median": 0.01091216699569486,
+        "min": 0.010607500007608905,
+        "max": 0.011177542008226737
+      },
+      "scheduledChunks": {
+        "median": 15,
+        "min": 14,
+        "max": 15
+      },
+      "peakRSSBytes": {
+        "median": 179404800,
+        "min": 178388992,
+        "max": 179650560
+      },
+      "restoreSeconds": {
+        "median": 0.007715624989941716,
+        "min": 0.007432582991896197,
+        "max": 0.008189041996956803
+      }
+    }
+  },
+  {
+    "targets": 500,
+    "contours": 12,
+    "mode": "direct",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 0.5145665829913924,
+        "min": 0.5084284589975141,
+        "max": 0.5150365409936057
+      },
+      "callbackSeconds": {
+        "median": 0.5145665829913924,
+        "min": 0.5084284589975141,
+        "max": 0.5150365409936057
+      },
+      "peakRSSBytes": {
+        "median": 206749696,
+        "min": 203259904,
+        "max": 210305024
+      }
+    }
+  },
+  {
+    "targets": 500,
+    "contours": 12,
+    "mode": "native",
+    "runs": 5,
+    "stats": {
+      "totalSeconds": {
+        "median": 1.108717292008805,
+        "min": 1.1019050000031712,
+        "max": 1.1114854580082465
+      },
+      "preparationSeconds": {
+        "median": 0.3124505000014324,
+        "min": 0.3053208750061458,
+        "max": 0.3204992079990916
+      },
+      "saveSeconds": {
+        "median": 0.04163875000085682,
+        "min": 0.04044070799136534,
+        "max": 0.044911416989634745
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.7990334170026472,
+        "min": 0.7871151250001276,
+        "max": 0.8033947500080103
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.5426050040259724,
+        "min": 0.5330179999727989,
+        "max": 0.5630299179611029
+      },
+      "longestChunkSeconds": {
+        "median": 0.011100165997049771,
+        "min": 0.010978541991789825,
+        "max": 0.011376374997780658
+      },
+      "scheduledChunks": {
+        "median": 71,
+        "min": 70,
+        "max": 72
+      },
+      "peakRSSBytes": {
+        "median": 207470592,
+        "min": 205996032,
+        "max": 210321408
+      },
+      "restoreSeconds": {
+        "median": 0.019448166000074707,
+        "min": 0.017193374995258637,
+        "max": 0.020274916998459958
+      }
+    }
+  }
+]

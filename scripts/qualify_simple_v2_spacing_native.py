@@ -76,6 +76,11 @@ def main():
     finally:
         native_worker._load_font = original_loader
     baseline = {(str(g.name),str(l.layerId)):(float(l.width),spacing_job.layer_hash(l)) for g in font.glyphs for l in g.layers}
+    # Fixture construction occurs in one CLI event; finish its automatic groups
+    # before handing an otherwise idle document to the production Undo guard.
+    for glyph in font.glyphs:
+        manager = glyph.undoManager()
+        while manager.groupingLevel(): manager.endUndoGrouping()
     queue=[]; bridge=BridgeCore(adapter,schedule=queue.append)
     bridge.begin_apply(patch)
     while queue: queue.pop(0)()

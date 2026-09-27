@@ -84,3 +84,13 @@ Each canonical persisted target state is limited to 8 MiB and the job to 64 MiB.
 Hash conflicts, readback failures or mid-batch exceptions trigger exact native
 snapshot restoration and rollback; report incomplete recovery rather than
 claiming a clean result.
+
+The `native_action` catalog remains closed. For a custom or large sequence of
+operations, offer separate advertised [direct native scripting](python-scripts.md#choose-the-route)
+with a verified saved baseline and whole-font saved reload. Resolve one manifest
+and perform the agreed sequence locally instead of a tool request per path or
+step. This route does not inherit typed-action diagnostics or snapshot recovery;
+keep the typed job for ordinary single commands or selective recovery. Never
+substitute scripts for missing advertised native capabilities or rejected writes.
+
+`set_glyph_color` can prepare on detached target copies through the internal native preparer. Other closed actions keep their existing worker route. This does not add a script mode or relax target guards, color restrictions or selective recovery. Successful results use [Keep, Save and Undo](edit-workflow.md).

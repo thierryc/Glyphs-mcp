@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "masters": 3,
+  "exactUndoRedo": true,
+  "preserved": [
+    "width",
+    "topology",
+    "metadata",
+    "hints",
+    "object identity",
+    "rounding flags",
+    "grid",
+    "Undo registration"
+  ]
+}

@@ -57,6 +57,9 @@ class Bridge:
     def operation(self, identity):
         return self.call(self.core.operation, identity)
 
+    def finish_edit(self, identity):
+        return self.call(self.core.finish_edit, identity)
+
     def discard(self, identity):
         return self.call(self.core.discard, identity)
 
@@ -410,7 +413,8 @@ def test_full_text_only_mcp_without_skills(env):
                 await asyncio.sleep(.01)
                 result = await client.call_tool('get_edit_workflow', dict(workflow_id=data['workflow_id']))
             assert text_control(result)['state'] == 'applied'
-            assert 'Changes applied. Save your font to keep them.' in result.content[0].text
+            assert 'Changes applied.' in result.content[0].text
+            assert 'Keep changes without saving' in result.content[0].text
             assert len(bridge.adapter.save_calls) == 1 and source.read_text() == '600'
             # A later plain "Save the font" uses the retained reference and a
             # fresh offered action; no user-supplied identifier is necessary.

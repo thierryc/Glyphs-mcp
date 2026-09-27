@@ -1,0 +1,40 @@
+{
+  "data": [
+    "dirty preparation does not execute",
+    "optional source omitted from polling",
+    "native flip preserves fractional coordinates",
+    "foreground other master anchors components preserved",
+    "control points mirrored",
+    "foreground preserved",
+    "execution unsaved",
+    "no layer snapshots retained",
+    "precision flags released",
+    "whole saved version restored",
+    "later manual edits replaced",
+    "restoration does not save",
+    "restored document clean",
+    "fresh document binding",
+    "restoration clears Undo",
+    "failure retains partial effects",
+    "failure offers Keep and Restore",
+    "failure restored",
+    "whole script with zero layer targets executes",
+    "whole script has no callback progress",
+    "font metadata removed by reload",
+    "feature additions removed by reload",
+    "kerning additions removed by reload",
+    "clean baseline uses zero Save calls",
+    "module failure preserves partial edits",
+    "script save detected",
+    "cancellation stops remaining callbacks",
+    "partial cancellation unsaved",
+    "cancelled script restored",
+    "Keep ends restoration offer"
+  ],
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

@@ -4,13 +4,20 @@ For conversation edits, use the [shared edit workflow](edit-workflow.md)
 with these same request fields when `edit.workflow.v1` is advertised. The
 low-level job examples below describe operation scope and existing guards.
 
+For a large numeric rule, absolute widths or one-master-only edits, also consider
+[direct native scripting](python-scripts.md#choose-the-route). Explain its whole-font saved reload; execution uses the original task authorization and saving requires authorization; one local callback avoids repeated
+width requests. Its exact surface manifest differs from this job's **all stored
+layers** scope. Never silently narrow the user's scope or treat a direct script
+as the `width_delta` job's selective recovery. Ordinary additive edits keep the
+typed workflow below.
+
 Reuse the specific connection's `$glyphs` context and verify `width_delta` in
 the retained `get_status.jobKinds`. A missing private capability requires updating the
 bridge, sidecar and skills together; do not substitute an older-build workflow.
 
 Reuse the intended `document_id`; discover only when it needs resolving. Inspect live
 master/layer IDs and before widths using the layer-read reference. Reads work
-on dirty fonts, but external width preparation requires a saved, clean source.
+on dirty fonts, but width preparation requires a saved, clean source.
 Never Save merely to satisfy this requirement without user authorization.
 
 For “add 17 units to A and B”, call `start_job` with:
@@ -52,3 +59,5 @@ verify the result. Reapplying the same job is not a new delta. A new accepted
 width-delta job is additive; when persistence is authorized, `accept_job`
 verifies the prior change and saves the whole document. Never retry an uncertain write as a new job, silently switch fonts or
 save/export/close a document without authorization.
+
+Widths can prepare directly from stored live layers when the bridge supports the internal native preparer, avoiding a font copy and worker launch. Target scope and guarded selective recovery are unchanged. Missing layers are never created by preparation.

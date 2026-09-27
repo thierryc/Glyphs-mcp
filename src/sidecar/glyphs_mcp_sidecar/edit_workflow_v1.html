@@ -7,6 +7,7 @@
 :root{color-scheme:light dark;font:14px/1.5 var(--font-sans,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);--bg:var(--color-background-primary,light-dark(#fff,#212121));--fg:var(--color-text-primary,light-dark(#171717,#f1f1f1));--muted:var(--color-text-secondary,light-dark(#626262,#b8b8b8));--line:var(--color-border-secondary,light-dark(#ddd,#484848));--accent:var(--color-text-info,light-dark(#126947,#69d3a8))}
 *{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--fg)}main{max-width:720px;margin:auto}h1{font-size:18px;line-height:1.3;margin:6px 0}p{margin:8px 0}.muted{color:var(--muted)}.path,pre,output{overflow-wrap:anywhere;white-space:pre-wrap}.path{font-size:12px}.status{font-weight:600}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}button,input{font:inherit;border:1px solid var(--line);border-radius:7px;padding:8px 12px;color:var(--fg);background:var(--bg)}button{cursor:pointer;min-height:40px}button.primary{border-color:var(--accent);color:var(--accent);font-weight:600}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:3px}label{display:block;margin:12px 0 4px}input[type=text]{width:100%}input[type=checkbox]{margin-right:8px}fieldset{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:12px}pre{font:12px/1.5 ui-monospace,monospace}details{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}summary{cursor:pointer}.error{color:var(--color-text-danger,light-dark(#a32525,#ffaaa2))}[hidden]{display:none!important}.badge{font-size:12px;color:var(--muted)}#fallback{border-top:1px solid var(--line);padding-top:10px;font-size:12px}
 @media(max-width:400px){body{padding:10px}.actions button{width:100%}}
+progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8px 0}
 </style>
 </head>
 <body>
@@ -16,6 +17,16 @@
   <p id="status" class="status" role="status" aria-live="polite">Connecting to this conversation…</p>
   <p id="message"></p><p id="progress" class="muted"></p>
   <div id="warnings"></div><div id="proposal"></div><div id="approvals"></div>
+  <details id="script-review" hidden><summary>Script details</summary>
+    <p id="script-mode"></p><pre id="script-params"></pre><pre id="script-source"></pre>
+    <pre id="script-output"></pre>
+  </details>
+  <p id="restore-coverage" class="muted" hidden></p>
+  <div id="auto-keep" hidden>
+    <p id="auto-keep-label" role="status" aria-live="polite"></p>
+    <progress id="auto-keep-progress" max="30" value="0" aria-label="Time until changes are kept without saving" aria-describedby="auto-keep-coverage"></progress>
+    <p id="auto-keep-coverage" class="muted">This ends this workflow’s recovery offer. Choose “Wait for my answer” to stop the countdown.</p>
+  </div>
   <div id="actions" class="actions"></div>
   <form id="save-form" hidden>
     <fieldset><legend>Save As</legend>
@@ -28,16 +39,19 @@
   </form>
   <p id="error" class="error" role="alert"></p>
   <p id="fallback" class="muted">You can always continue in the conversation using ordinary language.</p>
-  <details><summary>Details</summary><pre id="details"></pre></details>
+  <details id="result-details"><summary>Details</summary><pre id="details"></pre></details>
 </main>
 <script>
 (() => {
   "use strict";
   const byId = id => document.getElementById(id);
   const pending = new Map();
+  let scriptCache = null, warningCache = null, evidenceCache = null, completionRead = false;
   let sequence = 0, current = null, host = {}, connected = false, busy = false;
   let disposed = false, visible = true, timer = null, formAction = null, origin = "*";
   let verified = false, reading = false, reconcile = false, contextVersion = null;
+  let autoKeepTimer = null, autoKeepKey = null, autoKeepStarted = 0, autoKeepPending = false;
+  let autoKeepAttempted = null;
   const setText = (id, text) => { byId(id).textContent = text || ""; };
   const pretty = value => JSON.stringify(value, null, 2);
   const excerpt = value => { const text = pretty(value) || ""; return text.length > 500 ? text.slice(0, 500) + "…" : text; };
@@ -56,6 +70,53 @@
     notify("ui/notifications/size-changed", {height:Math.ceil(document.querySelector("main").getBoundingClientRect().height) + 32});
   }
   function toolCallsAvailable() { return connected && !!host.serverTools; }
+  const optedOut = new Set();
+  const resultIdentity = value => JSON.stringify([value?.id, value?.requestFingerprint]);
+  const autoKeepIdentity = value => JSON.stringify([value?.id, value?.jobId, value?.requestFingerprint, value?.revision]);
+  function stopAutoKeep() {
+    clearTimeout(autoKeepTimer); autoKeepTimer = null; autoKeepKey = null;
+    byId("auto-keep").hidden = true;
+  }
+  function canAutoKeep() {
+    return current?.state === "applied" && !current.blockerId && !optedOut.has(resultIdentity(current))
+      && current?.autoKeep?.enabled === true && ["finish_script", "finish_edit"].includes(current.autoKeep.action)
+      && current.autoKeep.delaySeconds === 30 && !current.error
+      && current.actions.some(a => a.action === current.autoKeep.action);
+  }
+  function updateAutoKeep() {
+    clearTimeout(autoKeepTimer); autoKeepTimer = null;
+    const key = autoKeepIdentity(current);
+    if (!canAutoKeep() || disposed || !visible || document.hidden || busy || reading || !verified
+        || !toolCallsAvailable() || formAction || byId("script-review").open || byId("result-details").open || autoKeepPending
+        || autoKeepAttempted === key) { stopAutoKeep(); return; }
+    if (autoKeepKey !== key) { autoKeepKey = key; autoKeepStarted = performance.now(); }
+    const elapsed = Math.max(0, performance.now() - autoKeepStarted);
+    const seconds = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
+    byId("auto-keep").hidden = false;
+    const label = `Keeping changes without saving in ${seconds} seconds…`;
+    if (byId("auto-keep-label").textContent !== label) setText("auto-keep-label", label);
+    byId("auto-keep-progress").value = Math.min(30, elapsed / 1000);
+    if (elapsed >= 30000) { autoKeepAttempted = key; autoKeepPending = true; keepAfterCountdown(key); }
+    else autoKeepTimer = setTimeout(updateAutoKeep, 100);
+  }
+  async function keepAfterCountdown(key) {
+    // Reconcile just before the single dispatch. Another card or text reply may
+    // have disabled the option or resolved this workflow during the countdown.
+    reading = true; verified = false; stopAutoKeep(); setBusy(false); render();
+    try {
+      const fresh = await call("get_edit_workflow", {workflow_id:current.id});
+      if (autoKeepIdentity(current) !== key) return;
+      useResult(fresh, true);
+      reading = false;
+      if (autoKeepIdentity(current) === key && canAutoKeep() && !disposed && visible
+          && !document.hidden && !byId("script-review").open && !byId("result-details").open) {
+        await perform(current.actions.find(a => a.action === current.autoKeep.action), undefined, true);
+      }
+    } catch (error) {
+      verified = false;
+      setText("error", "Automatic Keep paused. " + error.message + " Choose an action in the conversation.");
+    } finally { reading = false; autoKeepPending = false; setBusy(false); render(); schedule(); }
+  }
   function unwrap(result) {
     if (result?.structuredContent) return result.structuredContent;
     for (const item of result?.content || []) {
@@ -77,6 +138,23 @@
     if (formAction && (current.id !== next.id || current.revision !== next.revision)) {
       formAction = null; byId("save-form").hidden = true;
     }
+    if (next.requestFingerprint !== current?.requestFingerprint || next.id !== current?.id || next.jobId !== current?.jobId) {
+      scriptCache = null; warningCache = null; evidenceCache = null; completionRead = false; byId("script-review").open = false;
+    }
+    if (next.scriptReview) scriptCache = {fingerprint:next.requestFingerprint, value:next.scriptReview};
+    if (next.warning) warningCache = {fingerprint:next.requestFingerprint, value:next.warning};
+    if (next.scriptReview) {
+      // Full reads are authoritative, including explicit empty output/errors.
+      evidenceCache = {result:next.job?.bridgeOperation?.scriptResult ?? null,
+        error:next.error ?? next.job?.bridgeOperation?.error ?? next.job?.error ?? null};
+      if (["applied", "failed", "cancelled", "executed", "saved", "discarded"].includes(next.state)) completionRead = true;
+    } else if (evidenceCache && next.job?.bridgeOperation?.scriptResult) {
+      evidenceCache.result = {...evidenceCache.result, ...next.job.bridgeOperation.scriptResult};
+    }
+    if (!next.scriptReview && evidenceCache && Object.hasOwn(next, "error")) {
+      const error = next.error ?? next.job?.bridgeOperation?.error ?? next.job?.error ?? null;
+      evidenceCache.error = error && Object.keys(error).length ? {...evidenceCache.error, ...error} : error;
+    }
     current = next;
     verified = authoritative;
     if (authoritative && current.modelContext && contextVersion !== current.modelContext) {
@@ -97,22 +175,31 @@
     const report = job.report || {}, names = scope.glyphs || [];
     setText("title", doc.familyName || "Untitled font");
     setText("path", doc.path || "Not saved yet");
-    setText("scope", [(scope.kind || "Font adjustment").replaceAll("_", " "), names.length ? names.join(", ") + (scope.glyphCount > names.length ? ` + ${scope.glyphCount-names.length} more` : "") : "Scope shown in request details", scope.masters ? `Masters: ${scope.masters.join(", ")}` : ""].filter(Boolean).join(" · "));
+    setText("scope", current.summary ? `${current.summary} · ${report.targetCount ?? "pending"} surfaces · ${report.skippedCount || 0} skipped` : [(scope.kind || "Font adjustment").replaceAll("_", " "), names.length ? names.join(", ") + (scope.glyphCount > names.length ? ` + ${scope.glyphCount-names.length} more` : "") : "Scope shown in request details", scope.masters ? `Masters: ${scope.masters.join(", ")}` : ""].filter(Boolean).join(" · "));
     const [heading, ...guidance] = (current.message || "Checking your changes…").split("\n");
     setText("status", heading);
     setText("message", guidance.join("\n"));
     byId("message").hidden = !guidance.length;
     const progress = job.bridgeOperation || {};
-    const showProgress = ["preparing", "applying", "saving", "discarding", "resolving"].includes(current.state) && Number.isFinite(progress.totalChanges) && progress.totalChanges > 0 && (progress.completedChanges || 0) < progress.totalChanges;
-    setText("progress", showProgress ? `${progress.completedChanges || 0} / ${progress.totalChanges} changes` : "");
+    const showProgress = current.entrypoint !== "script" && ["preparing", "applying", "saving", "discarding", "resolving"].includes(current.state) && Number.isFinite(progress.totalChanges) && progress.totalChanges > 0 && (progress.completedChanges || 0) < progress.totalChanges;
+    setText("progress", showProgress ? `${progress.completedChanges || 0} / ${progress.totalChanges} ${current.entrypoint ? "callbacks completed" : "changes"}` : "");
     byId("progress").hidden = !showProgress;
     const warnings = byId("warnings"); warnings.replaceChildren();
-    for (const warning of report.warnings || []) { const p = document.createElement("p"); p.textContent = warning; warnings.append(p); }
+    for (const warning of [...(report.warnings || []), ...(warningCache && warningCache.fingerprint === current.requestFingerprint ? [warningCache.value] : [])]) { const p = document.createElement("p"); p.textContent = warning; warnings.append(p); }
     if (current.state === "needs_review" && current.reviewInConversation) {
       const p = document.createElement("p"); p.textContent = "Ask in the conversation to review the complete report before applying these changes."; warnings.append(p);
     }
+    const script = scriptCache?.fingerprint === current.requestFingerprint ? scriptCache?.value : null;
+    byId("script-review").hidden = scope.kind !== "python_script";
+    if (script) {
+      setText("script-mode", "Native Python · saved-version recovery");
+      setText("script-params", pretty({params:script.params, targets:script.targets, entrypoint:script.entrypoint}));
+      setText("script-source", script.source);
+      setText("script-output", pretty(evidenceCache || ""));
+    }
+    if (!script) for (const id of ["script-mode", "script-params", "script-source", "script-output"]) setText(id, "");
     const proposal = byId("proposal"); proposal.replaceChildren();
-    if (["ready", "needs_review", "applied"].includes(current.state)) {
+    if (scope.kind !== "python_script" && ["ready", "needs_review", "applied"].includes(current.state)) {
       const heading = document.createElement("p"); heading.textContent = `${job.changeCount || 0} ${job.changeCount === 1 ? "change" : "changes"}` + (report.unavailableCount ? ` · ${report.unavailableCount} could not be prepared` : ""); proposal.append(heading);
       for (const change of (job.sample || []).slice(0, 10)) {
         const row = document.createElement("pre");
@@ -130,6 +217,8 @@
         label.append(checkbox, document.createTextNode("Approve this existing-value change: " + pretty(entry))); approvals.append(label);
       }
     }
+    setText("restore-coverage", current.scope?.kind !== "python_script" && current.state === "applied" ? "Undo these changes restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available." : current.savedVersion?.available ? "Restore saved version reloads the whole font, discards all later unsaved edits and clears Undo history. The saved file is checked again before restoring." : "");
+    byId("restore-coverage").hidden = !current.savedVersion?.available && !(current.scope?.kind !== "python_script" && current.state === "applied");
     const actions = byId("actions");
     const focusedAction = document.activeElement?.dataset?.action;
     actions.replaceChildren();
@@ -143,7 +232,8 @@
     actions.hidden = !current.actions.length;
     byId("fallback").hidden = !current.actions.length;
     setText("fallback", current.actions.length ? (toolCallsAvailable() ? "You can also reply in the conversation: " : "Interactive controls are unavailable here. Reply in the conversation: ") + current.actions.map(a => a.label).join("; ") + "." : "");
-    setText("details", pretty({scope:current.scope, job:current.job, receipt:current.receipt, error:current.error}));
+    setText("details", pretty({scope:current.scope, blockingWorkflowId:current.blockingWorkflowId, job:current.job, receipt:current.receipt, error:current.error}));
+    updateAutoKeep();
     resize();
   }
   function setBusy(value) {
@@ -155,18 +245,24 @@
     // Host approval dialogs routinely outlive the former 15-second deadline.
     return send("tools/call", {name, arguments:args}, 120000);
   }
-  async function refresh() {
+  async function refresh(includeReview = false) {
     if (!current || busy || reading || disposed || !toolCallsAvailable()) return;
     reading = true; verified = false; reconcile = false; setBusy(false); render();
-    try { useResult(await call("get_edit_workflow", {workflow_id:current.id}), true); setText("error", ""); }
+    try { useResult(await call("get_edit_workflow", {workflow_id:current.id, ...(includeReview ? {include_review:true} : {})}), true); setText("error", ""); }
     catch (error) { setText("error", error.message); clearTimeout(timer); }
     finally { reading = false; setBusy(false); render(); if (reconcile) refresh(); else schedule(); }
   }
   function schedule() {
     clearTimeout(timer);
+    if (!disposed && visible && !document.hidden && !busy && !reading && toolCallsAvailable()
+        && byId("script-review").open && !completionRead
+        && ["applied", "failed", "cancelled", "executed", "saved", "discarded"].includes(current?.state)) {
+      timer = setTimeout(() => { completionRead = true; refresh(true); }, 0);
+      return;
+    }
     if (!disposed && visible && !document.hidden && current?.poll && toolCallsAvailable() && !busy && !reading && !formAction) timer = setTimeout(refresh, 1500);
   }
-  async function perform(action, destination) {
+  async function perform(action, destination, automatic = false) {
     if (disposed || busy || reading || !verified || !current.actions.some(item => item.token === action?.token)) return;
     const overwrites = current.job?.report?.requiredOverwrites || [];
     if (action.action === "apply" && overwrites.length && byId("approvals").querySelectorAll("input:checked").length !== overwrites.length) {
@@ -174,6 +270,7 @@
     }
     setBusy(true); clearTimeout(timer); setText("error", "");
     const args = {workflow_id:current.id, expected_revision:current.revision, action_token:action.token};
+    if (automatic) args.automatic = true;
     if (destination) args.destination = destination;
     if (action.action === "apply" && overwrites.length) args.approved_overwrites = overwrites;
     try {
@@ -181,6 +278,7 @@
       formAction = null; byId("save-form").hidden = true;
       useResult(raw, true); setText("error", "");
     } catch (error) {
+      if (automatic) optedOut.add(resultIdentity(current));
       setText("error", error.message + " Continue in the conversation if needed.");
       // A read is safe after a lost response; never repeat the mutation automatically.
       verified = false;
@@ -194,6 +292,8 @@
   }
   function choose(action) {
     if (disposed || busy || reading || !verified || !toolCallsAvailable()) return;
+    if (action.action === "wait_for_answer") optedOut.add(resultIdentity(current));
+    stopAutoKeep();
     if (action.requiresDestination) {
       formAction = action; clearTimeout(timer);
       const path = current.document.path || "", slash = path.lastIndexOf("/");
@@ -208,6 +308,12 @@
     const folder = byId("folder").value.trim(), name = byId("filename").value.trim();
     setText("destination", folder.replace(/\/$/, "") + "/" + name);
   }
+  byId("script-review").addEventListener("toggle", () => {
+    stopAutoKeep();
+    if (byId("script-review").open) refresh(true);
+    else render();
+  });
+  byId("result-details").addEventListener("toggle", () => { stopAutoKeep(); render(); });
   byId("folder").addEventListener("input", updateDestination);
   byId("filename").addEventListener("input", updateDestination);
   byId("cancel-form").addEventListener("click", () => { formAction = null; byId("save-form").hidden = true; resize(); schedule(); });
@@ -232,14 +338,14 @@
       try { useResult(message.params); reconcile = true; refresh(); } catch (error) { setText("error", error.message); }
     } else if (message.method === "ui/notifications/host-context-changed") theme(message.params);
     else if (message.method === "ui/resource-teardown") {
-      disposed = true; clearTimeout(timer);
+      disposed = true; clearTimeout(timer); stopAutoKeep();
       for (const item of pending.values()) { clearTimeout(item.deadline); item.reject(new Error("View closed; authorized work continues.")); }
       pending.clear(); window.parent.postMessage({jsonrpc:"2.0", id:message.id, result:{}}, origin);
     }
   });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); else clearTimeout(timer); });
+  document.addEventListener("visibilitychange", () => { stopAutoKeep(); if (!document.hidden) refresh(); else clearTimeout(timer); });
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(resize).observe(document.querySelector("main"));
-  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { const wasVisible = visible; visible = entries.some(e => e.isIntersecting); if (visible && !wasVisible) refresh(); else schedule(); }).observe(document.querySelector("main"));
+  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { const wasVisible = visible; visible = entries.some(e => e.isIntersecting); if (visible && !wasVisible) refresh(); else { updateAutoKeep(); schedule(); } }).observe(document.querySelector("main"));
   send("ui/initialize", {protocolVersion:"2026-01-26", appInfo:{name:"Glyphs edit workflow", version:"1.0.0"}, appCapabilities:{}}, 5000)
     .then(result => { host = result.hostCapabilities || {}; connected = true; theme(result.hostContext); notify("ui/notifications/initialized"); render(); refresh(); })
     .catch(() => { setText("status", "Continue in the conversation"); setText("fallback", "Interactive MCP Apps are unavailable here. Reply with Save and continue, Save As, Check and continue, or another offered choice in the conversation."); render(); });

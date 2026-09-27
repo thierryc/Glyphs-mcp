@@ -631,6 +631,22 @@ def test_accepting_job_remains_active_without_finished_timestamp(tmp_path):
     assert "finishedAt" not in value
 
 
+def test_read_reconciles_old_applied_typed_record_without_mutation(tmp_path):
+    jobs = JobStore(tmp_path / "jobs")
+    job = jobs.create({"id": "old_doc", "path": str(tmp_path / "old.glyphs")}, {"kind": "width_delta"})
+    jobs.update(job["id"], status="applied", resultKind="mutation",
+                bridgeOperation={"jobId": job["id"], "documentId": "old_doc", "status": "applied"})
+    def missing(identity):
+        assert identity == job["id"]
+        raise BridgeClientError("job_not_found", "history ended after editor restart")
+    service = SidecarService(SimpleNamespace(operation=missing), jobs=jobs, worker=object())
+    observed = service.get_job(job["id"])
+    assert observed["status"] == "interrupted"
+    assert observed["error"]["code"] == "bridge_operation_lost"
+    assert observed["bridgeOperation"]["status"] == "applied"
+    assert observed["error"]["details"]["outcome"] == "unverified"
+
+
 def test_v2_save_modules_do_not_import_or_delegate_to_legacy_save_font():
     sources = "\n".join(
         path.read_text(encoding="utf-8")

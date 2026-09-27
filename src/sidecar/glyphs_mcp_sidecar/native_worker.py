@@ -11,7 +11,7 @@ from glyphs_mcp_protocol import PATCH_VERSION, validate_patch, validate_worker_r
 from .worker import WORKER_ERROR_PREFIX, WorkerError
 
 
-def _load_font(path: Path) -> Any:
+def _load_font(path: Path, *, preserve_grid: bool = False) -> Any:
     from Foundation import NSURL  # type: ignore[import-not-found]
     from GlyphsApp import GSFont  # type: ignore[import-not-found]
 
@@ -22,7 +22,8 @@ def _load_font(path: Path) -> Any:
     # This font exists only in the external worker and is never saved. Native
     # parented component bounds otherwise use the document's display grid even
     # with layer rounding suppressed. Compute physical geometry without it.
-    font.grid = 0
+    if not preserve_grid:
+        font.grid = 0
     return font
 
 
@@ -33,6 +34,8 @@ def _number(value: Any) -> float | int:
 
 def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
     request = payload["request"]
+    if request.get('kind') == 'python_script':
+        raise ValueError('Python scripts require the native conversation workflow')
     if request.get("kind") in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action", "dimensions_edit"):
         from .spacing_job import prepare as spacing_prepare
         from .kerning_job import prepare as kerning_prepare
@@ -56,52 +59,10 @@ def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
                               if request["kind"] == "dimensions_edit" else "Collision corrections for {} master pairs".format(len(report["pairs"])))})
     if request.get("kind") != "width_delta":
         raise ValueError("unsupported external job kind")
-    delta = float(request["delta"])
-    names = {str(value) for value in request.get("glyphs") or []}
-    font = _load_font(Path(payload["source"]))
-    glyphs = list(font.glyphs or [])
-    missing = sorted(names - {str(glyph.name or "") for glyph in glyphs})
-    if missing:
-        raise ValueError("width_delta requested glyphs missing from saved source: "
-                         + json.dumps(missing, ensure_ascii=False))
-    changes = []
-    for glyph in glyphs:
-        glyph_name = str(glyph.name or "")
-        if not glyph_name or names and glyph_name not in names:
-            continue
-        for layer in list(glyph.layers or []):
-            layer_id = str(layer.layerId or layer.associatedMasterId or "")
-            if not layer_id:
-                continue
-            before = _number(layer.width)
-            after = _number(float(before) + delta)
-            if after == before:
-                continue
-            changes.append(
-                {
-                    "kind": "set",
-                    "glyph": glyph_name,
-                    "layer": layer_id,
-                    "field": "width",
-                    "before": before,
-                    "after": after,
-                }
-            )
-    if not changes:
-        raise ValueError("the job selected no writable layers")
-    selected = "selected glyphs" if names else "all layers"
-    return validate_patch(
-        {
-            "version": PATCH_VERSION,
-            "jobId": payload["jobId"],
-            "documentId": payload["document"]["id"],
-            "sourcePath": payload["document"]["path"],
-            "sourceHash": payload["sourceHash"],
-            "generation": payload["document"]["generation"],
-            "changes": changes,
-            "summary": "Add {} units to {}".format(_number(delta), selected),
-        }
-    )
+    from glyphs_mcp_protocol.preparation.simple import width_iter, patch
+    from glyphs_mcp_protocol.preparation import consume
+    changes, report = consume(width_iter(_load_font(Path(payload["source"])), request))
+    return patch(payload["jobId"], payload["document"], payload["sourceHash"], request, changes, report)
 
 
 def build_result(payload: dict[str, Any]) -> dict[str, Any]:

@@ -67,8 +67,20 @@ intended document ID. Only missing or invalid bindings need
 [document targeting](../glyphs/references/document-targeting.md). Reads are fresh;
 dirty fonts need no Save. Native relaunch invalidates old document IDs.
 
-The twelve-tool MCP has no arbitrary Python execution or plugin reload tool.
-Native development through files/UI does not add an MCP capability. A required
+The twelve-tool MCP can execute scripts through an advertised `python_script`
+job; use the [shared execution contract](../glyphs/references/python-scripts.md).
+For a one-off bulk or font-level edit, direct native scripting avoids a
+plugin installation and layer patch preparation. Require `script.native.v1`;
+its Restore saved version reloads the whole pre-run saved font. This does not
+recover external script effects or replace the plugin iteration workflow.
+There is no plugin reload tool. Native development through files/UI does not add
+an MCP capability. A required
 missing private capability needs the bridge, sidecar and skills updated together.
-No earlier-private fallback or whole-font recovery is promised. Installation,
+Do not use an earlier-private fallback or claim recovery beyond the saved baseline. Installation,
 execution, restart, font edits and Save follow the user's authorised scope.
+
+For script requests, follow the shared intent rules: writing includes code review,
+review-only stays non-executing, and writing alone does not authorize live edits.
+A result-focused font task needs validation/testing and result verification, without
+a mandatory source review or another Run question. Clean saved fonts skip Save;
+dirty fonts require already-established or explicit save authorization.

@@ -371,7 +371,7 @@ def test_specialized_scope_is_focused_and_does_not_claim_retired_audits():
     # Unsupported audits remain scoped; a native task is never an MCP fallback.
     assert 'does not prove that a current lean runtime needs updating' in text
     assert 'never claim that a partial read completes a full audit' in text
-    assert 'A native script is separate from the MCP' in text
+    assert 'advertised Python script job or an authorized native route' in text
     assert 'v1 skills after catalog and identity' in text
     assert 'document IDs or jobs' in text
     assert 'Plugin caches and source worktrees are separate' in text
@@ -391,3 +391,20 @@ def test_master_properties_have_focused_precise_requested_field_guidance():
     assert 'master.properties.v1' in source and '256 master-axis items' in source
     layer=(SKILL/'references/layer-reads.md').read_text()
     assert 'master ascender/\ndescender' not in layer and 'master-reads.md' in layer
+
+
+def test_script_routing_fixtures_match_shared_contract_and_valid_options():
+    sys.path.insert(0,str(ROOT/'src/protocol'))
+    from glyphs_mcp_protocol.scripts import validate_options, WARNING
+    fixtures=json.loads((ROOT/'src/glyphs-mcp/tests/fixtures/python_script_routing.json').read_text())
+    reference=(SKILL/'references/python-scripts.md').read_text()
+    for fixture in fixtures:
+        options=validate_options(fixture['request']['options'])
+        assert options['entrypoint']==fixture['entrypoint']
+        assert fixture['authorization'] in {'original_task', 'preview_waits'}
+        assert not {'executionMode','recovery'} & options.keys()
+        for capability in fixture['requiredCapabilities']:assert capability in reference
+        assert fixture['runAction'] in {'run_script', 'save_run_script'}
+    assert WARNING.replace('\n',' ') in reference.replace('\n> ',' ').replace('\n',' ')
+    assert 'Acknowledge unknown outcome' in reference and 'changesVerified' in reference
+    assert (ROOT/'skills/glyphs-mcp-scripting/examples/vertical_flip.py').is_file()

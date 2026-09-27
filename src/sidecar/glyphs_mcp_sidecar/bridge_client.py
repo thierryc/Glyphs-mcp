@@ -26,16 +26,18 @@ class BridgeClient:
         request = value or {}
         save = request.get("save") if isinstance(request.get("save"), dict) else {}
         uncertain = {}
-        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save"):
+        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save", "/v1/script/run", "/v1/script/finish", "/v1/script/restore-saved"):
             patch = request.get("patch") if isinstance(request.get("patch"), dict) else {}
             uncertain["execution"] = "uncertain"
-            job_id = request.get("jobId") or patch.get("jobId")
+            job_id = request.get("jobId") or patch.get("jobId") or (request.get("script") or {}).get("jobId")
             save_id = request.get("saveId") or save.get("saveId")
             if job_id:
                 uncertain["jobId"] = job_id
             if save_id:
                 uncertain["saveId"] = save_id
-        body = json.dumps(value or {}, separators=(",", ":")).encode("utf-8")
+        body = json.dumps(value or {}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        if len(body) > 4 * 1024 * 1024:
+            raise BridgeClientError('request_too_large', 'bridge request exceeds 4 MiB; reduce script source or target manifest')
         request = Request(
             self.base_url + path,
             data=body,
@@ -83,6 +85,27 @@ class BridgeClient:
 
     def apply(self, patch: dict[str, Any], *, approved_overwrites=None) -> dict[str, Any]:
         return self._post("/v1/apply", {"patch": patch, **({"approvedOverwrites": approved_overwrites} if approved_overwrites is not None else {})})
+
+    def review_script(self, request):
+        return self._post('/v1/script/review', {'script': request})
+
+    def restore_saved_script(self, request):
+        return self._post('/v1/script/restore-saved', {'script': request})
+
+    def run_script(self, request):
+        return self._post('/v1/script/run', {'script': request})
+
+    def finish_script(self, job_id):
+        return self._post('/v1/script/finish', {'jobId': job_id})
+
+    def prepare_typed(self, request):
+        return self._post("/v1/edit/prepare", {"preparation": request})
+
+    def prepared_typed(self, job_id):
+        return self._post("/v1/edit/prepared", {"jobId": job_id})
+
+    def finish_edit(self, job_id):
+        return self._post('/v1/edit/finish', {'jobId': job_id})
 
     def operation(self, job_id: str) -> dict[str, Any]:
         return self._post("/v1/operation", {"jobId": job_id})

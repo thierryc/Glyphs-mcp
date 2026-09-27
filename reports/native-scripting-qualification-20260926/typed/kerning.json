@@ -1,0 +1,39 @@
+{
+  "benefit": {
+    "coarseGap": 12.0,
+    "minGap": -8.0,
+    "worstY": 50.0,
+    "refined": true,
+    "sampleCount": 14,
+    "denseStep": 10,
+    "yRange": [
+      0.0,
+      100.0
+    ]
+  },
+  "cases": [
+    {
+      "before": null,
+      "after": 10.125,
+      "independentClearance": 90.125,
+      "exactRestoration": true
+    },
+    {
+      "before": 0.0,
+      "after": 10.125,
+      "independentClearance": 90.125,
+      "exactRestoration": true
+    },
+    {
+      "before": -90.125,
+      "after": 10.125,
+      "independentClearance": 90.125,
+      "exactRestoration": true
+    }
+  ],
+  "nativeEffectiveResolution": true,
+  "groupPeerUnchanged": true,
+  "componentResolution": true,
+  "clearPairUnchanged": true,
+  "scope": "isolated native process; editor gate separate"
+}

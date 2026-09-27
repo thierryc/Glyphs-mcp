@@ -20,9 +20,9 @@ and never claim that a bounded export completes one either.
   source/visual or broader audit evidence before proposing existing-binary analysis. Do
   not invoke retired tools or use another job to simulate an unsupported audit.
 - “Write a Glyphs 4 audit script”: use the development/scripting skill and its
-  pinned documentation for the agreed scope. A native script is separate from
-  the MCP's twelve tools. Writing it needs no document discovery; executing it
-  must use the intended live font and verify its results.
+  pinned documentation for the agreed scope. Writing a script needs no document discovery. Execute it through an advertised
+  Python script job or an authorized native route, with the intended font and
+  verified results.
 - A separate v1 connection uses its available v1 skills after catalog and identity
   verification. It does not inherit the lean connection's document IDs or jobs.
 
@@ -34,3 +34,11 @@ Archiving does not implement the retired capability. Plugin caches and source
 worktrees are separate: do not edit them as an installation shortcut. A task
 that already loaded old instructions may need a new skill-discovery session;
 verify the selected file rather than assuming hot refresh.
+
+An advertised [Python script job](python-scripts.md#choose-the-route) can execute
+reviewed specialized code. For coordinated metadata/font-setting edits, direct
+native scripting can avoid repeated tool writes and restore persisted in-font
+data through whole-font saved reload. Declared-target recovery covers only its
+layers; neither mode offers full-font Undo or recovery of external effects.
+Prefer save-free reads/offline analysis for audits. Executing an audit script
+does not establish complete audit coverage or implement a retired typed family.

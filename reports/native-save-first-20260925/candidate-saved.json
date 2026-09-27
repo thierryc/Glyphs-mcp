@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "suite": "saved",
+  "loadedModules": {
+    "glyphs_mcp_protocol.layer_state": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/python-scripts-save-first/sidecar/glyphs_mcp_protocol/layer_state.py",
+    "glyphs_mcp_bridge.core": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/python-scripts-save-first/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/core.py",
+    "glyphs_mcp_sidecar.service": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/python-scripts-save-first/sidecar/glyphs_mcp_sidecar/service.py",
+    "glyphs_mcp_sidecar.native_worker": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/python-scripts-save-first/sidecar/glyphs_mcp_sidecar/native_worker.py"
+  },
+  "bridge": "sha256:1f7f2181b8bae382bb224b15ecbbf9bb88a6b05ca3390d31c47e93cdd7d2b30e",
+  "sidecar": "sha256:4e622201a7a9317ef5926410bd6ba12132dffed059484d90e4f8bc043b10decd"
+}

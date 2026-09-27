@@ -1,0 +1,109 @@
+{
+  "reviewDate": "2026-09-26",
+  "v1Tag": "v1.11.1",
+  "v1Commit": "590053fedd7bcab13a2027fb3bce99b724072b57",
+  "v1CatalogMatchesV1110": true,
+  "v1ActiveTools": 87,
+  "v1Visibility": {
+    "model+app": 76,
+    "app-only": 11
+  },
+  "mappedTools": 87,
+  "capabilityGroups": 39,
+  "currentPublicTools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "accept_job",
+    "discard_job",
+    "save_document",
+    "start_edit_workflow",
+    "get_edit_workflow",
+    "respond_edit_workflow"
+  ],
+  "toolDescriptionLengths": {
+    "get_status": {
+      "words": 16,
+      "characters": 144
+    },
+    "list_documents": {
+      "words": 43,
+      "characters": 327
+    },
+    "read_entities": {
+      "words": 960,
+      "characters": 7283
+    },
+    "start_job": {
+      "words": 238,
+      "characters": 1948
+    },
+    "get_job": {
+      "words": 22,
+      "characters": 168
+    },
+    "apply_job": {
+      "words": 81,
+      "characters": 595
+    },
+    "accept_job": {
+      "words": 27,
+      "characters": 200
+    },
+    "discard_job": {
+      "words": 17,
+      "characters": 138
+    },
+    "save_document": {
+      "words": 43,
+      "characters": 261
+    },
+    "start_edit_workflow": {
+      "words": 214,
+      "characters": 1571
+    },
+    "get_edit_workflow": {
+      "words": 143,
+      "characters": 1033
+    },
+    "respond_edit_workflow": {
+      "words": 279,
+      "characters": 1949
+    }
+  },
+  "sourceHashes": {
+    "src/sidecar/glyphs_mcp_sidecar/server.py": "sha256:3de5bacfd8f29ed7974dcf1a1885496323390d2c62d4af95a30b31cd7f7050d8",
+    "src/sidecar/glyphs_mcp_sidecar/edit_workflow_ui.py": "sha256:9cb10f55753076748971bae7aa407cb8553f7eecd27aca5ac2ab570d752ac4b9",
+    "src/sidecar/glyphs_mcp_sidecar/edit_workflow.py": "sha256:200f5ccf52a39b72893ae4e7a8fba26f6253ee622026274d5156f4c785cf5cba",
+    "src/sidecar/glyphs_mcp_sidecar/edit_workflow_state.py": "sha256:1afac462bfbc5e25666aca0f75095551ce97cbefe6ad4324aacd7cdeaf54ed25",
+    "src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html": "sha256:835895e37dfe82697d005282feab9140292d5ba444a07c83602730d669b387e9",
+    "src/sidecar/glyphs_mcp_sidecar/native_worker.py": "sha256:db290fdb8a71704f3f784c70d518a2a583a41cf47b3fa16dbf6005f1f9d68642",
+    "src/sidecar/glyphs_mcp_sidecar/worker.py": "sha256:d3b5451450b6a0d8ee3114787aae2ad44948b30a5c6d2a2799c3e683a886e07f",
+    "src/sidecar/glyphs_mcp_sidecar/source.py": "sha256:c95e505a4d5f95d66cce3ff3796b3f2d238ad34a549d1a40e6e01ca1ebf9d131",
+    "src/sidecar/glyphs_mcp_sidecar/service.py": "sha256:a4ee50c3800323a9d455e7c8ad21b1ece719b77d49460b6ee174cbbf24105346",
+    "src/sidecar/glyphs_mcp_sidecar/jobs.py": "sha256:8a2a2529455bb68f5398f0b69f2ce0f902a77207f2ff7a8e7c78b9a17e9003c6",
+    "src/sidecar/glyphs_mcp_sidecar/saving.py": "sha256:0eb54c172533e9cc493debb2eff28f4eb39b40b02c5806fc091488e1a1a21b2b",
+    "src/sidecar/glyphs_mcp_sidecar/script_service.py": "sha256:8ca9d9d6d7562ea5c58e615fbdd21e8b0a54ffffb3580090a0ae4210612c9590",
+    "src/sidecar/glyphs_mcp_sidecar/native_action_job.py": "sha256:01ef48606f63ef43e9c22426f87f546f573798dc5281e2e20fc2082ae3ad1811",
+    "src/sidecar/glyphs_mcp_sidecar/dimensions_job.py": "sha256:12879e227a84357e549ecf7d72e098a0d7bacc68d6e766abb49deea504d42d47",
+    "src/sidecar/glyphs_mcp_sidecar/outline_job.py": "sha256:e495f50401b1c2c84fb9330fbe2246318396933eee3fa094d0df18dd955c4883",
+    "src/sidecar/glyphs_mcp_sidecar/spacing_job.py": "sha256:d735dd34ecfc03a807cda2712eb011b7c1f9f9c7a386f58431b72c5bc54c5e43",
+    "src/sidecar/glyphs_mcp_sidecar/kerning_job.py": "sha256:9bfe60df172199c63c13136a781cc75f01b00ef728fa78ba4cdd99d5d2770239",
+    "src/sidecar/glyphs_mcp_sidecar/start_node_job.py": "sha256:40808c7b7e94d71f40a62f51a3aa9b6189c3e6196e87ff4437f020571f33aa3b",
+    "src/sidecar/glyphs_mcp_sidecar/slant_job.py": "sha256:dab1f1599afa5627e97a61317c9abab5cfe98d27aae70f87b120654931f66ee3",
+    "src/bridge/glyphs_mcp_bridge/core.py": "sha256:7fce3d2cfab3cca1dc6526ff93613cca57a8b508fbb6b79607b662de0a87646c",
+    "src/bridge/glyphs_mcp_bridge/feature_compile.py": "sha256:ae0d106e929137202a75cf9024ff7c47f59888e39d9f678080e5afbc0d0028da",
+    "src/bridge/glyphs_mcp_bridge/script_execution.py": "sha256:18fdf8dd1c3573a9400fd10e9def3ddb5f40b5e6ba7970629a93eb41354a45fe",
+    "src/bridge/glyphs_mcp_bridge/saved_script.py": "sha256:ab0419bd73cf6a10123dfbea1f922d5e9b0fa26ef874bfacfef1225604181a13",
+    "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py": "sha256:1707e2a978302990ebd2e93a44b68ebe1e467c51c449f1095e6de78e7d28855f",
+    "src/protocol/glyphs_mcp_protocol/scripts.py": "sha256:bf79a7bce6108373c3e197f4417d8f26a8ecae456047cd0b9ffa91d3aad7de1e",
+    "src/protocol/glyphs_mcp_protocol/script_targets.py": "sha256:5d47bcdc1c7b9534f60e3070837f83dfb77fe9f6f3c5cee25876d2ac7c6704f9",
+    "src/protocol/glyphs_mcp_protocol/native_actions.py": "sha256:bd4114416439dc4775f1701311f92c542307abc609e0d677a905e04d757b97f0",
+    "src/protocol/glyphs_mcp_protocol/compile_export.py": "sha256:08a2c50c28c3d036b1707c3696a442357e4aa736358eff83c3c725026819ad2d",
+    "src/protocol/glyphs_mcp_protocol/models.py": "sha256:02370afdb9f877608de0334e2b2100b91f6e699cf56e5407e2fe0dc4d9eaf0b5"
+  },
+  "validation": "All v1 names mapped exactly once; 12 current tool definitions checked. Review only, no new native qualification or paired benchmark."
+}

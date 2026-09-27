@@ -24,9 +24,14 @@ For a generated binary or feature-on/off behavior, use the advertised
 `font_export` job and [verified export workflow](../glyphs/references/font-export.md).
 These remain inside the same twelve-tool surface and do not expose arbitrary code.
 
-Author scripts with normal file tools for genuinely unsupported feature-source
-work and execute them through the existing native Glyphs route within the
-user's task. The twelve MCP tools provide no arbitrary Python execution.
+For manual source edits or coordinated changes across prefixes, classes and
+features, offer **direct native scripting** under
+[the shared script contract](../glyphs/references/python-scripts.md#choose-the-route).
+Use one whole script with exact block names, expected old text and replacement
+text in `params`; no artificial layer target is needed. Native script recovery restores feature source by reloading
+the whole unchanged pre-run saved font, including all other edits since that save.
+Keep collection order and automatic/manual state intact. A few related blocks
+can justify this route; the surface-count threshold does not apply to features.
 Compilation, export and shaping remain separate evidence; MCP diagnostic and
 artifact lifecycles differ from scripts. Never replace a missing advertised
 `update_features` capability with an implicit script.

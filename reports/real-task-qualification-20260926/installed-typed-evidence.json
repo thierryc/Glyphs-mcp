@@ -1,0 +1,3979 @@
+{
+  "documents": [
+    {
+      "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Dactylotype MCP Task Test"
+    },
+    {
+      "id": "doc_2725edfcbd7f4d49a593c30657214ae8",
+      "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+      "dirty": false,
+      "generation": 623,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    }
+  ],
+  "steps": [
+    {
+      "task": "path",
+      "request": {
+        "document_id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+        "kind": "outline_edit",
+        "idempotency_key": "real-task-20260926-path-v1",
+        "mode": "apply",
+        "options": {
+          "targets": [
+            {
+              "glyph": "o",
+              "referenceLayer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "layers": {
+                "scope": "ids",
+                "ids": [
+                  "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+                ]
+              },
+              "guards": [
+                {
+                  "path": 0,
+                  "hash": "sha256:54eb0e2922683a20c65d9fab6ca565ef6bc89b2d5129967878bdb32093d93836"
+                }
+              ],
+              "operations": [
+                {
+                  "op": "update_nodes",
+                  "path": 0,
+                  "updates": [
+                    {
+                      "index": 0,
+                      "delta": {
+                        "dx": 7.25,
+                        "dy": -3.5
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "workflow": {
+        "id": "edit_ff9203f180854c4e9b1f1096bc97ed94",
+        "revision": 11,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": true,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "applied",
+        "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+        "blockerId": null,
+        "job": {
+          "id": "job_319d09c37e384714be2d5d9bc14baff0",
+          "status": "applied",
+          "summary": "Outline edits for 1 layers",
+          "resultKind": "mutation",
+          "changeCount": 1,
+          "sample": [
+            {
+              "afterHash": "sha256:73b6cad43764764e98a182e93e7d23db2d727acb7e51e6384b6a69251649c5ed",
+              "beforeHash": "sha256:c9a949df3f5ff4644a04aaf8fcc28c08486f8a46768d3c852f03e8aef93562d0",
+              "glyph": "o",
+              "kind": "outline",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "operations": [
+                {
+                  "op": "update_nodes",
+                  "path": 0,
+                  "updates": [
+                    {
+                      "delta": {
+                        "dx": 7.25,
+                        "dy": -3.5
+                      },
+                      "index": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "report": {
+            "claim": "Prepared typed outline edits on detached native copies; native removals use Glyphs keep-shape behavior; no font was saved.",
+            "layerCount": 1,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_319d09c37e384714be2d5d9bc14baff0/report.json",
+            "sample": [
+              {
+                "afterHash": "sha256:73b6cad43764764e98a182e93e7d23db2d727acb7e51e6384b6a69251649c5ed",
+                "beforeHash": "sha256:c9a949df3f5ff4644a04aaf8fcc28c08486f8a46768d3c852f03e8aef93562d0",
+                "glyph": "o",
+                "insertedNodes": [],
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "nativeRemovals": [],
+                "rawDeletionCount": 0,
+                "rawNodeDelta": 0,
+                "status": "ready",
+                "surface": "foreground"
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+            "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+            "status": "applied",
+            "completedChanges": 1,
+            "totalChanges": 1,
+            "error": null,
+            "nativeSave": null,
+            "receipt": null,
+            "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+          },
+          "activity": {
+            "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "outline_edit",
+            "phase": "applied",
+            "startedAt": 1790444529.5918322,
+            "finishedAt": 1790444529.591857,
+            "completed": 1,
+            "total": 1,
+            "message": null
+          },
+          "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "outline_edit",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "glyph": "o",
+              "layers": {
+                "scope": "ids",
+                "ids": [
+                  "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+                ]
+              },
+              "referenceLayer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "guards": [
+                {
+                  "path": 0,
+                  "hash": "sha256:54eb0e2922683a20c65d9fab6ca565ef6bc89b2d5129967878bdb32093d93836"
+                }
+              ],
+              "operations": [
+                {
+                  "op": "update_nodes",
+                  "path": 0,
+                  "updates": [
+                    {
+                      "index": 0,
+                      "delta": {
+                        "dx": 7.25,
+                        "dy": -3.5
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "actions": [
+          {
+            "action": "save_result",
+            "label": "Save font",
+            "token": "53b911271ec3acbb5b88030bb467ec64b1cd044f9fdae5a8e801207afca23475",
+            "requiresDestination": false
+          },
+          {
+            "action": "save_result_as",
+            "label": "Save As…",
+            "token": "9aced02f4577aa62ff30203faab6ccb047a6ae7b6d17ba02e14b845a511f443b",
+            "requiresDestination": true
+          },
+          {
+            "action": "discard",
+            "label": "Undo these changes",
+            "token": "47b472d3a6553a1c32dc5015f11adf29644b3f241f32f603fa0ef37fbee4c7f0",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Changes applied. Save your font to keep them.\nSaving includes the whole font, including any other edits.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nChanges applied. Save your font to keep them.\nSaving includes the whole font, including any other edits.\nOperation: outline edit\nAvailable choices: Save font; Save As…; Undo these changes. You can reply in ordinary language.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_ff9203f180854c4e9b1f1096bc97ed94\",\"expected_revision\":11,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"applied\",\"poll\":false,\"actions\":[{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"53b911271ec3acbb5b88030bb467ec64b1cd044f9fdae5a8e801207afca23475\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"9aced02f4577aa62ff30203faab6ccb047a6ae7b6d17ba02e14b845a511f443b\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"47b472d3a6553a1c32dc5015f11adf29644b3f241f32f603fa0ef37fbee4c7f0\",\"requiresDestination\":false}]}"
+      },
+      "baseline": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "path",
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "index": 0
+            },
+            "values": {
+              "index": 0,
+              "closed": true,
+              "locked": false,
+              "pathHash": "sha256:54eb0e2922683a20c65d9fab6ca565ef6bc89b2d5129967878bdb32093d93836",
+              "nodes": [
+                {
+                  "index": 0,
+                  "x": 816.875,
+                  "y": -19.953,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 1,
+                  "x": 995.017,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 2,
+                  "x": 995.017,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 3,
+                  "x": 995.017,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 4,
+                  "x": 816.875,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 5,
+                  "x": 546.235,
+                  "y": 1022.462,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 6,
+                  "x": 275.277,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 7,
+                  "x": 96.986,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 8,
+                  "x": 96.986,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 9,
+                  "x": 96.986,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 10,
+                  "x": 275.277,
+                  "y": -19.953,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 11,
+                  "x": 546.235,
+                  "y": -19.953,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                }
+              ],
+              "total": 12,
+              "returned": 12,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      },
+      "after": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "path",
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "index": 0
+            },
+            "values": {
+              "index": 0,
+              "closed": true,
+              "locked": false,
+              "pathHash": "sha256:922561e0fbc8aa51cbae40bbcfbbde5ceabac4f3479b4c1870e92c6ba71ba2e5",
+              "nodes": [
+                {
+                  "index": 0,
+                  "x": 824.125,
+                  "y": -23.453,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 1,
+                  "x": 995.017,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 2,
+                  "x": 995.017,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 3,
+                  "x": 995.017,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 4,
+                  "x": 816.875,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 5,
+                  "x": 546.235,
+                  "y": 1022.462,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 6,
+                  "x": 275.277,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 7,
+                  "x": 96.986,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 8,
+                  "x": 96.986,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 9,
+                  "x": 96.986,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 10,
+                  "x": 275.277,
+                  "y": -19.953,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 11,
+                  "x": 546.235,
+                  "y": -19.953,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                }
+              ],
+              "total": 12,
+              "returned": 12,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      },
+      "layerBefore": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+            },
+            "values": {
+              "width": 893,
+              "outlineHash": "sha256:d395fb119a2c414109a1f0c0a22fd549cb2580b17ac38d887f4cb070aa6043a8",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+            },
+            "values": {
+              "width": 1108.5,
+              "outlineHash": "sha256:cf40291a367bc992ff4a9affeef021159538e550bc54337f140f6fe2d011add1",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "926F7910-9E82-41CD-9117-571F75F96159"
+            },
+            "values": {
+              "width": 1332,
+              "outlineHash": "sha256:34ff736aa0e59410ddb669969f9f7abb80eb6fe5757b4833e1ed70b6ad1dfef5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+            },
+            "values": {
+              "width": 919.125,
+              "outlineHash": "sha256:3e921cb4403d27f6925529b50f5a33e851cee8b2c742ee6296f475b720c0b161",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1092.03521,
+              "outlineHash": "sha256:6354b0c645e61582dae12807887faf89a5bde5d80b1f5577c6b6d8fd1c20dc9f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+            },
+            "values": {
+              "width": 1375.125,
+              "outlineHash": "sha256:619c536fe7da8dd13875ae902ca39954cc229170983d0fb7a17d809b862ce191",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+            },
+            "values": {
+              "width": 978,
+              "outlineHash": "sha256:75a44f7d712aa46d9179e63e44de6e5da1ee10f5b9061536bc6632c340649d4f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+            },
+            "values": {
+              "width": 1121.7,
+              "outlineHash": "sha256:41d406f2e3dda0a2676a1fd0a5b19ce56986b7b28432e52c0dcf4a543b9d6d60",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+            },
+            "values": {
+              "width": 1465,
+              "outlineHash": "sha256:a7cab2e2908af424a4d63e3f1c3de26c09e7191e13b00c7d434367fdd09bcdb7",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "V",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1305.5876,
+              "outlineHash": "sha256:959c66c16e3a091c26216f9dde011aed894ccb526e00e256f9b65b06f84a6e18",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "T",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1058,
+              "outlineHash": "sha256:ad5df17bd3e12b08a574456368a297a45a92a22e5448a8e2def8a25b02cad928",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "layerAfter": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+            },
+            "values": {
+              "width": 893,
+              "outlineHash": "sha256:d395fb119a2c414109a1f0c0a22fd549cb2580b17ac38d887f4cb070aa6043a8",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+            },
+            "values": {
+              "width": 1108.5,
+              "outlineHash": "sha256:cf40291a367bc992ff4a9affeef021159538e550bc54337f140f6fe2d011add1",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "926F7910-9E82-41CD-9117-571F75F96159"
+            },
+            "values": {
+              "width": 1332,
+              "outlineHash": "sha256:34ff736aa0e59410ddb669969f9f7abb80eb6fe5757b4833e1ed70b6ad1dfef5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+            },
+            "values": {
+              "width": 919.125,
+              "outlineHash": "sha256:3e921cb4403d27f6925529b50f5a33e851cee8b2c742ee6296f475b720c0b161",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1092.03521,
+              "outlineHash": "sha256:9ef73922d28c854740bd2a7cf9e0e46b25d0790f3310f1ca5fe2ad1cdf2045ab",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+            },
+            "values": {
+              "width": 1375.125,
+              "outlineHash": "sha256:619c536fe7da8dd13875ae902ca39954cc229170983d0fb7a17d809b862ce191",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+            },
+            "values": {
+              "width": 978,
+              "outlineHash": "sha256:75a44f7d712aa46d9179e63e44de6e5da1ee10f5b9061536bc6632c340649d4f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+            },
+            "values": {
+              "width": 1121.7,
+              "outlineHash": "sha256:41d406f2e3dda0a2676a1fd0a5b19ce56986b7b28432e52c0dcf4a543b9d6d60",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+            },
+            "values": {
+              "width": 1465,
+              "outlineHash": "sha256:a7cab2e2908af424a4d63e3f1c3de26c09e7191e13b00c7d434367fdd09bcdb7",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "V",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1305.5876,
+              "outlineHash": "sha256:959c66c16e3a091c26216f9dde011aed894ccb526e00e256f9b65b06f84a6e18",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "T",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1058,
+              "outlineHash": "sha256:ad5df17bd3e12b08a574456368a297a45a92a22e5448a8e2def8a25b02cad928",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "checks": {
+        "exactNode": true,
+        "unchangedOtherLayers": 13,
+        "wholeJobRestoration": true
+      },
+      "nativeUndo": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "path",
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "index": 0
+            },
+            "values": {
+              "index": 0,
+              "closed": true,
+              "locked": false,
+              "pathHash": "sha256:54eb0e2922683a20c65d9fab6ca565ef6bc89b2d5129967878bdb32093d93836",
+              "nodes": [
+                {
+                  "index": 0,
+                  "x": 816.875,
+                  "y": -19.953,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 1,
+                  "x": 995.017,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 2,
+                  "x": 995.017,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                },
+                {
+                  "index": 3,
+                  "x": 995.017,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 4,
+                  "x": 816.875,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 5,
+                  "x": 546.235,
+                  "y": 1022.462,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                },
+                {
+                  "index": 6,
+                  "x": 275.277,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 7,
+                  "x": 96.986,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 8,
+                  "x": 96.986,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                },
+                {
+                  "index": 9,
+                  "x": 96.986,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 10,
+                  "x": 275.277,
+                  "y": -19.953,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 11,
+                  "x": 546.235,
+                  "y": -19.953,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                }
+              ],
+              "total": 12,
+              "returned": 12,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      },
+      "nativeRedo": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "path",
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "index": 0
+            },
+            "values": {
+              "index": 0,
+              "closed": true,
+              "locked": false,
+              "pathHash": "sha256:922561e0fbc8aa51cbae40bbcfbbde5ceabac4f3479b4c1870e92c6ba71ba2e5",
+              "nodes": [
+                {
+                  "index": 0,
+                  "x": 824.125,
+                  "y": -23.453,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 1,
+                  "x": 995.017,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 2,
+                  "x": 995.017,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                },
+                {
+                  "index": 3,
+                  "x": 995.017,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 4,
+                  "x": 816.875,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 5,
+                  "x": 546.235,
+                  "y": 1022.462,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                },
+                {
+                  "index": 6,
+                  "x": 275.277,
+                  "y": 1022.462,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 7,
+                  "x": 96.986,
+                  "y": 814.76,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 8,
+                  "x": 96.986,
+                  "y": 502.187,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                },
+                {
+                  "index": 9,
+                  "x": 96.986,
+                  "y": 188.58,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 10,
+                  "x": 275.277,
+                  "y": -19.953,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": ""
+                },
+                {
+                  "index": 11,
+                  "x": 546.235,
+                  "y": -19.953,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": ""
+                }
+              ],
+              "total": 12,
+              "returned": 12,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      },
+      "restorationWorkflow": {
+        "id": "edit_ff9203f180854c4e9b1f1096bc97ed94",
+        "revision": 18,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": true,
+          "generation": 7,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "discarded",
+        "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+        "blockerId": null,
+        "job": {
+          "id": "job_319d09c37e384714be2d5d9bc14baff0",
+          "status": "discarded",
+          "summary": "Outline edits for 1 layers",
+          "resultKind": "mutation",
+          "changeCount": 1,
+          "sample": [
+            {
+              "afterHash": "sha256:73b6cad43764764e98a182e93e7d23db2d727acb7e51e6384b6a69251649c5ed",
+              "beforeHash": "sha256:c9a949df3f5ff4644a04aaf8fcc28c08486f8a46768d3c852f03e8aef93562d0",
+              "glyph": "o",
+              "kind": "outline",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "operations": [
+                {
+                  "op": "update_nodes",
+                  "path": 0,
+                  "updates": [
+                    {
+                      "delta": {
+                        "dx": 7.25,
+                        "dy": -3.5
+                      },
+                      "index": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "report": {
+            "claim": "Prepared typed outline edits on detached native copies; native removals use Glyphs keep-shape behavior; no font was saved.",
+            "layerCount": 1,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_319d09c37e384714be2d5d9bc14baff0/report.json",
+            "sample": [
+              {
+                "afterHash": "sha256:73b6cad43764764e98a182e93e7d23db2d727acb7e51e6384b6a69251649c5ed",
+                "beforeHash": "sha256:c9a949df3f5ff4644a04aaf8fcc28c08486f8a46768d3c852f03e8aef93562d0",
+                "glyph": "o",
+                "insertedNodes": [],
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "nativeRemovals": [],
+                "rawDeletionCount": 0,
+                "rawNodeDelta": 0,
+                "status": "ready",
+                "surface": "foreground"
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+            "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+            "status": "discarded",
+            "completedChanges": 1,
+            "totalChanges": 1,
+            "error": null,
+            "nativeSave": null,
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "outline_edit",
+            "phase": "discarded",
+            "startedAt": 1790444784.9575849,
+            "finishedAt": 1790444784.9576268,
+            "completed": 1,
+            "total": 1,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "outline_edit",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "glyph": "o",
+              "layers": {
+                "scope": "ids",
+                "ids": [
+                  "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+                ]
+              },
+              "referenceLayer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "guards": [
+                {
+                  "path": 0,
+                  "hash": "sha256:54eb0e2922683a20c65d9fab6ca565ef6bc89b2d5129967878bdb32093d93836"
+                }
+              ],
+              "operations": [
+                {
+                  "op": "update_nodes",
+                  "path": 0,
+                  "updates": [
+                    {
+                      "index": 0,
+                      "delta": {
+                        "dx": 7.25,
+                        "dy": -3.5
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "actions": [],
+        "message": "Changes discarded.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nChanges discarded.\nOperation: outline edit",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_ff9203f180854c4e9b1f1096bc97ed94\",\"expected_revision\":18,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"discarded\",\"poll\":false,\"actions\":[]}"
+      },
+      "findings": [
+        "Native Undo/Redo restored geometry exactly but node.name changed from null to empty string on all 12 nodes in the touched path."
+      ]
+    },
+    {
+      "task": "spacing_preserve",
+      "request": {
+        "document_id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+        "kind": "spacing",
+        "glyphs": [
+          "H",
+          "n",
+          "o"
+        ],
+        "options": {
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "reference": "auto",
+          "widthMode": "preserve",
+          "area": 400,
+          "depth": 15,
+          "sampleStep": 5
+        },
+        "idempotency_key": "real-task-20260926-spacing-v1",
+        "mode": "apply"
+      },
+      "workflow": {
+        "id": "edit_ffa698c55a634b03bc794d017c74de66",
+        "revision": 13,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": false,
+          "generation": 8,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "no_changes",
+        "jobId": "job_a79bc1ef1bd84eecba632a9d1ad4c478",
+        "blockerId": null,
+        "job": {
+          "id": "job_a79bc1ef1bd84eecba632a9d1ad4c478",
+          "status": "ready",
+          "summary": "Spacing suggestions for 3 master layers",
+          "resultKind": "mutation",
+          "changeCount": 0,
+          "sample": [],
+          "report": {
+            "claim": "Reference selection and preservation of specified metrics; sampled spacing suggestions, not optimal optical spacing.",
+            "layerCount": 3,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_a79bc1ef1bd84eecba632a9d1ad4c478/report.json",
+            "sample": [
+              {
+                "after": {
+                  "lsb": 31.719638000000003,
+                  "rsb": 31.275733499999887,
+                  "width": 1359.68
+                },
+                "before": {
+                  "lsb": 31.719638000000003,
+                  "rsb": 31.275733499999887,
+                  "width": 1359.68
+                },
+                "dx": 0,
+                "fallback": null,
+                "glyph": "H",
+                "glyphClass": "uppercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 282,
+                  "yMax": 1399.168,
+                  "yMin": -3.138
+                },
+                "preservedWidthReason": "explicit_width_preservation",
+                "reason": "below_tolerance",
+                "requestedReference": "auto",
+                "selectedReference": "H",
+                "status": "preserved"
+              },
+              {
+                "after": {
+                  "lsb": 58.386989299999996,
+                  "rsb": 32.61307500000021,
+                  "width": 1150.78625
+                },
+                "before": {
+                  "lsb": 58.386989299999996,
+                  "rsb": 32.61307500000021,
+                  "width": 1150.78625
+                },
+                "dx": 0,
+                "fallback": null,
+                "glyph": "n",
+                "glyphClass": "lowercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 202,
+                  "yMax": 1001.291,
+                  "yMin": -2.372
+                },
+                "preservedWidthReason": "explicit_width_preservation",
+                "reason": "below_tolerance",
+                "requestedReference": "auto",
+                "selectedReference": "x",
+                "status": "preserved"
+              },
+              {
+                "after": {
+                  "lsb": 96.986,
+                  "rsb": 97.01820999999995,
+                  "width": 1092.03521
+                },
+                "before": {
+                  "lsb": 96.986,
+                  "rsb": 97.01820999999995,
+                  "width": 1092.03521
+                },
+                "dx": 0,
+                "fallback": null,
+                "glyph": "o",
+                "glyphClass": "lowercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 202,
+                  "yMax": 1001.291,
+                  "yMin": -2.372
+                },
+                "preservedWidthReason": "explicit_width_preservation",
+                "reason": "below_tolerance",
+                "requestedReference": "auto",
+                "selectedReference": "x",
+                "status": "preserved"
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": null,
+          "activity": {
+            "jobId": "job_a79bc1ef1bd84eecba632a9d1ad4c478",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "ready",
+            "startedAt": 1790444831.2141938,
+            "finishedAt": 1790444831.2142248,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_e4b713a7bb7d47c8b7c156bffecd8d82",
+          "jobId": null,
+          "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:0adeedea25378d4fa17eba92b56e20fa3490ec6c9dd38c4f5ee1b19dbc5d5d8c",
+          "sourceHashAfter": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790444829.449507
+        },
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "spacing",
+          "glyphs": [
+            "H",
+            "n",
+            "o"
+          ],
+          "glyphCount": 3,
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "targets": []
+        },
+        "actions": [],
+        "message": "No changes needed.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nNo changes needed.\nOperation: spacing; glyphs: H, n, o; masters: 0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_ffa698c55a634b03bc794d017c74de66\",\"expected_revision\":13,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"no_changes\",\"poll\":false,\"actions\":[]}"
+      },
+      "result": "No changes needed; all three layers preserved."
+    },
+    {
+      "task": "spacing_proportional",
+      "request": {
+        "document_id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+        "kind": "spacing",
+        "glyphs": [
+          "H",
+          "n",
+          "o"
+        ],
+        "options": {
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "reference": "auto",
+          "widthMode": "proportional",
+          "area": 500,
+          "depth": 15,
+          "sampleStep": 5
+        },
+        "idempotency_key": "real-task-20260926-spacing-proportional-v1",
+        "mode": "apply"
+      },
+      "workflow": {
+        "id": "edit_772a5be7f971481a9bd445228917b075",
+        "revision": 11,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": true,
+          "generation": 9,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "applied",
+        "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+        "blockerId": null,
+        "job": {
+          "id": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+          "status": "applied",
+          "summary": "Spacing suggestions for 3 master layers",
+          "resultKind": "mutation",
+          "changeCount": 6,
+          "sample": [
+            {
+              "afterHash": "sha256:b03ac5c96ada8a9de67e0b4bd7dc33c74543a22657bdf5252dc2f87b26a97439",
+              "beforeHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "dx": 61.71527438256004,
+              "dy": 0,
+              "glyph": "H",
+              "kind": "translate",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "after": 1483.110609753689,
+              "before": 1359.68,
+              "field": "width",
+              "glyph": "H",
+              "kind": "set",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "afterHash": "sha256:c9c77217b4e85ebb4a1f5a04671ef52e8a5c552d89ef807a54fdcfef2d7e0201",
+              "beforeHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "dx": 50.714600463076366,
+              "dy": 0,
+              "glyph": "n",
+              "kind": "translate",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "after": 1252.2153923535816,
+              "before": 1150.78625,
+              "field": "width",
+              "glyph": "n",
+              "kind": "set",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "afterHash": "sha256:24313355e3fa3d6d2a91d86d1d519ff416d0ca87fed6b3dff473186b92909691",
+              "beforeHash": "sha256:6354b0c645e61582dae12807887faf89a5bde5d80b1f5577c6b6d8fd1c20dc9f",
+              "dx": 49.044899323116155,
+              "dy": 0,
+              "glyph": "o",
+              "kind": "translate",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "after": 1190.1248601095244,
+              "before": 1092.03521,
+              "field": "width",
+              "glyph": "o",
+              "kind": "set",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            }
+          ],
+          "report": {
+            "claim": "Reference selection and preservation of specified metrics; sampled spacing suggestions, not optimal optical spacing.",
+            "layerCount": 3,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_bf1fc6bf097a4f51ac2f88d98988ebc8/report.json",
+            "sample": [
+              {
+                "after": {
+                  "lsb": 93.43491238256004,
+                  "rsb": 92.99106887112879,
+                  "width": 1483.110609753689
+                },
+                "before": {
+                  "lsb": 31.719638000000003,
+                  "rsb": 31.275733499999887,
+                  "width": 1359.68
+                },
+                "dx": 61.71527438256004,
+                "fallback": null,
+                "glyph": "H",
+                "glyphClass": "uppercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 282,
+                  "yMax": 1399.168,
+                  "yMin": -3.138
+                },
+                "preservedWidthReason": null,
+                "requestedReference": "auto",
+                "selectedReference": "H",
+                "status": "suggested"
+              },
+              {
+                "after": {
+                  "lsb": 109.10158976307636,
+                  "rsb": 83.32761689050533,
+                  "width": 1252.2153923535816
+                },
+                "before": {
+                  "lsb": 58.386989299999996,
+                  "rsb": 32.61307500000021,
+                  "width": 1150.78625
+                },
+                "dx": 50.714600463076366,
+                "fallback": null,
+                "glyph": "n",
+                "glyphClass": "lowercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 202,
+                  "yMax": 1001.291,
+                  "yMin": -2.372
+                },
+                "preservedWidthReason": null,
+                "requestedReference": "auto",
+                "selectedReference": "x",
+                "status": "suggested"
+              },
+              {
+                "after": {
+                  "lsb": 146.03089932311616,
+                  "rsb": 146.0629607864082,
+                  "width": 1190.1248601095244
+                },
+                "before": {
+                  "lsb": 96.986,
+                  "rsb": 97.01820999999995,
+                  "width": 1092.03521
+                },
+                "dx": 49.044899323116155,
+                "fallback": null,
+                "glyph": "o",
+                "glyphClass": "lowercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 202,
+                  "yMax": 1001.291,
+                  "yMin": -2.372
+                },
+                "preservedWidthReason": null,
+                "requestedReference": "auto",
+                "selectedReference": "x",
+                "status": "suggested"
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+            "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+            "status": "applied",
+            "completedChanges": 6,
+            "totalChanges": 6,
+            "error": null,
+            "nativeSave": null,
+            "receipt": null,
+            "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+          },
+          "activity": {
+            "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "applied",
+            "startedAt": 1790444866.0878139,
+            "finishedAt": 1790444866.08784,
+            "completed": 6,
+            "total": 6,
+            "message": null
+          },
+          "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "spacing",
+          "glyphs": [
+            "H",
+            "n",
+            "o"
+          ],
+          "glyphCount": 3,
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "targets": []
+        },
+        "actions": [
+          {
+            "action": "save_result",
+            "label": "Save font",
+            "token": "2e49cc166021ef202c394bcbca05f74a9daa891acff1db44e451058b003be68f",
+            "requiresDestination": false
+          },
+          {
+            "action": "save_result_as",
+            "label": "Save As…",
+            "token": "02bdc8989f95ac82df33e0de487419b7f28b526f9414754c2668db66858acad4",
+            "requiresDestination": true
+          },
+          {
+            "action": "discard",
+            "label": "Undo these changes",
+            "token": "5ea7ee6f67ba21f2c475dea158d346360bb56a46bdf7187d3417e047bcc64b40",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Changes applied. Save your font to keep them.\nSaving includes the whole font, including any other edits.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nChanges applied. Save your font to keep them.\nSaving includes the whole font, including any other edits.\nOperation: spacing; glyphs: H, n, o; masters: 0578215A-7423-43EB-8AD4-4C95A1C78DFA\nAvailable choices: Save font; Save As…; Undo these changes. You can reply in ordinary language.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_772a5be7f971481a9bd445228917b075\",\"expected_revision\":11,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"applied\",\"poll\":false,\"actions\":[{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"2e49cc166021ef202c394bcbca05f74a9daa891acff1db44e451058b003be68f\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"02bdc8989f95ac82df33e0de487419b7f28b526f9414754c2668db66858acad4\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"5ea7ee6f67ba21f2c475dea158d346360bb56a46bdf7187d3417e047bcc64b40\",\"requiresDestination\":false}]}"
+      },
+      "before": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+            },
+            "values": {
+              "width": 893,
+              "outlineHash": "sha256:d395fb119a2c414109a1f0c0a22fd549cb2580b17ac38d887f4cb070aa6043a8",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+            },
+            "values": {
+              "width": 1108.5,
+              "outlineHash": "sha256:cf40291a367bc992ff4a9affeef021159538e550bc54337f140f6fe2d011add1",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "926F7910-9E82-41CD-9117-571F75F96159"
+            },
+            "values": {
+              "width": 1332,
+              "outlineHash": "sha256:34ff736aa0e59410ddb669969f9f7abb80eb6fe5757b4833e1ed70b6ad1dfef5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+            },
+            "values": {
+              "width": 919.125,
+              "outlineHash": "sha256:3e921cb4403d27f6925529b50f5a33e851cee8b2c742ee6296f475b720c0b161",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1092.03521,
+              "outlineHash": "sha256:6354b0c645e61582dae12807887faf89a5bde5d80b1f5577c6b6d8fd1c20dc9f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+            },
+            "values": {
+              "width": 1375.125,
+              "outlineHash": "sha256:619c536fe7da8dd13875ae902ca39954cc229170983d0fb7a17d809b862ce191",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+            },
+            "values": {
+              "width": 978,
+              "outlineHash": "sha256:75a44f7d712aa46d9179e63e44de6e5da1ee10f5b9061536bc6632c340649d4f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+            },
+            "values": {
+              "width": 1121.7,
+              "outlineHash": "sha256:41d406f2e3dda0a2676a1fd0a5b19ce56986b7b28432e52c0dcf4a543b9d6d60",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+            },
+            "values": {
+              "width": 1465,
+              "outlineHash": "sha256:a7cab2e2908af424a4d63e3f1c3de26c09e7191e13b00c7d434367fdd09bcdb7",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "V",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1305.5876,
+              "outlineHash": "sha256:959c66c16e3a091c26216f9dde011aed894ccb526e00e256f9b65b06f84a6e18",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "T",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1058,
+              "outlineHash": "sha256:ad5df17bd3e12b08a574456368a297a45a92a22e5448a8e2def8a25b02cad928",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "after": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+            },
+            "values": {
+              "width": 893,
+              "outlineHash": "sha256:d395fb119a2c414109a1f0c0a22fd549cb2580b17ac38d887f4cb070aa6043a8",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+            },
+            "values": {
+              "width": 1108.5,
+              "outlineHash": "sha256:cf40291a367bc992ff4a9affeef021159538e550bc54337f140f6fe2d011add1",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "926F7910-9E82-41CD-9117-571F75F96159"
+            },
+            "values": {
+              "width": 1332,
+              "outlineHash": "sha256:34ff736aa0e59410ddb669969f9f7abb80eb6fe5757b4833e1ed70b6ad1dfef5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+            },
+            "values": {
+              "width": 919.125,
+              "outlineHash": "sha256:3e921cb4403d27f6925529b50f5a33e851cee8b2c742ee6296f475b720c0b161",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1190.1248601095244,
+              "outlineHash": "sha256:24313355e3fa3d6d2a91d86d1d519ff416d0ca87fed6b3dff473186b92909691",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+            },
+            "values": {
+              "width": 1375.125,
+              "outlineHash": "sha256:619c536fe7da8dd13875ae902ca39954cc229170983d0fb7a17d809b862ce191",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+            },
+            "values": {
+              "width": 978,
+              "outlineHash": "sha256:75a44f7d712aa46d9179e63e44de6e5da1ee10f5b9061536bc6632c340649d4f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+            },
+            "values": {
+              "width": 1121.7,
+              "outlineHash": "sha256:41d406f2e3dda0a2676a1fd0a5b19ce56986b7b28432e52c0dcf4a543b9d6d60",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+            },
+            "values": {
+              "width": 1465,
+              "outlineHash": "sha256:a7cab2e2908af424a4d63e3f1c3de26c09e7191e13b00c7d434367fdd09bcdb7",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1483.110609753689,
+              "outlineHash": "sha256:b03ac5c96ada8a9de67e0b4bd7dc33c74543a22657bdf5252dc2f87b26a97439",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1252.2153923535816,
+              "outlineHash": "sha256:c9c77217b4e85ebb4a1f5a04671ef52e8a5c552d89ef807a54fdcfef2d7e0201",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "V",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1305.5876,
+              "outlineHash": "sha256:959c66c16e3a091c26216f9dde011aed894ccb526e00e256f9b65b06f84a6e18",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "T",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1058,
+              "outlineHash": "sha256:ad5df17bd3e12b08a574456368a297a45a92a22e5448a8e2def8a25b02cad928",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "checks": {
+        "exactWidthsAndOutlineHashes": true,
+        "unselectedControlLayersPreserved": 11,
+        "nativeRedoExact": true,
+        "wholeJobRestoreExact": true
+      },
+      "nativeUndo": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1483.110609753689,
+              "outlineHash": "sha256:b03ac5c96ada8a9de67e0b4bd7dc33c74543a22657bdf5252dc2f87b26a97439"
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1252.2153923535816,
+              "outlineHash": "sha256:c9c77217b4e85ebb4a1f5a04671ef52e8a5c552d89ef807a54fdcfef2d7e0201"
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1092.03521,
+              "outlineHash": "sha256:6354b0c645e61582dae12807887faf89a5bde5d80b1f5577c6b6d8fd1c20dc9f"
+            }
+          }
+        ]
+      },
+      "restorationWorkflow": {
+        "id": "edit_772a5be7f971481a9bd445228917b075",
+        "revision": 18,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": true,
+          "generation": 11,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "discarded",
+        "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+        "blockerId": null,
+        "job": {
+          "id": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+          "status": "discarded",
+          "summary": "Spacing suggestions for 3 master layers",
+          "resultKind": "mutation",
+          "changeCount": 6,
+          "sample": [
+            {
+              "afterHash": "sha256:b03ac5c96ada8a9de67e0b4bd7dc33c74543a22657bdf5252dc2f87b26a97439",
+              "beforeHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "dx": 61.71527438256004,
+              "dy": 0,
+              "glyph": "H",
+              "kind": "translate",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "after": 1483.110609753689,
+              "before": 1359.68,
+              "field": "width",
+              "glyph": "H",
+              "kind": "set",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "afterHash": "sha256:c9c77217b4e85ebb4a1f5a04671ef52e8a5c552d89ef807a54fdcfef2d7e0201",
+              "beforeHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "dx": 50.714600463076366,
+              "dy": 0,
+              "glyph": "n",
+              "kind": "translate",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "after": 1252.2153923535816,
+              "before": 1150.78625,
+              "field": "width",
+              "glyph": "n",
+              "kind": "set",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "afterHash": "sha256:24313355e3fa3d6d2a91d86d1d519ff416d0ca87fed6b3dff473186b92909691",
+              "beforeHash": "sha256:6354b0c645e61582dae12807887faf89a5bde5d80b1f5577c6b6d8fd1c20dc9f",
+              "dx": 49.044899323116155,
+              "dy": 0,
+              "glyph": "o",
+              "kind": "translate",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "after": 1190.1248601095244,
+              "before": 1092.03521,
+              "field": "width",
+              "glyph": "o",
+              "kind": "set",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            }
+          ],
+          "report": {
+            "claim": "Reference selection and preservation of specified metrics; sampled spacing suggestions, not optimal optical spacing.",
+            "layerCount": 3,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_bf1fc6bf097a4f51ac2f88d98988ebc8/report.json",
+            "sample": [
+              {
+                "after": {
+                  "lsb": 93.43491238256004,
+                  "rsb": 92.99106887112879,
+                  "width": 1483.110609753689
+                },
+                "before": {
+                  "lsb": 31.719638000000003,
+                  "rsb": 31.275733499999887,
+                  "width": 1359.68
+                },
+                "dx": 61.71527438256004,
+                "fallback": null,
+                "glyph": "H",
+                "glyphClass": "uppercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 282,
+                  "yMax": 1399.168,
+                  "yMin": -3.138
+                },
+                "preservedWidthReason": null,
+                "requestedReference": "auto",
+                "selectedReference": "H",
+                "status": "suggested"
+              },
+              {
+                "after": {
+                  "lsb": 109.10158976307636,
+                  "rsb": 83.32761689050533,
+                  "width": 1252.2153923535816
+                },
+                "before": {
+                  "lsb": 58.386989299999996,
+                  "rsb": 32.61307500000021,
+                  "width": 1150.78625
+                },
+                "dx": 50.714600463076366,
+                "fallback": null,
+                "glyph": "n",
+                "glyphClass": "lowercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 202,
+                  "yMax": 1001.291,
+                  "yMin": -2.372
+                },
+                "preservedWidthReason": null,
+                "requestedReference": "auto",
+                "selectedReference": "x",
+                "status": "suggested"
+              },
+              {
+                "after": {
+                  "lsb": 146.03089932311616,
+                  "rsb": 146.0629607864082,
+                  "width": 1190.1248601095244
+                },
+                "before": {
+                  "lsb": 96.986,
+                  "rsb": 97.01820999999995,
+                  "width": 1092.03521
+                },
+                "dx": 49.044899323116155,
+                "fallback": null,
+                "glyph": "o",
+                "glyphClass": "lowercase",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "samples": 202,
+                  "yMax": 1001.291,
+                  "yMin": -2.372
+                },
+                "preservedWidthReason": null,
+                "requestedReference": "auto",
+                "selectedReference": "x",
+                "status": "suggested"
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+            "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+            "status": "discarded",
+            "completedChanges": 6,
+            "totalChanges": 6,
+            "error": null,
+            "nativeSave": null,
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "discarded",
+            "startedAt": 1790445022.876653,
+            "finishedAt": 1790445022.87668,
+            "completed": 6,
+            "total": 6,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "spacing",
+          "glyphs": [
+            "H",
+            "n",
+            "o"
+          ],
+          "glyphCount": 3,
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "targets": []
+        },
+        "actions": [],
+        "message": "Changes discarded.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nChanges discarded.\nOperation: spacing; glyphs: H, n, o; masters: 0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_772a5be7f971481a9bd445228917b075\",\"expected_revision\":18,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"discarded\",\"poll\":false,\"actions\":[]}"
+      }
+    },
+    {
+      "task": "kerning_clearance_5",
+      "request": {
+        "document_id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+        "kind": "kerning_collision",
+        "options": {
+          "pairs": [
+            [
+              "A",
+              "V"
+            ],
+            [
+              "T",
+              "o"
+            ]
+          ],
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "direction": "LTR",
+          "targetGap": 5.125,
+          "denseStep": 5
+        },
+        "idempotency_key": "real-task-20260926-kerning-v1",
+        "mode": "apply"
+      },
+      "workflow": {
+        "id": "edit_129196930dcb48ce9123735a746d3007",
+        "revision": 13,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": false,
+          "generation": 12,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "no_changes",
+        "jobId": "job_c281d59ea18e495a99ba2a05c64397fb",
+        "blockerId": null,
+        "job": {
+          "id": "job_c281d59ea18e495a99ba2a05c64397fb",
+          "status": "ready",
+          "summary": "Collision corrections for 2 master pairs",
+          "resultKind": "mutation",
+          "changeCount": 0,
+          "sample": [],
+          "report": {
+            "claim": "Detect and correct measured horizontal collisions; unsampled heights and optical kerning are not guaranteed.",
+            "pairCount": 2,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_c281d59ea18e495a99ba2a05c64397fb/report.json",
+            "sample": [
+              {
+                "delta": 0,
+                "direction": "LTR",
+                "effectiveBefore": -300.25,
+                "groupKeys": [
+                  "@MMK_L_A",
+                  "@MMK_R_V"
+                ],
+                "left": "A",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "coarseGap": 278.4623949382783,
+                  "denseStep": 5,
+                  "minGap": 278.4623949382783,
+                  "refined": false,
+                  "sampleCount": 5,
+                  "worstY": 66.68746522500001,
+                  "yRange": [
+                    -3.6551619000000004,
+                    1403.1973806
+                  ]
+                },
+                "right": "V",
+                "status": "unchanged",
+                "storedBefore": -300.25
+              },
+              {
+                "delta": 0,
+                "direction": "LTR",
+                "effectiveBefore": -280.5,
+                "groupKeys": [
+                  "@MMK_L_T",
+                  "@MMK_R_o"
+                ],
+                "left": "T",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "coarseGap": 265.96853206072126,
+                  "denseStep": 5,
+                  "minGap": 265.96853206072126,
+                  "refined": false,
+                  "sampleCount": 5,
+                  "worstY": 48.11255000000001,
+                  "yRange": [
+                    -3.169,
+                    1022.462
+                  ]
+                },
+                "right": "o",
+                "status": "unchanged",
+                "storedBefore": -280.5
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": null,
+          "activity": {
+            "jobId": "job_c281d59ea18e495a99ba2a05c64397fb",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "kerning_collision",
+            "phase": "ready",
+            "startedAt": 1790445089.3021162,
+            "finishedAt": 1790445089.302141,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_fa261a7f30274f0da17afdca639eab12",
+          "jobId": null,
+          "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+          "sourceHashAfter": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790445087.6400151
+        },
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "kerning_collision",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "targets": [
+            [
+              "A",
+              "V"
+            ],
+            [
+              "T",
+              "o"
+            ]
+          ]
+        },
+        "actions": [],
+        "message": "No changes needed.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nNo changes needed.\nOperation: kerning collision; masters: 0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_129196930dcb48ce9123735a746d3007\",\"expected_revision\":13,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"no_changes\",\"poll\":false,\"actions\":[]}"
+      },
+      "result": "No measured collision; clearances exceeded 265 units. Fixture negative values did not cause the anticipated collision."
+    },
+    {
+      "task": "kerning_clearance_400",
+      "request": {
+        "document_id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+        "kind": "kerning_collision",
+        "options": {
+          "pairs": [
+            [
+              "A",
+              "V"
+            ],
+            [
+              "T",
+              "o"
+            ]
+          ],
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "direction": "LTR",
+          "targetGap": 400,
+          "denseStep": 5
+        },
+        "idempotency_key": "real-task-20260926-kerning-clearance-v1",
+        "mode": "apply"
+      },
+      "workflow": {
+        "id": "edit_6137fc2a81b042e7ba5abfe8601318d9",
+        "revision": 11,
+        "document": {
+          "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+          "dirty": true,
+          "generation": 13,
+          "isCurrent": true,
+          "familyName": "Dactylotype MCP Task Test"
+        },
+        "mode": "apply",
+        "state": "applied",
+        "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+        "blockerId": null,
+        "job": {
+          "id": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+          "status": "applied",
+          "summary": "Collision corrections for 2 master pairs",
+          "resultKind": "mutation",
+          "changeCount": 2,
+          "sample": [
+            {
+              "after": -177.8762353373504,
+              "before": -300.25,
+              "direction": "LTR",
+              "kind": "kerning",
+              "left": "A",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "right": "V"
+            },
+            {
+              "after": -98.74719348375515,
+              "before": -280.5,
+              "direction": "LTR",
+              "kind": "kerning",
+              "left": "T",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "right": "o"
+            }
+          ],
+          "report": {
+            "claim": "Detect and correct measured horizontal collisions; unsampled heights and optical kerning are not guaranteed.",
+            "pairCount": 2,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_481d0a616f2b449c9e04d5b3f69ec50f/report.json",
+            "sample": [
+              {
+                "after": -177.8762353373504,
+                "delta": 122.37376466264959,
+                "direction": "LTR",
+                "effectiveBefore": -300.25,
+                "groupKeys": [
+                  "@MMK_L_A",
+                  "@MMK_R_V"
+                ],
+                "left": "A",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "coarseGap": 278.4623949382783,
+                  "denseStep": 5,
+                  "minGap": 277.6262353373504,
+                  "refined": true,
+                  "sampleCount": 287,
+                  "worstY": 76.3448381,
+                  "yRange": [
+                    -3.6551619000000004,
+                    1403.1973806
+                  ]
+                },
+                "right": "V",
+                "status": "suggested",
+                "storedBefore": -300.25
+              },
+              {
+                "after": -98.74719348375515,
+                "delta": 181.75280651624485,
+                "direction": "LTR",
+                "effectiveBefore": -280.5,
+                "groupKeys": [
+                  "@MMK_L_T",
+                  "@MMK_R_o"
+                ],
+                "left": "T",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "measurement": {
+                  "coarseGap": 265.96853206072126,
+                  "denseStep": 5,
+                  "minGap": 218.24719348375515,
+                  "refined": true,
+                  "sampleCount": 211,
+                  "worstY": 101.831,
+                  "yRange": [
+                    -3.169,
+                    1022.462
+                  ]
+                },
+                "right": "o",
+                "status": "suggested",
+                "storedBefore": -280.5
+              }
+            ],
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+            "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+            "status": "applied",
+            "completedChanges": 2,
+            "totalChanges": 2,
+            "error": null,
+            "nativeSave": null,
+            "receipt": null,
+            "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+          },
+          "activity": {
+            "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "kerning_collision",
+            "phase": "applied",
+            "startedAt": 1790445166.460934,
+            "finishedAt": 1790445166.460981,
+            "completed": 2,
+            "total": 2,
+            "message": null
+          },
+          "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "scope": {
+          "kind": "kerning_collision",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": [
+            "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          ],
+          "targets": [
+            [
+              "A",
+              "V"
+            ],
+            [
+              "T",
+              "o"
+            ]
+          ]
+        },
+        "actions": [
+          {
+            "action": "save_result",
+            "label": "Save font",
+            "token": "f8aaf084d579f7215fc41ca867af9a9c6d24ff859198634889678eebb302d906",
+            "requiresDestination": false
+          },
+          {
+            "action": "save_result_as",
+            "label": "Save As…",
+            "token": "e86343f5b51ac0b5a2c8d456208830a9a4a3f1007925caa127695e5e8c330f63",
+            "requiresDestination": true
+          },
+          {
+            "action": "discard",
+            "label": "Undo these changes",
+            "token": "3430a05dce288a5c263f8c3ed77b6f4508b114934ac472063242acbae6bfbcb2",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Changes applied. Save your font to keep them.\nSaving includes the whole font, including any other edits.",
+        "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nChanges applied. Save your font to keep them.\nSaving includes the whole font, including any other edits.\nOperation: kerning collision; masters: 0578215A-7423-43EB-8AD4-4C95A1C78DFA\nAvailable choices: Save font; Save As…; Undo these changes. You can reply in ordinary language.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_6137fc2a81b042e7ba5abfe8601318d9\",\"expected_revision\":11,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"applied\",\"poll\":false,\"actions\":[{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"f8aaf084d579f7215fc41ca867af9a9c6d24ff859198634889678eebb302d906\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"e86343f5b51ac0b5a2c8d456208830a9a4a3f1007925caa127695e5e8c330f63\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"3430a05dce288a5c263f8c3ed77b6f4508b114934ac472063242acbae6bfbcb2\",\"requiresDestination\":false}]}"
+      },
+      "before": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "926F7910-9E82-41CD-9117-571F75F96159",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "926F7910-9E82-41CD-9117-571F75F96159",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": -300.25
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": -280.5
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "H",
+              "right": "O"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "V",
+              "right": "A"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "T",
+              "right": "a"
+            },
+            "values": {
+              "value": null
+            }
+          }
+        ]
+      },
+      "after": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "926F7910-9E82-41CD-9117-571F75F96159",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "926F7910-9E82-41CD-9117-571F75F96159",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": -177.8762353373504
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": -98.74719348375515
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+              "direction": "LTR",
+              "left": "A",
+              "right": "V"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+              "direction": "LTR",
+              "left": "T",
+              "right": "o"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "H",
+              "right": "O"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "V",
+              "right": "A"
+            },
+            "values": {
+              "value": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "kerning",
+              "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "direction": "LTR",
+              "left": "T",
+              "right": "a"
+            },
+            "values": {
+              "value": null
+            }
+          }
+        ]
+      },
+      "groupsBefore": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "A"
+            },
+            "values": {
+              "leftKerningGroup": "A",
+              "rightKerningGroup": "A",
+              "leftKerningKey": "@MMK_R_A",
+              "rightKerningKey": "@MMK_L_A"
+            }
+          },
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "V"
+            },
+            "values": {
+              "leftKerningGroup": "V",
+              "rightKerningGroup": "V",
+              "leftKerningKey": "@MMK_R_V",
+              "rightKerningKey": "@MMK_L_V"
+            }
+          },
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "T"
+            },
+            "values": {
+              "leftKerningGroup": "T",
+              "rightKerningGroup": "T",
+              "leftKerningKey": "@MMK_R_T",
+              "rightKerningKey": "@MMK_L_T"
+            }
+          },
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "o"
+            },
+            "values": {
+              "leftKerningGroup": "o",
+              "rightKerningGroup": "o",
+              "leftKerningKey": "@MMK_R_o",
+              "rightKerningKey": "@MMK_L_o"
+            }
+          }
+        ]
+      },
+      "groupsAfter": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "A"
+            },
+            "values": {
+              "leftKerningGroup": "A",
+              "rightKerningGroup": "A",
+              "leftKerningKey": "@MMK_R_A",
+              "rightKerningKey": "@MMK_L_A"
+            }
+          },
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "V"
+            },
+            "values": {
+              "leftKerningGroup": "V",
+              "rightKerningGroup": "V",
+              "leftKerningKey": "@MMK_R_V",
+              "rightKerningKey": "@MMK_L_V"
+            }
+          },
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "T"
+            },
+            "values": {
+              "leftKerningGroup": "T",
+              "rightKerningGroup": "T",
+              "leftKerningKey": "@MMK_R_T",
+              "rightKerningKey": "@MMK_L_T"
+            }
+          },
+          {
+            "entity": {
+              "kind": "glyph",
+              "id": "o"
+            },
+            "values": {
+              "leftKerningGroup": "o",
+              "rightKerningGroup": "o",
+              "leftKerningKey": "@MMK_R_o",
+              "rightKerningKey": "@MMK_L_o"
+            }
+          }
+        ]
+      },
+      "layersAfter": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+            },
+            "values": {
+              "width": 893,
+              "outlineHash": "sha256:d395fb119a2c414109a1f0c0a22fd549cb2580b17ac38d887f4cb070aa6043a8",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+            },
+            "values": {
+              "width": 1108.5,
+              "outlineHash": "sha256:cf40291a367bc992ff4a9affeef021159538e550bc54337f140f6fe2d011add1",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "926F7910-9E82-41CD-9117-571F75F96159"
+            },
+            "values": {
+              "width": 1332,
+              "outlineHash": "sha256:34ff736aa0e59410ddb669969f9f7abb80eb6fe5757b4833e1ed70b6ad1dfef5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+            },
+            "values": {
+              "width": 919.125,
+              "outlineHash": "sha256:3e921cb4403d27f6925529b50f5a33e851cee8b2c742ee6296f475b720c0b161",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1092.03521,
+              "outlineHash": "sha256:6354b0c645e61582dae12807887faf89a5bde5d80b1f5577c6b6d8fd1c20dc9f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+            },
+            "values": {
+              "width": 1375.125,
+              "outlineHash": "sha256:619c536fe7da8dd13875ae902ca39954cc229170983d0fb7a17d809b862ce191",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+            },
+            "values": {
+              "width": 978,
+              "outlineHash": "sha256:75a44f7d712aa46d9179e63e44de6e5da1ee10f5b9061536bc6632c340649d4f",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+            },
+            "values": {
+              "width": 1121.7,
+              "outlineHash": "sha256:41d406f2e3dda0a2676a1fd0a5b19ce56986b7b28432e52c0dcf4a543b9d6d60",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+            },
+            "values": {
+              "width": 1465,
+              "outlineHash": "sha256:a7cab2e2908af424a4d63e3f1c3de26c09e7191e13b00c7d434367fdd09bcdb7",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "V",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1305.5876,
+              "outlineHash": "sha256:959c66c16e3a091c26216f9dde011aed894ccb526e00e256f9b65b06f84a6e18",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "T",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1058,
+              "outlineHash": "sha256:ad5df17bd3e12b08a574456368a297a45a92a22e5448a8e2def8a25b02cad928",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "checks": {
+        "exactStoredValues": true,
+        "otherPairsUnchanged": 19,
+        "groupsUnchanged": true,
+        "layersUnchanged": 14,
+        "sampledClearance": 400
+      },
+      "restoration": {
+        "workflow": {
+          "id": "edit_6137fc2a81b042e7ba5abfe8601318d9",
+          "revision": 17,
+          "document": {
+            "id": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+            "dirty": true,
+            "generation": 13,
+            "isCurrent": true,
+            "familyName": "Dactylotype MCP Task Test"
+          },
+          "mode": "apply",
+          "state": "discarded",
+          "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+          "blockerId": null,
+          "job": {
+            "id": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+            "status": "discarded",
+            "summary": "Collision corrections for 2 master pairs",
+            "resultKind": "mutation",
+            "changeCount": 2,
+            "sample": [
+              {
+                "after": -177.8762353373504,
+                "before": -300.25,
+                "direction": "LTR",
+                "kind": "kerning",
+                "left": "A",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "right": "V"
+              },
+              {
+                "after": -98.74719348375515,
+                "before": -280.5,
+                "direction": "LTR",
+                "kind": "kerning",
+                "left": "T",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "right": "o"
+              }
+            ],
+            "report": {
+              "claim": "Detect and correct measured horizontal collisions; unsampled heights and optical kerning are not guaranteed.",
+              "pairCount": 2,
+              "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_481d0a616f2b449c9e04d5b3f69ec50f/report.json",
+              "sample": [
+                {
+                  "after": -177.8762353373504,
+                  "delta": 122.37376466264959,
+                  "direction": "LTR",
+                  "effectiveBefore": -300.25,
+                  "groupKeys": [
+                    "@MMK_L_A",
+                    "@MMK_R_V"
+                  ],
+                  "left": "A",
+                  "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                  "measurement": {
+                    "coarseGap": 278.4623949382783,
+                    "denseStep": 5,
+                    "minGap": 277.6262353373504,
+                    "refined": true,
+                    "sampleCount": 287,
+                    "worstY": 76.3448381,
+                    "yRange": [
+                      -3.6551619000000004,
+                      1403.1973806
+                    ]
+                  },
+                  "right": "V",
+                  "status": "suggested",
+                  "storedBefore": -300.25
+                },
+                {
+                  "after": -98.74719348375515,
+                  "delta": 181.75280651624485,
+                  "direction": "LTR",
+                  "effectiveBefore": -280.5,
+                  "groupKeys": [
+                    "@MMK_L_T",
+                    "@MMK_R_o"
+                  ],
+                  "left": "T",
+                  "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                  "measurement": {
+                    "coarseGap": 265.96853206072126,
+                    "denseStep": 5,
+                    "minGap": 218.24719348375515,
+                    "refined": true,
+                    "sampleCount": 211,
+                    "worstY": 101.831,
+                    "yRange": [
+                      -3.169,
+                      1022.462
+                    ]
+                  },
+                  "right": "o",
+                  "status": "suggested",
+                  "storedBefore": -280.5
+                }
+              ],
+              "unavailableCount": 0
+            },
+            "manifest": null,
+            "error": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+              "documentId": "doc_13f51deaf6ee4acd8d9fd37662e0a561",
+              "status": "discarded",
+              "completedChanges": 2,
+              "totalChanges": 2,
+              "error": null,
+              "nativeSave": null,
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "kerning_collision",
+              "phase": "discarded",
+              "startedAt": 1790445395.2527292,
+              "finishedAt": 1790445395.2527711,
+              "completed": 2,
+              "total": 2,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": null,
+          "reviewInConversation": false,
+          "scope": {
+            "kind": "kerning_collision",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": [
+              "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            ],
+            "targets": [
+              [
+                "A",
+                "V"
+              ],
+              [
+                "T",
+                "o"
+              ]
+            ]
+          },
+          "actions": [],
+          "message": "Changes discarded.",
+          "text": "Dactylotype MCP Task Test — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage\nChanges discarded.\nOperation: kerning collision; masters: 0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_6137fc2a81b042e7ba5abfe8601318d9\",\"expected_revision\":17,\"document_id\":\"doc_13f51deaf6ee4acd8d9fd37662e0a561\",\"state\":\"discarded\",\"poll\":false,\"actions\":[]}"
+        },
+        "pairs": {
+          "ok": true,
+          "data": [
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "926F7910-9E82-41CD-9117-571F75F96159",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "926F7910-9E82-41CD-9117-571F75F96159",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": -300.25
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": -280.5
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+                "direction": "LTR",
+                "left": "A",
+                "right": "V"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+                "direction": "LTR",
+                "left": "T",
+                "right": "o"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "direction": "LTR",
+                "left": "H",
+                "right": "O"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "direction": "LTR",
+                "left": "V",
+                "right": "A"
+              },
+              "values": {
+                "value": null
+              }
+            },
+            {
+              "entity": {
+                "kind": "kerning",
+                "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "direction": "LTR",
+                "left": "T",
+                "right": "a"
+              },
+              "values": {
+                "value": null
+              }
+            }
+          ]
+        },
+        "verified": true
+      }
+    }
+  ]
+}

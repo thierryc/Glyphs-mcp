@@ -1,0 +1,291 @@
+{
+  "documents": {
+    "ok": true,
+    "data": [
+      {
+        "id": "doc_2725edfcbd7f4d49a593c30657214ae8",
+        "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+        "dirty": false,
+        "generation": 623,
+        "isCurrent": true,
+        "familyName": "Dactylotype"
+      }
+    ]
+  },
+  "status": {
+    "ok": true,
+    "data": {
+      "protocol": 1,
+      "sidecarVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.7",
+        "channel": "beta",
+        "betaNumber": 7,
+        "installerBuild": 49
+      },
+      "runtimeId": "2.0.0-beta.7+44cd3cdfaac8",
+      "codeHash": "sha256:44cd3cdfaac85bda4997085d6a361241047f9180557d1d522cf96e0b4ba6dfbb",
+      "identityEvidence": "initialization-time file fingerprint",
+      "interface": "glyphs-mcp-sidecar",
+      "interfaceVersion": 1,
+      "jobKinds": [
+        "width_delta",
+        "spacing",
+        "kerning_collision",
+        "start_nodes",
+        "slant",
+        "outline_edit",
+        "native_action",
+        "dimensions_edit",
+        "feature_compile",
+        "font_export"
+      ],
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.remove-node.v1",
+        "outline.background.edit.v1",
+        "native.action.v1",
+        "master.dimensions.edit.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1"
+      ],
+      "tools": [
+        "get_status",
+        "list_documents",
+        "read_entities",
+        "start_job",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "bridge": {
+        "reachable": true,
+        "protocol": 1,
+        "bridgeVersion": "2.0.0",
+        "release": {
+          "version": "2.0.0",
+          "releaseVersion": "2.0.0-beta.7",
+          "channel": "beta",
+          "betaNumber": 7,
+          "installerBuild": 49
+        },
+        "runtimeId": "2.0.0-beta.7+521e2506920a",
+        "codeHash": "sha256:521e2506920a938a1198802b8d1680e1e1e6661896181764b1425362de541d2d",
+        "identityEvidence": "initialization-time file fingerprint",
+        "host": {
+          "identifier": "com.GeorgSeifert.Glyphs4",
+          "version": "4.1",
+          "build": "4107"
+        },
+        "readCapabilities": [
+          "master.read.exact.v1",
+          "masters.list.v1",
+          "layer.read.exact.v1",
+          "selection.nodes.native.v1",
+          "selection.context.v1",
+          "document.context.v1",
+          "glyphs.list.v1",
+          "layers.list.v1",
+          "kerning.groups.v1",
+          "kerning.pairs.v1",
+          "master.properties.v1",
+          "paths.list.v1",
+          "path.geometry.v1",
+          "outline.background.read.v1",
+          "features.read.v1",
+          "instances.read.v1",
+          "master.dimensions.read.v1"
+        ],
+        "writeCapabilities": [
+          "outline.edit.v1",
+          "outline.background.edit.v1",
+          "outline.remove-node.v1",
+          "master.dimensions.edit.v1",
+          "native.action.v1"
+        ],
+        "nativeActions": [
+          "add_extremes",
+          "add_missing_anchors",
+          "align_components",
+          "cleanup_paths",
+          "connect_open_paths",
+          "correct_path_direction",
+          "decompose_components",
+          "decompose_corners",
+          "make_components",
+          "reinterpolate",
+          "remove_overlap",
+          "round_coordinates",
+          "set_glyph_color",
+          "swap_foreground_background",
+          "update_automatic_feature_block",
+          "update_features",
+          "update_glyph_info",
+          "update_metrics"
+        ],
+        "jobCapabilities": [
+          "feature.compile.live.v1"
+        ],
+        "activity": "ready",
+        "activeOperations": 0,
+        "companions": [
+          {
+            "protocol": 1,
+            "id": "curve-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "curve.measure",
+              "curve.overlay"
+            ]
+          },
+          {
+            "protocol": 1,
+            "id": "reference-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "reference.file",
+              "reference.git",
+              "reference.github",
+              "reference.overlay",
+              "reference.saved"
+            ]
+          }
+        ]
+      },
+      "worker": {
+        "available": true,
+        "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+        "application": "/Applications/Glyphs 4.app",
+        "plugins": "disabled",
+        "processModel": "one_shot",
+        "executions": [],
+        "jobCapabilities": [
+          "feature.compile.saved.v1",
+          "font.export.static.v1",
+          "font.export.variable.v1",
+          "font.export.web.v1",
+          "font.verify.shaping.v1",
+          "font.verify.tables.v1"
+        ]
+      },
+      "controlProtocol": 1,
+      "workflowCapabilities": [
+        "edit.workflow.v1"
+      ],
+      "activity": {
+        "jobs": [
+          {
+            "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "kerning_collision",
+            "phase": "discarded",
+            "startedAt": 1790445395.2527292,
+            "finishedAt": 1790445395.2527711,
+            "completed": 2,
+            "total": 2,
+            "message": null
+          },
+          {
+            "jobId": "job_c281d59ea18e495a99ba2a05c64397fb",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "kerning_collision",
+            "phase": "discarded",
+            "startedAt": 1790445089.437053,
+            "finishedAt": 1790445089.437057,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "discarded",
+            "startedAt": 1790445022.876653,
+            "finishedAt": 1790445022.87668,
+            "completed": 6,
+            "total": 6,
+            "message": null
+          },
+          {
+            "jobId": "job_a79bc1ef1bd84eecba632a9d1ad4c478",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "discarded",
+            "startedAt": 1790444831.242441,
+            "finishedAt": 1790444831.2424479,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_319d09c37e384714be2d5d9bc14baff0",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "outline_edit",
+            "phase": "discarded",
+            "startedAt": 1790444784.9575849,
+            "finishedAt": 1790444784.9576268,
+            "completed": 1,
+            "total": 1,
+            "message": null
+          }
+        ],
+        "activeCount": 0,
+        "moreCount": 0
+      },
+      "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+    }
+  }
+}

@@ -11,13 +11,14 @@ from typing import Any, Callable, Mapping, Protocol
 
 from glyphs_mcp_protocol import PROTOCOL_VERSION, ProtocolError, validate_patch
 from glyphs_mcp_protocol.native_actions import MAX_JOB_STATE_BYTES
+from glyphs_mcp_protocol import scripts
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
 
 from . import dimensions, feature_compile, native_actions, outline_edit, saving
 from .companions import CompanionRegistry
 from .identity import IDENTITY, VERSION, host_identity
 
-ACTIVE = {"applying", "accepting", "discarding", "rolling_back"}
+ACTIVE = {"preparing", "applying", "accepting", "discarding", "rolling_back"}
 
 
 class BridgeError(RuntimeError):
@@ -91,6 +92,12 @@ class BridgeCore:
         if actions:
             write_capabilities.append("native.action.v1")
         job_capabilities = (["feature.compile.live.v1"] if feature_compile.available() else [])
+        from . import saved_script
+        if saved_script.available():
+            job_capabilities.append(scripts.NATIVE)
+        if callable(getattr(self.adapter, "_font", None)):
+            from glyphs_mcp_protocol.preparation.simple import CAPABILITY
+            job_capabilities.append(CAPABILITY)
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             **IDENTITY, "host": self.host,
@@ -139,6 +146,34 @@ class BridgeCore:
         except Exception as exc:
             raise BridgeError("native_compile_failed", str(exc) or type(exc).__name__) from exc
 
+    def begin_script(self, value):
+        from . import script_execution
+        from . import saved_script
+        supported = saved_script.available()
+        if self.paused or not supported:
+            raise BridgeError('unsupported_job', 'native scripting is unavailable')
+        return script_execution.begin(self, value, BridgeError)
+
+    def finish_script(self, job_id):
+        operation = self._operations.get(job_id)
+        if not operation or not operation.get('scriptRequest') or operation['status'] not in {'applied', 'failed', 'cancelled', 'completed'}:
+            raise BridgeError('job_not_ready', 'script has no completed result to release')
+        operation.update(status='completed', resolved=[], nativeStateBytes=0, restorationClosed=True)
+        return self._public(operation)
+
+    def finish_edit(self, job_id):
+        """Release selective recovery; native Undo owns independent inverses."""
+        with self._lock:
+            operation = self._operations.get(job_id)
+            if (not operation or operation.get('scriptRequest') or operation.get('error')
+                    or operation['status'] not in {'applied', 'completed'}):
+                raise BridgeError('job_not_ready', 'only a successfully applied edit can be kept')
+            if operation['status'] == 'completed':
+                return self._public(operation)
+            self._check_owner(operation['documentId'], ignore_job_id=job_id)
+            operation.update(status='completed', resolved=[], nativeStateBytes=0, restorationClosed=True)
+            return self._public(operation)
+
     def begin_save(self, value: Any) -> dict[str, Any]:
         return saving.begin_save(self, value, BridgeError)
 
@@ -182,8 +217,9 @@ class BridgeCore:
             if existing is not None:
                 if existing["patch"] != patch:
                     raise BridgeError("job_conflict", "job ID already belongs to another patch")
-                return self._public(existing)
-            self._check_owner(patch["documentId"])
+                if not (existing.get("prepared") and existing["status"] == "ready"):
+                    return self._public(existing)
+            self._check_owner(patch["documentId"], ignore_job_id=job_id)
         state = self.adapter.document_state(patch["documentId"])
         if state.get("path") != patch["sourcePath"]:
             raise BridgeError("stale_document", "the document path changed before application")
@@ -200,8 +236,9 @@ class BridgeCore:
             if existing is not None:
                 if existing["patch"] != patch:
                     raise BridgeError("job_conflict", "job ID already belongs to another patch")
-                return self._public(existing)
-            self._check_owner(patch["documentId"])
+                if not (existing.get("prepared") and existing["status"] == "ready"):
+                    return self._public(existing)
+            self._check_owner(patch["documentId"], ignore_job_id=job_id)
             # Keep a bounded recent retry/discard window. Native Undo owns
             # its inverses independently of these bridge operation records.
             finished = [key for key, item in self._operations.items()
@@ -213,6 +250,12 @@ class BridgeCore:
         return self._public(operation)
 
     def _check_owner(self, document_id, *, ignore_job_id=None):
+        from .script_execution import unresolved
+        if any(unresolved(item) and item['jobId'] != ignore_job_id for item in self._operations.values()):
+            raise BridgeError('document_busy', 'keep or restore partial script edits before another mutation')
+        if any(item.get('scriptRequest') and item['status'] in ACTIVE and item['jobId'] != ignore_job_id
+               for item in self._operations.values()):
+            raise BridgeError('document_busy', 'native Python is executing')
         if any(item["documentId"] == document_id and item["status"] in ACTIVE
                and item["jobId"] != ignore_job_id for item in self._operations.values()):
             raise BridgeError("document_busy", "another operation is changing this document")
@@ -249,6 +292,10 @@ class BridgeCore:
             operation = self._operations.get(str(job_id))
             if operation is None:
                 raise BridgeError("job_not_found", "the bridge does not know this job")
+            if operation.get("prepared") and operation["status"] in {"preparing", "ready"}:
+                from .typed_preparation import cancel
+                cancel(operation)
+                return self._public(operation)
             if operation["status"] in {"applying", "rolling_back"}:
                 operation["cancelRequested"] = True
                 return self._public(operation)
@@ -256,6 +303,8 @@ class BridgeCore:
                 return self._public(operation)
             if operation["status"] != "applied":
                 raise BridgeError("job_not_discardable", "the job is not applied")
+            if operation.get('scriptRequest'):
+                raise BridgeError('recovery_unavailable', 'use Restore saved version for this script')
             self._check_owner(operation["documentId"])
             operation.update(status="discarding", direction="restore", index=0,
                              applied=[], cancelRequested=False, error=None)
@@ -289,6 +338,17 @@ class BridgeCore:
             operation = self._operations.get(job_id)
             if operation is None or operation["status"] not in ACTIVE:
                 return
+        if operation.get('scriptStage') not in (None, 'done'):
+            from . import script_execution
+            deadline = time.perf_counter() + self.chunk_seconds
+            for _ in range(self.chunk_limit):
+                script_execution.advance(self, operation)
+                if (operation['status'] not in ACTIVE
+                        or time.perf_counter() >= deadline):
+                    break
+            if operation['status'] in ACTIVE:
+                self._schedule(operation)
+            return
         if operation["status"] == "accepting":
             try:
                 if self._run_accept_chunk(operation):
@@ -445,21 +505,30 @@ class BridgeCore:
     @staticmethod
     def _public(operation: Mapping[str, Any]) -> dict[str, Any]:
         count = len(operation["patch"]["changes"])
+        script_running = bool(operation.get('scriptResult'))
+        if script_running:
+            count = operation['scriptResult']['totalTargets']
         completed = (
             operation.get("acceptIndex", count)
             if operation["status"] == "accepting"
+            else operation['scriptResult']['executedTargets'] if script_running
             else operation["index"]
         )
         return {
             "jobId": operation["jobId"],
             "documentId": operation["documentId"],
             "status": operation["status"],
-            "completedChanges": max(0, min(count, int(completed))),
-            "totalChanges": count,
+            "completedChanges": (None if operation.get('scriptRequest', {}).get('options', {}).get('entrypoint') == 'script'
+                                 else max(0, min(count, int(completed)))),
+            "longestPreparationChunk": operation.get("longestPreparationChunk"),
+            "totalChanges": None if operation.get('scriptRequest', {}).get('options', {}).get('entrypoint') == 'script' else count,
             "error": copy.deepcopy(operation["error"]),
             "nativeSave": copy.deepcopy(operation.get("nativeSave")),
+            "scriptResult": copy.deepcopy(operation.get("scriptResult")),
             "receipt": copy.deepcopy(operation.get("receipt")),
             "message": (
+                "Script finished. Verify the intended result; Restore saved version reloads the whole font."
+                if script_running and operation["status"] == "applied" else
                 "Dimensions changed without saving. Use native document Undo/Redo or discard_job; save separately when authorized."
                 if operation["status"] == "applied" and any(c["kind"] == "dimension" for c in operation["patch"]["changes"]) else
                 "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."

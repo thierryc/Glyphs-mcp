@@ -89,7 +89,8 @@ class BridgeHTTPServer:
                 except TimeoutError as exc:
                     details = {"execution": getattr(exc, "execution", "uncertain")}
                     patch = payload.get("patch") if isinstance(payload.get("patch"), dict) else {}
-                    job_id = payload.get("jobId") or patch.get("jobId")
+                    script = payload.get("script") if isinstance(payload.get("script"), dict) else {}
+                    job_id = payload.get("jobId") or patch.get("jobId") or script.get("jobId")
                     if job_id:
                         details["jobId"] = job_id
                     save = payload.get("save") if isinstance(payload.get("save"), dict) else {}
@@ -115,6 +116,21 @@ class BridgeHTTPServer:
                     )
                 if self.path == "/v1/compile-features":
                     return owner.core.compile_features(payload.get("compile"))
+                if self.path in {'/v1/script/review', '/v1/script/restore-saved'}:
+                    from . import saved_script
+                    call = saved_script.review if self.path.endswith('/review') else saved_script.restore
+                    return call(owner.core, payload.get('script'), BridgeError)
+                if self.path == '/v1/script/run':
+                    return owner.core.begin_script(payload.get('script'))
+                if self.path == '/v1/script/finish':
+                    return owner.core.finish_script(str(payload.get('jobId') or ''))
+                if self.path == '/v1/edit/finish':
+                    return owner.core.finish_edit(str(payload.get('jobId') or ''))
+                if self.path in {"/v1/edit/prepare", "/v1/edit/prepared"}:
+                    from . import typed_preparation
+                    if self.path.endswith("/prepare"):
+                        return typed_preparation.begin(owner.core, payload.get("preparation"), BridgeError)
+                    return typed_preparation.result(owner.core, str(payload.get("jobId") or ""), BridgeError)
                 if self.path == "/v1/apply":
                     return owner.core.begin_apply(payload.get("patch"), approved_overwrites=payload.get("approvedOverwrites"))
                 if self.path == "/v1/operation":

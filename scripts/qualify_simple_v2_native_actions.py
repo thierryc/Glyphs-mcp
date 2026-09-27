@@ -33,7 +33,7 @@ def state_hash(owner, scope, change=None):
     worker_state = worker_actions.persistent_state(worker_owner, scope)
     bridge_state = bridge_actions.persistent_state(owner, scope, change)
     worker_hash = worker_actions.state_hash(worker_state)
-    bridge_hash = bridge_actions.current_hash(owner, scope)
+    bridge_hash = bridge_actions.current_hash(owner, scope, change)
     assert worker_state == bridge_state and worker_hash == bridge_hash
     return worker_hash
 

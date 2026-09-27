@@ -12,6 +12,7 @@ from .models import PATCH_VERSION, ProtocolError, validate_patch
 
 
 JOB_CAPABILITIES = (
+    "script.native.v1",
     "feature.compile.live.v1",
     "feature.compile.saved.v1",
     "font.export.static.v1",

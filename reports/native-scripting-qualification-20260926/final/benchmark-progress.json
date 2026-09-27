@@ -1,0 +1,426 @@
+{
+  "completed": 60,
+  "total": 60,
+  "runs": [
+    {
+      "name": "direct-100-1-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.62557345800451,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-1-1.json"
+    },
+    {
+      "name": "direct-100-1-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.602179082998191,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-1-2.json"
+    },
+    {
+      "name": "direct-100-1-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.477938333991915,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-1-3.json"
+    },
+    {
+      "name": "direct-100-1-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.4239329169940902,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-1-4.json"
+    },
+    {
+      "name": "direct-100-1-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.3773795000015525,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-1-5.json"
+    },
+    {
+      "name": "native-100-1-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.6475087919970974,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-1-1.json"
+    },
+    {
+      "name": "native-100-1-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.6755192499986151,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-1-2.json"
+    },
+    {
+      "name": "native-100-1-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.0288958750024904,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-1-3.json"
+    },
+    {
+      "name": "native-100-1-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.630107417004183,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-1-4.json"
+    },
+    {
+      "name": "native-100-1-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.6867120829992928,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-1-5.json"
+    },
+    {
+      "name": "direct-1000-1-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 4.951892917000805,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-1000-1-1.json"
+    },
+    {
+      "name": "direct-1000-1-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 6.128536709002219,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-1000-1-2.json"
+    },
+    {
+      "name": "direct-1000-1-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.100068083003862,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-1000-1-3.json"
+    },
+    {
+      "name": "direct-1000-1-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 4.724771166991559,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-1000-1-4.json"
+    },
+    {
+      "name": "direct-1000-1-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 4.957327332987916,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-1000-1-5.json"
+    },
+    {
+      "name": "native-1000-1-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.229393791989423,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-1000-1-1.json"
+    },
+    {
+      "name": "native-1000-1-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.2905280420091,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-1000-1-2.json"
+    },
+    {
+      "name": "native-1000-1-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.055379458004609,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-1000-1-3.json"
+    },
+    {
+      "name": "native-1000-1-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.437162583009922,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-1000-1-4.json"
+    },
+    {
+      "name": "native-1000-1-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 6.011121458999696,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-1000-1-5.json"
+    },
+    {
+      "name": "direct-4096-1-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 44.260223542005406,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-4096-1-1.json"
+    },
+    {
+      "name": "direct-4096-1-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 44.21981712500565,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-4096-1-2.json"
+    },
+    {
+      "name": "direct-4096-1-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 44.33975791599369,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-4096-1-3.json"
+    },
+    {
+      "name": "direct-4096-1-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 43.2004249169986,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-4096-1-4.json"
+    },
+    {
+      "name": "direct-4096-1-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 45.92889795800147,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-4096-1-5.json"
+    },
+    {
+      "name": "native-4096-1-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 46.07859783399908,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-4096-1-1.json"
+    },
+    {
+      "name": "native-4096-1-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 45.36831804199028,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-4096-1-2.json"
+    },
+    {
+      "name": "native-4096-1-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 45.59790999999677,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-4096-1-3.json"
+    },
+    {
+      "name": "native-4096-1-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 45.45176920799713,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-4096-1-4.json"
+    },
+    {
+      "name": "native-4096-1-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 46.52227420800773,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-4096-1-5.json"
+    },
+    {
+      "name": "direct-100-12-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.953638166989549,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-12-1.json"
+    },
+    {
+      "name": "direct-100-12-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.175624625000637,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-12-2.json"
+    },
+    {
+      "name": "direct-100-12-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.911945707994164,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-12-3.json"
+    },
+    {
+      "name": "direct-100-12-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 1.9666086250072112,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-12-4.json"
+    },
+    {
+      "name": "direct-100-12-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.4573613749962533,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-100-12-5.json"
+    },
+    {
+      "name": "native-100-12-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.5162460419960553,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-12-1.json"
+    },
+    {
+      "name": "native-100-12-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.5313415829878068,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-12-2.json"
+    },
+    {
+      "name": "native-100-12-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.4445877079997445,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-12-3.json"
+    },
+    {
+      "name": "native-100-12-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.3911596670077415,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-12-4.json"
+    },
+    {
+      "name": "native-100-12-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 2.3433880830125418,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-100-12-5.json"
+    },
+    {
+      "name": "direct-500-12-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.85804541700054,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-500-12-1.json"
+    },
+    {
+      "name": "direct-500-12-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.2027336659957655,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-500-12-2.json"
+    },
+    {
+      "name": "direct-500-12-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.068015834011021,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-500-12-3.json"
+    },
+    {
+      "name": "direct-500-12-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.647321374999592,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-500-12-4.json"
+    },
+    {
+      "name": "direct-500-12-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.209988250004244,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/direct-500-12-5.json"
+    },
+    {
+      "name": "native-500-12-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.462322583000059,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-500-12-1.json"
+    },
+    {
+      "name": "native-500-12-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 6.18067729199538,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-500-12-2.json"
+    },
+    {
+      "name": "native-500-12-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.608511124999495,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-500-12-3.json"
+    },
+    {
+      "name": "native-500-12-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.52450712499558,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-500-12-4.json"
+    },
+    {
+      "name": "native-500-12-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 6.02681733299687,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/native-500-12-5.json"
+    },
+    {
+      "name": "real-glyphs-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 3.3613072089938214,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphs-1/candidate-native-glyphs.json"
+    },
+    {
+      "name": "real-glyphs-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 3.24895833399205,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphs-2/candidate-native-glyphs.json"
+    },
+    {
+      "name": "real-glyphs-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 3.132373624990578,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphs-3/candidate-native-glyphs.json"
+    },
+    {
+      "name": "real-glyphs-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 3.212909708992811,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphs-4/candidate-native-glyphs.json"
+    },
+    {
+      "name": "real-glyphs-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 3.3257569590059575,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphs-5/candidate-native-glyphs.json"
+    },
+    {
+      "name": "real-glyphspackage-1",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 4.61884683399694,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphspackage-1/candidate-native-glyphspackage.json"
+    },
+    {
+      "name": "real-glyphspackage-2",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 4.441790042008506,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphspackage-2/candidate-native-glyphspackage.json"
+    },
+    {
+      "name": "real-glyphspackage-3",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.020765083987499,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphspackage-3/candidate-native-glyphspackage.json"
+    },
+    {
+      "name": "real-glyphspackage-4",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 4.157170375008718,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphspackage-4/candidate-native-glyphspackage.json"
+    },
+    {
+      "name": "real-glyphspackage-5",
+      "exitCode": 0,
+      "passed": true,
+      "processWallSeconds": 5.010938333012746,
+      "path": "reports/native-scripting-qualification-20260926/final/benchmarks/real-glyphspackage-5/candidate-native-glyphspackage.json"
+    }
+  ]
+}

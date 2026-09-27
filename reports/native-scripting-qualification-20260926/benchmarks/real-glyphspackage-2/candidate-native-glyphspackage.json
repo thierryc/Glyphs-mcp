@@ -1,0 +1,1015 @@
+{
+  "data": {
+    "checks": [
+      "path: preparation does not execute",
+      "path: save count",
+      "path: exact fractional node, all other selected geometry unchanged",
+      "path: untouched H/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "path: untouched H/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "path: untouched H/926F7910-9E82-41CD-9117-571F75F96159",
+      "path: untouched H/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "path: untouched H/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "path: untouched H/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "path: untouched H/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "path: untouched H/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "path: untouched H/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "path: untouched n/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "path: untouched n/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "path: untouched n/926F7910-9E82-41CD-9117-571F75F96159",
+      "path: untouched n/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "path: untouched n/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "path: untouched n/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "path: untouched n/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "path: untouched n/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "path: untouched n/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "path: untouched o/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "path: untouched o/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "path: untouched o/926F7910-9E82-41CD-9117-571F75F96159",
+      "path: untouched o/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "path: background and metrics keys preserved o/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "path: untouched o/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "path: untouched o/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "path: untouched o/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "path: untouched o/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "path: untouched A/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "path: untouched A/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "path: untouched A/926F7910-9E82-41CD-9117-571F75F96159",
+      "path: untouched A/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "path: untouched A/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "path: untouched A/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "path: untouched A/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "path: untouched A/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "path: untouched A/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "path: untouched V/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "path: untouched V/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "path: untouched V/926F7910-9E82-41CD-9117-571F75F96159",
+      "path: untouched V/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "path: untouched V/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "path: untouched V/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "path: untouched V/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "path: untouched V/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "path: untouched V/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "path: untouched T/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "path: untouched T/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "path: untouched T/926F7910-9E82-41CD-9117-571F75F96159",
+      "path: untouched T/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "path: untouched T/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "path: untouched T/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "path: untouched T/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "path: untouched T/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "path: untouched T/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "path: kerning untouched",
+      "path: groups and features untouched",
+      "path: saved version restored",
+      "path: restoration clean and fresh binding",
+      "path: restoration clears Undo",
+      "path: restoration does not save",
+      "path: baseline unchanged",
+      "spacing: preparation does not execute",
+      "spacing: save count",
+      "spacing: exact paths components anchors advances",
+      "spacing: untouched H/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "spacing: untouched H/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "spacing: untouched H/926F7910-9E82-41CD-9117-571F75F96159",
+      "spacing: untouched H/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "spacing: background and metrics keys preserved H/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "spacing: untouched H/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "spacing: untouched H/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "spacing: untouched H/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "spacing: untouched H/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "spacing: untouched n/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "spacing: untouched n/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "spacing: untouched n/926F7910-9E82-41CD-9117-571F75F96159",
+      "spacing: untouched n/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "spacing: background and metrics keys preserved n/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "spacing: untouched n/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "spacing: untouched n/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "spacing: untouched n/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "spacing: untouched n/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "spacing: untouched o/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "spacing: untouched o/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "spacing: untouched o/926F7910-9E82-41CD-9117-571F75F96159",
+      "spacing: untouched o/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "spacing: background and metrics keys preserved o/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "spacing: untouched o/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "spacing: untouched o/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "spacing: untouched o/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "spacing: untouched o/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "spacing: untouched A/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "spacing: untouched A/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "spacing: untouched A/926F7910-9E82-41CD-9117-571F75F96159",
+      "spacing: untouched A/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "spacing: untouched A/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "spacing: untouched A/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "spacing: untouched A/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "spacing: untouched A/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "spacing: untouched A/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "spacing: untouched V/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "spacing: untouched V/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "spacing: untouched V/926F7910-9E82-41CD-9117-571F75F96159",
+      "spacing: untouched V/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "spacing: untouched V/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "spacing: untouched V/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "spacing: untouched V/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "spacing: untouched V/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "spacing: untouched V/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "spacing: untouched T/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "spacing: untouched T/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "spacing: untouched T/926F7910-9E82-41CD-9117-571F75F96159",
+      "spacing: untouched T/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "spacing: untouched T/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "spacing: untouched T/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "spacing: untouched T/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "spacing: untouched T/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "spacing: untouched T/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "spacing: kerning untouched",
+      "spacing: groups and features untouched",
+      "spacing: saved version restored",
+      "spacing: restoration clean and fresh binding",
+      "spacing: restoration clears Undo",
+      "spacing: restoration does not save",
+      "kerning: preparation does not execute",
+      "kerning: save count",
+      "kerning: two exact pairs and all other stored values unchanged",
+      "kerning: untouched H/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "kerning: untouched H/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "kerning: untouched H/926F7910-9E82-41CD-9117-571F75F96159",
+      "kerning: untouched H/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "kerning: untouched H/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "kerning: untouched H/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "kerning: untouched H/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "kerning: untouched H/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "kerning: untouched H/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "kerning: untouched n/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "kerning: untouched n/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "kerning: untouched n/926F7910-9E82-41CD-9117-571F75F96159",
+      "kerning: untouched n/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "kerning: untouched n/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "kerning: untouched n/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "kerning: untouched n/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "kerning: untouched n/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "kerning: untouched n/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "kerning: untouched o/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "kerning: untouched o/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "kerning: untouched o/926F7910-9E82-41CD-9117-571F75F96159",
+      "kerning: untouched o/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "kerning: untouched o/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "kerning: untouched o/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "kerning: untouched o/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "kerning: untouched o/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "kerning: untouched o/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "kerning: untouched A/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "kerning: untouched A/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "kerning: untouched A/926F7910-9E82-41CD-9117-571F75F96159",
+      "kerning: untouched A/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "kerning: untouched A/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "kerning: untouched A/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "kerning: untouched A/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "kerning: untouched A/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "kerning: untouched A/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "kerning: untouched V/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "kerning: untouched V/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "kerning: untouched V/926F7910-9E82-41CD-9117-571F75F96159",
+      "kerning: untouched V/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "kerning: untouched V/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "kerning: untouched V/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "kerning: untouched V/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "kerning: untouched V/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "kerning: untouched V/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "kerning: untouched T/AF94AE23-1910-4859-814C-A48A47EEDF58",
+      "kerning: untouched T/2E77CFE9-4347-4996-916C-66BA704F6DA5",
+      "kerning: untouched T/926F7910-9E82-41CD-9117-571F75F96159",
+      "kerning: untouched T/F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+      "kerning: untouched T/0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+      "kerning: untouched T/112BA480-1628-43E5-92BC-AE80BCA529EB",
+      "kerning: untouched T/20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+      "kerning: untouched T/CC51697B-BB46-485D-9A47-70AE762A7DC7",
+      "kerning: untouched T/6825D31D-5B3D-46C4-B419-A0158C275CED",
+      "kerning: groups and features untouched",
+      "kerning: saved version restored",
+      "kerning: restoration clean and fresh binding",
+      "kerning: restoration clears Undo",
+      "kerning: restoration does not save",
+      "kerning: baseline unchanged"
+    ],
+    "tasks": [
+      {
+        "name": "path",
+        "options": {
+          "summary": "Move one Regular o node by +7.25, -3.5",
+          "source": "def run(layer, params, context):\n    n=layer.paths[0].nodes[0]\n    n.position=(n.position.x+params[\"dx\"],n.position.y+params[\"dy\"])",
+          "params": {
+            "dx": 7.25,
+            "dy": -3.5
+          },
+          "targets": [
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            }
+          ]
+        },
+        "reviewState": "waiting_run",
+        "result": {
+          "id": "edit_1fe98a57087746479865cd356395b60b",
+          "revision": 15,
+          "document": {
+            "id": "doc_c52fb6767fe74ec0a2443cc981547ca9",
+            "path": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirty": true,
+            "generation": 0,
+            "isCurrent": false,
+            "familyName": "Later disposable edit"
+          },
+          "mode": "preview",
+          "state": "applied",
+          "jobId": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+            "status": "applied",
+            "summary": "Move one Regular o node by +7.25, -3.5",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 1,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+              "documentId": "doc_c52fb6767fe74ec0a2443cc981547ca9",
+              "status": "applied",
+              "completedChanges": 1,
+              "totalChanges": 1,
+              "error": null,
+              "nativeSave": null,
+              "scriptResult": {
+                "executed": true,
+                "entrypoint": "per_target",
+                "executionSucceeded": true,
+                "changesVerified": false,
+                "executedTargets": 1,
+                "totalTargets": 1,
+                "documentAfter": {
+                  "id": "doc_c52fb6767fe74ec0a2443cc981547ca9",
+                  "path": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+                  "dirty": true,
+                  "generation": 0
+                }
+              },
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "python_script",
+              "phase": "applied",
+              "startedAt": 1790449207.9471092,
+              "finishedAt": 1790449207.9471219,
+              "completed": 1,
+              "total": 1,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": null,
+          "reviewInConversation": false,
+          "savedVersion": {
+            "available": true,
+            "path": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "sourceHash": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+            "generation": 0,
+            "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+          },
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": [
+              {
+                "glyph": "o",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              }
+            ]
+          },
+          "requestFingerprint": "sha256:b13fcdebf0319c472e96a52eeed76864c447b015364a036eef492c86acb1f282",
+          "summary": "Move one Regular o node by +7.25, -3.5",
+          "entrypoint": "per_target",
+          "actions": [
+            {
+              "action": "finish_script",
+              "label": "Keep changes without saving",
+              "token": "7659e06ad1bde29de503baa6edb9f6a3111288bc8804718f3db25cc786d78408",
+              "requiresDestination": false
+            },
+            {
+              "action": "save_result",
+              "label": "Save font",
+              "token": "58975ebbbad2b288d0d8223f3e71ef7692af6fa973df75fb03eb6d9e62ccddeb",
+              "requiresDestination": false
+            },
+            {
+              "action": "restore_saved_script",
+              "label": "Restore saved version",
+              "token": "69f1bd99587b9bcc74379a30398194c969c5a4cb008b7b49927f3d8cccf90d74",
+              "requiresDestination": false
+            }
+          ],
+          "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+          "verification": "Intended changes have not been verified by the wrapper.",
+          "text": "Later disposable edit \u2014 /var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Move one Regular o node by +7.25, -3.5\nScope: 1 resolved surfaces; 0 skipped.\nCompleted callbacks: 1 / 1.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_1fe98a57087746479865cd356395b60b\",\"expected_revision\":15,\"document_id\":\"doc_c52fb6767fe74ec0a2443cc981547ca9\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:b13fcdebf0319c472e96a52eeed76864c447b015364a036eef492c86acb1f282\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"7659e06ad1bde29de503baa6edb9f6a3111288bc8804718f3db25cc786d78408\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"58975ebbbad2b288d0d8223f3e71ef7692af6fa973df75fb03eb6d9e62ccddeb\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"69f1bd99587b9bcc74379a30398194c969c5a4cb008b7b49927f3d8cccf90d74\",\"requiresDestination\":false}]}"
+        },
+        "restored": {
+          "id": "edit_1fe98a57087746479865cd356395b60b",
+          "revision": 19,
+          "document": {
+            "id": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+            "path": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirty": false,
+            "generation": 0
+          },
+          "mode": "preview",
+          "state": "discarded",
+          "jobId": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+            "status": "discarded",
+            "summary": "Move one Regular o node by +7.25, -3.5",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 1,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+              "documentId": "doc_c52fb6767fe74ec0a2443cc981547ca9",
+              "status": "discarded",
+              "completedChanges": 1,
+              "totalChanges": 1,
+              "error": null,
+              "nativeSave": null,
+              "scriptResult": {
+                "executed": true,
+                "entrypoint": "per_target",
+                "executionSucceeded": true,
+                "changesVerified": false,
+                "executedTargets": 1,
+                "totalTargets": 1,
+                "documentAfter": {
+                  "id": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+                  "path": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+                  "dirty": false,
+                  "generation": 0
+                },
+                "savedVersionRestored": true
+              },
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_d2f9f5502522439db5d2fbcd217bfbd9",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "python_script",
+              "phase": "discarded",
+              "startedAt": 1790449208.1506329,
+              "finishedAt": 1790449208.150645,
+              "completed": 1,
+              "total": 1,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": null,
+          "reviewInConversation": false,
+          "savedVersion": null,
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": [
+              {
+                "glyph": "o",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              }
+            ]
+          },
+          "requestFingerprint": "sha256:b13fcdebf0319c472e96a52eeed76864c447b015364a036eef492c86acb1f282",
+          "summary": "Move one Regular o node by +7.25, -3.5",
+          "entrypoint": "per_target",
+          "actions": [],
+          "message": "Saved version restored. Subsequent unsaved edits were replaced; external effects remain.",
+          "verification": "Intended changes have not been verified by the wrapper.",
+          "text": "Untitled font \u2014 /var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage\nSaved version restored. Subsequent unsaved edits were replaced; external effects remain.\nOperation: python script\nIntended change: Move one Regular o node by +7.25, -3.5\nScope: 1 resolved surfaces; 0 skipped.\nCompleted callbacks: 1 / 1.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_1fe98a57087746479865cd356395b60b\",\"expected_revision\":19,\"document_id\":\"doc_9e278b4bbb6742d7b030c4f4ec7fb5c6\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:b13fcdebf0319c472e96a52eeed76864c447b015364a036eef492c86acb1f282\",\"blockingWorkflowId\":null,\"actions\":[]}"
+        },
+        "timingsSeconds": {
+          "preparation": 0.14934841700596735,
+          "executionAndPolling": 0.16357912500097882,
+          "save": 0,
+          "verification": 0.05976333300350234,
+          "longestScheduledChunk": 0.028192707992275245,
+          "scheduledNative": 0.029075998987536877,
+          "chunks": 2,
+          "restoration": 0.09596304199658334
+        },
+        "processPeakRSSBytes": 239697920,
+        "saveCalls": 0,
+        "laterEditReplaced": true
+      },
+      {
+        "name": "spacing",
+        "options": {
+          "summary": "Add 12.5 left and 8.25 right spacing to H n o",
+          "source": "def run(layer, params, context):\n    dx=params['dx']\n    for path in layer.paths:\n        for node in path.nodes:\n            node.position=(node.position.x+dx,node.position.y)\n    for component in layer.components:\n        t=list(component.transform)\n        t[4]+=dx\n        component.transform=tuple(t)\n    for anchor in layer.anchors:\n        anchor.position=(anchor.position.x+dx,anchor.position.y)\n    layer.width+=params['advance']\n",
+          "params": {
+            "dx": 12.5,
+            "advance": 20.75
+          },
+          "targets": [
+            {
+              "glyph": "H",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "glyph": "n",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            }
+          ]
+        },
+        "reviewState": "waiting_run",
+        "result": {
+          "id": "edit_6de6b39b5fb544fd85489ed8aa328a99",
+          "revision": 17,
+          "document": {
+            "id": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirty": true,
+            "generation": 0,
+            "isCurrent": false,
+            "familyName": "Dactylotype MCP Task Test"
+          },
+          "mode": "preview",
+          "state": "applied",
+          "jobId": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+            "status": "applied",
+            "summary": "Add 12.5 left and 8.25 right spacing to H n o",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 3,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+              "documentId": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+              "status": "applied",
+              "completedChanges": 3,
+              "totalChanges": 3,
+              "error": null,
+              "nativeSave": null,
+              "scriptResult": {
+                "executed": true,
+                "entrypoint": "per_target",
+                "executionSucceeded": true,
+                "changesVerified": false,
+                "executedTargets": 3,
+                "totalTargets": 3,
+                "documentAfter": {
+                  "id": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+                  "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+                  "dirty": true,
+                  "generation": 0
+                }
+              },
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "python_script",
+              "phase": "applied",
+              "startedAt": 1790449209.165992,
+              "finishedAt": 1790449209.166027,
+              "completed": 3,
+              "total": 3,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": {
+            "saveId": "save_eea22f64eeb94e38b57014dee4c43d45",
+            "jobId": null,
+            "documentId": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+            "saveMode": "save",
+            "previousPath": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirtyBefore": true,
+            "dirtyAfter": false,
+            "nativeSaveSucceeded": true,
+            "writeAttempted": true,
+            "sourceHashBefore": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+            "sourceHashAfter": "sha256:ff829cf4d31b093f31b204432b9064a83a0892504d32c307d22706434f1dcb2d",
+            "sourceChangedSinceJob": false,
+            "originalSourceHashAfter": "sha256:ff829cf4d31b093f31b204432b9064a83a0892504d32c307d22706434f1dcb2d",
+            "originalSourceUnchanged": null,
+            "verification": "native_and_source_hash",
+            "savedAt": 1790449208.7339892
+          },
+          "reviewInConversation": false,
+          "savedVersion": {
+            "available": true,
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "sourceHash": "sha256:ff829cf4d31b093f31b204432b9064a83a0892504d32c307d22706434f1dcb2d",
+            "generation": 0,
+            "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+          },
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": [
+              {
+                "glyph": "H",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              },
+              {
+                "glyph": "n",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              },
+              {
+                "glyph": "o",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              }
+            ]
+          },
+          "requestFingerprint": "sha256:e32892f6cf6f48edfec4a4926ac356ea777d18972badc04470a2958a2cb00dab",
+          "summary": "Add 12.5 left and 8.25 right spacing to H n o",
+          "entrypoint": "per_target",
+          "actions": [
+            {
+              "action": "finish_script",
+              "label": "Keep changes without saving",
+              "token": "1086e0e230ec2b630262e1eaccfcc541b9f2d7b82df6c5861c4f5f4e7a39d9b8",
+              "requiresDestination": false
+            },
+            {
+              "action": "save_result",
+              "label": "Save font",
+              "token": "3a373b82cfe0842a690f70cfc3715d74dd84092bea6f55750e683517a0bb465c",
+              "requiresDestination": false
+            },
+            {
+              "action": "restore_saved_script",
+              "label": "Restore saved version",
+              "token": "32d4ac1e9f7c6192c42b50f1dcf4a917428487e1442156a9dce71bbb8498bbfd",
+              "requiresDestination": false
+            }
+          ],
+          "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+          "verification": "Intended changes have not been verified by the wrapper.",
+          "text": "Dactylotype MCP Task Test \u2014 /private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to H n o\nScope: 3 resolved surfaces; 0 skipped.\nCompleted callbacks: 3 / 3.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_6de6b39b5fb544fd85489ed8aa328a99\",\"expected_revision\":17,\"document_id\":\"doc_9e278b4bbb6742d7b030c4f4ec7fb5c6\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:e32892f6cf6f48edfec4a4926ac356ea777d18972badc04470a2958a2cb00dab\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"1086e0e230ec2b630262e1eaccfcc541b9f2d7b82df6c5861c4f5f4e7a39d9b8\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"3a373b82cfe0842a690f70cfc3715d74dd84092bea6f55750e683517a0bb465c\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"32d4ac1e9f7c6192c42b50f1dcf4a917428487e1442156a9dce71bbb8498bbfd\",\"requiresDestination\":false}]}"
+        },
+        "restored": {
+          "id": "edit_6de6b39b5fb544fd85489ed8aa328a99",
+          "revision": 21,
+          "document": {
+            "id": "doc_6198f97279c54e28a47df2f5bc8148b8",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirty": false,
+            "generation": 0
+          },
+          "mode": "preview",
+          "state": "discarded",
+          "jobId": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+            "status": "discarded",
+            "summary": "Add 12.5 left and 8.25 right spacing to H n o",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 3,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+              "documentId": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+              "status": "discarded",
+              "completedChanges": 3,
+              "totalChanges": 3,
+              "error": null,
+              "nativeSave": null,
+              "scriptResult": {
+                "executed": true,
+                "entrypoint": "per_target",
+                "executionSucceeded": true,
+                "changesVerified": false,
+                "executedTargets": 3,
+                "totalTargets": 3,
+                "documentAfter": {
+                  "id": "doc_6198f97279c54e28a47df2f5bc8148b8",
+                  "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+                  "dirty": false,
+                  "generation": 0
+                },
+                "savedVersionRestored": true
+              },
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_9fef2d65d038446fabf3d82a4bff9e3b",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "python_script",
+              "phase": "discarded",
+              "startedAt": 1790449209.407716,
+              "finishedAt": 1790449209.407731,
+              "completed": 3,
+              "total": 3,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": {
+            "saveId": "save_eea22f64eeb94e38b57014dee4c43d45",
+            "jobId": null,
+            "documentId": "doc_9e278b4bbb6742d7b030c4f4ec7fb5c6",
+            "saveMode": "save",
+            "previousPath": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirtyBefore": true,
+            "dirtyAfter": false,
+            "nativeSaveSucceeded": true,
+            "writeAttempted": true,
+            "sourceHashBefore": "sha256:258527bff3ed598487fc6bc53f573e24976a8812edea9fb555cb0b181beb812b",
+            "sourceHashAfter": "sha256:ff829cf4d31b093f31b204432b9064a83a0892504d32c307d22706434f1dcb2d",
+            "sourceChangedSinceJob": false,
+            "originalSourceHashAfter": "sha256:ff829cf4d31b093f31b204432b9064a83a0892504d32c307d22706434f1dcb2d",
+            "originalSourceUnchanged": null,
+            "verification": "native_and_source_hash",
+            "savedAt": 1790449208.7339892
+          },
+          "reviewInConversation": false,
+          "savedVersion": null,
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": [
+              {
+                "glyph": "H",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              },
+              {
+                "glyph": "n",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              },
+              {
+                "glyph": "o",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              }
+            ]
+          },
+          "requestFingerprint": "sha256:e32892f6cf6f48edfec4a4926ac356ea777d18972badc04470a2958a2cb00dab",
+          "summary": "Add 12.5 left and 8.25 right spacing to H n o",
+          "entrypoint": "per_target",
+          "actions": [],
+          "message": "Saved version restored. Subsequent unsaved edits were replaced; external effects remain.",
+          "verification": "Intended changes have not been verified by the wrapper.",
+          "text": "Untitled font \u2014 /private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage\nSaved version restored. Subsequent unsaved edits were replaced; external effects remain.\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to H n o\nScope: 3 resolved surfaces; 0 skipped.\nCompleted callbacks: 3 / 3.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_6de6b39b5fb544fd85489ed8aa328a99\",\"expected_revision\":21,\"document_id\":\"doc_6198f97279c54e28a47df2f5bc8148b8\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:e32892f6cf6f48edfec4a4926ac356ea777d18972badc04470a2958a2cb00dab\",\"blockingWorkflowId\":null,\"actions\":[]}"
+        },
+        "timingsSeconds": {
+          "preparation": 0.08762287501303945,
+          "executionAndPolling": 0.7382283749902854,
+          "save": 0.11550879200513009,
+          "verification": 0.07737779201124795,
+          "longestScheduledChunk": 0.13310279200959485,
+          "scheduledNative": 0.14825887500774115,
+          "chunks": 3,
+          "restoration": 0.1030472499987809
+        },
+        "processPeakRSSBytes": 272580608,
+        "saveCalls": 1,
+        "laterEditReplaced": false
+      },
+      {
+        "name": "kerning",
+        "options": {
+          "summary": "Set exact Regular A/V and T/o kerning",
+          "entrypoint": "script",
+          "targets": [],
+          "source": "for left,right,value in params[\"pairs\"]:\n    font.setKerningForPair(params[\"master\"],left,right,value)",
+          "params": {
+            "master": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+            "pairs": [
+              [
+                "A",
+                "V",
+                -60.25
+              ],
+              [
+                "T",
+                "o",
+                -45.5
+              ]
+            ]
+          }
+        },
+        "reviewState": "waiting_run",
+        "result": {
+          "id": "edit_57e33880e25e4f6188132d5e9479cddc",
+          "revision": 14,
+          "document": {
+            "id": "doc_6198f97279c54e28a47df2f5bc8148b8",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirty": true,
+            "generation": 0,
+            "isCurrent": false,
+            "familyName": "Dactylotype MCP Task Test"
+          },
+          "mode": "preview",
+          "state": "applied",
+          "jobId": "job_90a51e1d70284267b9574b05166b4a0a",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_90a51e1d70284267b9574b05166b4a0a",
+            "status": "applied",
+            "summary": "Set exact Regular A/V and T/o kerning",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 0,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_90a51e1d70284267b9574b05166b4a0a",
+              "documentId": "doc_6198f97279c54e28a47df2f5bc8148b8",
+              "status": "applied",
+              "completedChanges": null,
+              "totalChanges": null,
+              "error": null,
+              "nativeSave": null,
+              "scriptResult": {
+                "executed": true,
+                "entrypoint": "script",
+                "executionSucceeded": true,
+                "changesVerified": false,
+                "executedTargets": 0,
+                "totalTargets": 0,
+                "documentAfter": {
+                  "id": "doc_6198f97279c54e28a47df2f5bc8148b8",
+                  "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+                  "dirty": true,
+                  "generation": 0
+                }
+              },
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_90a51e1d70284267b9574b05166b4a0a",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "python_script",
+              "phase": "applied",
+              "startedAt": 1790449209.935012,
+              "finishedAt": 1790449209.935029,
+              "completed": null,
+              "total": null,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": null,
+          "reviewInConversation": false,
+          "savedVersion": {
+            "available": true,
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "sourceHash": "sha256:ff829cf4d31b093f31b204432b9064a83a0892504d32c307d22706434f1dcb2d",
+            "generation": 0,
+            "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+          },
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": []
+          },
+          "requestFingerprint": "sha256:71952cfcc45a9e2029fe329ca3f30a10e724a4a923655e4d63951f9ea7573dd8",
+          "summary": "Set exact Regular A/V and T/o kerning",
+          "entrypoint": "script",
+          "actions": [
+            {
+              "action": "finish_script",
+              "label": "Keep changes without saving",
+              "token": "72a601b9d6787ba38e421813198f940cf3a65284db520ac017667ba1d6ca15ab",
+              "requiresDestination": false
+            },
+            {
+              "action": "save_result",
+              "label": "Save font",
+              "token": "52e2a25402be56bc40b0097b10b238080155862bd288bb2e20e0693bab00a555",
+              "requiresDestination": false
+            },
+            {
+              "action": "restore_saved_script",
+              "label": "Restore saved version",
+              "token": "57473bb5553cf4f0d5cb2e1b6a6fea6b27bc2afe00a3d4f9811a61084e5e988e",
+              "requiresDestination": false
+            }
+          ],
+          "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+          "verification": "Intended changes have not been verified by the wrapper.",
+          "text": "Dactylotype MCP Task Test \u2014 /private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Set exact Regular A/V and T/o kerning\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_57e33880e25e4f6188132d5e9479cddc\",\"expected_revision\":14,\"document_id\":\"doc_6198f97279c54e28a47df2f5bc8148b8\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:71952cfcc45a9e2029fe329ca3f30a10e724a4a923655e4d63951f9ea7573dd8\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"72a601b9d6787ba38e421813198f940cf3a65284db520ac017667ba1d6ca15ab\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"52e2a25402be56bc40b0097b10b238080155862bd288bb2e20e0693bab00a555\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"57473bb5553cf4f0d5cb2e1b6a6fea6b27bc2afe00a3d4f9811a61084e5e988e\",\"requiresDestination\":false}]}"
+        },
+        "restored": {
+          "id": "edit_57e33880e25e4f6188132d5e9479cddc",
+          "revision": 18,
+          "document": {
+            "id": "doc_58c683ef786b4fe7aef17911dd114ade",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+            "dirty": false,
+            "generation": 0
+          },
+          "mode": "preview",
+          "state": "discarded",
+          "jobId": "job_90a51e1d70284267b9574b05166b4a0a",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_90a51e1d70284267b9574b05166b4a0a",
+            "status": "discarded",
+            "summary": "Set exact Regular A/V and T/o kerning",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 0,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": {
+              "jobId": "job_90a51e1d70284267b9574b05166b4a0a",
+              "documentId": "doc_6198f97279c54e28a47df2f5bc8148b8",
+              "status": "discarded",
+              "completedChanges": null,
+              "totalChanges": null,
+              "error": null,
+              "nativeSave": null,
+              "scriptResult": {
+                "executed": true,
+                "entrypoint": "script",
+                "executionSucceeded": true,
+                "changesVerified": false,
+                "executedTargets": 0,
+                "totalTargets": 0,
+                "documentAfter": {
+                  "id": "doc_58c683ef786b4fe7aef17911dd114ade",
+                  "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage",
+                  "dirty": false,
+                  "generation": 0
+                },
+                "savedVersionRestored": true
+              },
+              "receipt": null,
+              "message": null
+            },
+            "activity": {
+              "jobId": "job_90a51e1d70284267b9574b05166b4a0a",
+              "document": "Dactylotype MCP Task Test",
+              "kind": "python_script",
+              "phase": "discarded",
+              "startedAt": 1790449210.1440058,
+              "finishedAt": 1790449210.144023,
+              "completed": null,
+              "total": null,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": null,
+          "reviewInConversation": false,
+          "savedVersion": null,
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": []
+          },
+          "requestFingerprint": "sha256:71952cfcc45a9e2029fe329ca3f30a10e724a4a923655e4d63951f9ea7573dd8",
+          "summary": "Set exact Regular A/V and T/o kerning",
+          "entrypoint": "script",
+          "actions": [],
+          "message": "Saved version restored. Subsequent unsaved edits were replaced; external effects remain.",
+          "verification": "Intended changes have not been verified by the wrapper.",
+          "text": "Untitled font \u2014 /private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-native-workflow-b6in6lsm/Probe.glyphspackage\nSaved version restored. Subsequent unsaved edits were replaced; external effects remain.\nOperation: python script\nIntended change: Set exact Regular A/V and T/o kerning\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_57e33880e25e4f6188132d5e9479cddc\",\"expected_revision\":18,\"document_id\":\"doc_58c683ef786b4fe7aef17911dd114ade\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:71952cfcc45a9e2029fe329ca3f30a10e724a4a923655e4d63951f9ea7573dd8\",\"blockingWorkflowId\":null,\"actions\":[]}"
+        },
+        "timingsSeconds": {
+          "preparation": 0.07869562499399763,
+          "executionAndPolling": 0.25254779199894983,
+          "save": 0,
+          "verification": 0.07661658299912233,
+          "longestScheduledChunk": 0.02754599999752827,
+          "scheduledNative": 0.02805324998917058,
+          "chunks": 2,
+          "restoration": 0.09011079200718086
+        },
+        "processPeakRSSBytes": 306020352,
+        "saveCalls": 0,
+        "laterEditReplaced": false
+      }
+    ],
+    "glyphCount": 423,
+    "masterCount": 9
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "loadedModules": {
+    "glyphs_mcp_protocol.script_targets": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/simple-native-scripting/sidecar/glyphs_mcp_protocol/script_targets.py",
+    "glyphs_mcp_bridge.core": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/simple-native-scripting/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/core.py",
+    "glyphs_mcp_sidecar.service": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/simple-native-scripting/sidecar/glyphs_mcp_sidecar/service.py",
+    "glyphs_mcp_sidecar.native_worker": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/simple-native-scripting/sidecar/glyphs_mcp_sidecar/native_worker.py"
+  },
+  "fixture": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/real-task-qualification-20260926/Dactylotype Task Test.glyphspackage",
+  "suffix": "glyphspackage",
+  "limitation": "Isolated native CLI with real candidate bridge/sidecar; fixture save adapter uses GSFont. Not installed editor, HTTP transport or chat-client scripting qualification."
+}

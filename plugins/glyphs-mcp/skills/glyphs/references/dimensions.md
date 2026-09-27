@@ -66,3 +66,5 @@ exact values and originally absent containers while preserving unrelated data.
 Use `accept_job` only when saving the entire document has separately been
 explicitly authorized. Rebuild the bridge, sidecar and skills together when
 these capabilities are absent; do not substitute arbitrary scripts.
+
+Dimensions preparation can use bounded live reads through the internal native preparer, without a full-font copy or worker. Exact overwrite approval remains required. Use the shared [result workflow](edit-workflow.md) for Keep, Save or selective Undo.

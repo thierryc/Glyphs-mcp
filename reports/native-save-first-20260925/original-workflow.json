@@ -1,0 +1,57 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "qualification leaves document clean",
+      "passed": true
+    },
+    {
+      "name": "qualification preserves live layer",
+      "passed": true
+    },
+    {
+      "name": "scoped preparation leaves live state clean",
+      "passed": true
+    },
+    {
+      "name": "external preparation and native apply",
+      "passed": true
+    },
+    {
+      "name": "native document Undo",
+      "passed": true
+    },
+    {
+      "name": "native document Redo",
+      "passed": true
+    },
+    {
+      "name": "whole job restoration",
+      "passed": true
+    },
+    {
+      "name": "wrapper did not save",
+      "passed": true
+    },
+    {
+      "name": "review did not execute module",
+      "passed": true
+    },
+    {
+      "name": "chat confirmation executes exactly once",
+      "passed": true
+    },
+    {
+      "name": "declared targets restored",
+      "passed": true
+    },
+    {
+      "name": "external effects excluded",
+      "passed": true
+    }
+  ],
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  }
+}

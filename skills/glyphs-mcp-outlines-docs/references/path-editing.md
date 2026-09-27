@@ -8,7 +8,8 @@ Require `paths.list.v1` and `path.geometry.v1` in negotiated
 `readCapabilities`, plus `outline.edit.v1` in bridge `writeCapabilities` and
 `outline_edit` in sidecar `jobKinds`. A missing capability means the bridge,
 sidecar and skills must be updated together. The public tool count remains
-twelve; never substitute arbitrary Python or direct font-file editing for this typed workflow.
+twelve; never substitute arbitrary Python or direct font-file editing to bypass
+missing typed capabilities or rejected writes.
 Shape-preserving removal additionally requires `outline.remove-node.v1`.
 
 Always read compact `context` and `selection` first. State whether selection
@@ -87,3 +88,15 @@ native removal; inspect the operation evidence. Applying does not Save. It
 retains native per-glyph Undo/Redo, partial-write recovery, whole-job
 `discard_job`, path metadata, components, anchors, surviving node identities
 and shape order. Apply only from the same saved clean baseline.
+
+For bulk scaling, centering, mirroring or a custom sequence, offer [direct native
+scripting](../../glyphs/references/python-scripts.md#choose-the-route) as a separate
+route under original task authorization. It can loop over native paths without reading every node into
+chat or constructing per-node requests. Use its authorized Run (or Save and run for a dirty font) and whole-font
+Restore saved version actions; these do not inherit the typed topology checks
+or per-glyph Undo above. Preserve fractions and verify untargeted content.
+Vertical mirroring differs from path-direction reversal; specify its pivot and
+selected surface. Script recovery uses the unchanged saved version of the whole
+font; selective recovery remains part of supported typed edits.
+
+Coordinate-only `update_nodes` requests (`position`/`delta` without node metadata or topology changes) can prepare on detached target copies inside Glyphs. Mixed requests retain external preparation. This internal optimization preserves background targeting, precision, compatibility checks, existing limits and selective recovery. Results use the shared [Keep/Save/Undo workflow](../../glyphs/references/edit-workflow.md).

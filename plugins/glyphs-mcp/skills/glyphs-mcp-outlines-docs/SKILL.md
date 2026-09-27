@@ -34,7 +34,7 @@ ID for reads of the same font; rediscover after `document_not_found` or target
 change, not a missing glyph. Never silently substitute another open font.
 Each read is fresh; check source/dirty state when preparing edits.
 
-Prepare supported work with `start_job`, inspect `get_job` until ready, and
+For typed outline jobs, prepare with `start_job`, inspect `get_job` until ready, and
 review its report before `apply_job`. Application is a reversible live change;
 it does not save. Use `accept_job` only when the user's task authorizes saving
 the reviewed whole document; it closes the rollback window. Use `discard_job`
@@ -56,8 +56,13 @@ For ordinary node removal, also require `outline.remove-node.v1` and use
 `remove_node`; reserve raw `delete_nodes` for explicitly requested topology
 surgery because it does not invoke Glyphs' keep-shape behavior.
 
-There is no arbitrary MCP Python or plugin reload. Unsupported edits require
-an explicitly authorised native workflow; do not invent an MCP command.
+For bulk transforms or a reviewed sequence of cleanup/anchor/component edits,
+offer **direct native scripting** under the [shared route and recovery
+guide](../glyphs/references/python-scripts.md#choose-the-route). One callback per
+surface can perform all requested steps locally, avoiding per-path tool calls
+and layer snapshots. Preserve fractions and untargeted contents, then verify
+geometry and compatibility. Use typed `outline_edit` for individual-node work
+and its topology checks and selective recovery.
 
 For a complete-target Glyphs command, prefer an advertised closed native
 action over scripting. The outline routes are `correct_path_direction`,
@@ -79,3 +84,11 @@ activation, node edits, panning, Undo and Redo. Use typed `outline_edit`,
 curve-edit tools.
 
 [Documentation](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set-v2.mdx).
+
+For bulk vertical mirroring, resolve the exact master and selected surface, then
+use the [vertical-flip example](../glyphs-mcp-scripting/examples/vertical_flip.py)
+with an explicit pivot. Default to combined path-bounds center per background.
+Direct native scripts use the saved baseline at every target count. Verify
+foregrounds, other masters, anchors and components remain unchanged. Restore saved
+version reloads the whole font and discards later unsaved edits; typed operations
+retain their selective recovery.

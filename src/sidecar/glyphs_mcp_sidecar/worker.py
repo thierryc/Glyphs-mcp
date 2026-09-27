@@ -18,8 +18,7 @@ import glyphs_mcp_protocol
 from glyphs_mcp_protocol import validate_worker_result
 
 
-class WorkerError(RuntimeError):
-    pass
+from glyphs_mcp_protocol.preparation import PreparationError as WorkerError
 
 
 WORKER_ERROR_PREFIX = "GLYPHS_MCP_WORKER_ERROR:"

@@ -42,12 +42,57 @@ def prepare_live_compile(service, job_id, cancel):
         _finish(service, job_id)
 
 
+def prepare_native_typed(service, job_id, cancel):
+    """Native reads produce the existing patch; application remains separate."""
+    started = False
+    try:
+        job = service.jobs.get(job_id)
+        service.jobs.update(job_id, phase="preparing_native")
+        fingerprint = source_hash(Path(job["document"]["path"]))
+        if cancel.is_set(): raise WorkerError("job cancelled")
+        started = True
+        operation = service.bridge.prepare_typed(dict(jobId=job_id, documentId=job['document']['id'],
+            sourcePath=job['document']['path'], sourceHash=fingerprint, generation=job['document']['generation'],
+            request=job['request']))
+        while operation['status'] == 'preparing':
+            if cancel.wait(.01): raise WorkerError('job cancelled')
+            operation = service.bridge.operation(job_id)
+        if operation['status'] != 'ready':
+            from .bridge_client import BridgeClientError
+            failure = operation.get('error') or dict(code='job_failed', message='native preparation did not finish')
+            raise BridgeClientError(failure['code'], failure['message'], failure.get('details'))
+        result = service.bridge.prepared_typed(job_id)
+        patch = validate_patch(result['patch'])
+        service.jobs.write_json(job_id, 'patch.json', patch)
+        report = result.get('report')
+        report_path = service.jobs.path(job_id) / 'report.json'
+        if report is not None: service.jobs.write_json(job_id, 'report.json', report)
+        with service._lock:
+            if cancel.is_set() or service.jobs.get(job_id)['status'] != 'preparing':
+                raise WorkerError('job cancelled')
+            service.jobs.update(job_id, status='ready', resultKind='mutation', sourceHash=fingerprint,
+                summary=patch['summary'], changeCount=len(patch['changes']), sample=patch['changes'][:10],
+                report=_mutation_report(report, report_path),
+                preparationMetrics=dict(longestChunkSeconds=result.get('longestChunkSeconds')))
+    except Exception as exc:
+        if started:
+            try: service.bridge.discard(job_id)
+            except Exception: pass  # Preparation cannot have applied edits.
+        _fail(service, job_id, cancel, exc)
+    finally:
+        _finish(service, job_id)
+
+
 def prepare_external(service, job_id, cancel):
     try:
         job = service.jobs.get(job_id)
         service.jobs.update(job_id, phase="copying_source")
         if cancel.is_set():
             raise WorkerError("job cancelled")
+        if job['request']['kind'] == 'python_script':
+            from .saved_script import prepare
+            prepare(service, job, cancel)
+            return
         source_path, fingerprint = snapshot_source(
             Path(job["document"]["path"]), service.jobs.path(job_id)
         )
@@ -113,7 +158,7 @@ def _mutation_report(report, path):
         "sample": rows[:10],
         "unavailableCount": sum(row["status"] == "unavailable" for row in rows),
     }
-    for name in ("action", "scope", "targetCount", "changedCount", "noChangeCount"):
+    for name in ("action", "scope", "targetCount", "changedCount", "noChangeCount", "skippedCount"):
         if name in report:
             summary[name] = report[name]
     if report.get("kind") == "dimensions_edit":

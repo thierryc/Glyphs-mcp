@@ -54,6 +54,11 @@ def main():
         assert len(changes)==1 and report['pairs'][0]['status']=='suggested',report
         patch=dict(version=1,jobId='kerning-native-'+str(index),documentId=document['id'],sourcePath=wrapper.filepath,
                    sourceHash='sha256:'+'a'*64,generation=0,changes=changes,summary='Native collision gate')
+        # Complete automatic groups opened by fixture construction/manual setup;
+        # an editor event boundary normally does this before a bridge callback.
+        for glyph in font.glyphs:
+            manager = glyph.undoManager()
+            while manager.groupingLevel(): manager.endUndoGrouping()
         queue=[];core=BridgeCore(adapter,queue.append);core.begin_apply(patch)
         while queue:queue.pop(0)()
         assert core.operation(patch['jobId'])['status']=='applied',core.operation(patch['jobId'])

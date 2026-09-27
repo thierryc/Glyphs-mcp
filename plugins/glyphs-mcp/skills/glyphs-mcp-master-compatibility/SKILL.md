@@ -15,7 +15,7 @@ ID for reads of the same font; rediscover after `document_not_found` or target
 change, not a missing glyph. Never silently substitute another open font.
 Each read is fresh; check source/dirty state when preparing edits.
 
-Prepare supported work with `start_job`, inspect `get_job` until ready, and
+For typed correspondence jobs, prepare with `start_job`, inspect `get_job` until ready, and
 review its report before `apply_job`. Application is a reversible live change;
 it does not save. Use `accept_job` only when the user's task authorizes saving
 the reviewed whole document; it closes the rollback window. Use `discard_job`
@@ -24,8 +24,15 @@ glyph. Never save merely to satisfy preparation, and never save, export, close,
 or overwrite a font unless the user's task authorizes it. Do not retry an
 uncertain write or save as a new job; reconcile the existing job identity first.
 
-There is no arbitrary MCP Python or plugin reload. Unsupported edits require
-an explicitly authorised native workflow; do not invent an MCP command.
+For a reviewed cross-master correction or coordinated font/master changes,
+offer **direct native scripting** under the [shared route and recovery
+guide](../glyphs/references/python-scripts.md#choose-the-route). Use explicit
+layer targets for independent callbacks, or a whole script with exact master IDs
+for dependent edits. Native scripting recovers through a whole-font saved reload;
+it does not establish node correspondence or interpolation quality. Keep
+`start_nodes` and `reinterpolate` for their supported operations and diagnostics.
+Review path order, node types and component relationships before and after any
+custom transform; speed is not evidence of compatibility.
 
 For native interpolation of explicitly identified complete layers, prefer the
 advertised `reinterpolate` native action and follow the
@@ -37,7 +44,7 @@ Use kind="start_nodes" for supported consistent contour starts. Review the
 prepared landmarks and cyclic shifts before applying. Malformed or unsupported
 segments are refused with exact locations; inspect them in Glyphs. Master deletion,
 interpolation replacement and topology surgery are native workflows or
-reviewed workspace scripts; they are not MCP job kinds.
+reviewed scripts; execute through an advertised Python script job or an authorized native route.
 See [lean correspondence](references/lean-v2.md).
 
 [Documentation](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set-v2.mdx).

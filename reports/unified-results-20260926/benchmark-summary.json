@@ -1,0 +1,3977 @@
+{
+  "complete": true,
+  "successfulRuns": 320,
+  "expectedRuns": 320,
+  "groups": [
+    {
+      "kind": "color",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.08871079199889209,
+          "minimum": 0.0734283339988906,
+          "maximum": 0.09317800001008436
+        },
+        "applicationPollingSeconds": {
+          "median": 0.21785079198889434,
+          "minimum": 0.21114487500744872,
+          "maximum": 0.24311116700118873
+        },
+        "totalSeconds": {
+          "median": 0.3085678749921499,
+          "minimum": 0.3043228750175331,
+          "maximum": 0.3165395010000793
+        },
+        "verificationSeconds": {
+          "median": 0.0010477920004632324,
+          "minimum": 0.0006800410046707839,
+          "maximum": 0.0011122080031782389
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25741004198789597,
+          "minimum": 0.2484725829999661,
+          "maximum": 0.26562887500040233
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174309376,
+          "minimum": 173654016,
+          "maximum": 176734208
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.02444262499921024,
+          "minimum": 0.0240300000004936,
+          "maximum": 0.026405874988995492
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.013214542006608099,
+        "minimum": 0.012730208007269539,
+        "maximum": 0.014320125002996065
+      }
+    },
+    {
+      "kind": "color",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1374516659998335,
+          "minimum": 1.0937585000065155,
+          "maximum": 1.1743016249965876
+        },
+        "applicationPollingSeconds": {
+          "median": 0.21090529099456035,
+          "minimum": 0.16671695800323505,
+          "maximum": 0.24152979199425317
+        },
+        "totalSeconds": {
+          "median": 1.339220332010882,
+          "minimum": 1.3323855420021573,
+          "maximum": 1.3483569569943938
+        },
+        "verificationSeconds": {
+          "median": 0.0011165000032633543,
+          "minimum": 0.001000874995952472,
+          "maximum": 0.001197582998429425
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2478682079963619,
+          "minimum": 0.24462337499426212,
+          "maximum": 0.25110529200173914
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174948352,
+          "minimum": 173834240,
+          "maximum": 176160768
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171753472,
+          "minimum": 169033728,
+          "maximum": 172277760
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.02527850000478793,
+          "minimum": 0.0248571670090314,
+          "maximum": 0.025673666008515283
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "color",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.08344258299621288,
+          "minimum": 0.07466037500125822,
+          "maximum": 0.08890716699534096
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2243834160035476,
+          "minimum": 0.21941758299362846,
+          "maximum": 0.23141362499154638
+        },
+        "totalSeconds": {
+          "median": 0.30840475000150036,
+          "minimum": 0.2990437910048058,
+          "maximum": 0.3120725409971783
+        },
+        "verificationSeconds": {
+          "median": 0.0010590419988147914,
+          "minimum": 0.0009126669901888818,
+          "maximum": 0.0011659579904517159
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25455333400168456,
+          "minimum": 0.24816054198890924,
+          "maximum": 0.2595244160038419
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176898048,
+          "minimum": 175505408,
+          "maximum": 177373184
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.024730832999921404,
+          "minimum": 0.024383875002968125,
+          "maximum": 0.0365070419939002
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.013448000012431294,
+        "minimum": 0.012860249989898875,
+        "maximum": 0.013727124998695217
+      }
+    },
+    {
+      "kind": "color",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.128480250001303,
+          "minimum": 1.0962350420013536,
+          "maximum": 1.2505110839992994
+        },
+        "applicationPollingSeconds": {
+          "median": 0.20269666600506753,
+          "minimum": 0.08302241600176785,
+          "maximum": 0.2448315410001669
+        },
+        "totalSeconds": {
+          "median": 1.3335335000010673,
+          "minimum": 1.32965595900896,
+          "maximum": 1.3410665830015205
+        },
+        "verificationSeconds": {
+          "median": 0.0009812920034164563,
+          "minimum": 0.0007599160016980022,
+          "maximum": 0.0010627079900586978
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2547197910025716,
+          "minimum": 0.24328075000084937,
+          "maximum": 0.26450104200921487
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175308800,
+          "minimum": 174178304,
+          "maximum": 176144384
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171130880,
+          "minimum": 170573824,
+          "maximum": 171835392
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.024785708999843337,
+          "minimum": 0.024253499999758787,
+          "maximum": 0.028436874999897555
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "color",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.23439095800858922,
+          "minimum": 0.22726075000537094,
+          "maximum": 0.24317758400866296
+        },
+        "applicationPollingSeconds": {
+          "median": 0.3573156670026947,
+          "minimum": 0.3466512090089964,
+          "maximum": 0.36282399999618065
+        },
+        "totalSeconds": {
+          "median": 0.5898287930176593,
+          "minimum": 0.5845764170080656,
+          "maximum": 0.5995613749983022
+        },
+        "verificationSeconds": {
+          "median": 0.0008482499979436398,
+          "minimum": 0.0006881669978611171,
+          "maximum": 0.004065708999405615
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.26230604099691845,
+          "minimum": 0.24581425001088064,
+          "maximum": 0.5180690000124741
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175308800,
+          "minimum": 174194688,
+          "maximum": 177684480
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03156233299523592,
+          "minimum": 0.025803625001572073,
+          "maximum": 0.05909550000797026
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.014098667001235299,
+        "minimum": 0.013816999999107793,
+        "maximum": 0.015399500000057742
+      }
+    },
+    {
+      "kind": "color",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.2005534170020837,
+          "minimum": 1.1819467909954255,
+          "maximum": 1.2547605419968022
+        },
+        "applicationPollingSeconds": {
+          "median": 0.4076490000006743,
+          "minimum": 0.357931374994223,
+          "maximum": 0.42746983299730346
+        },
+        "totalSeconds": {
+          "median": 1.6126919169910252,
+          "minimum": 1.6019594579993282,
+          "maximum": 1.6241740000114078
+        },
+        "verificationSeconds": {
+          "median": 0.0006168330000946298,
+          "minimum": 0.000338625002768822,
+          "maximum": 0.0011799999920185655
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25204249999660533,
+          "minimum": 0.2471911249886034,
+          "maximum": 0.2685713749960996
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175292416,
+          "minimum": 174882816,
+          "maximum": 178241536
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172687360,
+          "minimum": 172408832,
+          "maximum": 173391872
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.02598125000076834,
+          "minimum": 0.025444375001825392,
+          "maximum": 0.028293207986280322
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "color",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.23482174999662675,
+          "minimum": 0.22703158301010262,
+          "maximum": 0.2462828330026241
+        },
+        "applicationPollingSeconds": {
+          "median": 0.35638195800129324,
+          "minimum": 0.33525562500290107,
+          "maximum": 0.3609568749961909
+        },
+        "totalSeconds": {
+          "median": 0.5878033750050236,
+          "minimum": 0.5793784590059659,
+          "maximum": 0.59120370799792
+        },
+        "verificationSeconds": {
+          "median": 0.0008152089867508039,
+          "minimum": 0.00040949998947326094,
+          "maximum": 0.001127083000028506
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2512877910048701,
+          "minimum": 0.24775241599127185,
+          "maximum": 0.5293369999999413
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174669824,
+          "minimum": 174194688,
+          "maximum": 176930816
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.026234584001940675,
+          "minimum": 0.024872750000213273,
+          "maximum": 0.05353441700572148
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.013972874992759898,
+        "minimum": 0.01322779200563673,
+        "maximum": 0.014866540994262323
+      }
+    },
+    {
+      "kind": "color",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.2345385830121813,
+          "minimum": 1.2098570420057513,
+          "maximum": 1.31072325000423
+        },
+        "applicationPollingSeconds": {
+          "median": 0.38173825001285877,
+          "minimum": 0.30023387499386445,
+          "maximum": 0.4162849999993341
+        },
+        "totalSeconds": {
+          "median": 1.61627683302504,
+          "minimum": 1.6109571249980945,
+          "maximum": 1.6261420420050854
+        },
+        "verificationSeconds": {
+          "median": 0.0009558750025462359,
+          "minimum": 0.0004390840040287003,
+          "maximum": 0.0010902920039370656
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2507626669976162,
+          "minimum": 0.24540154199348763,
+          "maximum": 0.26051324998843484
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175800320,
+          "minimum": 174702592,
+          "maximum": 176504832
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171081728,
+          "minimum": 169754624,
+          "maximum": 171474944
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.025620458996854722,
+          "minimum": 0.025343249988509342,
+          "maximum": 0.02579966699704528
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "color",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.6361059170012595,
+          "minimum": 1.6180737079994287,
+          "maximum": 1.7677939170098398
+        },
+        "applicationPollingSeconds": {
+          "median": 2.776576834003208,
+          "minimum": 2.720514375003404,
+          "maximum": 2.9138449159945594
+        },
+        "totalSeconds": {
+          "median": 4.394650542002637,
+          "minimum": 4.353356375009753,
+          "maximum": 4.6630140420020325
+        },
+        "verificationSeconds": {
+          "median": 0.0008210420055547729,
+          "minimum": 0.0005174589896341786,
+          "maximum": 0.0009738330118125305
+        },
+        "selectiveRecoverySeconds": {
+          "median": 2.4469674169959035,
+          "minimum": 2.415333707991522,
+          "maximum": 2.491797792012221
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 182599680,
+          "minimum": 179470336,
+          "maximum": 184385536
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.05533162500069011,
+          "minimum": 0.027279417001409456,
+          "maximum": 0.06052208300388884
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.01848491698910948,
+        "minimum": 0.01691416700487025,
+        "maximum": 0.03288312500808388
+      }
+    },
+    {
+      "kind": "color",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 2.289314166002441,
+          "minimum": 2.254885000002105,
+          "maximum": 2.633188625011826
+        },
+        "applicationPollingSeconds": {
+          "median": 2.893375792002189,
+          "minimum": 2.6386235829995712,
+          "maximum": 3.060096415996668
+        },
+        "totalSeconds": {
+          "median": 5.18268995800463,
+          "minimum": 4.915573958001914,
+          "maximum": 5.693285041008494
+        },
+        "verificationSeconds": {
+          "median": 0.0008326249953825027,
+          "minimum": 0.0005493749922607094,
+          "maximum": 0.0010680000123102218
+        },
+        "selectiveRecoverySeconds": {
+          "median": 2.462644833009108,
+          "minimum": 2.397300249998807,
+          "maximum": 2.508613832993433
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 179224576,
+          "minimum": 178651136,
+          "maximum": 181174272
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 176193536,
+          "minimum": 175095808,
+          "maximum": 176455680
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0716069170011906,
+          "minimum": 0.028254541990463622,
+          "maximum": 0.0868755839910591
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "color",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.6487297499988927,
+          "minimum": 1.6224015829939162,
+          "maximum": 1.6599988749949262
+        },
+        "applicationPollingSeconds": {
+          "median": 2.742841125000268,
+          "minimum": 2.735624833003385,
+          "maximum": 2.811980999991647
+        },
+        "totalSeconds": {
+          "median": 4.391525332990568,
+          "minimum": 4.387302083006944,
+          "maximum": 4.471979874986573
+        },
+        "verificationSeconds": {
+          "median": 0.0007517089979955927,
+          "minimum": 0.0005624999903375283,
+          "maximum": 0.001075958993169479
+        },
+        "selectiveRecoverySeconds": {
+          "median": 2.428651667010854,
+          "minimum": 2.4076048339920817,
+          "maximum": 2.4897034159948817
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 180649984,
+          "minimum": 180011008,
+          "maximum": 181796864
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.09103537499322556,
+          "minimum": 0.026922707998892292,
+          "maximum": 0.2695396250055637
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.015577333004330285,
+        "minimum": 0.01526183300302364,
+        "maximum": 0.016631124992272817
+      }
+    },
+    {
+      "kind": "color",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 2.390464833006263,
+          "minimum": 2.32495325000491,
+          "maximum": 2.4811502499942435
+        },
+        "applicationPollingSeconds": {
+          "median": 2.785266041988507,
+          "minimum": 2.6860582920053275,
+          "maximum": 2.882191791999503
+        },
+        "totalSeconds": {
+          "median": 5.152927000002819,
+          "minimum": 5.122195625008317,
+          "maximum": 5.26641629198275
+        },
+        "verificationSeconds": {
+          "median": 0.0007750840013613924,
+          "minimum": 0.0005689999961759895,
+          "maximum": 0.0011307920067338273
+        },
+        "selectiveRecoverySeconds": {
+          "median": 2.44078754200018,
+          "minimum": 2.4301222920039436,
+          "maximum": 2.461512291993131
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 179372032,
+          "minimum": 177799168,
+          "maximum": 181354496
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 176226304,
+          "minimum": 175030272,
+          "maximum": 178176000
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.030261000007158145,
+          "minimum": 0.026793415992869996,
+          "maximum": 0.07626316598907579
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "dimensions",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07681650000449736,
+          "minimum": 0.06999029099824838,
+          "maximum": 0.07846370899642352
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2365902500023367,
+          "minimum": 0.22944558299786877,
+          "maximum": 0.2413977079995675
+        },
+        "totalSeconds": {
+          "median": 0.3089893750002375,
+          "minimum": 0.30658054100058507,
+          "maximum": 0.31591199900140055
+        },
+        "verificationSeconds": {
+          "median": 0.001164667002740316,
+          "minimum": 0.0006452920060837641,
+          "maximum": 0.0011969589977525175
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2514062499976717,
+          "minimum": 0.24732704200141598,
+          "maximum": 0.26753183400433045
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175325184,
+          "minimum": 174768128,
+          "maximum": 176209920
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0012237079936312512,
+          "minimum": 0.0011692920088535175,
+          "maximum": 0.002324500004760921
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0011824579996755347,
+        "minimum": 0.0010748329950729385,
+        "maximum": 0.001302500008023344
+      }
+    },
+    {
+      "kind": "dimensions",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.0907283339911373,
+          "minimum": 1.047790750002605,
+          "maximum": 1.127893209006288
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23854120798932854,
+          "minimum": 0.02740679199632723,
+          "maximum": 0.2471101250121137
+        },
+        "totalSeconds": {
+          "median": 1.3321841670112917,
+          "minimum": 1.0751975419989321,
+          "maximum": 1.3332923330017366
+        },
+        "verificationSeconds": {
+          "median": 0.000891500007128343,
+          "minimum": 0.000701666998793371,
+          "maximum": 0.0012277919886400923
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2631794580083806,
+          "minimum": 0.2505892089975532,
+          "maximum": 0.26987791698775254
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175783936,
+          "minimum": 174522368,
+          "maximum": 176488448
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172621824,
+          "minimum": 170770432,
+          "maximum": 174391296
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.00114900000335183,
+          "minimum": 0.0009634999878471717,
+          "maximum": 0.0024594999995315447
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "dimensions",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07184962500468828,
+          "minimum": 0.07005687500350177,
+          "maximum": 0.07962920800491702
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23252925000269897,
+          "minimum": 0.2265718340058811,
+          "maximum": 0.2421575830085203
+        },
+        "totalSeconds": {
+          "median": 0.30580649999319576,
+          "minimum": 0.2984214590105694,
+          "maximum": 0.3122144580120221
+        },
+        "verificationSeconds": {
+          "median": 0.0011707910016411915,
+          "minimum": 0.000552166995476,
+          "maximum": 0.0012574579886859283
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2530421249975916,
+          "minimum": 0.24626762499974575,
+          "maximum": 0.26837862499814946
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176095232,
+          "minimum": 175243264,
+          "maximum": 177209344
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0011751670099329203,
+          "minimum": 0.0011127919860882685,
+          "maximum": 0.003568000000086613
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0010843330092029646,
+        "minimum": 0.0009957089932868257,
+        "maximum": 0.0012020839931210503
+      }
+    },
+    {
+      "kind": "dimensions",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.09813591701095,
+          "minimum": 1.0800456669967389,
+          "maximum": 1.174646291998215
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23782095799106173,
+          "minimum": 0.15305312498821877,
+          "maximum": 0.2647535419964697
+        },
+        "totalSeconds": {
+          "median": 1.3441646249993937,
+          "minimum": 1.3276994169864338,
+          "maximum": 1.3447992089932086
+        },
+        "verificationSeconds": {
+          "median": 0.001029834005748853,
+          "minimum": 0.0006296670035226271,
+          "maximum": 0.0010986669949488714
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25265049999870826,
+          "minimum": 0.24925704099587165,
+          "maximum": 0.26163974999508355
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174866432,
+          "minimum": 174555136,
+          "maximum": 176750592
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171180032,
+          "minimum": 170639360,
+          "maximum": 171261952
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0010262919968226925,
+          "minimum": 0.000973999995039776,
+          "maximum": 0.0011892920010723174
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "dimensions",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07758033300342504,
+          "minimum": 0.07587429099658038,
+          "maximum": 0.07906450000882614
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23295404198870528,
+          "minimum": 0.22836808300053235,
+          "maximum": 0.23659520799992606
+        },
+        "totalSeconds": {
+          "median": 0.30992975099070463,
+          "minimum": 0.3059484160039574,
+          "maximum": 0.31246949899650645
+        },
+        "verificationSeconds": {
+          "median": 0.0015053340030135587,
+          "minimum": 0.0014689169911434874,
+          "maximum": 0.0016222919948631898
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25802758400095627,
+          "minimum": 0.2492828329995973,
+          "maximum": 0.2652418329962529
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176177152,
+          "minimum": 174997504,
+          "maximum": 177668096
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.004904082990833558,
+          "minimum": 0.00450083299074322,
+          "maximum": 0.01146008400246501
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.00134845900174696,
+        "minimum": 0.00122975000704173,
+        "maximum": 0.0014800419885432348
+      }
+    },
+    {
+      "kind": "dimensions",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.0897324589896016,
+          "minimum": 1.062761249995674,
+          "maximum": 1.1802162500098348
+        },
+        "applicationPollingSeconds": {
+          "median": 0.24115633299516048,
+          "minimum": 0.02889091699034907,
+          "maximum": 0.26563837499998044
+        },
+        "totalSeconds": {
+          "median": 1.3352203750109766,
+          "minimum": 1.091652166986023,
+          "maximum": 1.34602175001055
+        },
+        "verificationSeconds": {
+          "median": 0.0015395419904962182,
+          "minimum": 0.0012646659888559952,
+          "maximum": 0.0017575829988345504
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2543282080005156,
+          "minimum": 0.2513522499939427,
+          "maximum": 0.26006474999303464
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176242688,
+          "minimum": 175456256,
+          "maximum": 177192960
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 173277184,
+          "minimum": 170672128,
+          "maximum": 174112768
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0049953749985434115,
+          "minimum": 0.004905540990876034,
+          "maximum": 0.005659667003783397
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "dimensions",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07700429200485814,
+          "minimum": 0.07069629200850613,
+          "maximum": 0.08034741699520964
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23208058399904985,
+          "minimum": 0.22373558300023433,
+          "maximum": 0.24114900000859052
+        },
+        "totalSeconds": {
+          "median": 0.3091894590033917,
+          "minimum": 0.30164966701704543,
+          "maximum": 0.31815329201344866
+        },
+        "verificationSeconds": {
+          "median": 0.0015902500017546117,
+          "minimum": 0.0013132919993950054,
+          "maximum": 0.003850000008242205
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2491387920017587,
+          "minimum": 0.24441749999823514,
+          "maximum": 0.26125445900834166
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176340992,
+          "minimum": 175325184,
+          "maximum": 177389568
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.004794332999153994,
+          "minimum": 0.004523167008301243,
+          "maximum": 0.008232791995396838
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0013967910053906962,
+        "minimum": 0.001209791997098364,
+        "maximum": 0.0015460829890798777
+      }
+    },
+    {
+      "kind": "dimensions",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1413043749926146,
+          "minimum": 1.0841884580004262,
+          "maximum": 1.2224449580098735
+        },
+        "applicationPollingSeconds": {
+          "median": 0.20852825000474695,
+          "minimum": 0.11597712499496993,
+          "maximum": 0.24979945899394806
+        },
+        "totalSeconds": {
+          "median": 1.3386450830003014,
+          "minimum": 1.3339879169943742,
+          "maximum": 1.3498326249973616
+        },
+        "verificationSeconds": {
+          "median": 0.0015005839959485456,
+          "minimum": 0.0010830000101123005,
+          "maximum": 0.0016070419951574877
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2553347499924712,
+          "minimum": 0.24666058299771976,
+          "maximum": 0.2609549579938175
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175620096,
+          "minimum": 174637056,
+          "maximum": 176537600
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172326912,
+          "minimum": 170688512,
+          "maximum": 174047232
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.005139665998285636,
+          "minimum": 0.004685457999585196,
+          "maximum": 0.005396207998273894
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "dimensions",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07955804100492969,
+          "minimum": 0.07588970901269931,
+          "maximum": 0.08127854099438991
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23105720900639426,
+          "minimum": 0.2247386670060223,
+          "maximum": 0.24066795800172258
+        },
+        "totalSeconds": {
+          "median": 0.3121686659869738,
+          "minimum": 0.304296708010952,
+          "maximum": 0.3165576670144219
+        },
+        "verificationSeconds": {
+          "median": 0.00827775000652764,
+          "minimum": 0.007979917005286552,
+          "maximum": 0.008401415994740091
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2514629580109613,
+          "minimum": 0.2377771669998765,
+          "maximum": 0.25764541600074153
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176488448,
+          "minimum": 175767552,
+          "maximum": 180060160
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.013091834000078961,
+          "minimum": 0.01155779100372456,
+          "maximum": 0.018088875003741123
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.004518625006312504,
+        "minimum": 0.004495999994105659,
+        "maximum": 0.004742083998280577
+      }
+    },
+    {
+      "kind": "dimensions",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.14880858300603,
+          "minimum": 1.0938302499998827,
+          "maximum": 1.193401750002522
+        },
+        "applicationPollingSeconds": {
+          "median": 0.19823758299753536,
+          "minimum": 0.1672743750095833,
+          "maximum": 0.2477839170023799
+        },
+        "totalSeconds": {
+          "median": 1.3470461660035653,
+          "minimum": 1.3416141670022625,
+          "maximum": 1.3606761250121053
+        },
+        "verificationSeconds": {
+          "median": 0.00844258299912326,
+          "minimum": 0.008296500003780238,
+          "maximum": 0.008652958000311628
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.24582891698810272,
+          "minimum": 0.23788866700488143,
+          "maximum": 0.25155300000915304
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 177307648,
+          "minimum": 174538752,
+          "maximum": 178847744
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172654592,
+          "minimum": 170164224,
+          "maximum": 174391296
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.012007625002297573,
+          "minimum": 0.011812707991339266,
+          "maximum": 0.014009709004312754
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "dimensions",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.08004412498848978,
+          "minimum": 0.07620983399101533,
+          "maximum": 0.09042579200468026
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23254174999601673,
+          "minimum": 0.22908858400478493,
+          "maximum": 0.23519666699576192
+        },
+        "totalSeconds": {
+          "median": 0.3126347920187982,
+          "minimum": 0.3088185839878861,
+          "maximum": 0.3195143760094652
+        },
+        "verificationSeconds": {
+          "median": 0.008420875004958361,
+          "minimum": 0.007987541001057252,
+          "maximum": 0.008544583004550077
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2496709999977611,
+          "minimum": 0.2436300410045078,
+          "maximum": 0.2525859169982141
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 177111040,
+          "minimum": 176291840,
+          "maximum": 179453952
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.012287833000300452,
+          "minimum": 0.011651291002635844,
+          "maximum": 0.012438292003935203
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.005057249989476986,
+        "minimum": 0.004462375000002794,
+        "maximum": 0.005422667003585957
+      }
+    },
+    {
+      "kind": "dimensions",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1746458749985322,
+          "minimum": 1.1163762919895817,
+          "maximum": 1.2274359169969102
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23008424999716226,
+          "minimum": 0.17238408299454022,
+          "maximum": 0.41249920800328255
+        },
+        "totalSeconds": {
+          "median": 1.3501552090019686,
+          "minimum": 1.3220078339945758,
+          "maximum": 1.6223709159967257
+        },
+        "verificationSeconds": {
+          "median": 0.00847329200769309,
+          "minimum": 0.008065291011007503,
+          "maximum": 0.009703458999865688
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2474806670070393,
+          "minimum": 0.2405415829998674,
+          "maximum": 0.2537471660034498
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175816704,
+          "minimum": 175439872,
+          "maximum": 177176576
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171868160,
+          "minimum": 170917888,
+          "maximum": 172392448
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.012055667000822723,
+          "minimum": 0.011485166003694758,
+          "maximum": 0.012272457999642938
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.0762004580028588,
+          "minimum": 0.07220558299741242,
+          "maximum": 0.0769855410035234
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2336606660101097,
+          "minimum": 0.2290072500036331,
+          "maximum": 0.24233308399561793
+        },
+        "totalSeconds": {
+          "median": 0.310033124012989,
+          "minimum": 0.3049398739967728,
+          "maximum": 0.3175237089890288
+        },
+        "verificationSeconds": {
+          "median": 0.0011519580002641305,
+          "minimum": 0.0008927080052671954,
+          "maximum": 0.0013342919992282987
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25309945800108835,
+          "minimum": 0.25075733300764114,
+          "maximum": 0.26687320800556336
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176816128,
+          "minimum": 174325760,
+          "maximum": 177160192
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.002350834009121172,
+          "minimum": 0.0021156669972697273,
+          "maximum": 0.0027939590072492138
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0018671669968171045,
+        "minimum": 0.0017311249976046383,
+        "maximum": 0.002001708999159746
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.091150624997681,
+          "minimum": 1.0705235839996021,
+          "maximum": 1.2115247089968761
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2486054999899352,
+          "minimum": 0.10704237499157898,
+          "maximum": 0.2689145829936024
+        },
+        "totalSeconds": {
+          "median": 1.3293037510011345,
+          "minimum": 1.3185670839884551,
+          "maximum": 1.3563469579967204
+        },
+        "verificationSeconds": {
+          "median": 0.0010849579994101077,
+          "minimum": 0.0009050419903360307,
+          "maximum": 0.0012368330062599853
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.24941354199836496,
+          "minimum": 0.24374074999650475,
+          "maximum": 0.26035004199366085
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175456256,
+          "minimum": 175046656,
+          "maximum": 177029120
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171409408,
+          "minimum": 170459136,
+          "maximum": 172146688
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0026612090005073696,
+          "minimum": 0.0022401249880203977,
+          "maximum": 0.0028260409890208393
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07398683299834374,
+          "minimum": 0.07004999999480788,
+          "maximum": 0.07990329099993687
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23123216700332705,
+          "minimum": 0.23089237499516457,
+          "maximum": 0.2357790409878362
+        },
+        "totalSeconds": {
+          "median": 0.3058290409826441,
+          "minimum": 0.30442570899322163,
+          "maximum": 0.31092033300956246
+        },
+        "verificationSeconds": {
+          "median": 0.001175500001409091,
+          "minimum": 0.0009067909995792434,
+          "maximum": 0.0012045420007780194
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.26147520799713675,
+          "minimum": 0.2571647500008112,
+          "maximum": 0.2680667079985142
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174931968,
+          "minimum": 174407680,
+          "maximum": 178995200
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0022892910055816174,
+          "minimum": 0.00203312499797903,
+          "maximum": 0.005598208008450456
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0019835000130115077,
+        "minimum": 0.0017723339988151565,
+        "maximum": 0.0020649170037359
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.0884833750023972,
+          "minimum": 1.0751700419932604,
+          "maximum": 1.1258764590020292
+        },
+        "applicationPollingSeconds": {
+          "median": 0.24691195800551213,
+          "minimum": 0.01723770800163038,
+          "maximum": 0.2579116670094663
+        },
+        "totalSeconds": {
+          "median": 1.345423209000728,
+          "minimum": 1.0924077499948908,
+          "maximum": 1.3477800840046257
+        },
+        "verificationSeconds": {
+          "median": 0.0010717499972088262,
+          "minimum": 0.0006484999903477728,
+          "maximum": 0.0012347500014584512
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2600759999913862,
+          "minimum": 0.25033629100653343,
+          "maximum": 0.2637195410061395
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175112192,
+          "minimum": 173768704,
+          "maximum": 177176576
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171425792,
+          "minimum": 170868736,
+          "maximum": 173293568
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0026722499897005036,
+          "minimum": 0.0023207909980555996,
+          "maximum": 0.0030810410098638386
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 12,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07871429099759553,
+          "minimum": 0.07505100000707898,
+          "maximum": 0.10354258400911931
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23366275000444148,
+          "minimum": 0.21986904200457502,
+          "maximum": 0.2351694579992909
+        },
+        "totalSeconds": {
+          "median": 0.31123791700520087,
+          "minimum": 0.29858333300217055,
+          "maximum": 0.3387120420084102
+        },
+        "verificationSeconds": {
+          "median": 0.0010752499947557226,
+          "minimum": 0.000913208001293242,
+          "maximum": 0.0013393750123213977
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25690562499221414,
+          "minimum": 0.25483762500516605,
+          "maximum": 0.2669222499971511
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174702592,
+          "minimum": 173506560,
+          "maximum": 177389568
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.007496291000279598,
+          "minimum": 0.006889750002301298,
+          "maximum": 0.020374875006382354
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0036149579973425716,
+        "minimum": 0.003359458001796156,
+        "maximum": 0.003731792006874457
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 12,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.070992834007484,
+          "minimum": 1.0659314169897698,
+          "maximum": 1.0859274590038694
+        },
+        "applicationPollingSeconds": {
+          "median": 0.25252537499181926,
+          "minimum": 0.021404625003924593,
+          "maximum": 0.2657307920017047
+        },
+        "totalSeconds": {
+          "median": 1.334323040995514,
+          "minimum": 1.0873360419936944,
+          "maximum": 1.3410873340035323
+        },
+        "verificationSeconds": {
+          "median": 0.0011068339954363182,
+          "minimum": 0.0008302920032292604,
+          "maximum": 0.001173584008938633
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2554349580022972,
+          "minimum": 0.24589920799189713,
+          "maximum": 0.25760033300321084
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176357376,
+          "minimum": 174374912,
+          "maximum": 177455104
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171622400,
+          "minimum": 170196992,
+          "maximum": 172244992
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.007747208001092076,
+          "minimum": 0.0063967080059228465,
+          "maximum": 0.0103891670005396
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 12,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07582899999397341,
+          "minimum": 0.06710104100056924,
+          "maximum": 0.07734291699307505
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2346362909884192,
+          "minimum": 0.23117287500645034,
+          "maximum": 0.24226695900142659
+        },
+        "totalSeconds": {
+          "median": 0.3098267499881331,
+          "minimum": 0.3075747499970021,
+          "maximum": 0.3122195010073483
+        },
+        "verificationSeconds": {
+          "median": 0.0011019170051440597,
+          "minimum": 0.0007615420036017895,
+          "maximum": 0.0011219589941902086
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2520105839939788,
+          "minimum": 0.2402238340000622,
+          "maximum": 0.2656708750000689
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176504832,
+          "minimum": 174030848,
+          "maximum": 176521216
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0066882089886348695,
+          "minimum": 0.006398792000254616,
+          "maximum": 0.007221332998597063
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0036380420060595497,
+        "minimum": 0.0033759590005502105,
+        "maximum": 0.0037528749962802976
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 12,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.0963322080060607,
+          "minimum": 1.077844166997238,
+          "maximum": 1.1787615420034854
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2341309579933295,
+          "minimum": 0.162104624992935,
+          "maximum": 0.2568026669905521
+        },
+        "totalSeconds": {
+          "median": 1.3346468339877902,
+          "minimum": 1.3239673329808284,
+          "maximum": 1.3412317909969715
+        },
+        "verificationSeconds": {
+          "median": 0.0009826250025071204,
+          "minimum": 0.000868667004397139,
+          "maximum": 0.0010899159969994798
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25381008299882524,
+          "minimum": 0.25161324998771306,
+          "maximum": 0.26129633400705643
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174424064,
+          "minimum": 173621248,
+          "maximum": 177274880
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171130880,
+          "minimum": 170164224,
+          "maximum": 171884544
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.007328916995902546,
+          "minimum": 0.006706000000122003,
+          "maximum": 0.007402957999147475
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07835833299031947,
+          "minimum": 0.07628683300572447,
+          "maximum": 0.08290100000158418
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23572941700695083,
+          "minimum": 0.23352075000002515,
+          "maximum": 0.23958500000298955
+        },
+        "totalSeconds": {
+          "median": 0.3164217500016093,
+          "minimum": 0.3120162500126753,
+          "maximum": 0.31882183300331235
+        },
+        "verificationSeconds": {
+          "median": 0.0011500840046210214,
+          "minimum": 0.0008704159990884364,
+          "maximum": 0.0013316249969648197
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25474916701205075,
+          "minimum": 0.24067008298879955,
+          "maximum": 0.26432154201029334
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175472640,
+          "minimum": 174653440,
+          "maximum": 176963584
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.010841875002370216,
+          "minimum": 0.010686041990993544,
+          "maximum": 0.014470041001914069
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.006317374994978309,
+        "minimum": 0.005964665993815288,
+        "maximum": 0.006518542009871453
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.0820290419942467,
+          "minimum": 1.078090291004628,
+          "maximum": 1.1755154590064194
+        },
+        "applicationPollingSeconds": {
+          "median": 0.24524483300046995,
+          "minimum": 0.16486241700476967,
+          "maximum": 0.2532792919955682
+        },
+        "totalSeconds": {
+          "median": 1.331379624985857,
+          "minimum": 1.3250867080059834,
+          "maximum": 1.340377876011189
+        },
+        "verificationSeconds": {
+          "median": 0.0013850830000592396,
+          "minimum": 0.001321582996752113,
+          "maximum": 0.0016945420065894723
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25991304199851584,
+          "minimum": 0.25186383300751913,
+          "maximum": 0.26516820800316054
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176259072,
+          "minimum": 174342144,
+          "maximum": 176816128
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171065344,
+          "minimum": 170459136,
+          "maximum": 173522944
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.010838415997568518,
+          "minimum": 0.010758042000816204,
+          "maximum": 0.01896491600200534
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.07882099998823833,
+          "minimum": 0.07204541699320544,
+          "maximum": 0.08211354201193899
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2370857499918202,
+          "minimum": 0.22867862500424962,
+          "maximum": 0.23764908299199305
+        },
+        "totalSeconds": {
+          "median": 0.3144322499865666,
+          "minimum": 0.3088505839841673,
+          "maximum": 0.3194451260205824
+        },
+        "verificationSeconds": {
+          "median": 0.0013304170133778825,
+          "minimum": 0.001189417002024129,
+          "maximum": 0.001516624994110316
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25185329200758133,
+          "minimum": 0.24921291699865833,
+          "maximum": 0.2569835000031162
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176652288,
+          "minimum": 175456256,
+          "maximum": 178323456
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.010709791007684544,
+          "minimum": 0.010322500005713664,
+          "maximum": 0.011955374997342005
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0066944170102942735,
+        "minimum": 0.005992459002300166,
+        "maximum": 0.006874625003547408
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.170487374998629,
+          "minimum": 1.0977899999998044,
+          "maximum": 1.2191684160061413
+        },
+        "applicationPollingSeconds": {
+          "median": 0.16896270799043123,
+          "minimum": 0.1343019159976393,
+          "maximum": 0.25538200000301003
+        },
+        "totalSeconds": {
+          "median": 1.3475101239891956,
+          "minimum": 1.3324868749914458,
+          "maximum": 1.3534703320037806
+        },
+        "verificationSeconds": {
+          "median": 0.001091833008104004,
+          "minimum": 0.000829082986456342,
+          "maximum": 0.0014515420043608174
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2555271250021178,
+          "minimum": 0.2519027500093216,
+          "maximum": 0.25924149999627843
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176095232,
+          "minimum": 174899200,
+          "maximum": 177405952
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172015616,
+          "minimum": 170999808,
+          "maximum": 172834816
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.010740415993495844,
+          "minimum": 0.010300374997314066,
+          "maximum": 0.011152999999467283
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 12,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.09592208299727645,
+          "minimum": 0.09402783399855252,
+          "maximum": 0.1082217499933904
+        },
+        "applicationPollingSeconds": {
+          "median": 0.21032595899305306,
+          "minimum": 0.20499470800859854,
+          "maximum": 0.22571341700677294
+        },
+        "totalSeconds": {
+          "median": 0.31321645800198894,
+          "minimum": 0.3049104589881608,
+          "maximum": 0.31974125100532547
+        },
+        "verificationSeconds": {
+          "median": 0.0013978750066598877,
+          "minimum": 0.0009113330015679821,
+          "maximum": 0.0016550830041524023
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2591043330030516,
+          "minimum": 0.25030987500213087,
+          "maximum": 0.2641304170101648
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 177700864,
+          "minimum": 176029696,
+          "maximum": 178831360
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.013408584010903724,
+          "minimum": 0.012692916003288701,
+          "maximum": 0.020498874990153126
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.010406458008219488,
+        "minimum": 0.01020566700026393,
+        "maximum": 0.011386749989469536
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 12,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1085192919999827,
+          "minimum": 1.1036807499913266,
+          "maximum": 1.2973414580046665
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23145025000849273,
+          "minimum": 0.21994124999037012,
+          "maximum": 0.2949520840047626
+        },
+        "totalSeconds": {
+          "median": 1.3385867920005694,
+          "minimum": 1.3284605419903528,
+          "maximum": 1.592293542009429
+        },
+        "verificationSeconds": {
+          "median": 0.0011436250060796738,
+          "minimum": 0.0009172089921776205,
+          "maximum": 0.0015462500014109537
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25586191700131167,
+          "minimum": 0.24829304100421723,
+          "maximum": 0.2631021669949405
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176930816,
+          "minimum": 176209920,
+          "maximum": 177324032
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172294144,
+          "minimum": 171704320,
+          "maximum": 174325760
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.014625625000917353,
+          "minimum": 0.013539958992623724,
+          "maximum": 0.015049666006234474
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 12,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.10830962499312591,
+          "minimum": 0.09382362499309238,
+          "maximum": 0.11360162500932347
+        },
+        "applicationPollingSeconds": {
+          "median": 0.20719954099331517,
+          "minimum": 0.19962841698725242,
+          "maximum": 0.2162575830006972
+        },
+        "totalSeconds": {
+          "median": 0.31435229199996684,
+          "minimum": 0.30793804198037833,
+          "maximum": 0.32080116600263864
+        },
+        "verificationSeconds": {
+          "median": 0.0012416250101523474,
+          "minimum": 0.0011239999876124784,
+          "maximum": 0.0013805000053253025
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25302104200818576,
+          "minimum": 0.24524299999757204,
+          "maximum": 0.26071783299266826
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 178241536,
+          "minimum": 177029120,
+          "maximum": 178995200
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.013646666004206054,
+          "minimum": 0.01290008399519138,
+          "maximum": 0.01631704199826345
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.01078862500435207,
+        "minimum": 0.010438665995025076,
+        "maximum": 0.011304708998068236
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 12,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1074442910030484,
+          "minimum": 1.1056673339917324,
+          "maximum": 1.1219699590001255
+        },
+        "applicationPollingSeconds": {
+          "median": 0.224827957994421,
+          "minimum": 0.2144232909922721,
+          "maximum": 0.23466641700360924
+        },
+        "totalSeconds": {
+          "median": 1.3363932499923976,
+          "minimum": 1.3304952919861535,
+          "maximum": 1.3421107080066577
+        },
+        "verificationSeconds": {
+          "median": 0.0013401670003077015,
+          "minimum": 0.000855291000334546,
+          "maximum": 0.0017231249948963523
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.253307417005999,
+          "minimum": 0.2481580839958042,
+          "maximum": 0.2595759999967413
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 177094656,
+          "minimum": 174997504,
+          "maximum": 179666944
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171933696,
+          "minimum": 171180032,
+          "maximum": 173277184
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.014750541013199836,
+          "minimum": 0.013766874995781109,
+          "maximum": 0.016157749996636994
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.16182666599343065,
+          "minimum": 0.160379875000217,
+          "maximum": 0.1650664580083685
+        },
+        "applicationPollingSeconds": {
+          "median": 0.18644808400131296,
+          "minimum": 0.18288133399619255,
+          "maximum": 0.42448741699627135
+        },
+        "totalSeconds": {
+          "median": 0.35151454200968146,
+          "minimum": 0.34491225000238046,
+          "maximum": 0.586314082989702
+        },
+        "verificationSeconds": {
+          "median": 0.006063166991225444,
+          "minimum": 0.005712708996725269,
+          "maximum": 0.00833233300363645
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2533121669985121,
+          "minimum": 0.2465796660108026,
+          "maximum": 0.25785104199894704
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 182779904,
+          "minimum": 181223424,
+          "maximum": 183648256
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03102083399426192,
+          "minimum": 0.027369707997422665,
+          "maximum": 0.05978783400496468
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.01061350000964012,
+        "minimum": 0.010363084002165124,
+        "maximum": 0.011845083994558081
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.221840958998655,
+          "minimum": 1.1640090409928234,
+          "maximum": 1.2454621249926277
+        },
+        "applicationPollingSeconds": {
+          "median": 0.3775400000013178,
+          "minimum": 0.18354829199961387,
+          "maximum": 0.4000199169968255
+        },
+        "totalSeconds": {
+          "median": 1.6007726669922704,
+          "minimum": 1.3490601659868844,
+          "maximum": 1.6422247079899535
+        },
+        "verificationSeconds": {
+          "median": 0.00629641700652428,
+          "minimum": 0.0061925829941174015,
+          "maximum": 0.006498167000245303
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2484041249990696,
+          "minimum": 0.24359124999318738,
+          "maximum": 0.2544770420063287
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 180944896,
+          "minimum": 177717248,
+          "maximum": 182910976
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 174014464,
+          "minimum": 172703744,
+          "maximum": 174538752
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03244054100650828,
+          "minimum": 0.030215124992537312,
+          "maximum": 0.033871125007863156
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.17484820900426712,
+          "minimum": 0.1695242080022581,
+          "maximum": 0.18200491700554267
+        },
+        "applicationPollingSeconds": {
+          "median": 0.41927454200049397,
+          "minimum": 0.40639891699538566,
+          "maximum": 0.42705304200353567
+        },
+        "totalSeconds": {
+          "median": 0.5932060000050114,
+          "minimum": 0.5849344589951215,
+          "maximum": 0.5967433750047348
+        },
+        "verificationSeconds": {
+          "median": 0.006973916999413632,
+          "minimum": 0.006110583999543451,
+          "maximum": 0.008930750002036802
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.252374540999881,
+          "minimum": 0.24341495899716392,
+          "maximum": 0.25357379199704155
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 183877632,
+          "minimum": 182386688,
+          "maximum": 184434688
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03210224999929778,
+          "minimum": 0.02916420799738262,
+          "maximum": 0.03431399998953566
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.010440917001687922,
+        "minimum": 0.010190708009758964,
+        "maximum": 0.011069291998865083
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.322569875002955,
+          "minimum": 1.2224442909937352,
+          "maximum": 1.3672842500091065
+        },
+        "applicationPollingSeconds": {
+          "median": 0.3063848329911707,
+          "minimum": 0.23418554200907238,
+          "maximum": 0.3960690420062747
+        },
+        "totalSeconds": {
+          "median": 1.617507792005199,
+          "minimum": 1.6014697920181789,
+          "maximum": 1.6289547079941258
+        },
+        "verificationSeconds": {
+          "median": 0.006385458997101523,
+          "minimum": 0.005750541007728316,
+          "maximum": 0.006995916002779268
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2541078750073211,
+          "minimum": 0.2496082080033375,
+          "maximum": 0.25800066599913407
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 179404800,
+          "minimum": 178601984,
+          "maximum": 183222272
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 174358528,
+          "minimum": 172376064,
+          "maximum": 174997504
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.031630249999579974,
+          "minimum": 0.03047283300838899,
+          "maximum": 0.03425949999655131
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 12,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.418126292002853,
+          "minimum": 0.40868487500119954,
+          "maximum": 0.5337584169901675
+        },
+        "applicationPollingSeconds": {
+          "median": 0.8732052919949638,
+          "minimum": 0.7239250830025412,
+          "maximum": 0.9799389590043575
+        },
+        "totalSeconds": {
+          "median": 1.3948132090008585,
+          "minimum": 1.1368229590007104,
+          "maximum": 1.4069637089851312
+        },
+        "verificationSeconds": {
+          "median": 0.00609545799670741,
+          "minimum": 0.005928374986979179,
+          "maximum": 0.006470624997746199
+        },
+        "selectiveRecoverySeconds": {
+          "median": 1.0760671250027372,
+          "minimum": 0.8047570829949109,
+          "maximum": 1.1772062919917516
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 202227712,
+          "minimum": 199720960,
+          "maximum": 203030528
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03702666699246038,
+          "minimum": 0.03112870900076814,
+          "maximum": 0.08486033300869167
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.012672790995566174,
+        "minimum": 0.012257958995178342,
+        "maximum": 0.022448957999586128
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 12,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.3638196250103647,
+          "minimum": 1.31494825000118,
+          "maximum": 1.5782078339980217
+        },
+        "applicationPollingSeconds": {
+          "median": 0.8470278750028228,
+          "minimum": 0.7876022910058964,
+          "maximum": 1.006163750003907
+        },
+        "totalSeconds": {
+          "median": 2.166261917009251,
+          "minimum": 2.151421916016261,
+          "maximum": 2.4443864160130033
+        },
+        "verificationSeconds": {
+          "median": 0.006304499998805113,
+          "minimum": 0.0059017080056946725,
+          "maximum": 0.006477667004219256
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.8003197499929229,
+          "minimum": 0.7892093749978812,
+          "maximum": 0.8083841249899706
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 197885952,
+          "minimum": 195624960,
+          "maximum": 200769536
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 178552832,
+          "minimum": 176570368,
+          "maximum": 179929088
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03384154199738987,
+          "minimum": 0.0322569999989355,
+          "maximum": 0.03585337499680463
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 12,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.43344908401195426,
+          "minimum": 0.4126771250012098,
+          "maximum": 0.5340007909981068
+        },
+        "applicationPollingSeconds": {
+          "median": 0.9620041250018403,
+          "minimum": 0.7230097499996191,
+          "maximum": 0.9787042079988169
+        },
+        "totalSeconds": {
+          "median": 1.398159416989074,
+          "minimum": 1.1356868750008289,
+          "maximum": 1.4443053750001127
+        },
+        "verificationSeconds": {
+          "median": 0.006463042009272613,
+          "minimum": 0.0060617499984800816,
+          "maximum": 0.008181249999324791
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.8002269170101499,
+          "minimum": 0.79639041700284,
+          "maximum": 0.8093385000101989
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 202326016,
+          "minimum": 200556544,
+          "maximum": 203685888
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.033232124987989664,
+          "minimum": 0.03275904100155458,
+          "maximum": 0.03791599998658057
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.01256945900968276,
+        "minimum": 0.011826332993223332,
+        "maximum": 0.013823625005898066
+      }
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 12,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.3807018749939743,
+          "minimum": 1.3747857910057064,
+          "maximum": 1.4203372500051046
+        },
+        "applicationPollingSeconds": {
+          "median": 0.7648055830068188,
+          "minimum": 0.7463879169954453,
+          "maximum": 0.9692494589980925
+        },
+        "totalSeconds": {
+          "median": 2.1467992490070174,
+          "minimum": 2.1299509999807924,
+          "maximum": 2.3818832089891657
+        },
+        "verificationSeconds": {
+          "median": 0.006103749998146668,
+          "minimum": 0.006014541009790264,
+          "maximum": 0.008165834005922079
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.8062327499937965,
+          "minimum": 0.7931647499935934,
+          "maximum": 0.8121109579951735
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 196952064,
+          "minimum": 195264512,
+          "maximum": 198475776
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 178733056,
+          "minimum": 177520640,
+          "maximum": 180305920
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.03216566699848045,
+          "minimum": 0.025820957991527393,
+          "maximum": 0.03667845801101066
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.06814116699388251,
+          "minimum": 0.06740233401069418,
+          "maximum": 0.0699642079998739
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2394622919964604,
+          "minimum": 0.23090104199945927,
+          "maximum": 0.24553991699940525
+        },
+        "totalSeconds": {
+          "median": 0.3071065839903895,
+          "minimum": 0.3007567090098746,
+          "maximum": 0.3129422510100994
+        },
+        "verificationSeconds": {
+          "median": 0.0009690000006230548,
+          "minimum": 0.0006850000063423067,
+          "maximum": 0.0009860830032266676
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2492177500098478,
+          "minimum": 0.2450247499946272,
+          "maximum": 0.25729641600628383
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174931968,
+          "minimum": 174571520,
+          "maximum": 175439872
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.00132862500322517,
+          "minimum": 0.001091833008104004,
+          "maximum": 0.0017580839921720326
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0011055420036427677,
+        "minimum": 0.0010532909946050495,
+        "maximum": 0.0011867919965879992
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1253324999997858,
+          "minimum": 1.072723416989902,
+          "maximum": 1.2896820410096552
+        },
+        "applicationPollingSeconds": {
+          "median": 0.19421666600101162,
+          "minimum": 0.05978174999472685,
+          "maximum": 0.23275408300105482
+        },
+        "totalSeconds": {
+          "median": 1.3138919579942012,
+          "minimum": 1.3054774999909569,
+          "maximum": 1.349463791004382
+        },
+        "verificationSeconds": {
+          "median": 0.0009110419923672453,
+          "minimum": 0.0005717919993912801,
+          "maximum": 0.0009554580028634518
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25080637499922886,
+          "minimum": 0.24341654100862797,
+          "maximum": 0.2634761250083102
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 173834240,
+          "minimum": 173113344,
+          "maximum": 176275456
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171458560,
+          "minimum": 169426944,
+          "maximum": 171933696
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0014339589979499578,
+          "minimum": 0.0012997080048080534,
+          "maximum": 0.0018445000023348257
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.06609166700218339,
+          "minimum": 0.06077908400038723,
+          "maximum": 0.06750325000029989
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23777579200395849,
+          "minimum": 0.235852874990087,
+          "maximum": 0.24440599999797996
+        },
+        "totalSeconds": {
+          "median": 0.3033561249903869,
+          "minimum": 0.3032859590020962,
+          "maximum": 0.3067794170056004
+        },
+        "verificationSeconds": {
+          "median": 0.0008000840025488287,
+          "minimum": 0.0006672909948974848,
+          "maximum": 0.0009269169968320057
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.24798441700113472,
+          "minimum": 0.24276799999643117,
+          "maximum": 0.2505001249955967
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175144960,
+          "minimum": 173785088,
+          "maximum": 176128000
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0012500830052886158,
+          "minimum": 0.0010738339915405959,
+          "maximum": 0.004072999989148229
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.001079290988855064,
+        "minimum": 0.0010030420089606196,
+        "maximum": 0.0012471250083763152
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.0905717499990715,
+          "minimum": 1.075902500000666,
+          "maximum": 1.1712124170007883
+        },
+        "applicationPollingSeconds": {
+          "median": 0.2241866659896914,
+          "minimum": 0.13492041699646506,
+          "maximum": 0.2419135840027593
+        },
+        "totalSeconds": {
+          "median": 1.3178160840034252,
+          "minimum": 1.3061328339972533,
+          "maximum": 1.3188197499985108
+        },
+        "verificationSeconds": {
+          "median": 0.0007515000033890828,
+          "minimum": 0.0005359590140869841,
+          "maximum": 0.0008797500049695373
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.25129920899053104,
+          "minimum": 0.24481775000458583,
+          "maximum": 0.2598566250089789
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 174637056,
+          "minimum": 173948928,
+          "maximum": 176013312
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 171638784,
+          "minimum": 169410560,
+          "maximum": 172425216
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.0013174579944461584,
+          "minimum": 0.0011582909937715158,
+          "maximum": 0.001615084009245038
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.06540883399429731,
+          "minimum": 0.06457712499832269,
+          "maximum": 0.06958641699748114
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23115900000266265,
+          "minimum": 0.23055112500151154,
+          "maximum": 0.23358370800269768
+        },
+        "totalSeconds": {
+          "median": 0.2972867919888813,
+          "minimum": 0.2951282499998342,
+          "maximum": 0.3031701250001788
+        },
+        "verificationSeconds": {
+          "median": 0.0017753330030245706,
+          "minimum": 0.0017099579999921843,
+          "maximum": 0.001878666997072287
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2539690420089755,
+          "minimum": 0.24865304201375693,
+          "maximum": 0.26070075000461657
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176570368,
+          "minimum": 175636480,
+          "maximum": 177717248
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.027026458003092557,
+          "minimum": 0.025567207994754426,
+          "maximum": 0.033622999995714054
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0014675830025225878,
+        "minimum": 0.0014502919948427007,
+        "maximum": 0.0018929999932879582
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1261039999953937,
+          "minimum": 1.0617556250072084,
+          "maximum": 1.17622208299872
+        },
+        "applicationPollingSeconds": {
+          "median": 0.19322674999420997,
+          "minimum": 0.13550070799828973,
+          "maximum": 0.2641887920035515
+        },
+        "totalSeconds": {
+          "median": 1.3193307499896036,
+          "minimum": 1.3096374159940751,
+          "maximum": 1.32594441701076
+        },
+        "verificationSeconds": {
+          "median": 0.0018014590023085475,
+          "minimum": 0.0015410420019179583,
+          "maximum": 0.002099042001646012
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.24695833299483638,
+          "minimum": 0.24403450000681914,
+          "maximum": 0.2530129580118228
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 175898624,
+          "minimum": 175161344,
+          "maximum": 177373184
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 172294144,
+          "minimum": 171065344,
+          "maximum": 174309376
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.024198750004870817,
+          "minimum": 0.023120750003727153,
+          "maximum": 0.025429832996451296
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.06563941699278075,
+          "minimum": 0.06421229100669734,
+          "maximum": 0.07686812500469387
+        },
+        "applicationPollingSeconds": {
+          "median": 0.23442550000618212,
+          "minimum": 0.22512987500522286,
+          "maximum": 0.23620800000207964
+        },
+        "totalSeconds": {
+          "median": 0.30006491699896287,
+          "minimum": 0.29903695901157334,
+          "maximum": 0.3019980000099167
+        },
+        "verificationSeconds": {
+          "median": 0.001727625000057742,
+          "minimum": 0.0015672079898649827,
+          "maximum": 0.0018452919903211296
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.24995933299942408,
+          "minimum": 0.2474613749946002,
+          "maximum": 0.25545420800335705
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 177078272,
+          "minimum": 175783936,
+          "maximum": 179027968
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.024389792000874877,
+          "minimum": 0.02390445800847374,
+          "maximum": 0.027107666988740675
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.0017033750045811757,
+        "minimum": 0.0015313330077333376,
+        "maximum": 0.0018865409947466105
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1395509579888312,
+          "minimum": 1.1269008749950444,
+          "maximum": 1.2412414999998873
+        },
+        "applicationPollingSeconds": {
+          "median": 0.1754107080050744,
+          "minimum": 0.06865529200877063,
+          "maximum": 0.19084533299610484
+        },
+        "totalSeconds": {
+          "median": 1.309896792008658,
+          "minimum": 1.3027389999915613,
+          "maximum": 1.3177462079911493
+        },
+        "verificationSeconds": {
+          "median": 0.0017501669935882092,
+          "minimum": 0.0016105830000014976,
+          "maximum": 0.001993332989513874
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.2542425830033608,
+          "minimum": 0.25207187500200234,
+          "maximum": 0.2607373749924591
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 176603136,
+          "minimum": 175816704,
+          "maximum": 176930816
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 173375488,
+          "minimum": 171458560,
+          "maximum": 174342144
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.02511324999795761,
+          "minimum": 0.022990457990090363,
+          "maximum": 0.02684975000738632
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 1000,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.12770029100647662,
+          "minimum": 0.12195412500295788,
+          "maximum": 0.1354745420103427
+        },
+        "applicationPollingSeconds": {
+          "median": 0.4498940420016879,
+          "minimum": 0.44196075000218116,
+          "maximum": 0.518228333996376
+        },
+        "totalSeconds": {
+          "median": 0.5769156669994118,
+          "minimum": 0.5658471249917056,
+          "maximum": 0.6502400839963229
+        },
+        "verificationSeconds": {
+          "median": 0.009453209000639617,
+          "minimum": 0.009215375001076609,
+          "maximum": 0.010232041997369379
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.44168008300766815,
+          "minimum": 0.4153989170008572,
+          "maximum": 0.44783520899363793
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 200589312,
+          "minimum": 199016448,
+          "maximum": 201605120
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.22328654200828169,
+          "minimum": 0.21339441699092276,
+          "maximum": 0.24359654200088698
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.004825666997930966,
+        "minimum": 0.004483291995711625,
+        "maximum": 0.00524779201077763
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 1000,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.1749710000003688,
+          "minimum": 1.1606397080031456,
+          "maximum": 1.223110250008176
+        },
+        "applicationPollingSeconds": {
+          "median": 0.4514156249933876,
+          "minimum": 0.4393679159984458,
+          "maximum": 0.5000732080079615
+        },
+        "totalSeconds": {
+          "median": 1.6607129160111072,
+          "minimum": 1.6135164159932174,
+          "maximum": 1.6745258750015637
+        },
+        "verificationSeconds": {
+          "median": 0.009604999999282882,
+          "minimum": 0.009080083997105248,
+          "maximum": 0.010068917006719857
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.4318522919929819,
+          "minimum": 0.4290951250004582,
+          "maximum": 0.4797655830043368
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 199901184,
+          "minimum": 198180864,
+          "maximum": 201900032
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 180420608,
+          "minimum": 179503104,
+          "maximum": 182026240
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.21778108400758356,
+          "minimum": 0.2171904159913538,
+          "maximum": 0.2542655839934014
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 1000,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.1844368750025751,
+          "minimum": 0.18031270800565835,
+          "maximum": 0.2048315419961
+        },
+        "applicationPollingSeconds": {
+          "median": 0.5223605000064708,
+          "minimum": 0.5044776670110878,
+          "maximum": 0.5958698329923209
+        },
+        "totalSeconds": {
+          "median": 0.7067973750090459,
+          "minimum": 0.6862371250026627,
+          "maximum": 0.7916413329949137
+        },
+        "verificationSeconds": {
+          "median": 0.009745208008098416,
+          "minimum": 0.00944787499611266,
+          "maximum": 0.010308375000022352
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.4388126250123605,
+          "minimum": 0.4288299590116367,
+          "maximum": 0.44908700000087265
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 201048064,
+          "minimum": 198852608,
+          "maximum": 203571200
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.21798554199631326,
+          "minimum": 0.2154878750006901,
+          "maximum": 0.2312692919949768
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.004697750002378598,
+        "minimum": 0.004580916007398628,
+        "maximum": 0.005012959009036422
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 1000,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.6450859999895329,
+          "minimum": 1.5703976250078995,
+          "maximum": 1.723850084003061
+        },
+        "applicationPollingSeconds": {
+          "median": 0.5351625420007622,
+          "minimum": 0.5271690420049708,
+          "maximum": 0.5839722499949858
+        },
+        "totalSeconds": {
+          "median": 2.1722550419945037,
+          "minimum": 2.1543698750028852,
+          "maximum": 2.2590126260038232
+        },
+        "verificationSeconds": {
+          "median": 0.009673374996054918,
+          "minimum": 0.009401208008057438,
+          "maximum": 0.00979554100194946
+        },
+        "selectiveRecoverySeconds": {
+          "median": 0.5261779169959482,
+          "minimum": 0.5057849589938996,
+          "maximum": 0.5418058750074124
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 201916416,
+          "minimum": 200097792,
+          "maximum": 202883072
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 183123968,
+          "minimum": 182517760,
+          "maximum": 185434112
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.22995420900406316,
+          "minimum": 0.2268990419979673,
+          "maximum": 0.275021082998137
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 4096,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.36425474999123253,
+          "minimum": 0.3427163339947583,
+          "maximum": 0.3785919579968322
+        },
+        "applicationPollingSeconds": {
+          "median": 1.8681368329998804,
+          "minimum": 1.7326716249954188,
+          "maximum": 1.9117629590036813
+        },
+        "totalSeconds": {
+          "median": 2.2108531669946387,
+          "minimum": 2.0970151660003467,
+          "maximum": 2.2903549170005135
+        },
+        "verificationSeconds": {
+          "median": 0.038332208001520485,
+          "minimum": 0.03768545800994616,
+          "maximum": 0.039258916993276216
+        },
+        "selectiveRecoverySeconds": {
+          "median": 1.7370037079963367,
+          "minimum": 1.720983207997051,
+          "maximum": 1.9962349999987055
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 287932416,
+          "minimum": 252362752,
+          "maximum": 339542016
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.9068355829949724,
+          "minimum": 0.8688084169989452,
+          "maximum": 0.9836867499980144
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.018103167007211596,
+        "minimum": 0.017080833000363782,
+        "maximum": 0.020786124994629063
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 4096,
+      "contours": 1,
+      "format": "glyphs",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 1.3722608749958454,
+          "minimum": 1.270562458987115,
+          "maximum": 1.4597257920104312
+        },
+        "applicationPollingSeconds": {
+          "median": 1.7744498329993803,
+          "minimum": 1.758355208003195,
+          "maximum": 1.8811002499860479
+        },
+        "totalSeconds": {
+          "median": 3.151662708973163,
+          "minimum": 3.0790434170048684,
+          "maximum": 3.2340211250120774
+        },
+        "verificationSeconds": {
+          "median": 0.03721654099354055,
+          "minimum": 0.0366375409939792,
+          "maximum": 0.03787458300939761
+        },
+        "selectiveRecoverySeconds": {
+          "median": 1.7641525409999304,
+          "minimum": 1.7033827919949545,
+          "maximum": 1.767989125000895
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 303185920,
+          "minimum": 249479168,
+          "maximum": 340557824
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 211419136,
+          "minimum": 211189760,
+          "maximum": 212074496
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.9792941670020809,
+          "minimum": 0.8611056669906247,
+          "maximum": 1.064850667011342
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    },
+    {
+      "kind": "width",
+      "targets": 4096,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "native",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 0.5951229589991271,
+          "minimum": 0.5866841660026694,
+          "maximum": 0.6488320000062231
+        },
+        "applicationPollingSeconds": {
+          "median": 1.9938112910022028,
+          "minimum": 1.968362416009768,
+          "maximum": 2.2005659160058713
+        },
+        "totalSeconds": {
+          "median": 2.5909877080121078,
+          "minimum": 2.5576427910127677,
+          "maximum": 2.7956888750049984
+        },
+        "verificationSeconds": {
+          "median": 0.03776908299187198,
+          "minimum": 0.037279709009453654,
+          "maximum": 0.03840433400182519
+        },
+        "selectiveRecoverySeconds": {
+          "median": 1.7342866660037544,
+          "minimum": 1.7093407080101315,
+          "maximum": 1.8568264580098912
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 347029504,
+          "minimum": 344735744,
+          "maximum": 348651520
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.8710468750068685,
+          "minimum": 0.8496050420071697,
+          "maximum": 0.8944451659917831
+        }
+      },
+      "preparationLongestChunkSeconds": {
+        "median": 0.01678970801003743,
+        "minimum": 0.01552537499810569,
+        "maximum": 0.017260999986319803
+      }
+    },
+    {
+      "kind": "width",
+      "targets": 4096,
+      "contours": 1,
+      "format": "glyphspackage",
+      "route": "worker",
+      "runs": 5,
+      "metrics": {
+        "preparationSeconds": {
+          "median": 3.2537330000050133,
+          "minimum": 3.0713984169997275,
+          "maximum": 3.518952124999487
+        },
+        "applicationPollingSeconds": {
+          "median": 2.0222761670011096,
+          "minimum": 1.9703784999874188,
+          "maximum": 2.0356587910064263
+        },
+        "totalSeconds": {
+          "median": 5.278364876008709,
+          "minimum": 5.041776916987146,
+          "maximum": 5.54876754200086
+        },
+        "verificationSeconds": {
+          "median": 0.0376964170136489,
+          "minimum": 0.0368237499933457,
+          "maximum": 0.0382298750046175
+        },
+        "selectiveRecoverySeconds": {
+          "median": 1.993932291996316,
+          "minimum": 1.9340735000005225,
+          "maximum": 2.0567058750020806
+        },
+        "saveSeconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0
+        },
+        "peakRSSBytes": {
+          "median": 344014848,
+          "minimum": 223985664,
+          "maximum": 345669632
+        },
+        "workerChildrenPeakRSSBytes": {
+          "median": 219840512,
+          "minimum": 218824704,
+          "maximum": 221003776
+        },
+        "longestMainThreadChunkSeconds": {
+          "median": 0.8663359580095857,
+          "minimum": 0.8542441250028787,
+          "maximum": 1.4048515839967877
+        }
+      },
+      "preparationLongestChunkSeconds": null
+    }
+  ],
+  "comparisons": [
+    {
+      "kind": "color",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 12.82202131634716,
+      "prepareApplySpeedup": 4.340115872544906
+    },
+    {
+      "kind": "color",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 13.52403304740123,
+      "prepareApplySpeedup": 4.323971988092206
+    },
+    {
+      "kind": "color",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 5.122012500832432,
+      "prepareApplySpeedup": 2.7341695354345674
+    },
+    {
+      "kind": "color",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 5.257343423383548,
+      "prepareApplySpeedup": 2.7496896100864117
+    },
+    {
+      "kind": "color",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 1.3992456981015116,
+      "prepareApplySpeedup": 1.1793178794241248
+    },
+    {
+      "kind": "color",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 1.4498827555018452,
+      "prepareApplySpeedup": 1.1733797733767704
+    },
+    {
+      "kind": "dimensions",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 14.199141251258242,
+      "prepareApplySpeedup": 4.311423870190578
+    },
+    {
+      "kind": "dimensions",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 15.283808606367746,
+      "prepareApplySpeedup": 4.395474344166333
+    },
+    {
+      "kind": "dimensions",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 14.0465040146385,
+      "prepareApplySpeedup": 4.308138766100652
+    },
+    {
+      "kind": "dimensions",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 14.821308595637896,
+      "prepareApplySpeedup": 4.329530144123112
+    },
+    {
+      "kind": "dimensions",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 14.439880224487249,
+      "prepareApplySpeedup": 4.31512292159321
+    },
+    {
+      "kind": "dimensions",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 14.674979271338707,
+      "prepareApplySpeedup": 4.3186338931873784
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 14.319475940115012,
+      "prepareApplySpeedup": 4.287618477003259
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 14.71185251336226,
+      "prepareApplySpeedup": 4.3992656965401835
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 12,
+      "format": "glyphs",
+      "preparationSpeedup": 13.606078647652424,
+      "prepareApplySpeedup": 4.287148088621918
+    },
+    {
+      "kind": "outline",
+      "targets": 1,
+      "contours": 12,
+      "format": "glyphspackage",
+      "preparationSpeedup": 14.457954187622056,
+      "prepareApplySpeedup": 4.307719827416159
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 13.808729725374869,
+      "prepareApplySpeedup": 4.207610965362164
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 14.849943227988598,
+      "prepareApplySpeedup": 4.285534082610053
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 12,
+      "format": "glyphs",
+      "preparationSpeedup": 11.556455587306807,
+      "prepareApplySpeedup": 4.2736796161332915
+    },
+    {
+      "kind": "outline",
+      "targets": 10,
+      "contours": 12,
+      "format": "glyphspackage",
+      "preparationSpeedup": 10.224800345060142,
+      "prepareApplySpeedup": 4.251259761746985
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 7.5503066907913405,
+      "prepareApplySpeedup": 4.553930138538
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 7.564103072801153,
+      "prepareApplySpeedup": 2.726721900977964
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 12,
+      "format": "glyphs",
+      "preparationSpeedup": 3.261740892871331,
+      "prepareApplySpeedup": 1.5530838846593673
+    },
+    {
+      "kind": "outline",
+      "targets": 100,
+      "contours": 12,
+      "format": "glyphspackage",
+      "preparationSpeedup": 3.1853842260187943,
+      "prepareApplySpeedup": 1.5354466900706742
+    },
+    {
+      "kind": "width",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 16.514723032272318,
+      "prepareApplySpeedup": 4.278293030784771
+    },
+    {
+      "kind": "width",
+      "targets": 1,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 16.500896398377176,
+      "prepareApplySpeedup": 4.344122222833595
+    },
+    {
+      "kind": "width",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 17.21639006886399,
+      "prepareApplySpeedup": 4.43790570433061
+    },
+    {
+      "kind": "width",
+      "targets": 100,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 17.36077208172283,
+      "prepareApplySpeedup": 4.365378015895092
+    },
+    {
+      "kind": "width",
+      "targets": 1000,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 9.20100487430195,
+      "prepareApplySpeedup": 2.878606026854182
+    },
+    {
+      "kind": "width",
+      "targets": 1000,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 8.91950701271947,
+      "prepareApplySpeedup": 3.073377348022412
+    },
+    {
+      "kind": "width",
+      "targets": 4096,
+      "contours": 1,
+      "format": "glyphs",
+      "preparationSpeedup": 3.7673108587571615,
+      "prepareApplySpeedup": 1.4255413955226297
+    },
+    {
+      "kind": "width",
+      "targets": 4096,
+      "contours": 1,
+      "format": "glyphspackage",
+      "preparationSpeedup": 5.467328979337505,
+      "prepareApplySpeedup": 2.037201820636365
+    }
+  ]
+}

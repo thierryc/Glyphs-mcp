@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "masters": 9,
+  "inserted": [
+    [
+      143.46100000000004,
+      873.0999999999999
+    ],
+    [
+      216.06099999999998,
+      727.75
+    ],
+    [
+      491.94100000000014,
+      175.41999999999973
+    ]
+  ],
+  "preview": true,
+  "apply": true,
+  "partialFailureRollback": true,
+  "cancellation": true,
+  "undoRedo": true,
+  "wholeJobDiscard": true,
+  "saveReopen": true,
+  "selectionIntegrity": true,
+  "hintIdentity": true,
+  "nativeRemoveNode": true,
+  "nativeRemoveLayers": 6,
+  "nativeRemoveVariants": [
+    "line",
+    "cubic",
+    "qcurve",
+    "closed-wrap"
+  ],
+  "componentAnchorPreservation": true,
+  "uiChunkCallbacks": 5,
+  "boundedRetainedOperations": 1
+}

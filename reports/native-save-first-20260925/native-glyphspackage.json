@@ -1,0 +1,36 @@
+{
+  "data": [
+    "scoped background survives saved/live identity normalization",
+    "dirty review does not save",
+    "review skips external copy",
+    "save and run preserves pre-run edits in saved baseline",
+    "native execution changes background",
+    "fractional path node preserved",
+    "result remains visibly unsaved",
+    "foreground preserved",
+    "native execution leaves saved file unchanged",
+    "no layer snapshots retained",
+    "native saved version restored",
+    "restore replaces later manual edits",
+    "restore resets complete background",
+    "restore does not write file",
+    "restored document clean",
+    "restoration exposes rebound document",
+    "failure retains partial effects",
+    "failure offers explicit saved restoration",
+    "failure saved restoration",
+    "whole script executes natively",
+    "whole script restored",
+    "overwritten baseline is not offered as original",
+    "overwritten baseline has no Restore action",
+    "cancellation stops remaining native callbacks",
+    "cancelled partial changes remain visibly unsaved",
+    "cancelled script restores saved font"
+  ],
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

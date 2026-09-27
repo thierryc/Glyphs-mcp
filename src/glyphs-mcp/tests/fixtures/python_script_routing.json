@@ -1,0 +1,144 @@
+[
+  {
+    "name": "preview-master-backgrounds",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "mode": "preview",
+      "options": {
+        "source": "def run(layer, params, context):\n    for path in layer.paths:\n        for node in path.nodes:\n            node.y = 2 * params[\"pivotY\"] - node.y",
+        "params": {
+          "pivotY": 0
+        },
+        "targets": {
+          "master": "REGULAR-ID",
+          "glyphs": "all",
+          "surface": "background"
+        },
+        "summary": "Flip backgrounds around the baseline"
+      }
+    },
+    "entrypoint": "per_target",
+    "runAction": "run_script",
+    "authorization": "preview_waits"
+  },
+  {
+    "name": "selected-backgrounds-task",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "mode": "apply",
+      "options": {
+        "source": "def run(layer, params, context):\n    print(context[\"glyph\"])",
+        "targets": {
+          "master": "REGULAR-ID",
+          "glyphs": [
+            "A",
+            "B"
+          ],
+          "surface": "background"
+        },
+        "summary": "Inspect selected backgrounds"
+      }
+    },
+    "entrypoint": "per_target",
+    "runAction": "run_script",
+    "authorization": "original_task"
+  },
+  {
+    "name": "preview-whole-script",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "mode": "preview",
+      "options": {
+        "entrypoint": "script",
+        "source": "print(font.familyName)",
+        "targets": [],
+        "summary": "Show the family name"
+      }
+    },
+    "entrypoint": "script",
+    "runAction": "run_script",
+    "authorization": "preview_waits"
+  },
+  {
+    "name": "dirty-width-task",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "options": {
+        "source": "def run(layer, params, context):\n    layer.width += params[\"delta\"]",
+        "params": {
+          "delta": 10
+        },
+        "targets": {
+          "master": "M1",
+          "glyphs": "all",
+          "surface": "foreground"
+        },
+        "summary": "Increase widths by 10 units"
+      }
+    },
+    "entrypoint": "per_target",
+    "runAction": "save_run_script",
+    "authorization": "original_task"
+  },
+  {
+    "name": "font-metadata-task",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "mode": "apply",
+      "options": {
+        "entrypoint": "script",
+        "source": "if font.familyName != params[\"before\"]:\n    raise ValueError(\"Family name changed\")\nfont.familyName = params[\"after\"]",
+        "params": {
+          "before": "Example",
+          "after": "Example Revised"
+        },
+        "targets": [],
+        "summary": "Change the family name"
+      }
+    },
+    "entrypoint": "script",
+    "runAction": "run_script",
+    "authorization": "original_task"
+  },
+  {
+    "name": "image-background-task",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "mode": "apply",
+      "options": {
+        "source": "def run(layer, params, context):\n    if layer.backgroundImage is not None:\n        layer.backgroundImage.position = (params[\"x\"], params[\"y\"])",
+        "params": {
+          "x": 12.5,
+          "y": 3.25
+        },
+        "targets": {
+          "master": "REGULAR-ID",
+          "glyphs": "all",
+          "surface": "background"
+        },
+        "summary": "Move existing background images"
+      }
+    },
+    "entrypoint": "per_target",
+    "runAction": "run_script",
+    "authorization": "original_task"
+  }
+]

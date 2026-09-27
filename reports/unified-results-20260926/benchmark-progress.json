@@ -1,0 +1,1606 @@
+{
+  "completed": 320,
+  "total": 320,
+  "runs": [
+    {
+      "name": "width-1-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.024474165998981
+    },
+    {
+      "name": "width-1-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0102470419951715
+    },
+    {
+      "name": "width-1-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.325624291988788
+    },
+    {
+      "name": "width-1-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.132114041989553
+    },
+    {
+      "name": "width-1-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.139225542006898
+    },
+    {
+      "name": "width-1-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.0140898329991614
+    },
+    {
+      "name": "width-1-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.0049556250014575
+    },
+    {
+      "name": "width-1-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.1199990830064053
+    },
+    {
+      "name": "width-1-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.124691500008339
+    },
+    {
+      "name": "width-1-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.0096507920097793
+    },
+    {
+      "name": "width-1-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 3.9521253749990137
+    },
+    {
+      "name": "width-1-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0021970000088913
+    },
+    {
+      "name": "width-1-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 3.983633124997141
+    },
+    {
+      "name": "width-1-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 1.9915181249962188
+    },
+    {
+      "name": "width-1-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 3.991519667004468
+    },
+    {
+      "name": "width-1-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 1.999574165995
+    },
+    {
+      "name": "width-1-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 3.9736019160045544
+    },
+    {
+      "name": "width-1-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.0445771669910755
+    },
+    {
+      "name": "width-1-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.117724916010047
+    },
+    {
+      "name": "width-1-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.0072451250016456
+    },
+    {
+      "name": "width-100-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.381492625005194
+    },
+    {
+      "name": "width-100-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.227980416006176
+    },
+    {
+      "name": "width-100-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.419729750006809
+    },
+    {
+      "name": "width-100-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.179791208996903
+    },
+    {
+      "name": "width-100-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.42048904200783
+    },
+    {
+      "name": "width-100-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.1704796670092037
+    },
+    {
+      "name": "width-100-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.256616541999392
+    },
+    {
+      "name": "width-100-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.1926199169975007
+    },
+    {
+      "name": "width-100-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.179312207998009
+    },
+    {
+      "name": "width-100-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.2786295830010204
+    },
+    {
+      "name": "width-100-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.275099207996391
+    },
+    {
+      "name": "width-100-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.2802422090026084
+    },
+    {
+      "name": "width-100-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.3783484589948785
+    },
+    {
+      "name": "width-100-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.2308420830086106
+    },
+    {
+      "name": "width-100-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.314399124996271
+    },
+    {
+      "name": "width-100-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.2610481250012526
+    },
+    {
+      "name": "width-100-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.218057874997612
+    },
+    {
+      "name": "width-100-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.338326708995737
+    },
+    {
+      "name": "width-100-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.362718624994159
+    },
+    {
+      "name": "width-100-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.2963712499913527
+    },
+    {
+      "name": "width-1000-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 8.932334166995133
+    },
+    {
+      "name": "width-1000-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 6.804097166997963
+    },
+    {
+      "name": "width-1000-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 8.860604249988683
+    },
+    {
+      "name": "width-1000-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 7.174932499998249
+    },
+    {
+      "name": "width-1000-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 8.991503750003176
+    },
+    {
+      "name": "width-1000-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 6.815743207989726
+    },
+    {
+      "name": "width-1000-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 9.20370404201094
+    },
+    {
+      "name": "width-1000-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 6.9215298339986475
+    },
+    {
+      "name": "width-1000-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 9.504634624987375
+    },
+    {
+      "name": "width-1000-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 7.3195250830031
+    },
+    {
+      "name": "width-1000-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 10.76619229199423
+    },
+    {
+      "name": "width-1000-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 8.263604125007987
+    },
+    {
+      "name": "width-1000-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 10.900380124992807
+    },
+    {
+      "name": "width-1000-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 7.609964041999774
+    },
+    {
+      "name": "width-1000-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 10.495384792011464
+    },
+    {
+      "name": "width-1000-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 7.6258547920006095
+    },
+    {
+      "name": "width-1000-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 10.862669416994322
+    },
+    {
+      "name": "width-1000-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 7.501116125000408
+    },
+    {
+      "name": "width-1000-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 10.581859583006008
+    },
+    {
+      "name": "width-1000-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 7.75372104201233
+    },
+    {
+      "name": "width-4096-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 54.242345291000674
+    },
+    {
+      "name": "width-4096-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 52.127373291004915
+    },
+    {
+      "name": "width-4096-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 54.34568804199807
+    },
+    {
+      "name": "width-4096-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 52.12749587500002
+    },
+    {
+      "name": "width-4096-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 53.12268304199097
+    },
+    {
+      "name": "width-4096-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 51.685162791007315
+    },
+    {
+      "name": "width-4096-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 53.37643575000402
+    },
+    {
+      "name": "width-4096-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 51.671655250000185
+    },
+    {
+      "name": "width-4096-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 52.855040291004116
+    },
+    {
+      "name": "width-4096-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 51.465240582998376
+    },
+    {
+      "name": "width-4096-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 62.97935008299828
+    },
+    {
+      "name": "width-4096-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 53.468619125007535
+    },
+    {
+      "name": "width-4096-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 58.41686445799132
+    },
+    {
+      "name": "width-4096-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 52.791001125006005
+    },
+    {
+      "name": "width-4096-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 59.01167366599839
+    },
+    {
+      "name": "width-4096-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 53.10488237500249
+    },
+    {
+      "name": "width-4096-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 58.007600832992466
+    },
+    {
+      "name": "width-4096-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 52.99634954199428
+    },
+    {
+      "name": "width-4096-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 59.94974025001284
+    },
+    {
+      "name": "width-4096-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 53.535045208001975
+    },
+    {
+      "name": "dimensions-1-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 3.7596264160092687
+    },
+    {
+      "name": "dimensions-1-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 1.9157467909972183
+    },
+    {
+      "name": "dimensions-1-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.03306958299072
+    },
+    {
+      "name": "dimensions-1-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 1.9580409589980263
+    },
+    {
+      "name": "dimensions-1-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.000825625000289
+    },
+    {
+      "name": "dimensions-1-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 1.9565676670026733
+    },
+    {
+      "name": "dimensions-1-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 3.9993817920039874
+    },
+    {
+      "name": "dimensions-1-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 1.96127308299765
+    },
+    {
+      "name": "dimensions-1-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 3.9561524169985205
+    },
+    {
+      "name": "dimensions-1-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 1.9728225419967202
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.015505374991335
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 1.913319416999002
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.012725500011584
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 1.9627923750085756
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 3.9841109580011107
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 1.9582242920005228
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.032810624994454
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 1.9501233750052052
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.023715624993201
+    },
+    {
+      "name": "dimensions-1-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 1.9409662919933908
+    },
+    {
+      "name": "dimensions-10-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 3.8827731659985147
+    },
+    {
+      "name": "dimensions-10-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 1.9745341669913614
+    },
+    {
+      "name": "dimensions-10-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 3.9813372920034453
+    },
+    {
+      "name": "dimensions-10-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 1.9615671249921434
+    },
+    {
+      "name": "dimensions-10-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.018259000004036
+    },
+    {
+      "name": "dimensions-10-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 1.9957670419971691
+    },
+    {
+      "name": "dimensions-10-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.023276416992303
+    },
+    {
+      "name": "dimensions-10-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 1.9509917499963194
+    },
+    {
+      "name": "dimensions-10-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.014276415997301
+    },
+    {
+      "name": "dimensions-10-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 1.982717708000564
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.050676416998613
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 1.981691499997396
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.007645624995348
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 1.9591434159956407
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.022458416991867
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 1.9667729579959996
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.142726833000779
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 1.9478915419895202
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 3.999353000006522
+    },
+    {
+      "name": "dimensions-10-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.068301249993965
+    },
+    {
+      "name": "dimensions-100-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.241816124995239
+    },
+    {
+      "name": "dimensions-100-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.279738165991148
+    },
+    {
+      "name": "dimensions-100-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.549038124998333
+    },
+    {
+      "name": "dimensions-100-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.124609833001159
+    },
+    {
+      "name": "dimensions-100-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.590849040992907
+    },
+    {
+      "name": "dimensions-100-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.149453332996927
+    },
+    {
+      "name": "dimensions-100-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.167617832994438
+    },
+    {
+      "name": "dimensions-100-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.226635792001616
+    },
+    {
+      "name": "dimensions-100-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.228967041999567
+    },
+    {
+      "name": "dimensions-100-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.131476374997874
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.464569500007201
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.112972458009608
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.223980041992036
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.1247510409884853
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.2229056659998605
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.134240209008567
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.19776508299401
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.1508934579906054
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.478748749999795
+    },
+    {
+      "name": "dimensions-100-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.152197375005926
+    },
+    {
+      "name": "color-1-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.041174666999723
+    },
+    {
+      "name": "color-1-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.02310295800271
+    },
+    {
+      "name": "color-1-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.009024707993376
+    },
+    {
+      "name": "color-1-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 1.983207917000982
+    },
+    {
+      "name": "color-1-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.090973333994043
+    },
+    {
+      "name": "color-1-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 1.9326840420108056
+    },
+    {
+      "name": "color-1-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.00203583300754
+    },
+    {
+      "name": "color-1-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 1.9303354590083472
+    },
+    {
+      "name": "color-1-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.036028916001669
+    },
+    {
+      "name": "color-1-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 1.9887374160025502
+    },
+    {
+      "name": "color-1-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.000926958993659
+    },
+    {
+      "name": "color-1-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.097396416007541
+    },
+    {
+      "name": "color-1-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 3.9807469160004985
+    },
+    {
+      "name": "color-1-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 1.953726584004471
+    },
+    {
+      "name": "color-1-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.023493040993344
+    },
+    {
+      "name": "color-1-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 1.9828279170033056
+    },
+    {
+      "name": "color-1-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.021047832997283
+    },
+    {
+      "name": "color-1-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 1.9603510409942828
+    },
+    {
+      "name": "color-1-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.019702249992406
+    },
+    {
+      "name": "color-1-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 1.9676426660007564
+    },
+    {
+      "name": "color-10-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.747907375000068
+    },
+    {
+      "name": "color-10-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.6356119999982184
+    },
+    {
+      "name": "color-10-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.690339291002601
+    },
+    {
+      "name": "color-10-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.9108367079898017
+    },
+    {
+      "name": "color-10-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.666940999988583
+    },
+    {
+      "name": "color-10-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.565962540989858
+    },
+    {
+      "name": "color-10-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.656046250005602
+    },
+    {
+      "name": "color-10-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.905882416991517
+    },
+    {
+      "name": "color-10-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.651117750006961
+    },
+    {
+      "name": "color-10-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.730052708007861
+    },
+    {
+      "name": "color-10-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.677252749999752
+    },
+    {
+      "name": "color-10-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.614316916995449
+    },
+    {
+      "name": "color-10-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.701249582998571
+    },
+    {
+      "name": "color-10-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.5892410410015145
+    },
+    {
+      "name": "color-10-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.68988824999542
+    },
+    {
+      "name": "color-10-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.7040267909906106
+    },
+    {
+      "name": "color-10-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.682650959002785
+    },
+    {
+      "name": "color-10-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.6150687920016935
+    },
+    {
+      "name": "color-10-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.692969750001794
+    },
+    {
+      "name": "color-10-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.9054976250045
+    },
+    {
+      "name": "color-100-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 14.999505999992834
+    },
+    {
+      "name": "color-100-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 13.780381000004127
+    },
+    {
+      "name": "color-100-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 15.783096208004281
+    },
+    {
+      "name": "color-100-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 14.084468417000608
+    },
+    {
+      "name": "color-100-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 15.249428540992085
+    },
+    {
+      "name": "color-100-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 13.728251249995083
+    },
+    {
+      "name": "color-100-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 14.718943957996089
+    },
+    {
+      "name": "color-100-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 13.659600457991473
+    },
+    {
+      "name": "color-100-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 14.900857625005301
+    },
+    {
+      "name": "color-100-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 13.503231958995457
+    },
+    {
+      "name": "color-100-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 15.08366654200654
+    },
+    {
+      "name": "color-100-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 14.065382999993744
+    },
+    {
+      "name": "color-100-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 15.361290959001053
+    },
+    {
+      "name": "color-100-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 13.86342020900338
+    },
+    {
+      "name": "color-100-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 15.20101566700032
+    },
+    {
+      "name": "color-100-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 13.757709291996434
+    },
+    {
+      "name": "color-100-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 15.140717582995421
+    },
+    {
+      "name": "color-100-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 13.624111500001163
+    },
+    {
+      "name": "color-100-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 15.459452708004392
+    },
+    {
+      "name": "color-100-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 13.999332040999434
+    },
+    {
+      "name": "outline-1-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.152454958995804
+    },
+    {
+      "name": "outline-1-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0779749580106
+    },
+    {
+      "name": "outline-1-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.150326666000183
+    },
+    {
+      "name": "outline-1-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.089237708001747
+    },
+    {
+      "name": "outline-1-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.1748533329955535
+    },
+    {
+      "name": "outline-1-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.215067375000217
+    },
+    {
+      "name": "outline-1-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.149697082990315
+    },
+    {
+      "name": "outline-1-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.0662048749945825
+    },
+    {
+      "name": "outline-1-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.173837166003068
+    },
+    {
+      "name": "outline-1-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.055315834004432
+    },
+    {
+      "name": "outline-1-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 3.910622124996735
+    },
+    {
+      "name": "outline-1-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0540575420018286
+    },
+    {
+      "name": "outline-1-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.178180124989012
+    },
+    {
+      "name": "outline-1-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.125591957999859
+    },
+    {
+      "name": "outline-1-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.165066166999168
+    },
+    {
+      "name": "outline-1-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.0257561249891296
+    },
+    {
+      "name": "outline-1-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.173656792001566
+    },
+    {
+      "name": "outline-1-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.075002958998084
+    },
+    {
+      "name": "outline-1-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.207711833005305
+    },
+    {
+      "name": "outline-1-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.0173745829961263
+    },
+    {
+      "name": "outline-10-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.168985833006445
+    },
+    {
+      "name": "outline-10-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0976815830072155
+    },
+    {
+      "name": "outline-10-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.230847208993509
+    },
+    {
+      "name": "outline-10-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.069599124995875
+    },
+    {
+      "name": "outline-10-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.162022167001851
+    },
+    {
+      "name": "outline-10-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.103144374996191
+    },
+    {
+      "name": "outline-10-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.209868374993675
+    },
+    {
+      "name": "outline-10-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.08442670799559
+    },
+    {
+      "name": "outline-10-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.1492379999981495
+    },
+    {
+      "name": "outline-10-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.07683570899826
+    },
+    {
+      "name": "outline-10-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.248590250004781
+    },
+    {
+      "name": "outline-10-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0801803749927785
+    },
+    {
+      "name": "outline-10-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.183261167010642
+    },
+    {
+      "name": "outline-10-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.040656208002474
+    },
+    {
+      "name": "outline-10-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.133066374997725
+    },
+    {
+      "name": "outline-10-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.0890492079925025
+    },
+    {
+      "name": "outline-10-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.194627375007258
+    },
+    {
+      "name": "outline-10-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.2657936250034254
+    },
+    {
+      "name": "outline-10-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.339140249998309
+    },
+    {
+      "name": "outline-10-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.2125984159938525
+    },
+    {
+      "name": "outline-100-1-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.808418832995812
+    },
+    {
+      "name": "outline-100-1-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.7008002090005903
+    },
+    {
+      "name": "outline-100-1-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.799511749995872
+    },
+    {
+      "name": "outline-100-1-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.7305417919997126
+    },
+    {
+      "name": "outline-100-1-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.813974249991588
+    },
+    {
+      "name": "outline-100-1-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.890510915996856
+    },
+    {
+      "name": "outline-100-1-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 5.046317166998051
+    },
+    {
+      "name": "outline-100-1-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.8940387499897042
+    },
+    {
+      "name": "outline-100-1-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.768763999993098
+    },
+    {
+      "name": "outline-100-1-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.723406499993871
+    },
+    {
+      "name": "outline-100-1-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 5.1212002920074156
+    },
+    {
+      "name": "outline-100-1-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.959648832998937
+    },
+    {
+      "name": "outline-100-1-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 5.0934709169960115
+    },
+    {
+      "name": "outline-100-1-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.9145090829988476
+    },
+    {
+      "name": "outline-100-1-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 5.076759084011428
+    },
+    {
+      "name": "outline-100-1-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.9618040829955135
+    },
+    {
+      "name": "outline-100-1-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 5.102037249991554
+    },
+    {
+      "name": "outline-100-1-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.9610613339900738
+    },
+    {
+      "name": "outline-100-1-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 5.116052542012767
+    },
+    {
+      "name": "outline-100-1-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.9476187079999363
+    },
+    {
+      "name": "outline-1-12-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 3.8871811669960152
+    },
+    {
+      "name": "outline-1-12-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0146219579910394
+    },
+    {
+      "name": "outline-1-12-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.250027832997148
+    },
+    {
+      "name": "outline-1-12-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.166729749995284
+    },
+    {
+      "name": "outline-1-12-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 3.9428582500113407
+    },
+    {
+      "name": "outline-1-12-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.0526902090059593
+    },
+    {
+      "name": "outline-1-12-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.097714707997511
+    },
+    {
+      "name": "outline-1-12-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.026137833992834
+    },
+    {
+      "name": "outline-1-12-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.201019583008019
+    },
+    {
+      "name": "outline-1-12-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.0556993749924004
+    },
+    {
+      "name": "outline-1-12-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.131111750000855
+    },
+    {
+      "name": "outline-1-12-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.0192188330111094
+    },
+    {
+      "name": "outline-1-12-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.168162834001123
+    },
+    {
+      "name": "outline-1-12-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.050010833001579
+    },
+    {
+      "name": "outline-1-12-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.124427959002787
+    },
+    {
+      "name": "outline-1-12-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.0591008750052424
+    },
+    {
+      "name": "outline-1-12-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.1825018340023234
+    },
+    {
+      "name": "outline-1-12-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.0938047079980606
+    },
+    {
+      "name": "outline-1-12-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.123772167004063
+    },
+    {
+      "name": "outline-1-12-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 1.9619650840031682
+    },
+    {
+      "name": "outline-10-12-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.1577764579997165
+    },
+    {
+      "name": "outline-10-12-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 2.141121957989526
+    },
+    {
+      "name": "outline-10-12-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.075884749996476
+    },
+    {
+      "name": "outline-10-12-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 2.1396338750055293
+    },
+    {
+      "name": "outline-10-12-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.517563958987012
+    },
+    {
+      "name": "outline-10-12-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 2.1558254590054275
+    },
+    {
+      "name": "outline-10-12-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.1505514579912415
+    },
+    {
+      "name": "outline-10-12-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 2.1066832079959568
+    },
+    {
+      "name": "outline-10-12-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.257457333005732
+    },
+    {
+      "name": "outline-10-12-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 2.107824916005484
+    },
+    {
+      "name": "outline-10-12-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 4.1092074580083136
+    },
+    {
+      "name": "outline-10-12-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 2.1382834579999326
+    },
+    {
+      "name": "outline-10-12-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 4.25394804199459
+    },
+    {
+      "name": "outline-10-12-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 2.155793416997767
+    },
+    {
+      "name": "outline-10-12-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 4.21637962499517
+    },
+    {
+      "name": "outline-10-12-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 2.084997250000015
+    },
+    {
+      "name": "outline-10-12-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 4.195208666991675
+    },
+    {
+      "name": "outline-10-12-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 2.1440525419893675
+    },
+    {
+      "name": "outline-10-12-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 4.1712415410001995
+    },
+    {
+      "name": "outline-10-12-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 2.1398486249963753
+    },
+    {
+      "name": "outline-100-12-glyphs-1-worker",
+      "passed": true,
+      "processWallSeconds": 7.550739542013616
+    },
+    {
+      "name": "outline-100-12-glyphs-1-native",
+      "passed": true,
+      "processWallSeconds": 6.076341749998392
+    },
+    {
+      "name": "outline-100-12-glyphs-2-worker",
+      "passed": true,
+      "processWallSeconds": 8.247039000008954
+    },
+    {
+      "name": "outline-100-12-glyphs-2-native",
+      "passed": true,
+      "processWallSeconds": 6.167471624998143
+    },
+    {
+      "name": "outline-100-12-glyphs-3-worker",
+      "passed": true,
+      "processWallSeconds": 7.9870633329992415
+    },
+    {
+      "name": "outline-100-12-glyphs-3-native",
+      "passed": true,
+      "processWallSeconds": 6.231239999993704
+    },
+    {
+      "name": "outline-100-12-glyphs-4-worker",
+      "passed": true,
+      "processWallSeconds": 7.254211874998873
+    },
+    {
+      "name": "outline-100-12-glyphs-4-native",
+      "passed": true,
+      "processWallSeconds": 5.873139291012194
+    },
+    {
+      "name": "outline-100-12-glyphs-5-worker",
+      "passed": true,
+      "processWallSeconds": 7.532467584009282
+    },
+    {
+      "name": "outline-100-12-glyphs-5-native",
+      "passed": true,
+      "processWallSeconds": 5.698706374998437
+    },
+    {
+      "name": "outline-100-12-glyphspackage-1-worker",
+      "passed": true,
+      "processWallSeconds": 7.574781124989386
+    },
+    {
+      "name": "outline-100-12-glyphspackage-1-native",
+      "passed": true,
+      "processWallSeconds": 5.798922625006526
+    },
+    {
+      "name": "outline-100-12-glyphspackage-2-worker",
+      "passed": true,
+      "processWallSeconds": 8.237998874988989
+    },
+    {
+      "name": "outline-100-12-glyphspackage-2-native",
+      "passed": true,
+      "processWallSeconds": 5.695648833003361
+    },
+    {
+      "name": "outline-100-12-glyphspackage-3-worker",
+      "passed": true,
+      "processWallSeconds": 8.484120709006675
+    },
+    {
+      "name": "outline-100-12-glyphspackage-3-native",
+      "passed": true,
+      "processWallSeconds": 5.4075417080021
+    },
+    {
+      "name": "outline-100-12-glyphspackage-4-worker",
+      "passed": true,
+      "processWallSeconds": 7.557881207991159
+    },
+    {
+      "name": "outline-100-12-glyphspackage-4-native",
+      "passed": true,
+      "processWallSeconds": 5.671580540991272
+    },
+    {
+      "name": "outline-100-12-glyphspackage-5-worker",
+      "passed": true,
+      "processWallSeconds": 7.556099791007
+    },
+    {
+      "name": "outline-100-12-glyphspackage-5-native",
+      "passed": true,
+      "processWallSeconds": 5.7778169170051115
+    }
+  ]
+}

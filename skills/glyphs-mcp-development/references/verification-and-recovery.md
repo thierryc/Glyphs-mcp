@@ -43,3 +43,12 @@ in [native iteration](native-iteration.md). A crash is failed evidence: retain
 the crash report and the last verified action. Do not claim a root cause from
 a passing retry. Resolve any risk to unrelated unsaved work before a relaunch;
 reuse installation and execution authorisation already present in the task.
+
+Advertised script jobs use the [script recovery contract](../../glyphs/references/python-scripts.md).
+On disposable fixtures, verify each recovery contract: native
+Undo/Redo and conflict-checked discard for typed jobs; verified saved baselines,
+whole-font reload, overwritten-baseline rejection and fresh document bindings
+for native scripts. Clean baselines skip Save; dirty ones save only when authorized.
+Direct native failure/cancellation does not auto-reload. Restoration clears Undo
+history and discards later unsaved edits. No script recovery covers external effects.
+Do not infer this recovery for independently executed plugin code.

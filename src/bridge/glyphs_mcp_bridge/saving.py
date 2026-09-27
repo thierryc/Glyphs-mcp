@@ -13,7 +13,7 @@ def request(value: Any, error_type) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise error_type("invalid_request", "save request must be an object")
     fields = {"saveId", "documentId", "saveMode", "previousPath", "path"}
-    if set(value) != fields:
+    if set(value) - {'reviewedGeneration'} != fields:
         raise error_type("invalid_request", "save request fields are incomplete or unexpected")
     save_id = str(value.get("saveId") or "").strip()
     document_id = str(value.get("documentId") or "").strip()
@@ -34,7 +34,13 @@ def request(value: Any, error_type) -> dict[str, Any]:
             "invalid_destination",
             "save path must be an absolute .glyphs or .glyphspackage path",
         )
+    extra = {}
+    if 'reviewedGeneration' in value:
+        if type(value['reviewedGeneration']) is not int:
+            raise error_type('invalid_request', 'reviewedGeneration must be an integer')
+        extra['reviewedGeneration'] = value['reviewedGeneration']
     return {
+        **extra,
         "saveId": save_id,
         "documentId": document_id,
         "saveMode": mode,
@@ -65,6 +71,8 @@ def preflight(core, value, error_type, *, accepting_job_id=None, generic=False):
                 "This document has an applied job; use accept_job instead",
             )
     state = core.adapter.document_state(document_id)
+    if 'reviewedGeneration' in value and state.get('generation') != value['reviewedGeneration']:
+        raise error_type('stale_document', 'document changed after Save and run review')
     if not same_path(state.get("path"), value.get("previousPath")):
         raise error_type("stale_document", "the document path changed before saving")
     if state.get("dirty") not in (True, False):

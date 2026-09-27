@@ -1,0 +1,8 @@
+{
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/native_script_harness.py\", line 133, in work\n    try:result['data']=callback(self);result['passed']=True\n                       ~~~~~~~~^^^^^^\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_typed_preparation_native.py\", line 121, in exercise\n    assert recovered == before, (name, chosen, 'selective recovery mismatch', differences(before, recovered))\n           ^^^^^^^^^^^^^^^^^^^\nAssertionError: ('foreground-components', 'worker', 'selective recovery mismatch', [{'path': '/glyphs/probe0/layers/DF5629D2-F500-4A02-A0D2-BFCD7B099619/foreground/0/nodes/0/name', 'before': None, 'after': ''}, {'path': '/glyphs/probe0/layers/DF5629D2-F500-4A02-A0D2-BFCD7B099619/foreground/0/nodes/1/name', 'before': None, 'after': ''}, {'path': '/glyphs/probe0/layers/DF5629D2-F500-4A02-A0D2-BFCD7B099619/foreground/0/nodes/2/name', 'before': None, 'after': ''}, {'path': '/glyphs/probe0/layers/DF5629D2-F500-4A02-A0D2-BFCD7B099619/foreground/1/nodes/0/name', 'before': None, 'after': ''}, {'path': '/glyphs/probe0/layers/DF5629D2-F500-4A02-A0D2-BFCD7B099619/foreground/1/nodes/1/name', 'before': None, 'after': ''}, {'path': '/glyphs/probe0/layers/DF5629D2-F500-4A02-A0D2-BFCD7B099619/foreground/1/nodes/2/name', 'before': None, 'after': ''}])\n",
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

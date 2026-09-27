@@ -16,13 +16,14 @@ function host({initialize=true, tools=true, reject=false, deferWrites=false, def
     querySelector(){return this.submit ||= new Element('button');}
     focus(){document.activeElement=this;}
   }
-  const elements=new Map(), calls=[], timers=new Map(), listeners={};let sequence=0;
+  const elements=new Map(), calls=[], timers=new Map(), listeners={};let sequence=0, now=0;
   const get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
   document={documentElement:new Element(),hidden:false,getElementById:get,createElement:t=>new Element(t),createTextNode:t=>({textContent:t}),querySelector:()=>get('main'),querySelectorAll:s=>[...elements.values()].flatMap(e=>e.querySelectorAll(s)),addEventListener:(k,f)=>listeners[k]=f};
   const parent={postMessage(message){calls.push(message);if(message.method==='ui/initialize'&&initialize)queueMicrotask(()=>dispatch({id:message.id,result:{hostCapabilities:tools?{serverTools:{}}:{},hostContext:{theme:'dark'}}}));if(message.method==='tools/call') { const read=message.params.name==='get_edit_workflow'; if (read ? deferReads : deferWrites) return; queueMicrotask(()=>dispatch(reject?{id:message.id,error:{message:'Host tool permission unavailable'}}:{id:message.id,result:{structuredContent:read?serverState:(serverState=state(4,'applied',[]))}})); }}};
   const dispatch=data=>listeners.message({source:parent,origin:'https://host.test',data:{jsonrpc:'2.0',...data}});
-  vm.runInNewContext(code,{window:{parent,addEventListener:(k,f)=>listeners[k]=f},document,Map,Promise,console,setTimeout:(callback,delay)=>{timers.set(++sequence,{callback,delay});return sequence;},clearTimeout:id=>timers.delete(id)});
-  return {get,document,calls,timers,dispatch,listeners,setState:s=>serverState=s,click:name=>get('actions').children.find(b=>b.dataset.action===name).listeners.click()};
+  vm.runInNewContext(code,{window:{parent,addEventListener:(k,f)=>listeners[k]=f},document,Map,Promise,console,performance:{now:()=>now},setTimeout:(callback,delay)=>{timers.set(++sequence,{callback,delay,at:now+delay});return sequence;},clearTimeout:id=>timers.delete(id)});
+  const advance=ms=>{now+=ms;for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.callback();}};
+  return {get,document,calls,timers,dispatch,listeners,advance,setState:s=>serverState=s,click:name=>get('actions').children.find(b=>b.dataset.action===name).listeners.click()};
 }
 const action=(name,label,destination=false)=>({action:name,label,token:'token-'+name,requiresDestination:destination});
 const state=(revision=1,value='waiting_save',actions=[action('save_continue','Save and continue'),action('save_as_continue','Save As…',true)])=>({ok:true,data:{id:'edit_example',revision,state:value,document:{id:'doc_A',familyName:'Two fonts with this name',path:'/fonts/version A.glyphs'},scope:{kind:'width_delta',glyphs:['A'],masters:['M1']},actions,message:value==='applied'?'Changes applied. Save your font to keep them.\nSaving includes the whole font.':'Preparing changes…',text:'Conversation alternative',modelContext:JSON.stringify({workflow_id:'edit_example',expected_revision:revision,state:value,actions:actions.map(a=>({action:a.action,label:a.label,action_token:a.token,requiresDestination:a.requiresDestination}))}),poll:value==='preparing'}});
@@ -75,6 +76,163 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
  polling.setState(state(5,'applied',[action('save_result','Save font')]));
  for(const t of [...polling.timers.values()])if(t.delay===1500)t.callback();await tick();
  assert.equal(JSON.parse(polling.calls.filter(m=>m.method==='ui/update-model-context').at(-1).params.content[1].text).expected_revision,5);
+ const scriptsHost=host();await tick();
+ const scriptReviewState=state(20,'waiting_run',[action('run_script','Run script'),action('cancel','Cancel')]);
+ scriptReviewState.data.scope={kind:'python_script'};scriptReviewState.data.requestFingerprint='script-one';
+ scriptReviewState.data.scriptReview={source:'print("<script>alert(1)</script>")',params:{value:'<b>literal</b>'},targets:[],entrypoint:'script'};
+ scriptReviewState.data.message='Script ready.';
+ deliver(scriptsHost,scriptReviewState);await tick();
+ assert.equal(scriptsHost.get('script-source').textContent,scriptReviewState.data.scriptReview.source);
+ assert.equal(scriptsHost.get('script-review').hidden,false);
+ assert(!scriptsHost.calls.some(m=>m.method==='tools/call'&&m.params.name==='respond_edit_workflow'),'script scriptReviewState must never auto-run');
+ await scriptsHost.click('run_script');await tick();
+ assert(scriptsHost.calls.some(m=>m.method==='tools/call'&&m.params.name==='respond_edit_workflow'));
+ const fast=host();await tick();
+ const fastState=state(21,'waiting_run',[action('save_run_script','Save and run'),action('cancel','Cancel')]);
+ fastState.data.scope={kind:'python_script'};fastState.data.requestFingerprint='script-two';
+ fastState.data.scriptReview={...scriptReviewState.data.scriptReview};
+ fastState.data.message='Save and run saves the whole font first.\nWhole-document restoration replaces all later edits.';
+ deliver(fast,fastState);await tick();
+ assert(fast.get('script-mode').textContent.includes('saved-version'));
+ assert(!fast.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ assert(fast.get('fallback').textContent.includes('Save and run'));
+ fast.click('save_run_script');await tick();
+ assert.equal(fast.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1);
+ deliver(fast,state(25,'applied',[action('restore_saved_script','Restore saved version')]));await tick();
+ assert(fast.get('fallback').textContent.includes('Restore saved version'));
+ const textOnlyFast=host({tools:false});await tick();deliver(textOnlyFast,fastState);
+ assert(textOnlyFast.get('fallback').textContent.includes('Save and run'));
+ assert(textOnlyFast.get('actions').children.every(b=>b.disabled));
+ // Script details are lazy, safe text, and cached only for the matching request.
+ const lazy=host();await tick();
+ const compact=state(30,'waiting_run',[action('run_script','Run script')]);
+ compact.data.scope={kind:'python_script'};compact.data.requestFingerprint='lazy-one';
+ deliver(lazy,compact);await tick();
+ assert.equal(lazy.get('script-source').textContent,'');
+ assert(!lazy.calls.some(m=>m.params?.arguments?.include_review));
+ const expanded=JSON.parse(JSON.stringify(compact));expanded.data.scriptReview={source:'<script>literal</script>',params:{},targets:[],entrypoint:'script'};
+ lazy.setState(expanded);lazy.get('script-review').open=true;lazy.get('script-review').listeners.toggle();await tick();
+ assert(lazy.calls.some(m=>m.params?.arguments?.include_review===true));
+ assert.equal(lazy.get('script-source').textContent,'<script>literal</script>');
+ deliver(lazy,compact);await tick();assert.equal(lazy.get('script-source').textContent,'<script>literal</script>');
+ const changed=JSON.parse(JSON.stringify(compact));changed.data.revision=31;changed.data.requestFingerprint='lazy-two';
+ deliver(lazy,changed);await tick();assert.equal(lazy.get('script-source').textContent,'');
+ assert.equal(lazy.get('script-review').open,false);
+ const whole=state(32,'applying',[]);whole.data.scope={kind:'python_script'};whole.data.entrypoint='script';
+ whole.data.job={bridgeOperation:{totalChanges:100,completedChanges:0}};
+ deliver(lazy,whole);await tick();assert(lazy.get('progress').hidden);
+ const finished=state(33,'applied',[]);finished.data.scope={kind:'python_script'};finished.data.job={changeCount:null};
+ deliver(lazy,finished);await tick();assert.equal(lazy.get('proposal').children.length,0);
+ // Loaded output and tracebacks survive compact reads for this job only.
+ const evidence=host();await tick();
+ const full=state(40,'applying',[]);full.data.scope={kind:'python_script'};full.data.requestFingerprint='evidence';full.data.jobId='job_1';
+ full.data.scriptReview={source:'print("<b>output</b>")',params:{},targets:[],entrypoint:'script'};
+ full.data.job={bridgeOperation:{scriptResult:{output:'VISIBLE_OUTPUT',executed:true}}};
+ full.data.error={code:'probe',message:'error',details:{traceback:'<script>TRACEBACK</script>'}};
+ deliver(evidence,full);await tick();
+ const small=JSON.parse(JSON.stringify(full));small.data.revision=41;delete small.data.scriptReview;
+ delete small.data.job.bridgeOperation.scriptResult.output;delete small.data.error.details;
+ deliver(evidence,small);await tick();
+ assert(evidence.get('script-output').textContent.includes('VISIBLE_OUTPUT'));
+ assert(evidence.get('script-output').textContent.includes('<script>TRACEBACK</script>'));
+ const empty=JSON.parse(JSON.stringify(small));empty.data.revision=42;
+ empty.data.job.bridgeOperation.scriptResult.output='';empty.data.error=null;
+ deliver(evidence,empty);await tick();
+ assert(!evidence.get('script-output').textContent.includes('VISIBLE_OUTPUT'));
+ assert(!evidence.get('script-output').textContent.includes('TRACEBACK'));
+ const newJob=JSON.parse(JSON.stringify(small));newJob.data.revision=43;newJob.data.jobId='job_2';
+ deliver(evidence,newJob);await tick();assert.equal(evidence.get('script-source').textContent,'');assert.equal(evidence.get('script-output').textContent,'');
+ // A completed compact result triggers one full read when details are open.
+ const completion=host();await tick();deliver(completion,full);await tick();completion.get('script-review').open=true;
+ const complete=JSON.parse(JSON.stringify(small));complete.data.revision=44;complete.data.state='applied';
+ deliver(completion,complete);await tick();
+ const finalFull=JSON.parse(JSON.stringify(complete));finalFull.data.scriptReview=full.data.scriptReview;
+ finalFull.data.job.bridgeOperation.scriptResult.output='FINAL_OUTPUT';completion.setState(finalFull);
+ for(const [id,t] of [...completion.timers])if(t.delay===0){completion.timers.delete(id);t.callback();}
+ await tick();assert(completion.get('script-output').textContent.includes('FINAL_OUTPUT'));
+ assert.equal(completion.calls.filter(m=>m.params?.arguments?.include_review).length,1);
+ deliver(completion,complete);await tick();assert(![...completion.timers.values()].some(t=>t.delay===0));
+ assert(completion.get('script-output').textContent.includes('FINAL_OUTPUT'));
+ // A visible, reconciled successful result keeps once after 30 seconds.
+ const autoState=()=>{
+   const s=state(50,'applied',[action('finish_script','Keep changes without saving'),action('wait_for_answer','Wait for my answer')]);
+   Object.assign(s.data,{scope:{kind:'python_script'},jobId:'job_auto',requestFingerprint:'auto',autoKeep:{enabled:true,delaySeconds:30,action:'finish_script'}});
+   return s;
+ };
+ const auto=host();await tick();deliver(auto,autoState());await tick();
+ assert(!auto.get('auto-keep').hidden);assert.equal(auto.get('auto-keep-progress').value,0);
+ auto.advance(29000);await tick();assert(!auto.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ assert.equal(auto.get('auto-keep-progress').value,29);
+ auto.advance(1000);await tick();
+ const autoWrites=auto.calls.filter(m=>m.params?.name==='respond_edit_workflow');
+ assert.equal(autoWrites.length,1);assert.equal(autoWrites[0].params.arguments.automatic,true);
+ assert.equal(autoWrites[0].params.arguments.action_token,'token-finish_script');
+ auto.advance(60000);await tick();assert.equal(auto.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1);
+ // A text reply or another card can opt out while this card counts down.
+ const opted=host();await tick();deliver(opted,autoState());await tick();
+ const off=autoState();off.data.revision++;off.data.autoKeep.enabled=false;off.data.autoKeep.action=null;
+ opted.setState(off);opted.advance(30000);await tick();assert(!opted.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ assert(opted.get('auto-keep').hidden);
+ const waitButton=host({deferWrites:true});await tick();deliver(waitButton,autoState());await tick();
+ waitButton.click('wait_for_answer');waitButton.advance(30000);await tick();
+ const waitWrites=waitButton.calls.filter(m=>m.params?.name==='respond_edit_workflow');
+ assert.equal(waitWrites.length,1);assert.equal(waitWrites[0].params.arguments.action_token,'token-wait_for_answer');
+ assert(!waitWrites[0].params.arguments.automatic);
+ waitButton.dispatch({id:waitWrites[0].id,result:{structuredContent:off}});await tick();waitButton.advance(60000);await tick();
+ assert.equal(waitButton.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1);
+ // A rejected Wait stays locally paused even if the server still says enabled.
+ const rejectedWait=host({deferWrites:true});await tick();deliver(rejectedWait,autoState());await tick();
+ rejectedWait.click('wait_for_answer');
+ const rejectedWrite=rejectedWait.calls.find(m=>m.params?.name==='respond_edit_workflow');
+ rejectedWait.dispatch({id:rejectedWrite.id,error:{message:'Permission rejected'}});await tick();
+ deliver(rejectedWait,autoState());await tick();rejectedWait.advance(60000);await tick();
+ assert(rejectedWait.get('auto-keep').hidden);
+ assert.equal(rejectedWait.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1);
+ const typed=host();await tick();const typedState=autoState();
+ typedState.data.scope.kind='width_delta';typedState.data.autoKeep.action='finish_edit';
+ typedState.data.actions[0]=action('finish_edit','Keep changes without saving');
+ deliver(typed,typedState);await tick();typed.advance(30000);await tick();
+ const typedWrites=typed.calls.filter(m=>m.params?.name==='respond_edit_workflow');
+ assert.equal(typedWrites.length,1);assert.equal(typedWrites[0].params.arguments.action_token,'token-finish_edit');
+ assert.equal(typedWrites[0].params.arguments.automatic,true);
+ // Hidden cards, open details, and stale requests cannot consume elapsed time.
+ const hidden=host();await tick();deliver(hidden,autoState());await tick();hidden.advance(20000);await tick();
+ hidden.document.hidden=true;hidden.listeners.visibilitychange();hidden.advance(60000);await tick();
+ assert(!hidden.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ hidden.document.hidden=false;hidden.listeners.visibilitychange();await tick();assert.equal(hidden.get('auto-keep-progress').value,0);
+ hidden.advance(10000);await tick();hidden.get('script-review').open=true;hidden.get('script-review').listeners.toggle();await tick();
+ hidden.advance(60000);await tick();assert(!hidden.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ const staleAuto=host();await tick();deliver(staleAuto,autoState());await tick();
+ const newer=autoState();newer.data.revision++;newer.data.requestFingerprint='changed';staleAuto.setState(newer);
+ staleAuto.advance(30000);await tick();assert(!staleAuto.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ assert.equal(staleAuto.get('auto-keep-progress').value,0);
+ // Generic typed Details also pause; a failed automatic dispatch is never replayed.
+ const details=host();await tick();deliver(details,typedState);await tick();
+ details.get('result-details').open=true;details.get('result-details').listeners.toggle();
+ details.advance(60000);await tick();assert(!details.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ const unknownKeep=host({deferWrites:true});await tick();deliver(unknownKeep,typedState);await tick();
+ unknownKeep.advance(30000);await tick();
+ const uncertainWrite=unknownKeep.calls.find(m=>m.params?.name==='respond_edit_workflow');
+ unknownKeep.dispatch({id:uncertainWrite.id,error:{message:'Lost response'}});await tick();
+ const nextRevision=JSON.parse(JSON.stringify(typedState));nextRevision.data.revision++;
+ deliver(unknownKeep,nextRevision);await tick();unknownKeep.advance(60000);await tick();
+ assert.equal(unknownKeep.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1);
+ // No countdown for legacy snapshots, failure, cancellation, preparation or text-only hosts.
+ for(const status of ['failed','cancelled','waiting_run','preparing','interrupted']) {
+   const h=host();await tick();const s=autoState();s.data.state=status;deliver(h,s);await tick();h.advance(60000);await tick();
+   assert(!h.calls.some(m=>m.params?.name==='respond_edit_workflow'));assert(h.get('auto-keep').hidden);
+ }
+ for(const config of [{tools:false},{deferReads:true}]) {
+   const h=host(config);await tick();deliver(h,autoState());await tick();h.advance(60000);await tick();
+   assert(!h.calls.some(m=>m.params?.name==='respond_edit_workflow'));assert(h.get('auto-keep').hidden);
+ }
+ const legacy=host();await tick();const oldAuto=autoState();delete oldAuto.data.autoKeep;deliver(legacy,oldAuto);await tick();legacy.advance(60000);await tick();
+ assert(!legacy.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ const closed=host();await tick();deliver(closed,autoState());await tick();closed.dispatch({method:'ui/resource-teardown',id:999});closed.advance(60000);await tick();
+ assert(!closed.calls.some(m=>m.params?.name==='respond_edit_workflow'));
+ const lostAuto=host({deferWrites:true});await tick();deliver(lostAuto,autoState());await tick();lostAuto.advance(30000);await tick();
+ lostAuto.advance(120000);await tick();lostAuto.advance(60000);await tick();
+ assert.equal(lostAuto.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1,'never replay a timed-out automatic action');
  if (process.argv[3]) {
    const wording=host(); await tick();
    for (const payload of JSON.parse(fs.readFileSync(process.argv[3],'utf8'))) {

@@ -1,0 +1,6 @@
+[
+  {"prompt":"Add 8 units to the widths; wait for my answer afterward", "kind":"width_delta", "auto_keep":false, "finishAction":"finish_edit", "recoveryAction":"discard"},
+  {"prompt":"Move these background nodes by 0.25 units", "kind":"outline_edit", "auto_keep":true, "finishAction":"finish_edit", "recoveryAction":"discard"},
+  {"prompt":"Run this font script and let me decide afterward", "kind":"python_script", "auto_keep":false, "finishAction":"finish_script", "recoveryAction":"restore_saved_script"},
+  {"prompt":"Apply the approved Dimensions values", "kind":"dimensions_edit", "auto_keep":true, "finishAction":"finish_edit", "recoveryAction":"discard"}
+]

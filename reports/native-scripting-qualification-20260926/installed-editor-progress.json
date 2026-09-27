@@ -1,0 +1,1722 @@
+{
+  "installedStatus": {
+    "ok": true,
+    "data": {
+      "protocol": 1,
+      "sidecarVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.7",
+        "channel": "beta",
+        "betaNumber": 7,
+        "installerBuild": 49
+      },
+      "runtimeId": "2.0.0-beta.7+152424e6c9a0",
+      "codeHash": "sha256:152424e6c9a02e230a06634cb985edae3bfcabd7748e59003a72fa56aadd2979",
+      "identityEvidence": "initialization-time file fingerprint",
+      "interface": "glyphs-mcp-sidecar",
+      "interfaceVersion": 1,
+      "jobKinds": [
+        "width_delta",
+        "spacing",
+        "kerning_collision",
+        "start_nodes",
+        "slant",
+        "python_script",
+        "outline_edit",
+        "native_action",
+        "dimensions_edit",
+        "feature_compile",
+        "font_export"
+      ],
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.remove-node.v1",
+        "outline.background.edit.v1",
+        "native.action.v1",
+        "master.dimensions.edit.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1",
+        "script.native.v1"
+      ],
+      "tools": [
+        "get_status",
+        "list_documents",
+        "read_entities",
+        "start_job",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "bridge": {
+        "reachable": true,
+        "protocol": 1,
+        "bridgeVersion": "2.0.0",
+        "release": {
+          "version": "2.0.0",
+          "releaseVersion": "2.0.0-beta.7",
+          "channel": "beta",
+          "betaNumber": 7,
+          "installerBuild": 49
+        },
+        "runtimeId": "2.0.0-beta.7+d926ef81438b",
+        "codeHash": "sha256:d926ef81438b1f0f7d1ef5417849890a882882a40736dc3cab5e0c451778e172",
+        "identityEvidence": "initialization-time file fingerprint",
+        "host": {
+          "identifier": "com.GeorgSeifert.Glyphs4",
+          "version": "4.1",
+          "build": "4107"
+        },
+        "readCapabilities": [
+          "master.read.exact.v1",
+          "masters.list.v1",
+          "layer.read.exact.v1",
+          "selection.nodes.native.v1",
+          "selection.context.v1",
+          "document.context.v1",
+          "glyphs.list.v1",
+          "layers.list.v1",
+          "kerning.groups.v1",
+          "kerning.pairs.v1",
+          "master.properties.v1",
+          "paths.list.v1",
+          "path.geometry.v1",
+          "outline.background.read.v1",
+          "features.read.v1",
+          "instances.read.v1",
+          "master.dimensions.read.v1"
+        ],
+        "writeCapabilities": [
+          "outline.edit.v1",
+          "outline.background.edit.v1",
+          "outline.remove-node.v1",
+          "master.dimensions.edit.v1",
+          "native.action.v1"
+        ],
+        "nativeActions": [
+          "add_extremes",
+          "add_missing_anchors",
+          "align_components",
+          "cleanup_paths",
+          "connect_open_paths",
+          "correct_path_direction",
+          "decompose_components",
+          "decompose_corners",
+          "make_components",
+          "reinterpolate",
+          "remove_overlap",
+          "round_coordinates",
+          "set_glyph_color",
+          "swap_foreground_background",
+          "update_automatic_feature_block",
+          "update_features",
+          "update_glyph_info",
+          "update_metrics"
+        ],
+        "jobCapabilities": [
+          "feature.compile.live.v1",
+          "script.native.v1"
+        ],
+        "activity": "ready",
+        "activeOperations": 0,
+        "companions": [
+          {
+            "protocol": 1,
+            "id": "curve-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "curve.measure",
+              "curve.overlay"
+            ]
+          },
+          {
+            "protocol": 1,
+            "id": "reference-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "reference.file",
+              "reference.git",
+              "reference.github",
+              "reference.overlay",
+              "reference.saved"
+            ]
+          }
+        ]
+      },
+      "worker": {
+        "available": true,
+        "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+        "application": "/Applications/Glyphs 4.app",
+        "plugins": "disabled",
+        "processModel": "one_shot",
+        "executions": [],
+        "jobCapabilities": [
+          "feature.compile.saved.v1",
+          "font.export.static.v1",
+          "font.export.variable.v1",
+          "font.export.web.v1",
+          "font.verify.shaping.v1",
+          "font.verify.tables.v1"
+        ]
+      },
+      "controlProtocol": 1,
+      "workflowCapabilities": [
+        "edit.workflow.v1"
+      ],
+      "activity": {
+        "jobs": [
+          {
+            "jobId": "job_5d0389e067584d729b89eac332db8581",
+            "document": "Dactylotype Editor Test glyphs",
+            "kind": "python_script",
+            "phase": "discarded",
+            "startedAt": 1790448202.705225,
+            "finishedAt": 1790448202.705236,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_481d0a616f2b449c9e04d5b3f69ec50f",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "kerning_collision",
+            "phase": "discarded",
+            "startedAt": 1790445395.2527292,
+            "finishedAt": 1790445395.2527711,
+            "completed": 2,
+            "total": 2,
+            "message": null
+          },
+          {
+            "jobId": "job_c281d59ea18e495a99ba2a05c64397fb",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "kerning_collision",
+            "phase": "discarded",
+            "startedAt": 1790445089.437053,
+            "finishedAt": 1790445089.437057,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_bf1fc6bf097a4f51ac2f88d98988ebc8",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "discarded",
+            "startedAt": 1790445022.876653,
+            "finishedAt": 1790445022.87668,
+            "completed": 6,
+            "total": 6,
+            "message": null
+          },
+          {
+            "jobId": "job_a79bc1ef1bd84eecba632a9d1ad4c478",
+            "document": "Dactylotype MCP Task Test",
+            "kind": "spacing",
+            "phase": "discarded",
+            "startedAt": 1790444831.242441,
+            "finishedAt": 1790444831.2424479,
+            "completed": null,
+            "total": null,
+            "message": null
+          }
+        ],
+        "activeCount": 0,
+        "moreCount": 0
+      },
+      "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+    }
+  },
+  "editorEvidence": [
+    {
+      "name": "path run",
+      "response": {
+        "ok": true,
+        "data": {
+          "id": "edit_4ae4f45797754c31bb4662be686c72b1",
+          "revision": 9,
+          "document": {
+            "id": "doc_1ff321d4f2c14aef82e589a33d904afb",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+            "dirty": false,
+            "generation": 0,
+            "isCurrent": true,
+            "familyName": "Dactylotype Editor Test glyphs"
+          },
+          "mode": "apply",
+          "state": "waiting_run",
+          "jobId": "job_5d0389e067584d729b89eac332db8581",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_5d0389e067584d729b89eac332db8581",
+            "status": "ready",
+            "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font",
+            "resultKind": "script",
+            "changeCount": null,
+            "report": {
+              "targetCount": 1,
+              "skippedCount": 0,
+              "sample": []
+            },
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": null,
+            "activity": {
+              "jobId": "job_5d0389e067584d729b89eac332db8581",
+              "document": "Dactylotype Editor Test glyphs",
+              "kind": "python_script",
+              "phase": "ready",
+              "startedAt": 1790448019.391212,
+              "finishedAt": 1790448019.391228,
+              "completed": null,
+              "total": null,
+              "message": null
+            },
+            "message": null
+          },
+          "error": {
+            "code": "document_busy",
+            "message": "resolve outstanding MCP mutations before native execution"
+          },
+          "receipt": null,
+          "reviewInConversation": false,
+          "savedVersion": null,
+          "scope": {
+            "kind": "python_script",
+            "glyphs": [],
+            "glyphCount": 0,
+            "masters": null,
+            "targets": [
+              {
+                "glyph": "o",
+                "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                "surface": "foreground"
+              }
+            ]
+          },
+          "requestFingerprint": "sha256:8f2d976e83e9036fbf3a0b742e97ea80c450c853d583c766de9995e158ed798f",
+          "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font",
+          "entrypoint": "per_target",
+          "actions": [
+            {
+              "action": "run_script",
+              "label": "Run script",
+              "token": "aaf077f805806defe5994240421ac8707d23dd42e770df58024e5d461dbdc289",
+              "requiresDestination": false
+            },
+            {
+              "action": "cancel",
+              "label": "Cancel",
+              "token": "897a1e7ae08c5c264eecba2a9ac13ac15a5d2f405c6e5be433a10f2fd5d14440",
+              "requiresDestination": false
+            }
+          ],
+          "message": "Script ready.",
+          "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nScript ready.\nOperation: python script\nIntended change: Move one Regular o node by +7.25, -3.5 on the disposable test font\nScope: 1 resolved surfaces; 0 skipped.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Run script; Cancel. You can reply in ordinary language.\nDetails: resolve outstanding MCP mutations before native execution",
+          "poll": false,
+          "modelContext": "{\"workflow_id\":\"edit_4ae4f45797754c31bb4662be686c72b1\",\"expected_revision\":9,\"document_id\":\"doc_1ff321d4f2c14aef82e589a33d904afb\",\"state\":\"waiting_run\",\"poll\":false,\"requestFingerprint\":\"sha256:8f2d976e83e9036fbf3a0b742e97ea80c450c853d583c766de9995e158ed798f\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"run_script\",\"label\":\"Run script\",\"action_token\":\"aaf077f805806defe5994240421ac8707d23dd42e770df58024e5d461dbdc289\",\"requiresDestination\":false},{\"action\":\"cancel\",\"label\":\"Cancel\",\"action_token\":\"897a1e7ae08c5c264eecba2a9ac13ac15a5d2f405c6e5be433a10f2fd5d14440\",\"requiresDestination\":false}]}"
+        }
+      },
+      "ms": 4913
+    },
+    {
+      "name": "Keep path task",
+      "applied": {
+        "id": "edit_98a29fef369e4993b84915074d7322f3",
+        "revision": 14,
+        "document": {
+          "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "dirty": true,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Dactylotype Editor Test glyphs"
+        },
+        "mode": "apply",
+        "state": "applied",
+        "jobId": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+          "status": "applied",
+          "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 1,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+            "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+            "status": "applied",
+            "completedChanges": 1,
+            "totalChanges": 1,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "output": "node 824.125 -23.453\n",
+              "entrypoint": "per_target",
+              "executionSucceeded": true,
+              "changesVerified": false,
+              "executedTargets": 1,
+              "totalTargets": 1,
+              "documentAfter": {
+                "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+                "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+                "dirty": true,
+                "generation": 0
+              }
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+            "document": "Dactylotype Editor Test glyphs",
+            "kind": "python_script",
+            "phase": "applied",
+            "startedAt": 1790448340.5563462,
+            "finishedAt": 1790448340.5563798,
+            "completed": 1,
+            "total": 1,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": {
+          "available": true,
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "sourceHash": "sha256:bec38efd8ca3d72497fe11dd5f5aa37ace5b370c0ab018be74c0dd6edae8ce28",
+          "generation": 0,
+          "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+        },
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            }
+          ]
+        },
+        "requestFingerprint": "sha256:8f2d976e83e9036fbf3a0b742e97ea80c450c853d583c766de9995e158ed798f",
+        "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font",
+        "entrypoint": "per_target",
+        "scriptReview": {
+          "source": "def run(layer, params, context):\n    n=layer.paths[0].nodes[0]\n    n.position=(n.position.x+params['dx'],n.position.y+params['dy'])\n    print('node', n.position.x, n.position.y)",
+          "params": {
+            "dx": 7.25,
+            "dy": -3.5
+          },
+          "entrypoint": "per_target",
+          "targets": [
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            }
+          ],
+          "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font"
+        },
+        "actions": [
+          {
+            "action": "finish_script",
+            "label": "Keep changes without saving",
+            "token": "8c54cf96afc2b92eeeb7fe9ce68c934accbcd7b00f5cd73b79653d35646d2ffb",
+            "requiresDestination": false
+          },
+          {
+            "action": "save_result",
+            "label": "Save font",
+            "token": "f0e8103a2e670bc958d6567dbf32d52212755b7b1d3f8d599d7cdf6820148c00",
+            "requiresDestination": false
+          },
+          {
+            "action": "restore_saved_script",
+            "label": "Restore saved version",
+            "token": "1e0a4914fc892ebd77335a39a16f7557da6818204d0c3ccb15b1b17f00004cb7",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Move one Regular o node by +7.25, -3.5 on the disposable test font\nScope: 1 resolved surfaces; 0 skipped.\nCompleted callbacks: 1 / 1.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"def run(layer, params, context):\\n    n=layer.paths[0].nodes[0]\\n    n.position=(n.position.x+params['dx'],n.position.y+params['dy'])\\n    print('node', n.position.x, n.position.y)\", \"params\": {\"dx\": 7.25, \"dy\": -3.5}, \"entrypoint\": \"per_target\", \"targets\": [{\"glyph\": \"o\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}], \"summary\": \"Move one Regular o node by +7.25, -3.5 on the disposable test font\"}\nScript output (text): \"node 824.125 -23.453\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_98a29fef369e4993b84915074d7322f3\",\"expected_revision\":14,\"document_id\":\"doc_04cd2733e84a4e1ca4d1326c1e2a187b\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:8f2d976e83e9036fbf3a0b742e97ea80c450c853d583c766de9995e158ed798f\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"8c54cf96afc2b92eeeb7fe9ce68c934accbcd7b00f5cd73b79653d35646d2ffb\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"f0e8103a2e670bc958d6567dbf32d52212755b7b1d3f8d599d7cdf6820148c00\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"1e0a4914fc892ebd77335a39a16f7557da6818204d0c3ccb15b1b17f00004cb7\",\"requiresDestination\":false}]}"
+      },
+      "next": {
+        "id": "edit_809bc76b6b1843d1a5df2cace263d375",
+        "revision": 3,
+        "document": {
+          "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "dirty": true,
+          "generation": 2,
+          "isCurrent": true,
+          "familyName": "Dactylotype Editor Test glyphs"
+        },
+        "mode": "apply",
+        "state": "preparing",
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_2545bf640dfb48e7ba4502d31b0c2490",
+          "status": "preparing",
+          "summary": null,
+          "resultKind": "mutation",
+          "changeCount": null,
+          "report": {},
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": null,
+          "activity": {
+            "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+            "document": "Dactylotype Editor Test glyphs",
+            "kind": "python_script",
+            "phase": "preparing",
+            "startedAt": 1790448442.5930612,
+            "finishedAt": null,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "glyph": "H",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "n",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            }
+          ]
+        },
+        "requestFingerprint": "sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b",
+        "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+        "entrypoint": "per_target",
+        "warning": "This script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.",
+        "actions": [
+          {
+            "action": "cancel",
+            "label": "Cancel preparation",
+            "token": "c74e511febe87c97c30e3571450d30d59c5a341551fb7773cfb985ed71d57eb6",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Validating script and resolving targets…",
+        "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nValidating script and resolving targets…\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\nScope: pending resolved surfaces; 0 skipped.\nThis script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Cancel preparation. You can reply in ordinary language.",
+        "poll": true,
+        "modelContext": "{\"workflow_id\":\"edit_809bc76b6b1843d1a5df2cace263d375\",\"expected_revision\":3,\"document_id\":\"doc_04cd2733e84a4e1ca4d1326c1e2a187b\",\"state\":\"preparing\",\"poll\":true,\"requestFingerprint\":\"sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"cancel\",\"label\":\"Cancel preparation\",\"action_token\":\"c74e511febe87c97c30e3571450d30d59c5a341551fb7773cfb985ed71d57eb6\",\"requiresDestination\":false}]}"
+      },
+      "before": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1100,
+              "outlineHash": "sha256:9ef73922d28c854740bd2a7cf9e0e46b25d0790f3310f1ca5fe2ad1cdf2045ab",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "file dirty Save and run + restore",
+      "before": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1100,
+              "outlineHash": "sha256:9ef73922d28c854740bd2a7cf9e0e46b25d0790f3310f1ca5fe2ad1cdf2045ab",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "after": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1380.43,
+              "outlineHash": "sha256:a5b7262a651d1e201fa9776c6b164ffd455457e03aa534b29579b5df274ba264",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1171.53625,
+              "outlineHash": "sha256:f83a9635bcd1feb5bfcd495ac79f453045443576860588341dd20e41531de41e",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1120.75,
+              "outlineHash": "sha256:623ddb7f50250fb2cd81d4525f669961db595639cdaf54eb63d1c2f65ad3c387",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "applied": {
+        "id": "edit_809bc76b6b1843d1a5df2cace263d375",
+        "revision": 17,
+        "document": {
+          "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "dirty": true,
+          "generation": 3,
+          "isCurrent": true,
+          "familyName": "Dactylotype Editor Test glyphs"
+        },
+        "mode": "apply",
+        "state": "applied",
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_2545bf640dfb48e7ba4502d31b0c2490",
+          "status": "applied",
+          "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 3,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+            "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+            "status": "applied",
+            "completedChanges": 3,
+            "totalChanges": 3,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "output": "H 1380.43\nn 1171.53625\no 1120.75\n",
+              "entrypoint": "per_target",
+              "executionSucceeded": true,
+              "changesVerified": false,
+              "executedTargets": 3,
+              "totalTargets": 3,
+              "documentAfter": {
+                "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+                "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+                "dirty": true,
+                "generation": 2
+              }
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+            "document": "Dactylotype Editor Test glyphs",
+            "kind": "python_script",
+            "phase": "applied",
+            "startedAt": 1790448463.081929,
+            "finishedAt": 1790448463.081963,
+            "completed": 3,
+            "total": 3,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_f1705526200a47d680f2d3b6a3b72f34",
+          "jobId": null,
+          "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:bec38efd8ca3d72497fe11dd5f5aa37ace5b370c0ab018be74c0dd6edae8ce28",
+          "sourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790448462.5484679
+        },
+        "reviewInConversation": false,
+        "savedVersion": {
+          "available": true,
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "sourceHash": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+          "generation": 3,
+          "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+        },
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "glyph": "H",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "n",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            }
+          ]
+        },
+        "requestFingerprint": "sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b",
+        "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+        "entrypoint": "per_target",
+        "scriptReview": {
+          "source": "def run(layer, params, context):\n    for path in layer.paths:\n        for node in path.nodes:\n            node.position=(node.position.x+params['dx'], node.position.y)\n    for component in layer.components:\n        t=list(component.transform);t[4]+=params['dx'];component.transform=tuple(t)\n    for anchor in layer.anchors:\n        anchor.position=(anchor.position.x+params['dx'],anchor.position.y)\n    layer.width+=params['advance']\n    print(context['glyph'],layer.width)\n",
+          "params": {
+            "advance": 20.75,
+            "dx": 12.5
+          },
+          "entrypoint": "per_target",
+          "targets": [
+            {
+              "glyph": "H",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "n",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            }
+          ],
+          "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font"
+        },
+        "actions": [
+          {
+            "action": "finish_script",
+            "label": "Keep changes without saving",
+            "token": "caa6ba3835445ef82d5247789832a1a7f4446db2cb7e26e385e02991b7714dbc",
+            "requiresDestination": false
+          },
+          {
+            "action": "save_result",
+            "label": "Save font",
+            "token": "3631f811117405744b25d1c04530ec221f66baf644f8f866221a2b5304b81806",
+            "requiresDestination": false
+          },
+          {
+            "action": "restore_saved_script",
+            "label": "Restore saved version",
+            "token": "06fff2e7e6a55fcd62d0134ba234af3a4b9e50b5ca52fba9ab4c2ab10e402f84",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\nScope: 3 resolved surfaces; 0 skipped.\nCompleted callbacks: 3 / 3.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"def run(layer, params, context):\\n    for path in layer.paths:\\n        for node in path.nodes:\\n            node.position=(node.position.x+params['dx'], node.position.y)\\n    for component in layer.components:\\n        t=list(component.transform);t[4]+=params['dx'];component.transform=tuple(t)\\n    for anchor in layer.anchors:\\n        anchor.position=(anchor.position.x+params['dx'],anchor.position.y)\\n    layer.width+=params['advance']\\n    print(context['glyph'],layer.width)\\n\", \"params\": {\"advance\": 20.75, \"dx\": 12.5}, \"entrypoint\": \"per_target\", \"targets\": [{\"glyph\": \"H\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}, {\"glyph\": \"n\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}, {\"glyph\": \"o\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}], \"summary\": \"Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\"}\nScript output (text): \"H 1380.43\\nn 1171.53625\\no 1120.75\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_809bc76b6b1843d1a5df2cace263d375\",\"expected_revision\":17,\"document_id\":\"doc_04cd2733e84a4e1ca4d1326c1e2a187b\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"caa6ba3835445ef82d5247789832a1a7f4446db2cb7e26e385e02991b7714dbc\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"3631f811117405744b25d1c04530ec221f66baf644f8f866221a2b5304b81806\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"06fff2e7e6a55fcd62d0134ba234af3a4b9e50b5ca52fba9ab4c2ab10e402f84\",\"requiresDestination\":false}]}"
+      },
+      "restored": {
+        "id": "edit_809bc76b6b1843d1a5df2cace263d375",
+        "revision": 21,
+        "document": {
+          "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "dirty": false,
+          "generation": 12
+        },
+        "mode": "apply",
+        "state": "discarded",
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_2545bf640dfb48e7ba4502d31b0c2490",
+          "status": "discarded",
+          "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 3,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+            "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+            "status": "discarded",
+            "completedChanges": 3,
+            "totalChanges": 3,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "entrypoint": "per_target",
+              "executionSucceeded": true,
+              "changesVerified": false,
+              "executedTargets": 3,
+              "totalTargets": 3,
+              "documentAfter": {
+                "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+                "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+                "dirty": false,
+                "generation": 12
+              },
+              "savedVersionRestored": true
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+            "document": "Dactylotype Editor Test glyphs",
+            "kind": "python_script",
+            "phase": "discarded",
+            "startedAt": 1790448486.0023758,
+            "finishedAt": 1790448486.002468,
+            "completed": 3,
+            "total": 3,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_f1705526200a47d680f2d3b6a3b72f34",
+          "jobId": null,
+          "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:bec38efd8ca3d72497fe11dd5f5aa37ace5b370c0ab018be74c0dd6edae8ce28",
+          "sourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790448462.5484679
+        },
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "glyph": "H",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "n",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            },
+            {
+              "glyph": "o",
+              "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+              "surface": "foreground"
+            }
+          ]
+        },
+        "requestFingerprint": "sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b",
+        "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+        "entrypoint": "per_target",
+        "actions": [],
+        "message": "Saved version restored. Subsequent unsaved edits were replaced; external effects remain.",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Untitled font — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nSaved version restored. Subsequent unsaved edits were replaced; external effects remain.\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\nScope: 3 resolved surfaces; 0 skipped.\nCompleted callbacks: 3 / 3.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_809bc76b6b1843d1a5df2cace263d375\",\"expected_revision\":21,\"document_id\":\"doc_4e2118cdd9f94a4684bc5f99f9e93d4f\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b\",\"blockingWorkflowId\":null,\"actions\":[]}"
+      }
+    },
+    {
+      "name": "file restored spacing exact readback",
+      "readback": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "H",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1359.68,
+              "outlineHash": "sha256:f0429f3e32d96904a202b52f713eded1d2c4230937479c662ce856a9777e4ae5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "n",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1150.78625,
+              "outlineHash": "sha256:08e51a386562128562e12eaf66afefe43ab62e33b6200bf85f56b1cd997ee7d5",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "o",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1100,
+              "outlineHash": "sha256:9ef73922d28c854740bd2a7cf9e0e46b25d0790f3310f1ca5fe2ad1cdf2045ab",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          },
+          {
+            "entity": {
+              "kind": "layer",
+              "glyph": "A",
+              "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+            },
+            "values": {
+              "width": 1394.37271,
+              "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+              "leftMetricsKey": null,
+              "rightMetricsKey": null,
+              "widthMetricsKey": null
+            }
+          }
+        ]
+      },
+      "equalsBefore": true,
+      "nativeUndoDisabled": true
+    }
+  ],
+  "manualContinuation": {
+    "id": "edit_a3bc631bc3754009afe20c9d0752aecc",
+    "revision": 9,
+    "document": {
+      "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirty": true,
+      "generation": 12,
+      "isCurrent": true,
+      "familyName": "Dactylotype Editor Test glyphs"
+    },
+    "mode": "apply",
+    "state": "waiting_manual",
+    "jobId": null,
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": null,
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": []
+    },
+    "requestFingerprint": "sha256:ff3aa9d428aa9f4edc826d10e7745b7f580a66d27280b36e8bf62da2cf08d277",
+    "summary": "Set Regular A/V to -60.25 and T/o to -45.5 on the disposable font",
+    "entrypoint": "script",
+    "actions": [
+      {
+        "action": "check_continue",
+        "label": "Check and continue",
+        "token": "b47fc425564e400c7174feb0a6635684ba9d9cd151c38e304153d0ad3e3805ea",
+        "requiresDestination": false
+      },
+      {
+        "action": "cancel",
+        "label": "Cancel",
+        "token": "56ee95db8263b0b5290598b80c41381fd3e759db6ea00db159de3d16206398a9",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Save your font in Glyphs, then continue here.\nChoose Check and continue once you have saved.",
+    "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nSave your font in Glyphs, then continue here.\nChoose Check and continue once you have saved.\nOperation: python script\nIntended change: Set Regular A/V to -60.25 and T/o to -45.5 on the disposable font\nScope: pending resolved surfaces; 0 skipped.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Check and continue; Cancel. You can reply in ordinary language.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_a3bc631bc3754009afe20c9d0752aecc\",\"expected_revision\":9,\"document_id\":\"doc_4e2118cdd9f94a4684bc5f99f9e93d4f\",\"state\":\"waiting_manual\",\"poll\":false,\"requestFingerprint\":\"sha256:ff3aa9d428aa9f4edc826d10e7745b7f580a66d27280b36e8bf62da2cf08d277\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"check_continue\",\"label\":\"Check and continue\",\"action_token\":\"b47fc425564e400c7174feb0a6635684ba9d9cd151c38e304153d0ad3e3805ea\",\"requiresDestination\":false},{\"action\":\"cancel\",\"label\":\"Cancel\",\"action_token\":\"56ee95db8263b0b5290598b80c41381fd3e759db6ea00db159de3d16206398a9\",\"requiresDestination\":false}]}"
+  },
+  "pathApplied": {
+    "id": "edit_98a29fef369e4993b84915074d7322f3",
+    "revision": 14,
+    "document": {
+      "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Dactylotype Editor Test glyphs"
+    },
+    "mode": "apply",
+    "state": "applied",
+    "jobId": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+      "status": "applied",
+      "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 1,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+        "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+        "status": "applied",
+        "completedChanges": 1,
+        "totalChanges": 1,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": {
+          "executed": true,
+          "output": "node 824.125 -23.453\n",
+          "entrypoint": "per_target",
+          "executionSucceeded": true,
+          "changesVerified": false,
+          "executedTargets": 1,
+          "totalTargets": 1,
+          "documentAfter": {
+            "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+            "dirty": true,
+            "generation": 0
+          }
+        },
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_62d4dbc432c342c2b97e9438fe7e07c7",
+        "document": "Dactylotype Editor Test glyphs",
+        "kind": "python_script",
+        "phase": "applied",
+        "startedAt": 1790448340.5563462,
+        "finishedAt": 1790448340.5563798,
+        "completed": 1,
+        "total": 1,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": {
+      "available": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "sourceHash": "sha256:bec38efd8ca3d72497fe11dd5f5aa37ace5b370c0ab018be74c0dd6edae8ce28",
+      "generation": 0,
+      "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+    },
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": [
+        {
+          "glyph": "o",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        }
+      ]
+    },
+    "requestFingerprint": "sha256:8f2d976e83e9036fbf3a0b742e97ea80c450c853d583c766de9995e158ed798f",
+    "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font",
+    "entrypoint": "per_target",
+    "scriptReview": {
+      "source": "def run(layer, params, context):\n    n=layer.paths[0].nodes[0]\n    n.position=(n.position.x+params['dx'],n.position.y+params['dy'])\n    print('node', n.position.x, n.position.y)",
+      "params": {
+        "dx": 7.25,
+        "dy": -3.5
+      },
+      "entrypoint": "per_target",
+      "targets": [
+        {
+          "glyph": "o",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        }
+      ],
+      "summary": "Move one Regular o node by +7.25, -3.5 on the disposable test font"
+    },
+    "actions": [
+      {
+        "action": "finish_script",
+        "label": "Keep changes without saving",
+        "token": "8c54cf96afc2b92eeeb7fe9ce68c934accbcd7b00f5cd73b79653d35646d2ffb",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result",
+        "label": "Save font",
+        "token": "f0e8103a2e670bc958d6567dbf32d52212755b7b1d3f8d599d7cdf6820148c00",
+        "requiresDestination": false
+      },
+      {
+        "action": "restore_saved_script",
+        "label": "Restore saved version",
+        "token": "1e0a4914fc892ebd77335a39a16f7557da6818204d0c3ccb15b1b17f00004cb7",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+    "verification": "Intended changes have not been verified by the wrapper.",
+    "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Move one Regular o node by +7.25, -3.5 on the disposable test font\nScope: 1 resolved surfaces; 0 skipped.\nCompleted callbacks: 1 / 1.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"def run(layer, params, context):\\n    n=layer.paths[0].nodes[0]\\n    n.position=(n.position.x+params['dx'],n.position.y+params['dy'])\\n    print('node', n.position.x, n.position.y)\", \"params\": {\"dx\": 7.25, \"dy\": -3.5}, \"entrypoint\": \"per_target\", \"targets\": [{\"glyph\": \"o\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}], \"summary\": \"Move one Regular o node by +7.25, -3.5 on the disposable test font\"}\nScript output (text): \"node 824.125 -23.453\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_98a29fef369e4993b84915074d7322f3\",\"expected_revision\":14,\"document_id\":\"doc_04cd2733e84a4e1ca4d1326c1e2a187b\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:8f2d976e83e9036fbf3a0b742e97ea80c450c853d583c766de9995e158ed798f\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"8c54cf96afc2b92eeeb7fe9ce68c934accbcd7b00f5cd73b79653d35646d2ffb\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"f0e8103a2e670bc958d6567dbf32d52212755b7b1d3f8d599d7cdf6820148c00\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"1e0a4914fc892ebd77335a39a16f7557da6818204d0c3ccb15b1b17f00004cb7\",\"requiresDestination\":false}]}"
+  },
+  "spacingApplied": {
+    "id": "edit_809bc76b6b1843d1a5df2cace263d375",
+    "revision": 17,
+    "document": {
+      "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirty": true,
+      "generation": 3,
+      "isCurrent": true,
+      "familyName": "Dactylotype Editor Test glyphs"
+    },
+    "mode": "apply",
+    "state": "applied",
+    "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_2545bf640dfb48e7ba4502d31b0c2490",
+      "status": "applied",
+      "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 3,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+        "status": "applied",
+        "completedChanges": 3,
+        "totalChanges": 3,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": {
+          "executed": true,
+          "output": "H 1380.43\nn 1171.53625\no 1120.75\n",
+          "entrypoint": "per_target",
+          "executionSucceeded": true,
+          "changesVerified": false,
+          "executedTargets": 3,
+          "totalTargets": 3,
+          "documentAfter": {
+            "id": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+            "dirty": true,
+            "generation": 2
+          }
+        },
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "document": "Dactylotype Editor Test glyphs",
+        "kind": "python_script",
+        "phase": "applied",
+        "startedAt": 1790448463.081929,
+        "finishedAt": 1790448463.081963,
+        "completed": 3,
+        "total": 3,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": {
+      "saveId": "save_f1705526200a47d680f2d3b6a3b72f34",
+      "jobId": null,
+      "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:bec38efd8ca3d72497fe11dd5f5aa37ace5b370c0ab018be74c0dd6edae8ce28",
+      "sourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790448462.5484679
+    },
+    "reviewInConversation": false,
+    "savedVersion": {
+      "available": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "sourceHash": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+      "generation": 3,
+      "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+    },
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": [
+        {
+          "glyph": "H",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        },
+        {
+          "glyph": "n",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        },
+        {
+          "glyph": "o",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        }
+      ]
+    },
+    "requestFingerprint": "sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b",
+    "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+    "entrypoint": "per_target",
+    "scriptReview": {
+      "source": "def run(layer, params, context):\n    for path in layer.paths:\n        for node in path.nodes:\n            node.position=(node.position.x+params['dx'], node.position.y)\n    for component in layer.components:\n        t=list(component.transform);t[4]+=params['dx'];component.transform=tuple(t)\n    for anchor in layer.anchors:\n        anchor.position=(anchor.position.x+params['dx'],anchor.position.y)\n    layer.width+=params['advance']\n    print(context['glyph'],layer.width)\n",
+      "params": {
+        "advance": 20.75,
+        "dx": 12.5
+      },
+      "entrypoint": "per_target",
+      "targets": [
+        {
+          "glyph": "H",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        },
+        {
+          "glyph": "n",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        },
+        {
+          "glyph": "o",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        }
+      ],
+      "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font"
+    },
+    "actions": [
+      {
+        "action": "finish_script",
+        "label": "Keep changes without saving",
+        "token": "caa6ba3835445ef82d5247789832a1a7f4446db2cb7e26e385e02991b7714dbc",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result",
+        "label": "Save font",
+        "token": "3631f811117405744b25d1c04530ec221f66baf644f8f866221a2b5304b81806",
+        "requiresDestination": false
+      },
+      {
+        "action": "restore_saved_script",
+        "label": "Restore saved version",
+        "token": "06fff2e7e6a55fcd62d0134ba234af3a4b9e50b5ca52fba9ab4c2ab10e402f84",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Script finished. Verify the intended result in Glyphs. The font has unsaved edits.",
+    "verification": "Intended changes have not been verified by the wrapper.",
+    "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nScript finished. Verify the intended result in Glyphs. The font has unsaved edits.\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\nScope: 3 resolved surfaces; 0 skipped.\nCompleted callbacks: 3 / 3.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"def run(layer, params, context):\\n    for path in layer.paths:\\n        for node in path.nodes:\\n            node.position=(node.position.x+params['dx'], node.position.y)\\n    for component in layer.components:\\n        t=list(component.transform);t[4]+=params['dx'];component.transform=tuple(t)\\n    for anchor in layer.anchors:\\n        anchor.position=(anchor.position.x+params['dx'],anchor.position.y)\\n    layer.width+=params['advance']\\n    print(context['glyph'],layer.width)\\n\", \"params\": {\"advance\": 20.75, \"dx\": 12.5}, \"entrypoint\": \"per_target\", \"targets\": [{\"glyph\": \"H\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}, {\"glyph\": \"n\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}, {\"glyph\": \"o\", \"layer\": \"0578215A-7423-43EB-8AD4-4C95A1C78DFA\", \"surface\": \"foreground\"}], \"summary\": \"Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\"}\nScript output (text): \"H 1380.43\\nn 1171.53625\\no 1120.75\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_809bc76b6b1843d1a5df2cace263d375\",\"expected_revision\":17,\"document_id\":\"doc_04cd2733e84a4e1ca4d1326c1e2a187b\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"caa6ba3835445ef82d5247789832a1a7f4446db2cb7e26e385e02991b7714dbc\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"3631f811117405744b25d1c04530ec221f66baf644f8f866221a2b5304b81806\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"06fff2e7e6a55fcd62d0134ba234af3a4b9e50b5ca52fba9ab4c2ab10e402f84\",\"requiresDestination\":false}]}"
+  },
+  "spacingRestored": {
+    "id": "edit_809bc76b6b1843d1a5df2cace263d375",
+    "revision": 21,
+    "document": {
+      "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirty": false,
+      "generation": 12
+    },
+    "mode": "apply",
+    "state": "discarded",
+    "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_2545bf640dfb48e7ba4502d31b0c2490",
+      "status": "discarded",
+      "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 3,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+        "status": "discarded",
+        "completedChanges": 3,
+        "totalChanges": 3,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": {
+          "executed": true,
+          "entrypoint": "per_target",
+          "executionSucceeded": true,
+          "changesVerified": false,
+          "executedTargets": 3,
+          "totalTargets": 3,
+          "documentAfter": {
+            "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+            "dirty": false,
+            "generation": 12
+          },
+          "savedVersionRestored": true
+        },
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_2545bf640dfb48e7ba4502d31b0c2490",
+        "document": "Dactylotype Editor Test glyphs",
+        "kind": "python_script",
+        "phase": "discarded",
+        "startedAt": 1790448486.0023758,
+        "finishedAt": 1790448486.002468,
+        "completed": 3,
+        "total": 3,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": {
+      "saveId": "save_f1705526200a47d680f2d3b6a3b72f34",
+      "jobId": null,
+      "documentId": "doc_04cd2733e84a4e1ca4d1326c1e2a187b",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:bec38efd8ca3d72497fe11dd5f5aa37ace5b370c0ab018be74c0dd6edae8ce28",
+      "sourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:f0110feadb2fbbc0aa450369bac70afabcc64a28e9d15a1e6c4affe4956d9608",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790448462.5484679
+    },
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": [
+        {
+          "glyph": "H",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        },
+        {
+          "glyph": "n",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        },
+        {
+          "glyph": "o",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+          "surface": "foreground"
+        }
+      ]
+    },
+    "requestFingerprint": "sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b",
+    "summary": "Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font",
+    "entrypoint": "per_target",
+    "actions": [],
+    "message": "Saved version restored. Subsequent unsaved edits were replaced; external effects remain.",
+    "verification": "Intended changes have not been verified by the wrapper.",
+    "text": "Untitled font — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nSaved version restored. Subsequent unsaved edits were replaced; external effects remain.\nOperation: python script\nIntended change: Add 12.5 left and 8.25 right spacing to Regular H n o on the disposable font\nScope: 3 resolved surfaces; 0 skipped.\nCompleted callbacks: 3 / 3.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_809bc76b6b1843d1a5df2cace263d375\",\"expected_revision\":21,\"document_id\":\"doc_4e2118cdd9f94a4684bc5f99f9e93d4f\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:7143b0ff7b096ae7fd1eeb686e19fc1f0ad734bc1e35f5b02d5757d274e5943b\",\"blockingWorkflowId\":null,\"actions\":[]}"
+  },
+  "openDocument": {
+    "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+    "dirty": false,
+    "generation": 12
+  },
+  "workflowKern": {
+    "id": "edit_a3bc631bc3754009afe20c9d0752aecc",
+    "revision": 3,
+    "document": {
+      "id": "doc_4e2118cdd9f94a4684bc5f99f9e93d4f",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs",
+      "dirty": true,
+      "generation": 12,
+      "isCurrent": true,
+      "familyName": "Dactylotype Editor Test glyphs"
+    },
+    "mode": "apply",
+    "state": "preparing",
+    "jobId": "job_d326a4197a244c1896fee9b176c8bb08",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_d326a4197a244c1896fee9b176c8bb08",
+      "status": "preparing",
+      "summary": null,
+      "resultKind": "mutation",
+      "changeCount": null,
+      "report": {},
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_d326a4197a244c1896fee9b176c8bb08",
+        "document": "Dactylotype Editor Test glyphs",
+        "kind": "python_script",
+        "phase": "preparing",
+        "startedAt": 1790448522.1661599,
+        "finishedAt": null,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": []
+    },
+    "requestFingerprint": "sha256:ff3aa9d428aa9f4edc826d10e7745b7f580a66d27280b36e8bf62da2cf08d277",
+    "summary": "Set Regular A/V to -60.25 and T/o to -45.5 on the disposable font",
+    "entrypoint": "script",
+    "warning": "This script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.",
+    "actions": [
+      {
+        "action": "cancel",
+        "label": "Cancel preparation",
+        "token": "4d6d7001c0f97a6e6e6a58d18b508c92ced2c4fd50f37194aa282f4fa94ee69e",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Validating script and resolving targets…",
+    "text": "Dactylotype Editor Test glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/native-scripting-editor-qualification/Dactylotype Editor Test.glyphs\nValidating script and resolving targets…\nOperation: python script\nIntended change: Set Regular A/V to -60.25 and T/o to -45.5 on the disposable font\nScope: pending resolved surfaces; 0 skipped.\nThis script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Cancel preparation. You can reply in ordinary language.",
+    "poll": true,
+    "modelContext": "{\"workflow_id\":\"edit_a3bc631bc3754009afe20c9d0752aecc\",\"expected_revision\":3,\"document_id\":\"doc_4e2118cdd9f94a4684bc5f99f9e93d4f\",\"state\":\"preparing\",\"poll\":true,\"requestFingerprint\":\"sha256:ff3aa9d428aa9f4edc826d10e7745b7f580a66d27280b36e8bf62da2cf08d277\",\"blockingWorkflowId\":null,\"actions\":[{\"action\":\"cancel\",\"label\":\"Cancel preparation\",\"action_token\":\"4d6d7001c0f97a6e6e6a58d18b508c92ced2c4fd50f37194aa282f4fa94ee69e\",\"requiresDestination\":false}]}"
+  },
+  "latencies": [
+    {
+      "stage": "full_review",
+      "ms": 30
+    }
+  ]
+}

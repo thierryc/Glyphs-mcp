@@ -14,6 +14,9 @@ Supported native choice controls may present these same choices in a text-only
 host; plain conversation is always sufficient. No installed skill is required
 to use the server's tool descriptions and returned choices.
 
+Typed edits and scripts share Keep, Save and their appropriate recovery action. Scripts use their own Run action under
+task authorization, as described at the end and in the shared contract.
+
 - Saved and clean: preparation begins immediately. Complete reports without
   warnings, unavailable/skipped targets or overwrite approvals apply automatically.
 - Dirty: explain that **Save and continue** saves the entire font, including
@@ -29,14 +32,19 @@ to use the server's tool descriptions and returned choices.
   Dimensions overwrites still need the exact old/new approval entries.
   Use **Changes ready to review.**, **Apply changes**, and **Discard preview**;
   when warnings need review, say **Some changes need your review.**
-- Applied: say **Changes applied. Save your font to keep them.**. Saving the result is a separate
-  authorization. **Save font**, **Save As**, and **Undo these changes** use
-  the existing native guards; whole-font saving can include subsequent edits.
+- Applied: say **Changes applied.** Offer **Keep changes without saving**,
+  **Save font**, **Save As**, and **Undo these changes**. Keep closes the workflow
+  and its selective Undo offer without saving; native Undo/Redo remains available.
+  Saving requires separate authorization and includes subsequent edits.
+  Selective Undo stops on conflicting later edits. Keeping a dirty font does not
+  satisfy a later task’s saved/clean prerequisite.
 - Saved: say **Font saved.** Do not describe discard windows or internal jobs.
 - Discarded: say **Changes discarded.** This also covers previews that were never
   applied; do not claim an edit was undone without verified evidence.
 - Preparing: say **Preparing changes…**; never report application before it is verified.
-- Previous edit: offer the returned save or undo choices; retain one next request only.
+- Previous edit: identify `blockingWorkflowId` when available and use its offered
+  resolution. Typed blockers also offer manual Keep, including direct jobs without
+  an original workflow. Never automatically settle a blocker; retain one next request only.
 - Outdated: describe the returned reason and offer preparation again, with a
   prerequisite save only if authorized. Never silently refresh a stale patch.
 - Uncertain or restarted: offer **Check result**. Never replay mutations
@@ -59,3 +67,56 @@ When `poll` is true, read until the current choice or outcome before reporting
 completion. A Preparing result establishes progress, not application.
 Do not keep polling an unchanged waiting choice. Every response contains both
 useful text and structured state, so a failed UI cannot strand the request.
+
+Python script workflows follow [the shared execution contract](python-scripts.md).
+Preparation and polling never execute Python. The agent uses the revision-bound
+Run action under the original task authorization without requiring code review,
+a human click or another Run question. Explicit previews wait. Write-only and
+review-only requests do not authorize live execution; script writing includes review.
+
+Require `script.native.v1`. Clean saved fonts skip Save. Dirty fonts require
+an authorized **Save and run** or manual saving; new fonts use Save As/manual
+saving and fresh validation. Failed/uncertain saves never start Python.
+
+Lead with font, intended change and scope, show the execution warning once,
+and keep exact source/params in optional **Script details**. Text-only **Show
+script** uses `get_edit_workflow(include_review=true)`; default polling stays
+compact. Successful execution and completed callbacks do not verify the result.
+
+After success, offer **Keep changes without saving**, **Save font**, and available
+**Restore saved version**. Partial failure/cancellation offers Keep and restoration.
+Restore reloads the whole unchanged baseline, replacing all later unsaved edits
+and clearing Undo history. It never saves or reruns code; use the fresh document
+binding. Keeping or saving ends the restoration offer. A clear restoration request
+authorizes the action; clarify only ambiguous scope. Unknown results use **Check
+result**, never automatic replay. No native dialog or external page is required.
+
+If another request is blocked by this script, use its `blockingWorkflowId` to
+resolve the original workflow's offered Keep, Save or Restore choices. Script
+blockers do not offer typed Undo. Failed/cancelled scripts with partial edits
+remain unresolved until explicitly kept or restored. Restoration availability
+uses a short display cache; the unchanged baseline is checked again at Restore.
+
+## Automatic Keep
+
+New successful typed-edit and script cards default to a visible 30-second Keep
+countdown. Keep ends the workflow’s recovery offer without saving. Older typed
+workflows remain manual. Honor **“wait for my answer”** with `auto_keep=false`
+on start or the offered **Wait for my answer** action; carry that directive into
+later requests until changed. A failed or uncertain opt-out leaves the card locally
+paused while its existing request is reconciled.
+
+The countdown runs only on a visible, connected, freshly reconciled successful
+result card. Details, hidden cards and reconnection reset elapsed time. Failed,
+partial, uncertain and blocked outcomes never automatically Keep. Text-only clients
+remain manual; elapsed time does not imply an answer. There is no timed Run, Save,
+Undo or Restore. Cards record timed completion as such, not as a human click.
+
+## Preparation
+
+When negotiated internally, widths, Dimensions, glyph colors and coordinate-only
+`outline_edit` node updates prepare from bounded live reads and detached target
+copies. Preparation never edits the font. These jobs retain saved/clean prerequisites,
+target guards and selective recovery; the agent chooses no additional mode.
+Mixed or other outline operations and algorithmic jobs retain external preparation.
+The runtime reports preparation errors instead of silently switching routes.

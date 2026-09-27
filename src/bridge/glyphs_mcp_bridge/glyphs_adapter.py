@@ -367,7 +367,7 @@ class GlyphsAdapter:
 
     def _change_layer(self, document_id, change):
         layer = self._target_layer(document_id, change["glyph"], change["layer"])
-        if change["kind"] == "outline":
+        if change.get("kind") == "outline":
             return outline_reads.surface_layer(layer, change.get("surface", "foreground"))
         return layer
 
@@ -389,6 +389,10 @@ class GlyphsAdapter:
         if change["kind"] == "outline":
             return outline_edit.hash_layer(layer)
         return self._outline_hash(layer)
+
+    def script_target(self, document_id, target):
+        from .script_adapter import target as resolve_target
+        return resolve_target(self, document_id, target)
 
     def capture_state(self, document_id, change):
         if change["kind"] == "native_action":

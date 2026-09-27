@@ -2,7 +2,7 @@
 title: How v2 works
 ---
 
-V2 separates expensive preparation from live editing. The AI client uses twelve MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
+V2 separates typed preparation from live editing and also supports direct native scripting. The AI client uses twelve MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
 
 | Part | Responsibility |
 | --- | --- |
@@ -20,14 +20,24 @@ Cocoa between chunks so the canvas can remain responsive.
 
 The bridge can also negotiate the closed `native_action` catalog without adding
 tools. The sidecar exposes the job kind only when the bridge reports
-`native.action.v1` plus recognized actions. Preparation runs the same fixed
-native command on a disposable saved snapshot; live application compares its
+`native.action.v1` plus recognized actions. Most actions prepare the same fixed
+native command on a disposable saved snapshot. Glyph colors can prepare on detached
+target copies inside the editor; live application compares its
 before/after hashes and retains native objects only for bounded Undo, rollback
 and discard.
 
+With `script.native.v1`, `python_script` uses the conversation lifecycle directly
+inside Glyphs. Syntax/target preparation never executes Python; the agent uses
+the current Run action under original task authorization, with no mandatory code
+review. Clean saved fonts skip Save; dirty fonts require authorized saving.
+Callbacks yield between batches. Whole scripts run once. Restore saved version
+reloads the whole baseline, replacing later unsaved edits and clearing Undo history.
+There is no external worker or layer snapshot for scripts. Typed jobs retain the
+algorithms and recovery described above.
+
 ## One job, one identity
 
-`start_job` prepares an external result and returns a job ID. `get_job` returns
+`start_job` prepares a typed result and returns a job ID. `get_job` returns
 progress and evidence. `apply_job` applies the stored result to the matching
 saved document. `accept_job` verifies the applied targets, persists the whole
 document and makes the job terminal. `discard_job` cancels preparation or
@@ -41,9 +51,22 @@ the owner's state.
 ## Native editing remains central
 
 `accept_job` accepts the reviewed result by saving the entire document and
-returning path/hash evidence. Undo and Redo use native per-glyph history before
+returning path/hash evidence. Typed-job Undo and Redo use native per-glyph history before
 acceptance. Revert uses Glyphs' own saved-document workflow. The Reference
 Inspector compares against a selected source; it is not a log of tool calls or
 an acceptance interface.
 
 Use the [twelve-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
+
+## Faster preparation, shared results
+
+Widths, Dimensions, glyph colors and coordinate-only node moves can prepare with
+bounded live reads and detached target copies. The private bridge negotiates this
+route; no new tool or execution mode is exposed. Preparation remains read-only,
+requires a saved clean document, and produces the same guarded patches. Other
+algorithms and external export processing are unchanged.
+
+Typed results now offer Keep without saving, Save and selective Undo. Keep ends
+the workflow recovery offer and retains native Undo/Redo. Script restoration still
+reloads the whole saved font. New successful cards for both offer a 30-second Keep
+countdown, disabled by “wait for my answer”; text-only responses remain manual.

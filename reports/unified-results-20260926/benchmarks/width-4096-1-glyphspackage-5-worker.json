@@ -1,0 +1,30 @@
+{
+  "data": {
+    "kind": "width",
+    "targets": 4096,
+    "contours": 1,
+    "format": "glyphspackage",
+    "route": "worker",
+    "preparationSeconds": 3.2537330000050133,
+    "applicationPollingSeconds": 2.0356587910064263,
+    "totalSeconds": 5.28939179101144,
+    "verificationSeconds": 0.0376964170136489,
+    "selectiveRecoverySeconds": 2.016010749997804,
+    "longestMainThreadChunkSeconds": 1.0043728750024457,
+    "peakRSSBytes": 343719936,
+    "workerChildrenPeakRSSBytes": 219971584,
+    "preparationMetrics": null,
+    "workerLaunches": 1,
+    "sourceCopyCount": 1,
+    "nativeUndoAfterKeep": true,
+    "saveSeconds": 0,
+    "saveCalls": 0
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodology": "Fresh glyphs-cli process, real native GSFont and GSDocument fixture. Preparation and guarded application through real workflow; clean baseline so no task Save. Fixture serialization and CLI startup excluded. Worker memory is separate and recorded by the runner when available. PeakRSS is this process before recovery. Selective recovery and native Undo/Redo after Keep verified. Actual editor NSDocument Save and installed-client latency require separate integration tests."
+}

@@ -1,0 +1,46 @@
+{
+  "platform": "macOS-26.7.1-arm64-arm-64bit-Mach-O",
+  "sourceChecks": [
+    {
+      "source": "src/protocol/glyphs_mcp_protocol",
+      "built": "build/simple-native-scripting/sidecar/glyphs_mcp_protocol",
+      "matchingFiles": 20,
+      "generated": []
+    },
+    {
+      "source": "src/protocol/glyphs_mcp_protocol",
+      "built": "build/simple-native-scripting/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_protocol",
+      "matchingFiles": 20,
+      "generated": []
+    },
+    {
+      "source": "src/sidecar/glyphs_mcp_sidecar",
+      "built": "build/simple-native-scripting/sidecar/glyphs_mcp_sidecar",
+      "matchingFiles": 38,
+      "generated": []
+    },
+    {
+      "source": "src/bridge/glyphs_mcp_bridge",
+      "built": "build/simple-native-scripting/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge",
+      "matchingFiles": 36,
+      "generated": [
+        {
+          "file": "src/bridge/glyphs_mcp_bridge/server_panel.json",
+          "fields": [
+            "projectVersion",
+            "releaseLabel"
+          ]
+        }
+      ]
+    }
+  ],
+  "installedCandidate": false,
+  "bridge": {
+    "built": "sha256:4ee7d4c936ad18ff784b657f1cd2026a82d677d3a3d41a441eb9f70df8fbb547",
+    "installed": "sha256:ff5f9e0e962bca7aaf2bbf73783417dc1c79e5caa87983024ce545db900bc24e"
+  },
+  "sidecar": {
+    "built": "sha256:7729847c3017156bac4e5a9596e7ddbd32ca0e77e576c53f8227c98e33fd505e",
+    "installed": "sha256:c5fdc08d1557a0021c7a4443a3bfb93c7ddca31b3a9dcbc4e2d835c89e311817"
+  }
+}

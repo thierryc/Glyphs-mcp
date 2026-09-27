@@ -1,5 +1,32 @@
 # Lean v2 qualification records
 
+[Unified results and faster typed edits — September 26, 2026](unified-results-20260926/README.md)
+adds typed Keep, shares successful-result countdowns, and prepares selected simple
+typed edits natively without source copies or workers. Source checks, native
+route-parity tests and all 320 paired benchmark runs pass. Installation and
+editor/client qualification remain pending the unsaved-document decision.
+
+[Automatic Keep countdown — September 26, 2026](auto-keep-countdown-20260926/README.md)
+adds the requested 30-second default Keep, progress bar and **Wait for my answer**
+opt-out. It is built and regression-tested; installation waits for the user's
+decision about the currently unsaved Dactylotype document.
+
+[Finish and qualify native scripting — September 26, 2026](native-scripting-qualification-20260926/README.md)
+implements the six focused fixes and installs the corrected candidate. It records
+2,231 passing Python tests, 67 isolated native scripting checks, retained typed
+recovery checks, 60 fresh-process benchmarks, actual editor Save/Restore and
+installed Codex text/reconnect workflows. Live fault/overwrite probes and an
+unattributed interaction observation remain explicit limits; see that report
+before treating the milestone as unconditionally signed off.
+
+[Simple native scripting — September 26, 2026](simple-native-scripting-20260926/README.md)
+removes the unpublished scoped and snapshot script branches, keeps one native
+execution route, and uses saved-version reload for script recovery. The candidate
+passes 2,208 regressions plus two separate socket tests, 60 built native fixture
+checks, and 50 fresh-process benchmark runs. Installation, actual editor saving
+and restoration, and the installed chat-client gate await authorization; this
+record does not claim the milestone complete.
+
 [Conversation workflow — September 22, 2026](edit-workflow-20260922/report.md)
 implements the shared MCP App, text contract and save/resume coordinator. Python,
 installer, packaging and transport gates pass. The authorized Beta 6/build 48

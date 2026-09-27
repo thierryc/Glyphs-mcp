@@ -1,0 +1,22 @@
+{
+  "fullRegression": {
+    "passed": 2190,
+    "skipped": 2,
+    "deselected": 2
+  },
+  "loopbackFollowup": {
+    "passed": 2
+  },
+  "finalTargeted": {
+    "passed": 75
+  },
+  "nativeHost": {
+    "version": "4.1",
+    "build": "4107"
+  },
+  "publicTools": 12,
+  "managedSkills": 11,
+  "builtPythonFileMatches": 98,
+  "installedRuntimeChanged": false,
+  "installedClientUIVerified": false
+}

@@ -20,7 +20,7 @@ ID for reads of the same font; rediscover after `document_not_found` or target
 change, not a missing glyph. Never silently substitute another open font.
 Each read is fresh; check source/dirty state when preparing edits.
 
-Prepare supported work with `start_job`, inspect `get_job` until ready, and
+For typed spacing jobs, prepare with `start_job`, inspect `get_job` until ready, and
 review its report before `apply_job`. Application is a reversible live change;
 it does not save. Use `accept_job` only when the user's task authorizes saving
 the reviewed whole document; it closes the rollback window. Use `discard_job`
@@ -29,8 +29,14 @@ glyph. Never save merely to satisfy preparation, and never save, export, close,
 or overwrite a font unless the user's task authorizes it. Do not retry an
 uncertain write or save as a new job; reconcile the existing job identity first.
 
-There is no arbitrary MCP Python or plugin reload. Unsupported edits require
-an explicitly authorised native workflow; do not invent an MCP command.
+For an explicit numeric rule across many layers, such as fixed widths or a
+reviewed bearing/key adjustment, offer **direct native scripting** under the
+[shared route and recovery guide](../glyphs/references/python-scripts.md#choose-the-route).
+One callback can apply the rule locally with Save and run and whole-font saved
+reload. Preserve key ownership, tabular widths, marks and component alignment;
+verify bearings and proofs. Keep `spacing` for reference-based suggestions: a
+bulk assignment does not reproduce its algorithm. Genuinely unsupported edits
+can also use an advertised script job or an authorized native workflow.
 
 When the task is to apply existing metrics keys, prefer the advertised
 `native_action` named `update_metrics`; it uses Glyphs `syncMetrics()` and is

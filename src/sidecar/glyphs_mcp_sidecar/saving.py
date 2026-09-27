@@ -249,7 +249,7 @@ def verify_save(request: Mapping[str, Any], native: Mapping[str, Any]) -> dict[s
 def bridge_request(value: Mapping[str, Any]) -> dict[str, Any]:
     return {
         key: value.get(key)
-        for key in ("saveId", "documentId", "saveMode", "previousPath", "path")
+        for key in ("saveId", "documentId", "saveMode", "previousPath", "path", "reviewedGeneration") if key in value
     }
 
 
@@ -425,6 +425,8 @@ def complete_acceptance(service, job, operation, *, include_preview=True):
 
 
 def save_document(service, error_type, document_id, *, destination=None, on_prepared=None):
+    from .saved_script import invalidate
+    invalidate(service, document_id)
     identity = str(document_id)
     for job in service.jobs.records():
         if job.get("document", {}).get("id") != identity:

@@ -1,0 +1,25 @@
+{
+  "sourceHashes": {
+    "src/protocol/glyphs_mcp_protocol/layer_state.py": "c59ae31f23683e37d172fb64765c374e574918c1192895d59dabd0ef9e802680",
+    "src/protocol/glyphs_mcp_protocol/script_runtime.py": "f7e0cad486bf2e8b8f291d3e726d5d8e6525f761f68e5f980000946fb8852918",
+    "src/sidecar/glyphs_mcp_sidecar/script_job.py": "a467a6e81d3bcf702442a20294ff130313bbb356e971159cd5045588283c1d35",
+    "src/bridge/glyphs_mcp_bridge/core.py": "9e12fe899a8059f665441744cc72fdc2c9c3b954d1f7e987c03dc58a76fbfbb3",
+    "src/bridge/glyphs_mcp_bridge/layer_preflight.py": "f08ed79506c7c4b2e563cc53b81cbab31e98a4d1862626dfc2fa0ffe125143d5",
+    "src/bridge/glyphs_mcp_bridge/script_adapter.py": "6eff8471eeff18ca3ff295ab3104150b933c249c0749c0c49eff75ab79b36d8f"
+  },
+  "targets": 4096,
+  "directCallbackSeconds": 1.9686861249938374,
+  "scopedPreparationSeconds": 28.2416908749874,
+  "bulkApplySeconds": 55.73843583399139,
+  "restoreSeconds": 28.355394666999928,
+  "repeatedBridgeApplySeconds": 62.590105458002654,
+  "recoveryStateBytes": 1888256,
+  "bulkScheduledChunks": 6173,
+  "maxBulkChunkSeconds": 0.11917833301413339,
+  "peakProcessRSSBytes": 1348812800,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "methodology": "Native triangular backgrounds. Fresh process per size. Preparation kernel excludes glyphs-cli launch; repeated serialized bridge requests exclude sidecar/worker startup, transport and model latency. Scheduled chunk duration is a responsiveness proxy, not a visual UI measurement."
+}

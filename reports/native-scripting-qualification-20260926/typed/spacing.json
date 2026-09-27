@@ -1,0 +1,106 @@
+{
+  "benefits": [
+    {
+      "glyph": "V",
+      "lowercase": {
+        "width": 770.3642857142856,
+        "lsb": -114.81785714285715,
+        "rsb": -114.81785714285714
+      },
+      "uppercase": {
+        "width": 1022.5050912959184,
+        "lsb": 11.252545647959243,
+        "rsb": 11.25254564795921
+      }
+    },
+    {
+      "glyph": "W",
+      "lowercase": {
+        "width": 770.3642857142856,
+        "lsb": -114.81785714285715,
+        "rsb": -114.81785714285714
+      },
+      "uppercase": {
+        "width": 1022.5050912959184,
+        "lsb": 11.252545647959243,
+        "rsb": 11.25254564795921
+      }
+    },
+    {
+      "glyph": "Y",
+      "lowercase": {
+        "width": 770.3642857142856,
+        "lsb": -114.81785714285715,
+        "rsb": -114.81785714285714
+      },
+      "uppercase": {
+        "width": 1022.5050912959184,
+        "lsb": 11.252545647959243,
+        "rsb": 11.25254564795921
+      }
+    }
+  ],
+  "boundaryChecks": [
+    {
+      "translated": false,
+      "step": 5,
+      "after": {
+        "width": 560.55,
+        "lsb": 80.025,
+        "rsb": 80.025
+      }
+    },
+    {
+      "translated": false,
+      "step": 1,
+      "after": {
+        "width": 560.55,
+        "lsb": 80.025,
+        "rsb": 80.025
+      }
+    },
+    {
+      "translated": false,
+      "step": 0.5,
+      "after": {
+        "width": 560.55,
+        "lsb": 80.025,
+        "rsb": 80.025
+      }
+    },
+    {
+      "translated": true,
+      "step": 5,
+      "after": {
+        "width": 560.55,
+        "lsb": 80.025,
+        "rsb": 80.025
+      }
+    },
+    {
+      "translated": true,
+      "step": 1,
+      "after": {
+        "width": 560.55,
+        "lsb": 80.025,
+        "rsb": 80.025
+      }
+    },
+    {
+      "translated": true,
+      "step": 0.5,
+      "after": {
+        "width": 560.55,
+        "lsb": 80.025,
+        "rsb": 80.025
+      }
+    }
+  ],
+  "fractionalBearings": 15,
+  "changes": 22,
+  "tabularWidthsPreserved": true,
+  "zeroWidthMarksPreserved": true,
+  "nativeBridgeApplyAndDiscard": true,
+  "exactGeometryAndWidthsRestored": true,
+  "scope": "isolated native process; editor acceptance is separate"
+}

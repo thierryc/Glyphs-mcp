@@ -80,4 +80,11 @@ New stable versions appear on [GitHub Releases](https://github.com/thierryc/Glyp
 
 Private lean v2 qualification is indexed in [reports/README.md](reports/README.md).
 The latest RV02 follow-up covers the installed OpenType, precision and native API
-guidance. Native scripts use Glyphs execution routes; they add no MCP tool.
+guidance. Native Python uses the advertised `python_script` job and
+`script.native.v1` without adding tools. Preparation never executes code. An
+ordinary task authorizes Run without a separate source review; previews wait.
+Clean saved fonts need no extra Save, while dirty fonts require authorized saving.
+Restore saved version reloads the whole baseline and replaces later unsaved edits.
+Successful edit cards offer a 30-second countdown to Keep changes without
+saving, ending the workflow recovery offer. Typed Keep preserves native Undo/Redo. Say **“wait for my answer”** to disable it.
+See [script execution and recovery](skills/glyphs/references/python-scripts.md).

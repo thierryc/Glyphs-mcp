@@ -58,3 +58,8 @@ If the retired family has no current replacement, use [specialized scope](specia
 do not treat its obsolete version gate as evidence of a stale runtime.
 Do not infer compatibility from a name or `surface` label. For failed setup,
 use [connection troubleshooting](connection-troubleshooting.md).
+
+Python capability discovery does not change the twelve-tool catalog. Require
+`script.native.v1` for direct native scripts. No worker or layer snapshots are
+needed. Retired scripting capabilities require a coordinated runtime update;
+see [script jobs](python-scripts.md).
