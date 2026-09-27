@@ -34,13 +34,16 @@
       ]
     }
   ],
-  "installedCandidate": false,
+  "installedCandidate": true,
   "bridge": {
     "built": "sha256:4ee7d4c936ad18ff784b657f1cd2026a82d677d3a3d41a441eb9f70df8fbb547",
-    "installed": "sha256:ff5f9e0e962bca7aaf2bbf73783417dc1c79e5caa87983024ce545db900bc24e"
+    "installed": "sha256:4ee7d4c936ad18ff784b657f1cd2026a82d677d3a3d41a441eb9f70df8fbb547",
+    "loaded": "sha256:4ee7d4c936ad18ff784b657f1cd2026a82d677d3a3d41a441eb9f70df8fbb547"
   },
   "sidecar": {
     "built": "sha256:7729847c3017156bac4e5a9596e7ddbd32ca0e77e576c53f8227c98e33fd505e",
-    "installed": "sha256:c5fdc08d1557a0021c7a4443a3bfb93c7ddca31b3a9dcbc4e2d835c89e311817"
-  }
+    "installed": "sha256:7729847c3017156bac4e5a9596e7ddbd32ca0e77e576c53f8227c98e33fd505e",
+    "loaded": "sha256:7729847c3017156bac4e5a9596e7ddbd32ca0e77e576c53f8227c98e33fd505e"
+  },
+  "installedEvidence": "installed-20260927/installation.json"
 }

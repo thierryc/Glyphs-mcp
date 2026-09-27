@@ -1,0 +1,52 @@
+[
+  {
+    "id": "job_1303ec3460904e07a29e47de2291a4b6",
+    "status": "completed",
+    "preparationRoute": "native",
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.041221082996344194
+    },
+    "summary": "Add 1.25 units to selected glyphs",
+    "phase": "preparing_native"
+  },
+  {
+    "id": "job_bad984411584455a923801e725133c9c",
+    "status": "accepted",
+    "preparationRoute": "native",
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.11103741699480452
+    },
+    "summary": "Native set_glyph_color action for 1 targets",
+    "phase": "preparing_native"
+  },
+  {
+    "id": "job_031f73c8403545cfa81545b02bb279d0",
+    "status": "accepted",
+    "preparationRoute": "native",
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.038494415988679975
+    },
+    "summary": "Dimensions reference edits for 1 fields",
+    "phase": "preparing_native"
+  },
+  {
+    "id": "job_0e00f6d999b3446f834b0054696a73d1",
+    "status": "discarded",
+    "preparationRoute": "native",
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.035118790983688086
+    },
+    "summary": "Outline edits for 1 layers",
+    "phase": "preparing_native"
+  },
+  {
+    "id": "job_7df37a6137204e85837258a2e04f78f9",
+    "status": "accepted",
+    "preparationRoute": "native",
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.04267570801312104
+    },
+    "summary": "Add 0.25 units to selected glyphs",
+    "phase": "preparing_native"
+  }
+]

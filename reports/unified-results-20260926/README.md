@@ -1,4 +1,4 @@
-# Unified results and faster typed edits — built; installed qualification pending
+# Unified results and faster typed edits — installed; card qualification pending
 
 Implemented typed Keep, shared successful-result card countdowns, persistent opt-out,
 fresh save-status wording, and native preparation for widths, Dimensions, glyph
@@ -7,10 +7,13 @@ algorithms and external export processing remain in use; twelve public tools.
 Keep releases native recovery and temporary preparation files through existing
 terminal-job cleanup; durable request, summary and bounded result evidence remain.
 
-The candidate is built at `build/simple-native-scripting`; it is **not installed**.
-Dactylotype is open with unrelated unsaved edits. Installation/relaunch authorization
-is retained; the choice about preserving/saving that open document remains pending.
-No original font has been saved, closed or changed by these qualification scripts.
+The candidate is built at `build/simple-native-scripting` and **installed** from
+commit `d75404ec`. On September 27 the user closed Dactylotype, after which the
+MCP component was updated and Glyphs relaunched. Source, build, installed and
+loaded fingerprints agree. Actual editor and installed Codex text checks pass
+as detailed in [the installation report](installed-20260927/README.md).
+Visible-card qualification remains blocked by Computer Use’s Codex access restriction.
+No original font was saved, closed or changed by these qualification scripts.
 
 ## Verification evidence
 
@@ -51,7 +54,7 @@ Across native runs, the longest measured scheduled coordinator chunk was **0.984
 
 Every measured native preparation asserted **zero source copies and zero worker launches**. Each process also checked selective recovery and a second edit followed by Keep and native Undo/Redo. The second edit/Keep qualification, fixture setup and CLI startup are outside the timed preparation/application interval.
 
-These are local fixture measurements of an uncommitted candidate, not a v1 comparison or an installed-client latency distribution. The final source/build identities are recorded separately. Result wording, retained-artifact cleanup and validation outside benchmark requests were refined during the matrix; measured preparation algorithms were kept stable for these requests. CPU load was not isolated. Worker-child and parent peak RSS are reported separately, not summed as simultaneous memory. See the full methodology before comparing these numbers with direct native loops.
+These are local fixture measurements made before the candidate was committed, not a v1 comparison or an installed-client latency distribution. The final source/build identities are recorded separately. Result wording, retained-artifact cleanup and validation outside benchmark requests were refined during the matrix; measured preparation algorithms were kept stable for these requests. CPU load was not isolated. Worker-child and parent peak RSS are reported separately, not summed as simultaneous memory. See the full methodology before comparing these numbers with direct native loops.
 
 ## Findings and limits
 
@@ -69,8 +72,9 @@ is retained. The extended parity fixtures use explicitly named nodes and verify
 their preservation without ignoring metadata differences.
 
 Benchmarks measure native fixture workflows, not installed chat-client latency.
-Fixture saving uses GSFont serialization; actual editor NSDocument saving and
-installed cards remain incomplete gates. Native application/cleanup can still
+Fixture saving uses GSFont serialization; subsequent actual editor saving and
+restoration passed the checks in the installation report. Installed cards remain
+an incomplete gate. Native application/cleanup can still
 produce a long main-thread chunk; time slicing is not a hard responsiveness guarantee.
 
 ## Candidate and rollout
@@ -78,14 +82,18 @@ produce a long main-thread chunk; time slicing is not a hard responsiveness guar
 [Source/build comparisons](identity-files.json) and [candidate identities](candidate-identities.json)
 record the prepared payload. [Runtime preflight](runtime-preflight.json) records
 the previous installed/loaded runtime and the unrelated dirty Dactylotype document.
-The new candidate has not been installed. Companions, installation settings,
-plugin caches and the original font remain unchanged.
+The candidate is now installed; both inspector companions and installation settings
+are preserved. The [September 27 report](installed-20260927/README.md) records
+actual editor saving, Save As/manual continuation, selective Undo, native Undo/Redo
+after Keep, whole-font script restoration, fresh bindings, duplicate actions,
+Keep-to-next behavior, partial failure, reconnect reconciliation and individual
+installed-client latency observations.
 
-The following gates remain open until the saved/closed-document choice is resolved:
-actual editor Save/Save As/manual continuation, installed selective Undo and native
-Undo/Redo after typed Keep, script restoration/fresh binding, installed Codex
-Keep-to-next/reconnect/duplicate actions, visible card countdown/Wait behavior,
-and installed-client latency. Prior-candidate evidence does not qualify this build.
+Visible installed-card countdown/Wait/Details qualification remains blocked by
+Computer Use's Codex access restriction. Live fault/edge cases not repeated on
+this exact loaded identity are listed explicitly in that report. Mock-host and
+prior-candidate evidence do not close those gates.
 
-A local commit is authorized. Publication remains excluded; installation is still
-pending safe handling of the unrelated unsaved font.
+Implementation commit: `d75404ec`. Publication remains excluded. Installation
+and this documented editor/text pass are complete; the broader milestone retains
+its explicit unqualified gates.

@@ -1,0 +1,29 @@
+{
+  "before": {
+    "running": true,
+    "processRunning": true,
+    "processId": 38143,
+    "loaded": true,
+    "port": 9680,
+    "autoStart": true,
+    "url": "http://127.0.0.1:9680/mcp/"
+  },
+  "stopped": {
+    "running": false,
+    "processRunning": false,
+    "processId": null,
+    "loaded": false,
+    "port": 9680,
+    "autoStart": true,
+    "url": "http://127.0.0.1:9680/mcp/"
+  },
+  "after": {
+    "running": true,
+    "processRunning": true,
+    "processId": 39017,
+    "loaded": true,
+    "port": 9680,
+    "autoStart": true,
+    "url": "http://127.0.0.1:9680/mcp/"
+  }
+}
