@@ -1,0 +1,39 @@
+{
+  "tag": "v2.0.0-beta.7",
+  "commit": "190d25c5",
+  "installerBuild": 49,
+  "notarization": {
+    "payload": "37b15a0f-5afe-4d12-88a1-65fc46b09188",
+    "application": "f9681660-aad2-4a70-b70b-1e9dc63c2848",
+    "dmg": "9f3a6970-a3c4-4c3b-bdd5-fad12a6f0af8",
+    "disposableOlderFixture": "28c348b2-a73a-4a98-a06c-ab291170d13a"
+  },
+  "notarizationStatus": "all accepted; app, plugins, DMG and fixture stapled",
+  "signedNative": {
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "typedCasesPerFormat": 7,
+    "scriptCasesPerFormat": 30,
+    "formats": [
+      "glyphs",
+      "glyphspackage"
+    ]
+  },
+  "publicRelease": false,
+  "updateTrial": "pending: Mac locked before VM setup",
+  "cleanup": {
+    "obsoleteDirectories": 30,
+    "bytes": 4229212167,
+    "allBuildsRemoved": false,
+    "unusedOutputs": 97,
+    "remaining": [
+      "build/desktop-dependencies",
+      "build/update-trial-beta7-20260927",
+      "dist"
+    ]
+  },
+  "draftAssetsVerified": true,
+  "developmentMetadata": "2.0.0-beta.8, build 50"
+}

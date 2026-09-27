@@ -1,8 +1,10 @@
-# Glyphs MCP Desktop 2.0.0 Beta 7
+# Glyphs MCP Desktop 2.0.0 Beta 8
 
-**Beta 7 in preparation — release `2.0.0-beta.7`, desktop build 49.**
+**Beta 8 development metadata — release `2.0.0-beta.8`, desktop build 50.**
+Beta 7/build 49 is signed, notarized and uploaded to a private draft; its final
+signed-update test and publication are pending. Beta 8 has no built release.
 Beta 6/build 48 remains the signed and notarized download.
-See [Beta 7 preparation](BETA7-VALIDATION.md) for the current local status.
+See [Beta 8 preparation](BETA8-VALIDATION.md) and [Beta 7 qualification](BETA7-VALIDATION.md).
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
@@ -50,13 +52,13 @@ The resulting edit remains unsaved until separately authorized. See
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-The Beta 7 payload is Glyphs 4-only. Glyphs 3 remains available through the
+The Beta 8 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. Beta 6 is available
 as a signed and notarized
 [GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.6).
 
-Documentation sources: [v2 · 2.0.0 Beta 7](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 8](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 Beta 6 qualification and publication are recorded in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
 Beta 5 qualification is recorded in
@@ -67,7 +69,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta 7 artifacts will use `Glyphs-MCP-2.0.0-beta.7.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Future Beta 8 artifacts will use `Glyphs-MCP-2.0.0-beta.8.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

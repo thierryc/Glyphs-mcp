@@ -3,7 +3,11 @@
 Source target: Glyphs MCP `2.0.0-beta.7`, desktop build 49, branch
 `lit/v2-beta`.
 
-Status: **complete local release gate passed; signed distribution in progress.**
+Status: **signed and notarized; verified assets uploaded to a private draft.**
+
+The signed-update acceptance test is blocked because the Mac is locked. Public
+publication and the signed feed update remain pending. Development metadata
+has advanced separately to Beta 8/build 50; the Beta 7 tag remains `190d25c5`.
 
 ## September 23, 2026
 

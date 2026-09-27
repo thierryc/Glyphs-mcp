@@ -1,10 +1,12 @@
-# Glyphs MCP 2.0.0 Beta 7 — release and launch plan
+# Glyphs MCP 2.0.0 Beta 8 — release and launch plan
 
 ## Decision
 
-Prepare **2.0.0 Beta 7**, tag `v2.0.0-beta.7`, build **49**, on `lit/v2-beta`.
-Beta 6/build 48 remains the published download and signed update feed.
-Beta 7 has a verified local feature build and remains unreleased; see [BETA7-VALIDATION.md](BETA7-VALIDATION.md).
+Prepare **2.0.0 Beta 8**, tag `v2.0.0-beta.8`, build **50**, on `lit/v2-beta`.
+Beta 7/build 49 has verified signed assets in a private draft; its update test
+and publication are pending. Beta 6/build 48 remains the published download
+and signed update feed.
+Beta 8 is metadata-only development preparation; no Beta 8 application has been built. See [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -15,7 +17,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 7**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 8**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -27,12 +29,12 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
   pin archives to commits and SHA-256, then publish registry-only changes on
   that branch. Refresh loads the new list; installed projects are unchanged.
 - Use `lit/v2-beta/appcast.xml` only for beta updates. Keep build numbers
-  increasing: 46, 47, 48, 49… even though the marketing version was renumbered.
+  increasing: 46, 47, 48, 49, 50… even though the marketing version was renumbered.
   Update signatures and build ordering follow the
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
   restored settings and component receipts; do not market side-by-side server
-  isolation. The Beta 7 payload is Glyphs 4-only; Glyphs 3 remains on its
+  isolation. The Beta 8 payload is Glyphs 4-only; Glyphs 3 remains on its
   separate pinned v1.11.0 release.
 
 ## Release sequence
@@ -58,7 +60,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.7 --publish --confirm-publish v2.0.0-beta.7
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.8 --publish --confirm-publish v2.0.0-beta.8
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -68,7 +70,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 7 uses `--beta 7 --installer-build 49`. Its qualification is pending.
+Beta 8 uses `--beta 8 --installer-build 50`. Its qualification is pending.
 Published Beta 6 qualification and public artifact verification remain in
 [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new
 higher build and tag, final qualification, and a separately reviewed merge to
@@ -236,3 +238,11 @@ artifacts and download links were verified.
   publication were performed. The beta branch and feeds are prepared locally.
   Full release qualification, signed updates, cross-machine testing and public
   registry/feed verification remain before distribution.
+
+## Beta 7 signed candidate — 27 September 2026
+
+Signed tag `v2.0.0-beta.7` remains on commit `190d25c5`. All four assets are
+verified in a private draft. The Mac locked before the final signed-update
+test; no public publication or beta feed update has occurred. See
+[the qualification record](BETA7-VALIDATION.md). Beta 8 metadata development
+can proceed independently without rebuilding or retagging those frozen assets.

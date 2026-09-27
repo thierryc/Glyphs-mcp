@@ -1,0 +1,16 @@
+{
+  "releaseVersion": "2.0.0-beta.7",
+  "channel": "beta",
+  "tag": "v2.0.0-beta.7",
+  "version": "2.0.0",
+  "build": "49",
+  "bundleIdentifier": "cx.ap.glyphsMcp",
+  "publicKey": "K5EkYQQZFhOWgsw2dtO2dPnCry+8VKhG0eHYeUd2iP8=",
+  "archive": "Glyphs-MCP-2.0.0-beta.7.zip",
+  "signature": "s5UdfQ+oNQDvJgV7cUPC9SoJ9DGCWciQQMnWQ69v64DwlfKKSn0E6ggB5wF7rxsk9IjVOfvO5BY4NDRSvNs3BQ==",
+  "checksums": {
+    "Glyphs-MCP-2.0.0-beta.7.zip": "95d8be0b6a2914df8fded6fef29f97f92d79bb97c96801c5f2575ee281396dd2",
+    "appcast.xml": "cf92f39fe07eeadfbeb881ff85b31fae137ba94dded67c814827d0e92fc7f2d6"
+  },
+  "published": false
+}

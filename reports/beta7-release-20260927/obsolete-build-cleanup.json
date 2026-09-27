@@ -1,0 +1,127 @@
+{
+  "applied": true,
+  "outputs": [
+    {
+      "path": "build/beta6-client-fixes",
+      "bytes": 12260
+    },
+    {
+      "path": "build/beta6-public-downloads",
+      "bytes": 5147
+    },
+    {
+      "path": "build/beta6-publication-docs",
+      "bytes": 104966
+    },
+    {
+      "path": "build/beta6-signed-dimensions",
+      "bytes": 37541
+    },
+    {
+      "path": "build/beta6-workflow-fixes",
+      "bytes": 1239379
+    },
+    {
+      "path": "build/beta7-template-determinism-a",
+      "bytes": 1239379
+    },
+    {
+      "path": "build/beta7-template-determinism-b",
+      "bytes": 1239379
+    },
+    {
+      "path": "build/commit-candidate",
+      "bytes": 1149717
+    },
+    {
+      "path": "build/dimensions-beta6",
+      "bytes": 594200
+    },
+    {
+      "path": "build/edit-workflow-candidate",
+      "bytes": 1232144
+    },
+    {
+      "path": "build/edit-workflow-native",
+      "bytes": 55432
+    },
+    {
+      "path": "build/native-scripting-editor-qualification",
+      "bytes": 4579463
+    },
+    {
+      "path": "build/native-scripting-qualification",
+      "bytes": 119114032
+    },
+    {
+      "path": "build/python-scripts-milestone",
+      "bytes": 2177262
+    },
+    {
+      "path": "build/python-scripts-save-first",
+      "bytes": 2234260
+    },
+    {
+      "path": "build/real-task-qualification-20260926",
+      "bytes": 2574859
+    },
+    {
+      "path": "build/simple-native-benchmark",
+      "bytes": 119041404
+    },
+    {
+      "path": "build/simple-native-editor-fixtures",
+      "bytes": 2179
+    },
+    {
+      "path": "build/simple-native-scripting",
+      "bytes": 364863697
+    },
+    {
+      "path": "build/simple-v2",
+      "bytes": 1150328
+    },
+    {
+      "path": "build/typed-preparation-benchmarks",
+      "bytes": 485833916
+    },
+    {
+      "path": "build/unified-editor-20260927",
+      "bytes": 150544
+    },
+    {
+      "path": "build/update-trial",
+      "bytes": 10755
+    },
+    {
+      "path": "build/update-trial-beta4-20260918",
+      "bytes": 5596
+    },
+    {
+      "path": "build/update-trial-beta6-20260922",
+      "bytes": 31436
+    },
+    {
+      "path": "build/workflow-wording",
+      "bytes": 1236451
+    },
+    {
+      "path": "build/workflow-wording-preview",
+      "bytes": 77431
+    },
+    {
+      "path": "dist/local",
+      "bytes": 421279465
+    },
+    {
+      "path": "dist/installer-dmg",
+      "bytes": 172145457
+    },
+    {
+      "path": "dist/installer-app/GlyphsMCPInstaller.xcarchive",
+      "bytes": 436892144
+    }
+  ],
+  "bytes": 2140310223,
+  "retained": "Active beta-7 release/update fixtures and dependencies until publication gates finish"
+}

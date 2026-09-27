@@ -16,16 +16,16 @@ and the Xcode project. The managed skill inventory comes from
 | Item | Value |
 | --- | --- |
 | Product version | `2.0.0` |
-| Release version | `2.0.0-beta.7` |
+| Release version | `2.0.0-beta.8` |
 | Channel | `beta` |
-| Beta number | `7` |
-| Installer build | `49` |
+| Beta number | `8` |
+| Installer build | `50` |
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
 | MCP tools | `12` |
-| Job kinds | `up to 10` |
+| Job kinds | `up to 11` |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
@@ -63,7 +63,7 @@ manifest and receipt:
   `codeHash` gives the complete fingerprint. Check `bridge.release`,
   `bridge.runtimeId` and `bridge.codeHash` independently.
 - `bridge.host` identifies the native application by bundle identifier, version
-  and build. The Beta 7 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
+  and build. The Beta 8 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
   uses its separate v1.11.0 distribution.
 
 The fingerprint is computed from component files at initialization. It is not a
@@ -93,10 +93,10 @@ receipts, client regressions and public-download verification are recorded in
 Physical Intel hardware and the broader manual/client matrix remain unverified
 beta coverage. A configured URL alone does not prove a feed or release is valid.
 
-Beta 7 is in preparation and targets tag `v2.0.0-beta.7` and branch `lit/v2-beta`. Its feed is
+Beta 8 is in preparation and targets tag `v2.0.0-beta.8` and branch `lit/v2-beta`. Its feed is
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.
-Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.7.dmg` and
-`Glyphs-MCP-2.0.0-beta.7.zip`. A beta is a prerelease with `make_latest=false`;
+Expected beta artifacts include `Glyphs-MCP-2.0.0-beta.8.dmg` and
+`Glyphs-MCP-2.0.0-beta.8.zip`. A beta is a prerelease with `make_latest=false`;
 never publish `Glyphs-MCP-latest.dmg` for it. Stable releases use their separate
 feed and release process. Installer builds increase across beta and final
 releases; changing the label does not make an older build newer.

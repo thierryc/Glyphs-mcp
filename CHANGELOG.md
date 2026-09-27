@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0 Beta 8 — unreleased, build 50
+
+- Advance development metadata after freezing the signed Beta 7 candidate.
+  Beta 7 assets are verified in a private draft; its final signed-update test
+  and publication remain pending. The published feed is unchanged.
+
 ## 2.0.0 Beta 7 — unreleased, build 49
 
 - Add native Python scripting through the existing job and conversation tools.

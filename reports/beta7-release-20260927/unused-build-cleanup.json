@@ -1,0 +1,400 @@
+{
+  "applied": true,
+  "outputs": [
+    {
+      "path": "build/verify-beta6-public-downloads.py",
+      "bytes": 2780
+    },
+    {
+      "path": "build/outline-edit-native.json",
+      "bytes": 696
+    },
+    {
+      "path": "build/beta6-dmg-mount.txt",
+      "bytes": 35
+    },
+    {
+      "path": "build/python-scripts-candidate-native.json",
+      "bytes": 966
+    },
+    {
+      "path": "build/workflow-wording-docs.log",
+      "bytes": 599
+    },
+    {
+      "path": "build/beta7-signed-payload",
+      "bytes": 400817980
+    },
+    {
+      "path": "build/beta6-artifact-verification.log",
+      "bytes": 7106
+    },
+    {
+      "path": "build/saved-scripts-benchmark-4096-1.json",
+      "bytes": 17387
+    },
+    {
+      "path": "build/beta6-workflow-fix-tests.log",
+      "bytes": 1014
+    },
+    {
+      "path": "build/diagnose-native-actions.py",
+      "bytes": 917
+    },
+    {
+      "path": "build/spacing-native-benefit.json",
+      "bytes": 2138
+    },
+    {
+      "path": "build/python-scripts-candidate-workflow.json",
+      "bytes": 968
+    },
+    {
+      "path": "build/beta6-dmg-layout-mount.log",
+      "bytes": 1078
+    },
+    {
+      "path": "build/saved-scripts-native-glyphspackage.json",
+      "bytes": 1310
+    },
+    {
+      "path": "build/beta6-signed-runtime.log",
+      "bytes": 1067
+    },
+    {
+      "path": "build/make-beta6-dmg-cua.sh",
+      "bytes": 6662
+    },
+    {
+      "path": "build/beta6-release-gate.log",
+      "bytes": 513168
+    },
+    {
+      "path": "build/beta6-fixed-payload.log",
+      "bytes": 630
+    },
+    {
+      "path": "build/typed-smoke-outline.json",
+      "bytes": 1346
+    },
+    {
+      "path": "build/beta7-signed-script-glyphspackage.json",
+      "bytes": 1337
+    },
+    {
+      "path": "build/kerning-native-benefit.json",
+      "bytes": 784
+    },
+    {
+      "path": "build/python-scripts-candidate-edges.json",
+      "bytes": 965
+    },
+    {
+      "path": "build/unified-results-build.json",
+      "bytes": 3117
+    },
+    {
+      "path": "build/simple-native-glyphspackage.json",
+      "bytes": 1337
+    },
+    {
+      "path": "build/beta6-release-report-tests.log",
+      "bytes": 854
+    },
+    {
+      "path": "build/verify-beta6-dmg-layout.py",
+      "bytes": 488
+    },
+    {
+      "path": "build/payload-check-b",
+      "bytes": 397233120
+    },
+    {
+      "path": "build/beta7-release-notes.md",
+      "bytes": 2167
+    },
+    {
+      "path": "build/beta6-dmg-build-final.log",
+      "bytes": 4915
+    },
+    {
+      "path": "build/beta6-signed-runtime.json",
+      "bytes": 1105
+    },
+    {
+      "path": "build/python-scripts-benchmark-1000.json",
+      "bytes": 1505
+    },
+    {
+      "path": "build/typed-smoke-dimensions100.json",
+      "bytes": 1391
+    },
+    {
+      "path": "build/saved-scripts-benchmark-500-1.json",
+      "bytes": 17384
+    },
+    {
+      "path": "build/exact-history-native.json",
+      "bytes": 223
+    },
+    {
+      "path": "build/python-scripts-edges.json",
+      "bytes": 3304
+    },
+    {
+      "path": "build/beta6-signed-build.log",
+      "bytes": 708367
+    },
+    {
+      "path": "build/beta6-public-docs-build.log",
+      "bytes": 599
+    },
+    {
+      "path": "build/python-scripts-candidate-saved.json",
+      "bytes": 963
+    },
+    {
+      "path": "build/saved-scripts-benchmark-500-12.json",
+      "bytes": 17389
+    },
+    {
+      "path": "build/beta6-fixed-install.json",
+      "bytes": 3820
+    },
+    {
+      "path": "build/write-beta7-dmg-layout.py",
+      "bytes": 1250
+    },
+    {
+      "path": "build/beta6-update-candidate.log",
+      "bytes": 809
+    },
+    {
+      "path": "build/private-runtime",
+      "bytes": 363427317
+    },
+    {
+      "path": "build/beta6-public-verification.log",
+      "bytes": 1500
+    },
+    {
+      "path": "build/qualify-beta7-signed-script.py",
+      "bytes": 1676
+    },
+    {
+      "path": "build/python-scripts-benchmark-4096.json",
+      "bytes": 1508
+    },
+    {
+      "path": "build/python-scripts-workflow.json",
+      "bytes": 1071
+    },
+    {
+      "path": "build/saved-scripts-native-glyphs.json",
+      "bytes": 1310
+    },
+    {
+      "path": "build/beta6-signed-dimensions.log",
+      "bytes": 12238
+    },
+    {
+      "path": "build/make-beta7-dmg-cua.sh",
+      "bytes": 6662
+    },
+    {
+      "path": "build/apply-beta6-publication-docs.py",
+      "bytes": 3601
+    },
+    {
+      "path": "build/saved-scripts-benchmark-100-1.json",
+      "bytes": 17392
+    },
+    {
+      "path": "build/workflow-wording-tests.log",
+      "bytes": 5830
+    },
+    {
+      "path": "build/beta7-signed-script-glyphs.json",
+      "bytes": 1337
+    },
+    {
+      "path": "build/write-beta6-dmg-layout.py",
+      "bytes": 1250
+    },
+    {
+      "path": "build/prepare-beta8-metadata.py",
+      "bytes": 1615
+    },
+    {
+      "path": "build/typed-smoke-color.json",
+      "bytes": 1343
+    },
+    {
+      "path": "build/xcode-runs",
+      "bytes": 0
+    },
+    {
+      "path": "build/dmg-metadata-install.log",
+      "bytes": 769
+    },
+    {
+      "path": "build/typed-smoke-width.json",
+      "bytes": 1347
+    },
+    {
+      "path": "build/typed-smoke-worker.json",
+      "bytes": 1290
+    },
+    {
+      "path": "build/beta6-workflow-build.log",
+      "bytes": 1925
+    },
+    {
+      "path": "build/beta6-fixed-release-gate.log",
+      "bytes": 511879
+    },
+    {
+      "path": "build/beta6-dmg-build.log",
+      "bytes": 3762
+    },
+    {
+      "path": "build/local-app-runs",
+      "bytes": 0
+    },
+    {
+      "path": "build/beta6-dmg-layout.log",
+      "bytes": 115
+    },
+    {
+      "path": "build/verify-beta7-dmg-layout.py",
+      "bytes": 488
+    },
+    {
+      "path": "build/installer-payload",
+      "bytes": 396967894
+    },
+    {
+      "path": "build/typed-smoke-dimensions.json",
+      "bytes": 1351
+    },
+    {
+      "path": "build/qualify-beta6-signed-dimensions.py",
+      "bytes": 9885
+    },
+    {
+      "path": "build/saved-scripts-benchmark-1000-1.json",
+      "bytes": 17385
+    },
+    {
+      "path": "build/beta7-release-evidence",
+      "bytes": 64562
+    },
+    {
+      "path": "build/auto-keep-preview.html",
+      "bytes": 29354
+    },
+    {
+      "path": "build/qualify-beta7-signed.py",
+      "bytes": 1193
+    },
+    {
+      "path": "build/saved-scripts-benchmark-100-12.json",
+      "bytes": 17389
+    },
+    {
+      "path": "build/beta6-dmg-layout.ready",
+      "bytes": 0
+    },
+    {
+      "path": "build/saved-scripts-benchmark-250-1.json",
+      "bytes": 17391
+    },
+    {
+      "path": "build/payload-check-a",
+      "bytes": 397233120
+    },
+    {
+      "path": "build/native-scripting-fixes.json",
+      "bytes": 511
+    },
+    {
+      "path": "build/python-scripts-native.json",
+      "bytes": 360
+    },
+    {
+      "path": "build/simple-native-glyphs.json",
+      "bytes": 1337
+    },
+    {
+      "path": "build/python-scripts-benchmark-100.json",
+      "bytes": 1507
+    },
+    {
+      "path": "build/python-scripts-candidate-saved-package.json",
+      "bytes": 971
+    },
+    {
+      "path": "build/test-report.md",
+      "bytes": 403
+    },
+    {
+      "path": "build/local-app-build.lock",
+      "bytes": 0
+    },
+    {
+      "path": "build/beta7-dmg-mount.txt",
+      "bytes": 35
+    },
+    {
+      "path": "build/dmg-metadata-tools",
+      "bytes": 341495
+    },
+    {
+      "path": "build/workflow-wording-build.json",
+      "bytes": 1925
+    },
+    {
+      "path": "build/beta6-dmg-layout-mount-final.log",
+      "bytes": 1078
+    },
+    {
+      "path": "build/prepare-beta6-publication-docs.py",
+      "bytes": 6922
+    },
+    {
+      "path": "build/beta6-publish.log",
+      "bytes": 520761
+    },
+    {
+      "path": "build/runtime-downloads",
+      "bytes": 102576010
+    },
+    {
+      "path": "build/reports",
+      "bytes": 1517141
+    },
+    {
+      "path": "build/background-edit-native.json",
+      "bytes": 358
+    },
+    {
+      "path": "website/build",
+      "bytes": 25705839
+    },
+    {
+      "path": "website/.docusaurus",
+      "bytes": 175700
+    },
+    {
+      "path": ".pytest_cache",
+      "bytes": 297802
+    }
+  ],
+  "bytes": 2088901944,
+  "retained": [
+    "build/desktop-dependencies",
+    "build/update-trial-beta7-20260927",
+    "dist"
+  ],
+  "reason": "Final signed-update test and publication pending desktop unlock"
+}

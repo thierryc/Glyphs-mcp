@@ -1,8 +1,10 @@
 # Glyphs MCP 2.0.0 Beta
 
-**Next candidate: Beta 7/build 49 is in preparation.**
-See [the preparation record](BETA7-VALIDATION.md). The download and qualification
-below remain Beta 6 until Beta 7 is separately qualified and published.
+**Beta 7/build 49 is signed and notarized, with verified assets in a private draft.**
+Its final signed-update test and publication are pending; see
+[the qualification record](BETA7-VALIDATION.md). Development metadata has
+advanced to [Beta 8/build 50](BETA8-VALIDATION.md). The download and qualification
+below remain Beta 6 until Beta 7 is published.
 
 **Beta 6/build 48 is published as a signed and notarized GitHub prerelease.
 Its signed desktop update and component migration passed in VirtualBuddy.
@@ -109,9 +111,10 @@ version/build, affected card, operation state, client, exact reproduction and a
 redacted diagnostic report. Share a disposable font only when it can be public.
 [Report a beta issue](https://github.com/thierryc/Glyphs-mcp/issues/new?title=%5BBeta%202.0.0%5D%20&body=Beta%20and%20build%3A%0AmacOS%20and%20processor%3A%0AGlyphs%20version%3A%0AAI%20client%3A%0ASteps%3A%0AExpected%3A%0AActual%3A).
 
-Known limitations: the welcome screen remains a placeholder; the twelve-tool
-workflow is intentionally narrower than v1 and exposes no arbitrary Python
-tool. In Project visual diffs, changing glyph files can retain the previously
+Known limitations: the welcome screen remains a placeholder. The published
+Beta 6 offers typed operations; the Beta 7 candidate adds native Python through
+the existing job tools, with saved-version recovery. Use the installed
+connection's advertised capabilities. In Project visual diffs, changing glyph files can retain the previously
 selected master even when that master is unchanged; choose a layer without the
 “unchanged” suffix to display the available geometry difference. Physical
 Intel acceptance and the complete packaged manual scenario matrix remain

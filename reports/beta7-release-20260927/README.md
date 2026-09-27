@@ -29,3 +29,43 @@ Those are development-installation checks, not signed-distribution evidence.
 
 Signing, notarization, update acceptance, publication and cleanup evidence is
 added after each step completes. No failed security check may be bypassed.
+
+## Signed distribution
+
+Signed tag `v2.0.0-beta.7` identifies candidate commit `190d25c5`. The tag and
+beta branch were pushed; stable `main` was not changed. Developer ID signatures,
+94 native files, 47 bundles, notarization, stapled tickets, Gatekeeper and
+signature-preserving installed copies passed. All four Apple submissions were
+accepted; identifiers are in [distribution state](distribution-state.json).
+
+The signed payload passed startup and catalog checks on ARM64 and x86_64,
+seven paired typed preparation/recovery cases per format, and 30 native script
+execution/restoration checks per format. These isolated tests use a native
+fixture save adapter; actual editor Save evidence remains in the earlier
+installed qualification report.
+
+The signed disk image layout was written and checked as Finder metadata, using
+the same DS_Store procedure as Beta 6. No alternative UI automation was used.
+The guarded publisher reran the complete local gate and passed final signed
+artifact verification before completing and verifying the four-asset draft upload.
+
+The older-build update fixture is signed, notarized and ready. The Mac locked
+before VM setup; signed-update acceptance and public publication are pending.
+The exact signed feed has not replaced the published Beta 6 feed.
+
+## Cleanup so far
+
+Thirty obsolete build directories were removed, totaling 2,140,310,223 bytes
+(sum of file sizes; not a physical-space measurement). Historical build
+evidence was retained in the excluded local release archive. The current
+release/update fixture and dependencies remain until distribution is complete.
+The installed runtime is copied independently; fresh status showed no open
+fonts or active jobs. Dactylotype and installed plugin caches were untouched.
+Beta 8/build 50 metadata changes are applied separately; they do not change
+the frozen Beta 7 tag or distribution assets.
+
+A second cleanup removed 97 unused outputs and dependency caches.
+Total removed file sizes across both passes: **4,229,212,167 bytes**. Only the
+current `dist/` release assets, `build/desktop-dependencies` signature utilities
+and `build/update-trial-beta7-20260927` fixture remain pending distribution.
+Website build output and generated documentation caches were also removed.

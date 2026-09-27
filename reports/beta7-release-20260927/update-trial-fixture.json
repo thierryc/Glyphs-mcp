@@ -1,0 +1,9 @@
+{
+  "port": 18473,
+  "older": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/update-trial-beta7-20260927/Glyphs MCP.app",
+  "olderVersion": "2.0.0",
+  "olderBuild": 48,
+  "newerVersion": "2.0.0",
+  "newerBuild": 49,
+  "scope": "Notarized desktop copy with lowered version for full-archive Sparkle acceptance; never published"
+}
