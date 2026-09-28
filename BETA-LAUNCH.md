@@ -3,10 +3,10 @@
 ## Decision
 
 Prepare **2.0.0 Beta 8**, tag `v2.0.0-beta.8`, build **50**, on `lit/v2-beta`.
-Beta 7/build 49 is the published signed and notarized prerelease and beta
-update feed. Its exact signed-update/component-migration acceptance test
+Beta 7/build 49 is the previous signed and notarized prerelease. Its exact
+signed-update/component-migration acceptance test
 remains incomplete and is disclosed in its release notes.
-Beta 8 now includes the accumulated milestone implementation and integrated checkpoint browser. Local release qualification, installation and signed-artifact preparation are in progress; public publication remains separate. See [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
+Beta 8 is published as a signed and notarized prerelease, including the accumulated milestone implementation and integrated checkpoint browser. Public downloads and the exact signed beta feed are verified. Remaining acceptance limits are disclosed in [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -70,7 +70,8 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 8 uses `--beta 8 --installer-build 50`. Its qualification is pending.
+Beta 8 uses `--beta 8 --installer-build 50`. Distribution verification passed;
+remaining native UI/card and signed-update acceptance limits are disclosed.
 Published Beta 7 evidence and its open qualification limits are recorded in
 [BETA7-VALIDATION.md](BETA7-VALIDATION.md). Historical Beta 6 evidence remains in
 [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new
@@ -249,3 +250,18 @@ locked before the signed-update/component-migration trial; that acceptance
 gate remains incomplete and is disclosed in the release notes. See
 [the qualification record](BETA7-VALIDATION.md). Beta 8 metadata development
 proceeds independently without rebuilding or retagging those frozen assets.
+
+## Beta 8 publication — 28 September 2026
+
+Signed tag `v2.0.0-beta.8` identifies `bf0ef6cd`. The guarded publisher passed
+2,464 Python tests (two skips), 219 desktop tests, all signatures, notarization,
+Gatekeeper and uploaded asset identities. Three Apple submissions were accepted.
+Both signed private runtimes and 96 standalone native kerning cases passed.
+
+The four public assets were downloaded without authentication and matched their
+local checksums; Sparkle archive and feed signatures verified. The exact signed
+Beta 8 appcast is published on `lit/v2-beta`. Stable Latest remains v1.11.1.
+Group-pair native UI Undo, new pair-card visual acceptance and the exact-release
+signed-update/component-migration trial remain incomplete and are disclosed.
+The user explicitly authorized publication after those limits were reported.
+See [the distribution evidence](reports/beta8-release-candidate/README.md).

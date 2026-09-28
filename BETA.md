@@ -1,45 +1,45 @@
 # Glyphs MCP 2.0.0 Beta
 
-**Beta 7/build 49 is published as a signed and notarized GitHub prerelease.
-Stable Latest remains v1.11.1.** Development metadata has advanced to
-[Beta 8/build 50](BETA8-VALIDATION.md); there is no Beta 8 build yet.
+**Beta 8/build 50 is published as a signed and notarized GitHub prerelease.
+Stable Latest remains v1.11.1.**
 
-Beta 7 adds native Python scripting, unified edit results and faster native
-preparation for selected typed edits. It retains twelve tools, eleven managed
-skills and the 4,096 eligible-surface limit. Exact targets and a verified saved
-baseline precede script execution; preparation and polling never run Python.
+Beta 8 adds opt-in local font checkpoints and integrates history into the
+existing comparison workspace. A compact picker shows readable titles and local
+times; selecting a checkpoint compares it with the latest saved checkpoint.
+Unsaved font edits are excluded. Restore and Action details open separate sheets.
+
+It also adds exact glyph/group kerning assignments and removals in LTR, RTL and
+vertical directions, plus bounded language-filtered proof pairs from a pinned
+MIT-licensed dataset. Proofing reports coverage without suggesting kerning values.
+The fixed 4,096-surface native-script ceiling is removed; the request byte budget,
+exact targeting and saved-version recovery remain. Twelve public tools and eleven
+managed skills are retained.
 
 Finish an edit with **Keep changes without saving**, **Save font**, or its
-recovery action. Typed **Undo these changes** covers the recorded edit.
-Script **Restore saved version** reloads the whole font and discards later
-unsaved edits; external effects are not restored. Visible, connected successful
-result cards offer a 30-second automatic Keep countdown and **Wait for my
-answer**. Text-only clients remain manual. Saving requires authorization;
-**Save and continue** saves existing work once, then leaves the new edit unsaved.
+recovery action. Typed **Undo these changes** covers the recorded edit and ends
+when you Keep or Save. Script **Restore saved version** and historical checkpoint
+restoration replace the whole open font, discard later unsaved edits, clear Undo,
+and do not save; external effects are not restored. Saving requires authorization.
+Visible connected successful result cards offer automatic Keep and **Wait for my
+answer**. Text-only clients remain manual.
 
-The published identity is `2.0.0-beta.7`, desktop build 49, on `lit/v2-beta`.
-See [qualification](BETA7-VALIDATION.md) and the
-[release report](reports/beta7-release-20260927/README.md). The exact-release
-signed desktop-update/component-migration test remains unperformed and is
-explicitly disclosed; signing, notarization and public asset verification passed.
-Beta 6’s earlier update test is historical evidence, not Beta 7 acceptance.
-
-Glyphs 3 is not included in the Beta 7 desktop payload. Its separate v1.11.0
-release, source metadata and documentation remain unchanged.
+The published identity is `2.0.0-beta.8`, desktop build 50, on `lit/v2-beta`.
+See [qualification](BETA8-VALIDATION.md) and the
+[release report](reports/beta8-release-candidate/README.md).
 
 ## Requirements and availability
 
-Beta 7 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 8 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
-required for an end-user installation. Glyphs still needs its own **Python
-(Glyphs)** scripting environment selected under **Glyphs → Settings → Addons**.
+required for end-user installation. Glyphs still needs its own **Python
+(Glyphs)** environment selected under **Glyphs → Settings → Addons**.
+Glyphs 3 remains on its separate pinned v1.11.0 release.
 
 Download the signed and notarized
-[Beta 7 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.7/Glyphs-MCP-2.0.0-beta.7.dmg)
-from the [Beta 7 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7).
-Its SHA-256 is
-`0bb76ec30f0edbdd9d1a439d3f87c3c6cadab0a278d460dd08522c18369cfa55`.
-Beta 7 remains a prerelease rather than the repository's Stable Latest.
+[Beta 8 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.8/Glyphs-MCP-2.0.0-beta.8.dmg)
+from the [Beta 8 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.8).
+Verify it against the release's `SHA256SUMS` file.
+Beta 8 remains a prerelease and does not replace Stable Latest.
 
 ## First session
 
@@ -99,13 +99,17 @@ component reconciliation are also separate operations; a migration failure
 must leave the manager available to retry or continue with the previous
 installation.
 
-## Help test Beta 7
+## Help test Beta 8
 
-The signed desktop-update/component-migration test for this exact release
-remains open. Installed visual card countdown/Details, physical Intel,
-minimum-macOS, the complete manual client matrix and some fault-injection
-cases also remain unqualified. Automated checks and installed text workflows
-are separate evidence; do not mark manual rows complete without testing them.
+The group-pair native Undo check remains unresolved: the tested group-pair
+value did not change through Glyphs' ordinary Undo menu. Use the workflow's
+**Undo these changes** before Keep/Save when reviewing those edits. Glyph-pair
+native Undo/Redo and 72 installed kerning lifecycle cases passed.
+
+Visual acceptance of the new exact-pair result card and this release's signed
+desktop-update/component-migration trial remain incomplete. Physical Intel,
+minimum-macOS and the complete manual client/failure matrix also remain open.
+Earlier beta acceptance does not establish these checks for Beta 8.
 
 Useful reports include the beta/build number, macOS and processor, Glyphs
 version/build, affected card, operation state, client, exact reproduction and a

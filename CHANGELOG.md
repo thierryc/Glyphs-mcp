@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 Beta 8 — release candidate, build 50
+## 2.0.0 Beta 8 — 2026-09-28, build 50
 
 - Remove the 4,096-surface native-script limit while retaining the complete
   request byte budget, exact targeting and one recoverable workflow.
@@ -19,9 +19,10 @@
   MIT-licensed dataset; proofing proposes no kerning values.
 - Consolidate current guidance and keep twelve public tools, eleven managed
   skills and the Glyphs 4-only runtime. Glyphs 3 uses the separate v1 release.
-- Candidate qualification and remaining installed-editor/client and signed
-  update/migration gates are recorded in BETA8-VALIDATION.md. This candidate
-  has not been publicly released and does not change the published Beta 7 feed.
+- Publish the signed, notarized Beta 8 prerelease and exact signed beta feed.
+  Public downloads and signatures are verified. Remaining group-pair native
+  Undo, pair-card visual and signed-update/migration checks are disclosed in
+  BETA8-VALIDATION.md and the release notes.
 
 ## 2.0.0 Beta 7 — 2026-09-27, build 49
 

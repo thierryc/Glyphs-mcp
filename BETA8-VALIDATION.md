@@ -1,7 +1,7 @@
 # Beta 8 development validation
 
 Source target: `2.0.0-beta.8`, desktop build **50**, branch `lit/v2-beta`.
-Status: **all accumulated source is consolidated in `3cf956ab`; the combined release gate passes, and the matching desktop/MCP components are installed locally. A universal Developer ID signed candidate is built. Apple notarization awaits explicit upload authorization. Milestone 8 group-pair native UI Undo, new pair-card visual acceptance, and signed-update/migration gates remain open. No Beta 8 publication.**
+Status: **Beta 8/build 50 is published as a signed and notarized GitHub prerelease at tag `v2.0.0-beta.8` (`bf0ef6cd`). Public downloads and the exact signed beta feed are verified. Group-pair native UI Undo, new pair-card visual acceptance, and signed-update/migration gates remain open and are disclosed in the release notes.**
 
 The [Beta 8 milestone plan](BETA8-MILESTONES.md) starts with removing the native
 script target-count ceiling. Every milestone begins with regression tests and
@@ -237,6 +237,26 @@ The installed picker, empty comparison, glyph comparison, details sheet, restore
 confirmation/cancel and return to working selection passed a native UI smoke
 check. The universal release app at `dist/installer-app/Glyphs MCP.app` is
 Developer ID signed with a secure timestamp; 94 Mach-O binaries and 47 bundles
-verify. It is not notarized. Automatic approval review rejected Apple submission
-until the user explicitly authorizes uploading those artifacts to Apple.
-No Beta 8 release tag, public release or feed update was created.
+verify. This was the initial local signed candidate. The later Apple submission
+and publication, explicitly authorized by the user, are recorded below.
+
+## Signed publication — September 28
+
+[Beta 8 is public](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.8).
+The signed tag remains on `bf0ef6cd`; later documentation/feed commits do not
+change the frozen release artifacts. Apple accepted the expanded payload, app
+and DMG. Developer ID, hardened runtime, secure timestamps, nested signatures,
+stapled tickets, Gatekeeper and signature-preserving installed copies passed.
+
+The guarded publisher repeated the complete gate: 2,464 Python tests passed
+(two skips, five warnings) and 219 desktop tests passed. Both signed private
+runtimes passed startup/catalog checks. The final signed source passed 48
+standalone native kerning cases per font format; this does not resolve the
+separate editor group-pair Undo observation.
+
+All four public downloads match local SHA-256 values. Both Sparkle signatures
+verify, and the exact signed appcast is committed to the beta branch. Stable
+Latest remains v1.11.1. The user approved publication with the stated acceptance
+limits; no failed signature or notarization check was overridden. See the
+[distribution record](reports/beta8-release-candidate/distribution-state.json)
+and [public-download evidence](reports/beta8-release-candidate/public-download-verification.json).

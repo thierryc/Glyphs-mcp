@@ -1,0 +1,99 @@
+{
+  "tag": "v2.0.0-beta.8",
+  "commit": "bf0ef6cd3779ccd40c49818825aae43bb4059dfd",
+  "installerBuild": 50,
+  "notarization": [
+    {
+      "id": "211fbdae-07f5-4e69-857d-cb87fc4a0ad4",
+      "status": "Accepted",
+      "log": "beta8-notarization.log"
+    },
+    {
+      "id": "1df3bd22-6245-4617-8bf7-f7942a1d9186",
+      "status": "Accepted",
+      "log": "beta8-notarization.log"
+    },
+    {
+      "id": "7d8d0535-bc58-4e78-8d0e-9789cceda235",
+      "status": "Accepted",
+      "log": "beta8-dmg-notarization.log"
+    }
+  ],
+  "signedRuntimes": [
+    {
+      "architecture": "arm64",
+      "privatePython": true,
+      "httpCatalog": [
+        "get_status",
+        "list_documents",
+        "read_entities",
+        "start_job",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "stdioProxy": true,
+      "mcpAppResourceAndCSP": true,
+      "structuredAndTextResults": true,
+      "packageDownloads": 0,
+      "packagedInstallerCLI": true,
+      "startupSeconds": 4.975
+    },
+    {
+      "architecture": "x86_64",
+      "privatePython": true,
+      "httpCatalog": [
+        "get_status",
+        "list_documents",
+        "read_entities",
+        "start_job",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "stdioProxy": true,
+      "mcpAppResourceAndCSP": true,
+      "structuredAndTextResults": true,
+      "packageDownloads": 0,
+      "packagedInstallerCLI": true,
+      "startupSeconds": 11.233
+    }
+  ],
+  "signedNativeKerning": {
+    "glyphs": {
+      "passed": true,
+      "caseCount": 48,
+      "reportSHA256": "70810222ea19193078f713f76e731177867b002d94124a74c85d6b4b1ed83bef"
+    },
+    "glyphspackage": {
+      "passed": true,
+      "caseCount": 48,
+      "reportSHA256": "d5de413a034a0a4920b9c63295006186ca2d599a9b4a1dfcbc6215487325af81"
+    }
+  },
+  "published": true,
+  "releaseURL": "https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.8",
+  "stableLatest": "v1.11.1",
+  "finalAppCDHash": "0f89904758972f617ce317abfcfe720a813eb301",
+  "finalAppTimestamp": "2026-09-28 12:07:50 EDT",
+  "publisherPythonTests": {
+    "passed": 2464,
+    "skipped": 2,
+    "warnings": 5
+  },
+  "publisherDesktopTests": {
+    "passed": 219,
+    "failed": 0
+  },
+  "publisherLogSHA256": "1be5ce034fbe5b6209ec40e89624fba8a8ea4f3c138a394d81da88f84e891378"
+}
