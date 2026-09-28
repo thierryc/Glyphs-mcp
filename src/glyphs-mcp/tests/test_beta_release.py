@@ -16,12 +16,12 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
-def test_current_checkout_is_beta_8_build_50():
+def test_current_checkout_is_beta_9_build_51():
     release = load(REPO)
     assert release['version'] == '2.0.0'
-    assert release['tag'] == 'v2.0.0-beta.8'
-    assert release['label'] == '2.0.0 Beta 8'
-    assert release['installerBuild'] == 50
+    assert release['tag'] == 'v2.0.0-beta.9'
+    assert release['label'] == '2.0.0 Beta 9'
+    assert release['installerBuild'] == 51
 
 
 def test_beta_5_validation_records_the_published_signed_release():
