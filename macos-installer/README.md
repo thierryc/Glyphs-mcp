@@ -10,11 +10,13 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-The beta branch prepares product 2.0.0 Beta 8, release `2.0.0-beta.8`, installer build 50. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany twelve tools and up to eleven capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
+The beta branch prepares product 2.0.0 Beta 9, release `2.0.0-beta.9`, installer build 51. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany twelve tools and up to eleven capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
-supports independent install, update, removal and retry. One serialized queue
+supports independent install, update, removal and retry. Setup also lists the
+independently distributed Beztrace development preview with setup details; it
+is excluded from Install All and from the bundled payload. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
 
@@ -30,7 +32,7 @@ reading upgrade choices. Ports, automatic start, authentication and welcome
 preferences remain outside component replacement. Unrelated files are retained.
 The Mac's normal Glyphs quit/save workflow must finish before replacement.
 
-The Beta 8 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
+The Beta 9 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
 release, original Python dependency installation and version-specific skills;
 the pinned v1 source metadata remains unchanged and is not embedded in this
 desktop payload. Legacy updater paths reject partial upgrades to the new

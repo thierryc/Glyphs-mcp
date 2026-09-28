@@ -1,14 +1,11 @@
-# Glyphs MCP Desktop 2.0.0 Beta 8
+# Glyphs MCP Desktop 2.0.0 Beta 9
 
-**Beta 8 development metadata — release `2.0.0-beta.8`, desktop build 50.**
-Beta 7/build 49 is published as a signed and notarized prerelease. Its final
-signed-update and component-migration test remains unperformed. Beta 8 has no
-built release. Stable Latest remains v1.11.1.
-See [Beta 8 preparation](BETA8-VALIDATION.md) and [Beta 7 qualification](BETA7-VALIDATION.md).
-Current delivery scope: [Beta 8 milestones](BETA8-MILESTONES.md). The
-[twelve-tool contract](content/reference/command-set.mdx) is the shared interface
-reference; historical roadmaps do not define current behavior.
-See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
+**Beta 9 preparation — release `2.0.0-beta.9`, desktop build 51.**
+Beta 8/build 50 is the current signed and notarized prerelease. Beta 9 is in
+local preparation; its release artifacts have not been signed or published.
+Stable Latest remains v1.11.1. See [Beta 9 preparation](BETA9-VALIDATION.md),
+[Beta 8 qualification](BETA8-VALIDATION.md), and the [beta guide](BETA.md).
+The [twelve-tool contract](content/reference/command-set.mdx) remains unchanged.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -16,9 +13,13 @@ no terminal setup is required for the Glyphs 4 sidecar.
 
 Open **Glyphs MCP.app** and use **Setup**. **Install All** reconciles Glyphs MCP,
 Curve Inspector and Reference Inspector, then configures Codex, Claude Code,
-Claude Desktop and Cursor. Every card also supports independent install,
+Claude Desktop and Cursor. Bundled component cards also support independent install,
 update, removal and retry. Upgrades preserve ports, startup settings and
 unrelated agent configuration.
+
+Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
+with requirements, development availability and links to its separate engine
+and setup guide. See [Beztrace setup](BETA.md#beztrace).
 
 The permanent app includes Setup and Project destinations, a static menu-bar
 popover, a dedicated troubleshooting-log window, local and public templates,
@@ -67,13 +68,13 @@ source stays optional; fresh server checks still guard actions. See
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-The Beta 8 source targets Glyphs 4 only. Glyphs 3 remains available through the
+The Beta 9 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. Beta 7 is available
+documentation tracks describe these versions separately. Beta 8 is available
 as a signed and notarized
-[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.7).
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.8).
 
-Documentation sources: [v2 · 2.0.0 Beta 8](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 9](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 Beta 7 qualification and publication are recorded in [BETA7-VALIDATION.md](BETA7-VALIDATION.md).
 Historical Beta 6 evidence remains in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
@@ -85,7 +86,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Future Beta 8 artifacts will use `Glyphs-MCP-2.0.0-beta.8.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Future Beta 9 artifacts will use `Glyphs-MCP-2.0.0-beta.9.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

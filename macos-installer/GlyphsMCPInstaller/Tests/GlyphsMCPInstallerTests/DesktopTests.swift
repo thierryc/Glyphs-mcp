@@ -3,6 +3,17 @@ import XCTest
 @testable import GlyphsMCPInstallerCore
 
 final class DesktopTests: XCTestCase {
+    func testExternalBeztraceIsExcludedFromBundledInstallAndRemovalPlans() {
+        let id = ExternalGlyphsCompanion.beztrace.id
+        XCTAssertFalse(DesktopComponent.ids.contains(id))
+        let plan = DesktopComponentPlan(installed: [id], selected: [id])
+        XCTAssertFalse(plan.hasWork)
+        let bulk = SetupQueuePolicy.bulkPlan(installedComponents: [id], installedConnectors: [])
+        XCTAssertFalse(bulk.contains(.component(id, .install)))
+        XCTAssertFalse(bulk.contains(.component(id, .update)))
+        XCTAssertEqual(DesktopComponent.ids, ["mcp", "curve-inspector", "reference-inspector"])
+    }
+
     func testQuitNoticeClearsOnlyWhenGlyphsActuallyCloses() {
         var notice = ComponentNotice.waitingForGlyphs
         notice.glyphsRunningChanged(true)

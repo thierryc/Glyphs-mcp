@@ -1,12 +1,13 @@
-# Glyphs MCP 2.0.0 Beta 8 â€” release and launch plan
+# Glyphs MCP 2.0.0 Beta 9 â€” release and launch plan
 
 ## Decision
 
-Prepare **2.0.0 Beta 8**, tag `v2.0.0-beta.8`, build **50**, on `lit/v2-beta`.
-Beta 7/build 49 is the previous signed and notarized prerelease. Its exact
-signed-update/component-migration acceptance test
-remains incomplete and is disclosed in its release notes.
-Beta 8 is published as a signed and notarized prerelease, including the accumulated milestone implementation and integrated checkpoint browser. Public downloads and the exact signed beta feed are verified. Remaining acceptance limits are disclosed in [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
+Prepare **2.0.0 Beta 9**, tag `v2.0.0-beta.9`, build **51**, on `lit/v2-beta`.
+Beta 8/build 50 is the current signed and notarized prerelease; keep its exact
+published update feed until Beta 9 publication. Beta 9 introduces the Beztrace
+companion setup card. Its independent plugin remains an unsigned development
+preview and is excluded from bundled installation. See [BETA9-VALIDATION.md](BETA9-VALIDATION.md).
+Beta 8's remaining acceptance limits are recorded in [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first
@@ -17,7 +18,7 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 8**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 9**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -34,7 +35,7 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
   restored settings and component receipts; do not market side-by-side server
-  isolation. The Beta 8 payload is Glyphs 4-only; Glyphs 3 remains on its
+  isolation. The Beta 9 payload is Glyphs 4-only; Glyphs 3 remains on its
   separate pinned v1.11.0 release.
 
 ## Release sequence
@@ -60,7 +61,7 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.8 --publish --confirm-publish v2.0.0-beta.8
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.9 --publish --confirm-publish v2.0.0-beta.9
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -70,8 +71,9 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 8 uses `--beta 8 --installer-build 50`. Distribution verification passed;
-remaining native UI/card and signed-update acceptance limits are disclosed.
+Beta 9 uses `--beta 9 --installer-build 51`. Signing, notarization and
+publication are pending. Carry forward the outstanding native UI and signed-update
+acceptance checks from the published Beta 8 qualification record.
 Published Beta 7 evidence and its open qualification limits are recorded in
 [BETA7-VALIDATION.md](BETA7-VALIDATION.md). Historical Beta 6 evidence remains in
 [BETA6-VALIDATION.md](BETA6-VALIDATION.md). Final 2.0.0 gets a new

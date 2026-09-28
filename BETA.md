@@ -27,6 +27,13 @@ The published identity is `2.0.0-beta.8`, desktop build 50, on `lit/v2-beta`.
 See [qualification](BETA8-VALIDATION.md) and the
 [release report](reports/beta8-release-candidate/README.md).
 
+## Beta 9 preparation
+
+The working source now targets **Beta 9/build 51**. Beta 9 adds the Beztrace
+companion card described below. Beta 8 remains the available download and update
+feed until Beta 9 is qualified, signed and published.
+See [Beta 9 validation](BETA9-VALIDATION.md).
+
 ## Requirements and availability
 
 Beta 8 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
@@ -124,3 +131,21 @@ choose a layer without the “unchanged” suffix to display the available geome
 difference. Native unnamed-node null-to-empty normalization is a separate
 selective-recovery follow-up. Historical build-48 update/migration evidence is
 in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
+
+## Beztrace
+
+Beta 9 Setup includes **Beztrace**, a separately versioned Glyphs plugin for
+tracing PNG/JPEG images into editable paths. **Setup details…** shows version
+0.1.0/build 2, requirements, engine download and plugin setup documentation.
+The plugin is an unsigned development preview; native Glyphs qualification and
+a signed companion release are pending. Availability does not imply installation
+or that Glyphs has loaded it. Install All continues to handle the three bundled
+components and agent connections.
+
+Beztrace requires Glyphs 4.1 build 4107 or later, Python 3.9 or later in Glyphs,
+and the separate [beztrace 0.1.0 engine](https://github.com/thierryc/beztrace/releases/tag/v0.1.0).
+After plugin installation and a Glyphs relaunch, select one layer and use
+**Path → Trace Image…**. The plugin works without the MCP server. Its shared
+engine remains installed when the plugin is removed.
+
+Integration source: [Beztrace companion 0.1.0/build 2](https://github.com/thierryc/beztrace/blob/45b1108fb7f51d5877c964a296a867412eb167cb/Companions/Glyphs/README.md).

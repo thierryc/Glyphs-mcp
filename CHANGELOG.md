@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0 Beta 9 — in preparation, build 51
+
+- Add Beztrace to Setup with plugin version, development availability, Glyphs
+  requirements, usage guidance and links to its independent engine and setup.
+- Keep Beztrace separate from the bundled component transaction and Install All;
+  its unsigned plugin is awaiting native qualification and a signed release.
+- Preserve the published Beta 8 update feed during Beta 9 preparation.
+
 ## 2.0.0 Beta 8 — 2026-09-28, build 50
 
 - Remove the 4,096-surface native-script limit while retaining the complete

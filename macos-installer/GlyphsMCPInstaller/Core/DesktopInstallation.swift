@@ -47,6 +47,29 @@ public struct DesktopComponent: Identifiable {
     public static let ids = Set(all.map(\.id))
 }
 
+/// Independently distributed companions are visible in Setup but never enter
+/// the bundled component transaction or its Install All queue.
+public struct ExternalGlyphsCompanion: Identifiable {
+    public let id: String
+    public let title: String
+    public let detail: String
+    public let versionLabel: String
+    public let availability: String
+    public let requirements: String
+    public let documentation: URL
+    public let engineRelease: URL
+
+    public static let beztrace = ExternalGlyphsCompanion(
+        id: "beztrace-glyphs", title: "Beztrace",
+        detail: "Trace PNG and JPEG images into editable outlines. Preview and fit the result to font metrics in Glyphs.",
+        versionLabel: "Plugin 0.1.0 · Build 2",
+        availability: "Development preview",
+        requirements: "Glyphs 4.1 (build 4107 or later), Python 3.9 or later in Glyphs, and the separately installed beztrace 0.1.0 engine.",
+        documentation: URL(string: "https://github.com/thierryc/beztrace/blob/45b1108fb7f51d5877c964a296a867412eb167cb/Companions/Glyphs/README.md")!,
+        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases/tag/v0.1.0")!
+    )
+}
+
 public enum SetupOperation: String, Equatable, Sendable {
     case install, update, remove
 

@@ -5,6 +5,7 @@ import GlyphsMCPInstallerCore
 struct InstallationView: View {
     @EnvironmentObject private var model: InstallerViewModel
     @State private var pendingRemoval: RemovalTarget?
+    @State private var showingBeztraceSetup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -35,6 +36,9 @@ struct InstallationView: View {
             Button("Cancel", role: .cancel) { pendingRemoval = nil }
         } message: { target in
             Text(target.message)
+        }
+        .sheet(isPresented: $showingBeztraceSetup) {
+            BeztraceSetupView()
         }
     }
 
@@ -77,6 +81,7 @@ struct InstallationView: View {
                         retry: { model.retryComponent(component.id) }
                     )
                 }
+                BeztraceSetupCard { showingBeztraceSetup = true }
             }
         }
     }
@@ -106,6 +111,71 @@ struct InstallationView: View {
                 }
             }
         }
+    }
+}
+
+private struct BeztraceSetupCard: View {
+    let showSetup: () -> Void
+    private let companion = ExternalGlyphsCompanion.beztrace
+
+    var body: some View {
+        SetupCard {
+            Image(systemName: "pencil.and.outline")
+                .font(.system(size: 36)).foregroundStyle(Color.accentColor)
+        } title: {
+            Text(companion.title).font(.headline)
+        } detail: {
+            Text(companion.detail)
+        } status: {
+            Label(companion.availability, systemImage: "hammer")
+                .font(.caption.weight(.medium)).foregroundStyle(.secondary)
+        } actions: {
+            HStack {
+                Button("Setup details…", action: showSetup)
+                    .accessibilityLabel("Beztrace setup details")
+                Spacer()
+            }
+        } footer: {
+            Link("Documentation", destination: companion.documentation).font(.caption)
+                .accessibilityLabel("Beztrace documentation")
+        }
+    }
+}
+
+private struct BeztraceSetupView: View {
+    @Environment(\.dismiss) private var dismiss
+    private let companion = ExternalGlyphsCompanion.beztrace
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text("Beztrace for Glyphs").font(.title2.bold())
+                Spacer()
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            }
+            Text(companion.versionLabel).foregroundStyle(.secondary)
+            Text(companion.detail)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Requirements").font(.headline)
+                Text(companion.requirements)
+                Link("Get the beztrace engine", destination: companion.engineRelease)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Plugin availability").font(.headline)
+                Text("The plugin is an unsigned development preview. Native Glyphs testing and a signed plugin release are pending. Install All manages the bundled MCP components; Beztrace setup is separate.")
+                Link("Read plugin setup and verification", destination: companion.documentation)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Using Beztrace").font(.headline)
+                Text("After installing the plugin and relaunching Glyphs, select one glyph layer and choose Path → Trace Image…. Choose an image, trace, review the preview, then Apply.")
+                Text("The plugin works independently of the MCP server. The engine is shared and stays installed when the plugin is removed.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .font(.callout)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(24)
+        .frame(width: 540)
     }
 }
 
