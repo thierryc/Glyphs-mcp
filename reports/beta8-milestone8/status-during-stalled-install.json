@@ -1,0 +1,144 @@
+{
+  "ok": true,
+  "data": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.8",
+      "channel": "beta",
+      "betaNumber": 8,
+      "installerBuild": 50
+    },
+    "runtimeId": "2.0.0-beta.8+bb5297f858c9",
+    "codeHash": "sha256:bb5297f858c9b66a541d159c2554cafb98c1dff1c92199e56bad09b7883722df",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant",
+      "feature_compile",
+      "font_export"
+    ],
+    "readCapabilities": [],
+    "writeCapabilities": [],
+    "nativeActions": [],
+    "jobCapabilities": [
+      "feature.compile.saved.v1",
+      "font.export.static.v1",
+      "font.export.variable.v1",
+      "font.export.web.v1",
+      "font.verify.shaping.v1",
+      "font.verify.tables.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "accept_job",
+      "discard_job",
+      "save_document",
+      "start_edit_workflow",
+      "get_edit_workflow",
+      "respond_edit_workflow"
+    ],
+    "bridge": {
+      "reachable": false,
+      "error": {
+        "code": "bridge_unavailable",
+        "message": "Glyphs bridge is unavailable",
+        "details": {}
+      }
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": [],
+      "jobCapabilities": [
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1"
+      ]
+    },
+    "controlProtocol": 1,
+    "workflowCapabilities": [
+      "edit.workflow.v1",
+      "font.checkpoints.v1"
+    ],
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "document": "Dactylotype",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1790602547.635148,
+          "finishedAt": 1790602547.635181,
+          "completed": 9,
+          "total": 9,
+          "message": null
+        },
+        {
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "accepted",
+          "startedAt": 1790602343.069375,
+          "finishedAt": 1790602343.069396,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "completed",
+          "startedAt": 1790599526.487915,
+          "finishedAt": 1790599526.48793,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_6de0d49779554f29b23e662737676a9a",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "accepted",
+          "startedAt": 1790599000.930567,
+          "finishedAt": 1790599000.930594,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+          "document": "Checkpoint qualification glyphs",
+          "kind": "font_export",
+          "phase": "accepted",
+          "startedAt": 1790598404.002562,
+          "finishedAt": 1790598404.002579,
+          "completed": null,
+          "total": null,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+  }
+}

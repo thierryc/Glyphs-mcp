@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import GlyphsMCPInstallerCore
 
 struct DesktopProjectMenuActions: View {
     @ObservedObject var model: DesktopProjectsModel
@@ -20,6 +21,9 @@ struct DesktopProjectSettings: View {
     @State private var name: String
     @State private var folder: URL
     @State private var error = ""
+    @State private var checkpointEnabled = false
+    @State private var configuration: Data?
+    @State private var configurationLoaded = false
 
     init(model: DesktopProjectsModel, path: String) {
         self.model = model; self.path = path
@@ -45,6 +49,10 @@ struct DesktopProjectSettings: View {
                     .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                 Text("Choose its new location if you moved the folder.").font(.caption).foregroundStyle(.secondary)
             }
+            Toggle("Create a Git checkpoint when saving through MCP.", isOn: $checkpointEnabled)
+                .disabled(!configurationLoaded)
+            Text("Enabling this authorizes local checkpoints, including the starting saved baseline. Saving still needs authorization. This does not initialize Git or push.")
+                .font(.caption).foregroundStyle(.secondary)
             if !error.isEmpty { Text(error).font(.callout).foregroundStyle(.red) }
             HStack {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
@@ -52,7 +60,8 @@ struct DesktopProjectSettings: View {
                 Button("Save", action: save).keyboardShortcut(.defaultAction)
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-        }.padding(28).frame(width: 460)
+        }.padding(28).frame(width: 510).onAppear(perform: loadPolicy)
+            .onChange(of: folder) { _, _ in loadPolicy() }
     }
 
     private func chooseFolder() {
@@ -61,8 +70,15 @@ struct DesktopProjectSettings: View {
         panel.begin { response in if response == .OK, let url = panel.url { folder = url; error = "" } }
     }
 
+    private func loadPolicy() {
+        do { let value = try FontCheckpointPolicy.read(folder); configuration = value.data; checkpointEnabled = value.enabled; configurationLoaded = true }
+        catch { self.error = error.localizedDescription; configurationLoaded = false }
+    }
     private func save() {
-        do { try model.update(path, name: name, folder: folder); dismiss() }
+        do {
+            if configurationLoaded { try FontCheckpointPolicy.write(folder, enabled: checkpointEnabled, expected: configuration) }
+            try model.update(path, name: name, folder: folder); dismiss()
+        }
         catch { self.error = error.localizedDescription }
     }
 }

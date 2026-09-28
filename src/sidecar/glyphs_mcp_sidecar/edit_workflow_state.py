@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 from uuid import uuid4
 from glyphs_mcp_protocol import scripts
+from .saved_script import unresolved
 
 TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed"}
 ACTIVE = {"preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
@@ -15,6 +16,8 @@ class WorkflowStore:
     def __init__(self, root):
         self.root = Path(root) / "edit-workflows"
         self.records = {}
+        self._active, self._keys, self._jobs, self._peers = {}, {}, {}, {}
+        self._memberships = {}
         if self.root.is_dir():
             for path in sorted(self.root.glob("edit_*.json")):
                 try:
@@ -22,6 +25,7 @@ class WorkflowStore:
                     if value["id"] != path.stem or value.get("version") != 1:
                         continue
                     self.records[value["id"]] = value
+                    self._remember(value)
                     if value["state"] not in TERMINAL and value["state"] != "interrupted":
                         value["resumeState"] = value["state"]
                         self.update(value, state="interrupted", error={
@@ -53,6 +57,40 @@ class WorkflowStore:
         temporary.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True))
         temporary.chmod(0o600)
         temporary.replace(path)
+        self._remember(value)
+
+    def _remember(self, value):
+        identity = value['id']
+        active = (value['state'] in ACTIVE - {'uncertain'}
+                  or value['state'] == 'ready' and value['mode'] == 'apply')
+        peer = value['state'] not in TERMINAL or unresolved(value.get('job') or {})
+        membership = (value['idempotencyKey'], value.get('jobId'), value['document']['id'] if peer else None)
+        previous = self._memberships.get(identity, (None, None, None))
+        for index, mapping in enumerate((self._keys, self._jobs, self._peers)):
+            old, new = previous[index], membership[index]
+            if old != new and old is not None:
+                mapping[old].pop(identity, None)
+                if not mapping[old]:
+                    del mapping[old]
+            if new is not None:
+                mapping.setdefault(new, {})[identity] = None
+        self._memberships[identity] = membership
+        if active:
+            self._active[identity] = None
+        else:
+            self._active.pop(identity, None)
+
+    def active_records(self):
+        return [self.records[key] for key in self._active]
+
+    def matching_key(self, key):
+        return next((self.records[identity] for identity in self._keys.get(key, ())), None)
+
+    def matching_job(self, job_id):
+        return next((self.records[key] for key in self._jobs.get(job_id, ())), None)
+
+    def peers(self, document_id):
+        return [self.records[key] for key in self._peers.get(document_id, ())]
 
 
 def action_token(value, action):
@@ -146,6 +184,12 @@ def offered_actions(value):
 
 def _offered_actions(value):
     state = value["state"]
+    if value['request']['kind'] == 'checkpoint_restore' and state in {'failed','interrupted','uncertain'} and unresolved(value.get('job') or {}):
+        return [('check_outcome','Check result'),('acknowledge_restore_outcome','Acknowledge uncertain restore')]
+    if state == 'failed' and (value.get('job') or {}).get('status') == 'ready' and str((value.get('error') or {}).get('code','')).startswith('checkpoint_'):
+        return [('apply', 'Retry baseline and apply'), ('cancel', 'Cancel')]
+    if state == 'saved' and ((value.get('receipt') or {}).get('checkpoint') or {}).get('status') == 'failed':
+        return [('retry_checkpoint', 'Retry checkpoint without saving')]
     if value.get('blockerId') and (value.get('job') or {}).get('resultKind') == 'script':
         return [('check_outcome', 'Check result')] if state in {'interrupted', 'uncertain'} else [
             ('check_continue', 'Check and continue'), ('cancel', 'Cancel this request')]
@@ -176,6 +220,8 @@ def _offered_actions(value):
         return [("reprepare", "Prepare again")] + ([("save_reprepare", "Save and prepare again")] if save else []) + [("manual_save", "I'll save in Glyphs"), ("cancel", "Cancel")]
     if state in {"ready", "needs_review"}:
         return [("apply", "Apply changes"), ("discard", "Discard preview")]
+    if value['request']['kind'] == 'checkpoint_restore' and state == 'applied':
+        return [('finish_edit', 'Keep changes without saving'), ('save_result', 'Save font')]
     if state == "applied":
         return [("finish_edit", "Keep changes without saving"), ("save_result", "Save font"), ("save_result_as", "Save As…"), ("discard", "Undo these changes")]
     if state == "blocked_review":
@@ -209,17 +255,23 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result['job'] = {k: v for k, v in (result.get('job') or {}).items()
                          if k in {'id', 'status', 'resultKind', 'summary'}}
     options = request.get("options") or {}
-    targets = options.get("targets") or options.get("changes") or options.get("pairs") or []
+    targets = options.get("targets") or options.get("changes") or options.get("pairs") or options.get("edits") or []
     targets = deepcopy(targets if isinstance(targets, dict) else targets[:100])
     result["scope"] = {"kind": request["kind"], "glyphs": request.get("glyphs", [])[:100],
                        "glyphCount": len(request.get("glyphs", [])), "masters": options.get("masters"),
                        "targets": targets}
+    if request['kind'] == 'python_script' and isinstance(targets, dict) and isinstance(targets.get('glyphs'), list):
+        result['scope']['targetSelectorGlyphCount'] = len(targets['glyphs'])
+        result['scope']['targetsTruncated'] = len(targets['glyphs']) > 100
+        targets['glyphs'] = targets['glyphs'][:100]
     finish_action = 'finish_script' if request['kind'] == 'python_script' else 'finish_edit'
     result['autoKeep'] = dict(enabled=value.get('autoKeepEnabled') is True, delaySeconds=30,
                              action=finish_action if auto_keep_available(value) else None)
     result['responseOrigin'] = value.get('responseOrigin')
     result['requestFingerprint'] = scripts.digest(request)
     result['documentStateConfirmed'] = value.get('documentStateConfirmed', False)
+    if request['kind'] != 'python_script' and not value.get('blockerId') and (result.get('job') or {}).get('summary'):
+        result['summary'] = result['job']['summary']
     if request['kind'] == 'python_script':
         result['summary'] = options.get('summary') or 'Run native Python on the requested font scope'
         result['entrypoint'] = options.get('entrypoint', 'per_target')
@@ -271,21 +323,41 @@ def public_workflow(value, *, include_review=False, include_warning=False):
             result['verification'] = 'Intended changes have not been verified by the wrapper.'
         if (value.get('job') or {}).get('outcome') == 'unverified':
             result['message'] = 'Unknown script outcome acknowledged. Execution remains unverified; no code was replayed.'
+    if request['kind'] == 'checkpoint_restore':
+        if (value.get('job') or {}).get('outcome') == 'unverified' or unresolved(value.get('job') or {}):
+            result['message'] = 'Historical restoration was not confirmed. Inspect the intended font; no reload was replayed. Acknowledgment ends this unresolved workflow without claiming recovery.'
+        result['message'] = ('Historical font restored without saving. Later changes were replaced and Undo history was cleared.' if value['state'] == 'applied' else result['message'])
+        if value['state'] in {'preparing','ready','needs_review'}:
+            result['message'] += '\nRestore replaces all later changes in this font, including unsaved edits, and clears Undo history. It does not save or reset the repository.'
+    checkpoint = (value.get('receipt') or {}).get('checkpoint') or {}
+    if value['state'] == 'saved' and checkpoint:
+        result['message'] = ('Font saved; checkpoint failed.' if checkpoint.get('status') == 'failed' else
+                             'Font saved and checkpoint '+('reused: ' if checkpoint.get('status') == 'reused' else 'created: ')+checkpoint.get('revision','')[:12]+'.')
     if value['state'] == 'applied':
         result['message'] += '\n' + current_save_status(value)
     if value.get('blockerId') and (value.get('job') or {}).get('resultKind') == 'script':
         result['message'] = 'Finish the earlier script in its original conversation workflow before continuing.'
         result['message'] += '\nUse that workflow’s available Keep, Save or Restore saved version actions. Restore replaces all subsequent unsaved edits in the whole font.'
+    if (value.get('job') or {}).get('checkpointEnabled') and value['state'] == 'applied':
+        result['message'] += '\nSave font also creates a local Git checkpoint. Keep does not create a result checkpoint.'
     labels = "; ".join(item["label"] for item in result["actions"])
     result["text"] = f'{value["document"].get("familyName") or "Untitled font"} — {value["document"].get("path") or "Not saved yet"}\n{result["message"]}'
+    if result.get('summary'):
+        result['text'] += '\nIntended change: ' + result['summary']
     result["text"] += "\nOperation: " + request["kind"].replace("_", " ")
+    if request['kind'] == 'kerning_edit':
+        result['text'] += '\nScope: {} exact pair edits; master and direction are explicit for each pair.'.format(len(options['edits']))
+        for change in ((result.get('job') or {}).get('sample') or [])[:10]:
+            if change.get('kind') == 'kerning':
+                before = 'absent' if change['before'] is None else str(change['before'])
+                after = 'remove' if change['after'] is None else str(change['after'])
+                result['text'] += '\n{} / {} · {} · {}: {} → {}'.format(change['left'], change['right'], change['master'], change['direction'], before, after)
     if request.get("glyphs"):
         result["text"] += "; glyphs: " + ", ".join(request["glyphs"][:8]) + ("…" if len(request["glyphs"]) > 8 else "")
     if options.get("masters"):
         result["text"] += "; masters: " + ", ".join(options["masters"])
     if request['kind'] == 'python_script':
         report = (result.get('job') or {}).get('report') or {}
-        result['text'] += '\nIntended change: ' + result['summary']
         result['text'] += '\nScope: {} resolved surfaces; {} skipped.'.format(report.get('targetCount', 'pending'), report.get('skippedCount', 0))
         evidence = ((result.get('job') or {}).get('bridgeOperation') or {}).get('scriptResult') or {}
         if result['entrypoint'] == 'per_target' and evidence.get('executed'):
@@ -306,7 +378,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
             result['text'] += '\nShow script: get_edit_workflow with include_review=true.'
     if value.get('blockingWorkflowId'):
         result['text'] += '\nEarlier workflow: ' + value['blockingWorkflowId']
-    if request['kind'] != 'python_script' and value['state'] == 'applied':
+    if request['kind'] not in {'python_script','checkpoint_restore'} and value['state'] == 'applied':
         result['text'] += '\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.'
     if labels:
         result["text"] += "\nAvailable choices: " + labels + ". You can reply in ordinary language."

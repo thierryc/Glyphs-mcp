@@ -1,0 +1,296 @@
+....................................................s................... [  3%]
+........................................................................ [  6%]
+.................................F...................................... [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+............................s........................................... [ 36%]
+........................................................................ [ 39%]
+..........F.....................s....................................... [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+.........F.F............................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 69%]
+........................................................................ [ 72%]
+........................................................................ [ 75%]
+........................................................................ [ 78%]
+........................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+......................                                                   [100%]
+=================================== FAILURES ===================================
+_________ test_v2_catalog_signatures_match_the_base_and_workflow_tools _________
+
+    def test_v2_catalog_signatures_match_the_base_and_workflow_tools():
+        tree = ast.parse('\n'.join((REPO / 'src/sidecar/glyphs_mcp_sidecar'/name).read_text()
+                                   for name in ('server.py','edit_workflow_ui.py')))
+        actual = {}
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            if any(isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
+                   and d.func.attr == 'tool' for d in node.decorator_list):
+                actual[node.name] = [arg.arg for arg in node.args.args]
+        reference = (REPO / 'content/reference/command-set.mdx').read_text()
+        reference = reference.split('## Explicit reads', 1)[0]
+        documented = {}
+        for name, args in re.findall(r'^\| `([a-z_]+)` \| (.*?) \|', reference, re.M):
+            documented[name] = re.findall(r'`([a-z_]+)`', args)
+        assert len(actual) == 12
+>       assert documented == actual
+E       AssertionError: assert {'accept_job'...review'], ...} == {'accept_job'...review'], ...}
+E
+E         Omitting 11 identical items, use -vv to show
+E         Differing items:
+E         {'save_document': ['document_id', 'destination']} != {'save_document': ['document_id', 'destination', 'retry_checkpoint_job_id']}
+E         Use -v to get more diff
+
+src/glyphs-mcp/tests/test_docs_versioning.py:48: AssertionError
+________________ test_initial_core_is_below_reset_line_budgets _________________
+
+    def test_initial_core_is_below_reset_line_budgets() -> None:
+        protocol = _python_lines(REPO / "src" / "protocol" / "glyphs_mcp_protocol")
+        bridge = _python_lines(REPO / "src" / "bridge" / "glyphs_mcp_bridge")
+        sidecar = _python_lines(REPO / "src" / "sidecar" / "glyphs_mcp_sidecar")
+        # Outline edit adds closed operation schemas and canonical path hashes.
+        # Keep explicit headroom without relaxing the 575-line per-file limit.
+        # Compilation/export add closed validators and artifact manifests without
+        # adding tools or a remote object model.
+        # Dimensions adds the 60-field catalog, exact metadata/approval contracts,
+        # and one bounded job using existing Undo, recovery and twelve public tools.
+        # Budget its explicit implementation; retain the existing per-module cap.
+        # Script schemas, immutable native targets and bounded Python invocation.
+        # Save-first native review/restore shares saved-source hashing and chat/save lifecycle.
+        # The existing native preparation algorithms now ship once in the shared
+        # package. Charge them to the original preparation budget, not wire schemas.
+        shared = _python_lines(REPO / "src/protocol/glyphs_mcp_protocol/preparation")
+        assert protocol - shared <= 2500
+        # Native setters for nodes, anchors and component matrices (benefit item 4).
+        # Bounded native master pages and strict IDs add 53 lines; no new tool/history.
+        # Compact selection context uses a small stateless read module; no new tool, job or history hooks.
+        # Lazy native groups and restoration of their original automatic-grouping setting.
+        # Existing inverse callbacks/history only; no additional recovery system.
+        # H3 adds one stateless bounded context projection, preserving all editing hooks.
+        # H4 adds bounded glyph pages with constant-size guards and no inventory cache.
+        # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
+        # H6 adds stateless indexed kerning pages with a bounded work budget.
+        # M7 adds native fractional defaults/axis projection and reuses the master page.
+        # Bounded path pages and identity-preserving native outline operations,
+        # including capability-gated Glyphs keep-shape node removal.
+        # Verified native saving adds an isolated selector adapter plus a bounded
+        # operation coordinator; public save policy stays out of the bridge core.
+        # Native scripts reuse the job registry, without script snapshots or staged patches.
+>       assert bridge <= 5400
+E       assert 5472 <= 5400
+
+src/glyphs-mcp/tests/test_simple_v2_build.py:164: AssertionError
+_____________ test_status_does_not_rehash_or_read_receipt_or_fonts _____________
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-147/test_status_does_not_rehash_or0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11a8e0440>
+
+    def test_status_does_not_rehash_or_read_receipt_or_fonts(tmp_path, monkeypatch):
+        service = SidecarService(SimpleNamespace(status=lambda: {'protocol':1}), jobs=JobStore(tmp_path),
+                                 worker=SimpleNamespace(status=lambda: {'available':True}))
+        def forbidden(*args, **kwargs): raise AssertionError('unexpected identity IO')
+        monkeypatch.setattr(Path, 'read_text', forbidden)
+        monkeypatch.setattr(Path, 'open', forbidden)
+        monkeypatch.setattr('glyphs_mcp_protocol.identity.payload_hash', forbidden)
+        status = service.get_status()
+        assert status['interface'] == 'glyphs-mcp-sidecar' and status['interfaceVersion'] == 1
+        assert status['jobKinds'] == list(JOB_KINDS)
+        assert len(status['tools']) == 12 and status['protocol'] == 1
+>       assert status['workflowCapabilities'] == ['edit.workflow.v1']
+E       AssertionError: assert ['edit.workfl...eckpoints.v1'] == ['edit.workflow.v1']
+E
+E         Left contains one more item: 'font.checkpoints.v1'
+E         Use -v to get more diff
+
+src/glyphs-mcp/tests/test_simple_v2_identity.py:105: AssertionError
+_______________ test_packaged_mcp_initialize_release_and_catalog _______________
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-147/test_packaged_mcp_initialize_r0')
+
+    def test_packaged_mcp_initialize_release_and_catalog(tmp_path):
+        build(tmp_path/'payload')
+        script = '''import asyncio, json
+    from fastmcp import Client
+    from glyphs_mcp_sidecar.server import create_server
+    from glyphs_mcp_protocol import TOOL_NAMES
+    async def main():
+        async with Client(create_server(None)) as client:
+            assert client.initialize_result.serverInfo.version == EXPECTED
+            catalog = await client.list_tools()
+            assert set(t.name for t in catalog) == set(TOOL_NAMES) and len(catalog) == 12
+            read = next(t for t in catalog if t.name == "read_entities")
+            assert set(read.inputSchema["properties"]) == {"document_id", "entities", "fields"}
+            assert set(read.inputSchema["required"]) == {"document_id", "entities", "fields"}
+            assert read.inputSchema["properties"]["document_id"]["type"] == "string"
+            assert read.inputSchema["properties"]["entities"]["type"] == "array"
+            assert read.inputSchema["properties"]["fields"]["items"]["type"] == "string"
+            accept = next(t for t in catalog if t.name == "accept_job")
+            assert set(accept.inputSchema["properties"]) == {"job_id", "destination", "include_preview"}
+            assert set(accept.inputSchema["required"]) == {"job_id"}
+            save = next(t for t in catalog if t.name == "save_document")
+            assert set(save.inputSchema["properties"]) == {"document_id", "destination"}
+            assert set(save.inputSchema["required"]) == {"document_id"}
+            assert "confirm" not in accept.inputSchema["properties"] | save.inputSchema["properties"]
+            assert "reason" not in accept.inputSchema["properties"] | save.inputSchema["properties"]
+            for text in ("Kerning uses", "exact native master ID", "LTR, RTL or vertical", "fields [value] only", "null means no entry", "Dirty and unsaved", "paths.list.v1", "path.geometry.v1", "fields [items]", "fields [nodes]", "invalid_request"):
+                assert text in read.description
+    asyncio.run(main())
+    '''.replace('EXPECTED',repr(load(ROOT)['releaseVersion']))
+>       subprocess.run([sys.executable, '-B', '-c', script], env={**os.environ, 'PYTHONPATH':str(tmp_path/'payload/sidecar')}, check=True)
+
+src/glyphs-mcp/tests/test_simple_v2_identity.py:155:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['/Library/Frameworks/Python.framework/Versions/3.14/bin/python3', '-B', '-c', 'import asyncio, json\nfrom fastmcp im...[items]", "fields [nodes]", "invalid_request"):\n            assert text in read.description\nasyncio.run(main())\n'],)
+kwargs = {'env': {'CODEX_APP_TOOLS_PIPE_PATH': '/tmp/codex-browser-use/b026f9d6-4e1e-4848-b446-ee3ccca579a6.sock', 'CODEX_CI': ...RRIDE': 'Codex Desktop', 'CODEX_MCP_NODE_PATH': '/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node', ...}}
+process = <Popen: returncode: 1 args: ['/Library/Frameworks/Python.framework/Versions/...>
+stdout = None, stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Library/Frameworks/Python.framework/Versions/3.14/bin/python3', '-B', '-c', 'import asyncio, json\nfrom fastmcp import Client\nfrom glyphs_mcp_sidecar.server import create_server\nfrom glyphs_mcp_protocol import TOOL_NAMES\nasync def main():\n    async with Client(create_server(None)) as client:\n        assert client.initialize_result.serverInfo.version == \'2.0.0-beta.8\'\n        catalog = await client.list_tools()\n        assert set(t.name for t in catalog) == set(TOOL_NAMES) and len(catalog) == 12\n        read = next(t for t in catalog if t.name == "read_entities")\n        assert set(read.inputSchema["properties"]) == {"document_id", "entities", "fields"}\n        assert set(read.inputSchema["required"]) == {"document_id", "entities", "fields"}\n        assert read.inputSchema["properties"]["document_id"]["type"] == "string"\n        assert read.inputSchema["properties"]["entities"]["type"] == "array"\n        assert read.inputSchema["properties"]["fields"]["items"]["type"] == "string"\n        accept = next(t for t in catalog if t.name == "accept_job")\n        assert set(accept.inputSchema["properties"]) == {"job_id", "destination", "include_preview"}\n        assert set(accept.inputSchema["required"]) == {"job_id"}\n        save = next(t for t in catalog if t.name == "save_document")\n        assert set(save.inputSchema["properties"]) == {"document_id", "destination"}\n        assert set(save.inputSchema["required"]) == {"document_id"}\n        assert "confirm" not in accept.inputSchema["properties"] | save.inputSchema["properties"]\n        assert "reason" not in accept.inputSchema["properties"] | save.inputSchema["properties"]\n        for text in ("Kerning uses", "exact native master ID", "LTR, RTL or vertical", "fields [value] only", "null means no entry", "Dirty and unsaved", "paths.list.v1", "path.geometry.v1", "fields [items]", "fields [nodes]", "invalid_request"):\n            assert text in read.description\nasyncio.run(main())\n']' returned non-zero exit status 1.
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+Traceback (most recent call last):
+  File "<string>", line 26, in <module>
+    asyncio.run(main())
+    ~~~~~~~~~~~^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 205, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 128, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "<string>", line 20, in main
+    assert set(save.inputSchema["properties"]) == {"document_id", "destination"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+=============================== warnings summary ===============================
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/opener/__init__.py:6
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/opener/__init__.py:6: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs.opener')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/pkg_resources/__init__.py:2558
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/pkg_resources/__init__.py:2558: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(parent)
+
+src/glyphs-mcp/tests/test_simple_v2_compile_export.py::test_harfbuzz_cases_compare_feature_on_off_and_unchanged_controls
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fontTools/ttLib/tables/otBase.py:672: DeprecationWarning: 'repack_with_tag' is deprecated, use serialize_with_tag() instead
+    return hb.repack_with_tag(str(tableTag), data, obj_list)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge        1379     3     1    61  140.75s
+Public MCP tools                       377     0     0    30    5.10s
+Installer and release                  262     0     1    20    8.20s
+Font behavior and companions           286     0     0    27    1.56s
+Docs, skills, and host plugins          57     1     1    11    4.24s
+Other regressions                       30     0     0     6    1.53s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_docs_versioning.py::test_v2_catalog_signatures_match_the_base_and_workflow_tools
+FAILED src/glyphs-mcp/tests/test_simple_v2_build.py::test_initial_core_is_below_reset_line_budgets
+FAILED src/glyphs-mcp/tests/test_simple_v2_identity.py::test_status_does_not_rehash_or_read_receipt_or_fonts
+FAILED src/glyphs-mcp/tests/test_simple_v2_identity.py::test_packaged_mcp_initialize_release_and_catalog
+4 failed, 2391 passed, 3 skipped, 5 warnings in 163.05s (0:02:43)

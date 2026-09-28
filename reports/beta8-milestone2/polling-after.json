@@ -1,0 +1,94 @@
+{
+  "data": {
+    "kind": "color",
+    "targets": 1,
+    "format": "glyphs",
+    "fontGlyphs": 501,
+    "contoursPerSurface": 4,
+    "preparationSeconds": 0.07259795800200664,
+    "applicationPollingSeconds": 0.448811125010252,
+    "totalSeconds": 0.5214090830122586,
+    "verificationSeconds": 0.14651658301590942,
+    "selectiveRecoverySeconds": 0.4213179580110591,
+    "saveSeconds": 0,
+    "saveCalls": 0,
+    "peakRSSBytes": 238436352,
+    "longestPreparationCallSeconds": 0.021400875004474074,
+    "longestApplicationCallSeconds": 0.0018142909975722432,
+    "longestRecoveryCallSeconds": 0.0006028329953551292,
+    "longestScheduledChunkSeconds": 0.16644108400214463,
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.0038189579790923744
+    },
+    "workerLaunches": 0,
+    "sourceCopyCount": 0,
+    "unchangedControls": true,
+    "nativeUndoRedo": true,
+    "selectiveRecovery": true,
+    "trace": [
+      {
+        "source": "workflow",
+        "state": "preparing",
+        "seconds": 0.2099252080079168
+      },
+      {
+        "source": "native",
+        "state": "ready",
+        "seconds": 0.22456920801778324
+      },
+      {
+        "source": "workflow",
+        "state": "ready",
+        "seconds": 0.24500541601446457
+      },
+      {
+        "source": "workflow",
+        "state": "applying",
+        "seconds": 0.4023456660215743
+      },
+      {
+        "source": "native",
+        "state": "applying",
+        "seconds": 0.574153749999823
+      },
+      {
+        "source": "native",
+        "state": "applied",
+        "seconds": 0.5774789580027573
+      },
+      {
+        "source": "workflow",
+        "state": "applied",
+        "seconds": 0.83066016601515
+      },
+      {
+        "source": "workflow",
+        "state": "discarding",
+        "seconds": 1.366531041014241
+      },
+      {
+        "source": "native",
+        "state": "discarding",
+        "seconds": 1.5065459580218885
+      },
+      {
+        "source": "native",
+        "state": "discarded",
+        "seconds": 1.5100227080110926
+      },
+      {
+        "source": "workflow",
+        "state": "discarded",
+        "seconds": 1.7665258330234792
+      }
+    ]
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodologyVersion": 3,
+  "methodology": "Fresh native process; identical prebuilt fixtures; current native route before/after. Whole-font verification outside edit timings. Peak RSS includes runtime, fixture and verification. No prerequisite Save; editor Save and client latency separate. Scheduled/call maxima are instrumentation, not OS UI stall traces."
+}

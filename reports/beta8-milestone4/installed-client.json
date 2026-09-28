@@ -1,0 +1,1301 @@
+{
+  "client": "installed Codex MCP connector",
+  "status": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.8",
+      "channel": "beta",
+      "betaNumber": 8,
+      "installerBuild": 50
+    },
+    "runtimeId": "2.0.0-beta.8+4f63a0966f49",
+    "codeHash": "sha256:4f63a0966f493d295738b5b05422204826f2bea1fd6b9a596cd922a8c4e15f22",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant",
+      "python_script",
+      "outline_edit",
+      "native_action",
+      "dimensions_edit",
+      "feature_compile",
+      "font_export"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1",
+      "layers.list.v1",
+      "kerning.groups.v1",
+      "kerning.pairs.v1",
+      "master.properties.v1",
+      "paths.list.v1",
+      "path.geometry.v1",
+      "outline.background.read.v1",
+      "features.read.v1",
+      "instances.read.v1",
+      "master.dimensions.read.v1"
+    ],
+    "writeCapabilities": [
+      "outline.edit.v1",
+      "outline.remove-node.v1",
+      "outline.background.edit.v1",
+      "native.action.v1",
+      "master.dimensions.edit.v1"
+    ],
+    "nativeActions": [
+      "add_extremes",
+      "add_missing_anchors",
+      "align_components",
+      "cleanup_paths",
+      "connect_open_paths",
+      "correct_path_direction",
+      "decompose_components",
+      "decompose_corners",
+      "make_components",
+      "reinterpolate",
+      "remove_overlap",
+      "round_coordinates",
+      "set_glyph_color",
+      "swap_foreground_background",
+      "update_automatic_feature_block",
+      "update_features",
+      "update_glyph_info",
+      "update_metrics"
+    ],
+    "jobCapabilities": [
+      "feature.compile.live.v1",
+      "feature.compile.saved.v1",
+      "font.export.static.v1",
+      "font.export.variable.v1",
+      "font.export.web.v1",
+      "font.verify.shaping.v1",
+      "font.verify.tables.v1",
+      "script.native.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "accept_job",
+      "discard_job",
+      "save_document",
+      "start_edit_workflow",
+      "get_edit_workflow",
+      "respond_edit_workflow"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.8",
+        "channel": "beta",
+        "betaNumber": 8,
+        "installerBuild": 50
+      },
+      "runtimeId": "2.0.0-beta.8+d9ad46e01f0f",
+      "codeHash": "sha256:d9ad46e01f0f0a5baa93320dc6e9d887d8b4b5485f6a89950015d238d7273119",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.background.edit.v1",
+        "outline.remove-node.v1",
+        "master.dimensions.edit.v1",
+        "native.action.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "script.native.v1",
+        "edit.prepare.native.v1"
+      ],
+      "scriptPreparationVersion": 2,
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": [],
+      "jobCapabilities": [
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1"
+      ]
+    },
+    "controlProtocol": 1,
+    "workflowCapabilities": [
+      "edit.workflow.v1"
+    ],
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_4a6ca722be3e440eaef2166846ddb9e5",
+          "document": "Native workflow probe",
+          "kind": "python_script",
+          "phase": "completed",
+          "startedAt": 1790552419.6978781,
+          "finishedAt": 1790552419.6978939,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_cc182283426b4d4e8dcb955bd01b9327",
+          "document": "Native workflow probe",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1790552410.66958,
+          "finishedAt": 1790552410.669612,
+          "completed": 4096,
+          "total": 4096,
+          "message": null
+        },
+        {
+          "jobId": "job_ab02bddce69b4ec39ab73c0dc2a5079b",
+          "document": "Native workflow probe",
+          "kind": "python_script",
+          "phase": "completed",
+          "startedAt": 1790552242.185643,
+          "finishedAt": 1790552242.185709,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_65ca1003a1094a39a6e41c48eb54349f",
+          "document": "Native workflow probe",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1790552169.561103,
+          "finishedAt": 1790552169.5611289,
+          "completed": 4096,
+          "total": 4096,
+          "message": null
+        },
+        {
+          "jobId": "job_235a5778ca5f49e2bfb4ffed1c192f8e",
+          "document": "Native workflow probe",
+          "kind": "width_delta",
+          "phase": "completed",
+          "startedAt": 1790551815.755671,
+          "finishedAt": 1790551815.75568,
+          "completed": null,
+          "total": null,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+  },
+  "documents": [
+    {
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Native workflow probe"
+    },
+    {
+      "id": "doc_d1a8b3d0a06b4915a279428b0ea6033d",
+      "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    }
+  ],
+  "calls": [
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.186,
+      "response": {
+        "ok": true,
+        "data": {
+          "id": "edit_9bceee192b9e4d7cbd076244919b9c99",
+          "revision": 3,
+          "document": {
+            "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+            "dirty": false,
+            "generation": 0,
+            "isCurrent": true,
+            "familyName": "Native workflow probe"
+          },
+          "mode": "apply",
+          "state": "preparing",
+          "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+          "blockerId": null,
+          "blockingWorkflowId": null,
+          "job": {
+            "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+            "status": "preparing",
+            "summary": null,
+            "resultKind": "mutation",
+            "changeCount": 0,
+            "sample": [],
+            "report": null,
+            "manifest": null,
+            "error": null,
+            "outcome": null,
+            "receipt": null,
+            "bridgeOperation": null,
+            "activity": {
+              "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+              "document": "Native workflow probe",
+              "kind": "width_delta",
+              "phase": "preparing",
+              "startedAt": 1790553572.938082,
+              "finishedAt": null,
+              "completed": null,
+              "total": null,
+              "message": null
+            },
+            "message": null
+          },
+          "error": null,
+          "receipt": null,
+          "reviewInConversation": false,
+          "savedVersion": null,
+          "scope": {
+            "kind": "width_delta",
+            "glyphs": [
+              "probe0"
+            ],
+            "glyphCount": 1,
+            "masters": null,
+            "targets": []
+          },
+          "autoKeep": {
+            "enabled": true,
+            "delaySeconds": 30,
+            "action": null
+          },
+          "responseOrigin": null,
+          "requestFingerprint": "sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3",
+          "documentStateConfirmed": false,
+          "actions": [
+            {
+              "action": "cancel",
+              "label": "Cancel preparation",
+              "token": "a8ffc3417231ade80a2d9e8c6cc062787a2014ae6d912d8c5a68e87408caf999",
+              "requiresDestination": false
+            },
+            {
+              "action": "wait_for_answer",
+              "label": "Wait for my answer",
+              "token": "7234f811b80deff8e81903594bb39a9bc3a39c753a241e67fe48e5355a8f7b0d",
+              "requiresDestination": false
+            }
+          ],
+          "message": "Preparing changes…\nYou can inspect the font. If you edit it, these changes will need to be prepared again.",
+          "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nPreparing changes…\nYou can inspect the font. If you edit it, these changes will need to be prepared again.\nOperation: width delta; glyphs: probe0\nAvailable choices: Cancel preparation; Wait for my answer. You can reply in ordinary language.",
+          "poll": true,
+          "modelContext": "{\"workflow_id\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"expected_revision\":3,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"preparing\",\"poll\":true,\"requestFingerprint\":\"sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"cancel\",\"label\":\"Cancel preparation\",\"action_token\":\"a8ffc3417231ade80a2d9e8c6cc062787a2014ae6d912d8c5a68e87408caf999\",\"requiresDestination\":false},{\"action\":\"wait_for_answer\",\"label\":\"Wait for my answer\",\"action_token\":\"7234f811b80deff8e81903594bb39a9bc3a39c753a241e67fe48e5355a8f7b0d\",\"requiresDestination\":false}]}"
+        }
+      }
+    }
+  ],
+  "A": {
+    "id": "edit_9bceee192b9e4d7cbd076244919b9c99",
+    "revision": 13,
+    "document": {
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Native workflow probe"
+    },
+    "mode": "apply",
+    "state": "applied",
+    "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+      "status": "applied",
+      "summary": "Add 0.125 units to selected glyphs",
+      "resultKind": "mutation",
+      "changeCount": 1,
+      "sample": [
+        {
+          "after": 500.125,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe0",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "status": "applied",
+        "completedChanges": 1,
+        "longestPreparationChunk": null,
+        "totalChanges": 1,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": null,
+        "receipt": null,
+        "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+      },
+      "activity": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "document": "Native workflow probe",
+        "kind": "width_delta",
+        "phase": "applied",
+        "startedAt": 1790553574.802923,
+        "finishedAt": 1790553574.8029509,
+        "completed": 1,
+        "total": 1,
+        "message": null
+      },
+      "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe0"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3",
+    "documentStateConfirmed": true,
+    "actions": [
+      {
+        "action": "finish_edit",
+        "label": "Keep changes without saving",
+        "token": "99855b3060f62dfd6be74d8be8505e689c3b27d3888f5d1588f066f28c031814",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result",
+        "label": "Save font",
+        "token": "76eebc8e17af1e067dea4281bfa3425ad483b84ea255815655272c06c93cdc20",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result_as",
+        "label": "Save As…",
+        "token": "8f08766662a19cf15b559df9d68410b5c646d49a2049e1fc9d5ef41aa4efa967",
+        "requiresDestination": true
+      },
+      {
+        "action": "discard",
+        "label": "Undo these changes",
+        "token": "8ae056e3543aa4905544261f7d0ef6f085196ba3543b36fe4ff10557d2c6b002",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Changes applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nChanges applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nOperation: width delta; glyphs: probe0\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As…; Undo these changes. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"expected_revision\":13,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_edit\",\"label\":\"Keep changes without saving\",\"action_token\":\"99855b3060f62dfd6be74d8be8505e689c3b27d3888f5d1588f066f28c031814\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"76eebc8e17af1e067dea4281bfa3425ad483b84ea255815655272c06c93cdc20\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"8f08766662a19cf15b559df9d68410b5c646d49a2049e1fc9d5ef41aa4efa967\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"8ae056e3543aa4905544261f7d0ef6f085196ba3543b36fe4ff10557d2c6b002\",\"requiresDestination\":false}]}"
+  },
+  "unchangedPolls": [
+    {
+      "seconds": 0.04,
+      "revision": 13
+    },
+    {
+      "seconds": 0.032,
+      "revision": 13
+    },
+    {
+      "seconds": 0.037,
+      "revision": 13
+    },
+    {
+      "seconds": 0.032,
+      "revision": 13
+    },
+    {
+      "seconds": 0.032,
+      "revision": 13
+    },
+    {
+      "seconds": 0.035,
+      "revision": 13
+    },
+    {
+      "seconds": 0.034,
+      "revision": 13
+    },
+    {
+      "seconds": 0.039,
+      "revision": 13
+    },
+    {
+      "seconds": 0.03,
+      "revision": 13
+    },
+    {
+      "seconds": 0.033,
+      "revision": 13
+    }
+  ],
+  "Bblocked": {
+    "id": "edit_d27c0ee92a49445396edc0af3075daff",
+    "revision": 4,
+    "document": {
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Native workflow probe"
+    },
+    "mode": "apply",
+    "state": "blocked_review",
+    "jobId": null,
+    "blockerId": "job_41c0a6041d8c4ca7872e79252b60d507",
+    "blockingWorkflowId": "edit_9bceee192b9e4d7cbd076244919b9c99",
+    "job": {
+      "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+      "status": "applied",
+      "summary": "Add 0.125 units to selected glyphs",
+      "resultKind": "mutation",
+      "changeCount": 1,
+      "sample": [
+        {
+          "after": 500.125,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe0",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "completedChanges": 1,
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "error": null,
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "longestPreparationChunk": null,
+        "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job.",
+        "nativeSave": null,
+        "receipt": null,
+        "scriptResult": null,
+        "status": "applied",
+        "totalChanges": 1
+      },
+      "activity": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "document": "Native workflow probe",
+        "kind": "width_delta",
+        "phase": "applied",
+        "startedAt": 1790553574.802923,
+        "finishedAt": 1790553574.8029509,
+        "completed": 1,
+        "total": 1,
+        "message": null
+      },
+      "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": null,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe1"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": null,
+    "requestFingerprint": "sha256:b3f4d157fec45dcdc6d53675ed0b79dac77a0a46194b1880f6f15f5fde472172",
+    "documentStateConfirmed": false,
+    "actions": [
+      {
+        "action": "keep_previous",
+        "label": "Keep earlier changes without saving",
+        "token": "b990dd2fb7e44c6102d24e339c41df84c953f7735aba40b60ae8603cd848dcdf",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_previous",
+        "label": "Save earlier changes and continue",
+        "token": "7dc05f67b03c29a44670a48f964dc783556da0b6c592984d6643dcabd8e2a568",
+        "requiresDestination": false
+      },
+      {
+        "action": "discard_previous",
+        "label": "Undo earlier changes and continue",
+        "token": "a63976737e7a0f19569bc7e3ba9ed0e8ecb7dc1cc87c535c4899361d4dde0af1",
+        "requiresDestination": false
+      },
+      {
+        "action": "cancel",
+        "label": "Cancel this request",
+        "token": "761cac4829b198f4d40f59626d2b1b30e06beed2b5a87881c43f9a092f0a9373",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Keep, save or undo the earlier changes to continue.\nSaving includes the whole font. Undo affects only the earlier changes and stops if they conflict with later edits.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nKeep, save or undo the earlier changes to continue.\nSaving includes the whole font. Undo affects only the earlier changes and stops if they conflict with later edits.\nOperation: width delta; glyphs: probe1\nEarlier workflow: edit_9bceee192b9e4d7cbd076244919b9c99\nAvailable choices: Keep earlier changes without saving; Save earlier changes and continue; Undo earlier changes and continue; Cancel this request. You can reply in ordinary language.",
+    "poll": true,
+    "modelContext": "{\"workflow_id\":\"edit_d27c0ee92a49445396edc0af3075daff\",\"expected_revision\":4,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"blocked_review\",\"poll\":true,\"requestFingerprint\":\"sha256:b3f4d157fec45dcdc6d53675ed0b79dac77a0a46194b1880f6f15f5fde472172\",\"blockingWorkflowId\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"keep_previous\",\"label\":\"Keep earlier changes without saving\",\"action_token\":\"b990dd2fb7e44c6102d24e339c41df84c953f7735aba40b60ae8603cd848dcdf\",\"requiresDestination\":false},{\"action\":\"save_previous\",\"label\":\"Save earlier changes and continue\",\"action_token\":\"7dc05f67b03c29a44670a48f964dc783556da0b6c592984d6643dcabd8e2a568\",\"requiresDestination\":false},{\"action\":\"discard_previous\",\"label\":\"Undo earlier changes and continue\",\"action_token\":\"a63976737e7a0f19569bc7e3ba9ed0e8ecb7dc1cc87c535c4899361d4dde0af1\",\"requiresDestination\":false},{\"action\":\"cancel\",\"label\":\"Cancel this request\",\"action_token\":\"761cac4829b198f4d40f59626d2b1b30e06beed2b5a87881c43f9a092f0a9373\",\"requiresDestination\":false}]}"
+  },
+  "AafterReconnect": {
+    "id": "edit_9bceee192b9e4d7cbd076244919b9c99",
+    "revision": 14,
+    "document": {
+      "dirty": true,
+      "familyName": "Native workflow probe",
+      "generation": 0,
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "isCurrent": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage"
+    },
+    "mode": "apply",
+    "state": "interrupted",
+    "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "activity": {
+        "completed": 1,
+        "document": "Native workflow probe",
+        "finishedAt": 1790553574.8029509,
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "kind": "width_delta",
+        "message": null,
+        "phase": "applied",
+        "startedAt": 1790553574.802923,
+        "total": 1
+      },
+      "bridgeOperation": {
+        "completedChanges": 1,
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "error": null,
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "longestPreparationChunk": null,
+        "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job.",
+        "nativeSave": null,
+        "receipt": null,
+        "scriptResult": null,
+        "status": "applied",
+        "totalChanges": 1
+      },
+      "changeCount": 1,
+      "error": null,
+      "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+      "manifest": null,
+      "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job.",
+      "outcome": null,
+      "receipt": null,
+      "report": null,
+      "resultKind": "mutation",
+      "sample": [
+        {
+          "after": 500.125,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe0",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "status": "applied",
+      "summary": "Add 0.125 units to selected glyphs"
+    },
+    "error": {
+      "code": "workflow_interrupted",
+      "message": "The service restarted. No save or edit was replayed. Check the existing outcome before starting new work."
+    },
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe0"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3",
+    "documentStateConfirmed": true,
+    "actions": [
+      {
+        "action": "check_outcome",
+        "label": "Check result",
+        "token": "a5329ad95adffa34a74f85693f99bc93878a815bcae1e5fd0b8a07f1b2d2575f",
+        "requiresDestination": false
+      }
+    ],
+    "message": "The connection was interrupted. Check the result to continue.\nCheck your font in Glyphs and review Details before continuing.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nThe connection was interrupted. Check the result to continue.\nCheck your font in Glyphs and review Details before continuing.\nOperation: width delta; glyphs: probe0\nAvailable choices: Check result. You can reply in ordinary language.\nDetails: The service restarted. No save or edit was replayed. Check the existing outcome before starting new work.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"expected_revision\":14,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"interrupted\",\"poll\":false,\"requestFingerprint\":\"sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"check_outcome\",\"label\":\"Check result\",\"action_token\":\"a5329ad95adffa34a74f85693f99bc93878a815bcae1e5fd0b8a07f1b2d2575f\",\"requiresDestination\":false}]}"
+  },
+  "staleAction": {
+    "ok": false,
+    "error": {
+      "code": "stale_workflow_action",
+      "message": "This choice is outdated. Refresh this workflow before choosing again.",
+      "details": {
+        "workflowId": "edit_9bceee192b9e4d7cbd076244919b9c99"
+      }
+    }
+  },
+  "Areconciled": {
+    "id": "edit_9bceee192b9e4d7cbd076244919b9c99",
+    "revision": 17,
+    "document": {
+      "dirty": true,
+      "familyName": "Native workflow probe",
+      "generation": 0,
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "isCurrent": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage"
+    },
+    "mode": "apply",
+    "state": "applied",
+    "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "activity": {
+        "completed": 1,
+        "document": "Native workflow probe",
+        "finishedAt": 1790553574.8029509,
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "kind": "width_delta",
+        "message": null,
+        "phase": "applied",
+        "startedAt": 1790553574.802923,
+        "total": 1
+      },
+      "bridgeOperation": {
+        "completedChanges": 1,
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "error": null,
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "longestPreparationChunk": null,
+        "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job.",
+        "nativeSave": null,
+        "receipt": null,
+        "scriptResult": null,
+        "status": "applied",
+        "totalChanges": 1
+      },
+      "changeCount": 1,
+      "error": null,
+      "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+      "manifest": null,
+      "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job.",
+      "outcome": null,
+      "receipt": null,
+      "report": null,
+      "resultKind": "mutation",
+      "sample": [
+        {
+          "after": 500.125,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe0",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "status": "applied",
+      "summary": "Add 0.125 units to selected glyphs"
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe0"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3",
+    "documentStateConfirmed": true,
+    "actions": [
+      {
+        "action": "finish_edit",
+        "label": "Keep changes without saving",
+        "token": "8f484738e70bfb4dd9889683f8b41e69482cc25fb3c7b044161ba20451be3006",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result",
+        "label": "Save font",
+        "token": "1f683c606befe41df976a86f9d3b29ab0a1d999312ee3fb65519a2d6a8260a02",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result_as",
+        "label": "Save As…",
+        "token": "cc36d52867d140c8febb736592e6ec9843aef69d9688d58cc5cd7f82e6bf1ae4",
+        "requiresDestination": true
+      },
+      {
+        "action": "discard",
+        "label": "Undo these changes",
+        "token": "433a8c4fd3e741221cb8f8944a82ca836e292626fd314ed0db8b2acc106bca07",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Changes applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nChanges applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nOperation: width delta; glyphs: probe0\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As…; Undo these changes. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"expected_revision\":17,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_edit\",\"label\":\"Keep changes without saving\",\"action_token\":\"8f484738e70bfb4dd9889683f8b41e69482cc25fb3c7b044161ba20451be3006\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"1f683c606befe41df976a86f9d3b29ab0a1d999312ee3fb65519a2d6a8260a02\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"cc36d52867d140c8febb736592e6ec9843aef69d9688d58cc5cd7f82e6bf1ae4\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"433a8c4fd3e741221cb8f8944a82ca836e292626fd314ed0db8b2acc106bca07\",\"requiresDestination\":false}]}"
+  },
+  "kept": {
+    "id": "edit_9bceee192b9e4d7cbd076244919b9c99",
+    "revision": 20,
+    "document": {
+      "dirty": true,
+      "familyName": "Native workflow probe",
+      "generation": 0,
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "isCurrent": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage"
+    },
+    "mode": "apply",
+    "state": "executed",
+    "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+      "status": "completed",
+      "summary": "Add 0.125 units to selected glyphs",
+      "resultKind": "mutation",
+      "changeCount": 1,
+      "sample": [
+        {
+          "after": 500.125,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe0",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "status": "completed",
+        "completedChanges": 1,
+        "longestPreparationChunk": null,
+        "totalChanges": 1,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": null,
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "document": "Native workflow probe",
+        "kind": "width_delta",
+        "phase": "completed",
+        "startedAt": 1790553690.451426,
+        "finishedAt": 1790553690.451461,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe0"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3",
+    "documentStateConfirmed": true,
+    "actions": [],
+    "message": "Changes kept without saving.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nChanges kept without saving.\nOperation: width delta; glyphs: probe0",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"expected_revision\":20,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+  },
+  "duplicateKeep": {
+    "id": "edit_9bceee192b9e4d7cbd076244919b9c99",
+    "revision": 20,
+    "document": {
+      "dirty": true,
+      "familyName": "Native workflow probe",
+      "generation": 0,
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "isCurrent": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage"
+    },
+    "mode": "apply",
+    "state": "executed",
+    "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_41c0a6041d8c4ca7872e79252b60d507",
+      "status": "completed",
+      "summary": "Add 0.125 units to selected glyphs",
+      "resultKind": "mutation",
+      "changeCount": 1,
+      "sample": [
+        {
+          "after": 500.125,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe0",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "status": "completed",
+        "completedChanges": 1,
+        "longestPreparationChunk": null,
+        "totalChanges": 1,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": null,
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+        "document": "Native workflow probe",
+        "kind": "width_delta",
+        "phase": "completed",
+        "startedAt": 1790553690.451426,
+        "finishedAt": 1790553690.451461,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe0"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3",
+    "documentStateConfirmed": true,
+    "actions": [],
+    "message": "Changes kept without saving.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nChanges kept without saving.\nOperation: width delta; glyphs: probe0",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_9bceee192b9e4d7cbd076244919b9c99\",\"expected_revision\":20,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:84a477d08d87426784612dfe54ca71ff2deb590182b4d778353fa9be0dc78cb3\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+  },
+  "Breleased": {
+    "id": "edit_d27c0ee92a49445396edc0af3075daff",
+    "revision": 9,
+    "document": {
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Native workflow probe"
+    },
+    "mode": "apply",
+    "state": "waiting_save",
+    "jobId": null,
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": null,
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": null,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe1"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": null,
+    "requestFingerprint": "sha256:b3f4d157fec45dcdc6d53675ed0b79dac77a0a46194b1880f6f15f5fde472172",
+    "documentStateConfirmed": false,
+    "actions": [
+      {
+        "action": "save_continue",
+        "label": "Save and continue",
+        "token": "09cc84388a3edc07bc424e86defa143719444f1ce7564efcd5221e78eeeff2ae",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_as_continue",
+        "label": "Save As…",
+        "token": "a9c5dda7d16d870bf2b590ab89a925721dfa6afa27dd93d3d963667aea1d8a57",
+        "requiresDestination": true
+      },
+      {
+        "action": "manual_save",
+        "label": "I'll save in Glyphs",
+        "token": "a06fde5b6d76b594063a6b2566d4abf33dcfad6209ccc2fe7ba52b65fcf9b242",
+        "requiresDestination": false
+      },
+      {
+        "action": "cancel",
+        "label": "Cancel",
+        "token": "b7c036f2336c2964a0575c3dc0cf7443b4c699dab0eeef2dca25dceaed977765",
+        "requiresDestination": false
+      },
+      {
+        "action": "wait_for_answer",
+        "label": "Wait for my answer",
+        "token": "d4ba487459cc70ceebfe8d39e8852dd6aba26b06c6791860ce9721b12de06379",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Save your font to continue.\nThis saves the whole font, including your existing work. The changes you requested will remain unsaved until you save again.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nSave your font to continue.\nThis saves the whole font, including your existing work. The changes you requested will remain unsaved until you save again.\nOperation: width delta; glyphs: probe1\nAvailable choices: Save and continue; Save As…; I'll save in Glyphs; Cancel; Wait for my answer. You can reply in ordinary language.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_d27c0ee92a49445396edc0af3075daff\",\"expected_revision\":9,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"waiting_save\",\"poll\":false,\"requestFingerprint\":\"sha256:b3f4d157fec45dcdc6d53675ed0b79dac77a0a46194b1880f6f15f5fde472172\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"save_continue\",\"label\":\"Save and continue\",\"action_token\":\"09cc84388a3edc07bc424e86defa143719444f1ce7564efcd5221e78eeeff2ae\",\"requiresDestination\":false},{\"action\":\"save_as_continue\",\"label\":\"Save As…\",\"action_token\":\"a9c5dda7d16d870bf2b590ab89a925721dfa6afa27dd93d3d963667aea1d8a57\",\"requiresDestination\":true},{\"action\":\"manual_save\",\"label\":\"I'll save in Glyphs\",\"action_token\":\"a06fde5b6d76b594063a6b2566d4abf33dcfad6209ccc2fe7ba52b65fcf9b242\",\"requiresDestination\":false},{\"action\":\"cancel\",\"label\":\"Cancel\",\"action_token\":\"b7c036f2336c2964a0575c3dc0cf7443b4c699dab0eeef2dca25dceaed977765\",\"requiresDestination\":false},{\"action\":\"wait_for_answer\",\"label\":\"Wait for my answer\",\"action_token\":\"d4ba487459cc70ceebfe8d39e8852dd6aba26b06c6791860ce9721b12de06379\",\"requiresDestination\":false}]}"
+  },
+  "Bfinished": {
+    "id": "edit_d27c0ee92a49445396edc0af3075daff",
+    "revision": 26,
+    "document": {
+      "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Native workflow probe"
+    },
+    "mode": "apply",
+    "state": "executed",
+    "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_4b7af4e4b7014242a85b50e75cded20a",
+      "status": "completed",
+      "summary": "Add 0.25 units to selected glyphs",
+      "resultKind": "mutation",
+      "changeCount": 1,
+      "sample": [
+        {
+          "after": 500.25,
+          "before": 500,
+          "field": "width",
+          "glyph": "probe1",
+          "kind": "set",
+          "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+        }
+      ],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+        "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+        "status": "completed",
+        "completedChanges": 1,
+        "longestPreparationChunk": null,
+        "totalChanges": 1,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": null,
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+        "document": "Native workflow probe",
+        "kind": "width_delta",
+        "phase": "completed",
+        "startedAt": 1790553710.933641,
+        "finishedAt": 1790553710.9336681,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": {
+      "saveId": "save_e81bec4c676a467f97708ce00e80b294",
+      "jobId": null,
+      "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:bc662958c086c0de2b350274795117b372bcb28806621c499da92cb861a5ee6c",
+      "sourceHashAfter": "sha256:1ea9a1f83386567f6341e7e947e81c2eac8e62d283c60d819e211739d26167f7",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:1ea9a1f83386567f6341e7e947e81c2eac8e62d283c60d819e211739d26167f7",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790553704.841687
+    },
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "probe1"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:b3f4d157fec45dcdc6d53675ed0b79dac77a0a46194b1880f6f15f5fde472172",
+    "documentStateConfirmed": true,
+    "actions": [],
+    "message": "Changes kept without saving.",
+    "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\nChanges kept without saving.\nOperation: width delta; glyphs: probe1",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_d27c0ee92a49445396edc0af3075daff\",\"expected_revision\":26,\"document_id\":\"doc_a65933ef3bc84c91a7b9e113343a68ab\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:b3f4d157fec45dcdc6d53675ed0b79dac77a0a46194b1880f6f15f5fde472172\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+  },
+  "verifiedWidths": [
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "probe0",
+        "id": "A98EF95D-1121-437B-8456-A13F589B46A2"
+      },
+      "values": {
+        "width": 500.125
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "probe1",
+        "id": "A98EF95D-1121-437B-8456-A13F589B46A2"
+      },
+      "values": {
+        "width": 500.25
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "probe2",
+        "id": "A98EF95D-1121-437B-8456-A13F589B46A2"
+      },
+      "values": {
+        "width": 500
+      }
+    }
+  ],
+  "finalSave": {
+    "saveId": "save_80d1465b13a84311b93ad3db08e57c08",
+    "jobId": null,
+    "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+    "saveMode": "save",
+    "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "dirtyBefore": true,
+    "dirtyAfter": false,
+    "nativeSaveSucceeded": true,
+    "writeAttempted": true,
+    "sourceHashBefore": "sha256:1ea9a1f83386567f6341e7e947e81c2eac8e62d283c60d819e211739d26167f7",
+    "sourceHashAfter": "sha256:96e27202b79c289a62b7fc3e635b711eff90df210373b59402ec4da7eb37ee6d",
+    "sourceChangedSinceJob": false,
+    "originalSourceHashAfter": "sha256:96e27202b79c289a62b7fc3e635b711eff90df210373b59402ec4da7eb37ee6d",
+    "originalSourceUnchanged": null,
+    "verification": "native_and_source_hash",
+    "savedAt": 1790553813.332407
+  }
+}

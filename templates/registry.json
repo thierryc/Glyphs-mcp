@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "templates": [
     {
+      "id": "font-git-checkpoints",
+      "name": "Font project with Git checkpoints",
+      "description": "A font project with explicit Git initialization and local checkpoints after authorized MCP saves.",
+      "author": "Glyphs MCP",
+      "license": "MIT",
+      "repository": "",
+      "templateDirectory": ".",
+      "revision": "",
+      "archiveSHA256": "",
+      "bundledResource": "font-git-checkpoints"
+    },
+    {
       "id": "glyphs-mcp-workshop",
       "name": "Glyphs MCP Workshop",
       "description": "Workshop demo font, checkpoints, prompts and a read-only reporting script. 8 October 2026; preparation draft.",

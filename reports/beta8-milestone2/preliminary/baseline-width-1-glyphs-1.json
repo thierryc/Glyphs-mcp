@@ -1,0 +1,10 @@
+{
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone2/baseline/scripts/native_script_harness.py\", line 149, in work\n    try:result['data']=callback(self);result['passed']=True\n                       ~~~~~~~~^^^^^^\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone2/baseline/scripts/benchmark_scoped_preparation.py\", line 92, in exercise\n    started=time.perf_counter();assert h.main(observe)==expected;verification=time.perf_counter()-started\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodologyVersion": 3,
+  "methodology": "Fresh native process; identical prebuilt fixtures; current native route before/after. Whole-font verification outside edit timings. Peak RSS includes runtime, fixture and verification. No prerequisite Save; editor Save and client latency separate. Scheduled/call maxima are instrumentation, not OS UI stall traces."
+}

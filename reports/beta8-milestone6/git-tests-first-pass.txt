@@ -1,0 +1,137 @@
+..FFsF..................FFFF..                                           [100%]
+=================================== FAILURES ===================================
+___ test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphs] ___
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:70: in test_exact_font_commit_preserves_unrelated_staging_and_worktree
+    result=target.checkpoint(expected,'save_1',record([{'request':{'kind':'width_delta','delta':.25}}]))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:162: in _publish
+    self.git('update-ref', ref, new, old or '0'*len(new))
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:55: in git
+    raise CheckpointError('checkpoint_git_failed', result.stderr.decode(errors='replace')[:2000].strip())
+E   glyphs_mcp_sidecar.checkpoint_git.CheckpointError: fatal: update_ref failed for ref 'refs/heads/main': cannot lock ref 'HEAD': Unable to create '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_exact_font_commit_preserv0/project/.git/HEAD.lock': File exists.
+E
+E   Another git process seems to be running in this repository, e.g.
+E   an editor opened by 'git commit'. Please make sure all processes
+E   are terminated then try again. If it still fails, a git process
+E   may have crashed in this repository earlier:
+E   remove the file manually to continue.
+_ test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphspackage] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:70: in test_exact_font_commit_preserves_unrelated_staging_and_worktree
+    result=target.checkpoint(expected,'save_1',record([{'request':{'kind':'width_delta','delta':.25}}]))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:162: in _publish
+    self.git('update-ref', ref, new, old or '0'*len(new))
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:55: in git
+    raise CheckpointError('checkpoint_git_failed', result.stderr.decode(errors='replace')[:2000].strip())
+E   glyphs_mcp_sidecar.checkpoint_git.CheckpointError: fatal: update_ref failed for ref 'refs/heads/main': cannot lock ref 'HEAD': Unable to create '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_exact_font_commit_preserv1/project/.git/HEAD.lock': File exists.
+E
+E   Another git process seems to be running in this repository, e.g.
+E   an editor opened by 'git commit'. Please make sure all processes
+E   are terminated then try again. If it still fails, a git process
+E   may have crashed in this repository earlier:
+E   remove the file manually to continue.
+________ test_package_additions_and_deletions_are_exact[.glyphspackage] ________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:88: in test_package_additions_and_deletions_are_exact
+    target,_=engine(repo);result=target.checkpoint(source_hash(font),'save_package',record())
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:162: in _publish
+    self.git('update-ref', ref, new, old or '0'*len(new))
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:55: in git
+    raise CheckpointError('checkpoint_git_failed', result.stderr.decode(errors='replace')[:2000].strip())
+E   glyphs_mcp_sidecar.checkpoint_git.CheckpointError: fatal: update_ref failed for ref 'refs/heads/main': cannot lock ref 'HEAD': Unable to create '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_package_additions_and_del1/project/.git/HEAD.lock': File exists.
+E
+E   Another git process seems to be running in this repository, e.g.
+E   an editor opened by 'git commit'. Please make sure all processes
+E   are terminated then try again. If it still fails, a git process
+E   may have crashed in this repository earlier:
+E   remove the file manually to continue.
+_ test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphs] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:129: in test_uncertain_publish_reconciles_existing_revision_without_duplicate
+    with pytest.raises(OSError):target.checkpoint(source_hash(font),'save_uncertain',record())
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:126: in lost_response
+    publish(*args)
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:162: in _publish
+    self.git('update-ref', ref, new, old or '0'*len(new))
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:55: in git
+    raise CheckpointError('checkpoint_git_failed', result.stderr.decode(errors='replace')[:2000].strip())
+E   glyphs_mcp_sidecar.checkpoint_git.CheckpointError: fatal: update_ref failed for ref 'refs/heads/main': cannot lock ref 'HEAD': Unable to create '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_uncertain_publish_reconci0/project/.git/HEAD.lock': File exists.
+E
+E   Another git process seems to be running in this repository, e.g.
+E   an editor opened by 'git commit'. Please make sure all processes
+E   are terminated then try again. If it still fails, a git process
+E   may have crashed in this repository earlier:
+E   remove the file manually to continue.
+_ test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphspackage] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:129: in test_uncertain_publish_reconciles_existing_revision_without_duplicate
+    with pytest.raises(OSError):target.checkpoint(source_hash(font),'save_uncertain',record())
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:126: in lost_response
+    publish(*args)
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:162: in _publish
+    self.git('update-ref', ref, new, old or '0'*len(new))
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:55: in git
+    raise CheckpointError('checkpoint_git_failed', result.stderr.decode(errors='replace')[:2000].strip())
+E   glyphs_mcp_sidecar.checkpoint_git.CheckpointError: fatal: update_ref failed for ref 'refs/heads/main': cannot lock ref 'HEAD': Unable to create '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_uncertain_publish_reconci1/project/.git/HEAD.lock': File exists.
+E
+E   Another git process seems to be running in this repository, e.g.
+E   an editor opened by 'git commit'. Please make sure all processes
+E   are terminated then try again. If it still fails, a git process
+E   may have crashed in this repository earlier:
+E   remove the file manually to continue.
+____________ test_concurrent_ref_change_is_not_overwritten[.glyphs] ____________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:147: in test_concurrent_ref_change_is_not_overwritten
+    with pytest.raises(CheckpointError):target.checkpoint(source_hash(font),'save_race',record())
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:144: in concurrent
+    git(root,'update-ref',ref,other,old)
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:15: in git
+    return subprocess.run(['git', '-C', str(root), *args], capture_output=True,
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['git', '-C', '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_concurrent_ref_change_is_0/project', 'update-ref', 'refs/heads/main', 'e529c1c5d77ae6bb492774ee587389ff92ecc3bd', '561a7d37d8da53ea2a6986e3844813e8f8ec175c']' returned non-zero exit status 128.
+________ test_concurrent_ref_change_is_not_overwritten[.glyphspackage] _________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:147: in test_concurrent_ref_change_is_not_overwritten
+    with pytest.raises(CheckpointError):target.checkpoint(source_hash(font),'save_race',record())
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:210: in checkpoint
+    self._publish(ref, revision, head)
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:144: in concurrent
+    git(root,'update-ref',ref,other,old)
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:15: in git
+    return subprocess.run(['git', '-C', str(root), *args], capture_output=True,
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['git', '-C', '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-136/test_concurrent_ref_change_is_1/project', 'update-ref', 'refs/heads/main', '4ef02cf7fb9ae79b8c1d46611c52833246a50608', '4b9f18f94e9a2444325d4d0114ffcec6314b4e1d']' returned non-zero exit status 128.
+=============================== warnings summary ===============================
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_matching_baseline_reuses_head_without_touching_font_or_index[.glyphs]
+  /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:182: SyntaxWarning: "\." is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\."? A raw string is also an option.
+    if not re.fullmatch('[A-Za-z0-9_-]{1,128}\.json', name): fail('Invalid scope record name.')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge          22     7     1     1   16.15s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_package_additions_and_deletions_are_exact[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_concurrent_ref_change_is_not_overwritten[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_concurrent_ref_change_is_not_overwritten[.glyphspackage]
+7 failed, 22 passed, 1 skipped, 1 warning in 16.38s

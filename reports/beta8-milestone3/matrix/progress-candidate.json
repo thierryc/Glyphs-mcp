@@ -1,0 +1,252 @@
+[
+  {
+    "case": "candidate-width-1000-glyphs-1",
+    "passed": true,
+    "processSeconds": 11.023119208985008
+  },
+  {
+    "case": "candidate-width-1000-glyphs-2",
+    "passed": true,
+    "processSeconds": 11.347204667021288
+  },
+  {
+    "case": "candidate-width-1000-glyphs-3",
+    "passed": true,
+    "processSeconds": 11.035612583014881
+  },
+  {
+    "case": "candidate-width-1000-glyphs-4",
+    "passed": true,
+    "processSeconds": 10.7968232499843
+  },
+  {
+    "case": "candidate-width-1000-glyphs-5",
+    "passed": true,
+    "processSeconds": 11.114894708007341
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 12.86452512498363
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 13.157210542005487
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 14.078072499978589
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 13.642386750027072
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 13.160091625002678
+  },
+  {
+    "case": "candidate-width-4096-glyphs-1",
+    "passed": true,
+    "processSeconds": 16.67017370898975
+  },
+  {
+    "case": "candidate-width-4096-glyphs-2",
+    "passed": true,
+    "processSeconds": 16.84936612501042
+  },
+  {
+    "case": "candidate-width-4096-glyphs-3",
+    "passed": true,
+    "processSeconds": 16.984043292002752
+  },
+  {
+    "case": "candidate-width-4096-glyphs-4",
+    "passed": true,
+    "processSeconds": 16.59435304198996
+  },
+  {
+    "case": "candidate-width-4096-glyphs-5",
+    "passed": true,
+    "processSeconds": 16.74651550000999
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 19.810036833019694
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 19.924316999997245
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 19.754203374992358
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 19.52965637500165
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 19.196690125012537
+  },
+  {
+    "case": "candidate-script-1000-glyphs-1",
+    "passed": true,
+    "processSeconds": 2.1666561249876395
+  },
+  {
+    "case": "candidate-script-1000-glyphs-2",
+    "passed": true,
+    "processSeconds": 1.8453489159874152
+  },
+  {
+    "case": "candidate-script-1000-glyphs-3",
+    "passed": true,
+    "processSeconds": 1.849619624990737
+  },
+  {
+    "case": "candidate-script-1000-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.8723432919941843
+  },
+  {
+    "case": "candidate-script-1000-glyphs-5",
+    "passed": true,
+    "processSeconds": 1.8608434170018882
+  },
+  {
+    "case": "candidate-script-1000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 2.8427217499993276
+  },
+  {
+    "case": "candidate-script-1000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 2.6121480409929063
+  },
+  {
+    "case": "candidate-script-1000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 2.64552195800934
+  },
+  {
+    "case": "candidate-script-1000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 2.6035851249762345
+  },
+  {
+    "case": "candidate-script-1000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 2.624548916995991
+  },
+  {
+    "case": "candidate-script-10000-glyphs-1",
+    "passed": true,
+    "processSeconds": 7.0445366249768995
+  },
+  {
+    "case": "candidate-script-10000-glyphs-2",
+    "passed": true,
+    "processSeconds": 6.974996457982343
+  },
+  {
+    "case": "candidate-script-10000-glyphs-3",
+    "passed": true,
+    "processSeconds": 7.208216832979815
+  },
+  {
+    "case": "candidate-script-10000-glyphs-4",
+    "passed": true,
+    "processSeconds": 7.218702291022055
+  },
+  {
+    "case": "candidate-script-10000-glyphs-5",
+    "passed": true,
+    "processSeconds": 6.955326875002356
+  },
+  {
+    "case": "candidate-script-10000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 14.93287787499139
+  },
+  {
+    "case": "candidate-script-10000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 15.90009983300115
+  },
+  {
+    "case": "candidate-script-10000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 15.025306083000032
+  },
+  {
+    "case": "candidate-script-10000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 15.006723917002091
+  },
+  {
+    "case": "candidate-script-10000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 15.002056999976048
+  },
+  {
+    "case": "candidate-script-20000-glyphs-1",
+    "passed": true,
+    "processSeconds": 12.982885250006802
+  },
+  {
+    "case": "candidate-script-20000-glyphs-2",
+    "passed": true,
+    "processSeconds": 13.342638957983581
+  },
+  {
+    "case": "candidate-script-20000-glyphs-3",
+    "passed": true,
+    "processSeconds": 13.803622625011485
+  },
+  {
+    "case": "candidate-script-20000-glyphs-4",
+    "passed": true,
+    "processSeconds": 13.174756166990846
+  },
+  {
+    "case": "candidate-script-20000-glyphs-5",
+    "passed": true,
+    "processSeconds": 12.992955166002503
+  },
+  {
+    "case": "candidate-script-20000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 30.893768416979583
+  },
+  {
+    "case": "candidate-script-20000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 30.39476370799821
+  },
+  {
+    "case": "candidate-script-20000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 30.122316791006597
+  },
+  {
+    "case": "candidate-script-20000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 30.225931417022366
+  },
+  {
+    "case": "candidate-script-20000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 31.81632629199885
+  }
+]

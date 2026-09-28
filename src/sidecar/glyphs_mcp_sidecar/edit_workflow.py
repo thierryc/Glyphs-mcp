@@ -36,7 +36,7 @@ class EditWorkflows:
     def _run(self):
         while not self.stopped.wait(.25):
             with self.lock:
-                for value in list(self.store.records.values()):
+                for value in self.store.active_records():
                     if self.stopped.is_set():
                         return
                     if (value["state"] in ACTIVE and value["state"] != "uncertain"
@@ -97,18 +97,17 @@ class EditWorkflows:
         with self.lock, self.service.lifecycle.mutation():
             if self.stopped.is_set():
                 raise self.error("service_stopped", "The workflow service is stopping.")
-            for value in self.store.records.values():
-                if value["idempotencyKey"] == idempotency_key:
-                    if (value["document"]["id"] != document_id or value["arguments"] != arguments or value["mode"] != mode
-                            or value.get('autoKeepRequested', auto_keep) != auto_keep):
-                        raise self.error("idempotency_conflict", "This idempotency key belongs to another edit request.")
-                    return public_workflow(value)
+            value = self.store.matching_key(idempotency_key)
+            if value is not None:
+                if (value["document"]["id"] != document_id or value["arguments"] != arguments or value["mode"] != mode
+                        or value.get('autoKeepRequested', auto_keep) != auto_keep):
+                    raise self.error("idempotency_conflict", "This idempotency key belongs to another edit request.")
+                return public_workflow(value)
             document = self.service._document(document_id)
             request = self.service.validate_job_request(**arguments)
             if type(document.get("generation")) is not int:
                 raise self.error("generation_unavailable", "Glyphs did not expose an edit generation.")
-            peers = [v for v in self.store.records.values() if v["document"]["id"] == document_id
-                     and (v["state"] not in TERMINAL or saved_script.unresolved(v.get('job') or {}))]
+            peers = self.store.peers(document_id)
             for peer in peers:
                 if peer.get("jobId") and peer["state"] in {"applied", "ready", "needs_review"}:
                     self._guard(peer, lambda: self._advance(peer, allow_apply=False))
@@ -117,8 +116,7 @@ class EditWorkflows:
                 raise self.error("workflow_busy", "Resolve the existing request for this font first.",
                                  details={"workflowId": peers[-1]["id"]})
             value = self.store.create(document, arguments, request, mode, idempotency_key, auto_keep=auto_keep)
-            blockers = [j for j in self.service.jobs.records()
-                        if j["document"]["id"] == document_id and (j["status"] in JOB_BUSY or saved_script.unresolved(j))]
+            blockers = self.service.jobs.select(JOB_BUSY, document_id=document_id, include_unresolved=True)
             if blockers:
                 self._set(value, blockerId=blockers[0]["id"], state="blocked_active")
                 self._guard(value, lambda: self._advance(value))
@@ -131,7 +129,8 @@ class EditWorkflows:
         with self.lock:
             value = self._find(workflow_id)
             fast_ready = value['state'] == 'preparing'
-            if value.get('blockerId') or (value.get("jobId") and (fast_ready or saved_script.unresolved(value.get('job') or {}) or value["state"] in {"applied", "ready", "needs_review", "waiting_run", "uncertain"})):
+            reconcile_result = value['state'] == 'failed' and (value.get('job') or {}).get('status') in {'applied','accepting','accepted'}
+            if value.get('blockerId') or (value.get("jobId") and (fast_ready or reconcile_result or saved_script.unresolved(value.get('job') or {}) or value["state"] in {"applied", "ready", "needs_review", "waiting_run", "uncertain"})):
                 self._guard(value, lambda: self._advance(value, allow_apply=False))
             if value["state"] in {"applied", "saved"}:
                 try:
@@ -187,7 +186,7 @@ class EditWorkflows:
     def _begin(self, value):
         document = self._document(value, allow_path_change=True)
         self.service.validate_job_request(**value["arguments"])
-        if not document.get("path") or (document.get("dirty") is not False and value["request"]["kind"] != "python_script"):
+        if not document.get("path") or (document.get("dirty") is not False and value["request"]["kind"] not in {"python_script", "checkpoint_restore"}):
             self._set(value, state="waiting_save")
             return
         self._set(value, state="preparing", error=None, reviewInConversation=False)
@@ -198,10 +197,13 @@ class EditWorkflows:
     def _advance(self, value, *, allow_apply=True):
         if value.get("blockerId"):
             job = self.service.get_job(value["blockerId"])
-            original = next((w for w in self.store.records.values() if w.get('jobId') == job['id']), None)
+            original = self.store.matching_job(job['id'])
             self._set(value, job=job, blockingWorkflowId=original['id'] if original else None)
             if job["status"] in {"accepted", "discarded", "completed", "cancelled"} and not saved_script.unresolved(job):
                 restored = ((job.get('bridgeOperation') or {}).get('scriptResult') or {})
+                historical = (job.get('bridgeOperation') or {}).get('documentAfter')
+                if job.get('resultKind') == 'historical_restore' and historical:
+                    self._set(value, document=historical)
                 if restored.get('savedVersionRestored') and restored.get('documentAfter'):
                     # Only this operation's authoritative reload can replace a binding.
                     self._set(value, document=restored['documentAfter'])
@@ -218,11 +220,14 @@ class EditWorkflows:
             return
         job = self.service.get_job(value["jobId"])
         self._set(value, job=job)
+        after = (job.get('bridgeOperation') or {}).get('documentAfter')
+        if job.get('resultKind') == 'historical_restore' and after and value['document']['id'] != after['id']:
+            self._set(value, document=after)
         state = job["status"]
         restored = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
         if state == 'discarded' and restored.get('savedVersionRestored') and restored.get('documentAfter'):
             self._set(value, document=restored['documentAfter'], savedVersion=None)
-        if state == 'completed' and job.get('resultKind') in {'script', 'mutation'}:
+        if state == 'completed' and job.get('resultKind') in {'script', 'mutation', 'historical_restore'}:
             self._set(value, state='executed')
             return
         if state == "ready":
@@ -233,7 +238,7 @@ class EditWorkflows:
                 return
             if report_needs_review(self.service, job):
                 self._set(value, state="needs_review", reviewInConversation=value['request']['kind'] != 'python_script' and report_needs_review(self.service, job, include_overwrites=False))
-            elif not job["changeCount"] and allow_apply:
+            elif not job["changeCount"] and job.get("resultKind") != "historical_restore" and allow_apply:
                 self.service.discard_job(job["id"])
                 self._set(value, state="no_changes")
             elif value["mode"] == "preview" or not allow_apply:
@@ -254,6 +259,16 @@ class EditWorkflows:
         self._set(value, job=job)
 
     def _respond(self, value, action, destination, approved_overwrites):
+        if action == 'acknowledge_restore_outcome':
+            from .checkpoint_restore import acknowledge
+            self._set(value, job=acknowledge(self.service,value,self.error), state='executed')
+            return
+        if action == 'retry_checkpoint':
+            from .checkpoints import retry
+            receipt = retry(self.service, (value.get('receipt') or {}).get('checkpoint', {}).get('retryJobId') or value['jobId'])
+            job = self.service.get_job(value['jobId']) if value.get('jobId') else value.get('job')
+            self._set(value, receipt=receipt, job=job)
+            return
         if action == 'wait_for_answer':
             self._set(value, autoKeepEnabled=False)
             return
@@ -291,6 +306,8 @@ class EditWorkflows:
                 if operation.get("status") == "saved":
                     try:
                         receipt = saving.verify_save(request, operation.get("native") or {})
+                        if request.get('checkpointJobId'):
+                            receipt = self.service.get_job(request['checkpointJobId'])['receipt']
                     except saving.SaveError as exc:
                         raise saving.service_error(exc, self.error) from exc
                     self._set(value, state="waiting_manual", receipt=receipt, error=None)

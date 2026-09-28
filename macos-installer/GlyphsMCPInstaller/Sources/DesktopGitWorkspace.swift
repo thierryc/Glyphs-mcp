@@ -6,7 +6,15 @@ import PierreDiffsSwift
 
 struct DesktopGitWorkspace: View {
     @ObservedObject var model: DesktopProjectsModel
-    @State private var filter = ""
+    @State private var showCheckpoints = false
+    @State private var checkpointSheet: CheckpointSheet?
+
+    private struct CheckpointSheet: Identifiable {
+        enum Kind { case details, restore }
+        let id = UUID()
+        let kind: Kind
+        let context: CheckpointComparisonContext
+    }
     @State private var diffStyle: DiffStyle = .unified
     @State private var overflow: OverflowMode = .scroll
     @State private var overlay: GlyphOverlayMode = .both
@@ -19,9 +27,21 @@ struct DesktopGitWorkspace: View {
     @State private var showGlyphErrorDetails = false
 
     var body: some View {
-        Group {
-            if let git = model.git {
-                if git.changes.isEmpty { cleanState(git) }
+        VStack(spacing: 8) {
+            checkpointToolbar
+            Divider()
+            Group {
+            if model.loadingCheckpoint {
+                ProgressView("Comparing checkpoints…").frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if !model.checkpointError.isEmpty {
+                VStack(spacing: 12) {
+                    ContentUnavailableView("Checkpoint comparison unavailable", systemImage: "exclamationmark.triangle", description: Text(model.checkpointError))
+                    Button("Retry", action: model.refreshComparison)
+                }
+            } else if let git = model.git {
+                if git.changes.isEmpty && model.historicalComparison != nil {
+                    ContentUnavailableView("No font differences between these checkpoints", systemImage: "equal.circle", description: Text("Choose another checkpoint to compare."))
+                } else if git.changes.isEmpty { cleanState(git) }
                 else { browser(git) }
             } else if model.inspecting {
                 ProgressView("Reading local Git information…").frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -29,6 +49,24 @@ struct DesktopGitWorkspace: View {
                 ContentUnavailableView("Git information unavailable", systemImage: "exclamationmark.triangle",
                                        description: Text(model.gitMessage))
             }
+        }
+        }
+        .sheet(item: $checkpointSheet) { sheet in
+            switch sheet.kind {
+            case .details: DesktopCheckpointDetails(context: sheet.context)
+            case .restore:
+                DesktopCheckpointRestore(context: sheet.context) { model.inspect() }
+            }
+        }
+        .onChange(of: model.selectedProject) { _, _ in
+            showCheckpoints = false
+            model.checkpointHistory.cancel()
+        }
+        .onChange(of: model.historicalComparison) { _, _ in
+            selectedDifferenceIndex = nil; selectedLayerID = nil
+            showGlyphErrorDetails = false
+            viewportStore = GlyphViewportSessionStore()
+            viewportRequest = .init(id: viewportRequest.id + 1, target: .fit)
         }
         .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(nsColor: .separatorColor).opacity(0.55)))
@@ -38,6 +76,33 @@ struct DesktopGitWorkspace: View {
             showGlyphErrorDetails = false
             viewportRequest = .init(id: viewportRequest.id + 1, target: .restore)
         }
+    }
+
+    private var checkpointToolbar: some View {
+        HStack(spacing: 12) {
+            if let context = model.historicalComparison {
+                Button(action: model.inspect) { Label("Working changes", systemImage: "chevron.left") }
+                    .help("Return to the project’s working changes")
+                Spacer(minLength: 8)
+                Text(context.checkpoint.dateLabel + " → Latest checkpoint")
+                    .font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    .help(context.checkpoint.helpText + "\nLatest checkpoint revision: " + context.after)
+            }
+            Spacer(minLength: 8)
+            Button { showCheckpoints.toggle() } label: {
+                HStack(spacing: 5) { Text("Font checkpoints"); Image(systemName: "chevron.down").font(.caption) }
+            }
+            .popover(isPresented: $showCheckpoints, arrowEdge: .bottom) {
+                DesktopCheckpointHistory(model: model, history: model.checkpointHistory)
+            }
+            if let context = model.historicalComparison {
+                Menu {
+                    Button("Restore this checkpoint…") { checkpointSheet = .init(kind: .restore, context: context) }
+                    Button("Action details…") { checkpointSheet = .init(kind: .details, context: context) }
+                } label: { Image(systemName: "ellipsis") }
+                    .menuIndicator(.hidden).fixedSize().accessibilityLabel("Checkpoint actions")
+            }
+        }.padding(10)
     }
 
     private func cleanState(_ git: GitObservation) -> some View {
@@ -54,17 +119,17 @@ struct DesktopGitWorkspace: View {
             VStack(spacing: 0) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(git.branch).font(.headline).lineLimit(1).truncationMode(.middle)
-                        Text("\(git.changes.count) changed file\(git.changes.count == 1 ? "" : "s")")
+                        Text(model.historicalComparison?.document.filename ?? git.branch).font(.headline).lineLimit(1).truncationMode(.middle)
+                        Text(fileCountLabel(git))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button(action: model.inspect) { Image(systemName: "arrow.clockwise") }
-                        .buttonStyle(.borderless).help("Refresh Git information")
-                        .accessibilityLabel("Refresh Git information").disabled(model.inspecting)
+                    Button(action: model.refreshComparison) { Image(systemName: "arrow.clockwise") }
+                        .buttonStyle(.borderless).help(model.historicalComparison == nil ? "Refresh working changes" : "Refresh this checkpoint comparison")
+                        .accessibilityLabel("Refresh comparison").disabled(model.inspecting || model.loadingCheckpoint)
                 }.padding(12)
                 Divider()
-                TextField("Filter files", text: $filter).textFieldStyle(.roundedBorder).padding(10)
+                TextField("Filter files", text: $model.fileFilter).textFieldStyle(.roundedBorder).padding(10)
                 Divider()
                 List {
                     OutlineGroup(tree(filtered(git.changes)), children: \.children) { node in row(node) }
@@ -72,6 +137,14 @@ struct DesktopGitWorkspace: View {
                 .listStyle(.sidebar)
                 .scrollContentBackground(.hidden)
                 .environment(\.defaultMinListRowHeight, 28)
+                if !model.checkpointPageError.isEmpty {
+                    Text(model.checkpointPageError).font(.caption).foregroundStyle(.red).padding(8)
+                }
+                if model.checkpointNextOffset != nil {
+                    Button(model.checkpointPageError.isEmpty ? "Load more files…" : "Retry loading files") { model.moreCheckpointChanges() }
+                        .disabled(model.loadingCheckpointPage).padding(8)
+                }
+                if model.loadingCheckpointPage { ProgressView().controlSize(.small).padding(8) }
             }
             .frame(minWidth: 220, idealWidth: 260, maxWidth: 380, maxHeight: .infinity)
 
@@ -81,18 +154,26 @@ struct DesktopGitWorkspace: View {
         .frame(minHeight: 410, maxHeight: .infinity)
     }
 
+    private func fileCountLabel(_ git: GitObservation) -> String {
+        let count = model.historicalComparison?.totalCount ?? git.changes.count
+        let text = "\(count) changed file\(count == 1 ? "" : "s")"
+        return model.checkpointNextOffset == nil ? text : text + " · \(git.changes.count) loaded"
+    }
+
     private var detail: some View {
         VStack(spacing: 0) {
             if let change = model.selectedChange {
                 header(change)
                 Divider()
                 if model.loadingComparison && model.comparison == nil {
-                    DiffLoadingView.comparison(includesGlyphGeometry: change.isGlyphPackageGlyph)
+                    DiffLoadingView.comparison(includesGlyphGeometry: change.isGlyphPackageGlyph, historical: model.historicalComparison != nil)
                 } else if let comparison = model.comparison {
                     comparisonView(change, comparison: comparison)
                 } else {
-                    ContentUnavailableView("Diff unavailable", systemImage: "doc.text.magnifyingglass",
-                                           description: Text(model.comparisonMessage))
+                    VStack {
+                        ContentUnavailableView("Diff unavailable", systemImage: "doc.text.magnifyingglass", description: Text(model.comparisonMessage))
+                        Button("Retry") { model.selectChange(change) }.padding()
+                    }
                 }
             } else {
                 ContentUnavailableView("Select a changed file", systemImage: "doc.text.magnifyingglass")
@@ -499,7 +580,7 @@ struct DesktopGitWorkspace: View {
     }
 
     private func filtered(_ changes: [GitObservation.Change]) -> [GitObservation.Change] {
-        GitChangeTree.filtered(changes, query: filter)
+        GitChangeTree.filtered(changes, query: model.fileFilter)
     }
 
     private func statusBadge(_ change: GitObservation.Change) -> some View {
@@ -1257,16 +1338,16 @@ private struct DiffLoadingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var messageIndex = 0
 
-    static func comparison(includesGlyphGeometry: Bool) -> DiffLoadingView {
+    static func comparison(includesGlyphGeometry: Bool, historical: Bool = false) -> DiffLoadingView {
         DiffLoadingView(
             title: includesGlyphGeometry ? "Preparing glyph and text diff…" : "Preparing text diff…",
             messages: includesGlyphGeometry ? [
                 "Reading the reference version from Git…",
-                "Comparing HEAD with the working tree…",
+                historical ? "Comparing saved checkpoints…" : "Comparing HEAD with the working tree…",
                 "Preparing text and visual changes…"
             ] : [
                 "Reading the reference version from Git…",
-                "Comparing HEAD with the working tree…",
+                historical ? "Comparing saved checkpoints…" : "Comparing HEAD with the working tree…",
                 "Preparing changed lines and words…"
             ],
             accessibilityStatus: includesGlyphGeometry

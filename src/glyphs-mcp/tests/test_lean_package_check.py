@@ -16,6 +16,36 @@ def test_current_package_passes_with_focused_native_coding_guidance():
     assert checker.check()['skills'] == len(manifest['managedSkills'])
 
 
+def test_kerning_dataset_package_rejects_changed_license_or_pair_payload(tmp_path):
+    import shutil
+    root=ROOT/'src/protocol/glyphs_mcp_protocol/data/kerning-pairs'
+    copied=tmp_path/'kerning-pairs';shutil.copytree(root,copied)
+    checker.check_kerning_data(copied)
+    (copied/'pairs.json').write_text('{}')
+    with pytest.raises(AssertionError):checker.check_kerning_data(copied)
+    shutil.copy2(root/'pairs.json',copied/'pairs.json')
+    (copied/'LICENSE.md').write_text('missing notice')
+    with pytest.raises(AssertionError):checker.check_kerning_data(copied)
+
+
+@pytest.mark.parametrize('replacement', ['renamed_tool', 'tool_1'])
+def test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations(tmp_path, replacement):
+    server = tmp_path/'src/sidecar/glyphs_mcp_sidecar'
+    protocol = tmp_path/'src/protocol/glyphs_mcp_protocol'
+    server.mkdir(parents=True); protocol.mkdir(parents=True)
+    names = [f'tool_{index}' for index in range(12)]
+    (protocol/'models.py').write_text('TOOL_NAMES = '+repr(tuple(names)))
+    def declaration(name):
+        return '@mcp.tool(name='+repr(name)+')\ndef f(): pass\n'
+    (server/'server.py').write_text(''.join(declaration(name) for name in names[:9]))
+    (server/'edit_workflow_ui.py').write_text(''.join(declaration(name) for name in names[9:]))
+    assert checker.check_tool_catalog(tmp_path) == set(names)
+    names[0] = replacement
+    (server/'server.py').write_text(''.join(declaration(name) for name in names[:9]))
+    with pytest.raises(AssertionError, match='tool contract'):
+        checker.check_tool_catalog(tmp_path)
+
+
 def test_duplicate_manifest_entry_is_rejected(tmp_path, monkeypatch):
     (tmp_path/'skills').mkdir()
     (tmp_path/'skills/manifest.json').write_text(json.dumps({

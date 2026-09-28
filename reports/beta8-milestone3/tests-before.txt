@@ -1,0 +1,162 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_cleanup_is_bounded_and_keeps_ownership_until_last_step[applied] _____
+
+outcome = 'applied'
+
+    @pytest.mark.parametrize('outcome', ['applied', 'cancelled', 'failed'])
+    def test_cleanup_is_bounded_and_keeps_ownership_until_last_step(outcome):
+        core, queue, native, layers, managers, request = fixture()
+        core.begin_apply(request)
+        if outcome == 'cancelled':
+            queue.run_one(); core.discard(request['jobId'])
+        elif outcome == 'failed':
+            layers[-1]._width = 900  # Later conflict: preceding writes must roll back.
+        observed_cleanup = False
+        while queue.items:
+            before = cleanup_count(layers, managers)
+            queue.run_one()
+            result = core.operation(request['jobId'])
+            delta = cleanup_count(layers, managers)-before
+>           assert delta <= core.chunk_limit, 'native cleanup ran all targets in one turn'
+E           AssertionError: native cleanup ran all targets in one turn
+E           assert 61 <= 3
+E            +  where 3 = <glyphs_mcp_bridge.core.BridgeCore object at 0x10969a120>.chunk_limit
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:53: AssertionError
+____ test_cleanup_is_bounded_and_keeps_ownership_until_last_step[cancelled] ____
+
+outcome = 'cancelled'
+
+    @pytest.mark.parametrize('outcome', ['applied', 'cancelled', 'failed'])
+    def test_cleanup_is_bounded_and_keeps_ownership_until_last_step(outcome):
+        core, queue, native, layers, managers, request = fixture()
+        core.begin_apply(request)
+        if outcome == 'cancelled':
+            queue.run_one(); core.discard(request['jobId'])
+        elif outcome == 'failed':
+            layers[-1]._width = 900  # Later conflict: preceding writes must roll back.
+        observed_cleanup = False
+        while queue.items:
+            before = cleanup_count(layers, managers)
+            queue.run_one()
+            result = core.operation(request['jobId'])
+            delta = cleanup_count(layers, managers)-before
+>           assert delta <= core.chunk_limit, 'native cleanup ran all targets in one turn'
+E           AssertionError: native cleanup ran all targets in one turn
+E           assert 6 <= 3
+E            +  where 3 = <glyphs_mcp_bridge.core.BridgeCore object at 0x1096d60d0>.chunk_limit
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:53: AssertionError
+_____ test_cleanup_is_bounded_and_keeps_ownership_until_last_step[failed] ______
+
+outcome = 'failed'
+
+    @pytest.mark.parametrize('outcome', ['applied', 'cancelled', 'failed'])
+    def test_cleanup_is_bounded_and_keeps_ownership_until_last_step(outcome):
+        core, queue, native, layers, managers, request = fixture()
+        core.begin_apply(request)
+        if outcome == 'cancelled':
+            queue.run_one(); core.discard(request['jobId'])
+        elif outcome == 'failed':
+            layers[-1]._width = 900  # Later conflict: preceding writes must roll back.
+        observed_cleanup = False
+        while queue.items:
+            before = cleanup_count(layers, managers)
+            queue.run_one()
+            result = core.operation(request['jobId'])
+            delta = cleanup_count(layers, managers)-before
+>           assert delta <= core.chunk_limit, 'native cleanup ran all targets in one turn'
+E           AssertionError: native cleanup ran all targets in one turn
+E           assert 60 <= 3
+E            +  where 3 = <glyphs_mcp_bridge.core.BridgeCore object at 0x1096d6e90>.chunk_limit
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:53: AssertionError
+_______ test_cleanup_error_does_not_skip_other_groups_or_flags[manager] ________
+
+failure = 'manager'
+
+    @pytest.mark.parametrize('failure', ['manager', 'rounding'])
+    def test_cleanup_error_does_not_skip_other_groups_or_flags(failure):
+        core, queue, native, layers, managers, request = fixture(bad_manager=failure=='manager', bad_rounding=failure=='rounding')
+        core.begin_apply(request)
+        while queue.items:
+            before = cleanup_count(layers, managers);queue.run_one()
+>           assert cleanup_count(layers, managers)-before <= core.chunk_limit
+E           assert (62 - 1) <= 3
+E            +  where 62 = cleanup_count([<test_simple_v2_glyphs_adapter.FractionalLayer object at 0x109b78370>, <test_simple_v2_glyphs_adapter.FractionalLayer...ter.FractionalLayer object at 0x109b78230>, <test_simple_v2_glyphs_adapter.FractionalLayer object at 0x109b78410>, ...], [<test_simple_v2_exact_history.History object at 0x109b46e40>, <test_simple_v2_exact_history.History object at 0x109b4...ple_v2_exact_history.History object at 0x109b47540>, <test_simple_v2_exact_history.History object at 0x109b47310>, ...])
+E            +  and   3 = <glyphs_mcp_bridge.core.BridgeCore object at 0x109b98640>.chunk_limit
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:89: AssertionError
+_______ test_cleanup_error_does_not_skip_other_groups_or_flags[rounding] _______
+
+failure = 'rounding'
+
+    @pytest.mark.parametrize('failure', ['manager', 'rounding'])
+    def test_cleanup_error_does_not_skip_other_groups_or_flags(failure):
+        core, queue, native, layers, managers, request = fixture(bad_manager=failure=='manager', bad_rounding=failure=='rounding')
+        core.begin_apply(request)
+        while queue.items:
+            before = cleanup_count(layers, managers);queue.run_one()
+>           assert cleanup_count(layers, managers)-before <= core.chunk_limit
+E           assert (61 - 1) <= 3
+E            +  where 61 = cleanup_count([<test_simple_v2_glyphs_adapter.FractionalLayer object at 0x109b796d0>, <test_simple_v2_glyphs_adapter.FractionalLayer...ter.FractionalLayer object at 0x109b79630>, <test_simple_v2_glyphs_adapter.FractionalLayer object at 0x109b798b0>, ...], [<test_simple_v2_exact_history.History object at 0x109bd8910>, <test_simple_v2_exact_history.History object at 0x109bd...ple_v2_exact_history.History object at 0x109bd8520>, <test_simple_v2_exact_history.History object at 0x109bd8050>, ...])
+E            +  and   3 = <glyphs_mcp_bridge.core.BridgeCore object at 0x109b99350>.chunk_limit
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:89: AssertionError
+_______ test_scope_closes_in_reverse_order_without_copying_all_managers ________
+
+    def test_scope_closes_in_reverse_order_without_copying_all_managers():
+        class NoBulkCopy(dict):
+            def values(self): raise AssertionError('cleanup must not copy all managers')
+        managers = [History() for _ in range(9)]
+        scope = NativeUndoScope()
+        for manager in managers: scope.manager_for(NS(undoManager=lambda m=manager:m))
+        scope.managers = NoBulkCopy(scope.managers)
+>       scope.finish('Finish')
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:105:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/bridge/glyphs_mcp_bridge/native_undo.py:59: in finish
+    for manager, automatic in reversed(tuple(self.managers.values())):
+                                             ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = {4458387776: (<test_simple_v2_exact_history.History object at 0x109bd9940>, True), 4458387440: (<test_simple_v2_exact_...istory object at 0x109bd9080>, True), 4458385760: (<test_simple_v2_exact_history.History object at 0x109bd9160>, True)}
+
+>   def values(self): raise AssertionError('cleanup must not copy all managers')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: cleanup must not copy all managers
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:100: AssertionError
+________ test_scheduler_failure_still_restores_all_native_settings_once ________
+
+    def test_scheduler_failure_still_restores_all_native_settings_once():
+        core, queue, native, layers, managers, request = fixture()
+        core.begin_apply(request)
+        while core.operation(request['jobId'])['completedChanges'] < len(layers): queue.run_one()
+        def rejected(_): raise RuntimeError('scheduler stopped')
+        core.schedule = rejected
+        queue.drain()
+        result = core.operation(request['jobId'])
+>       assert result['status'] == 'failed'
+E       AssertionError: assert 'applied' == 'failed'
+E
+E         - failed
+E         + applied
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:118: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     7     0     1    0.11s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_cleanup_is_bounded_and_keeps_ownership_until_last_step[applied]
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_cleanup_is_bounded_and_keeps_ownership_until_last_step[cancelled]
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_cleanup_is_bounded_and_keeps_ownership_until_last_step[failed]
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_cleanup_error_does_not_skip_other_groups_or_flags[manager]
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_cleanup_error_does_not_skip_other_groups_or_flags[rounding]
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_scope_closes_in_reverse_order_without_copying_all_managers
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_scheduler_failure_still_restores_all_native_settings_once
+7 failed in 0.23s

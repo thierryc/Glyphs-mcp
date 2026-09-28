@@ -1,0 +1,252 @@
+[
+  {
+    "case": "baseline-width-1000-glyphs-1",
+    "passed": true,
+    "processSeconds": 10.880784000008134
+  },
+  {
+    "case": "baseline-width-1000-glyphs-2",
+    "passed": true,
+    "processSeconds": 10.260442124999827
+  },
+  {
+    "case": "baseline-width-1000-glyphs-3",
+    "passed": true,
+    "processSeconds": 10.367414500011364
+  },
+  {
+    "case": "baseline-width-1000-glyphs-4",
+    "passed": true,
+    "processSeconds": 10.583324833016377
+  },
+  {
+    "case": "baseline-width-1000-glyphs-5",
+    "passed": true,
+    "processSeconds": 10.41169004101539
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 13.528823625005316
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 13.81451462500263
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 13.352097167022293
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 12.975175875006244
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 13.319586208002875
+  },
+  {
+    "case": "baseline-width-4096-glyphs-1",
+    "passed": true,
+    "processSeconds": 15.861538500001188
+  },
+  {
+    "case": "baseline-width-4096-glyphs-2",
+    "passed": true,
+    "processSeconds": 16.901619707990903
+  },
+  {
+    "case": "baseline-width-4096-glyphs-3",
+    "passed": true,
+    "processSeconds": 20.263778874999844
+  },
+  {
+    "case": "baseline-width-4096-glyphs-4",
+    "passed": true,
+    "processSeconds": 16.138251083000796
+  },
+  {
+    "case": "baseline-width-4096-glyphs-5",
+    "passed": true,
+    "processSeconds": 15.883250583981862
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 18.622388374991715
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 19.21943475000444
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 17.980330791993765
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 17.980755374999717
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 18.5581767919939
+  },
+  {
+    "case": "baseline-script-1000-glyphs-1",
+    "passed": true,
+    "processSeconds": 2.124575709021883
+  },
+  {
+    "case": "baseline-script-1000-glyphs-2",
+    "passed": true,
+    "processSeconds": 1.9066025829815771
+  },
+  {
+    "case": "baseline-script-1000-glyphs-3",
+    "passed": true,
+    "processSeconds": 1.8999217090022285
+  },
+  {
+    "case": "baseline-script-1000-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.9078435839910526
+  },
+  {
+    "case": "baseline-script-1000-glyphs-5",
+    "passed": true,
+    "processSeconds": 2.0247395830228925
+  },
+  {
+    "case": "baseline-script-1000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 2.721285749983508
+  },
+  {
+    "case": "baseline-script-1000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 2.7530400829855353
+  },
+  {
+    "case": "baseline-script-1000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 2.655654583009891
+  },
+  {
+    "case": "baseline-script-1000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 2.5529583750176243
+  },
+  {
+    "case": "baseline-script-1000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 2.66544937499566
+  },
+  {
+    "case": "baseline-script-10000-glyphs-1",
+    "passed": true,
+    "processSeconds": 6.965069875004701
+  },
+  {
+    "case": "baseline-script-10000-glyphs-2",
+    "passed": true,
+    "processSeconds": 7.0881516249792185
+  },
+  {
+    "case": "baseline-script-10000-glyphs-3",
+    "passed": true,
+    "processSeconds": 7.082091707998188
+  },
+  {
+    "case": "baseline-script-10000-glyphs-4",
+    "passed": true,
+    "processSeconds": 7.399722083995584
+  },
+  {
+    "case": "baseline-script-10000-glyphs-5",
+    "passed": true,
+    "processSeconds": 7.184472416993231
+  },
+  {
+    "case": "baseline-script-10000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 15.756997334014159
+  },
+  {
+    "case": "baseline-script-10000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 16.365697499975795
+  },
+  {
+    "case": "baseline-script-10000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 16.153408667014446
+  },
+  {
+    "case": "baseline-script-10000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 15.72979245899478
+  },
+  {
+    "case": "baseline-script-10000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 15.123789709003177
+  },
+  {
+    "case": "baseline-script-20000-glyphs-1",
+    "passed": true,
+    "processSeconds": 12.716182875010418
+  },
+  {
+    "case": "baseline-script-20000-glyphs-2",
+    "passed": true,
+    "processSeconds": 12.952495833975263
+  },
+  {
+    "case": "baseline-script-20000-glyphs-3",
+    "passed": true,
+    "processSeconds": 14.477656750008464
+  },
+  {
+    "case": "baseline-script-20000-glyphs-4",
+    "passed": true,
+    "processSeconds": 13.338959082990186
+  },
+  {
+    "case": "baseline-script-20000-glyphs-5",
+    "passed": true,
+    "processSeconds": 13.076853250007844
+  },
+  {
+    "case": "baseline-script-20000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 32.428924791980535
+  },
+  {
+    "case": "baseline-script-20000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 31.020903291995637
+  },
+  {
+    "case": "baseline-script-20000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 30.856654875009554
+  },
+  {
+    "case": "baseline-script-20000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 32.202264749997994
+  },
+  {
+    "case": "baseline-script-20000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 30.22173158300575
+  }
+]

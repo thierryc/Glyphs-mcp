@@ -1,0 +1,14 @@
+{
+  "workflow": "edit_205f38ab6f5d423e978a07b85690d3c0",
+  "job": "job_714729fe1cd6427c903196f132eded27",
+  "state": "applied",
+  "document": {
+    "id": "doc_df6283bbe4fb4656918faa507d03e8af",
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+    "dirty": true,
+    "generation": 0,
+    "isCurrent": true,
+    "familyName": "Dactylotype"
+  },
+  "revision": 18
+}

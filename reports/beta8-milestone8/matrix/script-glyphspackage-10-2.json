@@ -1,0 +1,26 @@
+{
+  "data": {
+    "route": "script",
+    "count": 10,
+    "format": "glyphspackage",
+    "baseline": true,
+    "preparationSeconds": 0.06646449997788295,
+    "executionPollingSeconds": 0.2358561250148341,
+    "verificationSeconds": 0.0004617090162355453,
+    "recoverySeconds": 0.008485500002279878,
+    "saveSeconds": 0.25827366701560095,
+    "totalEditSeconds": 0.3027823340089526,
+    "peakRSSBytes": 183402496,
+    "longestMainThreadChunkSeconds": 0.00289483301457949,
+    "scheduledNativeSeconds": 0.003972833015723154,
+    "recoveryCoverage": "whole saved font"
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodology": "One route/count/format per fresh Glyphs CLI process. Workflow includes native preparation, dispatch, application, result polling, independent verification and recovery. Save is a second equivalent result. Native GSFont serialization is not editor NSDocument saving. Peak RSS includes Glyphs, fixture and route, sampled before recovery. CLI startup, HTTP/client latency and UI frame rate excluded.",
+  "sourceDigest": "05dfc957c1315bdf9a016df429d85cd674aeec69e05f6f0639aee6ab4931ee9f"
+}

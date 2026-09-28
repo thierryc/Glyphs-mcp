@@ -73,21 +73,18 @@ class ServiceLifecycle:
                 self.pending -= 1
 
     def reconcile(self):
-        for job in self.service.jobs.records():
-            if job["status"] in ("applying", "accepting", "discarding"):
-                try:
-                    self.service.get_job(job["id"])
-                except Exception:
-                    # Keep the existing identity and last observation when native
-                    # execution cannot be reconciled. Never infer completion.
-                    pass
+        for job in self.service.jobs.select({'applying', 'accepting', 'discarding'}):
+            try:
+                self.service.get_job(job["id"])
+            except Exception:
+                # Keep the existing identity and last observation when native
+                # execution cannot be reconciled. Never infer completion.
+                pass
 
     def snapshot(self):
         self.reconcile()
-        jobs = self.service.jobs.records()
-        active = [job for job in jobs if job["status"] in BUSY]
-        other = [job for job in jobs if job["status"] not in BUSY]
-        selected = active[:10] + other[:max(0, 5 - len(active))]
+        active = self.service.jobs.select(BUSY)
+        selected = active[:10] + self.service.jobs.recent(max(0, 5-len(active)), exclude_statuses=BUSY)
         return {"jobs": [activity(job) for job in selected], "activeCount": len(active),
                 "moreCount": max(0, len(active) - 10)}
 
@@ -97,9 +94,7 @@ class ServiceLifecycle:
             self._expire()
             if self.reservation:
                 raise self.error("service_reserved", "The service is already reserved.")
-            if self.pending or self.service._cancellations or any(
-                job["status"] in BUSY for job in self.service.jobs.records()
-            ):
+            if self.pending or self.service._cancellations or self.service.jobs.count(BUSY) or self.service.jobs.select(set(), include_unresolved=True):
                 raise self.error("service_busy", "The service is busy. Wait for the current operation to finish.")
             try:
                 native = self.service.bridge.status()

@@ -14,18 +14,24 @@ public actor TemplateStore {
     }
     public func registry(bundle: Bundle = .main) throws -> TemplateRegistry {
         let cached = root.appendingPathComponent("registry.json")
-        if let data = try? Data(contentsOf: cached), let registry = try? TemplateRegistry.decode(data) { return registry }
+        if let data = try? Data(contentsOf: cached), let registry = try? TemplateRegistry.decode(data) { return registry.includingBuiltIns() }
         guard let bundled = bundle.url(forResource: "registry", withExtension: "json", subdirectory: "Templates") else { throw ProjectError("The bundled template registry is missing.") }
-        return try TemplateRegistry.decode(Data(contentsOf: bundled))
+        return try TemplateRegistry.decode(Data(contentsOf: bundled)).includingBuiltIns()
     }
     public func refreshRegistry() async throws -> TemplateRegistry {
         let data = try await download(TemplateRegistry.remoteURL, maximumBytes: 256_000)
         let registry = try TemplateRegistry.decode(data)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         try data.write(to: root.appendingPathComponent("registry.json"), options: .atomic)
-        return registry
+        return registry.includingBuiltIns()
     }
     public func files(_ template: ProjectTemplate) async throws -> [ProjectFile] {
+        if template.isBundled {
+            guard let folder = Bundle.main.url(forResource: "font-git-checkpoints", withExtension: nil, subdirectory: "Templates") else {
+                throw ProjectError("The bundled checkpoint template is missing.")
+            }
+            return try ProjectFiles.read(folder)
+        }
         guard let remote = template.archiveURL else { throw ProjectError("The template registry entry is invalid.") }
         if template.templateDirectory != "." { try ProjectFiles.validateRelativePath(template.templateDirectory) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

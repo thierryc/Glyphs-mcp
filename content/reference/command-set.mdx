@@ -13,12 +13,12 @@ independent sidecar/bridge identities and negotiated `readCapabilities`,
 | `get_status` | None | Read sidecar, worker and bridge availability plus negotiated read/write/job capabilities. |
 | `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
-| `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job outside the editor. |
+| `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job without applying it; the negotiated route may use detached native targets or the external worker. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
 | `apply_job` | `job_id`, optional `include_preview`, `approved_overwrites` | Apply a mutation result as a reversible live change. |
 | `accept_job` | `job_id`, optional `destination`, `include_preview` | Persist an applied mutation, or publish verified export artifacts to a new directory. |
 | `discard_job` | `job_id`, optional `include_preview` | Cancel preparation, discard a proposal or restore current affected live targets. |
-| `save_document` | `document_id`, optional `destination` | Save an explicitly identified unowned document. |
+| `save_document` | `document_id`, optional `destination`, `retry_checkpoint_job_id` | Save an explicitly identified unowned document. |
 | `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options`, `auto_keep` (default true) | Retain a requested edit; successful edit cards may Keep after 30 seconds. Honor “wait for my answer” with `auto_keep=false`. |
 | `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance. |
 | `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false) | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. |
@@ -26,8 +26,8 @@ independent sidecar/bridge identities and negotiated `readCapabilities`,
 ## Conversation workflow
 
 `get_status.workflowCapabilities` advertises `edit.workflow.v1`. The three
-workflow tools wrap existing services; the original nine signatures and saved,
-clean source rules remain intact. They support every advertised mutation kind,
+workflow tools wrap existing services; saved, clean source prerequisites remain
+intact for typed edits and scripts. They support every advertised mutation kind,
 including `dimensions_edit`, and exclude compilation and export.
 
 Use `apply` for requested edits and `preview` for preview-only requests. The
@@ -230,12 +230,21 @@ Example `read_entities` arguments:
 | `width_delta` | Finite, nonzero `delta`; optional `glyphs`; no `options`. Adjusts widths across the selected glyphs' layers. |
 | `spacing` | Optional glyphs and master IDs, references, width mode and sampling options. [Spacing guide](../spacing-tools.md). |
 | `kerning_collision` | Explicit `options.pairs`, optional master IDs and sampling options; no `glyphs`. [Kerning guide](../kerning-workflow.md). |
+| `kerning_edit` | `kerning.edit.exact.v1`; 1–100 `options.edits` with `op: set/remove`, explicit `master` and `direction`, glyph/group `left` and `right` objects. Only set accepts finite `value`; zero is stored. Native preparation and selective recovery; no worker or collision analysis. |
 | `start_nodes` | Explicit glyphs, contour index and master/reference selection. [Correspondence guide](../workflows/start-node-correspondence.mdx). |
 | `slant` | Optional glyphs, angle, pivot, master IDs and straight-stem preservation. [Slant guide](../italic-first-pass.md). |
 | `outline_edit` | Typed, ordered path operations on ordinary masters or explicit layer IDs; requires bridge `outline.edit.v1`. |
 | `native_action` | One closed Glyphs command over exact layer/glyph/font targets; requires bridge `native.action.v1` and the action in `nativeActions`. |
 | `feature_compile` | Closed saved-source or live-editor compiler diagnostic; requires the corresponding `feature.compile.*.v1` capability. |
 | `font_export` | One exact static/variable instance exported to private staging and structurally verified; requires export and verification capabilities. |
+
+With `kerning.proof.v1`, `read_entities` accepts one `kerning_proof` selector
+with exact `master`, `direction`, requested `languages`, optional `limit` (1–100)
+and unchanged continuation `cursor`, using `fields:["pairs"]`. Mapping visits
+at most 256 glyphs per read; candidate pages scan at most 256 pairs. Empty pages
+can be incomplete. Primary Unicode ambiguities are skipped. Results include
+existing group/exception coverage and unshaped proof strings, with pinned MIT
+provenance. They are pairs to inspect, without numeric recommendations.
 
 For example, the mutation fields for increasing H's layer widths by 8.125 units
 are shown below. Pass them with the explicit `document_id` to `start_job`, or
@@ -533,7 +542,13 @@ Use `python_script` with `source`, JSON `params`, `entrypoint="per_target"|"scri
 and `recovery` are retired and rejected. Target selectors are explicit glyph/layer/
 surface entries or all/named glyphs in one exact master; background IDs identify
 owning foreground layers. Whole scripts may use an empty target list; callbacks
-require eligible surfaces. Limits: 4,096 surfaces, 128 KiB source, 64 KiB params.
+require eligible surfaces. Native scripts have no fixed surface-count ceiling.
+The complete internal request is limited to 4 MiB, including the resolved
+manifest; source and parameters retain their 128 KiB and 64 KiB bounds. Large
+selectors resolve in cancellable main-thread chunks. Oversize fails before
+execution, without silently truncating the requested scope. Typed limits remain
+unchanged. Use a coordinated bridge/sidecar installation for this preparation
+protocol; never replace a rejected manifest with a whole-font loop to evade it.
 
 A requested font task authorizes in-scope Run without a separate code review or
 human click. Write-only/review-only requests do not execute; writing includes code
@@ -576,3 +591,23 @@ The private `edit.prepare.native.v1` capability selects bounded native preparati
 for width deltas, Dimensions, glyph colors and coordinate-only node updates. It
 adds no public tool or user mode. Saved/clean prerequisites, limits and selective
 recovery remain unchanged. Other requests retain their existing worker route.
+
+## Optional local Git checkpoints
+
+`font.checkpoints.v1` in workflow capabilities adds on-demand `checkpoint_history`,
+`checkpoint_details`, `checkpoint_compare` and `checkpoint_scope` selectors to
+`read_entities` with `fields=["checkpoint"]`. Use one selector, 1–100 entries per
+page, returned cursors, and exact full revisions. These reads do not load history
+during ordinary polling. Action records distinguish execution, verification and
+possible manual edits.
+
+The explicit project setting in `.glyphs-mcp.json` authorizes local checkpoints,
+including the starting saved baseline, but no extra font Saves or push. After a
+verified Save, Git failure returns a separate failed checkpoint receipt. Retry
+with the offered workflow action or `retry_checkpoint_job_id`; no Save is repeated.
+
+With `font.checkpoint-restore.v1`, `kind=checkpoint_restore` and
+`options={revision: FULL_REVISION}` use the existing edit workflow. Applying loads
+that font version in Glyphs, replaces subsequent unsaved edits and clears Undo.
+It leaves the disk font untouched, returns the fresh document binding and does
+not save. A later authorized Save records the restoration in a new checkpoint.

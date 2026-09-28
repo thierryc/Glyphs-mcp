@@ -1,0 +1,26 @@
+{
+  "installed": "/Applications/Glyphs MCP.app",
+  "backup": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone7/app-before",
+  "verifiedIdentity": {
+    "version": "2.0.0",
+    "build": "50",
+    "assets": [
+      "ClaudeCodeLogo",
+      "ClaudeLogo",
+      "CodexLogo",
+      "CursorLogo",
+      "GitHubMark",
+      "GlyphsMCPMenu"
+    ],
+    "pierre": {
+      "version": "1.2.4",
+      "commit": "c2249d7890de957a96480711152d90a06fa1222b",
+      "bundleSHA256": "ae5aa8dd4fda867fa77510ac0390f5d5c144814f73f2f3f0c8cd6e4b95211fa8",
+      "resources": {
+        "pierre-diffs-bundle.js": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2",
+        "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+      }
+    },
+    "appSHA256": "1d1d010c3ed28f158066bf3266af435f23606d4beb8aa75580f853909b2f561b"
+  }
+}

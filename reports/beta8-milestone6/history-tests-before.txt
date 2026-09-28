@@ -1,0 +1,29 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_history_details_compare_and_materialize_are_bounded_and_font_only[.glyphs] _
+
+repo = (PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-140/test_history_detail.../folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-140/test_history_details_compare_a0/operation'))
+
+    def test_history_details_compare_and_materialize_are_bounded_and_font_only(repo):
+>       from glyphs_mcp_sidecar.checkpoint_history import history, details, compare, materialize
+E       ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_history'
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:189: ModuleNotFoundError
+_ test_history_details_compare_and_materialize_are_bounded_and_font_only[.glyphspackage] _
+
+repo = (PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-140/test_history_detail.../folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-140/test_history_details_compare_a1/operation'))
+
+    def test_history_details_compare_and_materialize_are_bounded_and_font_only(repo):
+>       from glyphs_mcp_sidecar.checkpoint_history import history, details, compare, materialize
+E       ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_history'
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:189: ModuleNotFoundError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     2     0     1    0.27s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_history_details_compare_and_materialize_are_bounded_and_font_only[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_history_details_compare_and_materialize_are_bounded_and_font_only[.glyphspackage]
+2 failed, 34 deselected in 0.34s

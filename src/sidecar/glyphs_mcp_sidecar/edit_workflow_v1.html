@@ -71,6 +71,7 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
   }
   function toolCallsAvailable() { return connected && !!host.serverTools; }
   const optedOut = new Set();
+  const evidenceIdentity = value => JSON.stringify([value?.id, value?.document?.id, value?.jobId, value?.requestFingerprint]);
   const resultIdentity = value => JSON.stringify([value?.id, value?.requestFingerprint]);
   const autoKeepIdentity = value => JSON.stringify([value?.id, value?.jobId, value?.requestFingerprint, value?.revision]);
   function stopAutoKeep() {
@@ -138,7 +139,7 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     if (formAction && (current.id !== next.id || current.revision !== next.revision)) {
       formAction = null; byId("save-form").hidden = true;
     }
-    if (next.requestFingerprint !== current?.requestFingerprint || next.id !== current?.id || next.jobId !== current?.jobId) {
+    if (evidenceIdentity(next) !== evidenceIdentity(current)) {
       scriptCache = null; warningCache = null; evidenceCache = null; completionRead = false; byId("script-review").open = false;
     }
     if (next.scriptReview) scriptCache = {fingerprint:next.requestFingerprint, value:next.scriptReview};
@@ -175,7 +176,7 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     const report = job.report || {}, names = scope.glyphs || [];
     setText("title", doc.familyName || "Untitled font");
     setText("path", doc.path || "Not saved yet");
-    setText("scope", current.summary ? `${current.summary} · ${report.targetCount ?? "pending"} surfaces · ${report.skippedCount || 0} skipped` : [(scope.kind || "Font adjustment").replaceAll("_", " "), names.length ? names.join(", ") + (scope.glyphCount > names.length ? ` + ${scope.glyphCount-names.length} more` : "") : "Scope shown in request details", scope.masters ? `Masters: ${scope.masters.join(", ")}` : ""].filter(Boolean).join(" · "));
+    setText("scope", scope.kind === "python_script" ? `${current.summary || "Native Python"} · ${report.targetCount ?? "pending"} surfaces · ${report.skippedCount || 0} skipped` : [current.summary || (scope.kind || "Font adjustment").replaceAll("_", " "), names.length ? names.join(", ") + (scope.glyphCount > names.length ? ` + ${scope.glyphCount-names.length} more` : "") : "Scope shown in request details", scope.masters ? `Masters: ${scope.masters.join(", ")}` : ""].filter(Boolean).join(" · "));
     const [heading, ...guidance] = (current.message || "Checking your changes…").split("\n");
     setText("status", heading);
     setText("message", guidance.join("\n"));
@@ -203,7 +204,9 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
       const heading = document.createElement("p"); heading.textContent = `${job.changeCount || 0} ${job.changeCount === 1 ? "change" : "changes"}` + (report.unavailableCount ? ` · ${report.unavailableCount} could not be prepared` : ""); proposal.append(heading);
       for (const change of (job.sample || []).slice(0, 10)) {
         const row = document.createElement("pre");
-        row.textContent = [change.glyph, change.layer || change.master, change.field || change.key || change.kind].filter(Boolean).join(" · ") + ": " + excerpt(change.before) + " → " + excerpt(change.after); proposal.append(row);
+        row.textContent = change.kind === "kerning"
+          ? `${change.left} / ${change.right} · ${change.master} · ${change.direction}: ${change.before === null ? "absent" : excerpt(change.before)} → ${change.after === null ? "remove" : excerpt(change.after)}`
+          : [change.glyph, change.layer || change.master, change.field || change.key || change.kind].filter(Boolean).join(" · ") + ": " + excerpt(change.before) + " → " + excerpt(change.after); proposal.append(row);
       }
       if (job.changeCount > 10) { const more = document.createElement("p"); more.textContent = "Showing the first 10 changes. Ask in the conversation for the complete report."; proposal.append(more); }
     }
@@ -247,9 +250,14 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
   }
   async function refresh(includeReview = false) {
     if (!current || busy || reading || disposed || !toolCallsAvailable()) return;
+    const identity = evidenceIdentity(current), workflowId = current.id;
     reading = true; verified = false; reconcile = false; setBusy(false); render();
-    try { useResult(await call("get_edit_workflow", {workflow_id:current.id, ...(includeReview ? {include_review:true} : {})}), true); setText("error", ""); }
-    catch (error) { setText("error", error.message); clearTimeout(timer); }
+    try {
+      const result = await call("get_edit_workflow", {workflow_id:workflowId, ...(includeReview ? {include_review:true} : {})});
+      if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
+      useResult(result, true); setText("error", "");
+    }
+    catch (error) { if (identity === evidenceIdentity(current)) setText("error", error.message); clearTimeout(timer); }
     finally { reading = false; setBusy(false); render(); if (reconcile) refresh(); else schedule(); }
   }
   function schedule() {
@@ -269,21 +277,26 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
       setText("error", "Approve every displayed existing-value change before applying, or discuss a reduced request in the conversation."); return;
     }
     setBusy(true); clearTimeout(timer); setText("error", "");
+    const identity = evidenceIdentity(current), resultKey = resultIdentity(current);
     const args = {workflow_id:current.id, expected_revision:current.revision, action_token:action.token};
     if (automatic) args.automatic = true;
     if (destination) args.destination = destination;
     if (action.action === "apply" && overwrites.length) args.approved_overwrites = overwrites;
     try {
       const raw = await call("respond_edit_workflow", args);
+      if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
       formAction = null; byId("save-form").hidden = true;
       useResult(raw, true); setText("error", "");
     } catch (error) {
-      if (automatic) optedOut.add(resultIdentity(current));
+      if (automatic) optedOut.add(resultKey);
+      if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
       setText("error", error.message + " Continue in the conversation if needed.");
       // A read is safe after a lost response; never repeat the mutation automatically.
       verified = false;
       try {
-        useResult(await call("get_edit_workflow", {workflow_id:args.workflow_id}), true);
+        const result = await call("get_edit_workflow", {workflow_id:args.workflow_id});
+        if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
+        useResult(result, true);
         // Keep actionable server validation errors (for example a Save As
         // collision). A successful read supersedes a transport timeout.
         if (!error.code) setText("error", "");
@@ -310,8 +323,8 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
   }
   byId("script-review").addEventListener("toggle", () => {
     stopAutoKeep();
-    if (byId("script-review").open) refresh(true);
-    else render();
+    if (byId("script-review").open && !scriptCache) refresh(true);
+    else { render(); schedule(); }
   });
   byId("result-details").addEventListener("toggle", () => { stopAutoKeep(); render(); });
   byId("folder").addEventListener("input", updateDestination);
@@ -335,7 +348,14 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
       if (event.origin && event.origin !== "null") origin = event.origin;
       if (message.error) request.reject(new Error(message.error.message)); else request.resolve(message.result);
     } else if (message.method === "ui/notifications/tool-result") {
-      try { useResult(message.params); reconcile = true; refresh(); } catch (error) { setText("error", error.message); }
+      try {
+        const next = unwrap(message.params)?.data;
+        // A redelivered compact result adds no evidence after reconciliation.
+        // Visibility/reconnect and dispatch still perform their fresh checks.
+        if (verified && evidenceIdentity(next) === evidenceIdentity(current)
+            && next?.revision <= current?.revision && !next?.scriptReview) return;
+        useResult(message.params); reconcile = true; refresh();
+      } catch (error) { setText("error", error.message); }
     } else if (message.method === "ui/notifications/host-context-changed") theme(message.params);
     else if (message.method === "ui/resource-teardown") {
       disposed = true; clearTimeout(timer); stopAutoKeep();

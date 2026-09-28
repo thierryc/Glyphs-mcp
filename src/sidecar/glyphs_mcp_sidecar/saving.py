@@ -305,6 +305,8 @@ def observed_details(service, request, native=None):
 
 
 def reconcile_accepted(service, job):
+    if job.get("resultKind") == "checkpoint":
+        return job
     receipt = job.get("receipt")
     if not isinstance(receipt, Mapping):
         return job
@@ -353,7 +355,9 @@ def accept_job(service, error_type, job_id, *, destination=None, include_preview
         )
     except SaveError as exc:
         raise service_error(exc, error_type) from exc
-    service.jobs.update(job["id"], status="accepting", saveRequest=save_request, error=None)
+    from .checkpoint_policy import policy_for
+    policy = policy_for(save_request['path'])
+    service.jobs.update(job["id"], status="accepting", saveRequest=save_request, error=None, checkpointPolicy=policy)
     try:
         operation = service.bridge.accept(job["id"], bridge_request(save_request))
     except Exception as exc:
@@ -411,6 +415,8 @@ def complete_acceptance(service, job, operation, *, include_preview=True):
         )
         return service._public(failed, include_preview=include_preview)
 
+    from .checkpoints import after_save
+    receipt = after_save(service, job, receipt)
     service.jobs.write_json(job["id"], "receipt.json", receipt)
     try:
         confirmed = service.bridge.complete_accept(job["id"], verified=True, receipt=receipt)
@@ -424,13 +430,17 @@ def complete_acceptance(service, job, operation, *, include_preview=True):
     return service._public(accepted, include_preview=include_preview)
 
 
-def save_document(service, error_type, document_id, *, destination=None, on_prepared=None):
+def save_document(service, error_type, document_id, *, destination=None, on_prepared=None, retry_checkpoint_job_id=None):
+    if retry_checkpoint_job_id:
+        from .checkpoints import retry
+        job = service._job(retry_checkpoint_job_id)
+        if job['document']['id'] != document_id or destination is not None:
+            raise error_type('invalid_request', 'Checkpoint retry must match the original document and cannot Save As.')
+        return retry(service, retry_checkpoint_job_id)
     from .saved_script import invalidate
     invalidate(service, document_id)
     identity = str(document_id)
-    for job in service.jobs.records():
-        if job.get("document", {}).get("id") != identity:
-            continue
+    for job in service.jobs.select({'applied', 'applying', 'accepting', 'discarding', 'accepted'}, document_id=identity):
         if job["status"] == "applied":
             raise error_type(
                 "job_acceptance_required", "This document has an applied job; use accept_job instead",
@@ -450,6 +460,10 @@ def save_document(service, error_type, document_id, *, destination=None, on_prep
         save_request = prepare_save(save_id, document, destination, documents)
     except SaveError as exc:
         raise service_error(exc, error_type) from exc
+    from .checkpoints import begin_save, after_save
+    checkpoint_job = begin_save(service, document, save_request)
+    if checkpoint_job:
+        save_request['checkpointJobId'] = checkpoint_job['id']
     if on_prepared is not None:
         on_prepared(save_request)
     try:
@@ -461,21 +475,30 @@ def save_document(service, error_type, document_id, *, destination=None, on_prep
             except Exception:
                 error = service._error(exc)
                 error.details.update(observed_details(service, save_request))
-                error.details.update({"saveId": save_id, "writeAttempted": True})
+                error.details.update({"saveId": save_id, "writeAttempted": True, "checkpointJobId": checkpoint_job["id"] if checkpoint_job else None})
                 raise error from exc
         else:
+            if checkpoint_job:
+                service.jobs.update(checkpoint_job['id'], status='failed', error=service._error(exc).as_dict())
             raise service._error(exc) from exc
     if operation.get("status") != "saved":
         error = operation.get("error") or {}
         details = dict(error.get("details") or {})
         details.update(observed_details(service, save_request, operation.get("native")))
+        if checkpoint_job:
+            service.jobs.update(checkpoint_job['id'], status='accept_uncertain', error=error)
+            details['checkpointJobId'] = checkpoint_job['id']
         raise error_type(
             str(error.get("code") or "save_verification_failed"),
             str(error.get("message") or "The document was not verifiably saved"),
             details=details,
         )
     try:
-        return verify_save(save_request, operation.get("native") or {})
+        receipt = verify_save(save_request, operation.get("native") or {})
+        if checkpoint_job:
+            receipt = after_save(service, checkpoint_job, receipt)
+            service.jobs.update(checkpoint_job['id'], status='accepted', receipt=receipt)
+        return receipt
     except SaveError as exc:
         details = observed_details(
             service, save_request, operation.get("native") or {}

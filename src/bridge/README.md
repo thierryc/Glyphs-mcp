@@ -1,5 +1,8 @@
 # Glyphs MCP Bridge
 
+See the [current twelve-tool contract](../../content/reference/command-set.mdx)
+and [Beta 8 milestones](../../BETA8-MILESTONES.md) for shared behavior and scope.
+
 The bridge is a combined Glyphs plug-in with a small, fixed-height sidebar palette
 and an application-wide server settings controller. It exposes an authenticated local
 JSON protocol, not MCP. Its responsibilities are limited to:
@@ -7,11 +10,21 @@ JSON protocol, not MCP. Its responsibilities are limited to:
 - status and open-document metadata;
 - reads of at most 100 explicit entities;
 - target-level preconditions and read-back;
-- `set` and `translate` changes in 8–12 ms chunks;
-- exact native Undo/Redo in each touched glyph's editing history.
+- guarded changes in scheduled chunks with a time budget and batch bound;
+- exact native Undo/Redo in each touched glyph's editing history;
+- syntax/target preparation and native Python execution (`script.native.v1`);
+- verified Save and editor-coordinated saved/historical font reloads.
 
-It never copies, serializes, hashes, canonicalizes, or diffs a complete font,
-and it never saves. Its palette title includes the bridge version; its single
+Completion retains mutation ownership while Undo groups, rounding flags and
+temporary target references are released incrementally. Terminal status follows
+cleanup, including on cancellation or failure. Individual native calls remain
+indivisible; the scheduling budget is not a maximum UI pause. If scheduling
+fails, cleanup drains synchronously to restore owned settings and reports failure.
+
+Full-font file copying, hashing, Git and external analysis/export stay in the
+sidecar/worker. The bridge performs authorized native document saves and reloads;
+ordinary preparation and typed application do not save. Native scripts can have
+external effects beyond font recovery. Its palette title includes the bridge version; its single
 status row reads “Ready” when connected. A startup error appears in
 the status tooltip when one exists. The fixed 30-point content height fits the
 single row without unused space below.

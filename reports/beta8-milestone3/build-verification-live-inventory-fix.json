@@ -1,0 +1,7 @@
+{
+  "sourceMatchesBuilt": true,
+  "sourcePythonCopiesCompared": 133,
+  "bridge": "sha256:d9ad46e01f0f0a5baa93320dc6e9d887d8b4b5485f6a89950015d238d7273119",
+  "sidecar": "sha256:7cb89a42377190ed25b6dc6518f28ddd0b579aa7711e0e994f2dc3335d6ac07c",
+  "loadedEvidence": "installed-loaded-live-inventory-fix.json"
+}

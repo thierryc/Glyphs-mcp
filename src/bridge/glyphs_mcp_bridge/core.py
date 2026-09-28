@@ -14,7 +14,7 @@ from glyphs_mcp_protocol.native_actions import MAX_JOB_STATE_BYTES
 from glyphs_mcp_protocol import scripts
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
 
-from . import dimensions, feature_compile, native_actions, outline_edit, saving
+from . import cleanup, dimensions, feature_compile, native_actions, outline_edit, saving
 from .companions import CompanionRegistry
 from .identity import IDENTITY, VERSION, host_identity
 
@@ -95,9 +95,11 @@ class BridgeCore:
         from . import saved_script
         if saved_script.available():
             job_capabilities.append(scripts.NATIVE)
+            write_capabilities.append("font.checkpoint-restore.v1")
         if callable(getattr(self.adapter, "_font", None)):
             from glyphs_mcp_protocol.preparation.simple import CAPABILITY
             job_capabilities.append(CAPABILITY)
+            write_capabilities.append("kerning.edit.exact.v1")
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             **IDENTITY, "host": self.host,
@@ -105,6 +107,7 @@ class BridgeCore:
             "writeCapabilities": write_capabilities,
             "nativeActions": actions,
             "jobCapabilities": job_capabilities,
+            "scriptPreparationVersion": scripts.PREPARATION_VERSION,
             "activity": "busy" if active else "ready", "activeOperations": active,
             "companions": self.companions.list(),
         }
@@ -252,7 +255,7 @@ class BridgeCore:
     def _check_owner(self, document_id, *, ignore_job_id=None):
         from .script_execution import unresolved
         if any(unresolved(item) and item['jobId'] != ignore_job_id for item in self._operations.values()):
-            raise BridgeError('document_busy', 'keep or restore partial script edits before another mutation')
+            raise BridgeError('document_busy', 'resolve the stopped native operation before another mutation')
         if any(item.get('scriptRequest') and item['status'] in ACTIVE and item['jobId'] != ignore_job_id
                for item in self._operations.values()):
             raise BridgeError('document_busy', 'native Python is executing')
@@ -276,6 +279,12 @@ class BridgeCore:
             self.schedule(lambda: self._run_chunk(operation["jobId"]))
         except Exception as exc:
             error = self._error(exc)
+            if "cleanupSteps" in operation:
+                # No next native turn is available. Restore owned settings now;
+                # this exceptional synchronous drain has no responsiveness claim.
+                cleanup.record_error(self, operation, exc)
+                self._run_cleanup_chunk(operation, drain=True)
+                return
             if operation["status"] == "accepting":
                 with self._lock:
                     operation.update(
@@ -303,6 +312,8 @@ class BridgeCore:
                 return self._public(operation)
             if operation["status"] != "applied":
                 raise BridgeError("job_not_discardable", "the job is not applied")
+            if operation.get('checkpointRestore'):
+                raise BridgeError('recovery_unavailable', 'Historical restoration has no selective Undo; choose another checkpoint explicitly.')
             if operation.get('scriptRequest'):
                 raise BridgeError('recovery_unavailable', 'use Restore saved version for this script')
             self._check_owner(operation["documentId"])
@@ -338,11 +349,17 @@ class BridgeCore:
             operation = self._operations.get(job_id)
             if operation is None or operation["status"] not in ACTIVE:
                 return
+        if "cleanupSteps" in operation:
+            self._run_cleanup_chunk(operation)
+            return
         if operation.get('scriptStage') not in (None, 'done'):
             from . import script_execution
+            script_execution.check_pre_execution(self, operation)
             deadline = time.perf_counter() + self.chunk_seconds
             for _ in range(self.chunk_limit):
                 script_execution.advance(self, operation)
+                if "cleanupSteps" in operation:
+                    return  # _finish already scheduled cleanup; do not double-queue.
                 if (operation['status'] not in ACTIVE
                         or time.perf_counter() >= deadline):
                     break
@@ -485,22 +502,10 @@ class BridgeCore:
         return exc if isinstance(exc, BridgeError) else BridgeError("native_write_failed", str(exc) or type(exc).__name__)
 
     def _finish(self, operation, status, error=None):
-        if error is not None:
-            operation["error"] = error.as_dict()
-        try:
-            if operation.pop("undoOpen", False):
-                self.adapter.end_undo(operation["documentId"], "Glyphs MCP: " + operation["patch"]["summary"])
-        except Exception as exc:
-            status = "failed"
-            error = operation["error"] or self._error(exc).as_dict()
-            error.setdefault("details", {})["cleanup"] = str(exc)
-            operation["error"] = error
-        finally:
-            with self._lock:
-                operation.update(status=status, finishedAt=time.time(), applied=[])
-                if status != "applied":
-                    operation["resolved"] = []
-                    operation["nativeStateBytes"] = 0
+        cleanup.finish(self, operation, status, error)
+
+    def _run_cleanup_chunk(self, operation, *, drain=False):
+        cleanup.run_chunk(self, operation, drain=drain)
 
     @staticmethod
     def _public(operation: Mapping[str, Any]) -> dict[str, Any]:
@@ -517,16 +522,19 @@ class BridgeCore:
         return {
             "jobId": operation["jobId"],
             "documentId": operation["documentId"],
+            "documentAfter": copy.deepcopy(operation.get("documentAfter")),
             "status": operation["status"],
-            "completedChanges": (None if operation.get('scriptRequest', {}).get('options', {}).get('entrypoint') == 'script'
+            "completedChanges": (None if operation.get("checkpointRestore") or operation.get('scriptRequest', {}).get('options', {}).get('entrypoint') == 'script'
                                  else max(0, min(count, int(completed)))),
             "longestPreparationChunk": operation.get("longestPreparationChunk"),
-            "totalChanges": None if operation.get('scriptRequest', {}).get('options', {}).get('entrypoint') == 'script' else count,
+            "totalChanges": None if operation.get("checkpointRestore") or operation.get('scriptRequest', {}).get('options', {}).get('entrypoint') == 'script' else count,
             "error": copy.deepcopy(operation["error"]),
             "nativeSave": copy.deepcopy(operation.get("nativeSave")),
             "scriptResult": copy.deepcopy(operation.get("scriptResult")),
             "receipt": copy.deepcopy(operation.get("receipt")),
             "message": (
+                "Historical font restored without saving. Keep or save separately; selective Undo is unavailable."
+                if operation.get("checkpointRestore") else
                 "Script finished. Verify the intended result; Restore saved version reloads the whole font."
                 if script_running and operation["status"] == "applied" else
                 "Dimensions changed without saving. Use native document Undo/Redo or discard_job; save separately when authorized."

@@ -1,0 +1,39 @@
+{
+  "frozenRuntimeUnchanged": true,
+  "matchingBenchmarkHarness": true,
+  "harnessSHA256": "ceef145cf9610123c406b8a85efbf45f818086f8cc9667a91f10958e172989c2",
+  "fixtures": {
+    "build/beta8-milestone2/fixtures/width-4.glyphs": {
+      "framedTreeSHA256": "cdcec32a1fc411ba2ec20b54330f8bad12640c5310f63e1ff4bc7c184b16e8f3",
+      "files": 1
+    },
+    "build/beta8-milestone2/fixtures/width-4.glyphspackage": {
+      "framedTreeSHA256": "d3b96fcc6018a30d2ea6b0525e8e41769a908c2e6965ebc3a47e027d25524d38",
+      "files": 5002
+    },
+    "build/beta8-milestone1/fixtures/1000-1.glyphs": {
+      "framedTreeSHA256": "2ce1c16ce38749a93b5d8ae02e08baf4f7a1baa420f9dec50dfb33ad8c9be90e",
+      "files": 1
+    },
+    "build/beta8-milestone1/fixtures/1000-1.glyphspackage": {
+      "framedTreeSHA256": "5a07ccae763ca61953f78c6139c171964a77deede793cac3804837a0ee9621a5",
+      "files": 1002
+    },
+    "build/beta8-milestone1/fixtures/10000-1.glyphs": {
+      "framedTreeSHA256": "62df7a5a19813460c50d2f7767dfb21d9c55e02d5cb8faf46096da0a5a0e2c25",
+      "files": 1
+    },
+    "build/beta8-milestone1/fixtures/10000-1.glyphspackage": {
+      "framedTreeSHA256": "fe7cb994bc03b22bf588f66173dd480aacaca4227fd6bcba77559e31c480d55c",
+      "files": 10002
+    },
+    "build/beta8-milestone1/fixtures/20000-1.glyphs": {
+      "framedTreeSHA256": "22b80547e6bb3571073e067b22e0026993ffd1a445b9078f31a8639f4b813279",
+      "files": 1
+    },
+    "build/beta8-milestone1/fixtures/20000-1.glyphspackage": {
+      "framedTreeSHA256": "2e1ad3e088c8a284d465d5d7e53ec25767368bab6b0ad35d3efcbf801423a3be",
+      "files": 20002
+    }
+  }
+}

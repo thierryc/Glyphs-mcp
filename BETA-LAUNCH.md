@@ -6,7 +6,7 @@ Prepare **2.0.0 Beta 8**, tag `v2.0.0-beta.8`, build **50**, on `lit/v2-beta`.
 Beta 7/build 49 is the published signed and notarized prerelease and beta
 update feed. Its exact signed-update/component-migration acceptance test
 remains incomplete and is disclosed in its release notes.
-Beta 8 is metadata-only development preparation; no Beta 8 application has been built. See [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
+Beta 8 now includes the accumulated milestone implementation and integrated checkpoint browser. Local release qualification, installation and signed-artifact preparation are in progress; public publication remains separate. See [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 Keep all v2 application and registry work off `main` through the beta cycle.
 Use an open download with optional enrollment. Focus communication on the
 Glyphs forum, GitHub and Thierry's social accounts. Thierry handles the first

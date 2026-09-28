@@ -32,6 +32,10 @@ glyph is not a discovery trigger. “Current/frontmost font” may require fresh
 intent resolution; see [document targeting](references/document-targeting.md).
 Each `read_entities` call reads fresh contents. Dirty fonts need no Save for reads.
 
+Tool descriptions provide compact routing and critical boundaries. Use the
+linked operation reference for full schemas, examples and limits; never treat an
+omitted detail in the catalog as new permission or an increased limit.
+
 Load only the reference needed for the requested operation. Reuse instructions
 and cited excerpts already in context; fetch only a missing or changed section.
 A focused skill inherits this connection/document context without reloading this
@@ -50,12 +54,15 @@ entry. Resolve genuine context gaps; do not treat remembered font data as curren
 | Active layer, selected-object counts or optional node details | [Selection](references/selection-reads.md), requiring `selection.context.v1` |
 | Discover kerning groups or stored pairs | [Kerning discovery](references/kerning-discovery.md) |
 | Exact stored kerning | [Kerning reads](references/kerning-reads.md) |
+| Set/remove exact glyph or group kerning entries | [Typed kerning edits](references/kerning-edits.md), requiring `kerning.edit.exact.v1` |
+| Language-filtered pairs and proof strings to inspect | [Kerning proofing](references/kerning-proofing.md), requiring `kerning.proof.v1` |
 | Additive advance changes | [Widths](references/width-changes.md) |
 | Glyphs-native metrics, outline/component/background, glyph-info or automatic-feature commands | [Closed native actions](references/native-actions.md), requiring `native.action.v1` and the action in `nativeActions` |
 | Feature source discovery and saved/live compiler diagnostics | [Feature compilation](references/feature-compilation.md), requiring `features.read.v1` and a compile capability |
 | Static, variable, WOFF/WOFF2 export and bounded shaping checks | [Font export](references/font-export.md), requiring `instances.read.v1` and export/verification capabilities |
 | Color, icon/Unicode, production or LitSquare audit scope beyond these jobs | [Specialized scope](references/specialized-scope.md) |
 | Direct native bulk edits or custom font-level changes | [Python script jobs](references/python-scripts.md), requiring `script.native.v1` and a verified saved baseline |
+| Local Git checkpoints, action history, comparison or historical restore | [Git checkpoints](references/git-checkpoints.md), requiring `font.checkpoints.v1` |
 | Connection failure | [Troubleshooting](references/connection-troubleshooting.md) |
 | Glyphs crashed or unexpectedly exited | [Crash recovery](references/crash-recovery.md); ask before any temporary autosave pause |
 

@@ -30,7 +30,8 @@ Use explicit glyph names. The delta is a finite non-zero number; negative and
 fractional values are supported, booleans are rejected. This adds to each
 existing advance; it does not set one absolute width across masters.
 **All stored layers** of each named glyph are included, including backup and
-special layers. There is no master filter and no width-specific `options`.
+special layers. A background’s reported width follows its owning foreground;
+its outlines remain untouched. There is no master filter and no width-specific `options`.
 Omitting `glyphs` selects the full font; do not omit it for a scoped request.
 
 Poll `get_job` with the returned `job_id` until ready or a terminal error.
@@ -61,3 +62,7 @@ verifies the prior change and saves the whole document. Never retry an uncertain
 save/export/close a document without authorization.
 
 Widths can prepare directly from stored live layers when the bridge supports the internal native preparer, avoiding a font copy and worker launch. Target scope and guarded selective recovery are unchanged. Missing layers are never created by preparation.
+Named requests use exact native glyph lookups and preserve font-order patches;
+they do not enumerate unrelated glyphs during preparation. Saved-source checks
+still validate the whole baseline. This does not change the typed patch limit
+or add a master filter.

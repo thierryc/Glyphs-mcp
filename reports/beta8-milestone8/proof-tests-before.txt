@@ -1,0 +1,411 @@
+FFFFFFFFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+_ test_language_pages_include_covered_pairs_and_zero_exceptions_without_mutation _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b377820>
+
+    def test_language_pages_include_covered_pairs_and_zero_exceptions_without_mutation(monkeypatch):
+>       f,a,d,r=fixture(monkeypatch); f.store['M1',0,'A','V']=0
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:48:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+________________ test_ambiguous_unicode_is_skipped_not_guessed _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b0a8c30>
+
+    def test_ambiguous_unicode_is_skipped_not_guessed(monkeypatch):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:62:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+________ test_mapping_scan_and_candidate_scan_are_bounded_and_reusable _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b409910>
+
+    def test_mapping_scan_and_candidate_scan_are_bounded_and_reusable(monkeypatch):
+>       f,a,d,r=fixture(monkeypatch, [('ZZ',['en'])]*300)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:70:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+________ test_cursor_binds_language_master_direction_and_live_document _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b40dd00>
+
+    def test_cursor_binds_language_master_direction_and_live_document(monkeypatch):
+>       f,a,d,r=fixture(monkeypatch); first=page(a,d,r)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:84:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change0] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b40cf30>
+change = {'languages': ['xx']}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change1] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3f1a50>
+change = {'languages': []}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change2] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3f3250>
+change = {'languages': ['en', 'en']}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change3] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b480320>
+change = {'direction': 'auto'}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change4] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b481130>
+change = {'limit': 101}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change5] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b157af0>
+change = {'limit': True}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+______________ test_invalid_proof_requests_fail_clearly[change6] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b157310>
+change = {'apply': True}
+
+    @pytest.mark.parametrize('change',[{'languages':['xx']},{'languages':[]},{'languages':['en','en']},{'direction':'auto'},{'limit':101},{'limit':True},{'apply':True}])
+    def test_invalid_proof_requests_fail_clearly(monkeypatch,change):
+>       f,a,d,r=fixture(monkeypatch)
+                ^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:22: in fixture
+    module = api()
+             ^^^^^
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:12: in api
+    def api(): return importlib.import_module('glyphs_mcp_bridge.kerning_proof')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_bridge.kerning_proof'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_bridge.kerning_proof'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_dataset_has_pinned_provenance_and_reproducible_contents _________
+
+    def test_dataset_has_pinned_provenance_and_reproducible_contents():
+>       dataset=importlib.import_module('glyphs_mcp_protocol.kerning_dataset')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_dataset'
+import_ = <function _gcd_import at 0x104727e20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_dataset'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0    12     0     1    0.00s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_language_pages_include_covered_pairs_and_zero_exceptions_without_mutation
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_ambiguous_unicode_is_skipped_not_guessed
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_mapping_scan_and_candidate_scan_are_bounded_and_reusable
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_cursor_binds_language_master_direction_and_live_document
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change0]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change1]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change2]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change3]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change4]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change5]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_invalid_proof_requests_fail_clearly[change6]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_proof.py::test_dataset_has_pinned_provenance_and_reproducible_contents
+12 failed in 0.19s

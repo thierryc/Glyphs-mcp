@@ -1,0 +1,144 @@
+{
+  "ok": true,
+  "data": {
+    "id": "edit_7d6e4f20165e4cc38ae37abda7d1dcfd",
+    "revision": 13,
+    "document": {
+      "id": "doc_c26e68634bb5439db81f0f36d5679205",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    },
+    "mode": "preview",
+    "state": "applied",
+    "jobId": "job_6de0d49779554f29b23e662737676a9a",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_6de0d49779554f29b23e662737676a9a",
+      "checkpointEnabled": false,
+      "status": "applied",
+      "summary": "Milestone 5 card check \u2014 diagnostic output only, no font edits",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 0,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "completedChanges": null,
+        "documentAfter": null,
+        "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+        "error": null,
+        "jobId": "job_6de0d49779554f29b23e662737676a9a",
+        "longestPreparationChunk": 0.006391083006747067,
+        "message": null,
+        "nativeSave": null,
+        "receipt": null,
+        "scriptResult": {
+          "changesVerified": false,
+          "documentAfter": {
+            "dirty": true,
+            "generation": 0,
+            "id": "doc_c26e68634bb5439db81f0f36d5679205",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage"
+          },
+          "entrypoint": "script",
+          "executed": true,
+          "executedTargets": 0,
+          "executionSucceeded": true,
+          "output": "Milestone 5 finished. Literal text: <b>not bold</b>.\n",
+          "totalTargets": 0
+        },
+        "status": "applied",
+        "totalChanges": null
+      },
+      "activity": {
+        "jobId": "job_6de0d49779554f29b23e662737676a9a",
+        "document": "Dactylotype",
+        "kind": "python_script",
+        "phase": "applied",
+        "startedAt": 1790598926.904246,
+        "finishedAt": 1790598926.904275,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": {
+      "available": true,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "sourceHash": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+      "generation": 0,
+      "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+    },
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": "finish_script"
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:b6898ac560ac6481e3a251c650147fa2645503899d1e2d662bc78e857b81bcda",
+    "documentStateConfirmed": true,
+    "summary": "Milestone 5 card check \u2014 diagnostic output only, no font edits",
+    "entrypoint": "script",
+    "scriptReview": {
+      "source": "# Milestone 5 card check: prints only; no font data is changed.\nprint(params['message'])\n",
+      "params": {
+        "message": "Milestone 5 finished. Literal text: <b>not bold</b>."
+      },
+      "entrypoint": "script",
+      "targets": [],
+      "summary": "Milestone 5 card check \u2014 diagnostic output only, no font edits"
+    },
+    "actions": [
+      {
+        "action": "finish_script",
+        "label": "Keep changes without saving",
+        "token": "3383c59faa7924f5a09fd58d822a0345bc4ce40aa1f38df87e59ba3043fe4c72",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result",
+        "label": "Save font",
+        "token": "2b45dfd7832c368e82408e5407e98c6b3441324f1c282df78ed0269594694c39",
+        "requiresDestination": false
+      },
+      {
+        "action": "restore_saved_script",
+        "label": "Restore saved version",
+        "token": "84e6d2fdb9aab8ea47b3ddbee75355d56a82bc550d57173c8cfae6d9c95d2515",
+        "requiresDestination": false
+      },
+      {
+        "action": "wait_for_answer",
+        "label": "Wait for my answer",
+        "token": "cce89827ab65c86fff1be811baf9dc8fdac0c699454dfa48bfe9355da679b8a3",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Script finished. Verify the intended result in Glyphs.\nThe font has unsaved edits.",
+    "verification": "Intended changes have not been verified by the wrapper.",
+    "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nScript finished. Verify the intended result in Glyphs.\nThe font has unsaved edits.\nIntended change: Milestone 5 card check \u2014 diagnostic output only, no font edits\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"# Milestone 5 card check: prints only; no font data is changed.\\nprint(params['message'])\\n\", \"params\": {\"message\": \"Milestone 5 finished. Literal text: <b>not bold</b>.\"}, \"entrypoint\": \"script\", \"targets\": [], \"summary\": \"Milestone 5 card check \u2014 diagnostic output only, no font edits\"}\nScript output (text): \"Milestone 5 finished. Literal text: <b>not bold</b>.\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version; Wait for my answer. You can reply in ordinary language.\nIn an active card, Keep changes without saving is selected after 30 seconds. This ends this workflow\u2019s recovery offer. Choose or say \u201cWait for my answer\u201d to disable it. Text-only clients keep this choice manual.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_7d6e4f20165e4cc38ae37abda7d1dcfd\",\"expected_revision\":13,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:b6898ac560ac6481e3a251c650147fa2645503899d1e2d662bc78e857b81bcda\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":\"finish_script\"},\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"3383c59faa7924f5a09fd58d822a0345bc4ce40aa1f38df87e59ba3043fe4c72\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"2b45dfd7832c368e82408e5407e98c6b3441324f1c282df78ed0269594694c39\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"84e6d2fdb9aab8ea47b3ddbee75355d56a82bc550d57173c8cfae6d9c95d2515\",\"requiresDestination\":false},{\"action\":\"wait_for_answer\",\"label\":\"Wait for my answer\",\"action_token\":\"cce89827ab65c86fff1be811baf9dc8fdac0c699454dfa48bfe9355da679b8a3\",\"requiresDestination\":false}]}"
+  }
+}

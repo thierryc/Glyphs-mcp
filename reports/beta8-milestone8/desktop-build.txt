@@ -1,0 +1,3 @@
+/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/desktop-dependencies
+Building in fresh directory: /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/local-app-runs/run-764xcjnf
+Build log: /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/reports/local-app-build.log

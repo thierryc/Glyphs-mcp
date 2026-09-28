@@ -1,0 +1,2430 @@
+[
+  {
+    "route": "baseline",
+    "format": "glyphs",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.0891371670004446,
+        "minimum": 0.0871149169979617,
+        "maximum": 0.0919821249844972
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.4681869170162827,
+        "minimum": 0.46570283398614265,
+        "maximum": 0.4890227080031764
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 0.5601690420007799,
+        "minimum": 0.5542075840057805,
+        "maximum": 0.5792119580146391
+      },
+      "requestBytes": {
+        "median": 92389,
+        "minimum": 92389,
+        "maximum": 92389
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.04602891599643044,
+        "minimum": 0.04540891697979532,
+        "maximum": 0.04704274999676272
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.010098250000737607,
+        "minimum": 0.010061957989819348,
+        "maximum": 0.01013308300753124
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.17963224803679623,
+        "minimum": 0.1753472530108411,
+        "maximum": 0.19343520601978526
+      },
+      "scheduledChunks": {
+        "median": 61,
+        "minimum": 61,
+        "maximum": 61
+      },
+      "verificationSeconds": {
+        "median": 0.07551254198187962,
+        "minimum": 0.07523558297543786,
+        "maximum": 0.07828799998969771
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 197541888,
+        "minimum": 197165056,
+        "maximum": 199557120
+      },
+      "restoreSeconds": {
+        "median": 0.023170792002929375,
+        "minimum": 0.022530791989993304,
+        "maximum": 0.023590374999912456
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.0191334159753751,
+        "minimum": 0.018615417007822543,
+        "maximum": 0.01947687499341555
+      },
+      "peakRSSBytes": {
+        "median": 207110144,
+        "minimum": 206749696,
+        "maximum": 209010688
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.02817092664190568,
+        "minimum": 0.028045350802130997,
+        "maximum": 0.02843149908585474
+      },
+      "initialize": {
+        "median": 0.003606250014854595,
+        "minimum": 0.003244333987822756,
+        "maximum": 0.003647792007541284
+      },
+      "run": {
+        "median": 0.13877747670630924,
+        "minimum": 0.1349292378872633,
+        "maximum": 0.1520481455954723
+      },
+      "complete": {
+        "median": 0.0005733750003855675,
+        "minimum": 0.0005284170038066804,
+        "maximum": 0.0005904579884372652
+      },
+      "cleanup": {
+        "median": 0.006523435178678483,
+        "minimum": 0.006379899801686406,
+        "maximum": 0.007071089930832386
+      }
+    }
+  },
+  {
+    "route": "baseline",
+    "format": "glyphs",
+    "targets": 4096,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.24075166700640693,
+        "minimum": 0.23646562499925494,
+        "maximum": 0.2441255000012461
+      },
+      "dispatchToResultSeconds": {
+        "median": 1.502691292000236,
+        "minimum": 1.2975890419911593,
+        "maximum": 1.5207665000052657
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 1.746816792001482,
+        "minimum": 1.5340546669904143,
+        "maximum": 1.7615181670116726
+      },
+      "requestBytes": {
+        "median": 377221,
+        "minimum": 377221,
+        "maximum": 377221
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.18840633300715126,
+        "minimum": 0.18624287500279024,
+        "maximum": 0.1921507910010405
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.013224791997345164,
+        "minimum": 0.013072875008219853,
+        "maximum": 0.014446166023844853
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.7188650869065896,
+        "minimum": 0.7098182844056282,
+        "maximum": 0.721150874189334
+      },
+      "scheduledChunks": {
+        "median": 246,
+        "minimum": 246,
+        "maximum": 246
+      },
+      "verificationSeconds": {
+        "median": 0.30263833299977705,
+        "minimum": 0.3000225409923587,
+        "maximum": 0.31443704199045897
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 242008064,
+        "minimum": 239648768,
+        "maximum": 243122176
+      },
+      "restoreSeconds": {
+        "median": 0.07519820801098831,
+        "minimum": 0.07301820899010636,
+        "maximum": 0.07626875001005828
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.07049708301201463,
+        "minimum": 0.06812237499980256,
+        "maximum": 0.07144274999154732
+      },
+      "peakRSSBytes": {
+        "median": 279085056,
+        "minimum": 277495808,
+        "maximum": 280608768
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.11096657702000812,
+        "minimum": 0.11028917288058437,
+        "maximum": 0.112336704187328
+      },
+      "initialize": {
+        "median": 0.011436957982368767,
+        "minimum": 0.011237500002607703,
+        "maximum": 0.012521666998509318
+      },
+      "run": {
+        "median": 0.5615305969549809,
+        "minimum": 0.5549381370947231,
+        "maximum": 0.5650766793114599
+      },
+      "complete": {
+        "median": 0.0005386669945437461,
+        "minimum": 0.0005324579833541065,
+        "maximum": 0.0005564579914789647
+      },
+      "cleanup": {
+        "median": 0.026500187464989722,
+        "minimum": 0.026356910180766135,
+        "maximum": 0.02744740407797508
+      }
+    }
+  },
+  {
+    "route": "baseline",
+    "format": "glyphspackage",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.20681495798635297,
+        "minimum": 0.2007916249858681,
+        "maximum": 0.21440470800735056
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.7489953330077697,
+        "minimum": 0.7443990409956314,
+        "maximum": 0.7517459579976276
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 0.956867249973584,
+        "minimum": 0.9451906659814995,
+        "maximum": 0.9634000410151202
+      },
+      "requestBytes": {
+        "median": 92396,
+        "minimum": 92396,
+        "maximum": 92396
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.04627495902241208,
+        "minimum": 0.045912417001090944,
+        "maximum": 0.04721879100543447
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.051626833010232076,
+        "minimum": 0.05086487502558157,
+        "maximum": 0.05361858298419975
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.22458729095524177,
+        "minimum": 0.22327358109760098,
+        "maximum": 0.22564129086094908
+      },
+      "scheduledChunks": {
+        "median": 62,
+        "minimum": 62,
+        "maximum": 62
+      },
+      "verificationSeconds": {
+        "median": 0.07453137499396689,
+        "minimum": 0.07180870801676065,
+        "maximum": 0.07573104198672809
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 199163904,
+        "minimum": 197197824,
+        "maximum": 199753728
+      },
+      "restoreSeconds": {
+        "median": 0.12924133299384266,
+        "minimum": 0.1273237919958774,
+        "maximum": 0.1316574579977896
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.12511270798859186,
+        "minimum": 0.12334212500718422,
+        "maximum": 0.127806167001836
+      },
+      "peakRSSBytes": {
+        "median": 208797696,
+        "minimum": 206946304,
+        "maximum": 209633280
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.0278964786848519,
+        "minimum": 0.02675806058687158,
+        "maximum": 0.027943817869527265
+      },
+      "initialize": {
+        "median": 0.051198957982705906,
+        "minimum": 0.05046191700967029,
+        "maximum": 0.05323487499845214
+      },
+      "run": {
+        "median": 0.1369748862052802,
+        "minimum": 0.13576145673869178,
+        "maximum": 0.1379460655443836
+      },
+      "complete": {
+        "median": 0.0006108329980634153,
+        "minimum": 0.0005736250022891909,
+        "maximum": 0.000666750012896955
+      },
+      "cleanup": {
+        "median": 0.006521613599034026,
+        "minimum": 0.006050073629012331,
+        "maximum": 0.006645706976996735
+      }
+    }
+  },
+  {
+    "route": "baseline",
+    "format": "glyphspackage",
+    "targets": 4096,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.7009370420128107,
+        "minimum": 0.6922549169976264,
+        "maximum": 0.7145388750068378
+      },
+      "dispatchToResultSeconds": {
+        "median": 2.3598409580008592,
+        "minimum": 2.329706749995239,
+        "maximum": 2.43010874997708
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 3.067417458019918,
+        "minimum": 3.0219616669928655,
+        "maximum": 3.131045791989891
+      },
+      "requestBytes": {
+        "median": 377228,
+        "minimum": 377228,
+        "maximum": 377228
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.18787483300548047,
+        "minimum": 0.1872735829965677,
+        "maximum": 0.19093837501714006
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.210162749979645,
+        "minimum": 0.2070285829831846,
+        "maximum": 0.21900995800388046
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.9194317092478741,
+        "minimum": 0.8979960392753128,
+        "maximum": 0.9270121240406297
+      },
+      "scheduledChunks": {
+        "median": 246,
+        "minimum": 246,
+        "maximum": 247
+      },
+      "verificationSeconds": {
+        "median": 0.30151620801188983,
+        "minimum": 0.2972119170008227,
+        "maximum": 0.30467020900687203
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 249217024,
+        "minimum": 248479744,
+        "maximum": 249790464
+      },
+      "restoreSeconds": {
+        "median": 0.5211713750031777,
+        "minimum": 0.514650791999884,
+        "maximum": 0.524297916010255
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.5167168749903794,
+        "minimum": 0.5100200409942772,
+        "maximum": 0.5192476249940228
+      },
+      "peakRSSBytes": {
+        "median": 287326208,
+        "minimum": 285736960,
+        "maximum": 289079296
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.11208990143495612,
+        "minimum": 0.10799252652213909,
+        "maximum": 0.1137971970892977
+      },
+      "initialize": {
+        "median": 0.20833429199410602,
+        "minimum": 0.20492525000008754,
+        "maximum": 0.2172538330196403
+      },
+      "run": {
+        "median": 0.5582565751683433,
+        "minimum": 0.54335851065116,
+        "maximum": 0.5674620720383245
+      },
+      "complete": {
+        "median": 0.0005432500038295984,
+        "minimum": 0.0005272909766063094,
+        "maximum": 0.000557417020900175
+      },
+      "cleanup": {
+        "median": 0.026815329649252817,
+        "minimum": 0.026019677374279127,
+        "maximum": 0.04459550540195778
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphs",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.1410061669885181,
+        "minimum": 0.13885158297489397,
+        "maximum": 0.1722500830073841
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.4198280409909785,
+        "minimum": 0.4188165000232402,
+        "maximum": 0.42720504201133735
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 0.5671372920332942,
+        "minimum": 0.5576680829981342,
+        "maximum": 0.5920781239983626
+      },
+      "requestBytes": {
+        "median": 92389,
+        "minimum": 92389,
+        "maximum": 92389
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.002923041000030935,
+        "minimum": 0.002838749991497025,
+        "maximum": 0.0033349579898640513
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.017414416011888534,
+        "minimum": 0.01647025000420399,
+        "maximum": 0.02044695900985971
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.010567792021902278,
+        "minimum": 0.01038299998617731,
+        "maximum": 0.010764999984530732
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.25895970399142243,
+        "minimum": 0.25751870693056844,
+        "maximum": 0.2596131648460869
+      },
+      "scheduledChunks": {
+        "median": 82,
+        "minimum": 82,
+        "maximum": 82
+      },
+      "verificationSeconds": {
+        "median": 0.07564779100357555,
+        "minimum": 0.07332966700778343,
+        "maximum": 0.0786551250203047
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 196640768,
+        "minimum": 196165632,
+        "maximum": 197607424
+      },
+      "restoreSeconds": {
+        "median": 0.02260104098240845,
+        "minimum": 0.022146332979900762,
+        "maximum": 0.026238624996040016
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.019053291995078325,
+        "minimum": 0.01859091699589044,
+        "maximum": 0.022506084002088755
+      },
+      "peakRSSBytes": {
+        "median": 206143488,
+        "minimum": 205897728,
+        "maximum": 207405056
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.05022236896911636,
+        "minimum": 0.04967760597355664,
+        "maximum": 0.051049412024440244
+      },
+      "initialize": {
+        "median": 0.0031009170052129775,
+        "minimum": 0.0030712079897057265,
+        "maximum": 0.0033699580235406756
+      },
+      "run": {
+        "median": 0.13540590295451693,
+        "minimum": 0.133853517472744,
+        "maximum": 0.13736638191039674
+      },
+      "complete": {
+        "median": 0.0005655410059262067,
+        "minimum": 0.0005467500013764948,
+        "maximum": 0.0006592500139959157
+      },
+      "cleanup": {
+        "median": 0.006125706888269633,
+        "minimum": 0.0059877761523239315,
+        "maximum": 0.006210541003383696
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphs",
+    "targets": 4096,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.3886284590116702,
+        "minimum": 0.38745900001958944,
+        "maximum": 0.39260120899416506
+      },
+      "dispatchToResultSeconds": {
+        "median": 1.4636410000093747,
+        "minimum": 1.213075250008842,
+        "maximum": 1.4702490420022514
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 1.8562422090035398,
+        "minimum": 1.6011286250140984,
+        "maximum": 1.8577080420218408
+      },
+      "requestBytes": {
+        "median": 377221,
+        "minimum": 377221,
+        "maximum": 377221
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.008049249998293817,
+        "minimum": 0.007798458012985066,
+        "maximum": 0.008327290997840464
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.017449792008846998,
+        "minimum": 0.01677437502075918,
+        "maximum": 0.018022332980763167
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.01541433300008066,
+        "minimum": 0.014752833027159795,
+        "maximum": 0.016177083016373217
+      },
+      "scheduledNativeSeconds": {
+        "median": 1.0499227889522444,
+        "minimum": 1.0397729190881364,
+        "maximum": 1.064547424291959
+      },
+      "scheduledChunks": {
+        "median": 328,
+        "minimum": 328,
+        "maximum": 330
+      },
+      "verificationSeconds": {
+        "median": 0.30597975000273436,
+        "minimum": 0.30001137501676567,
+        "maximum": 0.3144322499865666
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 239419392,
+        "minimum": 237289472,
+        "maximum": 241451008
+      },
+      "restoreSeconds": {
+        "median": 0.07480654199025594,
+        "minimum": 0.0729378339892719,
+        "maximum": 0.07525662498665042
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.07030624998151325,
+        "minimum": 0.06879641700652428,
+        "maximum": 0.07117720801034011
+      },
+      "peakRSSBytes": {
+        "median": 277676032,
+        "minimum": 275365888,
+        "maximum": 279724032
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.20562468626303598,
+        "minimum": 0.2027559851994738,
+        "maximum": 0.20807991825859062
+      },
+      "initialize": {
+        "median": 0.011751540994737297,
+        "minimum": 0.011396624991903082,
+        "maximum": 0.01264866697601974
+      },
+      "run": {
+        "median": 0.5513472451129928,
+        "minimum": 0.5454955456079915,
+        "maximum": 0.5705863487091847
+      },
+      "complete": {
+        "median": 0.0005518749821931124,
+        "minimum": 0.0005271670233923942,
+        "maximum": 0.0006459159776568413
+      },
+      "cleanup": {
+        "median": 0.025981967977713794,
+        "minimum": 0.025336213904665783,
+        "maximum": 0.02637426697765477
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphs",
+    "targets": 10000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.884045334008988,
+        "minimum": 0.8803159999952186,
+        "maximum": 0.8936702500213869
+      },
+      "dispatchToResultSeconds": {
+        "median": 3.0611675420077518,
+        "minimum": 3.016047625016654,
+        "maximum": 3.0809874999977183
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 3.9452128760167398,
+        "minimum": 3.901342291996116,
+        "maximum": 3.9638893749797717
+      },
+      "requestBytes": {
+        "median": 920389,
+        "minimum": 920389,
+        "maximum": 920389
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.010801708995131776,
+        "minimum": 0.0103182090097107,
+        "maximum": 0.011415667016990483
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.026857250020839274,
+        "minimum": 0.025883708003675565,
+        "maximum": 0.028236790996743366
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.02907070898800157,
+        "minimum": 0.028295750002143905,
+        "maximum": 0.029948834009701386
+      },
+      "scheduledNativeSeconds": {
+        "median": 2.532866946217837,
+        "minimum": 2.5142425924132112,
+        "maximum": 2.538492414285429
+      },
+      "scheduledChunks": {
+        "median": 803,
+        "minimum": 803,
+        "maximum": 803
+      },
+      "verificationSeconds": {
+        "median": 0.7276226669782773,
+        "minimum": 0.7234008329978678,
+        "maximum": 0.7393090419936925
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 325156864,
+        "minimum": 323862528,
+        "maximum": 326025216
+      },
+      "restoreSeconds": {
+        "median": 0.1759092920110561,
+        "minimum": 0.17332270799670368,
+        "maximum": 0.18280320797930472
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.1699106249725446,
+        "minimum": 0.16774775000521913,
+        "maximum": 0.17686187499202788
+      },
+      "peakRSSBytes": {
+        "median": 418988032,
+        "minimum": 416792576,
+        "maximum": 419708928
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.504677930730395,
+        "minimum": 0.4993562269373797,
+        "maximum": 0.509132126782788
+      },
+      "initialize": {
+        "median": 0.026892041991231963,
+        "minimum": 0.0257332079927437,
+        "maximum": 0.027376499987440184
+      },
+      "run": {
+        "median": 1.3274892411136534,
+        "minimum": 1.3132903732766863,
+        "maximum": 1.3329512967611663
+      },
+      "complete": {
+        "median": 0.0005776660109404474,
+        "minimum": 0.0005357909831218421,
+        "maximum": 0.0006346250011119992
+      },
+      "cleanup": {
+        "median": 0.06391690718010068,
+        "minimum": 0.06351278474903665,
+        "maximum": 0.06455130747053772
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphs",
+    "targets": 10000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.9532602499821223,
+        "minimum": 0.9453124169958755,
+        "maximum": 1.3204268750268966
+      },
+      "dispatchToResultSeconds": {
+        "median": 5.963326541008428,
+        "minimum": 5.912948999990476,
+        "maximum": 6.56445987499319
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 7.1834463339764625,
+        "minimum": 6.858261416986352,
+        "maximum": 7.5177201249753125
+      },
+      "requestBytes": {
+        "median": 920389,
+        "minimum": 920389,
+        "maximum": 920389
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.012373542005661875,
+        "minimum": 0.010623334004776552,
+        "maximum": 0.1571611249819398
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.026299000019207597,
+        "minimum": 0.026033166999695823,
+        "maximum": 0.040846458985470235
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.03002120801829733,
+        "minimum": 0.029326666000997648,
+        "maximum": 0.15717120800400153
+      },
+      "scheduledNativeSeconds": {
+        "median": 5.187743249873165,
+        "minimum": 5.048237815644825,
+        "maximum": 5.425970603595488
+      },
+      "scheduledChunks": {
+        "median": 981,
+        "minimum": 977,
+        "maximum": 999
+      },
+      "verificationSeconds": {
+        "median": 1.7685646250029095,
+        "minimum": 1.733643208979629,
+        "maximum": 1.77695204099291
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 405143552,
+        "minimum": 328613888,
+        "maximum": 406044672
+      },
+      "restoreSeconds": {
+        "median": 0.2275430420122575,
+        "minimum": 0.22324633301468566,
+        "maximum": 0.2561840409762226
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.21891845899517648,
+        "minimum": 0.21500900000683032,
+        "maximum": 0.2473007500229869
+      },
+      "peakRSSBytes": {
+        "median": 530989056,
+        "minimum": 442925056,
+        "maximum": 532234240
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.509472003497649,
+        "minimum": 0.500325729342876,
+        "maximum": 0.5283478839264717
+      },
+      "initialize": {
+        "median": 0.027688292000675574,
+        "minimum": 0.02704520901897922,
+        "maximum": 0.02875104098347947
+      },
+      "run": {
+        "median": 3.8566696343477815,
+        "minimum": 3.82329514020239,
+        "maximum": 4.198239655728685
+      },
+      "complete": {
+        "median": 0.0005598750140052289,
+        "minimum": 0.0005280829791445285,
+        "maximum": 0.0006662080122623593
+      },
+      "cleanup": {
+        "median": 0.06535168577102013,
+        "minimum": 0.0638480487104971,
+        "maximum": 0.07278014469193295
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphs",
+    "targets": 20000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 1.8524102919909637,
+        "minimum": 1.8302627080120146,
+        "maximum": 1.8674283330037724
+      },
+      "dispatchToResultSeconds": {
+        "median": 6.486754291981924,
+        "minimum": 6.301011457981076,
+        "maximum": 6.5849177920026705
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 8.317016999993939,
+        "minimum": 8.156213749956805,
+        "maximum": 8.452346125006443
+      },
+      "requestBytes": {
+        "median": 1850389,
+        "minimum": 1850389,
+        "maximum": 1850389
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.02186637499835342,
+        "minimum": 0.02107841699034907,
+        "maximum": 0.027889582997886464
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.058048332983162254,
+        "minimum": 0.055066208995413035,
+        "maximum": 0.06024337498820387
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.05831595798372291,
+        "minimum": 0.05772466698545031,
+        "maximum": 0.06175225001061335
+      },
+      "scheduledNativeSeconds": {
+        "median": 5.281503441394307,
+        "minimum": 5.1616242515156046,
+        "maximum": 5.3301151988853235
+      },
+      "scheduledChunks": {
+        "median": 1603,
+        "minimum": 1603,
+        "maximum": 1609
+      },
+      "verificationSeconds": {
+        "median": 1.4791478749830276,
+        "minimum": 1.4625312919961289,
+        "maximum": 1.7480210829817224
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 473268224,
+        "minimum": 458899456,
+        "maximum": 475447296
+      },
+      "restoreSeconds": {
+        "median": 0.3611769999843091,
+        "minimum": 0.33989350000047125,
+        "maximum": 0.5541732079873327
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.3525040000095032,
+        "minimum": 0.33132687499164604,
+        "maximum": 0.544543290976435
+      },
+      "peakRSSBytes": {
+        "median": 664780800,
+        "minimum": 567803904,
+        "maximum": 667533312
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 1.0381028527626768,
+        "minimum": 1.0358857839892153,
+        "maximum": 1.0586759356083348
+      },
+      "initialize": {
+        "median": 0.0539580839977134,
+        "minimum": 0.05304400000022724,
+        "maximum": 0.056775957986246794
+      },
+      "run": {
+        "median": 2.7664642985910177,
+        "minimum": 2.6716159092320595,
+        "maximum": 2.819430169824045
+      },
+      "complete": {
+        "median": 0.000604125001700595,
+        "minimum": 0.0005173749814275652,
+        "maximum": 0.0007146249990910292
+      },
+      "cleanup": {
+        "median": 0.15238179184962064,
+        "minimum": 0.14278595501673408,
+        "maximum": 0.18926679115975276
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphs",
+    "targets": 20000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 1.6784879170008935,
+        "minimum": 1.6485006249858998,
+        "maximum": 1.6994117089780048
+      },
+      "dispatchToResultSeconds": {
+        "median": 11.3539937500027,
+        "minimum": 11.064785499998834,
+        "maximum": 11.380494499986526
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 13.031550208979752,
+        "minimum": 12.743273416999727,
+        "maximum": 13.043349708983442
+      },
+      "requestBytes": {
+        "median": 1850389,
+        "minimum": 1850389,
+        "maximum": 1850389
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.021158084011403844,
+        "minimum": 0.020601500000339,
+        "maximum": 0.022167874994920567
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.055442542012315243,
+        "minimum": 0.052183833002345636,
+        "maximum": 0.058465334004722536
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.058767625014297664,
+        "minimum": 0.05732304198318161,
+        "maximum": 0.06056574999820441
+      },
+      "scheduledNativeSeconds": {
+        "median": 9.528462230577134,
+        "minimum": 9.448413137870375,
+        "maximum": 9.720645505003631
+      },
+      "scheduledChunks": {
+        "median": 1909,
+        "minimum": 1898,
+        "maximum": 1917
+      },
+      "verificationSeconds": {
+        "median": 3.3519313750148285,
+        "minimum": 3.319017416011775,
+        "maximum": 3.3674685409932863
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 632111104,
+        "minimum": 586285056,
+        "maximum": 636338176
+      },
+      "restoreSeconds": {
+        "median": 0.4284406249935273,
+        "minimum": 0.4178194580017589,
+        "maximum": 0.43990516700432636
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.41701791700324975,
+        "minimum": 0.40568345799692906,
+        "maximum": 0.427388834010344
+      },
+      "peakRSSBytes": {
+        "median": 886685696,
+        "minimum": 715718656,
+        "maximum": 891256832
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.9730121388856787,
+        "minimum": 0.9139942328911275,
+        "maximum": 0.9773560019966681
+      },
+      "initialize": {
+        "median": 0.05482333299005404,
+        "minimum": 0.05316837501595728,
+        "maximum": 0.05661037500249222
+      },
+      "run": {
+        "median": 7.182600512314821,
+        "minimum": 7.070527001924347,
+        "maximum": 7.280213231249945
+      },
+      "complete": {
+        "median": 0.0005481250118464231,
+        "minimum": 0.0005320000054780394,
+        "maximum": 0.0006402499857358634
+      },
+      "cleanup": {
+        "median": 0.27797041603480466,
+        "minimum": 0.2607203414954711,
+        "maximum": 0.31491907811141573
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphspackage",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.25403412501327693,
+        "minimum": 0.24453133300994523,
+        "maximum": 0.262397750018863
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.7090571250009816,
+        "minimum": 0.6995276660018135,
+        "maximum": 0.7148213750042487
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 0.9643331250117626,
+        "minimum": 0.9440589990117587,
+        "maximum": 0.9767290420422796
+      },
+      "requestBytes": {
+        "median": 92396,
+        "minimum": 92396,
+        "maximum": 92396
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.0030324580147862434,
+        "minimum": 0.002908416005084291,
+        "maximum": 0.003229041991289705
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.01740749998134561,
+        "minimum": 0.016420874977484345,
+        "maximum": 0.018629083002451807
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.05242079100571573,
+        "minimum": 0.051066874992102385,
+        "maximum": 0.14828233298612759
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.3108722460165154,
+        "minimum": 0.30385666311485693,
+        "maximum": 0.43844733593869023
+      },
+      "scheduledChunks": {
+        "median": 83,
+        "minimum": 83,
+        "maximum": 83
+      },
+      "verificationSeconds": {
+        "median": 0.07442087499657646,
+        "minimum": 0.07110083298175596,
+        "maximum": 0.07703770798980258
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 198410240,
+        "minimum": 196984832,
+        "maximum": 199524352
+      },
+      "restoreSeconds": {
+        "median": 0.12889774999348447,
+        "minimum": 0.1274320000084117,
+        "maximum": 0.1341562919842545
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.12504120901576243,
+        "minimum": 0.12426637500175275,
+        "maximum": 0.13060012500500306
+      },
+      "peakRSSBytes": {
+        "median": 208404480,
+        "minimum": 206782464,
+        "maximum": 209485824
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.050985761074116454,
+        "minimum": 0.04882286794600077,
+        "maximum": 0.08681015446200036
+      },
+      "initialize": {
+        "median": 0.0514205000072252,
+        "minimum": 0.04997216700576246,
+        "maximum": 0.13879370799986646
+      },
+      "run": {
+        "median": 0.13683539180783555,
+        "minimum": 0.1347631587414071,
+        "maximum": 0.1392868483089842
+      },
+      "complete": {
+        "median": 0.0005872079927939922,
+        "minimum": 0.0005727910029236227,
+        "maximum": 0.0006448339845519513
+      },
+      "cleanup": {
+        "median": 0.006230287195648998,
+        "minimum": 0.006073700817069039,
+        "maximum": 0.0065053557336796075
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphspackage",
+    "targets": 4096,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.8519789159763604,
+        "minimum": 0.8362004589871503,
+        "maximum": 0.9420862080005463
+      },
+      "dispatchToResultSeconds": {
+        "median": 2.31016766699031,
+        "minimum": 2.3041189579817,
+        "maximum": 2.3775993330054916
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 3.158767248998629,
+        "minimum": 3.1463681259774603,
+        "maximum": 3.2691217079991475
+      },
+      "requestBytes": {
+        "median": 377228,
+        "minimum": 377228,
+        "maximum": 377228
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.006841167021775618,
+        "minimum": 0.006274209008552134,
+        "maximum": 0.01945858300314285
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.017257582978345454,
+        "minimum": 0.016308332997141406,
+        "maximum": 0.017773958010366186
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.21355162499821745,
+        "minimum": 0.21177091699792072,
+        "maximum": 0.2633649159979541
+      },
+      "scheduledNativeSeconds": {
+        "median": 1.2512224582314957,
+        "minimum": 1.236372873041546,
+        "maximum": 1.368118338752538
+      },
+      "scheduledChunks": {
+        "median": 328,
+        "minimum": 328,
+        "maximum": 333
+      },
+      "verificationSeconds": {
+        "median": 0.3160758329904638,
+        "minimum": 0.31389250000938773,
+        "maximum": 0.32160391699289903
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 245071872,
+        "minimum": 243728384,
+        "maximum": 248365056
+      },
+      "restoreSeconds": {
+        "median": 0.5200270829955116,
+        "minimum": 0.5165355409844778,
+        "maximum": 0.5284752920269966
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.5159093750116881,
+        "minimum": 0.5115917499933857,
+        "maximum": 0.5238231249968521
+      },
+      "peakRSSBytes": {
+        "median": 283688960,
+        "minimum": 282394624,
+        "maximum": 287408128
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.2060035351314582,
+        "minimum": 0.20340827928157523,
+        "maximum": 0.20973078161478043
+      },
+      "initialize": {
+        "median": 0.2098496250109747,
+        "minimum": 0.20837329200003296,
+        "maximum": 0.2602392500266433
+      },
+      "run": {
+        "median": 0.5525114624470007,
+        "minimum": 0.5474564933101647,
+        "maximum": 0.6190756413852796
+      },
+      "complete": {
+        "median": 0.0005557500116992742,
+        "minimum": 0.0005272919952403754,
+        "maximum": 0.000569665979128331
+      },
+      "cleanup": {
+        "median": 0.026459428772795945,
+        "minimum": 0.0258070174313616,
+        "maximum": 0.03192655765451491
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphspackage",
+    "targets": 10000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 2.0542559169989545,
+        "minimum": 1.9961820829776116,
+        "maximum": 2.2050006670178846
+      },
+      "dispatchToResultSeconds": {
+        "median": 5.380075958004454,
+        "minimum": 5.222239666007226,
+        "maximum": 5.620568624988664
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 7.434331875003409,
+        "minimum": 7.218421748984838,
+        "maximum": 7.809240458038403
+      },
+      "requestBytes": {
+        "median": 920396,
+        "minimum": 920396,
+        "maximum": 920396
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.010956041020108387,
+        "minimum": 0.010723624989623204,
+        "maximum": 0.011596208001719788
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.03676479202113114,
+        "minimum": 0.03494320798199624,
+        "maximum": 0.037345791002735496
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.5259119169786572,
+        "minimum": 0.5184596249891911,
+        "maximum": 0.6006585829891264
+      },
+      "scheduledNativeSeconds": {
+        "median": 3.0453849041368812,
+        "minimum": 3.0205489757063333,
+        "maximum": 3.097652813507011
+      },
+      "scheduledChunks": {
+        "median": 803,
+        "minimum": 803,
+        "maximum": 803
+      },
+      "verificationSeconds": {
+        "median": 0.7300497500109486,
+        "minimum": 0.7170981250237674,
+        "maximum": 0.840884459001245
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 342228992,
+        "minimum": 337592320,
+        "maximum": 343130112
+      },
+      "restoreSeconds": {
+        "median": 1.314923625002848,
+        "minimum": 1.29317250000895,
+        "maximum": 1.3840807919914369
+      },
+      "longestRestoreCallSeconds": {
+        "median": 1.3078145839972422,
+        "minimum": 1.2870640830078628,
+        "maximum": 1.377653375006048
+      },
+      "peakRSSBytes": {
+        "median": 439156736,
+        "minimum": 434094080,
+        "maximum": 439599104
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.5067446474859025,
+        "minimum": 0.5032766653166618,
+        "maximum": 0.5110939438163769
+      },
+      "initialize": {
+        "median": 0.5237232920189854,
+        "minimum": 0.5164054999768268,
+        "maximum": 0.5986935840046499
+      },
+      "run": {
+        "median": 1.3255170865741093,
+        "minimum": 1.315765907871537,
+        "maximum": 1.3425583709322382
+      },
+      "complete": {
+        "median": 0.0005722919886466116,
+        "minimum": 0.0005440000095404685,
+        "maximum": 0.0007134999905247241
+      },
+      "cleanup": {
+        "median": 0.06425367362680845,
+        "minimum": 0.063651717355242,
+        "maximum": 0.0917659422266297
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphspackage",
+    "targets": 10000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 1.8696711669908836,
+        "minimum": 1.8094662080111448,
+        "maximum": 2.0533765419968404
+      },
+      "dispatchToResultSeconds": {
+        "median": 7.475945957994554,
+        "minimum": 7.449787624995224,
+        "maximum": 7.798274000000674
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 9.374972249992425,
+        "minimum": 9.269835582992528,
+        "maximum": 9.740019291988574
+      },
+      "requestBytes": {
+        "median": 920396,
+        "minimum": 920396,
+        "maximum": 920396
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.010486042010597885,
+        "minimum": 0.010318541986634955,
+        "maximum": 0.011100292002083734
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.03343329200288281,
+        "minimum": 0.03287687498959713,
+        "maximum": 0.034751958010019735
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.5077357499976642,
+        "minimum": 0.4920215829915833,
+        "maximum": 0.5764969169977121
+      },
+      "scheduledNativeSeconds": {
+        "median": 5.172402776690433,
+        "minimum": 5.102765761490446,
+        "maximum": 5.2384404314507265
+      },
+      "scheduledChunks": {
+        "median": 954,
+        "minimum": 952,
+        "maximum": 958
+      },
+      "verificationSeconds": {
+        "median": 1.6834497920062859,
+        "minimum": 1.6514444579952396,
+        "maximum": 1.7160834159876686
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 422068224,
+        "minimum": 421085184,
+        "maximum": 423149568
+      },
+      "restoreSeconds": {
+        "median": 1.2496340410143603,
+        "minimum": 1.2374807909945957,
+        "maximum": 1.309744625003077
+      },
+      "longestRestoreCallSeconds": {
+        "median": 1.242014957999345,
+        "minimum": 1.2293860000208952,
+        "maximum": 1.3009875830030069
+      },
+      "peakRSSBytes": {
+        "median": 550289408,
+        "minimum": 549289984,
+        "maximum": 551567360
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.45128357349312864,
+        "minimum": 0.4442595615691971,
+        "maximum": 0.4873532338242512
+      },
+      "initialize": {
+        "median": 0.5058269160217606,
+        "minimum": 0.4898346670088358,
+        "maximum": 0.5745357919950038
+      },
+      "run": {
+        "median": 3.573833954782458,
+        "minimum": 3.5541216227575205,
+        "maximum": 3.617516939615598
+      },
+      "complete": {
+        "median": 0.0005408330180216581,
+        "minimum": 0.0005308749969117343,
+        "maximum": 0.0005700000037904829
+      },
+      "cleanup": {
+        "median": 0.07824781950330362,
+        "minimum": 0.05837716243695468,
+        "maximum": 0.09038048546062782
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphspackage",
+    "targets": 20000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 4.13006037499872,
+        "minimum": 4.099343708978267,
+        "maximum": 4.2595682500104886
+      },
+      "dispatchToResultSeconds": {
+        "median": 10.9050564589852,
+        "minimum": 10.807009082986042,
+        "maximum": 11.231264625006588
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 15.06657733299653,
+        "minimum": 14.947569792013383,
+        "maximum": 15.361325000005309
+      },
+      "requestBytes": {
+        "median": 1850396,
+        "minimum": 1850396,
+        "maximum": 1850396
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.022075499990023673,
+        "minimum": 0.021767583006294444,
+        "maximum": 0.022166875016409904
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.05081437499029562,
+        "minimum": 0.04959879201487638,
+        "maximum": 0.05220924998866394
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 1.1616331670084037,
+        "minimum": 1.0953970830014441,
+        "maximum": 1.2243603340175468
+      },
+      "scheduledNativeSeconds": {
+        "median": 6.309027933573816,
+        "minimum": 6.150050641561393,
+        "maximum": 6.492114490858512
+      },
+      "scheduledChunks": {
+        "median": 1603,
+        "minimum": 1603,
+        "maximum": 1609
+      },
+      "verificationSeconds": {
+        "median": 1.463821832992835,
+        "minimum": 1.4518256660085171,
+        "maximum": 1.6585771249956451
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 511115264,
+        "minimum": 497582080,
+        "maximum": 513015808
+      },
+      "restoreSeconds": {
+        "median": 2.811232458014274,
+        "minimum": 2.771736624999903,
+        "maximum": 3.0519961249956395
+      },
+      "longestRestoreCallSeconds": {
+        "median": 2.80278100000578,
+        "minimum": 2.759818833001191,
+        "maximum": 3.042851917009102
+      },
+      "peakRSSBytes": {
+        "median": 700203008,
+        "minimum": 683343872,
+        "maximum": 707493888
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 1.0397705954383127,
+        "minimum": 1.0307839447341394,
+        "maximum": 1.101839608134469
+      },
+      "initialize": {
+        "median": 1.1568350000015926,
+        "minimum": 1.0906752080190927,
+        "maximum": 1.2194071249978151
+      },
+      "run": {
+        "median": 2.682565343915485,
+        "minimum": 2.6584659450454637,
+        "maximum": 2.839646591892233
+      },
+      "complete": {
+        "median": 0.0005938340036664158,
+        "minimum": 0.0005302090139593929,
+        "maximum": 0.0006830829952377826
+      },
+      "cleanup": {
+        "median": 0.15874657392851077,
+        "minimum": 0.14817368623334914,
+        "maximum": 0.22028432157821953
+      }
+    }
+  },
+  {
+    "route": "candidate",
+    "format": "glyphspackage",
+    "targets": 20000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 3.8056435409816913,
+        "minimum": 3.7281545409932733,
+        "maximum": 3.9109234169882257
+      },
+      "dispatchToResultSeconds": {
+        "median": 16.070783749979455,
+        "minimum": 15.528415624983609,
+        "maximum": 17.803098125004908
+      },
+      "saveSeconds": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "saveCalls": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "totalSeconds": {
+        "median": 19.954710374964634,
+        "minimum": 19.336738040990895,
+        "maximum": 21.53125266599818
+      },
+      "requestBytes": {
+        "median": 1850396,
+        "minimum": 1850396,
+        "maximum": 1850396
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.021709084016038105,
+        "minimum": 0.019948333996580914,
+        "maximum": 0.022410458012018353
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.04849066599854268,
+        "minimum": 0.048078374995384365,
+        "maximum": 0.050865417026216164
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 1.100019041012274,
+        "minimum": 1.0808025839796755,
+        "maximum": 1.109874707995914
+      },
+      "scheduledNativeSeconds": {
+        "median": 10.598470626515336,
+        "minimum": 10.44166424201103,
+        "maximum": 10.875226403499255
+      },
+      "scheduledChunks": {
+        "median": 1909,
+        "minimum": 1901,
+        "maximum": 1922
+      },
+      "verificationSeconds": {
+        "median": 3.38363450000179,
+        "minimum": 3.3125277500075754,
+        "maximum": 3.483722584001953
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 654393344,
+        "minimum": 615104512,
+        "maximum": 674758656
+      },
+      "restoreSeconds": {
+        "median": 2.9567066250019707,
+        "minimum": 2.8121020419930574,
+        "maximum": 5.3185665839992
+      },
+      "longestRestoreCallSeconds": {
+        "median": 2.941359874996124,
+        "minimum": 2.799785957991844,
+        "maximum": 5.302052457991522
+      },
+      "peakRSSBytes": {
+        "median": 902414336,
+        "minimum": 716308480,
+        "maximum": 928792576
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.9529294136445969,
+        "minimum": 0.9451379684032872,
+        "maximum": 1.0694081680849195
+      },
+      "initialize": {
+        "median": 1.09601454201038,
+        "minimum": 1.0763615840114653,
+        "maximum": 1.105150457995478
+      },
+      "run": {
+        "median": 7.1926903316925745,
+        "minimum": 7.098058321804274,
+        "maximum": 7.366351104457863
+      },
+      "complete": {
+        "median": 0.0005384999967645854,
+        "minimum": 0.0005229160015005618,
+        "maximum": 0.0005661250033881515
+      },
+      "cleanup": {
+        "median": 0.25807627016911283,
+        "minimum": 0.19708628969965503,
+        "maximum": 0.28494437216431834
+      }
+    }
+  },
+  {
+    "route": "direct",
+    "format": "glyphs",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 0.09918912500143051,
+        "minimum": 0.0986062080191914,
+        "maximum": 0.10001170801115222
+      },
+      "verificationSeconds": {
+        "median": 0.07536449999315664,
+        "minimum": 0.07383000000845641,
+        "maximum": 0.07750375001342036
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 193822720,
+        "minimum": 190775296,
+        "maximum": 193855488
+      },
+      "peakRSSBytes": {
+        "median": 193822720,
+        "minimum": 190775296,
+        "maximum": 193855488
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphs",
+    "targets": 4096,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 0.4047190419805702,
+        "minimum": 0.4029443750041537,
+        "maximum": 0.40994012501323596
+      },
+      "verificationSeconds": {
+        "median": 0.3038745000085328,
+        "minimum": 0.29349679200095125,
+        "maximum": 0.30647204199340194
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 231456768,
+        "minimum": 230916096,
+        "maximum": 234274816
+      },
+      "peakRSSBytes": {
+        "median": 231456768,
+        "minimum": 230916096,
+        "maximum": 234274816
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphs",
+    "targets": 10000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 0.9771940840000752,
+        "minimum": 0.9741152090136893,
+        "maximum": 0.9914030840154737
+      },
+      "verificationSeconds": {
+        "median": 0.7334471660142299,
+        "minimum": 0.7276015419920441,
+        "maximum": 0.7369862919731531
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 304332800,
+        "minimum": 303349760,
+        "maximum": 305692672
+      },
+      "peakRSSBytes": {
+        "median": 304332800,
+        "minimum": 303349760,
+        "maximum": 305692672
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphs",
+    "targets": 10000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 3.397119417000795,
+        "minimum": 3.2560200830048416,
+        "maximum": 3.456509374984307
+      },
+      "verificationSeconds": {
+        "median": 1.754805916978512,
+        "minimum": 1.694696999998996,
+        "maximum": 1.7828565829840954
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 382828544,
+        "minimum": 378896384,
+        "maximum": 385597440
+      },
+      "peakRSSBytes": {
+        "median": 382828544,
+        "minimum": 378896384,
+        "maximum": 385597440
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphs",
+    "targets": 20000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 1.9703837079869118,
+        "minimum": 1.9471138750086538,
+        "maximum": 2.1101109590090346
+      },
+      "verificationSeconds": {
+        "median": 1.4762170840112958,
+        "minimum": 1.4554456660116557,
+        "maximum": 1.5103132080112118
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 427868160,
+        "minimum": 427343872,
+        "maximum": 432504832
+      },
+      "peakRSSBytes": {
+        "median": 427868160,
+        "minimum": 427343872,
+        "maximum": 432504832
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphs",
+    "targets": 20000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 6.5437264170031995,
+        "minimum": 6.471099666989176,
+        "maximum": 6.721779542014701
+      },
+      "verificationSeconds": {
+        "median": 3.340216958982637,
+        "minimum": 3.319803124992177,
+        "maximum": 3.653127792000305
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 587186176,
+        "minimum": 586760192,
+        "maximum": 588480512
+      },
+      "peakRSSBytes": {
+        "median": 587186176,
+        "minimum": 586760192,
+        "maximum": 588480512
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphspackage",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 0.099696417019004,
+        "minimum": 0.09824620900326408,
+        "maximum": 0.10116883399314247
+      },
+      "verificationSeconds": {
+        "median": 0.07615170799545012,
+        "minimum": 0.07520604200544767,
+        "maximum": 0.07766866698511876
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 195428352,
+        "minimum": 193511424,
+        "maximum": 196673536
+      },
+      "peakRSSBytes": {
+        "median": 195428352,
+        "minimum": 193511424,
+        "maximum": 196673536
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphspackage",
+    "targets": 4096,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 0.4019294999889098,
+        "minimum": 0.3964857499813661,
+        "maximum": 0.4076068750000559
+      },
+      "verificationSeconds": {
+        "median": 0.3012637910142075,
+        "minimum": 0.29754908301401883,
+        "maximum": 0.30255824999767356
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 239321088,
+        "minimum": 236666880,
+        "maximum": 240205824
+      },
+      "peakRSSBytes": {
+        "median": 239321088,
+        "minimum": 236666880,
+        "maximum": 240205824
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphspackage",
+    "targets": 10000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 0.9821199160069227,
+        "minimum": 0.9770652500155848,
+        "maximum": 1.0008734170114622
+      },
+      "verificationSeconds": {
+        "median": 0.7352832089818548,
+        "minimum": 0.7281616660184227,
+        "maximum": 0.7469525840133429
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 322224128,
+        "minimum": 320159744,
+        "maximum": 322535424
+      },
+      "peakRSSBytes": {
+        "median": 322224128,
+        "minimum": 320159744,
+        "maximum": 322535424
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphspackage",
+    "targets": 10000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 3.256706332991598,
+        "minimum": 3.246105708007235,
+        "maximum": 3.3250541670131497
+      },
+      "verificationSeconds": {
+        "median": 1.7062307909945957,
+        "minimum": 1.6635185830236878,
+        "maximum": 1.721641832991736
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 399622144,
+        "minimum": 398082048,
+        "maximum": 401620992
+      },
+      "peakRSSBytes": {
+        "median": 399622144,
+        "minimum": 398082048,
+        "maximum": 401620992
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphspackage",
+    "targets": 20000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 1.97279220900964,
+        "minimum": 1.9627557919884566,
+        "maximum": 2.104244332993403
+      },
+      "verificationSeconds": {
+        "median": 1.4718672500166576,
+        "minimum": 1.464310999988811,
+        "maximum": 1.5394002910179552
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 465829888,
+        "minimum": 440041472,
+        "maximum": 467222528
+      },
+      "peakRSSBytes": {
+        "median": 465829888,
+        "minimum": 440041472,
+        "maximum": 467222528
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "direct",
+    "format": "glyphspackage",
+    "targets": 20000,
+    "contours": 4,
+    "runs": 5,
+    "metrics": {
+      "callbackSeconds": {
+        "median": 6.6042300410044845,
+        "minimum": 6.523692166025285,
+        "maximum": 6.79407058400102
+      },
+      "verificationSeconds": {
+        "median": 3.419843958981801,
+        "minimum": 3.335075457987841,
+        "maximum": 3.589549917000113
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 624607232,
+        "minimum": 623984640,
+        "maximum": 626556928
+      },
+      "peakRSSBytes": {
+        "median": 624607232,
+        "minimum": 623984640,
+        "maximum": 626556928
+      }
+    },
+    "stagesSeconds": {}
+  },
+  {
+    "route": "dirty",
+    "format": "glyphs",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.13820691598812118,
+        "minimum": 0.12983495800290257,
+        "maximum": 0.1446556249866262
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.4425093340105377,
+        "minimum": 0.42973733399412595,
+        "maximum": 0.4491900420107413
+      },
+      "saveSeconds": {
+        "median": 0.010574957996141165,
+        "minimum": 0.009984250005800277,
+        "maximum": 0.011139957990963012
+      },
+      "saveCalls": {
+        "median": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "totalSeconds": {
+        "median": 0.5790250000136439,
+        "minimum": 0.5743929589807522,
+        "maximum": 0.5825995840423275
+      },
+      "requestBytes": {
+        "median": 92397,
+        "minimum": 92397,
+        "maximum": 92397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.0026851250149775296,
+        "minimum": 0.0023133750073611736,
+        "maximum": 0.0031492499983869493
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.016433540993602946,
+        "minimum": 0.01601437499630265,
+        "maximum": 0.022881042008521035
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.01048862500465475,
+        "minimum": 0.010239916009595618,
+        "maximum": 0.010559874994214624
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.23951942290295847,
+        "minimum": 0.23514642094960436,
+        "maximum": 0.2488232899340801
+      },
+      "scheduledChunks": {
+        "median": 82,
+        "minimum": 82,
+        "maximum": 82
+      },
+      "verificationSeconds": {
+        "median": 0.07480270799715072,
+        "minimum": 0.06928199998219498,
+        "maximum": 0.07733529098914005
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 195608576,
+        "minimum": 194936832,
+        "maximum": 196968448
+      },
+      "restoreSeconds": {
+        "median": 0.02007299999240786,
+        "minimum": 0.0198831669986248,
+        "maximum": 0.023044208995997906
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.01668162501300685,
+        "minimum": 0.016433958982815966,
+        "maximum": 0.019153792003635317
+      },
+      "peakRSSBytes": {
+        "median": 205373440,
+        "minimum": 204701696,
+        "maximum": 206667776
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.04859142596251331,
+        "minimum": 0.04784223102615215,
+        "maximum": 0.05003454245161265
+      },
+      "initialize": {
+        "median": 0.0031897079898044467,
+        "minimum": 0.003008458996191621,
+        "maximum": 0.003278749994933605
+      },
+      "run": {
+        "median": 0.12640709709376097,
+        "minimum": 0.12344623051467352,
+        "maximum": 0.13078683207277209
+      },
+      "complete": {
+        "median": 0.0005360000068321824,
+        "minimum": 0.0005198339931666851,
+        "maximum": 0.0005493750213645399
+      },
+      "cleanup": {
+        "median": 0.005513348849490285,
+        "minimum": 0.005177450802875683,
+        "maximum": 0.005793621035991237
+      }
+    }
+  },
+  {
+    "route": "dirty",
+    "format": "glyphspackage",
+    "targets": 1000,
+    "contours": 1,
+    "runs": 5,
+    "metrics": {
+      "preparationSeconds": {
+        "median": 0.21650962499552406,
+        "minimum": 0.21131987500120886,
+        "maximum": 0.22133699999540113
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.9424945839855354,
+        "minimum": 0.9156229580112267,
+        "maximum": 0.9448063749878202
+      },
+      "saveSeconds": {
+        "median": 0.24263062499812804,
+        "minimum": 0.23615095898276195,
+        "maximum": 0.24839487500139512
+      },
+      "saveCalls": {
+        "median": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "totalSeconds": {
+        "median": 1.1597196660004556,
+        "minimum": 1.1269428330124356,
+        "maximum": 1.1661433749832213
+      },
+      "requestBytes": {
+        "median": 92404,
+        "minimum": 92404,
+        "maximum": 92404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.0023608749906998128,
+        "minimum": 0.002204416989115998,
+        "maximum": 0.0029917499923612922
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.10946995799895376,
+        "minimum": 0.10214174998691306,
+        "maximum": 0.11656016699271277
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.0458225839829538,
+        "minimum": 0.04425599999376573,
+        "maximum": 0.04994766600430012
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.27621179580455646,
+        "minimum": 0.26864549997844733,
+        "maximum": 0.28054166614310816
+      },
+      "scheduledChunks": {
+        "median": 83,
+        "minimum": 83,
+        "maximum": 83
+      },
+      "verificationSeconds": {
+        "median": 0.07133799997973256,
+        "minimum": 0.069046291988343,
+        "maximum": 0.07292458301526494
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 196804608,
+        "minimum": 195936256,
+        "maximum": 200605696
+      },
+      "restoreSeconds": {
+        "median": 0.11831166699994355,
+        "minimum": 0.1155948750092648,
+        "maximum": 0.12259725001058541
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.11478970901225694,
+        "minimum": 0.11094975000014529,
+        "maximum": 0.1187260000151582
+      },
+      "peakRSSBytes": {
+        "median": 206602240,
+        "minimum": 205340672,
+        "maximum": 210452480
+      }
+    },
+    "stagesSeconds": {
+      "resolve": {
+        "median": 0.04580115247517824,
+        "minimum": 0.04472308047115803,
+        "maximum": 0.04837848886381835
+      },
+      "initialize": {
+        "median": 0.04504533298313618,
+        "minimum": 0.04345033300342038,
+        "maximum": 0.0491332919918932
+      },
+      "run": {
+        "median": 0.12324793316656724,
+        "minimum": 0.11999058441142552,
+        "maximum": 0.12804276793031022
+      },
+      "complete": {
+        "median": 0.0005297089810483158,
+        "minimum": 0.0005234589916653931,
+        "maximum": 0.0005412919854279608
+      },
+      "cleanup": {
+        "median": 0.005367681209463626,
+        "minimum": 0.005189567193156108,
+        "maximum": 0.005466382397571579
+      }
+    }
+  }
+]

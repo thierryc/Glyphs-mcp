@@ -1,0 +1,752 @@
+[
+  {
+    "name": "baseline-1000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 2.3410477500001434
+  },
+  {
+    "name": "candidate-1000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 1.9630576250201557
+  },
+  {
+    "name": "direct-1000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 1.263020249985857
+  },
+  {
+    "name": "baseline-1000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 1.7907391249900684
+  },
+  {
+    "name": "candidate-1000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 1.808276374998968
+  },
+  {
+    "name": "direct-1000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 1.267063125007553
+  },
+  {
+    "name": "baseline-1000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 1.7970881249930244
+  },
+  {
+    "name": "candidate-1000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 1.793022750003729
+  },
+  {
+    "name": "direct-1000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 1.2635790419881232
+  },
+  {
+    "name": "baseline-1000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.8043740830034949
+  },
+  {
+    "name": "candidate-1000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.7939226670132484
+  },
+  {
+    "name": "direct-1000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.309553875005804
+  },
+  {
+    "name": "baseline-1000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 1.7960653330083005
+  },
+  {
+    "name": "candidate-1000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 1.777312542020809
+  },
+  {
+    "name": "direct-1000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 1.2604674999893177
+  },
+  {
+    "name": "baseline-1000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 2.601565374992788
+  },
+  {
+    "name": "candidate-1000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 2.612769416999072
+  },
+  {
+    "name": "direct-1000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 1.5482398749736603
+  },
+  {
+    "name": "baseline-1000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 2.595681458013132
+  },
+  {
+    "name": "candidate-1000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 2.5388577499834355
+  },
+  {
+    "name": "direct-1000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 1.532570500014117
+  },
+  {
+    "name": "baseline-1000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 2.549396499991417
+  },
+  {
+    "name": "candidate-1000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 2.5713375420018565
+  },
+  {
+    "name": "direct-1000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 1.5290398750221357
+  },
+  {
+    "name": "baseline-1000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 2.613836291973712
+  },
+  {
+    "name": "candidate-1000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 2.668616957991617
+  },
+  {
+    "name": "direct-1000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 1.5134916249953676
+  },
+  {
+    "name": "baseline-1000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 2.532959792006295
+  },
+  {
+    "name": "candidate-1000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 2.584493125003064
+  },
+  {
+    "name": "direct-1000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 1.5262317080050707
+  },
+  {
+    "name": "baseline-4096-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 3.5497689999756403
+  },
+  {
+    "name": "candidate-4096-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 3.752426833001664
+  },
+  {
+    "name": "direct-4096-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 1.9558945000171661
+  },
+  {
+    "name": "baseline-4096-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 3.6117707090161275
+  },
+  {
+    "name": "candidate-4096-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 3.4409056669974234
+  },
+  {
+    "name": "direct-4096-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 2.010800374991959
+  },
+  {
+    "name": "baseline-4096-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 3.575343000004068
+  },
+  {
+    "name": "candidate-4096-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 3.675873291998869
+  },
+  {
+    "name": "direct-4096-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 2.085611541988328
+  },
+  {
+    "name": "baseline-4096-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 3.5794637909857556
+  },
+  {
+    "name": "candidate-4096-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 3.688520583003992
+  },
+  {
+    "name": "direct-4096-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.9576107500179205
+  },
+  {
+    "name": "baseline-4096-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 3.3114073750039097
+  },
+  {
+    "name": "candidate-4096-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 3.6815671670192387
+  },
+  {
+    "name": "direct-4096-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 1.9609830839908682
+  },
+  {
+    "name": "baseline-4096-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 6.863638708979124
+  },
+  {
+    "name": "candidate-4096-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 6.746398457995383
+  },
+  {
+    "name": "direct-4096-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 3.082935249985894
+  },
+  {
+    "name": "baseline-4096-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 6.438942582986783
+  },
+  {
+    "name": "candidate-4096-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 6.578923374996521
+  },
+  {
+    "name": "direct-4096-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 3.2097430410212837
+  },
+  {
+    "name": "baseline-4096-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 6.470817166991765
+  },
+  {
+    "name": "candidate-4096-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 6.641106333001517
+  },
+  {
+    "name": "direct-4096-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 3.1244287909939885
+  },
+  {
+    "name": "baseline-4096-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 6.374157625017688
+  },
+  {
+    "name": "candidate-4096-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 6.53240895800991
+  },
+  {
+    "name": "direct-4096-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 3.070179582980927
+  },
+  {
+    "name": "baseline-4096-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 6.416043334000278
+  },
+  {
+    "name": "candidate-4096-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 6.528493457997683
+  },
+  {
+    "name": "direct-4096-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 3.1673648330033757
+  },
+  {
+    "name": "candidate-10000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 6.845497458009049
+  },
+  {
+    "name": "direct-10000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 3.316107667022152
+  },
+  {
+    "name": "candidate-10000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 6.806874875008361
+  },
+  {
+    "name": "direct-10000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 3.3200121249828953
+  },
+  {
+    "name": "candidate-10000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 6.83883700001752
+  },
+  {
+    "name": "direct-10000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 3.3098673750064336
+  },
+  {
+    "name": "candidate-10000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 6.853121791995363
+  },
+  {
+    "name": "direct-10000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 3.3121701670170296
+  },
+  {
+    "name": "candidate-10000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 6.791213958989829
+  },
+  {
+    "name": "direct-10000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 3.3506502080126666
+  },
+  {
+    "name": "candidate-10000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 14.928450707986485
+  },
+  {
+    "name": "direct-10000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 6.59499087498989
+  },
+  {
+    "name": "candidate-10000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 14.163928958005272
+  },
+  {
+    "name": "direct-10000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 6.2765684589976445
+  },
+  {
+    "name": "candidate-10000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 15.050522334000561
+  },
+  {
+    "name": "direct-10000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 6.710382707999088
+  },
+  {
+    "name": "candidate-10000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 14.705819416994927
+  },
+  {
+    "name": "direct-10000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 7.092849082982866
+  },
+  {
+    "name": "candidate-10000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 14.518998582992936
+  },
+  {
+    "name": "direct-10000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 6.766297666996252
+  },
+  {
+    "name": "candidate-20000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 13.990992832987104
+  },
+  {
+    "name": "direct-20000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 5.786669916997198
+  },
+  {
+    "name": "candidate-20000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 13.306351584004005
+  },
+  {
+    "name": "direct-20000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 5.810240124992561
+  },
+  {
+    "name": "candidate-20000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 13.281024541996885
+  },
+  {
+    "name": "direct-20000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 5.93728858299437
+  },
+  {
+    "name": "candidate-20000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 13.22766508400673
+  },
+  {
+    "name": "direct-20000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 5.984251708985539
+  },
+  {
+    "name": "candidate-20000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 13.00168487499468
+  },
+  {
+    "name": "direct-20000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 5.674039292003727
+  },
+  {
+    "name": "candidate-20000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 29.73392591701122
+  },
+  {
+    "name": "direct-20000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 12.932749125000555
+  },
+  {
+    "name": "candidate-20000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 30.03402991598705
+  },
+  {
+    "name": "direct-20000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 12.977920791017823
+  },
+  {
+    "name": "candidate-20000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 29.90740804199595
+  },
+  {
+    "name": "direct-20000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 12.93805812500068
+  },
+  {
+    "name": "candidate-20000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 30.315241834003245
+  },
+  {
+    "name": "direct-20000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 12.984644834010396
+  },
+  {
+    "name": "candidate-20000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 29.59282804201939
+  },
+  {
+    "name": "direct-20000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 12.669643624976743
+  },
+  {
+    "name": "candidate-10000-4-glyphs-1",
+    "passed": true,
+    "processSeconds": 12.064630833017873
+  },
+  {
+    "name": "direct-10000-4-glyphs-1",
+    "passed": true,
+    "processSeconds": 6.924184958974365
+  },
+  {
+    "name": "candidate-10000-4-glyphs-2",
+    "passed": true,
+    "processSeconds": 12.296143207990099
+  },
+  {
+    "name": "direct-10000-4-glyphs-2",
+    "passed": true,
+    "processSeconds": 7.122495832998538
+  },
+  {
+    "name": "candidate-10000-4-glyphs-3",
+    "passed": true,
+    "processSeconds": 12.017727166996337
+  },
+  {
+    "name": "direct-10000-4-glyphs-3",
+    "passed": true,
+    "processSeconds": 6.921407457994064
+  },
+  {
+    "name": "candidate-10000-4-glyphs-4",
+    "passed": true,
+    "processSeconds": 12.5422755839827
+  },
+  {
+    "name": "direct-10000-4-glyphs-4",
+    "passed": true,
+    "processSeconds": 6.903586958011147
+  },
+  {
+    "name": "candidate-10000-4-glyphs-5",
+    "passed": true,
+    "processSeconds": 12.578301250003278
+  },
+  {
+    "name": "direct-10000-4-glyphs-5",
+    "passed": true,
+    "processSeconds": 6.586179542005993
+  },
+  {
+    "name": "candidate-10000-4-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 18.43828562501585
+  },
+  {
+    "name": "direct-10000-4-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 9.484810624999227
+  },
+  {
+    "name": "candidate-10000-4-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 18.762770458008163
+  },
+  {
+    "name": "direct-10000-4-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 9.627294290985446
+  },
+  {
+    "name": "candidate-10000-4-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 17.932733166002436
+  },
+  {
+    "name": "direct-10000-4-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 9.424224207992665
+  },
+  {
+    "name": "candidate-10000-4-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 17.88511612502043
+  },
+  {
+    "name": "direct-10000-4-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 9.346770625008503
+  },
+  {
+    "name": "candidate-10000-4-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 18.46324124999228
+  },
+  {
+    "name": "direct-10000-4-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 9.43150112501462
+  },
+  {
+    "name": "candidate-20000-4-glyphs-1",
+    "passed": true,
+    "processSeconds": 21.79447983400314
+  },
+  {
+    "name": "direct-20000-4-glyphs-1",
+    "passed": true,
+    "processSeconds": 12.154745166975772
+  },
+  {
+    "name": "candidate-20000-4-glyphs-2",
+    "passed": true,
+    "processSeconds": 21.767763416981325
+  },
+  {
+    "name": "direct-20000-4-glyphs-2",
+    "passed": true,
+    "processSeconds": 12.179903542011743
+  },
+  {
+    "name": "candidate-20000-4-glyphs-3",
+    "passed": true,
+    "processSeconds": 21.73489587500808
+  },
+  {
+    "name": "direct-20000-4-glyphs-3",
+    "passed": true,
+    "processSeconds": 12.293182749999687
+  },
+  {
+    "name": "candidate-20000-4-glyphs-4",
+    "passed": true,
+    "processSeconds": 21.406497208983637
+  },
+  {
+    "name": "direct-20000-4-glyphs-4",
+    "passed": true,
+    "processSeconds": 12.087687499995809
+  },
+  {
+    "name": "candidate-20000-4-glyphs-5",
+    "passed": true,
+    "processSeconds": 21.793689208017895
+  },
+  {
+    "name": "direct-20000-4-glyphs-5",
+    "passed": true,
+    "processSeconds": 12.808457334002014
+  },
+  {
+    "name": "candidate-20000-4-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 43.179513625014806
+  },
+  {
+    "name": "direct-20000-4-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 19.968583624984603
+  },
+  {
+    "name": "candidate-20000-4-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 37.55341162500554
+  },
+  {
+    "name": "direct-20000-4-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 18.89874287499697
+  },
+  {
+    "name": "candidate-20000-4-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 38.635300374997314
+  },
+  {
+    "name": "direct-20000-4-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 19.09380391598097
+  },
+  {
+    "name": "candidate-20000-4-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 37.56699474999914
+  },
+  {
+    "name": "direct-20000-4-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 19.354807208001148
+  },
+  {
+    "name": "candidate-20000-4-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 39.86197875000653
+  },
+  {
+    "name": "direct-20000-4-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 19.01159487501718
+  },
+  {
+    "name": "dirty-1000-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 2.011895875009941
+  },
+  {
+    "name": "dirty-1000-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 1.8091134169953875
+  },
+  {
+    "name": "dirty-1000-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 1.7739261249953415
+  },
+  {
+    "name": "dirty-1000-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 1.7676732919935603
+  },
+  {
+    "name": "dirty-1000-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 1.7308206669986248
+  },
+  {
+    "name": "dirty-1000-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 2.7090532919974066
+  },
+  {
+    "name": "dirty-1000-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 2.8247787080181297
+  },
+  {
+    "name": "dirty-1000-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 2.7109137079969514
+  },
+  {
+    "name": "dirty-1000-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 2.766697125014616
+  },
+  {
+    "name": "dirty-1000-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 2.818558958999347
+  }
+]

@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_historical_artifact_cleanup_is_idempotent_when_polling_races_save ____
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x10af016a0>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-161/test_historical_artifact_clean0/Test.glyphs'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af94c30>
+
+    def test_historical_artifact_cleanup_is_idempotent_when_polling_races_save(project,monkeypatch):
+        import shutil
+        service,bridge,_,_=project
+        job=service.jobs.create(bridge.documents()[0],{'kind':'checkpoint_restore','options':{}})
+        historical=service.jobs.path(job['id'])/'historical';historical.mkdir()
+        (historical/'font.glyphs').write_text('600')
+        original=shutil.rmtree
+        def raced(path):
+            original(path)
+            raise FileNotFoundError(path)
+        monkeypatch.setattr(shutil,'rmtree',raced)
+>       service.jobs.release_bulk_artifacts(job['id'])
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:174:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/sidecar/glyphs_mcp_sidecar/jobs.py:150: in release_bulk_artifacts
+    shutil.rmtree(item)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-161/test_historical_artifact_clean0/jobs/job_d0fbd4d5fa144923a44cb750850009ab/historical')
+
+    def raced(path):
+        original(path)
+>       raise FileNotFoundError(path)
+E       FileNotFoundError: /private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-161/test_historical_artifact_clean0/jobs/job_d0fbd4d5fa144923a44cb750850009ab/historical
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:172: FileNotFoundError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    0.18s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_historical_artifact_cleanup_is_idempotent_when_polling_races_save
+1 failed, 11 deselected in 0.30s

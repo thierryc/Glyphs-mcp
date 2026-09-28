@@ -1,0 +1,32 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_________ test_current_guidance_identifies_history_and_shared_contract _________
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:96: in test_current_guidance_identifies_history_and_shared_contract
+    assert 'historical' in '\n'.join(intro).lower(), name
+E   AssertionError: LEAN-V2-BENEFITS.md
+E   assert 'historical' in '# lean v2 benefit queue\n\nimplement one item at a time. native glyphs operations remain the write\nmechanism whereve...ion patches. automatic reference policy\nuses h for uppercase, x/n/o for lowercase, and one/zero for figures. explicit'
+E    +  where '# lean v2 benefit queue\n\nimplement one item at a time. native glyphs operations remain the write\nmechanism whereve...ion patches. automatic reference policy\nuses h for uppercase, x/n/o for lowercase, and one/zero for figures. explicit' = <built-in method lower of str object at 0x8a4725900>()
+E    +    where <built-in method lower of str object at 0x8a4725900> = '# Lean v2 benefit queue\n\nImplement one item at a time. Native Glyphs operations remain the write\nmechanism whereve...ion patches. Automatic reference policy\nuses H for uppercase, x/n/o for lowercase, and one/zero for figures. Explicit'.lower
+E    +      where '# Lean v2 benefit queue\n\nImplement one item at a time. Native Glyphs operations remain the write\nmechanism whereve...ion patches. Automatic reference policy\nuses H for uppercase, x/n/o for lowercase, and one/zero for figures. Explicit' = <built-in method join of str object at 0x106392410>(['# Lean v2 benefit queue', '', 'Implement one item at a time. Native Glyphs operations remain the write', 'mechanism ...it. Preserve external computation, compact patches,', 'fractional coordinates, and the existing seven MCP tools.', ...])
+E    +        where <built-in method join of str object at 0x106392410> = '\n'.join
+_ test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations[renamed_tool] _
+src/glyphs-mcp/tests/test_lean_package_check.py:30: in test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations
+    assert checker.check_tool_catalog(tmp_path) == set(names)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'lean_package_check' has no attribute 'check_tool_catalog'
+_ test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations[tool_1] _
+src/glyphs-mcp/tests/test_lean_package_check.py:30: in test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations
+    assert checker.check_tool_catalog(tmp_path) == set(names)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'lean_package_check' has no attribute 'check_tool_catalog'
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    0.00s
+Other regressions                        0     2     0     1    0.01s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_current_guidance_identifies_history_and_shared_contract
+FAILED src/glyphs-mcp/tests/test_lean_package_check.py::test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations[renamed_tool]
+FAILED src/glyphs-mcp/tests/test_lean_package_check.py::test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations[tool_1]
+3 failed, 4 deselected in 0.16s

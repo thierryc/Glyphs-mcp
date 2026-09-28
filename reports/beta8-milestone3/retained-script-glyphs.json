@@ -1,0 +1,21 @@
+{
+  "data": [
+    "missing native master layer/background never created by resolution",
+    "4097 callbacks prepared without execution",
+    "failure stops subsequent callbacks",
+    "partial edits remain visible",
+    "untouched later callback",
+    "failed script cannot auto Keep",
+    "partial failure restored with fresh binding",
+    "all partial coordinates restored",
+    "cancellation stops remaining native callbacks",
+    "cancelled script cannot auto Keep",
+    "cancelled edits restore without replay"
+  ],
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

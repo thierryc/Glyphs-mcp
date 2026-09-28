@@ -39,11 +39,11 @@ def test_source_validation_does_not_execute(tmp_path):
     with pytest.raises(ProtocolError): scripts.validate_options(dict(result,source='def broken('))
 
 
-def test_deduplicate_reject_overlaps_and_large_scope():
+def test_deduplicate_and_reject_overlapping_scope():
     t=dict(glyph='A',layer='M1')
     assert len(scripts.targets([t,t]))==1
     with pytest.raises(ProtocolError): scripts.targets([t,dict(t,surface='background')])
-    with pytest.raises(ProtocolError): scripts.targets([t]*4097)
+    assert len(scripts.targets([t]*4097))==1
 
 
 def test_runtime_compiles_once_params_and_output_are_bounded():
@@ -257,10 +257,14 @@ def test_no_eligible_callbacks_never_initialize_module():
     from types import SimpleNamespace
     font=SimpleNamespace(glyphs={'A':SimpleNamespace(layers=[SimpleNamespace(layerId='M1',hasBackground=False)])})
     adapter=SimpleNamespace(_font=lambda _:font,document_state=lambda _:dict(generation=1,path='/font.glyphs'))
+    from glyphs_mcp_bridge.core import BridgeCore
+    queue=[];core=BridgeCore(adapter,queue.append)
     opts=scripts.validate_options(dict(source='raise AssertionError("module ran")',targets=[dict(glyph='A',layer='M1',surface='background')]))
-    with pytest.raises(BridgeError,match='no eligible script targets') as error:
-        review(SimpleNamespace(adapter=adapter),dict(documentId='doc',generation=1,sourcePath='/font.glyphs',options=opts),BridgeError)
-    assert error.value.details['skippedCount']==1
+    review(core,dict(jobId='empty',sourceHash='sha256:'+'a'*64,documentId='doc',generation=1,sourcePath='/font.glyphs',options=opts),BridgeError)
+    while queue:queue.pop(0)()
+    result=core.operation('empty')
+    assert result['status']=='failed' and 'no eligible script targets' in result['error']['message']
+    assert result['error']['details']['skippedCount']==1
 
 
 @pytest.mark.parametrize('contents', [dict(backgroundImage=object()), dict(userData={'note':'yes'}),
@@ -289,9 +293,6 @@ def test_bulk_limit_counts_eligible_surfaces_and_bounds_skips(eligible):
         glyphs[str(i)]=SimpleNamespace(name=str(i),layers=[layer])
     font=SimpleNamespace(glyphs=glyphs,masters=[SimpleNamespace(id='M1')])
     spec=dict(master='M1',glyphs='all',surface='background')
-    if eligible>4096:
-        with pytest.raises(ProtocolError,match='4,096 eligible'):resolve(font,spec)
-    else:
-        selected,skipped=resolve(font,spec)
-        assert len(selected)==eligible and skipped['count']==5000-eligible
-        assert len(skipped['sample'])==10
+    selected,skipped=resolve(font,spec)
+    assert len(selected)==eligible and skipped['count']==5000-eligible
+    assert len(skipped['sample'])==10

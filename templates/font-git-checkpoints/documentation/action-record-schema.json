@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Glyphs MCP font checkpoint action record",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "fontPath",
+    "sourceHash",
+    "intendedChange",
+    "actions",
+    "manualChanges",
+    "verification"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "fontPath": {
+      "type": "string"
+    },
+    "sourceHash": {
+      "type": "string"
+    },
+    "intendedChange": {
+      "type": "string"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "jobId",
+          "request",
+          "scope",
+          "execution",
+          "verification"
+        ]
+      }
+    },
+    "manualChanges": {
+      "const": "possible"
+    },
+    "verification": {
+      "type": "object"
+    },
+    "save": {
+      "type": "object"
+    }
+  }
+}

@@ -9,6 +9,22 @@ ROOT = Path(__file__).resolve().parents[3]
 SKILL = ROOT/'skills/glyphs'
 
 
+def test_conversation_reuse_guidance_and_routing_preserve_target_resolution():
+    rows=json.loads((Path(__file__).parent/'fixtures/conversation_reuse_routing.json').read_text())
+    assert all(not r['discoveryReads'] for r in rows if r['knownBinding'])
+    assert all(r['selectionReads'] != r['explicitTarget'] for r in rows)
+    assert [r['includeReview'] for r in rows] == [False, False, True]
+    for path in ('SKILL.md', 'references/path-editing.md'):
+        text=(ROOT/'skills/glyphs-mcp-outlines-docs'/path).read_text()
+        assert 'When the target depends on the current selection' in text
+        assert 'Explicit' in text and 'selection informed' in text
+        assert 'Skip context/selection reads for fully explicit targets' in text
+    text=(SKILL/'references/edit-workflow.md').read_text()
+    for phrase in ('minimal sequence', 'workflow, document binding, job and request fingerprint',
+                   'bounded fresh reads', 'before acting on a later reply'):
+        assert phrase in text
+
+
 def test_slant_request_default_review_and_precision_recovery():
     sys.path.insert(0,str(ROOT/'src/sidecar'));sys.path.insert(0,str(ROOT/'src/protocol'))
     from glyphs_mcp_sidecar.slant_job import validate_options
@@ -156,7 +172,7 @@ def test_outline_skill_routes_bounded_reads_and_typed_mutations_with_selection_p
     root = ROOT/'skills/glyphs-mcp-outlines-docs'
     entry = (root/'SKILL.md').read_text()
     reference = (root/'references/path-editing.md').read_text()
-    for phrase in ('first inspect the current Edit View', 'Explicit', 'selection informed',
+    for phrase in ('When the target depends on the current selection', 'Explicit', 'selection informed',
                    'path-editing.md', 'outline.edit.v1', 'outline.remove-node.v1',
                    'remove_node', 'saved clean baseline'):
         assert phrase in entry
@@ -310,7 +326,7 @@ def test_compile_and_export_skills_define_closed_capability_gated_workflows():
         assert path.read_bytes() == mirror.read_bytes()
 
 
-def test_compile_export_public_docs_and_tool_descriptions_match_the_nine_tool_contract():
+def test_compile_export_public_docs_and_tool_descriptions_match_the_twelve_tool_contract():
     command = (ROOT/'content/reference/command-set.mdx').read_text()
     safety = (ROOT/'content/concepts/safety-model.mdx').read_text()
     changelog = (ROOT/'CHANGELOG.md').read_text()
@@ -408,3 +424,16 @@ def test_script_routing_fixtures_match_shared_contract_and_valid_options():
     assert WARNING.replace('\n',' ') in reference.replace('\n> ',' ').replace('\n',' ')
     assert 'Acknowledge unknown outcome' in reference and 'changesVerified' in reference
     assert (ROOT/'skills/glyphs-mcp-scripting/examples/vertical_flip.py').is_file()
+
+
+def test_native_script_capacity_guidance_preserves_other_limits():
+    reference=(SKILL/'references/python-scripts.md').read_text()
+    assert 'no fixed script target-count ceiling' in reference
+    assert '4 MiB' in reference and 'Typed edit and read limits' in reference
+    assert 'manifests to 4,096' not in reference
+    assert '4,096 expanded layers' in (SKILL/'references/native-actions.md').read_text()
+    fixtures=json.loads((ROOT/'src/glyphs-mcp/tests/fixtures/python_script_routing.json').read_text())
+    large=next(f for f in fixtures if f['name']=='large-master-backgrounds')
+    assert large['expectedEligibleTargets']==12000
+    assert large['request']['options']['targets']['glyphs']=='all'
+    assert large['entrypoint']=='per_target'

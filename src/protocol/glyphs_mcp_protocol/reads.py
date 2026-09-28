@@ -20,3 +20,4 @@ FEATURE_BLOCK_PAGE_LIMIT = 100
 INSTANCE_PAGE_LIMIT = 100
 
 READ_CAPABILITIES += ("master.dimensions.read.v1",)
+READ_CAPABILITIES += ("kerning.proof.v1",)

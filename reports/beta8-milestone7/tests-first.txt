@@ -1,0 +1,46 @@
+F.FFFFF..                                                                [100%]
+=================================== FAILURES ===================================
+_________ test_current_catalog_examples_remain_valid_and_discoverable __________
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:38: in test_current_catalog_examples_remain_valid_and_discoverable
+    assert term in tool.description, (case['task'], term)
+E   AssertionError: ('Move explicit fractional nodes', 'outline_edit')
+E   assert 'outline_edit' in 'For checkpoint_restore, a clear restore request authorizes loading the selected whole-font version; it replaces later...uthorized work. Retain typed overwrite approval and report review requirements; do not claim skipped work as complete.'
+E    +  where 'For checkpoint_restore, a clear restore request authorizes loading the selected whole-font version; it replaces later...uthorized work. Retain typed overwrite approval and report review requirements; do not claim skipped work as complete.' = Tool(name='start_edit_workflow', title=None, description='For checkpoint_restore, a clear restore request authorizes l...': {'resourceUri': 'ui://glyphs-mcp/edit-workflow-v1.html', 'visibility': ['model', 'app']}, '_fastmcp': {'tags': []}}).description
+_____________ test_shared_artifact_hash_streams_exact_bytes[empty] _____________
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:62: in test_shared_artifact_hash_streams_exact_bytes
+    from glyphs_mcp_sidecar.source import file_hash
+E   ImportError: cannot import name 'file_hash' from 'glyphs_mcp_sidecar.source' (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/source.py)
+____________ test_shared_artifact_hash_streams_exact_bytes[binary] _____________
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:62: in test_shared_artifact_hash_streams_exact_bytes
+    from glyphs_mcp_sidecar.source import file_hash
+E   ImportError: cannot import name 'file_hash' from 'glyphs_mcp_sidecar.source' (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/source.py)
+__________ test_shared_artifact_hash_streams_exact_bytes[multi-chunk] __________
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:62: in test_shared_artifact_hash_streams_exact_bytes
+    from glyphs_mcp_sidecar.source import file_hash
+E   ImportError: cannot import name 'file_hash' from 'glyphs_mcp_sidecar.source' (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/source.py)
+__ test_shared_artifact_hash_propagates_io_errors_and_is_used_by_both_routes ___
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:78: in test_shared_artifact_hash_propagates_io_errors_and_is_used_by_both_routes
+    from glyphs_mcp_sidecar.source import file_hash
+E   ImportError: cannot import name 'file_hash' from 'glyphs_mcp_sidecar.source' (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/source.py)
+_________ test_current_guidance_identifies_history_and_shared_contract _________
+src/glyphs-mcp/tests/test_simple_v2_consolidation.py:91: in test_current_guidance_identifies_history_and_shared_contract
+    assert 'historical' in '\n'.join(intro).lower(), name
+E   AssertionError: ROADMAP.md
+E   assert 'historical' in '# glyphs mcp roadmap\n\nthis roadmap ranks possible additions by expected user value first and relative\nimplementati...t during the current glyphs run. it is an\nactivity record, not a semantic before/after source diff. it never edits or'
+E    +  where '# glyphs mcp roadmap\n\nthis roadmap ranks possible additions by expected user value first and relative\nimplementati...t during the current glyphs run. it is an\nactivity record, not a semantic before/after source diff. it never edits or' = <built-in method lower of str object at 0x8942c1900>()
+E    +    where <built-in method lower of str object at 0x8942c1900> = '# Glyphs MCP roadmap\n\nThis roadmap ranks possible additions by expected user value first and relative\nimplementati...t during the current Glyphs run. It is an\nactivity record, not a semantic before/after source diff. It never edits or'.lower
+E    +      where '# Glyphs MCP roadmap\n\nThis roadmap ranks possible additions by expected user value first and relative\nimplementati...t during the current Glyphs run. It is an\nactivity record, not a semantic before/after source diff. It never edits or' = <built-in method join of str object at 0x103b56410>(['# Glyphs MCP roadmap', '', 'This roadmap ranks possible additions by expected user value first and relative', 'imple...ter that milestone is directional: order and scope may change, and', 'these entries are not release commitments.', ...])
+E    +        where <built-in method join of str object at 0x103b56410> = '\n'.join
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           3     6     0     1    0.83s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_current_catalog_examples_remain_valid_and_discoverable
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_shared_artifact_hash_streams_exact_bytes[empty]
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_shared_artifact_hash_streams_exact_bytes[binary]
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_shared_artifact_hash_streams_exact_bytes[multi-chunk]
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_shared_artifact_hash_propagates_io_errors_and_is_used_by_both_routes
+FAILED src/glyphs-mcp/tests/test_simple_v2_consolidation.py::test_current_guidance_identifies_history_and_shared_contract
+6 failed, 3 passed in 0.96s

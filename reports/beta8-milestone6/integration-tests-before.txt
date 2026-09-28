@@ -1,0 +1,160 @@
+....s...........................FFFFFF.                                  [100%]
+=================================== FAILURES ===================================
+________ test_known_unpublished_checkpoint_retries_same_commit[.glyphs] ________
+
+repo = (PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_known_unpublis.../folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_known_unpublished_checkpo0/operation'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106f096a0>
+
+    def test_known_unpublished_checkpoint_retries_same_commit(repo,monkeypatch):
+        root,font,_=repo;alter(font,'changed\n');target,state=engine(repo)
+        monkeypatch.setattr(target,'_publish',lambda *args: (_ for _ in ()).throw(OSError('offline')))
+        with pytest.raises(OSError):target.checkpoint(source_hash(font),'retry',record())
+        revision=state['revision'];target,_=engine(repo,state)
+>       result=target.checkpoint(source_hash(font),'retry',record(),transaction=state)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:184:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:169: in checkpoint
+    return self._reconcile(transaction, expected, index_lock)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:223: in _reconcile
+    return self._reconcile_locked(txn, expected, index_lock)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:234: in _reconcile_locked
+    fail('Checkpoint publication did not finish. Refresh the saved result before creating another checkpoint.', 'checkpoint_not_published')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'Checkpoint publication did not finish. Refresh the saved result before creating another checkpoint.'
+code = 'checkpoint_not_published'
+
+    def fail(message, code='checkpoint_conflict'):
+>       raise CheckpointError(code, message)
+E       glyphs_mcp_sidecar.checkpoint_git.CheckpointError: Checkpoint publication did not finish. Refresh the saved result before creating another checkpoint.
+
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:26: CheckpointError
+____ test_known_unpublished_checkpoint_retries_same_commit[.glyphspackage] _____
+
+repo = (PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_known_unpublis.../folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_known_unpublished_checkpo1/operation'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106f21b50>
+
+    def test_known_unpublished_checkpoint_retries_same_commit(repo,monkeypatch):
+        root,font,_=repo;alter(font,'changed\n');target,state=engine(repo)
+        monkeypatch.setattr(target,'_publish',lambda *args: (_ for _ in ()).throw(OSError('offline')))
+        with pytest.raises(OSError):target.checkpoint(source_hash(font),'retry',record())
+        revision=state['revision'];target,_=engine(repo,state)
+>       result=target.checkpoint(source_hash(font),'retry',record(),transaction=state)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:184:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:169: in checkpoint
+    return self._reconcile(transaction, expected, index_lock)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:223: in _reconcile
+    return self._reconcile_locked(txn, expected, index_lock)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:234: in _reconcile_locked
+    fail('Checkpoint publication did not finish. Refresh the saved result before creating another checkpoint.', 'checkpoint_not_published')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'Checkpoint publication did not finish. Refresh the saved result before creating another checkpoint.'
+code = 'checkpoint_not_published'
+
+    def fail(message, code='checkpoint_conflict'):
+>       raise CheckpointError(code, message)
+E       glyphs_mcp_sidecar.checkpoint_git.CheckpointError: Checkpoint publication did not finish. Refresh the saved result before creating another checkpoint.
+
+src/sidecar/glyphs_mcp_sidecar/checkpoint_git.py:26: CheckpointError
+__________ test_baseline_and_result_save_are_separate_and_idempotent ___________
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x1070a1be0>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_baseline_and_result_save_0/Test.glyphs'))
+
+    def test_baseline_and_result_save_are_separate_and_idempotent(project):
+        service,bridge,_,font=project
+        font.write_text('601');bridge.adapter.value=601
+        value=wait(service,start(project),'applied')
+        assert bridge.adapter.save_calls==[]
+>       assert git(font.parent,'show','HEAD:'+font.name)==b'601'
+E       AssertionError: assert b'600' == b'601'
+E
+E         At index 2 diff: b'0' != b'1'
+E         Use -v to get more diff
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:25: AssertionError
+_____________ test_git_failure_after_save_retries_only_checkpoint ______________
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x107a31090>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_git_failure_after_save_re0/Test.glyphs'))
+
+    def test_git_failure_after_save_retries_only_checkpoint(project):
+        service,bridge,_,font=project
+        value=wait(service,start(project),'applied')
+        hook=font.parent/'.git/hooks/pre-commit';hook.write_text('#!/bin/sh\nexit 0\n');hook.chmod(0o755)
+        value=wait(service,choose(service,value,'save_result'),'saved')
+>       assert value['receipt']['checkpoint']['status']=='failed'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'checkpoint'
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:44: KeyError
+_______________ test_keep_retains_action_evidence_for_later_save _______________
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x107a31e50>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_keep_retains_action_evide0/Test.glyphs'))
+
+    def test_keep_retains_action_evidence_for_later_save(project):
+        service,bridge,_,font=project
+        value=wait(service,start(project),'applied');identity=value['jobId']
+        choose(service,value,'finish_edit')
+        assert bridge.adapter.save_calls==[]
+>       assert service.jobs.path(identity).joinpath('action-scope.json').exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_keep_retains_action_evide0/jobs/job_d1ea579d0adf4cb094b24827c4e5d518/action-scope.json').exists
+E        +      where PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_keep_retains_action_evide0/jobs/job_d1ea579d0adf4cb094b24827c4e5d518/action-scope.json') = joinpath('action-scope.json')
+E        +        where joinpath = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_keep_retains_action_evide0/jobs/job_d1ea579d0adf4cb094b24827c4e5d518').joinpath
+E        +          where PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_keep_retains_action_evide0/jobs/job_d1ea579d0adf4cb094b24827c4e5d518') = path('job_d1ea579d0adf4cb094b24827c4e5d518')
+E        +            where path = <glyphs_mcp_sidecar.jobs.JobStore object at 0x107a31d10>.path
+E        +              where <glyphs_mcp_sidecar.jobs.JobStore object at 0x107a31d10> = <glyphs_mcp_sidecar.service.SidecarService object at 0x107a31e50>.jobs
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:57: AssertionError
+__________________ test_baseline_failure_prevents_application __________________
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x1070ceb10>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_baseline_failure_prevents0/Test.glyphs'))
+
+    def test_baseline_failure_prevents_application(project):
+        service,bridge,_,font=project
+        hook=font.parent/'.git/hooks/pre-commit';hook.write_text('#!/bin/sh\nexit 1\n');hook.chmod(0o755)
+        value=start(project)
+>       value=wait(service,value,'failed')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:70:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+service = <glyphs_mcp_sidecar.service.SidecarService object at 0x1070ceb10>
+value = {'actions': [{'action': 'finish_edit', 'label': 'Keep changes without saving', 'requiresDestination': False, 'token': ...p': {'action': 'finish_edit', 'delaySeconds': 30, 'enabled': True}, 'blockerId': None, 'blockingWorkflowId': None, ...}
+state = 'failed'
+
+    def wait(service, value, state):
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            value = service.edit_workflows.get(value["id"])
+            if value["state"] == state:
+                return value
+            time.sleep(.02)
+>       raise AssertionError(value)
+E       AssertionError: {'id': 'edit_5221b31a6e7547168b10ef39c63a998f', 'revision': 11, 'document': {'id': 'doc_1', 'path': '/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_baseline_failure_prevents0/Test.glyphs', 'dirty': True, 'generation': 1, 'familyName': 'Test family'}, 'mode': 'apply', 'state': 'applied', 'jobId': 'job_e36db3a2cdcc42dfbbdfabce41fa3c5e', 'blockerId': None, 'blockingWorkflowId': None, 'job': {'id': 'job_e36db3a2cdcc42dfbbdfabce41fa3c5e', 'status': 'applied', 'summary': 'Add 8 units', 'resultKind': 'mutation', 'changeCount': 1, 'sample': [{'after': 608.0, 'before': 600.0, 'field': 'width', 'glyph': 'A', 'kind': 'set', 'layer': 'M1'}], 'report': None, 'manifest': None, 'error': None, 'outcome': None, 'receipt': None, 'bridgeOperation': {'jobId': 'job_e36db3a2cdcc42dfbbdfabce41fa3c5e', 'documentId': 'doc_1', 'status': 'applied', 'completedChanges': 1, 'longestPreparationChunk': None, 'totalChanges': 1, 'error': None, 'nativeSave': None, 'scriptResult': None, 'receipt': None, 'message': 'Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job.'}, 'activity': {'jobId': 'job_e36db3a2cdcc42dfbbdfabce41fa3c5e', 'document': 'Test family', 'kind': 'width_delta', 'phase': 'applied', 'startedAt': 1790558344.835934, 'finishedAt': 1790558344.835955, 'completed': 1, 'total': 1, 'message': None}, 'message': 'Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job.'}, 'error': None, 'receipt': None, 'reviewInConversation': False, 'savedVersion': None, 'scope': {'kind': 'width_delta', 'glyphs': [], 'glyphCount': 0, 'masters': None, 'targets': []}, 'autoKeep': {'enabled': True, 'delaySeconds': 30, 'action': 'finish_edit'}, 'responseOrigin': None, 'requestFingerprint': 'sha256:b352b1c1f8f5fdeb21c1181e88661788181f2aeb062a927f61a4a12c5ceb34b9', 'documentStateConfirmed': True, 'summary': 'Add 8 units', 'actions': [{'action': 'finish_edit', 'label': 'Keep changes without saving', 'token': '7c71a8fc27728f54980ea8806f54a3c057d4f6b83ceb4f90bebd43981ff5e20f', 'requiresDestination': False}, {'action': 'save_result', 'label': 'Save font', 'token': '6192dae958b7f9668c8ff60d95af2a1787a9484e47a2d098006c7cefd205a566', 'requiresDestination': False}, {'action': 'save_result_as', 'label': 'Save As…', 'token': '7dddfa596de4a329ad1ccc8236e9483bf65d40a84cd216faadd16eb13dd7397f', 'requiresDestination': True}, {'action': 'discard', 'label': 'Undo these changes', 'token': 'cdb7427f305ed302652a77758c209332d83a422a46e463b40b3bfa7738671849', 'requiresDestination': False}, {'action': 'wait_for_answer', 'label': 'Wait for my answer', 'token': '0ab0df279bb2318ccf193a5146a07c0184bf6b83df956902ff3ba992485d619d', 'requiresDestination': False}], 'message': 'Changes applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.', 'text': 'Test family — /private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-138/test_baseline_failure_prevents0/Test.glyphs\nChanges applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nIntended change: Add 8 units\nOperation: width delta\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As…; Undo these changes; Wait for my answer. You can reply in ordinary language.\nIn an active card, Keep changes without saving is selected after 30 seconds. This ends this workflow’s recovery offer. Choose or say “Wait for my answer” to disable it. Text-only clients keep this choice manual.', 'poll': False, 'modelContext': '{"workflow_id":"edit_5221b31a6e7547168b10ef39c63a998f","expected_revision":11,"document_id":"doc_1","state":"applied","poll":false,"requestFingerprint":"sha256:b352b1c1f8f5fdeb21c1181e88661788181f2aeb062a927f61a4a12c5ceb34b9","blockingWorkflowId":null,"autoKeep":{"enabled":true,"delaySeconds":30,"action":"finish_edit"},"actions":[{"action":"finish_edit","label":"Keep changes without saving","action_token":"7c71a8fc27728f54980ea8806f54a3c057d4f6b83ceb4f90bebd43981ff5e20f","requiresDestination":false},{"action":"save_result","label":"Save font","action_token":"6192dae958b7f9668c8ff60d95af2a1787a9484e47a2d098006c7cefd205a566","requiresDestination":false},{"action":"save_result_as","label":"Save As…","action_token":"7dddfa596de4a329ad1ccc8236e9483bf65d40a84cd216faadd16eb13dd7397f","requiresDestination":true},{"action":"discard","label":"Undo these changes","action_token":"cdb7427f305ed302652a77758c209332d83a422a46e463b40b3bfa7738671849","requiresDestination":false},{"action":"wait_for_answer","label":"Wait for my answer","action_token":"0ab0df279bb2318ccf193a5146a07c0184bf6b83df956902ff3ba992485d619d","requiresDestination":false}]}'}
+
+src/glyphs-mcp/tests/test_simple_v2_edit_workflow.py:128: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge          32     6     1     2   27.47s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_known_unpublished_checkpoint_retries_same_commit[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_known_unpublished_checkpoint_retries_same_commit[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_baseline_and_result_save_are_separate_and_idempotent
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_git_failure_after_save_retries_only_checkpoint
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_keep_retains_action_evidence_for_later_save
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_baseline_failure_prevents_application
+6 failed, 32 passed, 1 skipped in 27.67s

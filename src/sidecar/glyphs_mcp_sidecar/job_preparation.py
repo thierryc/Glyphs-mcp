@@ -177,7 +177,7 @@ def _fail(service, job_id, cancel, exc):
         cancelled = cancel.is_set() or str(exc) == "job cancelled"
         service.jobs.update(
             job_id, status="cancelled" if cancelled else "failed",
-            error={"code": "cancelled" if cancelled else "job_failed", "message": str(exc)},
+            error={"code": "cancelled" if cancelled else getattr(exc, 'code', 'job_failed'), "message": str(exc)},
         )
 
 

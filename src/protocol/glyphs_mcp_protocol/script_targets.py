@@ -1,6 +1,7 @@
 """Immutable script target resolution without copying font contents."""
 from collections.abc import Mapping
 from . import scripts
+from .preparation import stored_layers
 
 
 def value(owner, name, default=None):
@@ -16,8 +17,18 @@ def has_content(layer):
             or any(value(layer, k) for k in ('leftMetricsKey', 'rightMetricsKey', 'widthMetricsKey')))
 
 
-def resolve(font, spec):
-    """Resolve once without lazily creating backgrounds."""
+def owner(font, target):
+    glyph = font.glyphs[target['glyph']]
+    if glyph is None:
+        raise ValueError('script glyph is unavailable: ' + target['glyph'])
+    layer = next((l for l in stored_layers(glyph) if str(l.layerId) == target['layer']), None)
+    if layer is None:
+        raise ValueError('script layer is unavailable: ' + target['layer'])
+    return layer
+
+
+def iterate(font, spec):
+    """Yield each candidate, including skips, so long empty scans can yield UI time."""
     if isinstance(spec, Mapping):
         mid = spec['master']
         if not any(str(m.id) == mid for m in font.masters):
@@ -25,8 +36,7 @@ def resolve(font, spec):
         names = (str(g.name) for g in font.glyphs) if spec['glyphs'] == 'all' else spec['glyphs']
         raw = (dict(glyph=n, layer=mid, surface=spec['surface']) for n in names)
     else:
-        raw = scripts.targets(spec)  # Keep explicit request limits and overlap checks.
-    manifest, skipped = [], dict(count=0, sample=[])
+        raw = scripts.targets(spec)
     # Bulk-all names are unique in the native collection. Explicit lists have
     # already been deduplicated during validation; retained keys stay bounded.
     selected = set()
@@ -35,28 +45,30 @@ def resolve(font, spec):
         key = (item['glyph'], item['layer'], item['surface'])
         if key in selected:
             continue
-        glyph = font.glyphs[item['glyph']]
-        if glyph is None:
-            raise ValueError('script glyph is unavailable: ' + item['glyph'])
-        owner = next((l for l in glyph.layers if str(l.layerId) == item['layer']), None)
-        if owner is None:
-            raise ValueError('script layer is unavailable: ' + item['layer'])
+        owning_layer = owner(font, item)
         reason = None
-        layer = owner
+        layer = owning_layer
         if item['surface'] == 'background':
-            if not value(owner, 'hasBackground', False):
+            if not value(owning_layer, 'hasBackground', False):
                 reason = 'missing background'
             else:
-                layer = owner.background
+                layer = owning_layer.background
                 if not has_content(layer):
                     reason = 'empty background'
+        if not reason: selected.add(key)
+        yield item, layer, reason
+
+
+def resolve(font, spec):
+    """Synchronous helper for local scripting; bridge preparation consumes iterate in chunks."""
+    manifest, skipped = [], dict(count=0, sample=[])
+    size = 2
+    for item, layer, reason in iterate(font, spec):
         if reason:
             skipped['count'] += 1
             if len(skipped['sample']) < 10:
                 skipped['sample'].append(dict(item, status='skipped', reason=reason))
             continue
-        if len(manifest) == scripts.MAX_TARGETS:
-            scripts.fail('script targets resolve to more than 4,096 eligible surfaces')
-        selected.add(key)
+        size = scripts.check_size(size + len(scripts.wire_bytes(item)) + bool(manifest))
         manifest.append((item, layer))
     return manifest, skipped

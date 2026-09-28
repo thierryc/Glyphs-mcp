@@ -1,0 +1,23 @@
+{
+  "frozenRuntimeUnchanged": true,
+  "matchingBenchmarkHarness": true,
+  "benchmarkSHA256": "4dade2d852024eb4b0cb76dfcad96dd49ae2deee9f50a47017962186d87ac20b",
+  "fixtures": {
+    "color-4.glyphs": {
+      "hash": "sha256:eb09e084d9c7be3811385f49aa3259e98fedb83cd6fa84f33020fa4cad090f47",
+      "files": 1
+    },
+    "color-4.glyphspackage": {
+      "hash": "sha256:71b73a878e81a8f642897576d1d315ecbc4ac8ce95c30c1059475944a733a020",
+      "files": 503
+    },
+    "width-4.glyphs": {
+      "hash": "sha256:41dc4f6070d1e7b4f13a2ea12e51c7dffc8e798f7260c966d8548e0f237faf43",
+      "files": 1
+    },
+    "width-4.glyphspackage": {
+      "hash": "sha256:bc662958c086c0de2b350274795117b372bcb28806621c499da92cb861a5ee6c",
+      "files": 5002
+    }
+  }
+}

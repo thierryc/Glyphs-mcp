@@ -18,6 +18,8 @@ from glyphs_mcp_protocol import (
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
 from glyphs_mcp_protocol import dimensions, scripts
 
+from .checkpoint_git import CheckpointError
+from . import checkpoints, checkpoint_restore
 from .bridge_client import BridgeClientError
 from .jobs import JobStore
 from .identity import IDENTITY, VERSION
@@ -58,6 +60,7 @@ class SidecarService:
         self.worker = worker or GlyphsCliWorker()
         self._cancellations: dict[str, Event] = {}
         self._lock, self._script_dispatch_lock = RLock(), RLock()
+        self._checkpoint_lock = RLock()
         self.lifecycle = ServiceLifecycle(self, ServiceError)
         for job in self.jobs.records():
             from .script_service import invalidate_retired_review
@@ -69,6 +72,8 @@ class SidecarService:
                     "message": "The previous service stopped during preparation. This job was not resubmitted.",
                 })
             elif job["status"] == "accepting":
+                if job.get('resultKind') == 'checkpoint':
+                    continue  # Reconcile the existing save on demand, never replay it.
                 if job.get("resultKind") == "artifact":
                     artifact_publication.reconcile(self, job)
                     continue
@@ -135,10 +140,12 @@ class SidecarService:
             **IDENTITY,
             "interface": "glyphs-mcp-sidecar", "interfaceVersion": 1,
             "jobKinds": list(JOB_KINDS)
+                        + (["checkpoint_restore"] if "font.checkpoint-restore.v1" in advertised_writes else [])
                         + (['python_script'] if scripts.NATIVE in job_capabilities else [])
                         + (["outline_edit"] if "outline.edit.v1" in advertised_writes else [])
                         + (["native_action"] if native_actions else [])
                         + (["dimensions_edit"] if dimensions.WRITE_CAPABILITY in advertised_writes else [])
+                        + (["kerning_edit"] if "kerning.edit.exact.v1" in advertised_writes else [])
                         + (["feature_compile"] if any(
                             name in job_capabilities for name in (
                                 "feature.compile.saved.v1", "feature.compile.live.v1"
@@ -151,7 +158,7 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY)
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1")
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
@@ -159,7 +166,7 @@ class SidecarService:
             "bridge": bridge,
             "worker": worker,
             "controlProtocol": 1,
-            "workflowCapabilities": ["edit.workflow.v1"],
+            "workflowCapabilities": ["edit.workflow.v1", "font.checkpoints.v1"],
             "activity": self.lifecycle.snapshot(),
             "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves.",
         }
@@ -174,6 +181,9 @@ class SidecarService:
         self, document_id: str, entities: list[dict[str, Any]], fields: list[str]
     ) -> list[dict[str, Any]]:
         try:
+            if any(str(item.get('kind','')).startswith('checkpoint_') for item in entities):
+                from .checkpoint_history import read
+                return read(self, str(document_id), entities, fields)
             return self.bridge.read_entities(str(document_id), entities, fields)
         except Exception as exc:
             raise self._error(exc) from exc
@@ -190,6 +200,8 @@ class SidecarService:
         options: dict[str, Any] | None = None,
         _workflow: bool = False,
     ) -> dict[str, Any]:
+        if kind == 'checkpoint_restore':
+            return checkpoint_restore.prepare(self, self._document(document_id), self.validate_job_request(kind, delta, glyphs, options))
         if kind == 'python_script' and not _workflow:
             raise ServiceError('workflow_required', 'native scripts require start_edit_workflow and its revision-bound Run action')
         document = self._document(document_id)
@@ -223,23 +235,30 @@ class SidecarService:
         if not eligible(request):
             return False
         status = bridge_status if bridge_status is not None else self.bridge.status()
-        return CAPABILITY in status.get("jobCapabilities", [])
+        available = CAPABILITY in status.get("jobCapabilities", [])
+        if request["kind"] == "kerning_edit" and (not available or "kerning.edit.exact.v1" not in status.get("writeCapabilities", [])):
+            raise ServiceError("unsupported_job", "exact kerning native preparation is unavailable")
+        return available
 
     def validate_job_request(self, kind, delta=None, glyphs=None, options=None):
         """Shared nonmutating preflight, including dirty/pathless workflow requests."""
+        if kind == 'checkpoint_restore':
+            return checkpoint_restore.validate(self, kind, delta, glyphs, options, ServiceError)
         request = self._job_request(kind, delta, glyphs, options)
         if kind == 'python_script':
             from .script_service import validate_capabilities
             validate_capabilities(self, request['options'], ServiceError)
             return request
         native_prepare = False
-        if kind in ("outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script"):
+        if kind in ("outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit"):
             try:
                 bridge_status = self.bridge.status()
                 advertised = bridge_status.get("writeCapabilities") or []
             except Exception:
                 bridge_status = {}
                 advertised = []
+            if kind == "kerning_edit" and ("kerning.edit.exact.v1" not in advertised or not self._native_preparation_available(request, bridge_status)):
+                raise ServiceError("unsupported_job", "exact kerning edits require a qualified native bridge; update the installation")
             if kind == "dimensions_edit" and dimensions.WRITE_CAPABILITY not in advertised:
                 raise ServiceError("unsupported_job", "Dimensions writes are not qualified by the live bridge")
             if kind == "outline_edit" and "outline.edit.v1" not in advertised:
@@ -291,6 +310,9 @@ class SidecarService:
 
     def get_job(self, job_id: str, *, include_preview: bool = True) -> dict[str, Any]:
         job = self._job(job_id)
+        if job.get('resultKind') == 'checkpoint':
+            from .checkpoints import reconcile_save
+            return reconcile_save(self, job)
         if job["status"] == "accepting" and job.get("resultKind") == "artifact":
             job = artifact_publication.reconcile(self, job)
             return self._public(job, include_preview=include_preview)
@@ -302,6 +324,8 @@ class SidecarService:
                 if interrupted is not None:
                     return self._public(interrupted, include_preview=include_preview)
                 raise self._error(exc) from exc
+            if operation.get('documentAfter') and job.get('resultKind') == 'historical_restore':
+                job = self.jobs.update(job['id'], document=operation['documentAfter'])
             state = operation.get("status")
             if state == "saved":
                 return self._complete_acceptance(
@@ -396,7 +420,7 @@ class SidecarService:
     @mutation_guard
     def finish_edit(self, job_id):
         job = self._job(job_id)
-        if (job.get('resultKind') != 'mutation' or job['status'] not in {'applied', 'completed'}
+        if (job.get('resultKind') not in {'mutation','historical_restore'} or job['status'] not in {'applied', 'completed'}
                 or job.get('error') or job.get('outcome') == 'unverified'):
             raise ServiceError('job_not_ready', 'only a successfully applied edit can be kept')
         if job['status'] == 'completed':
@@ -412,6 +436,8 @@ class SidecarService:
     def apply_job(self, job_id: str, *, include_preview: bool = True, approved_overwrites=None) -> dict[str, Any]:
         job = self._job(job_id)
         self._require_available_operation(job)
+        if job.get('resultKind') == 'historical_restore':
+            return checkpoint_restore.apply(self, job, ServiceError)
         if job.get("resultKind") not in (None, "mutation"):
             raise ServiceError("job_not_applicable", "this job does not produce a live document mutation")
         if job["status"] in {"applying", "applied"}:
@@ -436,6 +462,7 @@ class SidecarService:
             approved = dimensions.validate_approval(patch["changes"], approved_overwrites)
         except ProtocolError as exc:
             raise ServiceError(exc.code, exc.message) from exc
+        checkpoints.establish_typed_baseline(self, job, patch)
         self.jobs.update(job["id"], status="applying", overwriteApproval=approved)
         try:
             operation = (self.bridge.apply(patch, approved_overwrites=approved)
@@ -475,10 +502,10 @@ class SidecarService:
     @mutation
     @mutation_guard
     def save_document(
-        self, document_id: str, *, destination: str | None = None, _on_prepared=None
+        self, document_id: str, *, destination: str | None = None, _on_prepared=None, retry_checkpoint_job_id=None
     ) -> dict[str, Any]:
         return saving.save_document(
-            self, ServiceError, document_id, destination=destination, on_prepared=_on_prepared
+            self, ServiceError, document_id, destination=destination, on_prepared=_on_prepared, retry_checkpoint_job_id=retry_checkpoint_job_id
         )
 
     @mutation
@@ -543,7 +570,7 @@ class SidecarService:
     def _error(exc: Exception) -> ServiceError:
         if isinstance(exc, ServiceError):
             return exc
-        if isinstance(exc, BridgeClientError):
+        if isinstance(exc, (BridgeClientError, CheckpointError)):
             return ServiceError(exc.code, exc.message, details=exc.details)
         return ServiceError("bridge_failed", str(exc) or exc.__class__.__name__)
 

@@ -1,0 +1,113 @@
+{
+  "ok": true,
+  "data": {
+    "id": "edit_c64c3ae948e14ea6b7c468cf114b79e6",
+    "revision": 17,
+    "document": {
+      "id": "doc_c26e68634bb5439db81f0f36d5679205",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    },
+    "mode": "preview",
+    "state": "executed",
+    "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_cb40622e4c5941b38501e2aa8daf9d39",
+      "checkpointEnabled": false,
+      "status": "completed",
+      "summary": "Milestone 5 \u2014 Wait persistence check (diagnostic output only)",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 0,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+        "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+        "documentAfter": null,
+        "status": "completed",
+        "completedChanges": null,
+        "longestPreparationChunk": 0.005402290989877656,
+        "totalChanges": null,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": {
+          "executed": true,
+          "output": "Milestone 5 Wait check completed once.\n",
+          "entrypoint": "script",
+          "executionSucceeded": true,
+          "changesVerified": false,
+          "executedTargets": 0,
+          "totalTargets": 0,
+          "documentAfter": {
+            "id": "doc_c26e68634bb5439db81f0f36d5679205",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+            "dirty": true,
+            "generation": 0
+          }
+        },
+        "receipt": null,
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+        "document": "Dactylotype",
+        "kind": "python_script",
+        "phase": "completed",
+        "startedAt": 1790599526.487915,
+        "finishedAt": 1790599526.48793,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "card_timeout",
+    "requestFingerprint": "sha256:d446c39a4ca07bebafecb411f55c15ff93f28ee4c8fcb873a630275a66378f41",
+    "documentStateConfirmed": true,
+    "summary": "Milestone 5 \u2014 Wait persistence check (diagnostic output only)",
+    "entrypoint": "script",
+    "scriptReview": {
+      "source": "# Disposable milestone 5 card check. No font data writes.\nprint(params['message'])\n",
+      "params": {
+        "message": "Milestone 5 Wait check completed once."
+      },
+      "entrypoint": "script",
+      "targets": [],
+      "summary": "Milestone 5 \u2014 Wait persistence check (diagnostic output only)"
+    },
+    "actions": [],
+    "message": "Changes kept without saving. This workflow\u2019s restoration offer has ended.",
+    "verification": "Intended changes have not been verified by the wrapper.",
+    "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nChanges kept without saving. This workflow\u2019s restoration offer has ended.\nIntended change: Milestone 5 \u2014 Wait persistence check (diagnostic output only)\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nScript details: {\"source\": \"# Disposable milestone 5 card check. No font data writes.\\nprint(params['message'])\\n\", \"params\": {\"message\": \"Milestone 5 Wait check completed once.\"}, \"entrypoint\": \"script\", \"targets\": [], \"summary\": \"Milestone 5 \u2014 Wait persistence check (diagnostic output only)\"}\nScript output (text): \"Milestone 5 Wait check completed once.\\n\"",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_c64c3ae948e14ea6b7c468cf114b79e6\",\"expected_revision\":17,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:d446c39a4ca07bebafecb411f55c15ff93f28ee4c8fcb873a630275a66378f41\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+  }
+}

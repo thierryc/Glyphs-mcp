@@ -1,7 +1,7 @@
 """Save-first native scripts reuse chat actions and the existing save service."""
 from pathlib import Path
 import time
-from glyphs_mcp_protocol import scripts
+from glyphs_mcp_protocol import ProtocolError, scripts
 from .source import source_hash
 from .worker import WorkerError
 
@@ -9,6 +9,8 @@ BASELINE_MEMO_SECONDS = 5.0
 
 
 def unresolved(job):
+    if job.get('resultKind') == 'historical_restore' and job.get('status') in {'failed','interrupted'}:
+        return bool((job.get('error') or {}).get('details', {}).get('writeAttempted') or job.get('restoreRequest'))
     return (job.get('resultKind') == 'script' and job.get('status') in {'failed', 'cancelled'}
             and bool(((job.get('bridgeOperation') or {}).get('scriptResult') or {}).get('executed')))
 
@@ -23,8 +25,23 @@ def invalidate(service, document_id=None):
 def prepare(service, job, cancel):
     doc = job['document']
     fingerprint = source_hash(Path(doc['path']))
-    report = service.bridge.review_script(dict(documentId=doc['id'], generation=doc['generation'],
-                                               sourcePath=doc['path'], options=job['request']['options']))
+    service.jobs.update(job['id'], phase='preparing_native')
+    try:
+        if cancel.is_set(): raise WorkerError('job cancelled')
+        operation = service.bridge.review_script(dict(jobId=job['id'], documentId=doc['id'], generation=doc['generation'],
+            sourcePath=doc['path'], sourceHash=fingerprint, options=job['request']['options']))
+        while operation['status'] == 'preparing':
+            if cancel.wait(.01): raise WorkerError('job cancelled')
+            operation = service.bridge.operation(job['id'])
+        if operation['status'] != 'ready':
+            from .bridge_client import BridgeClientError
+            failure = operation.get('error') or dict(code='job_failed', message='script preparation did not finish')
+            raise BridgeClientError(failure['code'], failure['message'], failure.get('details'))
+        report = service.bridge.reviewed_script(job['id'])
+    except Exception:
+        try: service.bridge.discard(job['id'])
+        except Exception: pass  # Preparation is read-only; it cannot have executed Python.
+        raise
     if source_hash(Path(doc['path'])) != fingerprint:
         raise WorkerError('saved source changed while preparing the script review')
     path = service.jobs.write_json(job['id'], 'report.json', report)
@@ -37,11 +54,21 @@ def prepare(service, job, cancel):
                             report=_mutation_report(report, path))
 
 
+def execution_request(job, report, error):
+    doc = job['document']
+    request = dict(jobId=job['id'], documentId=doc['id'], sourcePath=doc['path'], sourceHash=job['sourceHash'],
+                   generation=doc['generation'], options=job['request']['options'], manifest=report['manifest'])
+    try: scripts.check_request(request)
+    except ProtocolError as exc: raise error(exc.code, exc.message) from exc
+    return request
+
+
 def save_before_run(service, job, workflow, error):
     options = scripts.validate_options(job['request']['options'])
     report = service.jobs.read_json(job['id'], 'report.json')
     if scripts.digest(options) != report['requestHash'] or options != report['review']:
         raise error('stale_script', 'the reviewed script or parameters changed')
+    execution_request(job, report, error)  # Known oversize must not trigger even an authorized Save.
     doc = service._document(job['document']['id'])
     if any(doc.get(k) != job['document'].get(k) for k in ('path', 'generation', 'dirty')):
         raise error('stale_document', 'the document changed after review; review again before saving and running')
@@ -133,6 +160,8 @@ def reconcile_save(service, workflow, error):
     operation = service.bridge.save_operation(request['saveId'])
     if operation.get('status') == 'saved':
         receipt = saving.verify_save(request, operation.get('native') or {})
+        if request.get('checkpointJobId'):
+            receipt = service.get_job(request['checkpointJobId'])['receipt']
         service.edit_workflows._set(workflow, state='outdated', receipt=receipt, error=None)
     else:
         service.edit_workflows._set(workflow, state='failed', error=operation.get('error') or

@@ -1,0 +1,1004 @@
+{
+  "beforeUndo": {
+    "ok": true,
+    "data": {
+      "id": "edit_b9a24a74a1cb4203bb23337bf900e664",
+      "revision": 17,
+      "document": {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": true,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      "mode": "preview",
+      "state": "applied",
+      "jobId": "job_4d45f9c249a147a9b84690156e270408",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_4d45f9c249a147a9b84690156e270408",
+        "checkpointEnabled": false,
+        "status": "applied",
+        "summary": "Add 0.125 units to selected glyphs",
+        "resultKind": "mutation",
+        "changeCount": 9,
+        "sample": [
+          {
+            "after": 2054.095,
+            "before": 2053.97,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+          },
+          {
+            "after": 1070.135,
+            "before": 1070.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+          },
+          {
+            "after": 1594.145,
+            "before": 1594.02,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "926F7910-9E82-41CD-9117-571F75F96159"
+          },
+          {
+            "after": 1271.135,
+            "before": 1271.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+          },
+          {
+            "after": 1394.49771,
+            "before": 1394.37271,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          },
+          {
+            "after": 1349.485,
+            "before": 1349.36,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+          },
+          {
+            "after": 1135.62,
+            "before": 1135.495,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+          },
+          {
+            "after": 1750.9,
+            "before": 1750.775,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+          },
+          {
+            "after": 1512.135,
+            "before": 1512.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+          }
+        ],
+        "report": null,
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "documentAfter": null,
+          "status": "applied",
+          "completedChanges": 9,
+          "longestPreparationChunk": null,
+          "totalChanges": 9,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": null,
+          "receipt": null,
+          "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+        },
+        "activity": {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "document": "Dactylotype",
+          "kind": "width_delta",
+          "phase": "applied",
+          "startedAt": 1790602363.1282618,
+          "finishedAt": 1790602363.1282911,
+          "completed": 9,
+          "total": 9,
+          "message": null
+        },
+        "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "width_delta",
+        "glyphs": [
+          "A"
+        ],
+        "glyphCount": 1,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e",
+      "documentStateConfirmed": true,
+      "summary": "Add 0.125 units to selected glyphs",
+      "actions": [
+        {
+          "action": "finish_edit",
+          "label": "Keep changes without saving",
+          "token": "54a230f0329b7a51ee9acfde9167edf3051c8d5ddd53ed9f8932f063b3a34946",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result",
+          "label": "Save font",
+          "token": "97d32eca020e463d42d1f1fe79a23335adf7651b304ffc1c1474bcf6df8da764",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result_as",
+          "label": "Save As\u2026",
+          "token": "8151325a8afd43a41a393d78a5a3ea7fca33754f94741d0a5e60b26093859d02",
+          "requiresDestination": true
+        },
+        {
+          "action": "discard",
+          "label": "Undo these changes",
+          "token": "b25ea55eaa089efcf739da2e49597ffc3eae720eb9e82d43ffe0bca5b79fc7d3",
+          "requiresDestination": false
+        }
+      ],
+      "message": "Changes applied.\nKeep ends this workflow\u2019s selective Undo offer without saving. Glyphs\u2019 native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.",
+      "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nChanges applied.\nKeep ends this workflow\u2019s selective Undo offer without saving. Glyphs\u2019 native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nIntended change: Add 0.125 units to selected glyphs\nOperation: width delta; glyphs: A\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As\u2026; Undo these changes. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_b9a24a74a1cb4203bb23337bf900e664\",\"expected_revision\":17,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_edit\",\"label\":\"Keep changes without saving\",\"action_token\":\"54a230f0329b7a51ee9acfde9167edf3051c8d5ddd53ed9f8932f063b3a34946\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"97d32eca020e463d42d1f1fe79a23335adf7651b304ffc1c1474bcf6df8da764\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As\u2026\",\"action_token\":\"8151325a8afd43a41a393d78a5a3ea7fca33754f94741d0a5e60b26093859d02\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"b25ea55eaa089efcf739da2e49597ffc3eae720eb9e82d43ffe0bca5b79fc7d3\",\"requiresDestination\":false}]}"
+    }
+  },
+  "undoDispatch": {
+    "ok": true,
+    "data": {
+      "id": "edit_b9a24a74a1cb4203bb23337bf900e664",
+      "revision": 21,
+      "document": {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": true,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      "mode": "preview",
+      "state": "discarding",
+      "jobId": "job_4d45f9c249a147a9b84690156e270408",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_4d45f9c249a147a9b84690156e270408",
+        "checkpointEnabled": false,
+        "status": "discarding",
+        "summary": "Add 0.125 units to selected glyphs",
+        "resultKind": "mutation",
+        "changeCount": 9,
+        "sample": [
+          {
+            "after": 2054.095,
+            "before": 2053.97,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+          },
+          {
+            "after": 1070.135,
+            "before": 1070.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+          },
+          {
+            "after": 1594.145,
+            "before": 1594.02,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "926F7910-9E82-41CD-9117-571F75F96159"
+          },
+          {
+            "after": 1271.135,
+            "before": 1271.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+          },
+          {
+            "after": 1394.49771,
+            "before": 1394.37271,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          },
+          {
+            "after": 1349.485,
+            "before": 1349.36,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+          },
+          {
+            "after": 1135.62,
+            "before": 1135.495,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+          },
+          {
+            "after": 1750.9,
+            "before": 1750.775,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+          },
+          {
+            "after": 1512.135,
+            "before": 1512.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+          }
+        ],
+        "report": null,
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "documentAfter": null,
+          "status": "discarding",
+          "completedChanges": 0,
+          "longestPreparationChunk": null,
+          "totalChanges": 9,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": null,
+          "receipt": null,
+          "message": null
+        },
+        "activity": {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "document": "Dactylotype",
+          "kind": "width_delta",
+          "phase": "discarding",
+          "startedAt": 1790602547.6038458,
+          "finishedAt": null,
+          "completed": 0,
+          "total": 9,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "width_delta",
+        "glyphs": [
+          "A"
+        ],
+        "glyphCount": 1,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e",
+      "documentStateConfirmed": true,
+      "summary": "Add 0.125 units to selected glyphs",
+      "actions": [],
+      "message": "Discarding changes\u2026",
+      "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nDiscarding changes\u2026\nIntended change: Add 0.125 units to selected glyphs\nOperation: width delta; glyphs: A",
+      "poll": true,
+      "modelContext": "{\"workflow_id\":\"edit_b9a24a74a1cb4203bb23337bf900e664\",\"expected_revision\":21,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"discarding\",\"poll\":true,\"requestFingerprint\":\"sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+    }
+  },
+  "afterUndo": {
+    "ok": true,
+    "data": {
+      "id": "edit_b9a24a74a1cb4203bb23337bf900e664",
+      "revision": 23,
+      "document": {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": true,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      "mode": "preview",
+      "state": "discarded",
+      "jobId": "job_4d45f9c249a147a9b84690156e270408",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_4d45f9c249a147a9b84690156e270408",
+        "checkpointEnabled": false,
+        "status": "discarded",
+        "summary": "Add 0.125 units to selected glyphs",
+        "resultKind": "mutation",
+        "changeCount": 9,
+        "sample": [
+          {
+            "after": 2054.095,
+            "before": 2053.97,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+          },
+          {
+            "after": 1070.135,
+            "before": 1070.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+          },
+          {
+            "after": 1594.145,
+            "before": 1594.02,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "926F7910-9E82-41CD-9117-571F75F96159"
+          },
+          {
+            "after": 1271.135,
+            "before": 1271.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+          },
+          {
+            "after": 1394.49771,
+            "before": 1394.37271,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+          },
+          {
+            "after": 1349.485,
+            "before": 1349.36,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+          },
+          {
+            "after": 1135.62,
+            "before": 1135.495,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+          },
+          {
+            "after": 1750.9,
+            "before": 1750.775,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+          },
+          {
+            "after": 1512.135,
+            "before": 1512.01,
+            "field": "width",
+            "glyph": "A",
+            "kind": "set",
+            "layer": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+          }
+        ],
+        "report": null,
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "documentAfter": null,
+          "status": "discarded",
+          "completedChanges": 9,
+          "longestPreparationChunk": null,
+          "totalChanges": 9,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": null,
+          "receipt": null,
+          "message": null
+        },
+        "activity": {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "document": "Dactylotype",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1790602547.635148,
+          "finishedAt": 1790602547.635181,
+          "completed": 9,
+          "total": 9,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "width_delta",
+        "glyphs": [
+          "A"
+        ],
+        "glyphCount": 1,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e",
+      "documentStateConfirmed": true,
+      "summary": "Add 0.125 units to selected glyphs",
+      "actions": [],
+      "message": "Changes discarded.",
+      "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nChanges discarded.\nIntended change: Add 0.125 units to selected glyphs\nOperation: width delta; glyphs: A",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_b9a24a74a1cb4203bb23337bf900e664\",\"expected_revision\":23,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+    }
+  },
+  "restoredValues": {
+    "ok": true,
+    "data": [
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+        },
+        "values": {
+          "width": 2053.97,
+          "outlineHash": "sha256:283bba4554a9913f3ee2d8c911525d2b1600b3700d5f38e4a3cf5da3d4adedf3",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+        },
+        "values": {
+          "width": 1070.01,
+          "outlineHash": "sha256:baed338c2d7e0219156acb000414eeea337dc2159bda6fda49cff3022366ebbf",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "926F7910-9E82-41CD-9117-571F75F96159"
+        },
+        "values": {
+          "width": 1594.02,
+          "outlineHash": "sha256:daa330b335be009ffe1c42291db5de4ff9a7410d64ccbdf6df38c4f08582c620",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+        },
+        "values": {
+          "width": 1271.01,
+          "outlineHash": "sha256:6578bda9352712c8a1d343bdae6d0ea49fb8c2f3959343c348d2ce57ae71ca52",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+        },
+        "values": {
+          "width": 1394.37271,
+          "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+        },
+        "values": {
+          "width": 1349.36,
+          "outlineHash": "sha256:ee513ddffaf96824ba58dadd8af488016f715ccb1af97e2e7ed0d9d5ead84fc2",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+        },
+        "values": {
+          "width": 1135.495,
+          "outlineHash": "sha256:7e68c9fde6b4200e12e7e5b956c3ada12aaa17f57a6f3acbcfc04be4a4ad7376",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+        },
+        "values": {
+          "width": 1750.775,
+          "outlineHash": "sha256:ca9152a7e8578d464be867487b19099091ecba8d834c5bf7d4eb7e8defc58ae4",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+        },
+        "values": {
+          "width": 1512.01,
+          "outlineHash": "sha256:f320aefb5753989674b74e829593344027a3d7b3e48d240ec8872d52771f1676",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "B",
+          "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+        },
+        "values": {
+          "width": 1209.42583,
+          "outlineHash": "sha256:4ca9a249e96a27658c79831e3fc72824c7d0794553b6849ceb50be36d416ace4",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      }
+    ]
+  },
+  "save": {
+    "ok": true,
+    "data": {
+      "saveId": "save_26e9c38b81c2464aabf6d05aa488fcb2",
+      "jobId": null,
+      "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+      "sourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790602548.481389
+    }
+  },
+  "documents": {
+    "ok": true,
+    "data": [
+      {
+        "id": "doc_d31c59b8eb7a4ed9994e042f667ad521",
+        "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": true,
+        "familyName": "Dactylotype"
+      },
+      {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      {
+        "id": "doc_346ee24d700b41ed9eb81d5023e794ae",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Native workflow probe"
+      },
+      {
+        "id": "doc_40857b941fc24c9da6cc8aa47684b2c4",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Checkpoint qualification glyphspackage"
+      },
+      {
+        "id": "doc_8b59fef6ac764fe4a6eb3a77a5938508",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Checkpoint qualification glyphs"
+      }
+    ]
+  },
+  "status": {
+    "ok": true,
+    "data": {
+      "protocol": 1,
+      "sidecarVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.8",
+        "channel": "beta",
+        "betaNumber": 8,
+        "installerBuild": 50
+      },
+      "runtimeId": "2.0.0-beta.8+bb5297f858c9",
+      "codeHash": "sha256:bb5297f858c9b66a541d159c2554cafb98c1dff1c92199e56bad09b7883722df",
+      "identityEvidence": "initialization-time file fingerprint",
+      "interface": "glyphs-mcp-sidecar",
+      "interfaceVersion": 1,
+      "jobKinds": [
+        "width_delta",
+        "spacing",
+        "kerning_collision",
+        "start_nodes",
+        "slant",
+        "checkpoint_restore",
+        "python_script",
+        "outline_edit",
+        "native_action",
+        "dimensions_edit",
+        "feature_compile",
+        "font_export"
+      ],
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.remove-node.v1",
+        "outline.background.edit.v1",
+        "native.action.v1",
+        "master.dimensions.edit.v1",
+        "font.checkpoint-restore.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1",
+        "script.native.v1"
+      ],
+      "tools": [
+        "get_status",
+        "list_documents",
+        "read_entities",
+        "start_job",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "bridge": {
+        "reachable": true,
+        "protocol": 1,
+        "bridgeVersion": "2.0.0",
+        "release": {
+          "version": "2.0.0",
+          "releaseVersion": "2.0.0-beta.8",
+          "channel": "beta",
+          "betaNumber": 8,
+          "installerBuild": 50
+        },
+        "runtimeId": "2.0.0-beta.8+c35ab0983487",
+        "codeHash": "sha256:c35ab0983487fb32734006b1244a83d00264f0af24ae5b7395ec77653174364c",
+        "identityEvidence": "initialization-time file fingerprint",
+        "host": {
+          "identifier": "com.GeorgSeifert.Glyphs4",
+          "version": "4.1",
+          "build": "4107"
+        },
+        "readCapabilities": [
+          "master.read.exact.v1",
+          "masters.list.v1",
+          "layer.read.exact.v1",
+          "selection.nodes.native.v1",
+          "selection.context.v1",
+          "document.context.v1",
+          "glyphs.list.v1",
+          "layers.list.v1",
+          "kerning.groups.v1",
+          "kerning.pairs.v1",
+          "master.properties.v1",
+          "paths.list.v1",
+          "path.geometry.v1",
+          "outline.background.read.v1",
+          "features.read.v1",
+          "instances.read.v1",
+          "master.dimensions.read.v1"
+        ],
+        "writeCapabilities": [
+          "outline.edit.v1",
+          "outline.background.edit.v1",
+          "outline.remove-node.v1",
+          "master.dimensions.edit.v1",
+          "native.action.v1",
+          "font.checkpoint-restore.v1"
+        ],
+        "nativeActions": [
+          "add_extremes",
+          "add_missing_anchors",
+          "align_components",
+          "cleanup_paths",
+          "connect_open_paths",
+          "correct_path_direction",
+          "decompose_components",
+          "decompose_corners",
+          "make_components",
+          "reinterpolate",
+          "remove_overlap",
+          "round_coordinates",
+          "set_glyph_color",
+          "swap_foreground_background",
+          "update_automatic_feature_block",
+          "update_features",
+          "update_glyph_info",
+          "update_metrics"
+        ],
+        "jobCapabilities": [
+          "feature.compile.live.v1",
+          "script.native.v1",
+          "edit.prepare.native.v1"
+        ],
+        "scriptPreparationVersion": 2,
+        "activity": "ready",
+        "activeOperations": 0,
+        "companions": [
+          {
+            "protocol": 1,
+            "id": "curve-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "curve.measure",
+              "curve.overlay"
+            ]
+          },
+          {
+            "protocol": 1,
+            "id": "reference-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "reference.file",
+              "reference.git",
+              "reference.github",
+              "reference.overlay",
+              "reference.saved"
+            ]
+          }
+        ]
+      },
+      "worker": {
+        "available": true,
+        "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+        "application": "/Applications/Glyphs 4.app",
+        "plugins": "disabled",
+        "processModel": "one_shot",
+        "executions": [],
+        "jobCapabilities": [
+          "feature.compile.saved.v1",
+          "font.export.static.v1",
+          "font.export.variable.v1",
+          "font.export.web.v1",
+          "font.verify.shaping.v1",
+          "font.verify.tables.v1"
+        ]
+      },
+      "controlProtocol": 1,
+      "workflowCapabilities": [
+        "edit.workflow.v1",
+        "font.checkpoints.v1"
+      ],
+      "activity": {
+        "jobs": [
+          {
+            "jobId": "job_4d45f9c249a147a9b84690156e270408",
+            "document": "Dactylotype",
+            "kind": "width_delta",
+            "phase": "discarded",
+            "startedAt": 1790602547.635148,
+            "finishedAt": 1790602547.635181,
+            "completed": 9,
+            "total": 9,
+            "message": null
+          },
+          {
+            "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+            "document": "Dactylotype",
+            "kind": "python_script",
+            "phase": "accepted",
+            "startedAt": 1790602343.069375,
+            "finishedAt": 1790602343.069396,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+            "document": "Dactylotype",
+            "kind": "python_script",
+            "phase": "completed",
+            "startedAt": 1790599526.487915,
+            "finishedAt": 1790599526.48793,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_6de0d49779554f29b23e662737676a9a",
+            "document": "Dactylotype",
+            "kind": "python_script",
+            "phase": "accepted",
+            "startedAt": 1790599000.930567,
+            "finishedAt": 1790599000.930594,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+            "document": "Checkpoint qualification glyphs",
+            "kind": "font_export",
+            "phase": "accepted",
+            "startedAt": 1790598404.002562,
+            "finishedAt": 1790598404.002579,
+            "completed": null,
+            "total": null,
+            "message": null
+          }
+        ],
+        "activeCount": 0,
+        "moreCount": 0
+      },
+      "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+    }
+  }
+}

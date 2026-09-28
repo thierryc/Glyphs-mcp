@@ -5,6 +5,9 @@ Beta 7/build 49 is published as a signed and notarized prerelease. Its final
 signed-update and component-migration test remains unperformed. Beta 8 has no
 built release. Stable Latest remains v1.11.1.
 See [Beta 8 preparation](BETA8-VALIDATION.md) and [Beta 7 qualification](BETA7-VALIDATION.md).
+Current delivery scope: [Beta 8 milestones](BETA8-MILESTONES.md). The
+[twelve-tool contract](content/reference/command-set.mdx) is the shared interface
+reference; historical roadmaps do not define current behavior.
 See the [beta guide](BETA.md) and [release and launch plan](BETA-LAUNCH.md).
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
@@ -19,7 +22,7 @@ unrelated agent configuration.
 
 The permanent app includes Setup and Project destinations, a static menu-bar
 popover, a dedicated troubleshooting-log window, local and public templates,
-and a read-only Git diff browser. Its
+and a Git diff browser with opt-in font checkpoints. Its
 native file tree opens source diffs in unified or split form and can compare
 individual `.glyphspackage` glyphs as visual overlays or source text. Automatic
 update checks are enabled by default and can be disabled in Settings. Desktop
@@ -35,9 +38,19 @@ closed native-action jobs; run feature compiler diagnostics; or stage verified
 static, variable and web-font exports. Conversation edits apply complete results
 under the original request; previews, warnings and incomplete coverage wait for
 review. Artifact publication remains separately authorized.
-`accept_job` verifies the affected live
-targets, saves the whole document and closes the rollback window; native Undo/Redo
-or whole-job discard keeps an unaccepted experiment reversible. Spacing proposals and
+
+Exact kerning assignments use `kerning_edit`: 1–100 glyph/group pairs with
+explicit masters and directions, fractional values, and distinct set/remove
+operations. Native preparation avoids a font copy and worker startup while
+retaining selective recovery. Read-only language proofing offers bounded pairs
+to inspect from a pinned MIT dataset; it does not suggest values or launch
+collision analysis. See the [kerning guidance](skills/glyphs-mcp-kerning/SKILL.md).
+Results offer **Keep changes without saving**, **Save font**, and recovery.
+Typed **Undo these changes** covers the recorded edit; script **Restore saved
+version** reloads the whole font, replacing later unsaved edits and clearing Undo.
+Keep ends wrapper recovery without saving and preserves native Undo/Redo.
+`accept_job` verifies affected targets and saves the whole document when authorized.
+Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
@@ -47,7 +60,9 @@ The twelve tools are `get_status`, `list_documents`, `read_entities`,
 `respond_edit_workflow`. The shared MCP App supports preparation, saving and
 review where the host supports interactive Apps; every action also works in
 text. **Save and continue** saves existing work once and resumes the request.
-The resulting edit remains unsaved until separately authorized. See
+The resulting edit remains unsaved until separately authorized. Cards reuse
+matching Script details, and typed results show their intended change. Exact
+source stays optional; fresh server checks still guard actions. See
 [conversation edits](content/tutorial/conversation-edits.mdx).
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
@@ -91,3 +106,18 @@ Restore saved version reloads the whole baseline and replaces later unsaved edit
 Successful edit cards offer a 30-second countdown to Keep changes without
 saving, ending the workflow recovery offer. Typed Keep preserves native Undo/Redo. Say **“wait for my answer”** to disable it.
 See [script execution and recovery](skills/glyphs/references/python-scripts.md).
+
+Beta 8 development removes the native-script 4,096-surface ceiling while retaining
+the complete 4 MiB request budget. Large selectors use incremental read-only
+preparation, one saved baseline and one result workflow. Typed edit and read
+limits are unchanged. Qualification is tracked in [the milestone plan](BETA8-MILESTONES.md).
+
+### Local font checkpoints (Beta 8 candidate)
+
+The opt-in project setting records exact saved baselines and authorized MCP saves
+as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be
+retried without another Save. Bounded history, recorded actions, comparison and
+whole-font historical reload share the existing twelve tools and app project UI.
+See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
+See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
+installed editor/app checks, measured costs and remaining limits.

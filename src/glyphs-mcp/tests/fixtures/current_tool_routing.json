@@ -1,0 +1,257 @@
+[
+  {
+    "task": "Move explicit fractional nodes",
+    "tool": "start_edit_workflow",
+    "arguments": {
+      "document_id": "doc",
+      "kind": "outline_edit",
+      "idempotency_key": "outline-1",
+      "options": {
+        "targets": [
+          {
+            "glyph": "o",
+            "referenceLayer": "Regular",
+            "layers": {
+              "scope": "ids",
+              "ids": [
+                "Regular"
+              ]
+            },
+            "guards": [
+              {
+                "path": 0,
+                "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            ],
+            "operations": [
+              {
+                "op": "update_nodes",
+                "path": 0,
+                "updates": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "dx": 0.25,
+                      "dy": -0.5
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "routingTerms": [
+      "outline_edit",
+      "preview"
+    ]
+  },
+  {
+    "task": "Width task",
+    "tool": "start_edit_workflow",
+    "arguments": {
+      "document_id": "doc",
+      "kind": "width_delta",
+      "delta": 0.5,
+      "glyphs": [
+        "A"
+      ],
+      "idempotency_key": "width-1"
+    },
+    "routingTerms": [
+      "typed",
+      "Keep",
+      "saving"
+    ]
+  },
+  {
+    "task": "Preview a script without executing",
+    "tool": "start_edit_workflow",
+    "arguments": {
+      "document_id": "doc",
+      "kind": "python_script",
+      "idempotency_key": "script-1",
+      "mode": "preview",
+      "options": {
+        "source": "def run(layer, params, context):\n    pass",
+        "targets": {
+          "master": "Regular",
+          "glyphs": "all",
+          "surface": "background"
+        }
+      }
+    },
+    "routingTerms": [
+      "script.native.v1",
+      "previews wait",
+      "source",
+      "4 MiB"
+    ]
+  },
+  {
+    "task": "Inspect stored kerning",
+    "tool": "read_entities",
+    "arguments": {
+      "document_id": "doc",
+      "entities": [
+        {
+          "kind": "kerning",
+          "master": "Regular",
+          "direction": "LTR",
+          "left": "A",
+          "right": "V"
+        }
+      ],
+      "fields": [
+        "value"
+      ]
+    },
+    "routingTerms": [
+      "null means no entry",
+      "zero",
+      "LTR, RTL or vertical"
+    ]
+  },
+  {
+    "task": "Read background path nodes",
+    "tool": "read_entities",
+    "arguments": {
+      "document_id": "doc",
+      "entities": [
+        {
+          "kind": "path",
+          "glyph": "o",
+          "layer": "Regular",
+          "index": 0,
+          "surface": "background"
+        }
+      ],
+      "fields": [
+        "nodes"
+      ]
+    },
+    "routingTerms": [
+      "owning foreground",
+      "fields [nodes]",
+      "stale",
+      "cursor"
+    ]
+  },
+  {
+    "task": "Show optional script details",
+    "tool": "get_edit_workflow",
+    "arguments": {
+      "workflow_id": "workflow",
+      "include_review": true
+    },
+    "routingTerms": [
+      "include_review=true",
+      "fingerprint",
+      "never executes Python"
+    ]
+  },
+  {
+    "task": "Save an explicitly authorized font",
+    "tool": "save_document",
+    "arguments": {
+      "document_id": "doc"
+    },
+    "routingTerms": [
+      "whole",
+      "authorization",
+      "retry_checkpoint_job_id"
+    ]
+  },
+  {
+    "task": "Compile features externally",
+    "tool": "start_job",
+    "arguments": {
+      "document_id": "doc",
+      "kind": "feature_compile"
+    },
+    "routingTerms": [
+      "feature_compile",
+      "font_export",
+      "jobCapabilities"
+    ]
+  },
+  {
+    "task": "Restore a historical version",
+    "tool": "start_edit_workflow",
+    "arguments": {
+      "document_id": "doc",
+      "kind": "checkpoint_restore",
+      "idempotency_key": "restore-1",
+      "options": {
+        "revision": "0123456789012345678901234567890123456789"
+      }
+    },
+    "routingTerms": [
+      "checkpoint_restore",
+      "whole-font",
+      "fresh binding"
+    ]
+  },
+  {
+    "task": "Set exact fractional kerning without Python",
+    "tool": "start_edit_workflow",
+    "arguments": {
+      "document_id": "doc",
+      "kind": "kerning_edit",
+      "idempotency_key": "kern-1",
+      "options": {
+        "edits": [
+          {
+            "op": "set",
+            "master": "M1",
+            "direction": "LTR",
+            "left": {
+              "kind": "glyph",
+              "name": "A"
+            },
+            "right": {
+              "kind": "group",
+              "key": "@MMK_R_V"
+            },
+            "value": -72.5
+          }
+        ]
+      }
+    },
+    "routingTerms": [
+      "kerning.edit.exact.v1",
+      "kerning_edit",
+      "zero is stored",
+      "selective Undo"
+    ]
+  },
+  {
+    "task": "Inspect language proof pairs without mutation",
+    "tool": "read_entities",
+    "arguments": {
+      "document_id": "doc",
+      "entities": [
+        {
+          "kind": "kerning_proof",
+          "master": "M1",
+          "direction": "LTR",
+          "languages": [
+            "en",
+            "fr"
+          ],
+          "limit": 100
+        }
+      ],
+      "fields": [
+        "pairs"
+      ]
+    },
+    "routingTerms": [
+      "kerning.proof.v1",
+      "kerning_proof",
+      "pairs to inspect",
+      "ambiguous"
+    ]
+  }
+]

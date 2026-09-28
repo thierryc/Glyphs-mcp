@@ -1,0 +1,22 @@
+..........F                                                              [100%]
+=================================== FAILURES ===================================
+_________ test_preparation_and_application_agree_on_clearing_node_name _________
+
+    def test_preparation_and_application_agree_on_clearing_node_name():
+        from glyphs_mcp_protocol.preparation import outline
+        node=Node(1.25,2.5);node.name='named'
+        path=PathShape([node,Node(5,6)]);layer=NS(paths=[path],shapes=[path],selection=[])
+        outline._apply(layer,dict(op='update_nodes',path=0,updates=[dict(index=0,name=None)]))
+>       assert node.name is None
+E       AssertionError: assert '' is None
+E        +  where '' = <test_simple_v2_outline_edit.Node object at 0x109403240>.name
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:103: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge          10     1     0     1    0.03s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_preparation_and_application_agree_on_clearing_node_name
+1 failed, 10 passed in 0.12s

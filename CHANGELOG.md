@@ -1,10 +1,27 @@
 # Changelog
 
-## 2.0.0 Beta 8 — unreleased, build 50
+## 2.0.0 Beta 8 — release candidate, build 50
 
-- Advance development metadata after freezing Beta 7. The signed Beta 7
-  prerelease and update feed are published; its exact signed-update and
-  component-migration acceptance test remains open.
+- Remove the 4,096-surface native-script limit while retaining the complete
+  request byte budget, exact targeting and one recoverable workflow.
+- Prepare small width and glyph-color edits from their actual scope. Make
+  end-of-job cleanup incremental and polling depend on active work.
+- Reduce repeated connection discovery, details payloads and unchanged status
+  writes while preserving recovery and the existing Keep/Save controls.
+- Add opt-in local Git checkpoints on verified MCP saves, durable action
+  evidence, whole-font historical restoration, and a Git-enabled font template.
+- Integrate checkpoint history into the existing comparison workspace with a
+  compact date-grouped picker, readable titles, fixed comparison endpoints,
+  and separate Restore and Action details sheets.
+- Add exact typed kerning assignments/removals for glyph and group pairs in
+  LTR, RTL and vertical directions, preserving zero, fractional values and
+  selective recovery. Add bounded language-filtered proof pairs from a pinned
+  MIT-licensed dataset; proofing proposes no kerning values.
+- Consolidate current guidance and keep twelve public tools, eleven managed
+  skills and the Glyphs 4-only runtime. Glyphs 3 uses the separate v1 release.
+- Candidate qualification and remaining installed-editor/client and signed
+  update/migration gates are recorded in BETA8-VALIDATION.md. This candidate
+  has not been publicly released and does not change the published Beta 7 feed.
 
 ## 2.0.0 Beta 7 — 2026-09-27, build 49
 

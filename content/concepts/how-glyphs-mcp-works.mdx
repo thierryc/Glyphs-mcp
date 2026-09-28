@@ -51,8 +51,8 @@ the owner's state.
 ## Native editing remains central
 
 `accept_job` accepts the reviewed result by saving the entire document and
-returning path/hash evidence. Typed-job Undo and Redo use native per-glyph history before
-acceptance. Revert uses Glyphs' own saved-document workflow. The Reference
+returning path/hash evidence. Typed-job Undo and Redo use native per-glyph history and remain available
+after Keep or Save; guarded workflow recovery ends when the result is settled. Revert uses Glyphs' own saved-document workflow. The Reference
 Inspector compares against a selected source; it is not a log of tool calls or
 an acceptance interface.
 

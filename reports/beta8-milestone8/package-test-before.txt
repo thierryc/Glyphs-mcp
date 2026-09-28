@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_kerning_dataset_package_rejects_changed_license_or_pair_payload _____
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-186/test_kerning_dataset_package_r0')
+
+    def test_kerning_dataset_package_rejects_changed_license_or_pair_payload(tmp_path):
+        import shutil
+        root=ROOT/'src/protocol/glyphs_mcp_protocol/data/kerning-pairs'
+        copied=tmp_path/'kerning-pairs';shutil.copytree(root,copied)
+>       checker.check_kerning_data(copied)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'lean_package_check' has no attribute 'check_kerning_data'
+
+src/glyphs-mcp/tests/test_lean_package_check.py:23: AttributeError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Other regressions                        0     1     0     1    0.01s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_lean_package_check.py::test_kerning_dataset_package_rejects_changed_license_or_pair_payload
+1 failed, 6 deselected in 0.12s

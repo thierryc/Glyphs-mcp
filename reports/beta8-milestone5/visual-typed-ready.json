@@ -1,0 +1,191 @@
+{
+  "ok": true,
+  "data": {
+    "id": "edit_b9a24a74a1cb4203bb23337bf900e664",
+    "revision": 14,
+    "document": {
+      "id": "doc_c26e68634bb5439db81f0f36d5679205",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "dirty": true,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    },
+    "mode": "preview",
+    "state": "applied",
+    "jobId": "job_4d45f9c249a147a9b84690156e270408",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_4d45f9c249a147a9b84690156e270408",
+      "checkpointEnabled": false,
+      "status": "applied",
+      "summary": "Add 0.125 units to selected glyphs",
+      "resultKind": "mutation",
+      "changeCount": 9,
+      "sample": [
+        {
+          "after": 2054.095,
+          "before": 2053.97,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+        },
+        {
+          "after": 1070.135,
+          "before": 1070.01,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+        },
+        {
+          "after": 1594.145,
+          "before": 1594.02,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "926F7910-9E82-41CD-9117-571F75F96159"
+        },
+        {
+          "after": 1271.135,
+          "before": 1271.01,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+        },
+        {
+          "after": 1394.49771,
+          "before": 1394.37271,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+        },
+        {
+          "after": 1349.485,
+          "before": 1349.36,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+        },
+        {
+          "after": 1135.62,
+          "before": 1135.495,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+        },
+        {
+          "after": 1750.9,
+          "before": 1750.775,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+        },
+        {
+          "after": 1512.135,
+          "before": 1512.01,
+          "field": "width",
+          "glyph": "A",
+          "kind": "set",
+          "layer": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+        }
+      ],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": {
+        "jobId": "job_4d45f9c249a147a9b84690156e270408",
+        "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+        "documentAfter": null,
+        "status": "applied",
+        "completedChanges": 9,
+        "longestPreparationChunk": null,
+        "totalChanges": 9,
+        "error": null,
+        "nativeSave": null,
+        "scriptResult": null,
+        "receipt": null,
+        "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+      },
+      "activity": {
+        "jobId": "job_4d45f9c249a147a9b84690156e270408",
+        "document": "Dactylotype",
+        "kind": "width_delta",
+        "phase": "applied",
+        "startedAt": 1790602363.1282618,
+        "finishedAt": 1790602363.1282911,
+        "completed": 9,
+        "total": 9,
+        "message": null
+      },
+      "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "width_delta",
+      "glyphs": [
+        "A"
+      ],
+      "glyphCount": 1,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": "finish_edit"
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e",
+    "documentStateConfirmed": true,
+    "summary": "Add 0.125 units to selected glyphs",
+    "actions": [
+      {
+        "action": "finish_edit",
+        "label": "Keep changes without saving",
+        "token": "06598e75e23df796de8824f7ec246f7a39e91d9500f3b179f5111cccd6e746b6",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result",
+        "label": "Save font",
+        "token": "4e6e6184112b078e09a58dcfb7f57bf89b80be95a4b2c69356fbf8008daf4350",
+        "requiresDestination": false
+      },
+      {
+        "action": "save_result_as",
+        "label": "Save As\u2026",
+        "token": "6e01da9d53d6679cf33c9ebb64ff87fe4157ef84cae4d144f3468bba835eaeb1",
+        "requiresDestination": true
+      },
+      {
+        "action": "discard",
+        "label": "Undo these changes",
+        "token": "046845b280fb45c957e153e9b7ecee2fbffa6ee8387353fb48158a971831eb12",
+        "requiresDestination": false
+      },
+      {
+        "action": "wait_for_answer",
+        "label": "Wait for my answer",
+        "token": "70a3305e2c52ac6824e773a26bad5d21a71e915bd9ee0aa7b0abca15e134edfb",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Changes applied.\nKeep ends this workflow\u2019s selective Undo offer without saving. Glyphs\u2019 native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.",
+    "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nChanges applied.\nKeep ends this workflow\u2019s selective Undo offer without saving. Glyphs\u2019 native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nIntended change: Add 0.125 units to selected glyphs\nOperation: width delta; glyphs: A\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As\u2026; Undo these changes; Wait for my answer. You can reply in ordinary language.\nIn an active card, Keep changes without saving is selected after 30 seconds. This ends this workflow\u2019s recovery offer. Choose or say \u201cWait for my answer\u201d to disable it. Text-only clients keep this choice manual.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_b9a24a74a1cb4203bb23337bf900e664\",\"expected_revision\":14,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:e3c9a12af5128d058b4bcee4bd6cd0da2e2862ed926c830ae57b8949e47de53e\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":\"finish_edit\"},\"actions\":[{\"action\":\"finish_edit\",\"label\":\"Keep changes without saving\",\"action_token\":\"06598e75e23df796de8824f7ec246f7a39e91d9500f3b179f5111cccd6e746b6\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"4e6e6184112b078e09a58dcfb7f57bf89b80be95a4b2c69356fbf8008daf4350\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As\u2026\",\"action_token\":\"6e01da9d53d6679cf33c9ebb64ff87fe4157ef84cae4d144f3468bba835eaeb1\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"046845b280fb45c957e153e9b7ecee2fbffa6ee8387353fb48158a971831eb12\",\"requiresDestination\":false},{\"action\":\"wait_for_answer\",\"label\":\"Wait for my answer\",\"action_token\":\"70a3305e2c52ac6824e773a26bad5d21a71e915bd9ee0aa7b0abca15e134edfb\",\"requiresDestination\":false}]}"
+  }
+}

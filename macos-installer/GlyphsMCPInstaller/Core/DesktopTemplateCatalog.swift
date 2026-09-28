@@ -19,7 +19,7 @@ public struct DesktopTemplateEntry: Identifiable {
     public var source: String {
         switch choice {
         case .starter: return "Built-in"
-        case .registry: return "GitHub"
+        case .registry: return template?.isBundled == true ? "Built-in" : "GitHub"
         case .local: return "Local"
         }
     }

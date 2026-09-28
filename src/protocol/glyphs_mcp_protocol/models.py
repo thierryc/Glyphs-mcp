@@ -150,13 +150,16 @@ def _translate_change(value: Mapping[str, Any]) -> dict[str, Any]:
 
 def _kerning_change(value: Mapping[str, Any]) -> dict[str, Any]:
     fields = {"kind", "master", "direction", "left", "right", "before", "after"}
-    if set(value) != fields or value.get("direction") not in ("LTR", "RTL", "vertical"):
+    if set(value) - {'targetGuard'} != fields or value.get("direction") not in ("LTR", "RTL", "vertical"):
         raise ProtocolError("invalid_request", "kerning requires exact keys, master, direction and values")
     result = {"kind": "kerning", **{key: _text(value[key], "kerning " + key) for key in ("master", "direction", "left", "right")}}
     for key in ("before", "after"):
         result[key] = None if value[key] is None else _number(value[key], "kerning " + key)
     if result["before"] == result["after"]:
         raise ProtocolError("invalid_request", "kerning change has no effect")
+    if 'targetGuard' in value:
+        from .kerning_edits import validate_guard
+        result['targetGuard'] = validate_guard(value['targetGuard'])
     return result
 
 

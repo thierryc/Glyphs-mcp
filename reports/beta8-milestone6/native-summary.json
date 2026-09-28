@@ -1,0 +1,213 @@
+{
+  "methodology": "Five fresh glyphs-cli processes per format and policy (20 total); native GSFont writer in the standalone harness, not editor NSDocument saving. On/off use the same candidate, not a v1 or pre-change revision comparison. Shared machine; other qualification work ran concurrently.",
+  "groups": {
+    "glyphs-off": {
+      "nativeSaveSeconds": {
+        "median": 0.015791459009051323,
+        "min": 0.014311541977804154,
+        "max": 0.01609583300887607
+      },
+      "checkpointAfterSaveSeconds": {
+        "median": 0.0001694579841569066,
+        "min": 0.0001530410081613809,
+        "max": 0.00020500001846812665
+      },
+      "preparationSeconds": {
+        "median": 0.06237649999093264,
+        "min": 0.0606951669906266,
+        "max": 0.07633437498589046
+      },
+      "applicationAndBaselineSeconds": {
+        "median": 0.2344908750092145,
+        "min": 0.22828154198941775,
+        "max": 0.24089975000242703
+      },
+      "saveVerificationCheckpointPollingSeconds": {
+        "median": 0.25707070899079554,
+        "min": 0.2541123329719994,
+        "max": 0.26034341598278843
+      },
+      "verificationSeconds": {
+        "median": 0.0021062079758848995,
+        "min": 0.0017560409905854613,
+        "max": 0.002463582990458235
+      },
+      "historicalRestorationSeconds": {
+        "median": 0.5741664170054719,
+        "min": 0.5641755000106059,
+        "max": 0.6031874589971267
+      },
+      "setupSeconds": {
+        "median": 0.5153841669962276,
+        "min": 0.46105045900912955,
+        "max": 0.6054589580162428
+      },
+      "longestMeasuredMainThreadSeconds": {
+        "median": 0.04658595900400542,
+        "min": 0.042924416018649936,
+        "max": 0.049125874997116625
+      },
+      "peakProcessRSSBytes": {
+        "median": 243826688,
+        "min": 241942528,
+        "max": 245940224
+      }
+    },
+    "glyphs-on": {
+      "nativeSaveSeconds": {
+        "median": 0.019437249982729554,
+        "min": 0.015031583985546604,
+        "max": 0.043791540985694155
+      },
+      "checkpointAfterSaveSeconds": {
+        "median": 2.3725909579952713,
+        "min": 2.0249244580045342,
+        "max": 2.5987867500225548
+      },
+      "preparationSeconds": {
+        "median": 0.07052808400476351,
+        "min": 0.05909608298679814,
+        "max": 0.11070587497670203
+      },
+      "applicationAndBaselineSeconds": {
+        "median": 1.288246749987593,
+        "min": 1.0525857089960482,
+        "max": 1.7054270829830784
+      },
+      "saveVerificationCheckpointPollingSeconds": {
+        "median": 2.6296353329962585,
+        "min": 2.282600000005914,
+        "max": 2.8847870829922613
+      },
+      "verificationSeconds": {
+        "median": 0.002204749995144084,
+        "min": 0.0017645830230321735,
+        "max": 0.0035354169958736748
+      },
+      "historicalRestorationSeconds": {
+        "median": 1.8620700830069836,
+        "min": 1.5866472079942469,
+        "max": 2.158942042005947
+      },
+      "setupSeconds": {
+        "median": 0.7945544590183999,
+        "min": 0.5771497079986148,
+        "max": 0.9550294170039706
+      },
+      "longestMeasuredMainThreadSeconds": {
+        "median": 0.05625712501932867,
+        "min": 0.051158832997316495,
+        "max": 0.10836087501957081
+      },
+      "peakProcessRSSBytes": {
+        "median": 221560832,
+        "min": 210419712,
+        "max": 243056640
+      }
+    },
+    "glyphspackage-off": {
+      "nativeSaveSeconds": {
+        "median": 0.11072425000020303,
+        "min": 0.0894367920118384,
+        "max": 0.15001691700308584
+      },
+      "checkpointAfterSaveSeconds": {
+        "median": 0.00018845900194719434,
+        "min": 0.0001635839871596545,
+        "max": 0.00021866601309739053
+      },
+      "preparationSeconds": {
+        "median": 0.09945254202466458,
+        "min": 0.08438549999846146,
+        "max": 0.12640154201653786
+      },
+      "applicationAndBaselineSeconds": {
+        "median": 0.20213983400026336,
+        "min": 0.1779922920104582,
+        "max": 0.20869141700677574
+      },
+      "saveVerificationCheckpointPollingSeconds": {
+        "median": 0.3291552910231985,
+        "min": 0.3162956669984851,
+        "max": 0.3314498330000788
+      },
+      "verificationSeconds": {
+        "median": 0.033170375012559816,
+        "min": 0.029233250010292977,
+        "max": 0.04096020801807754
+      },
+      "historicalRestorationSeconds": {
+        "median": 1.0087323339830618,
+        "min": 0.8813138330006041,
+        "max": 1.1000066659762524
+      },
+      "setupSeconds": {
+        "median": 1.4060122910013888,
+        "min": 1.1733482090057805,
+        "max": 1.6568474170053378
+      },
+      "longestMeasuredMainThreadSeconds": {
+        "median": 0.15239208299317397,
+        "min": 0.13822224998148158,
+        "max": 0.2588291249994654
+      },
+      "peakProcessRSSBytes": {
+        "median": 241221632,
+        "min": 211337216,
+        "max": 243335168
+      }
+    },
+    "glyphspackage-on": {
+      "nativeSaveSeconds": {
+        "median": 0.08541279099881649,
+        "min": 0.07250416700844653,
+        "max": 0.14877154197893105
+      },
+      "checkpointAfterSaveSeconds": {
+        "median": 2.2483481249946635,
+        "min": 1.78999799999292,
+        "max": 2.478246374987066
+      },
+      "preparationSeconds": {
+        "median": 0.10021004101145081,
+        "min": 0.08174720898387022,
+        "max": 0.32886533299461007
+      },
+      "applicationAndBaselineSeconds": {
+        "median": 1.4527222920150962,
+        "min": 1.0737057499936782,
+        "max": 1.6018703749869019
+      },
+      "saveVerificationCheckpointPollingSeconds": {
+        "median": 2.565480125020258,
+        "min": 2.1009593329799827,
+        "max": 2.78794041700894
+      },
+      "verificationSeconds": {
+        "median": 0.02995945801376365,
+        "min": 0.023597208026330918,
+        "max": 0.03739779198076576
+      },
+      "historicalRestorationSeconds": {
+        "median": 1.7015237500017975,
+        "min": 1.5596229170041624,
+        "max": 2.2560310839908198
+      },
+      "setupSeconds": {
+        "median": 1.2596015419985633,
+        "min": 0.9589871659991331,
+        "max": 1.3940214589820243
+      },
+      "longestMeasuredMainThreadSeconds": {
+        "median": 0.13250208302633837,
+        "min": 0.1265555830032099,
+        "max": 0.15084175000083633
+      },
+      "peakProcessRSSBytes": {
+        "median": 242794496,
+        "min": 240746496,
+        "max": 243089408
+      }
+    }
+  }
+}

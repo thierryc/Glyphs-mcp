@@ -1,0 +1,41 @@
+{
+  "data": {
+    "format": "glyphs",
+    "cases": [
+      {
+        "outcome": "success",
+        "passed": true,
+        "forwardWrites": 126,
+        "settingsRestored": true,
+        "untouchedControl": true,
+        "nativeUndoRedo": true,
+        "selectiveRecovery": true
+      },
+      {
+        "outcome": "cancel",
+        "passed": true,
+        "forwardWrites": 50,
+        "settingsRestored": true,
+        "untouchedControl": true,
+        "nativeUndoRedo": false,
+        "selectiveRecovery": false
+      },
+      {
+        "outcome": "conflict",
+        "passed": true,
+        "forwardWrites": 93,
+        "settingsRestored": true,
+        "untouchedControl": true,
+        "nativeUndoRedo": false,
+        "selectiveRecovery": false
+      }
+    ],
+    "longestScheduledChunkSeconds": 0.010185541992541403
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

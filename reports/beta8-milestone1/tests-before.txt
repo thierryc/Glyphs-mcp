@@ -1,0 +1,479 @@
+.FFF.FFF.FFFFFFFFFFF.......F...........................F                 [100%]
+=================================== FAILURES ===================================
+___________ test_large_selectors_cover_every_surface[explicit-4097] ____________
+
+count = 4097, selector = 'explicit'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+>       options = scripts.validate_options(opts(font, selector))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:63:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:102: in validate_options
+    selected = targets(selected)
+               ^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/scripts.py:52: in targets
+    fail('script targets must contain at most 4,096 surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets must contain at most 4,096 surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets must contain at most 4,096 surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+___________ test_large_selectors_cover_every_surface[explicit-10000] ___________
+
+count = 10000, selector = 'explicit'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+>       options = scripts.validate_options(opts(font, selector))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:63:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:102: in validate_options
+    selected = targets(selected)
+               ^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/scripts.py:52: in targets
+    fail('script targets must contain at most 4,096 surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets must contain at most 4,096 surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets must contain at most 4,096 surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+___________ test_large_selectors_cover_every_surface[explicit-20000] ___________
+
+count = 20000, selector = 'explicit'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+>       options = scripts.validate_options(opts(font, selector))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:63:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:102: in validate_options
+    selected = targets(selected)
+               ^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/scripts.py:52: in targets
+    fail('script targets must contain at most 4,096 surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets must contain at most 4,096 surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets must contain at most 4,096 surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+_____________ test_large_selectors_cover_every_surface[names-4097] _____________
+
+count = 4097, selector = 'names'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+>       options = scripts.validate_options(opts(font, selector))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:63:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:98: in validate_options
+    fail('bulk glyphs must be all or 1-4,096 names')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'bulk glyphs must be all or 1-4,096 names'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: bulk glyphs must be all or 1-4,096 names
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+____________ test_large_selectors_cover_every_surface[names-10000] _____________
+
+count = 10000, selector = 'names'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+>       options = scripts.validate_options(opts(font, selector))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:63:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:98: in validate_options
+    fail('bulk glyphs must be all or 1-4,096 names')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'bulk glyphs must be all or 1-4,096 names'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: bulk glyphs must be all or 1-4,096 names
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+____________ test_large_selectors_cover_every_surface[names-20000] _____________
+
+count = 20000, selector = 'names'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+>       options = scripts.validate_options(opts(font, selector))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:63:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:98: in validate_options
+    fail('bulk glyphs must be all or 1-4,096 names')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'bulk glyphs must be all or 1-4,096 names'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: bulk glyphs must be all or 1-4,096 names
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+______________ test_large_selectors_cover_every_surface[all-4097] ______________
+
+count = 4097, selector = 'all'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+        options = scripts.validate_options(opts(font, selector))
+>       selected, skipped = script_targets.resolve(font, options['targets'])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:64:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/script_targets.py:59: in resolve
+    scripts.fail('script targets resolve to more than 4,096 eligible surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets resolve to more than 4,096 eligible surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets resolve to more than 4,096 eligible surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+_____________ test_large_selectors_cover_every_surface[all-10000] ______________
+
+count = 10000, selector = 'all'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+        options = scripts.validate_options(opts(font, selector))
+>       selected, skipped = script_targets.resolve(font, options['targets'])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:64:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/script_targets.py:59: in resolve
+    scripts.fail('script targets resolve to more than 4,096 eligible surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets resolve to more than 4,096 eligible surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets resolve to more than 4,096 eligible surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+_____________ test_large_selectors_cover_every_surface[all-20000] ______________
+
+count = 20000, selector = 'all'
+
+    @pytest.mark.parametrize('count', [4096, 4097, 10000, 20000])
+    @pytest.mark.parametrize('selector', ['explicit', 'names', 'all'])
+    def test_large_selectors_cover_every_surface(count, selector):
+        font = font_fixture(count)
+        options = scripts.validate_options(opts(font, selector))
+>       selected, skipped = script_targets.resolve(font, options['targets'])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:64:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/script_targets.py:59: in resolve
+    scripts.fail('script targets resolve to more than 4,096 eligible surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets resolve to more than 4,096 eligible surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets resolve to more than 4,096 eligible surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+_______________ test_resolution_never_uses_lazy_layer_iteration ________________
+
+    def test_resolution_never_uses_lazy_layer_iteration():
+        font = font_fixture(10, missing=2, stored_only=True)
+>       selected, skipped = script_targets.resolve(font, opts(font)['targets'])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:71:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/script_targets.py:41: in resolve
+    owner = next((l for l in glyph.layers if str(l.layerId) == item['layer']), None)
+                             ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_script_capacity.font_fixture.<locals>.Glyph object at 0x10add81a0>
+
+    @property
+    def layers(self):
+>       if stored_only: raise AssertionError('lazy layer iterator used')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: lazy layer iterator used
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:32: AssertionError
+___________ test_review_is_chunked_read_only_idempotent_and_compact ____________
+
+    def test_review_is_chunked_read_only_idempotent_and_compact():
+        font = font_fixture(120, missing=50, stored_only=True)
+        core, queue, state = core_fixture(font)
+        r = request(opts(font))
+>       result = saved_script.review(core, r, BridgeError)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:81:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+core = <glyphs_mcp_bridge.core.BridgeCore object at 0x10b2f6120>
+request = {'documentId': 'doc', 'generation': 1, 'jobId': 'capacity', 'options': {'source': 'raise AssertionError("preparation executed Python")', 'targets': {'glyphs': 'all', 'master': 'M', 'surface': 'background'}}, ...}
+error = <class 'glyphs_mcp_bridge.core.BridgeError'>
+
+    def review(core, request, error):
+        if not isinstance(request, dict) or set(request) != {'documentId', 'generation', 'sourcePath', 'options'}:
+>           raise error('invalid_request', 'invalid native script review')
+E           glyphs_mcp_bridge.core.BridgeError: invalid native script review
+
+src/bridge/glyphs_mcp_bridge/saved_script.py:18: BridgeError
+__________ test_preparation_can_stop_without_module_execution[cancel] __________
+
+change = 'cancel'
+
+    @pytest.mark.parametrize('change', ['cancel', 'generation', 'closed'])
+    def test_preparation_can_stop_without_module_execution(change):
+        core, queue, state = core_fixture(font_fixture(100))
+        r = request(opts(core.adapter._font('doc')))
+>       saved_script.review(core, r, BridgeError)
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+core = <glyphs_mcp_bridge.core.BridgeCore object at 0x10b3b6490>
+request = {'documentId': 'doc', 'generation': 1, 'jobId': 'capacity', 'options': {'source': 'raise AssertionError("preparation executed Python")', 'targets': {'glyphs': 'all', 'master': 'M', 'surface': 'background'}}, ...}
+error = <class 'glyphs_mcp_bridge.core.BridgeError'>
+
+    def review(core, request, error):
+        if not isinstance(request, dict) or set(request) != {'documentId', 'generation', 'sourcePath', 'options'}:
+>           raise error('invalid_request', 'invalid native script review')
+E           glyphs_mcp_bridge.core.BridgeError: invalid native script review
+
+src/bridge/glyphs_mcp_bridge/saved_script.py:18: BridgeError
+________ test_preparation_can_stop_without_module_execution[generation] ________
+
+change = 'generation'
+
+    @pytest.mark.parametrize('change', ['cancel', 'generation', 'closed'])
+    def test_preparation_can_stop_without_module_execution(change):
+        core, queue, state = core_fixture(font_fixture(100))
+        r = request(opts(core.adapter._font('doc')))
+>       saved_script.review(core, r, BridgeError)
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+core = <glyphs_mcp_bridge.core.BridgeCore object at 0x10b3b6ad0>
+request = {'documentId': 'doc', 'generation': 1, 'jobId': 'capacity', 'options': {'source': 'raise AssertionError("preparation executed Python")', 'targets': {'glyphs': 'all', 'master': 'M', 'surface': 'background'}}, ...}
+error = <class 'glyphs_mcp_bridge.core.BridgeError'>
+
+    def review(core, request, error):
+        if not isinstance(request, dict) or set(request) != {'documentId', 'generation', 'sourcePath', 'options'}:
+>           raise error('invalid_request', 'invalid native script review')
+E           glyphs_mcp_bridge.core.BridgeError: invalid native script review
+
+src/bridge/glyphs_mcp_bridge/saved_script.py:18: BridgeError
+__________ test_preparation_can_stop_without_module_execution[closed] __________
+
+change = 'closed'
+
+    @pytest.mark.parametrize('change', ['cancel', 'generation', 'closed'])
+    def test_preparation_can_stop_without_module_execution(change):
+        core, queue, state = core_fixture(font_fixture(100))
+        r = request(opts(core.adapter._font('doc')))
+>       saved_script.review(core, r, BridgeError)
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+core = <glyphs_mcp_bridge.core.BridgeCore object at 0x10b3de060>
+request = {'documentId': 'doc', 'generation': 1, 'jobId': 'capacity', 'options': {'source': 'raise AssertionError("preparation executed Python")', 'targets': {'glyphs': 'all', 'master': 'M', 'surface': 'background'}}, ...}
+error = <class 'glyphs_mcp_bridge.core.BridgeError'>
+
+    def review(core, request, error):
+        if not isinstance(request, dict) or set(request) != {'documentId', 'generation', 'sourcePath', 'options'}:
+>           raise error('invalid_request', 'invalid native script review')
+E           glyphs_mcp_bridge.core.BridgeError: invalid native script review
+
+src/bridge/glyphs_mcp_bridge/saved_script.py:18: BridgeError
+______ test_large_manifest_rejected_during_review_with_bounded_retention _______
+
+    def test_large_manifest_rejected_during_review_with_bounded_retention():
+        font = font_fixture(20000, name=lambda i: ('字' * 240)+str(i))
+        core, queue, _ = core_fixture(font)
+        r = request(opts(font))
+>       saved_script.review(core, r, BridgeError)
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:117:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+core = <glyphs_mcp_bridge.core.BridgeCore object at 0x10b2cbce0>
+request = {'documentId': 'doc', 'generation': 1, 'jobId': 'capacity', 'options': {'source': 'raise AssertionError("preparation executed Python")', 'targets': {'glyphs': 'all', 'master': 'M', 'surface': 'background'}}, ...}
+error = <class 'glyphs_mcp_bridge.core.BridgeError'>
+
+    def review(core, request, error):
+        if not isinstance(request, dict) or set(request) != {'documentId', 'generation', 'sourcePath', 'options'}:
+>           raise error('invalid_request', 'invalid native script review')
+E           glyphs_mcp_bridge.core.BridgeError: invalid native script review
+
+src/bridge/glyphs_mcp_bridge/saved_script.py:18: BridgeError
+_____________ test_oversized_complete_request_never_saves_or_runs ______________
+
+env = (<glyphs_mcp_sidecar.service.SidecarService object at 0x10b4881a0>, <test_simple_v2_edit_workflow.Bridge object at 0x1...folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-98/test_oversized_complete_reques0/Test.glyphs'))
+
+    def test_oversized_complete_request_never_saves_or_runs(env):
+        service, bridge, _ = env
+        bridge.adapter.dirty = True
+        value = wait(service, start(service), 'waiting_run')
+        report = service.jobs.read_json(value['jobId'], 'report.json')
+        report['manifest'] = [dict(glyph='字'*250+str(i), layer='M', surface='foreground') for i in range(6000)]
+        service.jobs.write_json(value['jobId'], 'report.json', report)
+        value = choose(service, value, 'save_run_script')
+>       assert value['error']['code'] == 'request_too_large'
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:132: TypeError
+__________ test_byte_boundary_uses_the_complete_actual_utf8_envelope ___________
+
+    def test_byte_boundary_uses_the_complete_actual_utf8_envelope():
+        options = dict(source='#字\\\"\n' * 20, params={'note':'é'}, entrypoint='script', targets=[])
+        r = dict(request(options), manifest=[])
+        # The boundary includes the outer script wrapper and JSON escaping.
+        actual = lambda: json.dumps({'script':r}, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+        r['sourcePath'] += 'x' * (LIMIT - len(actual()))
+        assert len(actual()) == LIMIT
+>       assert scripts.check_request(r) == LIMIT
+               ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'glyphs_mcp_protocol.scripts' has no attribute 'check_request'
+
+src/glyphs-mcp/tests/test_simple_v2_script_capacity.py:143: AttributeError
+________________ test_deduplicate_and_reject_overlapping_scope _________________
+
+    def test_deduplicate_and_reject_overlapping_scope():
+        t=dict(glyph='A',layer='M1')
+        assert len(scripts.targets([t,t]))==1
+        with pytest.raises(ProtocolError): scripts.targets([t,dict(t,surface='background')])
+>       assert len(scripts.targets([t]*4097))==1
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_python_scripts.py:46:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/scripts.py:52: in targets
+    fail('script targets must contain at most 4,096 surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets must contain at most 4,096 surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets must contain at most 4,096 surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+_______ test_bulk_limit_counts_eligible_surfaces_and_bounds_skips[4097] ________
+
+eligible = 4097
+
+    @pytest.mark.parametrize('eligible',[1,4096,4097])
+    def test_bulk_limit_counts_eligible_surfaces_and_bounds_skips(eligible):
+        from glyphs_mcp_protocol.script_targets import resolve
+        class Glyphs(dict):
+            def __iter__(self):return iter(self.values())
+        class EmptyOwner:
+            layerId='M1';hasBackground=False
+            @property
+            def background(self):raise AssertionError('created missing background')
+        glyphs=Glyphs()
+        for i in range(5000):
+            layer=SimpleNamespace(layerId='M1',hasBackground=True,background=SimpleNamespace(shapes=[object()])) if i<eligible else EmptyOwner()
+            glyphs[str(i)]=SimpleNamespace(name=str(i),layers=[layer])
+        font=SimpleNamespace(glyphs=glyphs,masters=[SimpleNamespace(id='M1')])
+        spec=dict(master='M1',glyphs='all',surface='background')
+>       selected,skipped=resolve(font,spec)
+                         ^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_python_scripts.py:292:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/script_targets.py:59: in resolve
+    scripts.fail('script targets resolve to more than 4,096 eligible surfaces')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+message = 'script targets resolve to more than 4,096 eligible surfaces'
+
+    def fail(message):
+>       raise ProtocolError('invalid_request', message)
+E       glyphs_mcp_protocol.models.ProtocolError: script targets resolve to more than 4,096 eligible surfaces
+
+src/protocol/glyphs_mcp_protocol/scripts.py:22: ProtocolError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge          37    19     0     2    1.36s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[explicit-4097]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[explicit-10000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[explicit-20000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[names-4097]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[names-10000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[names-20000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[all-4097]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[all-10000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_selectors_cover_every_surface[all-20000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_resolution_never_uses_lazy_layer_iteration
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_review_is_chunked_read_only_idempotent_and_compact
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_preparation_can_stop_without_module_execution[cancel]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_preparation_can_stop_without_module_execution[generation]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_preparation_can_stop_without_module_execution[closed]
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_large_manifest_rejected_during_review_with_bounded_retention
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_oversized_complete_request_never_saves_or_runs
+FAILED src/glyphs-mcp/tests/test_simple_v2_script_capacity.py::test_byte_boundary_uses_the_complete_actual_utf8_envelope
+FAILED src/glyphs-mcp/tests/test_simple_v2_python_scripts.py::test_deduplicate_and_reject_overlapping_scope
+FAILED src/glyphs-mcp/tests/test_simple_v2_python_scripts.py::test_bulk_limit_counts_eligible_surfaces_and_bounds_skips[4097]
+19 failed, 37 passed in 1.60s

@@ -1,0 +1,24 @@
+{
+  "history": 100,
+  "active": true,
+  "root": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2",
+  "activityPolls": 20,
+  "activityMedianSeconds": 0.00013424947974272072,
+  "activityRangeSeconds": [
+    0.0001250829955097288,
+    0.0003023750032298267
+  ],
+  "activityCpuSeconds": 0.003017999999999993,
+  "activityCounts": {
+    "reads": 40,
+    "writes": 0,
+    "copiedRecords": 120,
+    "supervised": 0
+  },
+  "supervisorTicks": 100,
+  "supervisorCpuSeconds": 7.999999999999674e-05,
+  "supervisorWallSeconds": 8.829199941828847e-05,
+  "supervisorAdvances": 100,
+  "peakMemoryBytes": 36388864,
+  "methodology": "Synthetic persisted jobs/workflows, fresh process, hot polls; CPU work excludes timer sleeping. macOS ru_maxrss includes history seeding/startup."
+}

@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_failed_presentation_reconciles_an_already_accepted_job_without_saving_again _
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x1078c97f0>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-163/test_failed_presentation_recon0/Test.glyphs'))
+
+    def test_failed_presentation_reconciles_an_already_accepted_job_without_saving_again(project):
+        service,bridge,_,_=project
+        value=wait(service,start(project),'applied')
+        before=service.jobs.get(value['jobId'])
+        value=wait(service,choose(service,value,'save_result'),'saved')
+        stored=service.edit_workflows.store.records[value['id']]
+        service.edit_workflows.store.update(stored,state='failed',job={**before,'status':'accepting'},receipt=None,
+            error={'code':'bridge_failed','message':'Historical artifact cleanup raced another result read'})
+        result=service.edit_workflows.get(value['id'])
+>       assert result['state']=='saved' and result['receipt']['checkpoint']['revision']==value['receipt']['checkpoint']['revision']
+E       AssertionError: assert ('failed' == 'saved'
+E
+E         - saved
+E         + failed)
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:188: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    3.16s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_failed_presentation_reconciles_an_already_accepted_job_without_saving_again
+1 failed, 12 deselected in 3.28s

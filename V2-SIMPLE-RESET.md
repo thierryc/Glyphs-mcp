@@ -1,5 +1,10 @@
 # Glyphs MCP v2 — Simple Reset
 
+> Historical reset decision and implementation record. Tool counts, no-Python
+> boundaries and source-line budgets below describe earlier stages, not current
+> requirements. Use [Beta 8 milestones](BETA8-MILESTONES.md) and the
+> [current tool contract](content/reference/command-set.mdx).
+
 ## Decision
 
 The current v2 is a research prototype, not the base of the next release.

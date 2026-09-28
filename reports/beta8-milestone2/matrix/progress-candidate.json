@@ -1,0 +1,352 @@
+[
+  {
+    "case": "candidate-color-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 3.2772352910251357
+  },
+  {
+    "case": "candidate-color-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 2.934301166998921
+  },
+  {
+    "case": "candidate-color-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 2.925110207987018
+  },
+  {
+    "case": "candidate-color-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 3.1057886659982614
+  },
+  {
+    "case": "candidate-color-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 2.984637333021965
+  },
+  {
+    "case": "candidate-color-10-glyphs-1",
+    "passed": true,
+    "processSeconds": 6.58601387499948
+  },
+  {
+    "case": "candidate-color-10-glyphs-2",
+    "passed": true,
+    "processSeconds": 6.632045625010505
+  },
+  {
+    "case": "candidate-color-10-glyphs-3",
+    "passed": true,
+    "processSeconds": 7.029371207987424
+  },
+  {
+    "case": "candidate-color-10-glyphs-4",
+    "passed": true,
+    "processSeconds": 6.640744125004858
+  },
+  {
+    "case": "candidate-color-10-glyphs-5",
+    "passed": true,
+    "processSeconds": 6.615121584007284
+  },
+  {
+    "case": "candidate-color-100-glyphs-1",
+    "passed": true,
+    "processSeconds": 43.63248862500768
+  },
+  {
+    "case": "candidate-color-100-glyphs-2",
+    "passed": true,
+    "processSeconds": 43.08513058300014
+  },
+  {
+    "case": "candidate-color-100-glyphs-3",
+    "passed": true,
+    "processSeconds": 43.79820670798654
+  },
+  {
+    "case": "candidate-color-100-glyphs-4",
+    "passed": true,
+    "processSeconds": 43.0836522919999
+  },
+  {
+    "case": "candidate-color-100-glyphs-5",
+    "passed": true,
+    "processSeconds": 43.3346165829862
+  },
+  {
+    "case": "candidate-color-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 3.445444042008603
+  },
+  {
+    "case": "candidate-color-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 3.151323666999815
+  },
+  {
+    "case": "candidate-color-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 3.174455250002211
+  },
+  {
+    "case": "candidate-color-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 3.1747993339959066
+  },
+  {
+    "case": "candidate-color-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 3.158123583998531
+  },
+  {
+    "case": "candidate-color-10-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 7.080100291990675
+  },
+  {
+    "case": "candidate-color-10-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 6.801154332992155
+  },
+  {
+    "case": "candidate-color-10-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 6.7449645409942605
+  },
+  {
+    "case": "candidate-color-10-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 6.7888822089880705
+  },
+  {
+    "case": "candidate-color-10-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 6.686789708997821
+  },
+  {
+    "case": "candidate-color-100-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 42.64712504198542
+  },
+  {
+    "case": "candidate-color-100-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 41.99774008302484
+  },
+  {
+    "case": "candidate-color-100-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 42.754420374985784
+  },
+  {
+    "case": "candidate-color-100-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 42.761001334001776
+  },
+  {
+    "case": "candidate-color-100-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 42.62495458399644
+  },
+  {
+    "case": "candidate-width-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 8.674155625019921
+  },
+  {
+    "case": "candidate-width-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 8.967926916986471
+  },
+  {
+    "case": "candidate-width-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 8.672783459012862
+  },
+  {
+    "case": "candidate-width-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 8.697329625021666
+  },
+  {
+    "case": "candidate-width-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 8.70770379100577
+  },
+  {
+    "case": "candidate-width-100-glyphs-1",
+    "passed": true,
+    "processSeconds": 9.206228833005298
+  },
+  {
+    "case": "candidate-width-100-glyphs-2",
+    "passed": true,
+    "processSeconds": 8.994694666995201
+  },
+  {
+    "case": "candidate-width-100-glyphs-3",
+    "passed": true,
+    "processSeconds": 9.031225334008923
+  },
+  {
+    "case": "candidate-width-100-glyphs-4",
+    "passed": true,
+    "processSeconds": 9.004859583015786
+  },
+  {
+    "case": "candidate-width-100-glyphs-5",
+    "passed": true,
+    "processSeconds": 9.002425375016173
+  },
+  {
+    "case": "candidate-width-1000-glyphs-1",
+    "passed": true,
+    "processSeconds": 10.213014125009067
+  },
+  {
+    "case": "candidate-width-1000-glyphs-2",
+    "passed": true,
+    "processSeconds": 10.318382875004318
+  },
+  {
+    "case": "candidate-width-1000-glyphs-3",
+    "passed": true,
+    "processSeconds": 10.290930624993052
+  },
+  {
+    "case": "candidate-width-1000-glyphs-4",
+    "passed": true,
+    "processSeconds": 10.31343687500339
+  },
+  {
+    "case": "candidate-width-1000-glyphs-5",
+    "passed": true,
+    "processSeconds": 10.276142207992962
+  },
+  {
+    "case": "candidate-width-4096-glyphs-1",
+    "passed": true,
+    "processSeconds": 15.119873249990633
+  },
+  {
+    "case": "candidate-width-4096-glyphs-2",
+    "passed": true,
+    "processSeconds": 15.238456749997567
+  },
+  {
+    "case": "candidate-width-4096-glyphs-3",
+    "passed": true,
+    "processSeconds": 15.130560417019296
+  },
+  {
+    "case": "candidate-width-4096-glyphs-4",
+    "passed": true,
+    "processSeconds": 15.112721250014147
+  },
+  {
+    "case": "candidate-width-4096-glyphs-5",
+    "passed": true,
+    "processSeconds": 15.238551791000646
+  },
+  {
+    "case": "candidate-width-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 11.35942912500468
+  },
+  {
+    "case": "candidate-width-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 11.69802641600836
+  },
+  {
+    "case": "candidate-width-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 11.67536162500619
+  },
+  {
+    "case": "candidate-width-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 11.237029832991539
+  },
+  {
+    "case": "candidate-width-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 11.279649000003701
+  },
+  {
+    "case": "candidate-width-100-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 12.202407875010977
+  },
+  {
+    "case": "candidate-width-100-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 11.691464333998738
+  },
+  {
+    "case": "candidate-width-100-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 11.566440458002035
+  },
+  {
+    "case": "candidate-width-100-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 11.340056916000322
+  },
+  {
+    "case": "candidate-width-100-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 11.271269791002851
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 11.988033749978058
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 11.953334791003726
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 12.091541667003185
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 11.895371749997139
+  },
+  {
+    "case": "candidate-width-1000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 11.985481874988182
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 16.500824582995847
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 16.492727792006917
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 16.459072750003543
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 16.43008925000322
+  },
+  {
+    "case": "candidate-width-4096-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 16.88226595899323
+  }
+]

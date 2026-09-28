@@ -1,0 +1,693 @@
+{
+  "data": {
+    "format": "glyphspackage",
+    "density": "sparse",
+    "glyphs": 30,
+    "evidence": [
+      {
+        "languages": [
+          "en"
+        ],
+        "seconds": 0.14731862500775605,
+        "pairs": 339,
+        "pages": [
+          {
+            "seconds": 0.012191124988021329,
+            "bytes": 1373,
+            "phase": "mapping",
+            "scannedGlyphs": 30,
+            "scannedCandidates": 0,
+            "returned": 0
+          },
+          {
+            "seconds": 0.02105895901331678,
+            "bytes": 29556,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 239,
+            "returned": 100
+          },
+          {
+            "seconds": 0.008932750002713874,
+            "bytes": 17180,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 55
+          },
+          {
+            "seconds": 0.01038975000847131,
+            "bytes": 11393,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 34
+          },
+          {
+            "seconds": 0.007165916002122685,
+            "bytes": 11130,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 33
+          },
+          {
+            "seconds": 0.005960208014585078,
+            "bytes": 8109,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 22
+          },
+          {
+            "seconds": 0.005905458005145192,
+            "bytes": 6180,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 15
+          },
+          {
+            "seconds": 0.005945625016465783,
+            "bytes": 7285,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 19
+          },
+          {
+            "seconds": 0.0042689160036388785,
+            "bytes": 3429,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.005062167008873075,
+            "bytes": 4530,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 9
+          },
+          {
+            "seconds": 0.005171832977794111,
+            "bytes": 5082,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 11
+          },
+          {
+            "seconds": 0.005080707982415333,
+            "bytes": 3977,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 7
+          },
+          {
+            "seconds": 0.014614125015214086,
+            "bytes": 3703,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 6
+          },
+          {
+            "seconds": 0.005834750016219914,
+            "bytes": 4811,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 10
+          },
+          {
+            "seconds": 0.004988749977201223,
+            "bytes": 3980,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 7
+          },
+          {
+            "seconds": 0.0051018340163864195,
+            "bytes": 2871,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 3
+          },
+          {
+            "seconds": 0.004728917003376409,
+            "bytes": 2878,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 3
+          },
+          {
+            "seconds": 0.0044285420153755695,
+            "bytes": 2054,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 0
+          },
+          {
+            "seconds": 0.004214083019178361,
+            "bytes": 1639,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 6,
+            "returned": 0
+          }
+        ],
+        "longestReadSeconds": 0.02105895901331678,
+        "maxResponseBytes": 29556
+      },
+      {
+        "languages": [
+          "fr",
+          "de"
+        ],
+        "seconds": 0.22833779198117554,
+        "pairs": 354,
+        "pages": [
+          {
+            "seconds": 0.002873833989724517,
+            "bytes": 1387,
+            "phase": "mapping",
+            "scannedGlyphs": 30,
+            "scannedCandidates": 0,
+            "returned": 0
+          },
+          {
+            "seconds": 0.014560458017513156,
+            "bytes": 29899,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 99
+          },
+          {
+            "seconds": 0.010928042000159621,
+            "bytes": 14723,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 45
+          },
+          {
+            "seconds": 0.010739332996308804,
+            "bytes": 11912,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 35
+          },
+          {
+            "seconds": 0.011676082998747006,
+            "bytes": 10781,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 31
+          },
+          {
+            "seconds": 0.009390999999595806,
+            "bytes": 7414,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 19
+          },
+          {
+            "seconds": 0.009288332978030667,
+            "bytes": 7417,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 19
+          },
+          {
+            "seconds": 0.008322374982526526,
+            "bytes": 4041,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 7
+          },
+          {
+            "seconds": 0.008674999990034848,
+            "bytes": 4879,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 10
+          },
+          {
+            "seconds": 0.01600133301690221,
+            "bytes": 5736,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 13
+          },
+          {
+            "seconds": 0.007817624980816618,
+            "bytes": 4879,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 10
+          },
+          {
+            "seconds": 0.008334415993886068,
+            "bytes": 4602,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 9
+          },
+          {
+            "seconds": 0.007180875021731481,
+            "bytes": 3477,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.007466999988537282,
+            "bytes": 4586,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 9
+          },
+          {
+            "seconds": 0.008167457999661565,
+            "bytes": 4611,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 9
+          },
+          {
+            "seconds": 0.008104250009637326,
+            "bytes": 3190,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 4
+          },
+          {
+            "seconds": 0.008128208020934835,
+            "bytes": 5429,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 12
+          },
+          {
+            "seconds": 0.00683004199527204,
+            "bytes": 3474,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.007520915998611599,
+            "bytes": 3470,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.007352916989475489,
+            "bytes": 2899,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 3
+          },
+          {
+            "seconds": 0.006713999988278374,
+            "bytes": 2628,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 2
+          },
+          {
+            "seconds": 0.00636666698846966,
+            "bytes": 2628,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 2
+          },
+          {
+            "seconds": 0.0068363329919520766,
+            "bytes": 2358,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 1
+          },
+          {
+            "seconds": 0.01718283400987275,
+            "bytes": 1829,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 135,
+            "returned": 0
+          }
+        ],
+        "longestReadSeconds": 0.01718283400987275,
+        "maxResponseBytes": 29899
+      },
+      {
+        "languages": [
+          "cs",
+          "da",
+          "de",
+          "en",
+          "es",
+          "et",
+          "fi",
+          "fr",
+          "hr",
+          "hu",
+          "it",
+          "lt",
+          "lv",
+          "nl",
+          "no",
+          "pl",
+          "pt",
+          "ro",
+          "se",
+          "sk",
+          "sl",
+          "sq",
+          "sv",
+          "tr"
+        ],
+        "seconds": 0.8877900000079535,
+        "pairs": 357,
+        "pages": [
+          {
+            "seconds": 0.0029940000094939023,
+            "bytes": 1667,
+            "phase": "mapping",
+            "scannedGlyphs": 30,
+            "scannedCandidates": 0,
+            "returned": 0
+          },
+          {
+            "seconds": 0.03285524999955669,
+            "bytes": 43383,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 99
+          },
+          {
+            "seconds": 0.02751195800374262,
+            "bytes": 17761,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 37
+          },
+          {
+            "seconds": 0.029567541991127655,
+            "bytes": 14431,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 29
+          },
+          {
+            "seconds": 0.028655750007601455,
+            "bytes": 13582,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 27
+          },
+          {
+            "seconds": 0.027938249986618757,
+            "bytes": 8609,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 15
+          },
+          {
+            "seconds": 0.02444204199127853,
+            "bytes": 6456,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 10
+          },
+          {
+            "seconds": 0.025184292026096955,
+            "bytes": 6521,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 10
+          },
+          {
+            "seconds": 0.0379480839765165,
+            "bytes": 6810,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 11
+          },
+          {
+            "seconds": 0.027077125007053837,
+            "bytes": 7619,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 13
+          },
+          {
+            "seconds": 0.02810662498814054,
+            "bytes": 4116,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 4
+          },
+          {
+            "seconds": 0.027618000021902844,
+            "bytes": 4835,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 6
+          },
+          {
+            "seconds": 0.027612625010078773,
+            "bytes": 4423,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.030105583980912343,
+            "bytes": 5002,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 7
+          },
+          {
+            "seconds": 0.029356958024436608,
+            "bytes": 6369,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 10
+          },
+          {
+            "seconds": 0.021729375002905726,
+            "bytes": 4751,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 6
+          },
+          {
+            "seconds": 0.03314391599269584,
+            "bytes": 5375,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 8
+          },
+          {
+            "seconds": 0.022682834009174258,
+            "bytes": 4217,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.022987417003605515,
+            "bytes": 4686,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 6
+          },
+          {
+            "seconds": 0.02251520799472928,
+            "bytes": 5389,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 8
+          },
+          {
+            "seconds": 0.023093499999959022,
+            "bytes": 5338,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 8
+          },
+          {
+            "seconds": 0.024429332988802344,
+            "bytes": 4869,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 7
+          },
+          {
+            "seconds": 0.022914875007700175,
+            "bytes": 3847,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 4
+          },
+          {
+            "seconds": 0.022781375009799376,
+            "bytes": 4501,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 6
+          },
+          {
+            "seconds": 0.02292124999803491,
+            "bytes": 3749,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 4
+          },
+          {
+            "seconds": 0.032425417011836544,
+            "bytes": 3393,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 3
+          },
+          {
+            "seconds": 0.022385292017133906,
+            "bytes": 4039,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 5
+          },
+          {
+            "seconds": 0.02129108298686333,
+            "bytes": 2801,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 1
+          },
+          {
+            "seconds": 0.020871082990197465,
+            "bytes": 3076,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 2
+          },
+          {
+            "seconds": 0.019761917006690055,
+            "bytes": 2505,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 0
+          },
+          {
+            "seconds": 0.022865625011036173,
+            "bytes": 2508,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 0
+          },
+          {
+            "seconds": 0.02204666699981317,
+            "bytes": 2507,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 0
+          },
+          {
+            "seconds": 0.02196533401729539,
+            "bytes": 2782,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "returned": 1
+          },
+          {
+            "seconds": 0.03091516697895713,
+            "bytes": 2114,
+            "phase": "pairs",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 114,
+            "returned": 0
+          }
+        ],
+        "longestReadSeconds": 0.0379480839765165,
+        "maxResponseBytes": 43383
+      }
+    ],
+    "peakRSSBytes": 191070208,
+    "savedSourceUnchanged": true,
+    "liveStateUnchanged": true,
+    "saveCallsDuringProofs": 0
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodology": "Fresh native process per format/density/repetition; three language filters each start with a cold bounded Unicode map. Read timings include harness main-thread dispatch and response, exclude CLI startup, HTTP/model latency and rendering. Every page has <=256 glyph or candidate scans and <=100 returned pairs. No shaping, collisions or value suggestions."
+}

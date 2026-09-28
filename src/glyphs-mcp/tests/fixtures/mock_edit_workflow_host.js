@@ -29,7 +29,8 @@ const action=(name,label,destination=false)=>({action:name,label,token:'token-'+
 const state=(revision=1,value='waiting_save',actions=[action('save_continue','Save and continue'),action('save_as_continue','Save As…',true)])=>({ok:true,data:{id:'edit_example',revision,state:value,document:{id:'doc_A',familyName:'Two fonts with this name',path:'/fonts/version A.glyphs'},scope:{kind:'width_delta',glyphs:['A'],masters:['M1']},actions,message:value==='applied'?'Changes applied. Save your font to keep them.\nSaving includes the whole font.':'Preparing changes…',text:'Conversation alternative',modelContext:JSON.stringify({workflow_id:'edit_example',expected_revision:revision,state:value,actions:actions.map(a=>({action:a.action,label:a.label,action_token:a.token,requiresDestination:a.requiresDestination}))}),poll:value==='preparing'}});
 const deliver=(h,s,{server=s}={})=>{h.setState(server);h.dispatch({method:'ui/notifications/tool-result',params:{structuredContent:s}});};
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-(async()=>{
+module.exports = {host, action, state, deliver, tick};
+if (require.main === module) (async()=>{
  const h=host();await tick();deliver(h,state());await tick();
  assert(h.calls.some(m=>m.method==='ui/notifications/initialized'));
  assert.equal(h.document.documentElement.style.colorScheme,'dark');

@@ -1,0 +1,185 @@
+{
+  "source": "https://github.com/andre-fuchs/kerning-pairs",
+  "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2019 André Fuchs",
+  "languageTags": "Upstream count/by_language directory codes and pinned readme language table. se is labelled Sami upstream; no broader coverage claim.",
+  "normalization": "Retain two-character pair order within each language, deduplicate within that language, discard upstream scores. No case expansion, Unicode normalization, alternate glyph guessing, or kerning values.",
+  "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage.",
+  "recipe": "scripts/vendor_kerning_pairs.py",
+  "inputs": [
+    {
+      "language": "cs",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/cs/common_kerning_pairs.json",
+      "sha256": "0f68f6b3875a8c0cd4dac685d0856022c3f5f18487eb902de5557c91a9367fb1",
+      "rows": 4751,
+      "pairs": 4751
+    },
+    {
+      "language": "da",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/da/common_kerning_pairs.json",
+      "sha256": "2ef614a5fb4655b3551da945262832387b6c64e271bad5b88e037bf61b3b6dee",
+      "rows": 3407,
+      "pairs": 3407
+    },
+    {
+      "language": "de",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/de/common_kerning_pairs.json",
+      "sha256": "f00b367553737a3ed10b7199f9a259437af79f89f52110ec6d75d61963f423d7",
+      "rows": 5154,
+      "pairs": 5154
+    },
+    {
+      "language": "en",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/en/common_kerning_pairs.json",
+      "sha256": "db87dd565a43e10675156482b785e7b6a9b893b066fac234e1dbb3ab8be9ccb8",
+      "rows": 4341,
+      "pairs": 4341
+    },
+    {
+      "language": "es",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/es/common_kerning_pairs.json",
+      "sha256": "c27417f8684400d6ea49ecc97f1cf7dc1cf3ede8c5b3715877d9fd94f3577cf5",
+      "rows": 3835,
+      "pairs": 3835
+    },
+    {
+      "language": "et",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/et/common_kerning_pairs.json",
+      "sha256": "611af5f515f538a3284273f8e9db4cdd202f152ecd3f844745c95f49ff097ba0",
+      "rows": 2616,
+      "pairs": 2616
+    },
+    {
+      "language": "fi",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/fi/common_kerning_pairs.json",
+      "sha256": "a82e55e4db98eb792f8f9f29224306683862a20e7a45b1e7a8ddffda64a1a03f",
+      "rows": 3278,
+      "pairs": 3278
+    },
+    {
+      "language": "fr",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/fr/common_kerning_pairs.json",
+      "sha256": "d4e3b39b6dc232f5a8b7baf3f6b323f85291fd7521f0feaa8a82b995a47ba6d3",
+      "rows": 4383,
+      "pairs": 4383
+    },
+    {
+      "language": "hr",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/hr/common_kerning_pairs.json",
+      "sha256": "7b19f86575df9853eb1f978bc9ee2e7bfccdcb7a3c580ad1c0a050bdbfc6f468",
+      "rows": 3305,
+      "pairs": 3305
+    },
+    {
+      "language": "hu",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/hu/common_kerning_pairs.json",
+      "sha256": "137e77df709c92b8c1767af097559f13987539c02ea39a2f7817c09363469dea",
+      "rows": 4752,
+      "pairs": 4752
+    },
+    {
+      "language": "it",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/it/common_kerning_pairs.json",
+      "sha256": "2094f354e5f9581a71ac499cb7452860b83e99bb26bcda3f64afa105e73b723e",
+      "rows": 3815,
+      "pairs": 3815
+    },
+    {
+      "language": "lt",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/lt/common_kerning_pairs.json",
+      "sha256": "219ab6fd93429b65078dc87dc2003732b31d3d6bf9c767d14fe938c8fc633de1",
+      "rows": 2353,
+      "pairs": 2353
+    },
+    {
+      "language": "lv",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/lv/common_kerning_pairs.json",
+      "sha256": "87131eda92a06742f79350f98d7ac544e9f22b912b2e82e7650fb4bb9f2841c6",
+      "rows": 1670,
+      "pairs": 1670
+    },
+    {
+      "language": "nl",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/nl/common_kerning_pairs.json",
+      "sha256": "27d32179f2e881f979f773224bb246bfac8583e2160d42511ddc4c77b9c3f328",
+      "rows": 3445,
+      "pairs": 3445
+    },
+    {
+      "language": "no",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/no/common_kerning_pairs.json",
+      "sha256": "98aea38e9d7174bd2c87d82b4df87fc15ef681948f9f9ee5855dade49658b830",
+      "rows": 3914,
+      "pairs": 3914
+    },
+    {
+      "language": "pl",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/pl/common_kerning_pairs.json",
+      "sha256": "7bb9aae0087d3826273af624311a9df42a98680d28f5b4bddd5ecb2fd6e86fbe",
+      "rows": 3537,
+      "pairs": 3537
+    },
+    {
+      "language": "pt",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/pt/common_kerning_pairs.json",
+      "sha256": "645bdb4bc90e143c0508288e12cfde6183aa079d91b273e77b6fe7f14390a339",
+      "rows": 2915,
+      "pairs": 2915
+    },
+    {
+      "language": "ro",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/ro/common_kerning_pairs.json",
+      "sha256": "60c2e3425d06af1493e9eecd25247d86cdc7a42020671ed3e2504108033faf5d",
+      "rows": 3077,
+      "pairs": 3077
+    },
+    {
+      "language": "se",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/se/common_kerning_pairs.json",
+      "sha256": "90fdb255f0205bc0816262d2bef573da7ad50b3c1974d258e3fe4e6fc9c229ae",
+      "rows": 1663,
+      "pairs": 1663
+    },
+    {
+      "language": "sk",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/sk/common_kerning_pairs.json",
+      "sha256": "23ea82605c945c4315444bca8c7783ce91a89be1aee8a79fc7da89ee170186e8",
+      "rows": 3008,
+      "pairs": 3008
+    },
+    {
+      "language": "sl",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/sl/common_kerning_pairs.json",
+      "sha256": "07cf47704c4cac689f92d49609c11b4c156eea75c0feb3e32b7f849024beee61",
+      "rows": 2694,
+      "pairs": 2694
+    },
+    {
+      "language": "sq",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/sq/common_kerning_pairs.json",
+      "sha256": "f8a0b244448e9e2104628423a7bd7eb8991225264bfd11c5e2e8faa81c306da9",
+      "rows": 2943,
+      "pairs": 2943
+    },
+    {
+      "language": "sv",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/sv/common_kerning_pairs.json",
+      "sha256": "0a9fe1d6f34f96903c767aaf06b07a29c90fe8d1f2d830d240473edc4c90737d",
+      "rows": 3158,
+      "pairs": 3158
+    },
+    {
+      "language": "tr",
+      "source": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/count/by_language/tr/common_kerning_pairs.json",
+      "sha256": "2d792f69e63fb65cfae7638719dc7793fcb8622473b58a131bbcc6425d35fcdf",
+      "rows": 2512,
+      "pairs": 2512
+    }
+  ],
+  "licenseSource": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/LICENSE.md",
+  "licenseSha256": "5147533ba28e591227ec39daa385a7f84d997e0c820a1602e75c8f6ca0418607",
+  "descriptionSource": "https://raw.githubusercontent.com/andre-fuchs/kerning-pairs/b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611/readme.md",
+  "descriptionSha256": "49cc76fe6d1e7c342a29e4c335eed8a91c3f8931c9ab8c1bbfa639d70c710776",
+  "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e"
+}

@@ -6,7 +6,8 @@ from collections.abc import Mapping
 from .models import ProtocolError, canonical_json
 
 NATIVE = 'script.native.v1'
-MAX_TARGETS = 4096
+PREPARATION_VERSION = 2  # Private bridge negotiation; the public script capability is unchanged.
+MAX_REQUEST_BYTES = 4 * 1024 * 1024
 MAX_SOURCE_BYTES = 128 * 1024
 MAX_PARAMS_BYTES = 64 * 1024
 MAX_OUTPUT_CHARS = 16000
@@ -20,6 +21,32 @@ def retired(options):
 
 def fail(message):
     raise ProtocolError('invalid_request', message)
+
+
+def wire_bytes(value):
+    return json.dumps(value, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
+
+
+def check_size(size):
+    if size > MAX_REQUEST_BYTES:
+        raise ProtocolError('request_too_large', 'script request exceeds 4 MiB; reduce source, parameters or target manifest. No script was run.')
+    return size
+
+
+def check_request(request):
+    """Count the complete POST body, with the same UTF-8 encoding as the bridge."""
+    return check_size(len(wire_bytes({'script': request})))
+
+
+class ManifestBudget:
+    """Linear accounting, including explicit targets duplicated in options."""
+    def __init__(self, request):
+        self.size = check_request(dict(request, manifest=[]))
+        self.count = 0
+
+    def add(self, target):
+        self.size = check_size(self.size + len(wire_bytes(target)) + bool(self.count))
+        self.count += 1
 
 
 def text(value, label, maximum=255):
@@ -48,8 +75,8 @@ def target(value):
 
 
 def targets(value):
-    if not isinstance(value, list) or len(value) > MAX_TARGETS:
-        fail('script targets must contain at most 4,096 surfaces')
+    if not isinstance(value, list):
+        fail('script targets must be a list')
     result = []
     seen = set()
     owners = {}
@@ -74,6 +101,11 @@ def validate_options(value):
         fail('executionMode and recovery are retired; prepare a new native script request with a saved baseline')
     if set(value) - {'source', 'params', 'entrypoint', 'targets', 'summary'}:
         fail('invalid python_script options')
+    try:
+        check_size(len(wire_bytes(value)))
+    except (TypeError, ValueError, RecursionError) as exc:
+        if isinstance(exc, ProtocolError): raise
+        fail('script data must be finite JSON: ' + str(exc))
     entrypoint = value.get('entrypoint', 'per_target')
     if entrypoint not in ('per_target', 'script'):
         fail('entrypoint must be per_target or script')
@@ -94,8 +126,8 @@ def validate_options(value):
             fail('invalid bulk surface')
         names = selected.get('glyphs', 'all')
         if names != 'all':
-            if not isinstance(names, list) or not 1 <= len(names) <= MAX_TARGETS:
-                fail('bulk glyphs must be all or 1-4,096 names')
+            if not isinstance(names, list) or not names:
+                fail('bulk glyphs must be all or a nonempty list of names')
             names = list(dict.fromkeys(text(n, 'glyph') for n in names))
         selected = dict(master=text(selected['master'], 'master'), glyphs=names, surface=surface)
     else:

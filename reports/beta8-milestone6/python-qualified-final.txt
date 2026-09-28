@@ -1,0 +1,70 @@
+....................................................s................... [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+............................s........................................... [ 35%]
+........................................................................ [ 38%]
+.....................................s.................................. [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 56%]
+........................................................................ [ 59%]
+........................................................................ [ 62%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+........................................................................ [ 98%]
+...............................                                          [100%]
+=============================== warnings summary ===============================
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/opener/__init__.py:6
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/opener/__init__.py:6: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs.opener')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/pkg_resources/__init__.py:2558
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/pkg_resources/__init__.py:2558: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(parent)
+
+src/glyphs-mcp/tests/test_simple_v2_compile_export.py::test_harfbuzz_cases_compare_feature_on_off_and_unchanged_controls
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fontTools/ttLib/tables/otBase.py:672: DeprecationWarning: 'repack_with_tag' is deprecated, use serialize_with_tag() instead
+    return hb.repack_with_tag(str(tableTag), data, obj_list)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge        1391     0     1    61  185.88s
+Public MCP tools                       377     0     0    30    5.39s
+Installer and release                  262     0     1    20    9.20s
+Font behavior and companions           286     0     0    27    2.14s
+Docs, skills, and host plugins          58     0     1    11    4.50s
+Other regressions                       30     0     0     6    1.60s
+Markdown test report: build/test-report.md
+2404 passed, 3 skipped, 5 warnings in 210.60s (0:03:30)

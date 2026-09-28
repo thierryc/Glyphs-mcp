@@ -1,6 +1,5 @@
 """Live script review and explicit whole-document saved-file restoration."""
 from functools import lru_cache
-from glyphs_mcp_protocol import scripts, script_targets
 from glyphs_mcp_protocol.source_identity import source_hash
 
 
@@ -14,20 +13,13 @@ def available():
 
 
 def review(core, request, error):
-    if not isinstance(request, dict) or set(request) != {'documentId', 'generation', 'sourcePath', 'options'}:
-        raise error('invalid_request', 'invalid native script review')
-    options = scripts.validate_options(request['options'])
-    state = core.adapter.document_state(request['documentId'])
-    if state['generation'] != request['generation'] or state.get('path') != request['sourcePath']:
-        raise error('stale_document', 'document changed while preparing script review')
-    selected, skipped = script_targets.resolve(core.adapter._font(request['documentId']), options['targets'])
-    if options['entrypoint'] == 'per_target' and not selected:
-        raise error('invalid_request', 'no eligible script targets; missing or empty backgrounds were skipped',
-                    details={'skippedCount': skipped['count'], 'sample': skipped['sample']})
-    return dict(kind='python_script', claim='Restore saved version reloads the whole font.',
-                targetCount=len(selected), skippedCount=skipped['count'],
-                targets=skipped['sample'], manifest=[t for t, _ in selected],
-                review=options, requestHash=scripts.digest(options))
+    from .script_preparation import begin
+    return begin(core, request, error)
+
+
+def review_result(core, identity, error):
+    from .script_preparation import result
+    return result(core, identity, error)
 
 
 def restore(core, request, error):

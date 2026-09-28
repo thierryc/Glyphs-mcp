@@ -1,0 +1,205 @@
+FFFFFFF..F                                                               [100%]
+=================================== FAILURES ===================================
+_ test_color_preparation_uses_metadata_only_and_keeps_patch_report[None-orange] _
+
+initial = None, wanted = 'orange'
+
+    @pytest.mark.parametrize('initial,wanted', [(None, 'orange'), (1, 'none'), (1, 'orange')])
+    def test_color_preparation_uses_metadata_only_and_keeps_patch_report(initial, wanted):
+        live = MetadataGlyph('h', [object()]); live.color = initial
+        detached = live.copyWithOptions_(0)
+        request = dict(options=dict(action='set_glyph_color', arguments=dict(color=wanted), targets=[dict(glyph='h')]))
+        expected = native_action.prepare(NS(glyphs=Collection([detached])), request)
+>       actual = consume(native_action.prepare_iter(NS(glyphs=Collection([live])), request, detached=True))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:33:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/preparation/__init__.py:10: in consume
+    next(iterator)
+src/protocol/glyphs_mcp_protocol/preparation/native_action.py:246: in prepare_iter
+    owner = live.copy()
+            ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_scoped_preparation.MetadataGlyph object at 0x109c7e900>
+
+    def copy(self):
+>       raise AssertionError('must not copy outlines')
+E       AssertionError: must not copy outlines
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:14: AssertionError
+___ test_color_preparation_uses_metadata_only_and_keeps_patch_report[1-none] ___
+
+initial = 1, wanted = 'none'
+
+    @pytest.mark.parametrize('initial,wanted', [(None, 'orange'), (1, 'none'), (1, 'orange')])
+    def test_color_preparation_uses_metadata_only_and_keeps_patch_report(initial, wanted):
+        live = MetadataGlyph('h', [object()]); live.color = initial
+        detached = live.copyWithOptions_(0)
+        request = dict(options=dict(action='set_glyph_color', arguments=dict(color=wanted), targets=[dict(glyph='h')]))
+        expected = native_action.prepare(NS(glyphs=Collection([detached])), request)
+>       actual = consume(native_action.prepare_iter(NS(glyphs=Collection([live])), request, detached=True))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:33:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/preparation/__init__.py:10: in consume
+    next(iterator)
+src/protocol/glyphs_mcp_protocol/preparation/native_action.py:246: in prepare_iter
+    owner = live.copy()
+            ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_scoped_preparation.MetadataGlyph object at 0x109ce9090>
+
+    def copy(self):
+>       raise AssertionError('must not copy outlines')
+E       AssertionError: must not copy outlines
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:14: AssertionError
+__ test_color_preparation_uses_metadata_only_and_keeps_patch_report[1-orange] __
+
+initial = 1, wanted = 'orange'
+
+    @pytest.mark.parametrize('initial,wanted', [(None, 'orange'), (1, 'none'), (1, 'orange')])
+    def test_color_preparation_uses_metadata_only_and_keeps_patch_report(initial, wanted):
+        live = MetadataGlyph('h', [object()]); live.color = initial
+        detached = live.copyWithOptions_(0)
+        request = dict(options=dict(action='set_glyph_color', arguments=dict(color=wanted), targets=[dict(glyph='h')]))
+        expected = native_action.prepare(NS(glyphs=Collection([detached])), request)
+>       actual = consume(native_action.prepare_iter(NS(glyphs=Collection([live])), request, detached=True))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:33:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/preparation/__init__.py:10: in consume
+    next(iterator)
+src/protocol/glyphs_mcp_protocol/preparation/native_action.py:246: in prepare_iter
+    owner = live.copy()
+            ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_scoped_preparation.MetadataGlyph object at 0x109ce87d0>
+
+    def copy(self):
+>       raise AssertionError('must not copy outlines')
+E       AssertionError: must not copy outlines
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:14: AssertionError
+_________ test_custom_color_is_still_rejected_without_reading_outlines _________
+
+    def test_custom_color_is_still_rejected_without_reading_outlines():
+        live = MetadataGlyph('h', [object()]); live.info['color'] = [.2, .3, .4, 1.]
+        request = dict(options=dict(action='set_glyph_color', arguments=dict(color='orange'), targets=[dict(glyph='h')]))
+        with pytest.raises(native_action.WorkerError, match='custom glyph color'):
+>           consume(native_action.prepare_iter(NS(glyphs=Collection([live])), request, detached=True))
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:42:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/preparation/__init__.py:10: in consume
+    next(iterator)
+src/protocol/glyphs_mcp_protocol/preparation/native_action.py:246: in prepare_iter
+    owner = live.copy()
+            ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_scoped_preparation.MetadataGlyph object at 0x109ce9f90>
+
+    def copy(self):
+>       raise AssertionError('must not copy outlines')
+E       AssertionError: must not copy outlines
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:14: AssertionError
+_ test_named_widths_lookup_only_requested_glyphs_and_preserve_font_order_scope _
+
+    def test_named_widths_lookup_only_requested_glyphs_and_preserve_font_order_scope():
+        font=width_font()
+>       changes, report=consume(simple.width_iter(font, dict(glyphs=['B','A'],delta=.25)))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:60:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/preparation/__init__.py:10: in consume
+    next(iterator)
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:61: in width_iter
+    for glyph in font.glyphs:
+                 ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_scoped_preparation.IndexedGlyphs object at 0x1099ae120>
+
+>   def __iter__(self): raise AssertionError('must not enumerate unrelated glyphs')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: must not enumerate unrelated glyphs
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:48: AssertionError
+_________ test_missing_named_widths_fail_without_scanning_other_glyphs _________
+
+    def test_missing_named_widths_fail_without_scanning_other_glyphs():
+        font=width_font()
+        with pytest.raises(ValueError, match='missing.*absent'):
+>           consume(simple.width_iter(font, dict(glyphs=['A','absent'],delta=.25)))
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:71:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/protocol/glyphs_mcp_protocol/preparation/__init__.py:10: in consume
+    next(iterator)
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:61: in width_iter
+    for glyph in font.glyphs:
+                 ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_scoped_preparation.IndexedGlyphs object at 0x109a24190>
+
+>   def __iter__(self): raise AssertionError('must not enumerate unrelated glyphs')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: must not enumerate unrelated glyphs
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:48: AssertionError
+_ test_outline_restore_preserves_exact_node_name_identity_and_fractional_position[None] _
+
+name = None
+
+    @pytest.mark.parametrize('name',[None,'','named'])
+    def test_outline_restore_preserves_exact_node_name_identity_and_fractional_position(name):
+        node=Node(10.25,700.5);node.name=name
+        path=PathShape([node,Node(20.75,0)])
+        layer=NS(paths=[path],shapes=[path],selection=[node])
+        before=outline_edit.hash_layer(layer);snapshot=outline_edit.capture(layer)
+        node.name='changed';node.position=(30.125,50.875)
+        outline_edit.restore(layer,snapshot)
+>       assert node.name==name and path.nodes[0] is node
+E       AssertionError: assert ('' == None)
+E        +  where '' = <test_simple_v2_outline_edit.Node object at 0x109c7e900>.name
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:83: AssertionError
+__ test_native_name_setter_receives_nil_instead_of_wrapper_string_conversion ___
+
+    def test_native_name_setter_receives_nil_instead_of_wrapper_string_conversion():
+        class NativeNode(Node):
+            def setName_(self,value):self.name=value
+        node=NativeNode(1.25,2.5);path=PathShape([node,Node(5,6)])
+        layer=NS(paths=[path],shapes=[path],selection=[])
+        snapshot=outline_edit.capture(layer);node.name='later'
+        outline_edit.restore(layer,snapshot)
+>       assert node.name is None
+E       AssertionError: assert '' is None
+E        +  where '' = <test_simple_v2_scoped_preparation.test_native_name_setter_receives_nil_instead_of_wrapper_string_conversion.<locals>.NativeNode object at 0x109c7eba0>.name
+
+src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py:95: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           2     8     0     1    0.05s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_color_preparation_uses_metadata_only_and_keeps_patch_report[None-orange]
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_color_preparation_uses_metadata_only_and_keeps_patch_report[1-none]
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_color_preparation_uses_metadata_only_and_keeps_patch_report[1-orange]
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_custom_color_is_still_rejected_without_reading_outlines
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_named_widths_lookup_only_requested_glyphs_and_preserve_font_order_scope
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_missing_named_widths_fail_without_scanning_other_glyphs
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_outline_restore_preserves_exact_node_name_identity_and_fractional_position[None]
+FAILED src/glyphs-mcp/tests/test_simple_v2_scoped_preparation.py::test_native_name_setter_receives_nil_instead_of_wrapper_string_conversion
+8 failed, 2 passed in 0.17s

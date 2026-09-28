@@ -1,0 +1,1034 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFF...FF                                          [100%]
+=================================== FAILURES ===================================
+_____ test_exact_request_is_native_and_rejects_legacy_top_level_selection ______
+
+    def test_exact_request_is_native_and_rejects_legacy_top_level_selection():
+        r = request()
+>       assert simple.eligible(r)
+E       AssertionError: assert False
+E        +  where False = <function eligible at 0x1094324b0>({'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}})
+E        +    where <function eligible at 0x1094324b0> = simple.eligible
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:54: AssertionError
+___ test_set_zero_delete_and_native_history_preserve_other_pairs[A-V-LTR-0] ____
+
+direction = 'LTR', native = 0, left = 'A', right = 'V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+___ test_set_zero_delete_and_native_history_preserve_other_pairs[A-V-RTL-2] ____
+
+direction = 'RTL', native = 2, left = 'A', right = 'V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'RTL', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[A-V-vertical-4] _
+
+direction = 'vertical', native = 4, left = 'A', right = 'V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'vertical', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[A-@MMK_R_V-LTR-0] _
+
+direction = 'LTR', native = 0, left = 'A', right = '@MMK_R_V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[A-@MMK_R_V-RTL-2] _
+
+direction = 'RTL', native = 2, left = 'A', right = '@MMK_L_A'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'RTL', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[A-@MMK_R_V-vertical-4] _
+
+direction = 'vertical', native = 4, left = 'A', right = '@MMK_T_top_V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'vertical', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-V-LTR-0] _
+
+direction = 'LTR', native = 0, left = '@MMK_L_A', right = 'V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'key': '@MMK_L_A', 'kind': 'group'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-V-RTL-2] _
+
+direction = 'RTL', native = 2, left = '@MMK_R_V', right = 'V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'RTL', 'left': {'key': '@MMK_R_V', 'kind': 'group'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-V-vertical-4] _
+
+direction = 'vertical', native = 4, left = '@MMK_B_bottom_A', right = 'V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'vertical', 'left': {'key': '@MMK_B_bottom_A', 'kind': 'group'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-@MMK_R_V-LTR-0] _
+
+direction = 'LTR', native = 0, left = '@MMK_L_A', right = '@MMK_R_V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'key': '@MMK_L_A', 'kind': 'group'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-@MMK_R_V-RTL-2] _
+
+direction = 'RTL', native = 2, left = '@MMK_R_V', right = '@MMK_L_A'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'RTL', 'left': {'key': '@MMK_R_V', 'kind': 'group'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_ test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-@MMK_R_V-vertical-4] _
+
+direction = 'vertical', native = 4, left = '@MMK_B_bottom_A'
+right = '@MMK_T_top_V'
+
+    @pytest.mark.parametrize('direction,native', [('LTR', 0), ('RTL', 2), ('vertical', 4)])
+    @pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'), ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+    def test_set_zero_delete_and_native_history_preserve_other_pairs(direction, native, left, right):
+        # Direction-specific group keys are qualified separately against the native wrapper.
+        if direction != 'LTR' and ('@' in left or '@' in right):
+            left = {'RTL': '@MMK_R_V', 'vertical': '@MMK_B_bottom_A'}[direction] if left.startswith('@') else left
+            right = {'RTL': '@MMK_L_A', 'vertical': '@MMK_T_top_V'}[direction] if right.startswith('@') else right
+        f = font(); original = deepcopy(f.store)
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+        history = History(); f.parent.undoManager = lambda: history
+        for g in f.glyphs:
+            g.layers['M1'].undoManager = lambda: history
+        key = ('M1', native, left, right)
+        for wanted in [-72.5, 0, None]:
+            before = deepcopy(f.store)
+>           changes, report = prepared(f, edit(left, right, direction=direction, op='remove' if wanted is None else 'set', value=wanted))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'vertical', 'left': {'key': '@MMK_B_bottom_A', 'kind': 'group'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad0] _________
+
+bad = {'op': 'delete'}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad1] _________
+
+bad = {'direction': 'auto'}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad2] _________
+
+bad = {'master': ''}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad3] _________
+
+bad = {'value': True}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad4] _________
+
+bad = {'value': nan}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad5] _________
+
+bad = {'value': inf}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad6] _________
+
+bad = {'value': None}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad7] _________
+
+bad = {'left': {'kind': 'glyph', 'name': '@MMK_L_A'}}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad8] _________
+
+bad = {'left': {'key': 'A', 'kind': 'group'}}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad9] _________
+
+bad = {'right': {'kind': 'glyph', 'name': ''}}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad10] _________
+
+bad = {'right': {'extra': True, 'kind': 'glyph', 'name': 'V'}}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+________ test_request_rejects_ambiguous_or_nonfinite_assignment[bad11] _________
+
+bad = {'surprise': True}
+
+    @pytest.mark.parametrize('bad', [
+        {'op':'delete'}, {'direction':'auto'}, {'master':''}, {'value':True},
+        {'value':float('nan')}, {'value':float('inf')}, {'value':None},
+        {'left':{'kind':'glyph','name':'@MMK_L_A'}},
+        {'left':{'kind':'group','key':'A'}}, {'right':{'kind':'glyph','name':''}},
+        {'right':{'kind':'glyph','name':'V','extra':True}}, {'surprise':True},
+    ])
+    def test_request_rejects_ambiguous_or_nonfinite_assignment(bad):
+        row = dict(edit(), **bad)
+>       with pytest.raises(ProtocolError): api().validate_options({'edits':[row]})
+                                           ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_____________ test_zero_is_not_remove_and_batch_boundary_is_exact ______________
+
+    def test_zero_is_not_remove_and_batch_boundary_is_exact():
+>       assert api().validate_options({'edits':[edit(value=0)]})['edits'][0]['value'] == 0
+               ^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:103:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:18: in api
+    return importlib.import_module('glyphs_mcp_protocol.kerning_edits')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'glyphs_mcp_protocol.kerning_edits'
+import_ = <function _gcd_import at 0x1027bbe20>
+
+>   ???
+E   ModuleNotFoundError: No module named 'glyphs_mcp_protocol.kerning_edits'
+
+<frozen importlib._bootstrap>:1335: ModuleNotFoundError
+_____________ test_unchanged_and_missing_removal_produce_no_patch ______________
+
+    def test_unchanged_and_missing_removal_produce_no_patch():
+        f=font(); f.store['M1',0,'A','V']=0
+>       changes,report=prepared(f,edit(value=0),edit('V','A',op='remove'))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:120:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'kind': 'glyph', 'name': 'A...'op': 'set', ...}, {'direction': 'LTR', 'left': {'kind': 'glyph', 'name': 'V'}, 'master': 'M1', 'op': 'remove', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+_____ test_prepared_identity_guard_rejects_replaced_glyph_or_changed_group _____
+
+    def test_prepared_identity_guard_rejects_replaced_glyph_or_changed_group():
+>       f=font();changes,_=prepared(f,edit())
+                           ^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:125:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:49: in prepared
+    return consume(simple.iterator(value, r))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:107: in iterator
+    validate_request(request)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = {'glyphs': [], 'kind': 'kerning_edit', 'options': {'edits': [{'direction': 'LTR', 'left': {'kind': 'glyph', 'name': 'A'}, 'master': 'M1', 'op': 'set', ...}]}}
+
+    def validate_request(request):
+        if not isinstance(request, dict) or not eligible(request):
+>           raise ProtocolError('invalid_request', 'request is not eligible for native typed preparation')
+E           glyphs_mcp_protocol.models.ProtocolError: request is not eligible for native typed preparation
+
+src/protocol/glyphs_mcp_protocol/preparation/simple.py:27: ProtocolError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           3    28     0     1    0.04s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_exact_request_is_native_and_rejects_legacy_top_level_selection
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[A-V-LTR-0]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[A-V-RTL-2]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[A-V-vertical-4]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[A-@MMK_R_V-LTR-0]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[A-@MMK_R_V-RTL-2]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[A-@MMK_R_V-vertical-4]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-V-LTR-0]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-V-RTL-2]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-V-vertical-4]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-@MMK_R_V-LTR-0]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-@MMK_R_V-RTL-2]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_set_zero_delete_and_native_history_preserve_other_pairs[@MMK_L_A-@MMK_R_V-vertical-4]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad0]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad1]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad2]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad3]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad4]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad5]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad6]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad7]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad8]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad9]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad10]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_request_rejects_ambiguous_or_nonfinite_assignment[bad11]
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_zero_is_not_remove_and_batch_boundary_is_exact
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_unchanged_and_missing_removal_produce_no_patch
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_prepared_identity_guard_rejects_replaced_glyph_or_changed_group
+28 failed, 3 passed in 0.31s

@@ -1,0 +1,107 @@
+{
+  "methodology": "Tool elapsed time includes connector/transport/native work; task elapsed across turns also includes agent reasoning. Bytes are JSON re-encoding of the complete returned MCP result, not network wire size.",
+  "tasks": [
+    {
+      "task": "kerning",
+      "calls": 8,
+      "tools": {
+        "read_entities": 1,
+        "start_edit_workflow": 1,
+        "get_edit_workflow": 5,
+        "respond_edit_workflow": 1
+      },
+      "summedToolSeconds": 6.693,
+      "responseJsonBytes": 52343
+    },
+    {
+      "task": "kerning-corrected",
+      "calls": 12,
+      "tools": {
+        "read_entities": 4,
+        "start_edit_workflow": 1,
+        "get_edit_workflow": 4,
+        "respond_edit_workflow": 3
+      },
+      "summedToolSeconds": 29.956000000000003,
+      "responseJsonBytes": 101596
+    },
+    {
+      "task": "kerning-failed-attempt",
+      "calls": 1,
+      "tools": {
+        "respond_edit_workflow": 1
+      },
+      "summedToolSeconds": 4.294,
+      "responseJsonBytes": 4202
+    },
+    {
+      "task": "path",
+      "calls": 18,
+      "tools": {
+        "read_entities": 5,
+        "start_edit_workflow": 1,
+        "get_edit_workflow": 9,
+        "respond_edit_workflow": 2,
+        "save_document": 1
+      },
+      "summedToolSeconds": 37.896,
+      "responseJsonBytes": 137934
+    },
+    {
+      "task": "setup",
+      "calls": 3,
+      "tools": {
+        "get_status": 1,
+        "list_documents": 1,
+        "read_entities": 1
+      },
+      "summedToolSeconds": 7.372,
+      "responseJsonBytes": 14872
+    },
+    {
+      "task": "spacing",
+      "calls": 14,
+      "tools": {
+        "start_edit_workflow": 1,
+        "get_edit_workflow": 7,
+        "respond_edit_workflow": 3,
+        "read_entities": 3
+      },
+      "summedToolSeconds": 25.031,
+      "responseJsonBytes": 130827
+    }
+  ],
+  "checks": [
+    {
+      "task": "path",
+      "passed": true,
+      "verified": "Exact fractional node; 11 other nodes and 53 foreground-layer controls; exact typed selective recovery; authorized editor Save",
+      "executeSeconds": 1.835,
+      "taskWallSeconds": 87.63
+    },
+    {
+      "task": "spacing",
+      "passed": true,
+      "verified": "Regular H/n/o widths +20.75; H/n bounds x +12.5; all 12 o path-0 nodes x +12.5; 51 foreground-layer controls unchanged; exact script details and compact omission; baseline reload with fresh binding and all 54 layers restored",
+      "limitation": "o layer bounds were whole-number native measurements before and after. Initial fractional-bounds assertion failed; exact node read verified the shift. No claim of exact fractional bearings from those bounds.",
+      "preparationSeconds": 0.878,
+      "executionAndPollingSeconds": 4.35,
+      "restoreAndVerifySeconds": 8.057,
+      "taskWallSeconds": 115.924
+    },
+    {
+      "task": "kerning-failed-attempt",
+      "expected": false,
+      "explanation": "Qualification script imported nonexistent Glyphs 4 constant LTR. Module initialization failed before assignments. Existing workflow restored; code not replayed."
+    },
+    {
+      "task": "kerning-corrected",
+      "passed": true,
+      "verified": "Two exact fractional LTR glyph-pair assignments; 25 pair/master controls and 54 layer controls unchanged; output details loaded; whole-font restore verified all 27 sampled pairs and refreshed binding",
+      "preparationSeconds": 3.639,
+      "executionAndPollingSeconds": 3.96,
+      "restoreAndVerifySeconds": 7.178,
+      "taskWallSeconds": 69.073
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "status": "created",
+  "revision": "0996b5c1a45583d322df141a7241c41a9ec260a0",
+  "previousRevision": null,
+  "ref": "refs/heads/main",
+  "recordPath": ".glyphs-mcp/actions/930fa31eb4c47f66e8278ae3/template_baseline.json",
+  "fontPath": "sources/First.glyphs",
+  "sourceHash": "sha256:cf5a793729c78c1683e0b8c29b186d9f26a9588a8b45d111da91de5998bc4e39",
+  "indexBefore": null,
+  "indexAfter": "f49a53b5ed6fdd190bf50066b8f159cb1f3b7df2e183882350061c24a47636ed",
+  "recordFiles": [
+    ".glyphs-mcp/actions/930fa31eb4c47f66e8278ae3/template_baseline.json"
+  ]
+}

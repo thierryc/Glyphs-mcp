@@ -240,7 +240,8 @@ def test_glyph_svg_renderer_is_delta_only_local_and_read_only():
 def test_diff_loading_states_explain_work_without_repeated_accessibility_announcements():
     source = (Path(__file__).resolve().parents[3]
               / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
-    assert 'DiffLoadingView.comparison(includesGlyphGeometry: change.isGlyphPackageGlyph)' in source
+    assert 'DiffLoadingView.comparison(includesGlyphGeometry: change.isGlyphPackageGlyph, historical: model.historicalComparison != nil)' in source
+    assert 'historical ? "Comparing saved checkpoints…" : "Comparing HEAD with the working tree…"' in source
     assert 'DiffLoadingView.glyphGeometry' in source
     assert 'Reading the reference version from Git…' in source
     assert 'Comparing HEAD with the working tree…' in source

@@ -1,0 +1,6 @@
+{
+  "sha256": "bddb58f660e00e54ee7a671615550103bd3356227fbea969d74e676ca501b6c2",
+  "matchesSource": true,
+  "simulatedHostOutput": "MCP Apps host: actions, fallback, revision ordering, no retry, consent, and server/card wording passed.\n",
+  "claim": "Installed resource and simulated-host checks only; no rendered Codex assertion"
+}

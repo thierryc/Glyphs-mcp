@@ -1,0 +1,562 @@
+[
+  {
+    "history": 0,
+    "active": false,
+    "baseline": {
+      "pollMs": {
+        "median": 0.0025839981390163302,
+        "range": [
+          0.002541506546549499,
+          0.0027084897737950087
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.004300000000000137,
+        "range": [
+          0.004049999999999887,
+          0.004700000000000537
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.00023999999999996247,
+        "range": [
+          0.00021999999999994246,
+          0.00024999999999997247
+        ]
+      },
+      "peakMiB": {
+        "median": 34.65625,
+        "range": [
+          34.25,
+          34.75
+        ]
+      },
+      "recordsCopiedPerPoll": 0.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.005188005161471665,
+        "range": [
+          0.005082983989268541,
+          0.005312511348165572
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.007349999999999718,
+        "range": [
+          0.007050000000000112,
+          0.007849999999999524
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.00023000000000009124,
+        "range": [
+          0.00022999999999995246,
+          0.00024999999999997247
+        ]
+      },
+      "peakMiB": {
+        "median": 34.1875,
+        "range": [
+          34.0,
+          34.4375
+        ]
+      },
+      "recordsCopiedPerPoll": 0.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 0,
+    "active": true,
+    "baseline": {
+      "pollMs": {
+        "median": 0.30506249458994716,
+        "range": [
+          0.30018750112503767,
+          0.36970851942896843
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.3495500000000006,
+        "range": [
+          0.3081500000000001,
+          0.40429999999999977
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0005799999999998862,
+        "range": [
+          0.0005199999999999649,
+          0.0005900000000000349
+        ]
+      },
+      "peakMiB": {
+        "median": 34.609375,
+        "range": [
+          34.5625,
+          34.84375
+        ]
+      },
+      "recordsCopiedPerPoll": 4.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 1.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.07737500709481537,
+        "range": [
+          0.07443749927915633,
+          0.08395851182285696
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.08260000000000003,
+        "range": [
+          0.0796000000000005,
+          0.09199999999999972
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0005499999999999949,
+        "range": [
+          0.0005299999999999749,
+          0.0005499999999999949
+        ]
+      },
+      "peakMiB": {
+        "median": 34.25,
+        "range": [
+          34.0,
+          34.421875
+        ]
+      },
+      "recordsCopiedPerPoll": 2.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 100,
+    "active": false,
+    "baseline": {
+      "pollMs": {
+        "median": 2.320875006262213,
+        "range": [
+          2.2973334998823702,
+          2.4751460150582716
+        ]
+      },
+      "pollCpuMs": {
+        "median": 2.3857500000000003,
+        "range": [
+          2.363100000000001,
+          2.49655
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.008679999999999799,
+        "range": [
+          0.007679999999999909,
+          0.009979999999999989
+        ]
+      },
+      "peakMiB": {
+        "median": 35.390625,
+        "range": [
+          35.078125,
+          35.546875
+        ]
+      },
+      "recordsCopiedPerPoll": 200.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.06777099042665213,
+        "range": [
+          0.06743750418536365,
+          0.06825001037213951
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.07124999999999909,
+        "range": [
+          0.07029999999999953,
+          0.07640000000000008
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.00023999999999996247,
+        "range": [
+          0.00022999999999995246,
+          0.00026999999999999247
+        ]
+      },
+      "peakMiB": {
+        "median": 34.71875,
+        "range": [
+          34.59375,
+          34.859375
+        ]
+      },
+      "recordsCopiedPerPoll": 5.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 100,
+    "active": true,
+    "baseline": {
+      "pollMs": {
+        "median": 2.731332991970703,
+        "range": [
+          2.6710414822446182,
+          2.81379149237182
+        ]
+      },
+      "pollCpuMs": {
+        "median": 2.792199999999999,
+        "range": [
+          2.7715500000000017,
+          2.892550000000001
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.008470000000000422,
+        "range": [
+          0.008270000000000222,
+          0.010439999999999894
+        ]
+      },
+      "peakMiB": {
+        "median": 35.3125,
+        "range": [
+          35.078125,
+          35.421875
+        ]
+      },
+      "recordsCopiedPerPoll": 204.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 1.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.12835451343562454,
+        "range": [
+          0.12554149725474417,
+          0.13866650988347828
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.14239999999999947,
+        "range": [
+          0.13244999999999924,
+          0.15715000000000034
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0005700000000000149,
+        "range": [
+          0.0005300000000002525,
+          0.0007999999999999674
+        ]
+      },
+      "peakMiB": {
+        "median": 34.71875,
+        "range": [
+          34.703125,
+          34.9375
+        ]
+      },
+      "recordsCopiedPerPoll": 6.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 1000,
+    "active": false,
+    "baseline": {
+      "pollMs": {
+        "median": 27.524437493411824,
+        "range": [
+          27.092499993159436,
+          29.99133348930627
+        ]
+      },
+      "pollCpuMs": {
+        "median": 27.53810000000001,
+        "range": [
+          27.345849999999995,
+          28.825050000000008
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0975400000000004,
+        "range": [
+          0.0929100000000016,
+          0.10084000000000426
+        ]
+      },
+      "peakMiB": {
+        "median": 47.265625,
+        "range": [
+          47.25,
+          47.34375
+        ]
+      },
+      "recordsCopiedPerPoll": 2000.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.06756301445420831,
+        "range": [
+          0.06739549280609936,
+          0.06943750486243516
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.07190000000000252,
+        "range": [
+          0.07169999999999677,
+          0.07814999999999905
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0002500000000016378,
+        "range": [
+          0.00024000000000024002,
+          0.0002599999999985947
+        ]
+      },
+      "peakMiB": {
+        "median": 45.234375,
+        "range": [
+          45.140625,
+          45.484375
+        ]
+      },
+      "recordsCopiedPerPoll": 5.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 1000,
+    "active": true,
+    "baseline": {
+      "pollMs": {
+        "median": 28.653020999627188,
+        "range": [
+          27.30899999733083,
+          29.175770992878824
+        ]
+      },
+      "pollCpuMs": {
+        "median": 28.8902,
+        "range": [
+          27.83,
+          29.25359999999999
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.10140999999999956,
+        "range": [
+          0.09848999999999997,
+          0.10932000000000164
+        ]
+      },
+      "peakMiB": {
+        "median": 47.25,
+        "range": [
+          46.890625,
+          47.28125
+        ]
+      },
+      "recordsCopiedPerPoll": 2004.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 1.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.13108350685797632,
+        "range": [
+          0.12699949729721993,
+          0.13541649968829006
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.1523500000000011,
+        "range": [
+          0.13265000000000082,
+          0.1603000000000021
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0006099999999986672,
+        "range": [
+          0.0005399999999999849,
+          0.0006700000000003925
+        ]
+      },
+      "peakMiB": {
+        "median": 45.28125,
+        "range": [
+          45.1875,
+          45.34375
+        ]
+      },
+      "recordsCopiedPerPoll": 6.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 10000,
+    "active": false,
+    "baseline": {
+      "pollMs": {
+        "median": 377.3812080034986,
+        "range": [
+          364.40718748781364,
+          400.795270994422
+        ]
+      },
+      "pollCpuMs": {
+        "median": 382.98335,
+        "range": [
+          368.55519999999996,
+          387.674
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 2.6400600000000196,
+        "range": [
+          2.596430000000005,
+          2.8012800000000126
+        ]
+      },
+      "peakMiB": {
+        "median": 160.578125,
+        "range": [
+          157.109375,
+          160.828125
+        ]
+      },
+      "recordsCopiedPerPoll": 20000.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.06897949788253754,
+        "range": [
+          0.06724998820573092,
+          0.07172951882239431
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.0808000000000142,
+        "range": [
+          0.07349999999997081,
+          0.08200000000000429
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.00026000000000081513,
+        "range": [
+          0.00023999999999801958,
+          0.00035999999999702936
+        ]
+      },
+      "peakMiB": {
+        "median": 151.40625,
+        "range": [
+          151.28125,
+          151.5
+        ]
+      },
+      "recordsCopiedPerPoll": 5.0,
+      "readsPerPoll": 0.0,
+      "writesPerPoll": 0.0
+    }
+  },
+  {
+    "history": 10000,
+    "active": true,
+    "baseline": {
+      "pollMs": {
+        "median": 368.17064600472804,
+        "range": [
+          361.9646455044858,
+          386.68477049213834
+        ]
+      },
+      "pollCpuMs": {
+        "median": 368.54125,
+        "range": [
+          361.5997,
+          383.21500000000003
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 2.1052099999999996,
+        "range": [
+          2.001010000000001,
+          3.0962099999999992
+        ]
+      },
+      "peakMiB": {
+        "median": 161.3125,
+        "range": [
+          160.0,
+          161.859375
+        ]
+      },
+      "recordsCopiedPerPoll": 20004.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 1.0
+    },
+    "candidate": {
+      "pollMs": {
+        "median": 0.13058350305072963,
+        "range": [
+          0.12597900058608502,
+          0.1473960146540776
+        ]
+      },
+      "pollCpuMs": {
+        "median": 0.13600000000000279,
+        "range": [
+          0.13325000000001808,
+          0.17199999999997218
+        ]
+      },
+      "supervisorCpuMsPerTick": {
+        "median": 0.0005599999999894578,
+        "range": [
+          0.0005400000000044258,
+          0.0006500000000109196
+        ]
+      },
+      "peakMiB": {
+        "median": 151.234375,
+        "range": [
+          150.984375,
+          151.78125
+        ]
+      },
+      "recordsCopiedPerPoll": 6.0,
+      "readsPerPoll": 2.0,
+      "writesPerPoll": 0.0
+    }
+  }
+]

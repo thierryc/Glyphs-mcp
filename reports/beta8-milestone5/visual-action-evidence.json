@@ -1,0 +1,18 @@
+{
+  "state": "saved",
+  "revision": 21,
+  "autoKeepEnabled": true,
+  "consumedActions": [
+    {
+      "revision": 5,
+      "action": "run_script",
+      "signature": "[null, null]"
+    },
+    {
+      "revision": 13,
+      "action": "save_result",
+      "signature": "[null, null]"
+    }
+  ],
+  "consumedCount": 2
+}

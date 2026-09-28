@@ -1,0 +1,145 @@
+{
+  "ok": true,
+  "data": [
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+      },
+      "values": {
+        "width": 2054.095,
+        "outlineHash": "sha256:283bba4554a9913f3ee2d8c911525d2b1600b3700d5f38e4a3cf5da3d4adedf3",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+      },
+      "values": {
+        "width": 1070.135,
+        "outlineHash": "sha256:baed338c2d7e0219156acb000414eeea337dc2159bda6fda49cff3022366ebbf",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "926F7910-9E82-41CD-9117-571F75F96159"
+      },
+      "values": {
+        "width": 1594.145,
+        "outlineHash": "sha256:daa330b335be009ffe1c42291db5de4ff9a7410d64ccbdf6df38c4f08582c620",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+      },
+      "values": {
+        "width": 1271.135,
+        "outlineHash": "sha256:6578bda9352712c8a1d343bdae6d0ea49fb8c2f3959343c348d2ce57ae71ca52",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+      },
+      "values": {
+        "width": 1394.49771,
+        "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+      },
+      "values": {
+        "width": 1349.485,
+        "outlineHash": "sha256:ee513ddffaf96824ba58dadd8af488016f715ccb1af97e2e7ed0d9d5ead84fc2",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+      },
+      "values": {
+        "width": 1135.62,
+        "outlineHash": "sha256:7e68c9fde6b4200e12e7e5b956c3ada12aaa17f57a6f3acbcfc04be4a4ad7376",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+      },
+      "values": {
+        "width": 1750.9,
+        "outlineHash": "sha256:ca9152a7e8578d464be867487b19099091ecba8d834c5bf7d4eb7e8defc58ae4",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "A",
+        "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+      },
+      "values": {
+        "width": 1512.135,
+        "outlineHash": "sha256:f320aefb5753989674b74e829593344027a3d7b3e48d240ec8872d52771f1676",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    },
+    {
+      "entity": {
+        "kind": "layer",
+        "glyph": "B",
+        "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+      },
+      "values": {
+        "width": 1209.42583,
+        "outlineHash": "sha256:4ca9a249e96a27658c79831e3fc72824c7d0794553b6849ceb50be36d416ace4",
+        "leftMetricsKey": null,
+        "rightMetricsKey": null,
+        "widthMetricsKey": null
+      }
+    }
+  ]
+}

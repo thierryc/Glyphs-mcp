@@ -8,13 +8,16 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 
 
-def test_v1_snapshot_preserves_all_release_files_and_records_adaptations():
+def test_v1_snapshot_records_release_files_adaptations_and_removals():
     provenance = json.loads((REPO / 'website/v1-source.json').read_text())
     snapshot = REPO / 'website/versioned_docs/version-1.11.0'
     actual = {str(path.relative_to(snapshot)): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in snapshot.rglob('*') if path.is_file()}
     assert actual == provenance['snapshotSha256']
-    assert actual.keys() == provenance['sha256'].keys()
+    removed = provenance.get('removals', {})
+    assert set(removed) <= provenance['sha256'].keys()
+    assert all(isinstance(reason, str) and reason.strip() for reason in removed.values())
+    assert actual.keys() == provenance['sha256'].keys() - removed.keys()
     changed = {name for name in actual if actual[name] != provenance['sha256'][name]}
     assert changed == provenance['adaptations'].keys()
     assert provenance['tag'] == 'v1.11.0'

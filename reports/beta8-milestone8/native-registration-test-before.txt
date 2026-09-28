@@ -1,0 +1,50 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_glyph_history_suppresses_native_document_registration __________
+
+    def test_glyph_history_suppresses_native_document_registration():
+        f = font(); changes, _ = prepared(f, edit())
+        document_history, glyph_history = History(), History()
+        for h in (document_history, glyph_history): h.isUndoRegistrationEnabled = lambda h=h: h.enabled
+        f.parent.undoManager = lambda: document_history
+        f.glyphs['A'].layers['M1'].undoManager = lambda: glyph_history
+        setter = f.setKerningForPair
+        def native_setter(*a, **k):
+            assert not document_history.enabled, 'native font setter also registers document Undo'
+            setter(*a, **k)
+        f.setKerningForPair = native_setter
+        adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+>       adapter.begin_undo(doc['id']); adapter.apply_change(doc['id'], changes[0]); adapter.end_undo(doc['id'], 'Kerning')
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:144:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/bridge/glyphs_mcp_bridge/glyphs_adapter.py:405: in apply_change
+    kerning.write_undo(self._operation_font(document_id), self._undo_managers.get(document_id), change, reverse=reverse)
+src/bridge/glyphs_mcp_bridge/kerning.py:35: in write_undo
+    write_value(manager, font, key, change["before"] if reverse else change["after"], read, write_exact)
+src/bridge/glyphs_mcp_bridge/native_undo.py:118: in write_value
+    exact_write(target, key, value)
+src/bridge/glyphs_mcp_bridge/kerning.py:23: in write_exact
+    font.setKerningForPair(*args, wanted, direction=direction)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = ('M1', 'A', 'V', -72.5), k = {'direction': 0}, @py_assert1 = True
+@py_assert3 = False
+@py_format4 = 'native font setter also registers document Undo\n>assert not True\n{True = <test_simple_v2_exact_history.History object at 0x10b9d86e0>.enabled\n}'
+
+    def native_setter(*a, **k):
+>       assert not document_history.enabled, 'native font setter also registers document Undo'
+E       AssertionError: native font setter also registers document Undo
+E       assert not True
+E        +  where True = <test_simple_v2_exact_history.History object at 0x10b9d86e0>.enabled
+
+src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py:140: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    0.04s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_kerning_edits.py::test_glyph_history_suppresses_native_document_registration
+1 failed, 31 deselected in 0.17s

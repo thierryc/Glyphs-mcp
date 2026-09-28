@@ -1,0 +1,11 @@
+{
+  "observedAt": "2026-09-28T14:31:58.243413+00:00",
+  "installationComplete": false,
+  "receiptUnchanged": true,
+  "transaction": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/transaction-qyzb26du",
+  "journalExists": false,
+  "backupEntries": [],
+  "processEvidence": "processes-during-stalled-install.txt",
+  "editorRelaunch": "blocked: Mac locked",
+  "editorAndInstalledClientQualification": "not run"
+}

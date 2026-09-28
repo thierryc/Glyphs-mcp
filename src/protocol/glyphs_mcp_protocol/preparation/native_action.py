@@ -221,6 +221,20 @@ def _summary(owner: Any, scope: str) -> dict[str, Any]:
     return values
 
 
+def _detached_color_metadata(owner):
+    # Glyphs' metadata-only copy omits custom color objects. Reject them on the
+    # live owner first; an indexed label and an absent label round-trip exactly.
+    if owner.color is None and getattr(owner, "colorObject", None) is not None:
+        raise WorkerError("custom glyph color labels require manual review")
+    copier = getattr(owner, "copyWithOptions_", None)
+    if not callable(copier):
+        raise WorkerError("Glyphs does not support detached glyph metadata preparation")
+    detached = copier(0)  # No master, special or background layers.
+    if detached is None or detached is owner:
+        raise WorkerError("Glyphs did not detach the glyph metadata")
+    return detached
+
+
 def prepare_iter(font: Any, request: Mapping[str, Any], *, detached=False) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     raw = dict(request.get("options") or {})
     declared_scope = raw.pop("scope", None)
@@ -243,7 +257,7 @@ def prepare_iter(font: Any, request: Mapping[str, Any], *, detached=False) -> tu
     for glyph_name, layer_id, owner, extra_target in owners:
         if detached:
             live = owner
-            owner = live.copy()
+            owner = _detached_color_metadata(live) if action == "set_glyph_color" else live.copy()
             if owner is None or owner is live: raise WorkerError("Glyphs did not detach the glyph copy")
         before = persistent_state(owner, scope)
         before_size = encoded_size(before)

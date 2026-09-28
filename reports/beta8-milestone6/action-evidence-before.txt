@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_baseline_and_result_save_are_separate_and_idempotent ___________
+
+project = (<glyphs_mcp_sidecar.service.SidecarService object at 0x10b231550>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-157/test_baseline_and_result_save_0/Test.glyphs'))
+
+    def test_baseline_and_result_save_are_separate_and_idempotent(project):
+        service,bridge,_,font=project
+        font.write_text('601');bridge.adapter.value=601
+        value=wait(service,start(project),'applied')
+        assert bridge.adapter.save_calls==[]
+        assert git(font.parent,'show','HEAD:'+font.name)==b'601'
+        baseline=service.jobs.get(value['jobId'])['checkpointBaseline']['revision']
+        original=value
+        value=wait(service,choose(service,value,'save_result'),'saved')
+        receipt=value['receipt'];assert receipt['checkpoint']['status']=='created'
+        assert len(bridge.adapter.save_calls)==1
+        choose(service,original,'save_result')
+        assert len(bridge.adapter.save_calls)==1
+        action=json.loads(git(font.parent,'show',receipt['checkpoint']['revision']+':'+receipt['checkpoint']['recordPath']))
+        assert action['actions'][0]['baselineRevision']==baseline
+        assert action['actions'][0]['request']['kind']=='width_delta'
+>       assert action['actions'][0]['verification']['guardedApplication'] is True
+E       assert False is True
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py:36: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    3.50s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_workflow.py::test_baseline_and_result_save_are_separate_and_idempotent
+1 failed in 3.62s

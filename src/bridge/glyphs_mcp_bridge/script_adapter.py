@@ -1,10 +1,10 @@
 """Live script targets share typed-operation precision protection, without snapshots."""
-from glyphs_mcp_protocol.script_targets import value
+from glyphs_mcp_protocol.script_targets import value, owner as stored_owner
 from . import outline_reads
 
 
 def target(adapter, document_id, change):
-    owner = adapter._target_layer(document_id, change['glyph'], change['layer'])
+    owner = stored_owner(adapter._operation_font(document_id), change)
     layer = outline_reads.surface_layer(owner, change['surface'])
     adapter._protect_write(document_id, layer, {'kind': 'coordinates'})
     return layer, value(owner, 'undoManager')

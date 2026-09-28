@@ -9,6 +9,7 @@ from glyphs_mcp_protocol import outline_hash
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
+from .cleanup import clear_adapter_steps
 from glyphs_mcp_protocol import ProtocolError
 from . import dimensions, context, coordinates, feature_compile, feature_inventory, glyph_inventory, instance_inventory, layer_inventory, kerning, kerning_inventory, master_properties, native_actions, native_save, native_values, outline_edit, outline_reads, selection, start_node
 
@@ -57,8 +58,9 @@ class GlyphsAdapter:
             self._generations[doc_id] = self._generations.get(doc_id, 0) + 1
 
     def _fonts(self) -> list[Any]:
-        values = _value(self.glyphs, "fonts", []) or []
-        fonts = list(values)
+        values = _value(self.glyphs, "fonts", [])
+        snapshot = getattr(values, 'values', None)  # Avoid repeated native window queries.
+        fonts = list(snapshot() if callable(snapshot) else values if values is not None else [])
         live = {self._native_identity(font) for font in fonts}
         for key in self._ids.keys() - live:
             _font, document_id = self._ids.pop(key)
@@ -241,19 +243,15 @@ class GlyphsAdapter:
                 raise BridgeError("native_write_failed", "Glyphs rejected temporary rounding suppression")
 
     def _clear_operation(self, document_id: str) -> None:
-        states = self._rounding_states.pop(document_id, {})
-        failures = []
-        for layer, original in reversed(tuple(states.values())):
-            if not self._set_rounding(layer, original):
-                failures.append(str(_value(layer, "layerId", "unknown")))
-        self._operation_layers.pop(document_id, None)
-        self._operation_fonts.pop(document_id, None)
-        if failures:
-            raise BridgeError("native_write_failed", "Could not restore rounding flags", details={"layers": failures})
+        for _ in clear_adapter_steps(self, document_id):
+            pass
 
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         font = self._font(document_id)
         kinds = {str(item.get("kind") or "") for item in entities if isinstance(item, Mapping)}
+        if 'kerning_proof' in kinds:
+            from . import kerning_proof
+            return kerning_proof.read(self, font, document_id, entities, fields)
         if kinds & {"feature_blocks", "feature_block"}:
             return feature_inventory.read(self, font, document_id, entities, fields)
         if kinds & {"instances", "instance"}:
@@ -555,10 +553,24 @@ class GlyphsAdapter:
             raise
 
     def end_undo(self, document_id: str, name: str) -> None:
+        for _ in self.end_undo_steps(document_id, name):
+            pass
+
+    def end_undo_steps(self, document_id: str, name: str):
+        """Keep operation resources until all groups and precision flags settle."""
         manager = self._undo_managers.pop(document_id, None)
+        first_error = None
         try:
-            if manager is None:
-                return
-            manager.finish(name)
-        finally:
-            self._clear_operation(document_id)
+            if manager is not None:
+                yield from manager.finish_steps(name)
+        except Exception as exc:
+            first_error = exc
+        try:
+            yield from clear_adapter_steps(self, document_id)
+        except Exception as exc:
+            if first_error is None:
+                raise
+            raise BridgeError("native_write_failed", str(first_error),
+                              details={"roundingCleanup": str(exc)}) from first_error
+        if first_error is not None:
+            raise first_error

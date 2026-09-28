@@ -1,0 +1,196 @@
+{
+  "date": "2026-09-28",
+  "status": "complete \u2014 user-assisted installed-card qualification",
+  "automationAccess": "Computer Use is not allowed to use the app 'com.openai.codex' for safety reasons.",
+  "workflowId": "edit_7d6e4f20165e4cc38ae37abda7d1dcfd",
+  "jobId": "job_6de0d49779554f29b23e662737676a9a",
+  "documentPath": "build/beta8-milestone5/editor/Conversation.glyphspackage",
+  "source": "prints only; no font content writes",
+  "runtime": "2.0.0-beta.8+bb5297f858c9",
+  "bridge": "2.0.0-beta.8+c35ab0983487",
+  "automatedChecks": {
+    "focused": "47 passed",
+    "installedResource": "current-served-card-check.json",
+    "claim": "These checks do not replace user-observed Codex rendering."
+  },
+  "observations": [
+    {
+      "source": "user reply in this Codex conversation",
+      "check": "Card visible; Script details opened, closed and reopened twice",
+      "answer": "Card visible; details work"
+    },
+    {
+      "source": "user reply in this Codex conversation",
+      "check": "Completion output refreshed with literal HTML tags, countdown displayed, Wait stopped Keep after 30 seconds",
+      "answer": "Output correct; bar appeared; Wait stopped Keep"
+    },
+    {
+      "source": "user reply in this Codex conversation",
+      "check": "Fresh card Run, Wait after countdown, no Save/Keep; 30-second observation",
+      "answer": "Wait worked; Keep still offered"
+    },
+    {
+      "source": "user pasted the final MCP workflow result",
+      "check": "Second card workflow ended via automatic Keep",
+      "answer": "Changes kept without saving. This workflow\u2019s restoration offer has ended.",
+      "serverEvidence": "visual-wait-retest.json: responseOrigin card_timeout; finish_script signature automatic=true; no Wait consumed"
+    },
+    {
+      "source": "user yes reply and matching MCP App context",
+      "check": "Single card Wait before Run",
+      "serverEvidence": "revision 9 waiting_run, autoKeep.enabled false; subsequent fresh read confirmed"
+    },
+    {
+      "source": "user reply",
+      "check": "First hidden/reopened-card observation request",
+      "answer": "retry this test.",
+      "outcome": "No pass/fail inferred; retry requested after actual sidecar reconnect."
+    },
+    {
+      "source": "user reply to enabled typed countdown hide/return/Wait test",
+      "answer": "the hidden countdown work",
+      "check": "Actual card hidden countdown"
+    }
+  ],
+  "pending": [],
+  "serverFollowup": {
+    "file": "visual-wait-server.json",
+    "state": "saved",
+    "revision": 21,
+    "autoKeepEnabled": true,
+    "saveVerified": true,
+    "sourceHashUnchanged": true,
+    "note": "No Wait action was consumed. User clarification requested before treating opt-out persistence as qualified."
+  },
+  "waitRetest": {
+    "workflowId": "edit_c64c3ae948e14ea6b7c468cf114b79e6",
+    "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+    "idempotencyKey": "m5-visual-20260928-wait-persistence-2",
+    "requestFingerprint": "sha256:d446c39a4ca07bebafecb411f55c15ff93f28ee4c8fcb873a630275a66378f41",
+    "initialState": "waiting_run",
+    "initialRevision": 6,
+    "scope": "Print-only script on the existing disposable Conversation.glyphspackage; no font data writes",
+    "manualRequest": "Run, click Wait after countdown appears, leave Keep and Save untouched, observe for 30 seconds.",
+    "serverState": "executed",
+    "serverRevision": 17,
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "consumedActions": [
+      {
+        "revision": 6,
+        "action": "run_script",
+        "signature": "[null, null]"
+      },
+      {
+        "revision": 14,
+        "action": "finish_script",
+        "signature": "[null, null, true]"
+      }
+    ],
+    "evidence": "visual-wait-retest.json"
+  },
+  "singleCardRetest": {
+    "workflowId": "edit_bc03ecc881a3484295751558fa908e22",
+    "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+    "idempotencyKey": "m5-visual-20260928-single-card-3",
+    "scope": "Print-only; preparation only, user asked to click Wait before Run",
+    "reason": "Second card auto-kept despite reported Wait; no successful server opt-out. Isolate one initial card and avoid the countdown race.",
+    "serverState": "applied",
+    "serverRevision": 17,
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "evidence": "visual-single-card-run.json",
+    "agentDispatched": "run_script once, after successful Wait"
+  },
+  "connectionRetest": {
+    "downtimeSeconds": 42.09364295005798,
+    "beforePid": 38470,
+    "afterPid": 57141,
+    "beforeState": "applied",
+    "afterReconnectState": "interrupted",
+    "afterReconciliationState": "applied",
+    "autoKeepEnabled": false,
+    "sameJobAndRequest": true,
+    "sameBridgeOperationEvidence": true,
+    "documentsUnchanged": true,
+    "sameSidecarIdentity": true,
+    "actions": [
+      {
+        "revision": 6,
+        "action": "wait_for_answer",
+        "signature": "[null, null]"
+      },
+      {
+        "revision": 9,
+        "action": "run_script",
+        "signature": "[null, null]"
+      },
+      {
+        "revision": 18,
+        "action": "check_outcome",
+        "signature": "[null, null]"
+      }
+    ],
+    "claim": "Actual sidecar disconnect and fresh Codex tool read passed; user visual card reappearance still pending. Glyphs was not restarted."
+  },
+  "typedHiddenCheck": {
+    "workflowId": "edit_b9a24a74a1cb4203bb23337bf900e664",
+    "jobId": "job_4d45f9c249a147a9b84690156e270408",
+    "idempotencyKey": "m5-visual-20260928-typed-hidden-4",
+    "scope": "A all nine stored layers, width +0.125 on disposable Conversation.glyphspackage",
+    "appliedVerification": "visual-typed-applied.json",
+    "controls": "All selected outline hashes and metrics keys plus B Regular width/hash/keys unchanged",
+    "stateObserved": "applied revision 14; explicit Apply arrived before the readiness read; the failed ready-state assertion was a test timing assumption, not an edit failure",
+    "pending": null,
+    "serverState": "applied",
+    "serverRevision": 17,
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "consumedActions": [
+      {
+        "revision": 6,
+        "action": "apply",
+        "signature": "[null, null]"
+      },
+      {
+        "revision": 14,
+        "action": "wait_for_answer",
+        "signature": "[null, null]"
+      }
+    ],
+    "evidence": "visual-typed-hidden-result.json",
+    "cleanupEvidence": "visual-typed-cleanup.json"
+  },
+  "completion": {
+    "date": "2026-09-28",
+    "visualMethod": "User observations in the actual Codex MCP cards, corroborated with authoritative workflow reads and consumed action records. Computer Use restriction respected.",
+    "verified": [
+      "Script details repeat open/close and completion refresh",
+      "Literal output rendering",
+      "Visible automatic script Keep",
+      "Persistent card Wait before Run and during the typed result countdown",
+      "User-reported enabled countdown pause while the card was hidden",
+      "Actual 42-second sidecar disconnection, reconciliation and installed Codex reconnection without replay",
+      "All nine fractional widths and controls restored through selective Undo",
+      "Disposable fixture saved with its original source hash; all five fonts clean; zero active operations"
+    ],
+    "limitations": [
+      "No automated access to Codex UI; visual observations are user supplied.",
+      "Early Wait reports were not corroborated and remain inconclusive; later isolated and typed-result tests passed.",
+      "Disconnected error-screen appearance was not directly observed; transport loss, retained state and post-reconnect card actions were verified."
+    ],
+    "runtimeChanged": false,
+    "buildOrInstallRequired": false,
+    "committed": false,
+    "published": false
+  }
+}

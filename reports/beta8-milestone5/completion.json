@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-28",
+  "milestone": 5,
+  "status": "complete locally",
+  "qualification": "User-assisted actual Codex card observations plus authoritative installed-server and editor evidence",
+  "followupChecks": {
+    "focusedCardLifecycleTests": 47,
+    "documentationTests": 3,
+    "skillSync": "11 synchronized skills",
+    "package": {
+      "publicTools": 12,
+      "runtimeArchitectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "skills": 11
+    },
+    "gitDiffCheck": "passed"
+  },
+  "cleanup": {
+    "typedWorkflow": "discarded",
+    "allNineWidthsAndControlsRestored": true,
+    "fixtureSourceHash": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+    "allFiveFontsClean": true,
+    "activeOperations": 0,
+    "originalDactylotypeEditedOrSaved": false
+  },
+  "runtime": {
+    "release": "2.0.0-beta.8",
+    "desktopBuild": 50,
+    "sidecar": "bb5297f858c9",
+    "bridge": "c35ab0983487",
+    "newRuntimeChanges": false
+  },
+  "nextMilestone": {
+    "number": 8,
+    "name": "Exact typed kerning edits and language-aware discovery",
+    "started": false
+  },
+  "remainingUnrelatedGate": "Signed Beta 7 updater/component-migration qualification",
+  "commitOrPublication": false
+}

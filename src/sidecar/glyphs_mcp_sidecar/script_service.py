@@ -8,8 +8,9 @@ from .saved_script import unresolved
 
 def validate_capabilities(service, options, error):
     native = service.bridge.status()
-    if scripts.NATIVE not in native.get('jobCapabilities', []):
-        raise error('unsupported_job', 'native scripts require a coordinated runtime update (script.native.v1)')
+    if (scripts.NATIVE not in native.get('jobCapabilities', [])
+            or native.get('scriptPreparationVersion') != scripts.PREPARATION_VERSION):
+        raise error('unsupported_job', 'native scripts require a coordinated runtime update (script.native.v1, preparation version 2)')
 
 
 def run(service, job_id, workflow_id, error):
@@ -19,8 +20,8 @@ def run(service, job_id, workflow_id, error):
     job = service._job(job_id)
     if job.get('resultKind') != 'script' or job['status'] != 'ready':
         raise error('job_not_ready', 'script review is not ready')
-    for other in service.jobs.records():
-        if other['id'] != job_id and (unresolved(other) or other['status'] in {'preparing', 'cancelling', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding'}):
+    for other in service.jobs.select({'preparing', 'cancelling', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding'}, include_unresolved=True):
+        if other['id'] != job_id:
             raise error('document_busy', 'resolve outstanding MCP mutations before native execution')
     from .saved_script import save_before_run
     job = save_before_run(service, job, workflow, error)
@@ -35,8 +36,10 @@ def run(service, job_id, workflow_id, error):
     options = scripts.validate_options(job['request']['options'])
     if scripts.digest(options) != report['requestHash'] or options != report['review']:
         raise error('stale_script', 'the reviewed source or parameters changed')
-    request = dict(jobId=job_id, documentId=doc['id'], sourcePath=doc['path'], sourceHash=job['sourceHash'],
-                   generation=doc['generation'], options=options, manifest=report['manifest'])
+    from .saved_script import execution_request
+    request = execution_request(job, report, error)
+    from .checkpoints import establish_baseline
+    establish_baseline(service, job, report.get('manifest') or request.get('targets') or [])
     service.jobs.update(job_id, status='applying')
     try:
         operation = service.bridge.run_script(request)
@@ -80,10 +83,10 @@ def mutation_guard(method):
         from .service import ServiceError
         with service._script_dispatch_lock:
             with service._lock:
-                if any(j['request']['kind'] == 'python_script'
+                if any(j['request']['kind'] in {'python_script','checkpoint_restore'}
                        and (unresolved(j) or j['status'] in {'applying', 'discarding', 'accept_uncertain'}
                             or j['status'] == 'interrupted' and (j.get('error') or {}).get('code') == 'bridge_operation_lost')
-                       for j in service.jobs.records()):
+                       for j in service.jobs.select({'applying', 'discarding', 'accept_uncertain', 'interrupted'}, include_unresolved=True)):
                     raise ServiceError('document_busy', 'reconcile native execution before another mutation')
             return method(service, *args, **kwargs)
     return guarded

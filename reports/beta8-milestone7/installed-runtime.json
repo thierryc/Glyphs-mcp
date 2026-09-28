@@ -1,0 +1,334 @@
+{
+  "status": {
+    "ok": true,
+    "data": {
+      "protocol": 1,
+      "sidecarVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.8",
+        "channel": "beta",
+        "betaNumber": 8,
+        "installerBuild": 50
+      },
+      "runtimeId": "2.0.0-beta.8+bb5297f858c9",
+      "codeHash": "sha256:bb5297f858c9b66a541d159c2554cafb98c1dff1c92199e56bad09b7883722df",
+      "identityEvidence": "initialization-time file fingerprint",
+      "interface": "glyphs-mcp-sidecar",
+      "interfaceVersion": 1,
+      "jobKinds": [
+        "width_delta",
+        "spacing",
+        "kerning_collision",
+        "start_nodes",
+        "slant",
+        "checkpoint_restore",
+        "python_script",
+        "outline_edit",
+        "native_action",
+        "dimensions_edit",
+        "feature_compile",
+        "font_export"
+      ],
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.remove-node.v1",
+        "outline.background.edit.v1",
+        "native.action.v1",
+        "master.dimensions.edit.v1",
+        "font.checkpoint-restore.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1",
+        "script.native.v1"
+      ],
+      "tools": [
+        "get_status",
+        "list_documents",
+        "read_entities",
+        "start_job",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "bridge": {
+        "reachable": true,
+        "protocol": 1,
+        "bridgeVersion": "2.0.0",
+        "release": {
+          "version": "2.0.0",
+          "releaseVersion": "2.0.0-beta.8",
+          "channel": "beta",
+          "betaNumber": 8,
+          "installerBuild": 50
+        },
+        "runtimeId": "2.0.0-beta.8+c35ab0983487",
+        "codeHash": "sha256:c35ab0983487fb32734006b1244a83d00264f0af24ae5b7395ec77653174364c",
+        "identityEvidence": "initialization-time file fingerprint",
+        "host": {
+          "identifier": "com.GeorgSeifert.Glyphs4",
+          "version": "4.1",
+          "build": "4107"
+        },
+        "readCapabilities": [
+          "master.read.exact.v1",
+          "masters.list.v1",
+          "layer.read.exact.v1",
+          "selection.nodes.native.v1",
+          "selection.context.v1",
+          "document.context.v1",
+          "glyphs.list.v1",
+          "layers.list.v1",
+          "kerning.groups.v1",
+          "kerning.pairs.v1",
+          "master.properties.v1",
+          "paths.list.v1",
+          "path.geometry.v1",
+          "outline.background.read.v1",
+          "features.read.v1",
+          "instances.read.v1",
+          "master.dimensions.read.v1"
+        ],
+        "writeCapabilities": [
+          "outline.edit.v1",
+          "outline.background.edit.v1",
+          "outline.remove-node.v1",
+          "master.dimensions.edit.v1",
+          "native.action.v1",
+          "font.checkpoint-restore.v1"
+        ],
+        "nativeActions": [
+          "add_extremes",
+          "add_missing_anchors",
+          "align_components",
+          "cleanup_paths",
+          "connect_open_paths",
+          "correct_path_direction",
+          "decompose_components",
+          "decompose_corners",
+          "make_components",
+          "reinterpolate",
+          "remove_overlap",
+          "round_coordinates",
+          "set_glyph_color",
+          "swap_foreground_background",
+          "update_automatic_feature_block",
+          "update_features",
+          "update_glyph_info",
+          "update_metrics"
+        ],
+        "jobCapabilities": [
+          "feature.compile.live.v1",
+          "script.native.v1",
+          "edit.prepare.native.v1"
+        ],
+        "scriptPreparationVersion": 2,
+        "activity": "ready",
+        "activeOperations": 0,
+        "companions": [
+          {
+            "protocol": 1,
+            "id": "curve-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "curve.measure",
+              "curve.overlay"
+            ]
+          },
+          {
+            "protocol": 1,
+            "id": "reference-inspector",
+            "version": "0.1.0",
+            "capabilities": [
+              "reference.file",
+              "reference.git",
+              "reference.github",
+              "reference.overlay",
+              "reference.saved"
+            ]
+          }
+        ]
+      },
+      "worker": {
+        "available": true,
+        "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+        "application": "/Applications/Glyphs 4.app",
+        "plugins": "disabled",
+        "processModel": "one_shot",
+        "executions": [],
+        "jobCapabilities": [
+          "feature.compile.saved.v1",
+          "font.export.static.v1",
+          "font.export.variable.v1",
+          "font.export.web.v1",
+          "font.verify.shaping.v1",
+          "font.verify.tables.v1"
+        ]
+      },
+      "controlProtocol": 1,
+      "workflowCapabilities": [
+        "edit.workflow.v1",
+        "font.checkpoints.v1"
+      ],
+      "activity": {
+        "jobs": [
+          {
+            "jobId": "job_458c46aab21a4589b5f09c28fe467fc4",
+            "document": "Checkpoint qualification glyphspackage",
+            "kind": "checkpoint_restore",
+            "phase": "accepted",
+            "startedAt": 1790595957.573575,
+            "finishedAt": 1790595957.5735989,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_af9c08915ac44f76948ee06e6fe052b9",
+            "document": "Checkpoint qualification glyphspackage",
+            "kind": "checkpoint_restore",
+            "phase": "accepted",
+            "startedAt": 1790595952.3037372,
+            "finishedAt": 1790595952.3037639,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_5a476076384944f7a4ef5b43cc109a24",
+            "document": "Checkpoint qualification glyphspackage",
+            "kind": "checkpoint_restore",
+            "phase": "accepted",
+            "startedAt": 1790595946.769563,
+            "finishedAt": 1790595946.769582,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_b0956aa7363d411783910d1aaeb85c46",
+            "document": "Checkpoint qualification glyphspackage",
+            "kind": "checkpoint_restore",
+            "phase": "accepted",
+            "startedAt": 1790595941.871211,
+            "finishedAt": 1790595941.871237,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          {
+            "jobId": "job_9bb8293f9e9b41958f2a6f4dcea5b6eb",
+            "document": "Checkpoint qualification glyphspackage",
+            "kind": "checkpoint_restore",
+            "phase": "accepted",
+            "startedAt": 1790595936.514988,
+            "finishedAt": 1790595936.5150158,
+            "completed": null,
+            "total": null,
+            "message": null
+          }
+        ],
+        "activeCount": 0,
+        "moreCount": 0
+      },
+      "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+    }
+  },
+  "documents": {
+    "ok": true,
+    "data": [
+      {
+        "id": "doc_d31c59b8eb7a4ed9994e042f667ad521",
+        "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": true,
+        "familyName": "Dactylotype"
+      },
+      {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      {
+        "id": "doc_346ee24d700b41ed9eb81d5023e794ae",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Native workflow probe"
+      },
+      {
+        "id": "doc_40857b941fc24c9da6cc8aa47684b2c4",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Checkpoint qualification glyphspackage"
+      },
+      {
+        "id": "doc_8b59fef6ac764fe4a6eb3a77a5938508",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Checkpoint qualification glyphs"
+      }
+    ]
+  },
+  "catalogMatchesSource": true,
+  "settingsAndCompanionsPreserved": true
+}

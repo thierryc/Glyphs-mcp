@@ -497,7 +497,8 @@ public struct GlyphDiffService {
     public func compare(
         project: URL,
         change: GitObservation.Change,
-        headRevision: String?
+        headRevision: String?,
+        afterRevision: String? = nil
     ) async throws -> GlyphDiffDocument {
         guard change.isGlyphPackageGlyph else { throw ProjectError("Visual comparison is available for glyph files inside .glyphspackage sources.") }
         let afterLocation = try location(change.path)
@@ -543,8 +544,14 @@ public struct GlyphDiffService {
         } else {
             beforePackage = nil
         }
-        let afterPackage = project.appendingPathComponent(afterLocation.packagePath, isDirectory: true)
-        let afterGlyph = project.appendingPathComponent(afterLocation.glyphPath)
+        let afterPackage: URL
+        if let afterRevision {
+            let afterFolder = temporary.appendingPathComponent("after-version", isDirectory: true)
+            try fileManager.createDirectory(at: afterFolder, withIntermediateDirectories: true)
+            afterPackage = try await materialize(project: project, revision: afterRevision, location: afterLocation, temporary: afterFolder)
+                ?? afterFolder.appendingPathComponent("missing.glyphspackage")
+        } else { afterPackage = project.appendingPathComponent(afterLocation.packagePath, isDirectory: true) }
+        let afterGlyph = afterPackage.appendingPathComponent(String(afterLocation.glyphPath.dropFirst(afterLocation.packagePath.count + 1)))
         if fileManager.fileExists(atPath: afterPackage.path) {
             try Self.validateMaterializedPackage(afterPackage)
         }

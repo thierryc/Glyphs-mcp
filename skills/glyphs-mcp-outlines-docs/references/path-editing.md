@@ -12,10 +12,12 @@ twelve; never substitute arbitrary Python or direct font-file editing to bypass
 missing typed capabilities or rejected writes.
 Shape-preserving removal additionally requires `outline.remove-node.v1`.
 
-Always read compact `context` and `selection` first. State whether selection
-informed the target. Explicit user-supplied glyph, layer, path and node targets
+When the target depends on the current selection, read compact `context` and
+`selection` first. State whether selection informed the target. Explicit user-supplied glyph, layer, path and node targets
 take precedence over selection; selection is evidence, never a late-bound write
 scope.
+Skip context/selection reads for fully explicit targets; read their exact
+geometry and path-hash guards instead. Reuse the known document and master IDs.
 
 Use these sole-selector reads:
 
@@ -87,7 +89,9 @@ and warnings. A zero raw-node delta can still include a split followed by a
 native removal; inspect the operation evidence. Applying does not Save. It
 retains native per-glyph Undo/Redo, partial-write recovery, whole-job
 `discard_job`, path metadata, components, anchors, surviving node identities
-and shape order. Apply only from the same saved clean baseline.
+and shape order. Absent node names remain absent after native Undo/Redo and
+selective recovery; an empty-string name is a distinct value. Apply only from
+the same saved clean baseline.
 
 For bulk scaling, centering, mirroring or a custom sequence, offer [direct native
 scripting](../../glyphs/references/python-scripts.md#choose-the-route) as a separate

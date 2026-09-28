@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate the shipped lean skill contract and locked runtime provenance offline."""
 import ast
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -23,6 +24,36 @@ def check_skill(root, name):
         assert root.resolve() in path.parents and path.is_file(), f'{entry}: missing or outside skill tree: {target}'
 
 
+def check_tool_catalog(root):
+    server_trees = [ast.parse((root/'src/sidecar/glyphs_mcp_sidecar'/name).read_text())
+                    for name in ('server.py', 'edit_workflow_ui.py')]
+    tools = [
+        keyword.value.value
+        for tree in server_trees for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
+        for decorator in node.decorator_list
+        if isinstance(decorator, ast.Call)
+        and isinstance(decorator.func, ast.Attribute)
+        and decorator.func.attr == 'tool'
+        for keyword in decorator.keywords
+        if keyword.arg == 'name' and isinstance(keyword.value, ast.Constant)
+    ]
+    model = ast.parse((root/'src/protocol/glyphs_mcp_protocol/models.py').read_text())
+    expected = next(ast.literal_eval(node.value) for node in model.body
+                    if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'TOOL_NAMES' for t in node.targets))
+    assert len(tools) == len(expected) == 12 and set(tools) == set(expected), f'Public tool contract mismatch: {tools}'
+    return set(tools)
+
+
+def check_kerning_data(root):
+    metadata=json.loads((root/'provenance.json').read_text())
+    assert metadata['revision']=='b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611' and metadata['license']=='MIT'
+    assert len(metadata['inputs'])==24 and len({r['language'] for r in metadata['inputs']})==24
+    assert all(re.fullmatch('[a-f0-9]{64}',r['sha256']) and metadata['revision'] in r['source'] for r in metadata['inputs'])
+    assert hashlib.sha256((root/'pairs.json').read_bytes()).hexdigest()==metadata['normalizedSha256']
+    assert hashlib.sha256((root/'LICENSE.md').read_bytes()).hexdigest()==metadata['licenseSha256']
+    assert 'André Fuchs' in (root/'LICENSE.md').read_text()
+
+
 def check():
     assert not (ROOT/'src/glyphs-mcp-v2').exists(), 'Obsolete experimental runtime in candidate'
     manifest = json.loads((ROOT/'skills/manifest.json').read_text())
@@ -39,19 +70,8 @@ def check():
         assert set(re.findall(r'--hash=sha256:([a-f0-9]{64})',lock)) == set(hashes.values())
         assert 'glyphs-cli==0.6.1' in lock and 'fastmcp==2.12.0' in lock
     for path in (ROOT/'src').glob('*/glyphs_mcp_*/*.py'): ast.parse(path.read_text())
-    server_trees = [ast.parse((ROOT/'src/sidecar/glyphs_mcp_sidecar'/name).read_text())
-                    for name in ('server.py', 'edit_workflow_ui.py')]
-    tools = {
-        keyword.value.value
-        for tree in server_trees for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
-        for decorator in node.decorator_list
-        if isinstance(decorator, ast.Call)
-        and isinstance(decorator.func, ast.Attribute)
-        and decorator.func.attr == 'tool'
-        for keyword in decorator.keywords
-        if keyword.arg == 'name' and isinstance(keyword.value, ast.Constant)
-    }
-    assert len(tools) == 12, f'Expected nine existing and three conversation tools, found {sorted(tools)}'
+    tools = check_tool_catalog(ROOT)
+    check_kerning_data(ROOT/'src/protocol/glyphs_mcp_protocol/data/kerning-pairs')
     return {'skills':len(names), 'runtimeArchitectures':['arm64','x86_64'], 'publicTools':len(tools)}
 
 

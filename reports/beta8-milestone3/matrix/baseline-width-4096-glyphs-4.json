@@ -1,0 +1,45 @@
+{
+  "data": {
+    "kind": "width",
+    "targets": 4096,
+    "format": "glyphs",
+    "fontGlyphs": 5000,
+    "contoursPerSurface": 4,
+    "preparationSeconds": 0.6144944170082454,
+    "applicationPollingSeconds": 1.8197978750104085,
+    "totalSeconds": 2.434292292018654,
+    "verificationSeconds": 1.1677511659800075,
+    "selectiveRecoverySeconds": 1.9750143749988638,
+    "saveSeconds": 0,
+    "saveCalls": 0,
+    "peakRSSBytes": 725893120,
+    "longestPreparationCallSeconds": 0.025460292003117502,
+    "longestApplicationCallSeconds": 0.012515000009443611,
+    "longestRecoveryCallSeconds": 0.0006834169907961041,
+    "longestScheduledChunkSeconds": 0.9328469579922967,
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.035246584011474624
+    },
+    "workerLaunches": 0,
+    "sourceCopyCount": 0,
+    "unchangedControls": true,
+    "nativeUndoRedo": true,
+    "selectiveRecovery": true
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodologyVersion": 3,
+  "methodology": "Fresh native process; identical prebuilt fixtures; current native route before/after. Whole-font verification outside edit timings. Peak RSS includes runtime, fixture and verification. No prerequisite Save; editor Save and client latency separate. Scheduled/call maxima are instrumentation, not OS UI stall traces.",
+  "cleanup": {
+    "totalNativeSeconds": 1.8083205000148155,
+    "longestStepSeconds": 0.9297877500066534,
+    "steps": 2,
+    "longestScheduledCleanupSeconds": 0.932845666015055,
+    "scheduledCleanupChunks": 2
+  },
+  "cleanupMethodology": "Native adapter cleanup, including application and selective recovery where present. Baseline step is synchronous cleanup; candidate step is one generator advance. Scheduled cleanup maxima include other work sharing that callback. Native calls remain indivisible."
+}

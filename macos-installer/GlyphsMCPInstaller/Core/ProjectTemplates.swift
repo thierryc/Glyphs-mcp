@@ -12,6 +12,8 @@ public struct ProjectTemplate: Codable, Equatable, Identifiable {
     public let templateDirectory: String
     public let revision: String
     public let archiveSHA256: String
+    public var bundledResource: String? = nil
+    public var isBundled: Bool { id == "font-git-checkpoints" && bundledResource == "font-git-checkpoints" }
     public var repositoryURL: URL? {
         guard let url = URL(string: repository), url.scheme == "https", url.host == "github.com",
               url.port == nil, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return nil }
@@ -48,13 +50,20 @@ public struct TemplateRegistry: Codable {
         URL(string: Bundle.main.object(forInfoDictionaryKey: "GMCPTemplateRegistryURL") as? String
             ?? "https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/templates/registry.json")!
     }
+    public func includingBuiltIns() -> Self {
+        let entry = ProjectTemplate(id: "font-git-checkpoints", name: "Font project with Git checkpoints",
+            description: "A font project with explicit Git initialization and checkpoints after authorized MCP saves.",
+            author: "Glyphs MCP", license: "MIT", repository: "", templateDirectory: ".", revision: "", archiveSHA256: "",
+            bundledResource: "font-git-checkpoints")
+        return .init(schemaVersion: schemaVersion, templates: [entry] + templates.filter { $0.id != entry.id })
+    }
     public static func decode(_ data: Data) throws -> Self {
         guard data.count < 256_000 else { throw ProjectError("The template registry is too large.") }
         let value = try JSONDecoder().decode(Self.self, from: data)
         guard value.schemaVersion == 1, value.templates.count <= 100,
               Set(value.templates.map(\.id)).count == value.templates.count else { throw ProjectError("Invalid template registry.") }
         for template in value.templates {
-            guard template.archiveURL != nil else { throw ProjectError("A template needs a public repository, pinned revision and checksum.") }
+            guard template.isBundled || template.archiveURL != nil else { throw ProjectError("A template needs a public repository, pinned revision and checksum.") }
             if template.templateDirectory != "." { try ProjectFiles.validateRelativePath(template.templateDirectory) }
         }
         return value
@@ -119,13 +128,22 @@ public enum ProjectFiles {
          ProjectFile(path: ".gitignore", data: Data(".DS_Store\n*.bak\n".utf8))] +
         ["sources", "exports", "proofs", "documentation"].map { ProjectFile(path: $0, data: nil) }
     }
-    public static func create(_ files: [ProjectFile], in parent: URL, name: String, endpoint: URL) throws -> URL {
+    public static func create(_ files: [ProjectFile], in parent: URL, name: String, endpoint: URL, initializeGit: Bool = false) throws -> URL {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         try validateRelativePath(name)
         guard !name.contains("/"), !name.hasPrefix("."), name.utf8.count <= 200 else { throw ProjectError("Use a project name without path separators or a leading dot.") }
         let target = parent.appendingPathComponent(name, isDirectory: true)
         let fm = FileManager.default
         guard !fm.fileExists(atPath: target.path) else { throw ProjectError("A folder with this name already exists. Choose another name.") }
+        if initializeGit {
+            var ancestor = parent.standardizedFileURL
+            while ancestor.path != "/" {
+                if fm.fileExists(atPath: ancestor.appendingPathComponent(".git").path) {
+                    throw ProjectError("Choose a location outside an existing Git repository for this new Git project.")
+                }
+                ancestor.deleteLastPathComponent()
+            }
+        }
         let stage = parent.appendingPathComponent(".glyphs-mcp-project-" + UUID().uuidString)
         try fm.createDirectory(at: stage, withIntermediateDirectories: false)
         defer { try? fm.removeItem(at: stage) }
@@ -147,6 +165,12 @@ public enum ProjectFiles {
             } else { try fm.createDirectory(at: destination, withIntermediateDirectories: true) }
         }
         try Task.checkCancellation()
+        if initializeGit {
+            let result = ProcessRunner().runSyncWithStderr(executable: URL(fileURLWithPath: "/usr/bin/git"),
+                args: ["-C", stage.path, "init", "--template=", "-b", "main"],
+                environment: ["PATH": "/usr/bin:/bin", "HOME": fm.homeDirectoryForCurrentUser.path])
+            guard result.exitCode == 0 else { throw ProjectError("Git initialization failed: " + String(result.stderr.prefix(1000))) }
+        }
         // Atomic exclusive rename closes the name-collision race. Never replace
         // or remove an existing project, including after failed creation.
         guard renameatx_np(AT_FDCWD, stage.path, AT_FDCWD, target.path, UInt32(RENAME_EXCL)) == 0 else {

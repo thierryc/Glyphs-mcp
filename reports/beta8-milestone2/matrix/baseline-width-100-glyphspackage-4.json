@@ -1,0 +1,37 @@
+{
+  "data": {
+    "kind": "width",
+    "targets": 100,
+    "format": "glyphspackage",
+    "fontGlyphs": 5000,
+    "contoursPerSurface": 4,
+    "preparationSeconds": 0.8894070420064963,
+    "applicationPollingSeconds": 0.6025057079968974,
+    "totalSeconds": 1.4919127500033937,
+    "verificationSeconds": 1.1628080410009716,
+    "selectiveRecoverySeconds": 0.19881337499828078,
+    "saveSeconds": 0,
+    "saveCalls": 0,
+    "peakRSSBytes": 592150528,
+    "longestPreparationCallSeconds": 0.02451524999924004,
+    "longestApplicationCallSeconds": 0.0009952090040314943,
+    "longestRecoveryCallSeconds": 0.0006381249986588955,
+    "longestScheduledChunkSeconds": 0.025118083984125406,
+    "preparationMetrics": {
+      "longestChunkSeconds": 0.00153254100587219
+    },
+    "workerLaunches": 0,
+    "sourceCopyCount": 0,
+    "unchangedControls": true,
+    "nativeUndoRedo": true,
+    "selectiveRecovery": true
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "methodologyVersion": 3,
+  "methodology": "Fresh native process; identical prebuilt fixtures; current native route before/after. Whole-font verification outside edit timings. Peak RSS includes runtime, fixture and verification. No prerequisite Save; editor Save and client latency separate. Scheduled/call maxima are instrumentation, not OS UI stall traces."
+}

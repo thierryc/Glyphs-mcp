@@ -1,0 +1,1041 @@
+[
+  {
+    "step": "masters",
+    "value": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "masters",
+            "limit": 100
+          },
+          "values": {
+            "items": [
+              {
+                "id": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+                "name": "Regular"
+              },
+              {
+                "id": "6BA53FAA-2991-4410-BA4F-EB9524907284",
+                "name": "Regular"
+              }
+            ],
+            "total": 2,
+            "complete": true,
+            "nextCursor": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "step": "mark_start",
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_2a950f8cfa4b48098d2e9ffe3d9b07d6",
+        "revision": 3,
+        "document": {
+          "id": "doc_be0f9a04e07743edaefaace87f103eef",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": false,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "preparing",
+        "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+          "status": "preparing",
+          "summary": null,
+          "resultKind": "mutation",
+          "changeCount": null,
+          "report": {},
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": null,
+          "activity": {
+            "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "preparing",
+            "startedAt": 1790533244.891194,
+            "finishedAt": null,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": []
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": null,
+        "requestFingerprint": "sha256:bff92f5b4407ede79fc2e67af44c42a846c02a85327977c16e4e7c5113586450",
+        "documentStateConfirmed": false,
+        "summary": "Create an unsaved metadata edit for package Save qualification",
+        "entrypoint": "script",
+        "warning": "This script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.",
+        "actions": [
+          {
+            "action": "cancel",
+            "label": "Cancel preparation",
+            "token": "68c0cfa2847d61378fdd6340f5f6e27e669ef06fc6d15418a775645ae8a9df76",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Validating script and resolving targets…",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nValidating script and resolving targets…\nOperation: python script\nIntended change: Create an unsaved metadata edit for package Save qualification\nScope: pending resolved surfaces; 0 skipped.\nThis script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Cancel preparation. You can reply in ordinary language.",
+        "poll": true,
+        "modelContext": "{\"workflow_id\":\"edit_2a950f8cfa4b48098d2e9ffe3d9b07d6\",\"expected_revision\":3,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"preparing\",\"poll\":true,\"requestFingerprint\":\"sha256:bff92f5b4407ede79fc2e67af44c42a846c02a85327977c16e4e7c5113586450\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"cancel\",\"label\":\"Cancel preparation\",\"action_token\":\"68c0cfa2847d61378fdd6340f5f6e27e669ef06fc6d15418a775645ae8a9df76\",\"requiresDestination\":false}]}"
+      }
+    }
+  },
+  {
+    "step": "mark_applied",
+    "value": {
+      "id": "edit_2a950f8cfa4b48098d2e9ffe3d9b07d6",
+      "revision": 15,
+      "document": {
+        "id": "doc_be0f9a04e07743edaefaace87f103eef",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+        "dirty": true,
+        "generation": 0,
+        "isCurrent": true,
+        "familyName": "Native workflow probe"
+      },
+      "mode": "apply",
+      "state": "applied",
+      "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+        "status": "applied",
+        "summary": "Create an unsaved metadata edit for package Save qualification",
+        "resultKind": "script",
+        "changeCount": null,
+        "report": {
+          "targetCount": 0,
+          "skippedCount": 0,
+          "sample": []
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+          "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+          "status": "applied",
+          "completedChanges": null,
+          "longestPreparationChunk": 0.018828957981895655,
+          "totalChanges": null,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": {
+            "executed": true,
+            "output": "Document undo before fixture edit: False\n",
+            "entrypoint": "script",
+            "executionSucceeded": true,
+            "changesVerified": false,
+            "executedTargets": 0,
+            "totalTargets": 0,
+            "documentAfter": {
+              "id": "doc_be0f9a04e07743edaefaace87f103eef",
+              "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+              "dirty": true,
+              "generation": 0
+            }
+          },
+          "receipt": null,
+          "message": null
+        },
+        "activity": {
+          "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+          "document": "Native workflow probe",
+          "kind": "python_script",
+          "phase": "applied",
+          "startedAt": 1790533257.06419,
+          "finishedAt": 1790533257.064234,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": {
+        "available": true,
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+        "sourceHash": "sha256:577844ff18bab0dc037f835e31c3f7626ca69fa9be69dc24f390054680519b52",
+        "generation": 0,
+        "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+      },
+      "scope": {
+        "kind": "python_script",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:bff92f5b4407ede79fc2e67af44c42a846c02a85327977c16e4e7c5113586450",
+      "documentStateConfirmed": true,
+      "summary": "Create an unsaved metadata edit for package Save qualification",
+      "entrypoint": "script",
+      "scriptReview": {
+        "source": "assert len(font.glyphs) == 10000\nprint(\"Document undo before fixture edit:\", bool(font.parent.undoManager().canUndo()))\nfont.userData[\"capacityQualification\"] = \"package baseline\"\n",
+        "params": {},
+        "entrypoint": "script",
+        "targets": [],
+        "summary": "Create an unsaved metadata edit for package Save qualification"
+      },
+      "actions": [
+        {
+          "action": "finish_script",
+          "label": "Keep changes without saving",
+          "token": "26e4fe36b6b8af72ed1f9dcd04cd4a71f00f43a786e4bfbee7091c074893b6a0",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result",
+          "label": "Save font",
+          "token": "91f92644d137f116223f7776d4a807668ddbe252b81fe5d7aa11a4dbfcc34b60",
+          "requiresDestination": false
+        },
+        {
+          "action": "restore_saved_script",
+          "label": "Restore saved version",
+          "token": "54641f03f5e12770700f9f5a8e129671456a125f575f4858535bcd86c92e265e",
+          "requiresDestination": false
+        }
+      ],
+      "message": "Script finished. Verify the intended result in Glyphs.\nThe font has unsaved edits.",
+      "verification": "Intended changes have not been verified by the wrapper.",
+      "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nScript finished. Verify the intended result in Glyphs.\nThe font has unsaved edits.\nOperation: python script\nIntended change: Create an unsaved metadata edit for package Save qualification\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"assert len(font.glyphs) == 10000\\nprint(\\\"Document undo before fixture edit:\\\", bool(font.parent.undoManager().canUndo()))\\nfont.userData[\\\"capacityQualification\\\"] = \\\"package baseline\\\"\\n\", \"params\": {}, \"entrypoint\": \"script\", \"targets\": [], \"summary\": \"Create an unsaved metadata edit for package Save qualification\"}\nScript output (text): \"Document undo before fixture edit: False\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_2a950f8cfa4b48098d2e9ffe3d9b07d6\",\"expected_revision\":15,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:bff92f5b4407ede79fc2e67af44c42a846c02a85327977c16e4e7c5113586450\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"26e4fe36b6b8af72ed1f9dcd04cd4a71f00f43a786e4bfbee7091c074893b6a0\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"91f92644d137f116223f7776d4a807668ddbe252b81fe5d7aa11a4dbfcc34b60\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"54641f03f5e12770700f9f5a8e129671456a125f575f4858535bcd86c92e265e\",\"requiresDestination\":false}]}"
+    }
+  },
+  {
+    "step": "keep",
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_2a950f8cfa4b48098d2e9ffe3d9b07d6",
+        "revision": 18,
+        "document": {
+          "id": "doc_be0f9a04e07743edaefaace87f103eef",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": true,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "executed",
+        "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+          "status": "completed",
+          "summary": "Create an unsaved metadata edit for package Save qualification",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 0,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+            "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+            "status": "completed",
+            "completedChanges": null,
+            "longestPreparationChunk": 0.018828957981895655,
+            "totalChanges": null,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "entrypoint": "script",
+              "executionSucceeded": true,
+              "changesVerified": false,
+              "executedTargets": 0,
+              "totalTargets": 0,
+              "documentAfter": {
+                "id": "doc_be0f9a04e07743edaefaace87f103eef",
+                "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+                "dirty": true,
+                "generation": 0
+              }
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_2cf852db6eb8404e9a4e064f36cbd3d5",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "completed",
+            "startedAt": 1790533271.0203059,
+            "finishedAt": 1790533271.0203578,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": []
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:bff92f5b4407ede79fc2e67af44c42a846c02a85327977c16e4e7c5113586450",
+        "documentStateConfirmed": true,
+        "summary": "Create an unsaved metadata edit for package Save qualification",
+        "entrypoint": "script",
+        "actions": [],
+        "message": "Changes kept without saving. This workflow’s restoration offer has ended.",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nChanges kept without saving. This workflow’s restoration offer has ended.\nOperation: python script\nIntended change: Create an unsaved metadata edit for package Save qualification\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_2a950f8cfa4b48098d2e9ffe3d9b07d6\",\"expected_revision\":18,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:bff92f5b4407ede79fc2e67af44c42a846c02a85327977c16e4e7c5113586450\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+      }
+    }
+  },
+  {
+    "step": "dirty_start",
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_b140fde253f243f69f0c8f52e620e84d",
+        "revision": 3,
+        "document": {
+          "id": "doc_be0f9a04e07743edaefaace87f103eef",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": true,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "preparing",
+        "jobId": "job_eff4b97953174a97a81076fef419492c",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_eff4b97953174a97a81076fef419492c",
+          "status": "preparing",
+          "summary": null,
+          "resultKind": "mutation",
+          "changeCount": null,
+          "report": {},
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": null,
+          "activity": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "preparing",
+            "startedAt": 1790533281.59115,
+            "finishedAt": null,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": {
+            "master": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "glyphs": "all",
+            "surface": "background"
+          }
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": null,
+        "requestFingerprint": "sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f",
+        "documentStateConfirmed": false,
+        "summary": "Test package editor Save, cancellation and restoration",
+        "entrypoint": "per_target",
+        "warning": "This script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.",
+        "actions": [
+          {
+            "action": "cancel",
+            "label": "Cancel preparation",
+            "token": "fff526ccde2ecb5891f45d507d5d880c2aa696cd36fed5473a20723b1ae3db1d",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Validating script and resolving targets…",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nValidating script and resolving targets…\nOperation: python script\nIntended change: Test package editor Save, cancellation and restoration\nScope: pending resolved surfaces; 0 skipped.\nThis script can access Glyphs and your computer. Restore saved version reloads the whole font and discards later unsaved edits. External effects are not restored.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Cancel preparation. You can reply in ordinary language.",
+        "poll": true,
+        "modelContext": "{\"workflow_id\":\"edit_b140fde253f243f69f0c8f52e620e84d\",\"expected_revision\":3,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"preparing\",\"poll\":true,\"requestFingerprint\":\"sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"cancel\",\"label\":\"Cancel preparation\",\"action_token\":\"fff526ccde2ecb5891f45d507d5d880c2aa696cd36fed5473a20723b1ae3db1d\",\"requiresDestination\":false}]}"
+      }
+    }
+  },
+  {
+    "step": "save_run",
+    "milliseconds": 7639,
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_b140fde253f243f69f0c8f52e620e84d",
+        "revision": 13,
+        "document": {
+          "id": "doc_be0f9a04e07743edaefaace87f103eef",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": false,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "applying",
+        "jobId": "job_eff4b97953174a97a81076fef419492c",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_eff4b97953174a97a81076fef419492c",
+          "status": "applying",
+          "summary": "Test package editor Save, cancellation and restoration",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 10000,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+            "status": "applying",
+            "completedChanges": 0,
+            "longestPreparationChunk": 0.02567812500637956,
+            "totalChanges": 10000,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": false,
+              "entrypoint": "per_target",
+              "executionSucceeded": false,
+              "changesVerified": false,
+              "executedTargets": 0,
+              "totalTargets": 10000
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "applying",
+            "startedAt": 1790533300.274527,
+            "finishedAt": null,
+            "completed": 0,
+            "total": 10000,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_b305ba4b3d2c49b4bea11141d2068157",
+          "jobId": null,
+          "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:577844ff18bab0dc037f835e31c3f7626ca69fa9be69dc24f390054680519b52",
+          "sourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790533299.759007
+        },
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": {
+            "master": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "glyphs": "all",
+            "surface": "background"
+          }
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f",
+        "documentStateConfirmed": false,
+        "summary": "Test package editor Save, cancellation and restoration",
+        "entrypoint": "per_target",
+        "actions": [
+          {
+            "action": "cancel",
+            "label": "Cancel remaining targets",
+            "token": "7e494f0591f7539150c7d2972eb9454f3a66da85a255f135e22a3d580b01695b",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Running script…",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nRunning script…\nOperation: python script\nIntended change: Test package editor Save, cancellation and restoration\nScope: 10000 resolved surfaces; 0 skipped.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Cancel remaining targets. You can reply in ordinary language.",
+        "poll": true,
+        "modelContext": "{\"workflow_id\":\"edit_b140fde253f243f69f0c8f52e620e84d\",\"expected_revision\":13,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"applying\",\"poll\":true,\"requestFingerprint\":\"sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"cancel\",\"label\":\"Cancel remaining targets\",\"action_token\":\"7e494f0591f7539150c7d2972eb9454f3a66da85a255f135e22a3d580b01695b\",\"requiresDestination\":false}]}"
+      }
+    }
+  },
+  {
+    "step": "cancel",
+    "milliseconds": 2532,
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_b140fde253f243f69f0c8f52e620e84d",
+        "revision": 16,
+        "document": {
+          "id": "doc_be0f9a04e07743edaefaace87f103eef",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": false,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "discarding",
+        "jobId": "job_eff4b97953174a97a81076fef419492c",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_eff4b97953174a97a81076fef419492c",
+          "status": "discarding",
+          "summary": "Test package editor Save, cancellation and restoration",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 10000,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+            "status": "applying",
+            "completedChanges": 1290,
+            "longestPreparationChunk": 0.02567812500637956,
+            "totalChanges": 10000,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "entrypoint": "per_target",
+              "executionSucceeded": false,
+              "changesVerified": false,
+              "executedTargets": 1290,
+              "totalTargets": 10000
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "discarding",
+            "startedAt": 1790533316.680515,
+            "finishedAt": null,
+            "completed": 1290,
+            "total": 10000,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_b305ba4b3d2c49b4bea11141d2068157",
+          "jobId": null,
+          "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:577844ff18bab0dc037f835e31c3f7626ca69fa9be69dc24f390054680519b52",
+          "sourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790533299.759007
+        },
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": {
+            "master": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "glyphs": "all",
+            "surface": "background"
+          }
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f",
+        "documentStateConfirmed": false,
+        "summary": "Test package editor Save, cancellation and restoration",
+        "entrypoint": "per_target",
+        "actions": [],
+        "message": "Discarding changes…",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nDiscarding changes…\nOperation: python script\nIntended change: Test package editor Save, cancellation and restoration\nScope: 10000 resolved surfaces; 0 skipped.\nCompleted callbacks: 1290 / 10000.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+        "poll": true,
+        "modelContext": "{\"workflow_id\":\"edit_b140fde253f243f69f0c8f52e620e84d\",\"expected_revision\":16,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"discarding\",\"poll\":true,\"requestFingerprint\":\"sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+      }
+    }
+  },
+  {
+    "step": "cancelled_result",
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_b140fde253f243f69f0c8f52e620e84d",
+        "revision": 22,
+        "document": {
+          "id": "doc_be0f9a04e07743edaefaace87f103eef",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": true,
+          "generation": 0,
+          "isCurrent": true,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "cancelled",
+        "jobId": "job_eff4b97953174a97a81076fef419492c",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_eff4b97953174a97a81076fef419492c",
+          "status": "cancelled",
+          "summary": "Test package editor Save, cancellation and restoration",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 10000,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": {
+            "code": "script_cancelled",
+            "message": "script cancelled; remaining callbacks were not run",
+            "details": {
+              "traceback": "Traceback (most recent call last):\n  File \"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/script_execution.py\", line 116, in advance\n    raise RuntimeError('script cancelled; remaining callbacks were not run')\nRuntimeError: script cancelled; remaining callbacks were not run\n",
+              "partialEditsPossible": true,
+              "externalEffects": "unverified"
+            }
+          },
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+            "status": "cancelled",
+            "completedChanges": 1290,
+            "longestPreparationChunk": 0.02567812500637956,
+            "totalChanges": 10000,
+            "error": {
+              "code": "script_cancelled",
+              "message": "script cancelled; remaining callbacks were not run",
+              "details": {
+                "traceback": "Traceback (most recent call last):\n  File \"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/script_execution.py\", line 116, in advance\n    raise RuntimeError('script cancelled; remaining callbacks were not run')\nRuntimeError: script cancelled; remaining callbacks were not run\n",
+                "partialEditsPossible": true,
+                "externalEffects": "unverified"
+              }
+            },
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "output": "",
+              "entrypoint": "per_target",
+              "executionSucceeded": false,
+              "changesVerified": false,
+              "executedTargets": 1290,
+              "totalTargets": 10000
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "cancelled",
+            "startedAt": 1790533317.697066,
+            "finishedAt": 1790533317.69711,
+            "completed": null,
+            "total": null,
+            "message": "script cancelled; remaining callbacks were not run"
+          },
+          "message": null
+        },
+        "error": {
+          "code": "script_cancelled",
+          "message": "script cancelled; remaining callbacks were not run",
+          "details": {
+            "traceback": "Traceback (most recent call last):\n  File \"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/script_execution.py\", line 116, in advance\n    raise RuntimeError('script cancelled; remaining callbacks were not run')\nRuntimeError: script cancelled; remaining callbacks were not run\n",
+            "partialEditsPossible": true,
+            "externalEffects": "unverified"
+          }
+        },
+        "receipt": {
+          "saveId": "save_b305ba4b3d2c49b4bea11141d2068157",
+          "jobId": null,
+          "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:577844ff18bab0dc037f835e31c3f7626ca69fa9be69dc24f390054680519b52",
+          "sourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790533299.759007
+        },
+        "reviewInConversation": false,
+        "savedVersion": {
+          "available": true,
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "sourceHash": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "generation": 0,
+          "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring."
+        },
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": {
+            "master": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "glyphs": "all",
+            "surface": "background"
+          }
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f",
+        "documentStateConfirmed": false,
+        "summary": "Test package editor Save, cancellation and restoration",
+        "entrypoint": "per_target",
+        "scriptReview": {
+          "source": "import time\ndef run(layer, params, context):\n    node = layer.paths[0].nodes[0]\n    node.position = (node.position.x, node.position.y + 0.25)\n    time.sleep(0.002)\n",
+          "params": {},
+          "entrypoint": "per_target",
+          "targets": {
+            "master": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "glyphs": "all",
+            "surface": "background"
+          },
+          "summary": "Test package editor Save, cancellation and restoration"
+        },
+        "actions": [
+          {
+            "action": "finish_script",
+            "label": "Keep changes without saving",
+            "token": "261cc8fa9785e19687d5e5c688df264dc016dac3786dd375e6d7cf40f5883152",
+            "requiresDestination": false
+          },
+          {
+            "action": "restore_saved_script",
+            "label": "Restore saved version",
+            "token": "971f3131822cd18be201d7519a4a851ab5d4d5361e2b8be83a95998d83d5203c",
+            "requiresDestination": false
+          }
+        ],
+        "message": "Script stopped. Partial edits may remain; inspect the font before keeping or restoring them.",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nScript stopped. Partial edits may remain; inspect the font before keeping or restoring them.\nOperation: python script\nIntended change: Test package editor Save, cancellation and restoration\nScope: 10000 resolved surfaces; 0 skipped.\nCompleted callbacks: 1290 / 10000.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"source\": \"import time\\ndef run(layer, params, context):\\n    node = layer.paths[0].nodes[0]\\n    node.position = (node.position.x, node.position.y + 0.25)\\n    time.sleep(0.002)\\n\", \"params\": {}, \"entrypoint\": \"per_target\", \"targets\": {\"master\": \"00DFA2FF-C1DA-4385-99BF-9B382968CBF5\", \"glyphs\": \"all\", \"surface\": \"background\"}, \"summary\": \"Test package editor Save, cancellation and restoration\"}\nError details (text): {\"code\": \"script_cancelled\", \"message\": \"script cancelled; remaining callbacks were not run\", \"details\": {\"traceback\": \"Traceback (most recent call last):\\n  File \\\"/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/script_execution.py\\\", line 116, in advance\\n    raise RuntimeError('script cancelled; remaining callbacks were not run')\\nRuntimeError: script cancelled; remaining callbacks were not run\\n\", \"partialEditsPossible\": true, \"externalEffects\": \"unverified\"}}\nAvailable choices: Keep changes without saving; Restore saved version. You can reply in ordinary language.\nDetails: script cancelled; remaining callbacks were not run",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_b140fde253f243f69f0c8f52e620e84d\",\"expected_revision\":22,\"document_id\":\"doc_be0f9a04e07743edaefaace87f103eef\",\"state\":\"cancelled\",\"poll\":false,\"requestFingerprint\":\"sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"261cc8fa9785e19687d5e5c688df264dc016dac3786dd375e6d7cf40f5883152\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"971f3131822cd18be201d7519a4a851ab5d4d5361e2b8be83a95998d83d5203c\",\"requiresDestination\":false}]}"
+      }
+    }
+  },
+  {
+    "step": "restore",
+    "milliseconds": 4843,
+    "value": {
+      "ok": true,
+      "data": {
+        "id": "edit_b140fde253f243f69f0c8f52e620e84d",
+        "revision": 26,
+        "document": {
+          "id": "doc_cb38c534129c4abe98a8ae9afccc9f67",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirty": false,
+          "generation": 2,
+          "familyName": "Native workflow probe"
+        },
+        "mode": "apply",
+        "state": "discarded",
+        "jobId": "job_eff4b97953174a97a81076fef419492c",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_eff4b97953174a97a81076fef419492c",
+          "status": "discarded",
+          "summary": "Test package editor Save, cancellation and restoration",
+          "resultKind": "script",
+          "changeCount": null,
+          "report": {
+            "targetCount": 10000,
+            "skippedCount": 0,
+            "sample": []
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+            "status": "discarded",
+            "completedChanges": 1290,
+            "longestPreparationChunk": 0.02567812500637956,
+            "totalChanges": 10000,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": {
+              "executed": true,
+              "entrypoint": "per_target",
+              "executionSucceeded": false,
+              "changesVerified": false,
+              "executedTargets": 1290,
+              "totalTargets": 10000,
+              "savedVersionRestored": true,
+              "documentAfter": {
+                "id": "doc_cb38c534129c4abe98a8ae9afccc9f67",
+                "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+                "dirty": false,
+                "generation": 2,
+                "familyName": "Native workflow probe"
+              }
+            },
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_eff4b97953174a97a81076fef419492c",
+            "document": "Native workflow probe",
+            "kind": "python_script",
+            "phase": "discarded",
+            "startedAt": 1790533337.334584,
+            "finishedAt": 1790533337.335249,
+            "completed": 1290,
+            "total": 10000,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": {
+          "saveId": "save_b305ba4b3d2c49b4bea11141d2068157",
+          "jobId": null,
+          "documentId": "doc_be0f9a04e07743edaefaace87f103eef",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:577844ff18bab0dc037f835e31c3f7626ca69fa9be69dc24f390054680519b52",
+          "sourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:64672141e74abea66ddd496a13ab9d6b78e12d0424ff6ea09ba766fdae9b37b5",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790533299.759007
+        },
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "python_script",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": {
+            "master": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "glyphs": "all",
+            "surface": "background"
+          }
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f",
+        "documentStateConfirmed": false,
+        "summary": "Test package editor Save, cancellation and restoration",
+        "entrypoint": "per_target",
+        "actions": [],
+        "message": "Saved version restored. Subsequent unsaved edits were replaced; external effects remain.",
+        "verification": "Intended changes have not been verified by the wrapper.",
+        "text": "Native workflow probe — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone1/editor/Capacity Test.glyphspackage\nSaved version restored. Subsequent unsaved edits were replaced; external effects remain.\nOperation: python script\nIntended change: Test package editor Save, cancellation and restoration\nScope: 10000 resolved surfaces; 0 skipped.\nCompleted callbacks: 1290 / 10000.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_b140fde253f243f69f0c8f52e620e84d\",\"expected_revision\":26,\"document_id\":\"doc_cb38c534129c4abe98a8ae9afccc9f67\",\"state\":\"discarded\",\"poll\":false,\"requestFingerprint\":\"sha256:f9723a62bd87087c7ddc4a9021997a523394b6d186cea3de95244e2878c6169f\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+      }
+    }
+  },
+  {
+    "step": "restored_probe0",
+    "value": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "path",
+            "glyph": "probe0",
+            "layer": "00DFA2FF-C1DA-4385-99BF-9B382968CBF5",
+            "index": 0,
+            "surface": "background"
+          },
+          "values": {
+            "index": 0,
+            "closed": true,
+            "locked": false,
+            "pathHash": "sha256:1aa319eaf2f477c529d8955b88dd6ceca7f38d1dfc7d69221d181172a12194c5",
+            "nodes": [
+              {
+                "index": 0,
+                "x": 10.25,
+                "y": 0,
+                "type": "line",
+                "smooth": false,
+                "name": null
+              },
+              {
+                "index": 1,
+                "x": 55.5,
+                "y": 700.25,
+                "type": "line",
+                "smooth": false,
+                "name": null
+              },
+              {
+                "index": 2,
+                "x": 300.25,
+                "y": 100.5,
+                "type": "line",
+                "smooth": false,
+                "name": null
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true,
+            "nextCursor": null
+          }
+        }
+      ]
+    }
+  }
+]

@@ -102,7 +102,7 @@ def test_status_does_not_rehash_or_read_receipt_or_fonts(tmp_path, monkeypatch):
     assert status['interface'] == 'glyphs-mcp-sidecar' and status['interfaceVersion'] == 1
     assert status['jobKinds'] == list(JOB_KINDS)
     assert len(status['tools']) == 12 and status['protocol'] == 1
-    assert status['workflowCapabilities'] == ['edit.workflow.v1']
+    assert status['workflowCapabilities'] == ['edit.workflow.v1', 'font.checkpoints.v1']
     assert status['codeHash'] is None  # unpackaged source cannot claim a release
 
 
@@ -144,7 +144,7 @@ async def main():
         assert set(accept.inputSchema["properties"]) == {"job_id", "destination", "include_preview"}
         assert set(accept.inputSchema["required"]) == {"job_id"}
         save = next(t for t in catalog if t.name == "save_document")
-        assert set(save.inputSchema["properties"]) == {"document_id", "destination"}
+        assert set(save.inputSchema["properties"]) == {"document_id", "destination", "retry_checkpoint_job_id"}
         assert set(save.inputSchema["required"]) == {"document_id"}
         assert "confirm" not in accept.inputSchema["properties"] | save.inputSchema["properties"]
         assert "reason" not in accept.inputSchema["properties"] | save.inputSchema["properties"]

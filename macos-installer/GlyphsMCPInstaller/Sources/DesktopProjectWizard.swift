@@ -13,6 +13,7 @@ struct DesktopProjectWizard: View {
     @State private var busy = false
     @State private var error = ""
     @State private var operation: Task<Void, Never>?
+    private var initializesGit: Bool { if case .registry(let id) = template { return model.templates.first { $0.id == id }?.isBundled == true }; return false }
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
@@ -42,6 +43,10 @@ struct DesktopProjectWizard: View {
                         ForEach(files, id: \.path) { file in Label(file.path, systemImage: file.data == nil ? "folder" : "doc") }
                     }
                 }.frame(minHeight: 180, maxHeight: 320)
+                if initializesGit {
+                    Text("Create Project initializes a new local Git repository and enables MCP checkpoints. It does not make a commit, save a font or push. Add your own font to sources.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
                 Button("Save as Local Template…", action: duplicateTemplate)
             }
             if !error.isEmpty { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
@@ -70,10 +75,10 @@ struct DesktopProjectWizard: View {
                 busy = false
             }
         } else {
-            let snapshot = files, location = parent, projectName = name, endpoint = DesktopInstallation().endpoint
+            let snapshot = files, location = parent, projectName = name, endpoint = DesktopInstallation().endpoint, initializeGit = initializesGit
             operation = Task {
                 do {
-                    let url = try await ProjectFiles.perform { try ProjectFiles.create(snapshot, in: location, name: projectName, endpoint: endpoint) }
+                    let url = try await ProjectFiles.perform { try ProjectFiles.create(snapshot, in: location, name: projectName, endpoint: endpoint, initializeGit: initializeGit) }
                     model.addProject(url); dismiss()
                 } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
                 busy = false

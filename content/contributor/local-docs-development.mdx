@@ -9,7 +9,7 @@ The Docusaurus site in `website/` builds two independent documentation tracks:
 | v1 · 1.11.0 | `website/versioned_docs/version-1.11.0/` | `/docs/` |
 | v2 · 2.0.0 | `content/` | `/docs/v2/` |
 
-The v1 snapshot comes from the `v1.11.0` release tag. `website/v1-source.json` records its commit, original file hashes and the adapted snapshot hashes. Only version context and release-pinned links are adjusted. Historical benchmark pages and their images remain there. V2 uses its own sidebar and authored guidance; it must not inherit v1 tool instructions.
+The v1 snapshot comes from the `v1.11.0` release tag. `website/v1-source.json` records its commit, original file hashes and the adapted snapshot hashes. Version context and release-pinned links are adjusted; explicitly reviewed removals of obsolete pages are recorded with their reasons in `removals`, preserving the original release hashes. Historical benchmark pages and their images remain there. V2 uses its own sidebar and authored guidance; it must not inherit v1 tool instructions.
 
 The native version selector preserves matching document IDs between versions. A page found only in one version switches to the other version's overview. Existing v1 URLs remain unchanged. `/latest` continues to point to released v1 documentation until the public release is updated deliberately.
 

@@ -1,0 +1,26 @@
+{
+  "paths": [
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone2/Editor.glyphs",
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone2/Editor.glyphspackage"
+  ],
+  "family": "M2 editor qualification",
+  "masters": {
+    "regular": "9B12BFF1-8E2D-40A0-8C22-C6A53145C3A6",
+    "bold": "92D62FB4-4EAD-4394-9955-6C3E4771D014"
+  },
+  "glyphs": [
+    "probe0",
+    "probe1",
+    "probe2"
+  ],
+  "expected": {
+    "regularWidth": 500,
+    "boldWidth": 600.25,
+    "backgroundNode0": {
+      "x": 10.25,
+      "y": 0,
+      "name": null
+    }
+  },
+  "openedInEditor": false
+}

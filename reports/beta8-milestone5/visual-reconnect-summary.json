@@ -1,0 +1,31 @@
+{
+  "downtimeSeconds": 42.09364295005798,
+  "beforePid": 38470,
+  "afterPid": 57141,
+  "beforeState": "applied",
+  "afterReconnectState": "interrupted",
+  "afterReconciliationState": "applied",
+  "autoKeepEnabled": false,
+  "sameJobAndRequest": true,
+  "sameBridgeOperationEvidence": true,
+  "documentsUnchanged": true,
+  "sameSidecarIdentity": true,
+  "actions": [
+    {
+      "revision": 6,
+      "action": "wait_for_answer",
+      "signature": "[null, null]"
+    },
+    {
+      "revision": 9,
+      "action": "run_script",
+      "signature": "[null, null]"
+    },
+    {
+      "revision": 18,
+      "action": "check_outcome",
+      "signature": "[null, null]"
+    }
+  ],
+  "claim": "Actual sidecar disconnect and fresh Codex tool read passed; user visual card reappearance still pending. Glyphs was not restarted."
+}

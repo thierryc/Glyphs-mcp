@@ -1,0 +1,175 @@
+FFFFsFFFFFFFFFFFFFFFFFFFFFFFFF                                           [100%]
+=================================== FAILURES ===================================
+__ test_matching_baseline_reuses_head_without_touching_font_or_index[.glyphs] __
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:56: in test_matching_baseline_reuses_head_without_touching_font_or_index
+    target,state=engine(repo)
+                 ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_matching_baseline_reuses_head_without_touching_font_or_index[.glyphspackage] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:56: in test_matching_baseline_reuses_head_without_touching_font_or_index
+    target,state=engine(repo)
+                 ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+___ test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphs] ___
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:69: in test_exact_font_commit_preserves_unrelated_staging_and_worktree
+    target,state=engine(repo);expected=source_hash(font)
+                 ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphspackage] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:69: in test_exact_font_commit_preserves_unrelated_staging_and_worktree
+    target,state=engine(repo);expected=source_hash(font)
+                 ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+________ test_package_additions_and_deletions_are_exact[.glyphspackage] ________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:88: in test_package_additions_and_deletions_are_exact
+    target,_=engine(repo);result=target.checkpoint(source_hash(font),'save_package',record())
+             ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-staged_font] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-index_lock] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+__ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-merge] __
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+__ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-hook] ___
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-filter] __
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+__ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-text] ___
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-symlink] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-identity] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-staged_font] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-index_lock] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-merge] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-hook] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-filter] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-text] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-symlink] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-identity] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:95: in test_ambiguous_or_unsupported_git_state_fails_before_commit
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+___________________ test_stale_source_never_commits[.glyphs] ___________________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:116: in test_stale_source_never_commits
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_______________ test_stale_source_never_commits[.glyphspackage] ________________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:116: in test_stale_source_never_commits
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphs] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:123: in test_uncertain_publish_reconciles_existing_revision_without_duplicate
+    root,font,_=repo;alter(font,'changed\n');target,state=engine(repo)
+                                                          ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_ test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphspackage] _
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:123: in test_uncertain_publish_reconciles_existing_revision_without_duplicate
+    root,font,_=repo;alter(font,'changed\n');target,state=engine(repo)
+                                                          ^^^^^^^^^^^^
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:39: in engine
+    from glyphs_mcp_sidecar.checkpoint_git import Repository
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+____________ test_concurrent_ref_change_is_not_overwritten[.glyphs] ____________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:138: in test_concurrent_ref_change_is_not_overwritten
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+________ test_concurrent_ref_change_is_not_overwritten[.glyphspackage] _________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:138: in test_concurrent_ref_change_is_not_overwritten
+    from glyphs_mcp_sidecar.checkpoint_git import CheckpointError
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_git'
+_______ test_policy_is_explicit_project_config_not_agents_text[.glyphs] ________
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:152: in test_policy_is_explicit_project_config_not_agents_text
+    from glyphs_mcp_sidecar.checkpoint_policy import policy_for
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_policy'
+____ test_policy_is_explicit_project_config_not_agents_text[.glyphspackage] ____
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:152: in test_policy_is_explicit_project_config_not_agents_text
+    from glyphs_mcp_sidecar.checkpoint_policy import policy_for
+E   ModuleNotFoundError: No module named 'glyphs_mcp_sidecar.checkpoint_policy'
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0    29     1     1    3.87s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_matching_baseline_reuses_head_without_touching_font_or_index[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_matching_baseline_reuses_head_without_touching_font_or_index[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_exact_font_commit_preserves_unrelated_staging_and_worktree[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_package_additions_and_deletions_are_exact[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-staged_font]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-index_lock]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-merge]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-hook]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-filter]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-text]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-symlink]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphs-identity]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-staged_font]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-index_lock]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-merge]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-hook]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-filter]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-text]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-symlink]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_ambiguous_or_unsupported_git_state_fails_before_commit[.glyphspackage-identity]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_stale_source_never_commits[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_stale_source_never_commits[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_uncertain_publish_reconciles_existing_revision_without_duplicate[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_concurrent_ref_change_is_not_overwritten[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_concurrent_ref_change_is_not_overwritten[.glyphspackage]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_policy_is_explicit_project_config_not_agents_text[.glyphs]
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_policy_is_explicit_project_config_not_agents_text[.glyphspackage]
+29 failed, 1 skipped in 4.05s

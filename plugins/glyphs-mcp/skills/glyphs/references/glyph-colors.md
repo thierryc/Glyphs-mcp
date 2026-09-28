@@ -43,3 +43,11 @@ requires a saved, clean source for preparation; if the font is dirty or new,
 the [conversation workflow](edit-workflow.md) offers explicit save choices.
 Explain that a prerequisite save persists the whole existing font, while the
 subsequent color change still remains unsaved.
+
+On a supporting bridge, color preparation copies only glyph metadata, leaving
+outlines and backgrounds untouched. The report and metadata conflict guards are
+unchanged. Custom labels are checked before the metadata copy, because Glyphs
+does not preserve custom color objects in that copy. Application and selective
+recovery still use the existing persisted-state guards; preparation speed does
+not imply the same improvement for the whole edit. The 100-glyph action bound
+is unchanged.

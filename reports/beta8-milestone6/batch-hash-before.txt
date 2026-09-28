@@ -1,0 +1,30 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_package_blob_hashing_uses_one_git_process[.glyphspackage] ________
+
+repo = (PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-148/test_package_blob_h.../folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-148/test_package_blob_hashing_uses1/operation'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108f0a780>
+
+    def test_package_blob_hashing_uses_one_git_process(repo,monkeypatch):
+        root,font,_=repo
+        if not font.is_dir():return
+        for i in range(100):(font/'glyphs'/f'g{i}.glyph').write_text(str(i))
+        target,_=engine(repo);original=target.git;calls=[]
+        def counted(*args,**kwargs):
+            if args[0]=='hash-object':calls.append(args)
+            return original(*args,**kwargs)
+        monkeypatch.setattr(target,'git',counted)
+        target._snapshot(source_hash(font))
+>       assert len(calls)==1
+E       AssertionError: assert 102 == 1
+E        +  where 102 = len([('hash-object', '-w', '--no-filters', '--stdin'), ('hash-object', '-w', '--no-filters', '--stdin'), ('hash-object', '...', '--stdin'), ('hash-object', '-w', '--no-filters', '--stdin'), ('hash-object', '-w', '--no-filters', '--stdin'), ...])
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:218: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           1     1     0     1    3.03s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_package_blob_hashing_uses_one_git_process[.glyphspackage]
+1 failed, 1 passed, 36 deselected in 3.10s

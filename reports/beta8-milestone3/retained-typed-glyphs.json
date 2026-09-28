@@ -1,0 +1,75 @@
+{
+  "data": {
+    "format": "glyphs",
+    "checks": [
+      {
+        "case": "width-selected-two-masters",
+        "matchingPatchAndReport": true,
+        "preparationReadOnly": true,
+        "targetedApplicationAndUntouchedControls": true,
+        "selectiveRecovery": true
+      },
+      {
+        "case": "glyph-color",
+        "matchingPatchAndReport": true,
+        "preparationReadOnly": true,
+        "targetedApplicationAndUntouchedControls": true,
+        "selectiveRecovery": true
+      },
+      {
+        "case": "dimensions-overwrite",
+        "matchingPatchAndReport": true,
+        "preparationReadOnly": true,
+        "targetedApplicationAndUntouchedControls": true,
+        "selectiveRecovery": true
+      },
+      {
+        "case": "foreground-components",
+        "matchingPatchAndReport": true,
+        "preparationReadOnly": true,
+        "targetedApplicationAndUntouchedControls": true,
+        "selectiveRecovery": true
+      },
+      {
+        "case": "foreground-all-masters",
+        "matchingPatchAndReport": true,
+        "preparationReadOnly": true,
+        "targetedApplicationAndUntouchedControls": true,
+        "selectiveRecovery": true
+      },
+      {
+        "case": "background-preserve-foreground",
+        "matchingPatchAndReport": true,
+        "preparationReadOnly": true,
+        "targetedApplicationAndUntouchedControls": true,
+        "selectiveRecovery": true
+      },
+      {
+        "case": "all-palette-colors-and-clear",
+        "matchingPatchAndReport": true,
+        "customColorRejectedBeforeCopy": true,
+        "nestedMetadataPreserved": true,
+        "preparationReadOnly": true
+      },
+      {
+        "case": "missing-background",
+        "rejectedWithoutCreation": true,
+        "error": {
+          "code": "native_write_failed",
+          "message": "the selected layer has no background"
+        }
+      }
+    ],
+    "grid": 1,
+    "masters": 2,
+    "mixedNamedAndAbsentNodes": true,
+    "nativeUndoRedo": true,
+    "exactNameRestoration": true
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

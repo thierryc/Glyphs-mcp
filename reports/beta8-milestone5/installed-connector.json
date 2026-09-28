@@ -1,0 +1,428 @@
+{
+  "client": "Installed Codex MCP connector",
+  "methodology": "Tool elapsed time includes connector/transport/native work; task elapsed across turns also includes agent reasoning. Bytes are JSON re-encoding of the complete returned MCP result, not network wire size.",
+  "calls": [
+    {
+      "name": "get_status",
+      "args": {},
+      "started": 1790556379154,
+      "seconds": 2.752,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"ok\":true,\"data\":{\"protocol\":1,\"sidecarVersion\":\"2.0.0\",\"release\":{\"version\":\"2.0.0\",\"releaseVersion\":\"2.0.0-beta.8\",\"channel\":\"beta\",\"betaNumber\":8,\"installerBuild\":50},\"runtimeId\":\"2.0.0-beta.8+151e72c99245\",\"codeHash\":\"sha256:151e72c99245b385af616dba0c9d9424558ac92ca5ec2393818bafa8c1a59b80\",\"identityEvidence\":\"initialization-time file fingerprint\",\"interface\":\"glyphs-mcp-sidecar\",\"interfaceVersion\":1,\"jobKinds\":[\"width_delta\",\"spacing\",\"kerning_collision\",\"start_nodes\",\"slant\",\"python_script\",\"outline_edit\",\"native_action\",\"dimensions_edit\",\"feature_compile\",\"font_export\"],\"readCapabilities\":[\"master.read.exact.v1\",\"masters.list.v1\",\"layer.read.exact.v1\",\"selection.nodes.native.v1\",\"selection.context.v1\",\"document.context.v1\",\"glyphs.list.v1\",\"layers.list.v1\",\"kerning.groups.v1\",\"kerning.pairs.v1\",\"master.properties.v1\",\"paths.list.v1\",\"path.geometry.v1\",\"outline.background.read.v1\",\"features.read.v1\",\"instances.read.v1\",\"master.dimensions.read.v1\"],\"writeCapabilities\":[\"outline.edit.v1\",\"outline.remove-node.v1\",\"outline.background.edit.v1\",\"native.action.v1\",\"master.dimensions.edit.v1\"],\"nativeActions\":[\"add_extremes\",\"add_missing_anchors\",\"align_components\",\"cleanup_paths\",\"connect_open_paths\",\"correct_path_direction\",\"decompose_components\",\"decompose_corners\",\"make_components\",\"reinterpolate\",\"remove_overlap\",\"round_coordinates\",\"set_glyph_color\",\"swap_foreground_background\",\"update_automatic_feature_block\",\"update_features\",\"update_glyph_info\",\"update_metrics\"],\"jobCapabilities\":[\"feature.compile.live.v1\",\"feature.compile.saved.v1\",\"font.export.static.v1\",\"font.export.variable.v1\",\"font.export.web.v1\",\"font.verify.shaping.v1\",\"font.verify.tables.v1\",\"script.native.v1\"],\"tools\":[\"get_status\",\"list_documents\",\"read_entities\",\"start_job\",\"get_job\",\"apply_job\",\"accept_job\",\"discard_job\",\"save_document\",\"start_edit_workflow\",\"get_edit_workflow\",\"respond_edit_workflow\"],\"bridge\":{\"reachable\":true,\"protocol\":1,\"bridgeVersion\":\"2.0.0\",\"release\":{\"version\":\"2.0.0\",\"releaseVersion\":\"2.0.0-beta.8\",\"channel\":\"beta\",\"betaNumber\":8,\"installerBuild\":50},\"runtimeId\":\"2.0.0-beta.8+d9ad46e01f0f\",\"codeHash\":\"sha256:d9ad46e01f0f0a5baa93320dc6e9d887d8b4b5485f6a89950015d238d7273119\",\"identityEvidence\":\"initialization-time file fingerprint\",\"host\":{\"identifier\":\"com.GeorgSeifert.Glyphs4\",\"version\":\"4.1\",\"build\":\"4107\"},\"readCapabilities\":[\"master.read.exact.v1\",\"masters.list.v1\",\"layer.read.exact.v1\",\"selection.nodes.native.v1\",\"selection.context.v1\",\"document.context.v1\",\"glyphs.list.v1\",\"layers.list.v1\",\"kerning.groups.v1\",\"kerning.pairs.v1\",\"master.properties.v1\",\"paths.list.v1\",\"path.geometry.v1\",\"outline.background.read.v1\",\"features.read.v1\",\"instances.read.v1\",\"master.dimensions.read.v1\"],\"writeCapabilities\":[\"outline.edit.v1\",\"outline.background.edit.v1\",\"outline.remove-node.v1\",\"master.dimensions.edit.v1\",\"native.action.v1\"],\"nativeActions\":[\"add_extremes\",\"add_missing_anchors\",\"align_components\",\"cleanup_paths\",\"connect_open_paths\",\"correct_path_direction\",\"decompose_components\",\"decompose_corners\",\"make_components\",\"reinterpolate\",\"remove_overlap\",\"round_coordinates\",\"set_glyph_color\",\"swap_foreground_background\",\"update_automatic_feature_block\",\"update_features\",\"update_glyph_info\",\"update_metrics\"],\"jobCapabilities\":[\"feature.compile.live.v1\",\"script.native.v1\",\"edit.prepare.native.v1\"],\"scriptPreparationVersion\":2,\"activity\":\"ready\",\"activeOperations\":0,\"companions\":[{\"protocol\":1,\"id\":\"curve-inspector\",\"version\":\"0.1.0\",\"capabilities\":[\"curve.measure\",\"curve.overlay\"]},{\"protocol\":1,\"id\":\"reference-inspector\",\"version\":\"0.1.0\",\"capabilities\":[\"reference.file\",\"reference.git\",\"reference.github\",\"reference.overlay\",\"reference.saved\"]}]},\"worker\":{\"available\":true,\"executable\":\"/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs\",\"application\":\"/Applications/Glyphs 4.app\",\"plugins\":\"disabled\",\"processModel\":\"one_shot\",\"executions\":[],\"jobCapabilities\":[\"feature.compile.saved.v1\",\"font.export.static.v1\",\"font.export.variable.v1\",\"font.export.web.v1\",\"font.verify.shaping.v1\",\"font.verify.tables.v1\"]},\"controlProtocol\":1,\"workflowCapabilities\":[\"edit.workflow.v1\"],\"activity\":{\"jobs\":[{\"jobId\":\"job_4b7af4e4b7014242a85b50e75cded20a\",\"document\":\"Native workflow probe\",\"kind\":\"width_delta\",\"phase\":\"completed\",\"startedAt\":1790553710.933641,\"finishedAt\":1790553710.9336681,\"completed\":null,\"total\":null,\"message\":null},{\"jobId\":\"job_41c0a6041d8c4ca7872e79252b60d507\",\"document\":\"Native workflow probe\",\"kind\":\"width_delta\",\"phase\":\"completed\",\"startedAt\":1790553690.451426,\"finishedAt\":1790553690.451461,\"completed\":null,\"total\":null,\"message\":null},{\"jobId\":\"job_4a6ca722be3e440eaef2166846ddb9e5\",\"document\":\"Native workflow probe\",\"kind\":\"python_script\",\"phase\":\"completed\",\"startedAt\":1790552419.6978781,\"finishedAt\":1790552419.6978939,\"completed\":null,\"total\":null,\"message\":null},{\"jobId\":\"job_cc182283426b4d4e8dcb955bd01b9327\",\"document\":\"Native workflow probe\",\"kind\":\"width_delta\",\"phase\":\"discarded\",\"startedAt\":1790552410.66958,\"finishedAt\":1790552410.669612,\"completed\":4096,\"total\":4096,\"message\":null},{\"jobId\":\"job_ab02bddce69b4ec39ab73c0dc2a5079b\",\"document\":\"Native workflow probe\",\"kind\":\"python_script\",\"phase\":\"completed\",\"startedAt\":1790552242.185643,\"finishedAt\":1790552242.185709,\"completed\":null,\"total\":null,\"message\":null}],\"activeCount\":0,\"moreCount\":0},\"acceptance\":\"Call accept_job to verify and save an applied job. apply_job remains reversible and never saves.\"}}"
+          }
+        ],
+        "structuredContent": {
+          "ok": true,
+          "data": {
+            "protocol": 1,
+            "sidecarVersion": "2.0.0",
+            "release": {
+              "version": "2.0.0",
+              "releaseVersion": "2.0.0-beta.8",
+              "channel": "beta",
+              "betaNumber": 8,
+              "installerBuild": 50
+            },
+            "runtimeId": "2.0.0-beta.8+151e72c99245",
+            "codeHash": "sha256:151e72c99245b385af616dba0c9d9424558ac92ca5ec2393818bafa8c1a59b80",
+            "identityEvidence": "initialization-time file fingerprint",
+            "interface": "glyphs-mcp-sidecar",
+            "interfaceVersion": 1,
+            "jobKinds": [
+              "width_delta",
+              "spacing",
+              "kerning_collision",
+              "start_nodes",
+              "slant",
+              "python_script",
+              "outline_edit",
+              "native_action",
+              "dimensions_edit",
+              "feature_compile",
+              "font_export"
+            ],
+            "readCapabilities": [
+              "master.read.exact.v1",
+              "masters.list.v1",
+              "layer.read.exact.v1",
+              "selection.nodes.native.v1",
+              "selection.context.v1",
+              "document.context.v1",
+              "glyphs.list.v1",
+              "layers.list.v1",
+              "kerning.groups.v1",
+              "kerning.pairs.v1",
+              "master.properties.v1",
+              "paths.list.v1",
+              "path.geometry.v1",
+              "outline.background.read.v1",
+              "features.read.v1",
+              "instances.read.v1",
+              "master.dimensions.read.v1"
+            ],
+            "writeCapabilities": [
+              "outline.edit.v1",
+              "outline.remove-node.v1",
+              "outline.background.edit.v1",
+              "native.action.v1",
+              "master.dimensions.edit.v1"
+            ],
+            "nativeActions": [
+              "add_extremes",
+              "add_missing_anchors",
+              "align_components",
+              "cleanup_paths",
+              "connect_open_paths",
+              "correct_path_direction",
+              "decompose_components",
+              "decompose_corners",
+              "make_components",
+              "reinterpolate",
+              "remove_overlap",
+              "round_coordinates",
+              "set_glyph_color",
+              "swap_foreground_background",
+              "update_automatic_feature_block",
+              "update_features",
+              "update_glyph_info",
+              "update_metrics"
+            ],
+            "jobCapabilities": [
+              "feature.compile.live.v1",
+              "feature.compile.saved.v1",
+              "font.export.static.v1",
+              "font.export.variable.v1",
+              "font.export.web.v1",
+              "font.verify.shaping.v1",
+              "font.verify.tables.v1",
+              "script.native.v1"
+            ],
+            "tools": [
+              "get_status",
+              "list_documents",
+              "read_entities",
+              "start_job",
+              "get_job",
+              "apply_job",
+              "accept_job",
+              "discard_job",
+              "save_document",
+              "start_edit_workflow",
+              "get_edit_workflow",
+              "respond_edit_workflow"
+            ],
+            "bridge": {
+              "reachable": true,
+              "protocol": 1,
+              "bridgeVersion": "2.0.0",
+              "release": {
+                "version": "2.0.0",
+                "releaseVersion": "2.0.0-beta.8",
+                "channel": "beta",
+                "betaNumber": 8,
+                "installerBuild": 50
+              },
+              "runtimeId": "2.0.0-beta.8+d9ad46e01f0f",
+              "codeHash": "sha256:d9ad46e01f0f0a5baa93320dc6e9d887d8b4b5485f6a89950015d238d7273119",
+              "identityEvidence": "initialization-time file fingerprint",
+              "host": {
+                "identifier": "com.GeorgSeifert.Glyphs4",
+                "version": "4.1",
+                "build": "4107"
+              },
+              "readCapabilities": [
+                "master.read.exact.v1",
+                "masters.list.v1",
+                "layer.read.exact.v1",
+                "selection.nodes.native.v1",
+                "selection.context.v1",
+                "document.context.v1",
+                "glyphs.list.v1",
+                "layers.list.v1",
+                "kerning.groups.v1",
+                "kerning.pairs.v1",
+                "master.properties.v1",
+                "paths.list.v1",
+                "path.geometry.v1",
+                "outline.background.read.v1",
+                "features.read.v1",
+                "instances.read.v1",
+                "master.dimensions.read.v1"
+              ],
+              "writeCapabilities": [
+                "outline.edit.v1",
+                "outline.background.edit.v1",
+                "outline.remove-node.v1",
+                "master.dimensions.edit.v1",
+                "native.action.v1"
+              ],
+              "nativeActions": [
+                "add_extremes",
+                "add_missing_anchors",
+                "align_components",
+                "cleanup_paths",
+                "connect_open_paths",
+                "correct_path_direction",
+                "decompose_components",
+                "decompose_corners",
+                "make_components",
+                "reinterpolate",
+                "remove_overlap",
+                "round_coordinates",
+                "set_glyph_color",
+                "swap_foreground_background",
+                "update_automatic_feature_block",
+                "update_features",
+                "update_glyph_info",
+                "update_metrics"
+              ],
+              "jobCapabilities": [
+                "feature.compile.live.v1",
+                "script.native.v1",
+                "edit.prepare.native.v1"
+              ],
+              "scriptPreparationVersion": 2,
+              "activity": "ready",
+              "activeOperations": 0,
+              "companions": [
+                {
+                  "protocol": 1,
+                  "id": "curve-inspector",
+                  "version": "0.1.0",
+                  "capabilities": [
+                    "curve.measure",
+                    "curve.overlay"
+                  ]
+                },
+                {
+                  "protocol": 1,
+                  "id": "reference-inspector",
+                  "version": "0.1.0",
+                  "capabilities": [
+                    "reference.file",
+                    "reference.git",
+                    "reference.github",
+                    "reference.overlay",
+                    "reference.saved"
+                  ]
+                }
+              ]
+            },
+            "worker": {
+              "available": true,
+              "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+              "application": "/Applications/Glyphs 4.app",
+              "plugins": "disabled",
+              "processModel": "one_shot",
+              "executions": [],
+              "jobCapabilities": [
+                "feature.compile.saved.v1",
+                "font.export.static.v1",
+                "font.export.variable.v1",
+                "font.export.web.v1",
+                "font.verify.shaping.v1",
+                "font.verify.tables.v1"
+              ]
+            },
+            "controlProtocol": 1,
+            "workflowCapabilities": [
+              "edit.workflow.v1"
+            ],
+            "activity": {
+              "jobs": [
+                {
+                  "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+                  "document": "Native workflow probe",
+                  "kind": "width_delta",
+                  "phase": "completed",
+                  "startedAt": 1790553710.933641,
+                  "finishedAt": 1790553710.9336681,
+                  "completed": null,
+                  "total": null,
+                  "message": null
+                },
+                {
+                  "jobId": "job_41c0a6041d8c4ca7872e79252b60d507",
+                  "document": "Native workflow probe",
+                  "kind": "width_delta",
+                  "phase": "completed",
+                  "startedAt": 1790553690.451426,
+                  "finishedAt": 1790553690.451461,
+                  "completed": null,
+                  "total": null,
+                  "message": null
+                },
+                {
+                  "jobId": "job_4a6ca722be3e440eaef2166846ddb9e5",
+                  "document": "Native workflow probe",
+                  "kind": "python_script",
+                  "phase": "completed",
+                  "startedAt": 1790552419.6978781,
+                  "finishedAt": 1790552419.6978939,
+                  "completed": null,
+                  "total": null,
+                  "message": null
+                },
+                {
+                  "jobId": "job_cc182283426b4d4e8dcb955bd01b9327",
+                  "document": "Native workflow probe",
+                  "kind": "width_delta",
+                  "phase": "discarded",
+                  "startedAt": 1790552410.66958,
+                  "finishedAt": 1790552410.669612,
+                  "completed": 4096,
+                  "total": 4096,
+                  "message": null
+                },
+                {
+                  "jobId": "job_ab02bddce69b4ec39ab73c0dc2a5079b",
+                  "document": "Native workflow probe",
+                  "kind": "python_script",
+                  "phase": "completed",
+                  "startedAt": 1790552242.185643,
+                  "finishedAt": 1790552242.185709,
+                  "completed": null,
+                  "total": null,
+                  "message": null
+                }
+              ],
+              "activeCount": 0,
+              "moreCount": 0
+            },
+            "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "name": "list_documents",
+      "args": {},
+      "started": 1790556381907,
+      "seconds": 2.117,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"ok\":true,\"data\":[{\"id\":\"doc_df6283bbe4fb4656918faa507d03e8af\",\"path\":\"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\",\"dirty\":false,\"generation\":0,\"isCurrent\":true,\"familyName\":\"Dactylotype\"},{\"id\":\"doc_cef910860f12442caeca26ddb031f0a9\",\"path\":\"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage\",\"dirty\":false,\"generation\":0,\"isCurrent\":false,\"familyName\":\"Native workflow probe\"},{\"id\":\"doc_fbb3f4eb9200400b8a509d68a2533356\",\"path\":\"/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage\",\"dirty\":false,\"generation\":0,\"isCurrent\":false,\"familyName\":\"Dactylotype\"}]}"
+          }
+        ],
+        "structuredContent": {
+          "ok": true,
+          "data": [
+            {
+              "id": "doc_df6283bbe4fb4656918faa507d03e8af",
+              "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+              "dirty": false,
+              "generation": 0,
+              "isCurrent": true,
+              "familyName": "Dactylotype"
+            },
+            {
+              "id": "doc_cef910860f12442caeca26ddb031f0a9",
+              "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+              "dirty": false,
+              "generation": 0,
+              "isCurrent": false,
+              "familyName": "Native workflow probe"
+            },
+            {
+              "id": "doc_fbb3f4eb9200400b8a509d68a2533356",
+              "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+              "dirty": false,
+              "generation": 0,
+              "isCurrent": false,
+              "familyName": "Dactylotype"
+            }
+          ]
+        },
+        "isError": false
+      }
+    },
+    {
+      "name": "read_entities",
+      "args": {
+        "document_id": "doc_df6283bbe4fb4656918faa507d03e8af",
+        "entities": [
+          {
+            "kind": "masters",
+            "limit": 100
+          }
+        ],
+        "fields": [
+          "id",
+          "name"
+        ]
+      },
+      "started": 1790556384024,
+      "seconds": 2.503,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"ok\":true,\"data\":[{\"entity\":{\"kind\":\"masters\",\"limit\":100},\"values\":{\"items\":[{\"id\":\"AF94AE23-1910-4859-814C-A48A47EEDF58\",\"name\":\"Thin Condensed\"},{\"id\":\"2E77CFE9-4347-4996-916C-66BA704F6DA5\",\"name\":\"Thin Normal\"},{\"id\":\"926F7910-9E82-41CD-9117-571F75F96159\",\"name\":\"Thin Extended\"},{\"id\":\"F6800DE0-8362-44AC-BD73-6321DA3A4F97\",\"name\":\"Regular Condensed\"},{\"id\":\"0578215A-7423-43EB-8AD4-4C95A1C78DFA\",\"name\":\"Regular\"},{\"id\":\"112BA480-1628-43E5-92BC-AE80BCA529EB\",\"name\":\"Regular Extended\"},{\"id\":\"20B80D33-B5FE-4CBE-AB86-1B0C04FA398E\",\"name\":\"Black Condensed\"},{\"id\":\"CC51697B-BB46-485D-9A47-70AE762A7DC7\",\"name\":\"Black Normal\"},{\"id\":\"6825D31D-5B3D-46C4-B419-A0158C275CED\",\"name\":\"Black Extended\"}],\"total\":9,\"complete\":true,\"nextCursor\":null}}]}"
+          }
+        ],
+        "structuredContent": {
+          "ok": true,
+          "data": [
+            {
+              "entity": {
+                "kind": "masters",
+                "limit": 100
+              },
+              "values": {
+                "items": [
+                  {
+                    "id": "AF94AE23-1910-4859-814C-A48A47EEDF58",
+                    "name": "Thin Condensed"
+                  },
+                  {
+                    "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5",
+                    "name": "Thin Normal"
+                  },
+                  {
+                    "id": "926F7910-9E82-41CD-9117-571F75F96159",
+                    "name": "Thin Extended"
+                  },
+                  {
+                    "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97",
+                    "name": "Regular Condensed"
+                  },
+                  {
+                    "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA",
+                    "name": "Regular"
+                  },
+                  {
+                    "id": "112BA480-1628-43E5-92BC-AE80BCA529EB",
+                    "name": "Regular Extended"
+                  },
+                  {
+                    "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E",
+                    "name": "Black Condensed"
+                  },
+                  {
+                    "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7",
+                    "name": "Black Normal"
+                  },
+                  {
+                    "id": "6825D31D-5B3D-46C4-B419-A0158C275CED",
+                    "name": "Black Extended"
+                  }
+                ],
+                "total": 9,
+                "complete": true,
+                "nextCursor": null
+              }
+            }
+          ]
+        },
+        "isError": false
+      }
+    }
+  ],
+  "checks": []
+}

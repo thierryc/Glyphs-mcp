@@ -1,0 +1,26 @@
+[
+  {
+    "id": "doc_d62b6735ca244319ba2db1c045fe7d2d",
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+    "dirty": false,
+    "generation": 21,
+    "isCurrent": true,
+    "familyName": "Dactylotype"
+  },
+  {
+    "id": "doc_cef910860f12442caeca26ddb031f0a9",
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "dirty": false,
+    "generation": 0,
+    "isCurrent": false,
+    "familyName": "Native workflow probe"
+  },
+  {
+    "id": "doc_fbb3f4eb9200400b8a509d68a2533356",
+    "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+    "dirty": false,
+    "generation": 0,
+    "isCurrent": false,
+    "familyName": "Dactylotype"
+  }
+]

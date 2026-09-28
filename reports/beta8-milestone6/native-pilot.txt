@@ -1,0 +1,92 @@
+2026-09-28 07:38:56.451 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.451 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.451 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.451 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.451 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.452 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.452 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.453 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.453 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.453 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.453 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.453 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.453 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.454 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.455 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.456 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.457 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.458 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.463 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.463 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.463 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.465 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.465 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.465 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.465 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.468 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.468 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.470 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.516 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.520 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+2026-09-28 07:38:56.521 glyphs[23438:5551134] [Bugsnag] [ERROR] Ensure you have started Bugsnag with startWithApiKey: before calling any other Bugsnag functions.
+Traceback (most recent call last):
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/native_script_harness.py", line 111, in call
+    try:result['value']=callback()
+                        ~~~~~~~~^^
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/beta8-milestone6/benchmark_native.py", line 53, in measured
+    try:return callback()
+               ~~~~~~~~^^
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/beta8-milestone6/benchmark_native.py", line 57, in <lambda>
+    h.service.bridge.restore_checkpoint=lambda request:h.service.bridge.call(lambda:checkpoint_restore.restore(h.core,request,BridgeError))
+                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/bridge/glyphs_mcp_bridge/checkpoint_restore.py", line 38, in restore
+    raise error('invalid_request', 'Restoration requires regular absolute font paths.')
+glyphs_mcp_bridge.core.BridgeError: Restoration requires regular absolute font paths.
+Traceback (most recent call last):
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/beta8-milestone6/benchmark_native.py", line 82, in <module>
+    if not result['passed']:raise RuntimeError(result['error'])
+           ~~~~~~^^^^^^^^^^
+KeyError: 'passed'

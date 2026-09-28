@@ -1,0 +1,385 @@
+[
+  {
+    "format": "glyphs",
+    "repetition": 1,
+    "workflowId": "edit_f0f14de8720248d0b1b9b15291eb1f8a",
+    "restorePreparationApplicationPollingSeconds": 2.8466310410003643,
+    "saveAndCheckpointSeconds": 2.2691668329935055,
+    "receipt": {
+      "saveId": "job_3e9efc235aab4c0996e7e732ecd9eb01",
+      "jobId": "job_3e9efc235aab4c0996e7e732ecd9eb01",
+      "documentId": "doc_c9ab971d191d4512b0c7babb62f8ecb5",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:cf5a793729c78c1683e0b8c29b186d9f26a9588a8b45d111da91de5998bc4e39",
+      "sourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595124.753479,
+      "checkpoint": {
+        "status": "created",
+        "revision": "b29cf21634e8a85c02af35470d034154941569af",
+        "previousRevision": "df9e83626d55b6f267d97ad23fec18b44724a48b",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_3e9efc235aab4c0996e7e732ecd9eb01.json",
+        "fontPath": "Checkpoint.glyphs",
+        "sourceHash": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+        "indexBefore": "7af5325485ea27460ca5894e697f23491c6dc802a015bce5f5436da1f36f5a9b",
+        "indexAfter": "848d7949d17459fb205baa8d1560f5f3a68e254d1f45e118d954db313deb7ded",
+        "recordFiles": [
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_3e9efc235aab4c0996e7e732ecd9eb01.json",
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_3e9efc235aab4c0996e7e732ecd9eb01_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphs",
+    "repetition": 2,
+    "workflowId": "edit_64b69fb6a1a248d3a7930bf0efdec966",
+    "restorePreparationApplicationPollingSeconds": 2.6358102500089444,
+    "saveAndCheckpointSeconds": 2.2903167920012493,
+    "receipt": {
+      "saveId": "job_c5099b5a279a48e4bc2cc36d082bc99d",
+      "jobId": "job_c5099b5a279a48e4bc2cc36d082bc99d",
+      "documentId": "doc_9558caa735984298b37db855c9941e9b",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595129.700086,
+      "checkpoint": {
+        "status": "created",
+        "revision": "c518890857eacdfdda2e5a91a2cbb3bda64ce47e",
+        "previousRevision": "b29cf21634e8a85c02af35470d034154941569af",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_c5099b5a279a48e4bc2cc36d082bc99d.json",
+        "fontPath": "Checkpoint.glyphs",
+        "sourceHash": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+        "indexBefore": "848d7949d17459fb205baa8d1560f5f3a68e254d1f45e118d954db313deb7ded",
+        "indexAfter": "eab55c04ef60829d4977348676eaf7136c2ac4f87236ab794576c3d663c87e2d",
+        "recordFiles": [
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_c5099b5a279a48e4bc2cc36d082bc99d.json",
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_c5099b5a279a48e4bc2cc36d082bc99d_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphs",
+    "repetition": 3,
+    "workflowId": "edit_d5cbdf263ba7487db55bc6dbd62473fd",
+    "restorePreparationApplicationPollingSeconds": 2.697280624997802,
+    "saveAndCheckpointSeconds": 2.2909827909898013,
+    "receipt": {
+      "saveId": "job_adcbb5c88cbb48d582414c8ac8ecc1df",
+      "jobId": "job_adcbb5c88cbb48d582414c8ac8ecc1df",
+      "documentId": "doc_e5e5bfdd597d41eebc0292158e7e4248",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595134.644468,
+      "checkpoint": {
+        "status": "created",
+        "revision": "96de9c825d7d47b563432557f776bdd79d9f9f93",
+        "previousRevision": "c518890857eacdfdda2e5a91a2cbb3bda64ce47e",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_adcbb5c88cbb48d582414c8ac8ecc1df.json",
+        "fontPath": "Checkpoint.glyphs",
+        "sourceHash": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+        "indexBefore": "eab55c04ef60829d4977348676eaf7136c2ac4f87236ab794576c3d663c87e2d",
+        "indexAfter": "1797ad4ad054a0162d7d8e68c5e68c044c37720fca955ee3210e8d03081f1792",
+        "recordFiles": [
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_adcbb5c88cbb48d582414c8ac8ecc1df.json",
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_adcbb5c88cbb48d582414c8ac8ecc1df_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphs",
+    "repetition": 4,
+    "workflowId": "edit_89ef41bb687d4a48b3a89c979d09eb03",
+    "restorePreparationApplicationPollingSeconds": 2.7185750839998946,
+    "saveAndCheckpointSeconds": 2.2683669590041973,
+    "receipt": {
+      "saveId": "job_e994d9ce6fea42a49c3db027e19beee7",
+      "jobId": "job_e994d9ce6fea42a49c3db027e19beee7",
+      "documentId": "doc_28a7b764a3e248a1b746b32bc394d6a3",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595139.6694279,
+      "checkpoint": {
+        "status": "created",
+        "revision": "f5e09e042685ad3ed8369104b559cc7a3053b0bb",
+        "previousRevision": "96de9c825d7d47b563432557f776bdd79d9f9f93",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_e994d9ce6fea42a49c3db027e19beee7.json",
+        "fontPath": "Checkpoint.glyphs",
+        "sourceHash": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+        "indexBefore": "1797ad4ad054a0162d7d8e68c5e68c044c37720fca955ee3210e8d03081f1792",
+        "indexAfter": "5b6d914c7637fcde139e760b340628ba17e5957f0d75935e312992baf7077882",
+        "recordFiles": [
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_e994d9ce6fea42a49c3db027e19beee7.json",
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_e994d9ce6fea42a49c3db027e19beee7_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphs",
+    "repetition": 5,
+    "workflowId": "edit_17122a18191c480a924ef19cf6669fde",
+    "restorePreparationApplicationPollingSeconds": 2.717756041995017,
+    "saveAndCheckpointSeconds": 2.3136961669952143,
+    "receipt": {
+      "saveId": "job_6fabe2404ee34b73bbdaf8a934f81397",
+      "jobId": "job_6fabe2404ee34b73bbdaf8a934f81397",
+      "documentId": "doc_8ddafeaa6e22406a973e091097151bae",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595144.658485,
+      "checkpoint": {
+        "status": "created",
+        "revision": "0a4f3a0492cb789700535d9b06b52d03b0409cb6",
+        "previousRevision": "f5e09e042685ad3ed8369104b559cc7a3053b0bb",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_6fabe2404ee34b73bbdaf8a934f81397.json",
+        "fontPath": "Checkpoint.glyphs",
+        "sourceHash": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+        "indexBefore": "5b6d914c7637fcde139e760b340628ba17e5957f0d75935e312992baf7077882",
+        "indexAfter": "815889335d0fc4141c37e3f74f01d2db12c011d4779ed875e8886b30846b3df2",
+        "recordFiles": [
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_6fabe2404ee34b73bbdaf8a934f81397.json",
+          ".glyphs-mcp/actions/c3bcea064bf5bbb7455d3fd4/job_6fabe2404ee34b73bbdaf8a934f81397_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphspackage",
+    "repetition": 1,
+    "workflowId": "edit_f0c894e43ff54cbf8563c4dc14b63f9e",
+    "restorePreparationApplicationPollingSeconds": 18.749085457995534,
+    "saveAndCheckpointSeconds": 2.7994830420066137,
+    "receipt": {
+      "saveId": "job_66b26d848550405b99c0e4cb9935f7c4",
+      "jobId": "job_66b26d848550405b99c0e4cb9935f7c4",
+      "documentId": "doc_446f4b5ed54641a59330e2eaf776d370",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:1c1c7682294ef9223ae5525501c228fe541318224a77ceeab9ced4d7fd1829af",
+      "sourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595165.987603,
+      "checkpoint": {
+        "status": "created",
+        "revision": "6853bc19b8dc0abbab61e3a86233fa42f369f9e2",
+        "previousRevision": "b37094a35e816f02ffe4d5748b51df931b808976",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_66b26d848550405b99c0e4cb9935f7c4.json",
+        "fontPath": "Checkpoint.glyphspackage",
+        "sourceHash": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+        "indexBefore": "f152273f7ef579f3b0d9b616234b30e7b1c187cad94245d45770659893dedf72",
+        "indexAfter": "ebe344d57429abcc5050e1dcabbaea51e6803ce530db88126fbb7d0dd2a52f3f",
+        "recordFiles": [
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_66b26d848550405b99c0e4cb9935f7c4.json",
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_66b26d848550405b99c0e4cb9935f7c4_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphspackage",
+    "repetition": 2,
+    "workflowId": "edit_6a20d30116654957bdf578e32cdb73c4",
+    "restorePreparationApplicationPollingSeconds": 18.64187145800679,
+    "saveAndCheckpointSeconds": 2.754978916986147,
+    "receipt": {
+      "checkpoint": {
+        "fontPath": "Checkpoint.glyphspackage",
+        "indexAfter": "eddab88b74f196d80590511033b3094f61cc167a949008c37e242183787f1cc6",
+        "indexBefore": "ebe344d57429abcc5050e1dcabbaea51e6803ce530db88126fbb7d0dd2a52f3f",
+        "previousRevision": "6853bc19b8dc0abbab61e3a86233fa42f369f9e2",
+        "recordFiles": [
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_a57a6a85cdc44f97b1157f0d8bb95bc4.json",
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_a57a6a85cdc44f97b1157f0d8bb95bc4_scope.json"
+        ],
+        "recordPath": ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_a57a6a85cdc44f97b1157f0d8bb95bc4.json",
+        "ref": "refs/heads/main",
+        "revision": "511877ddebb96ef876ac3364ccddacb198548cfd",
+        "sourceHash": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+        "status": "created"
+      },
+      "dirtyAfter": false,
+      "dirtyBefore": true,
+      "documentId": "doc_f5228cbb372e46c2a8014b6ed705ab0b",
+      "jobId": "job_a57a6a85cdc44f97b1157f0d8bb95bc4",
+      "nativeSaveSucceeded": true,
+      "originalSourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "originalSourceUnchanged": null,
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "saveId": "job_a57a6a85cdc44f97b1157f0d8bb95bc4",
+      "saveMode": "save",
+      "savedAt": 1790595187.409185,
+      "sourceChangedSinceJob": false,
+      "sourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "sourceHashBefore": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "verification": "native_and_source_hash",
+      "writeAttempted": true
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphspackage",
+    "repetition": 3,
+    "workflowId": "edit_aff5b63510ae452db5fae77e024193f8",
+    "restorePreparationApplicationPollingSeconds": 18.32211779197678,
+    "saveAndCheckpointSeconds": 2.866680249979254,
+    "receipt": {
+      "saveId": "job_439ee339ed0647cf818d8080e6f7fc42",
+      "jobId": "job_439ee339ed0647cf818d8080e6f7fc42",
+      "documentId": "doc_cc93ef5d73b9477f8c65b5d8e9ccac57",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "sourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595208.518084,
+      "checkpoint": {
+        "status": "created",
+        "revision": "d74e164cfd7984614e233b4b0e3a2c4d07ca248c",
+        "previousRevision": "511877ddebb96ef876ac3364ccddacb198548cfd",
+        "ref": "refs/heads/main",
+        "recordPath": ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_439ee339ed0647cf818d8080e6f7fc42.json",
+        "fontPath": "Checkpoint.glyphspackage",
+        "sourceHash": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+        "indexBefore": "eddab88b74f196d80590511033b3094f61cc167a949008c37e242183787f1cc6",
+        "indexAfter": "880819858c3be49bd76725c0a41008d9f167a99b321fcea8b4211ddc2727f262",
+        "recordFiles": [
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_439ee339ed0647cf818d8080e6f7fc42.json",
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_439ee339ed0647cf818d8080e6f7fc42_scope.json"
+        ]
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphspackage",
+    "repetition": 4,
+    "workflowId": "edit_c015cf646a6948bf849c6fab829b35d2",
+    "restorePreparationApplicationPollingSeconds": 18.45004695901298,
+    "saveAndCheckpointSeconds": 2.7091631249932107,
+    "receipt": {
+      "saveId": "job_476af97287914ce685aadc1c9f618e39",
+      "jobId": "job_476af97287914ce685aadc1c9f618e39",
+      "documentId": "doc_6e10973e34cf4e2ab9059e811fdd6c68",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "sourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790595229.822067,
+      "checkpoint": {
+        "fontPath": "Checkpoint.glyphspackage",
+        "indexAfter": "fa708d919a287dc6335f8e4b6b3963250a5c43c5eb7975ce83068dfec041421b",
+        "indexBefore": "880819858c3be49bd76725c0a41008d9f167a99b321fcea8b4211ddc2727f262",
+        "previousRevision": "d74e164cfd7984614e233b4b0e3a2c4d07ca248c",
+        "recordFiles": [
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_476af97287914ce685aadc1c9f618e39.json",
+          ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_476af97287914ce685aadc1c9f618e39_scope.json"
+        ],
+        "recordPath": ".glyphs-mcp/actions/14e9b5ef6bec12e0700ca9fb/job_476af97287914ce685aadc1c9f618e39.json",
+        "ref": "refs/heads/main",
+        "revision": "19b1a88257e600ed1ab47051eaeb3daa9fddcf7b",
+        "sourceHash": "sha256:1a2a35f63a7f1873c3e14eb51313fd323dd6d85fe90eec38e60a6606c4ffb240",
+        "status": "created"
+      }
+    },
+    "passed": true
+  },
+  {
+    "format": "glyphspackage",
+    "repetition": 5,
+    "workflowId": "edit_2b0064f70bca4d57b742b9d5ca408b73"
+  }
+]

@@ -1,0 +1,6 @@
+.DS_Store
+*.bak
+* (autosave).*
+* (Autosaved).*
+exports/
+proofs/

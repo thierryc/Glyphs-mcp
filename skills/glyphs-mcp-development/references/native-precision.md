@@ -55,3 +55,10 @@ import bridge internals or construct a new topology or recovery framework.
 Evidence: RV01, commit `a833e599`, `reports/rv01-realistic-20260914`,
 T04–T08 and `artifacts/outline_tasks.py`. The instructions above are
 self-contained; that repository evidence is supplemental.
+
+For exact node-name restoration, preserve an absent name separately from an
+empty string. On the qualified Glyphs 4.1 build, the Python `node.name` setter
+stringifies `None`; `node.setName_(None)` restores the native absent value. The
+typed outline adapter uses that selector for nullable names and retains the
+existing snapshot and node identities. Verify the name as well as coordinates
+after Undo/Redo or selective recovery.

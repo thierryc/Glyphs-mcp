@@ -42,12 +42,29 @@ final class DesktopProjectsModel: ObservableObject {
     private let defaults: UserDefaults
     private let gitReader = ReadOnlyGit()
     private let glyphReader = GlyphDiffService()
+    private let checkpointRead: (String, [String: Any]) async throws -> [String: Any]
+    @Published private(set) var historicalComparison: CheckpointComparisonContext?
+    @Published private(set) var loadingCheckpoint = false
+    @Published private(set) var checkpointError = ""
+    @Published private(set) var checkpointPageError = ""
+    @Published private(set) var loadingCheckpointPage = false
+    @Published var fileFilter = ""
+    let checkpointHistory = CheckpointHistoryStore()
+    private var workingSelection: (project: String, path: String?, filter: String)?
+    private var comparisonGeneration = UUID()
+    private var checkpointTask: Task<Void, Never>?
+    private var checkpointPageTask: Task<Void, Never>?
+    @Published private(set) var checkpointNextOffset: Int?
     private var inspection: Task<Void, Never>?
     private var comparisonTask: Task<Void, Never>?
     private var glyphRetryTask: Task<Void, Never>?
     var selectedProject: String? { navigation.selectedProject }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard,
+         checkpointRead: @escaping (String, [String: Any]) async throws -> [String: Any] = {
+             try await CheckpointClient.read(documentID: $0, selector: $1)
+         }) {
+        self.checkpointRead = checkpointRead
         self.defaults = defaults
         navigation = DesktopProjectNavigation(defaults: defaults, hasInstallation: DesktopInstallation().hasInstallation)
         localTemplates = defaults.stringArray(forKey: "localTemplates") ?? []
@@ -147,7 +164,15 @@ final class DesktopProjectsModel: ObservableObject {
         defaults.set(localTemplates, forKey: "localTemplates")
     }
     func inspect() {
-        let selectedPath = selectedChange?.path
+        let saved = workingSelection.flatMap { $0.project == selectedProject ? $0 : nil }
+        let selectedPath = saved?.path ?? selectedChange?.path
+        if let saved { fileFilter = saved.filter }
+        else if historicalComparison != nil || workingSelection != nil { fileFilter = "" }
+        workingSelection = nil
+        invalidateCheckpointRequests()
+        checkpointHistory.cancel()
+        historicalComparison = nil; checkpointNextOffset = nil
+        checkpointError = ""; checkpointPageError = ""
         inspection?.cancel(); comparisonTask?.cancel(); glyphRetryTask?.cancel()
         git = nil; gitMessage = ""; inspecting = false
         comparison = nil; glyphDiff = nil; comparisonMessage = ""; glyphMessage = ""
@@ -176,18 +201,96 @@ final class DesktopProjectsModel: ObservableObject {
         guard let change = git?.changes.first(where: { $0.path == path }) else { return }
         selectChange(change)
     }
+    private func invalidateCheckpointRequests() {
+        comparisonGeneration = UUID()
+        checkpointTask?.cancel(); checkpointPageTask?.cancel()
+        comparisonTask?.cancel(); glyphRetryTask?.cancel(); inspection?.cancel()
+        loadingCheckpoint = false; loadingCheckpointPage = false
+        loadingComparison = false; loadingGlyphDiff = false; inspecting = false
+    }
+    func refreshComparison() {
+        if let context = historicalComparison { showCheckpointComparison(context) }
+        else { inspect() }
+    }
+    func showCheckpointComparison(_ context: CheckpointComparisonContext) {
+        guard let project = selectedProject else { return }
+        if historicalComparison == nil {
+            workingSelection = (project, selectedChange?.path, fileFilter)
+            fileFilter = ""
+        }
+        invalidateCheckpointRequests()
+        let request = comparisonGeneration
+        historicalComparison = context
+        checkpointError = ""; checkpointPageError = ""; checkpointNextOffset = nil
+        git = nil; selectedChange = nil; comparison = nil; glyphDiff = nil
+        comparisonMessage = ""; glyphMessage = ""; loadingCheckpoint = true
+        checkpointTask = Task {
+            do {
+                let value = try await checkpointRead(context.documentID, ["kind":"checkpoint_compare", "before":context.before, "after":context.after, "limit":100])
+                guard !Task.isCancelled, comparisonGeneration == request, selectedProject == project else { return }
+                var updated = context
+                updated.projectRoot = value["repository"] as? String ?? project
+                let changes = Self.checkpointChanges(value)
+                updated.totalCount = value["count"] as? Int ?? changes.count
+                historicalComparison = updated
+                checkpointNextOffset = value["nextOffset"] as? Int
+                git = .init(branch: context.document.filename, headRevision: context.before, changes: changes)
+                loadingCheckpoint = false
+                if let first = changes.first { selectChange(first) }
+            } catch {
+                guard !Task.isCancelled, comparisonGeneration == request, selectedProject == project else { return }
+                checkpointError = error.localizedDescription; loadingCheckpoint = false
+            }
+        }
+    }
+    private static func checkpointChanges(_ value: [String: Any]) -> [GitObservation.Change] {
+        (value["files"] as? [[String: Any]] ?? []).compactMap { item in
+            guard let path = item["path"] as? String else { return nil }
+            let kind: GitObservation.Change.Kind = item["change"] as? String == "added" ? .added : item["change"] as? String == "removed" ? .deleted : .modified
+            let status = kind == .added ? "A" : kind == .deleted ? "D" : "M"
+            return .init(status: status, stagedStatus: " ", workingStatus: status, kind: kind, path: path)
+        }
+    }
+    func moreCheckpointChanges() {
+        guard let history = historicalComparison, let offset = checkpointNextOffset,
+              let observation = git, !loadingCheckpointPage else { return }
+        let request = comparisonGeneration
+        loadingCheckpointPage = true; checkpointPageError = ""
+        checkpointPageTask = Task {
+            do {
+                let value = try await checkpointRead(history.documentID, ["kind":"checkpoint_compare", "before":history.before, "after":history.after, "offset":offset, "limit":100])
+                guard !Task.isCancelled, comparisonGeneration == request else { return }
+                let page = Self.checkpointChanges(value)
+                git = .init(branch: history.document.filename, headRevision: history.before, changes: observation.changes + page)
+                checkpointNextOffset = value["nextOffset"] as? Int
+                loadingCheckpointPage = false
+            } catch {
+                guard !Task.isCancelled, comparisonGeneration == request else { return }
+                checkpointPageError = error.localizedDescription; loadingCheckpointPage = false
+            }
+        }
+    }
     func selectChange(_ change: GitObservation.Change) {
         guard let project = selectedProject, let git else { return }
         comparisonTask?.cancel(); glyphRetryTask?.cancel()
         selectedChange = change
         comparison = nil; glyphDiff = nil; comparisonMessage = ""; glyphMessage = ""
         loadingComparison = true; loadingGlyphDiff = change.isGlyphPackageGlyph
+        let historical = historicalComparison
         comparisonTask = Task {
             do {
                 async let glyphValueTask: GlyphDiffDocument? = change.isGlyphPackageGlyph
-                    ? glyphReader.compare(project: URL(fileURLWithPath: project), change: change, headRevision: git.headRevision)
+                    ? glyphReader.compare(project: URL(fileURLWithPath: historical?.projectRoot ?? project), change: change, headRevision: git.headRevision, afterRevision: historical?.after)
                     : nil
-                let value = try await gitReader.comparison(URL(fileURLWithPath: project), change: change, headRevision: git.headRevision)
+                let value: GitFileComparison
+                if let historical {
+                    let content = try await checkpointRead(historical.documentID, ["kind":"checkpoint_compare", "before":historical.before, "after":historical.after, "file":change.path])
+                    value = .init(path: change.path, originalPath: nil, kind: change.kind,
+                                  oldContent: (content["before"] as? String).map(GitFileContent.text) ?? .missing,
+                                  newContent: (content["after"] as? String).map(GitFileContent.text) ?? .missing)
+                } else {
+                    value = try await gitReader.comparison(URL(fileURLWithPath: project), change: change, headRevision: git.headRevision)
+                }
                 guard !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path else { return }
                 comparison = value
                 loadingComparison = false
@@ -221,10 +324,12 @@ final class DesktopProjectsModel: ObservableObject {
         glyphRetryTask?.cancel()
         glyphDiff = nil; glyphMessage = ""; loadingGlyphDiff = true; glyphMode = .visual
         let headRevision = git.headRevision
+        let historical = historicalComparison
         glyphRetryTask = Task {
             do {
                 let value = try await glyphReader.compare(
-                    project: URL(fileURLWithPath: project), change: change, headRevision: headRevision
+                    project: URL(fileURLWithPath: historical?.projectRoot ?? project), change: change,
+                    headRevision: headRevision, afterRevision: historical?.after
                 )
                 guard !Task.isCancelled, selectedProject == project,
                       selectedChange?.path == change.path else { return }

@@ -1,0 +1,37 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_historical_package_materialization_uses_one_bounded_git_batch[.glyphspackage] _
+
+repo = (PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-159/test_historical_pac.../folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-159/test_historical_package_materi1/operation'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1077b0c30>
+
+    def test_historical_package_materialization_uses_one_bounded_git_batch(repo,monkeypatch):
+        from glyphs_mcp_sidecar.checkpoint_history import materialize
+        root,font,operation=repo
+        if not font.is_dir():return
+        for i in range(100):(font/'glyphs'/f'g{i}.glyph').write_text(str(i))
+        target,_=engine(repo)
+        receipt=target.checkpoint(source_hash(font),'many_files',record())
+        original=target.git;calls=[]
+        def counted(*args,**kwargs):
+            if args[0]=='cat-file':calls.append(args)
+            return original(*args,**kwargs)
+        monkeypatch.setattr(target,'git',counted)
+        output=materialize(target,receipt['revision'],operation/'materialized')
+        assert source_hash(output)==source_hash(font)
+>       assert calls==[('cat-file','--batch')]
+E       AssertionError: assert [('cat-file',...5db503'), ...] == [('cat-file', '--batch')]
+E
+E         At index 0 diff: ('cat-file', 'blob', '41db4933441e91a0a3f3219b4ae75d1646b9c88e') != ('cat-file', '--batch')
+E         Left contains 101 more items, first extra item: ('cat-file', 'blob', 'd499c91c6b591f74b7f3b76eb6091f8a3ae56ef5')
+E         Use -v to get more diff
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoints.py:235: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           1     1     0     1    4.83s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoints.py::test_historical_package_materialization_uses_one_bounded_git_batch[.glyphspackage]
+1 failed, 1 passed, 38 deselected in 4.91s

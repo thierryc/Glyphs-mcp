@@ -1,0 +1,42 @@
+[
+  {
+    "case": "fixture-color-glyphs",
+    "passed": true,
+    "processSeconds": 6.660030333005125
+  },
+  {
+    "case": "baseline-color-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 28.039998292020755
+  },
+  {
+    "case": "baseline-color-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 28.076394042000175
+  },
+  {
+    "case": "baseline-color-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 28.013426917023025
+  },
+  {
+    "case": "baseline-color-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 27.982376457977807
+  },
+  {
+    "case": "baseline-color-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 28.23538341600215
+  },
+  {
+    "case": "baseline-color-10-glyphs-1",
+    "passed": true,
+    "processSeconds": 78.09008999998332
+  },
+  {
+    "case": "baseline-color-10-glyphs-2",
+    "passed": false,
+    "processSeconds": 1.3552460409991909
+  }
+]

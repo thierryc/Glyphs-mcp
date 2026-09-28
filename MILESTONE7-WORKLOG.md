@@ -4,6 +4,7 @@
 > in favor of **2.0.0 Beta 1, build 43**. Version numbers, installation states
 > and artifact paths below describe past local tests, not a current release.
 > Use [BETA.md](BETA.md) for the current candidate.
+> This is not Beta 8 milestone 7; see [the current milestones](BETA8-MILESTONES.md).
 
 The authorized implementation is Glyphs MCP Desktop 2.1.0, build 30, bridge
 (0.1.0). Work only in this worktree (`lit/milestone-7`). The Milestone 6

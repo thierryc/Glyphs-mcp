@@ -1,0 +1,129 @@
+{
+  "arguments": {
+    "delta": 0.25,
+    "glyphs": [
+      "probe1"
+    ],
+    "kind": "width_delta",
+    "options": null
+  },
+  "autoKeepEnabled": true,
+  "autoKeepRequested": true,
+  "blockerId": null,
+  "blockingWorkflowId": null,
+  "createdAt": 1790553632.9502919,
+  "document": {
+    "dirty": true,
+    "familyName": "Native workflow probe",
+    "generation": 0,
+    "id": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+    "isCurrent": true,
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage"
+  },
+  "documentStateConfirmed": true,
+  "error": null,
+  "id": "edit_d27c0ee92a49445396edc0af3075daff",
+  "idempotencyKey": "m4-codex-waiting-B-20260927",
+  "job": {
+    "activity": {
+      "completed": null,
+      "document": "Native workflow probe",
+      "finishedAt": 1790553710.9336681,
+      "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+      "kind": "width_delta",
+      "message": null,
+      "phase": "completed",
+      "startedAt": 1790553710.933641,
+      "total": null
+    },
+    "bridgeOperation": {
+      "completedChanges": 1,
+      "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+      "error": null,
+      "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+      "longestPreparationChunk": null,
+      "message": null,
+      "nativeSave": null,
+      "receipt": null,
+      "scriptResult": null,
+      "status": "completed",
+      "totalChanges": 1
+    },
+    "changeCount": 1,
+    "error": null,
+    "id": "job_4b7af4e4b7014242a85b50e75cded20a",
+    "manifest": null,
+    "message": null,
+    "outcome": null,
+    "receipt": null,
+    "report": null,
+    "resultKind": "mutation",
+    "sample": [
+      {
+        "after": 500.25,
+        "before": 500,
+        "field": "width",
+        "glyph": "probe1",
+        "kind": "set",
+        "layer": "A98EF95D-1121-437B-8456-A13F589B46A2"
+      }
+    ],
+    "status": "completed",
+    "summary": "Add 0.25 units to selected glyphs"
+  },
+  "jobId": "job_4b7af4e4b7014242a85b50e75cded20a",
+  "mode": "apply",
+  "nonce": "efdcd67a632146b48b14929298b98ea3",
+  "pendingAction": null,
+  "receipt": {
+    "dirtyAfter": false,
+    "dirtyBefore": true,
+    "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+    "jobId": null,
+    "nativeSaveSucceeded": true,
+    "originalSourceHashAfter": "sha256:1ea9a1f83386567f6341e7e947e81c2eac8e62d283c60d819e211739d26167f7",
+    "originalSourceUnchanged": null,
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "saveId": "save_e81bec4c676a467f97708ce00e80b294",
+    "saveMode": "save",
+    "savedAt": 1790553704.841687,
+    "sourceChangedSinceJob": false,
+    "sourceHashAfter": "sha256:1ea9a1f83386567f6341e7e947e81c2eac8e62d283c60d819e211739d26167f7",
+    "sourceHashBefore": "sha256:bc662958c086c0de2b350274795117b372bcb28806621c499da92cb861a5ee6c",
+    "verification": "native_and_source_hash",
+    "writeAttempted": true
+  },
+  "request": {
+    "delta": 0.25,
+    "glyphs": [
+      "probe1"
+    ],
+    "kind": "width_delta"
+  },
+  "responseOrigin": "explicit_action",
+  "resumeState": "blocked_review",
+  "reviewInConversation": false,
+  "revision": 26,
+  "saveRequest": {
+    "dirtyBefore": true,
+    "documentId": "doc_a65933ef3bc84c91a7b9e113343a68ab",
+    "generationBefore": 0,
+    "jobId": null,
+    "jobSourceHash": null,
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+    "saveId": "save_e81bec4c676a467f97708ce00e80b294",
+    "saveMode": "save",
+    "sourceChangedSinceJob": false,
+    "sourceHashBefore": "sha256:bc662958c086c0de2b350274795117b372bcb28806621c499da92cb861a5ee6c"
+  },
+  "savedVersion": null,
+  "state": "executed",
+  "updatedAt": 1790553710.936219,
+  "usedActions": {
+    "09cc84388a3edc07bc424e86defa143719444f1ce7564efcd5221e78eeeff2ae": "[null, null]",
+    "681ad1e1184bb379897294151091c52b16272b050e17d04c88411126bc08a947": "[null, null]"
+  },
+  "version": 1
+}

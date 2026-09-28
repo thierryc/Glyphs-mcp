@@ -17,6 +17,32 @@ to use the server's tool descriptions and returned choices.
 Typed edits and scripts share Keep, Save and their appropriate recovery action. Scripts use their own Run action under
 task authorization, as described at the end and in the shared contract.
 
+For a known connection and document, use this minimal sequence:
+
+1. Read only missing target information, then start one workflow. Do not repeat
+   `get_status` or `list_documents` for each edit or focused skill.
+2. Reuse the returned state and actions. Poll `get_edit_workflow` with its default
+   compact response only while `poll` is true. Do not add `get_job` or health
+   reads unless a complete report or a connection problem actually requires them.
+3. Verify the intended result with bounded fresh reads of targets and relevant
+   controls. Report observed changes separately from execution completion.
+4. Use the offered Keep, Save or recovery action under its actual authorization.
+   Refresh the workflow before acting on a later reply; after restoration, use
+   its fresh document binding. An uncertain action is reconciled, never replayed.
+
+Load **Script details** once when requested and reuse it only for the same
+workflow, document binding, job and request fingerprint. Compact responses omit
+source and output; omission preserves matching evidence, while explicit empty
+values replace it. Refresh open details when execution finishes. A changed
+identity clears cached evidence. Display caching never authorizes Run, Save or
+Restore, and a reconnected or newly visible card still reconciles fresh state.
+
+An edit remains active while its native Undo groups and temporary precision
+settings finish closing/restoring. Keep polling the same workflow; a completed
+target count alone is not a finished result. Wrapper cleanup yields between
+targets, but an individual native call or script invocation cannot be interrupted.
+Do not start a replacement edit, save or offer Keep before the result is ready.
+
 - Saved and clean: preparation begins immediately. Complete reports without
   warnings, unavailable/skipped targets or overwrite approvals apply automatically.
 - Dirty: explain that **Save and continue** saves the entire font, including
@@ -120,3 +146,10 @@ copies. Preparation never edits the font. These jobs retain saved/clean prerequi
 target guards and selective recovery; the agent chooses no additional mode.
 Mixed or other outline operations and algorithmic jobs retain external preparation.
 The runtime reports preparation errors instead of silently switching routes.
+
+## Optional project checkpoints
+
+When enabled in project settings, authorized Saves also create local Git checkpoints.
+Keep without saving creates no result checkpoint. Saving and Git failures are
+reported separately; retry only the checkpoint. See [Git checkpoints](git-checkpoints.md)
+for bounded history reads and whole-font historical restoration through Glyphs.

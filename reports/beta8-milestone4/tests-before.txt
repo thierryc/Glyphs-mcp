@@ -1,0 +1,274 @@
+.FFF.FFFF.F.                                                             [100%]
+=================================== FAILURES ===================================
+_ test_activity_poll_copies_only_bounded_recent_and_active_records[False-100] __
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_activity_poll_copies_only1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d42b10>
+count = 100, active = False
+
+    @pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+    @pytest.mark.parametrize('active', [False, True])
+    def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
+        store = JobStore(tmp_path/'jobs')
+        seed_history(store,count)
+        current = store.create(dict(id='live-doc'),dict(kind='width_delta')) if active else None
+        touched = []
+        original = job_module.copy.deepcopy
+        def copy(value, *args, **kwargs):
+            if isinstance(value,list):
+                touched.extend(item['id'] for item in value if isinstance(item,dict) and 'id' in item)
+            elif isinstance(value,dict) and 'id' in value:
+                touched.append(value['id'])
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(job_module.copy,'deepcopy',copy)
+        owner = SimpleNamespace(jobs=store)
+        result = ServiceLifecycle(owner,RuntimeError).snapshot()
+        assert result['activeCount'] == int(active)
+        assert len(result['jobs']) == min(count+int(active),5)
+        if active: assert result['jobs'][0]['jobId'] == current['id']
+>       assert len(touched) <= 11, (count,len(touched))
+E       AssertionError: (100, 200)
+E       assert 200 <= 11
+E        +  where 200 = len(['job_a90af953fbc8475c9f8b7fb87d3e9174', 'job_381feaf3fac8445cb8ea6ed29a3a3112', 'job_67077d627d2a41108754714a1b210679...6194b9f769b8476f9428a39446cea053', 'job_6d8b643502264dc888fb49fa5d962459', 'job_d3086c08639d468a82750ac89c5d7343', ...])
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:41: AssertionError
+_ test_activity_poll_copies_only_bounded_recent_and_active_records[False-1000] _
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_activity_poll_copies_only2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d815b0>
+count = 1000, active = False
+
+    @pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+    @pytest.mark.parametrize('active', [False, True])
+    def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
+        store = JobStore(tmp_path/'jobs')
+        seed_history(store,count)
+        current = store.create(dict(id='live-doc'),dict(kind='width_delta')) if active else None
+        touched = []
+        original = job_module.copy.deepcopy
+        def copy(value, *args, **kwargs):
+            if isinstance(value,list):
+                touched.extend(item['id'] for item in value if isinstance(item,dict) and 'id' in item)
+            elif isinstance(value,dict) and 'id' in value:
+                touched.append(value['id'])
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(job_module.copy,'deepcopy',copy)
+        owner = SimpleNamespace(jobs=store)
+        result = ServiceLifecycle(owner,RuntimeError).snapshot()
+        assert result['activeCount'] == int(active)
+        assert len(result['jobs']) == min(count+int(active),5)
+        if active: assert result['jobs'][0]['jobId'] == current['id']
+>       assert len(touched) <= 11, (count,len(touched))
+E       AssertionError: (1000, 2000)
+E       assert 2000 <= 11
+E        +  where 2000 = len(['job_a4d1c06274594256a19b68936039f8db', 'job_a716ad0e62354d3eb12b844cef45b5b9', 'job_50902d5bc9e34890a73a2751ca1a6841...62dffb89b23c438394fd752b5b5c180c', 'job_0656b38cc27e4825bcc2d4d5de90fe81', 'job_36f2d41c22b04e28b13a4a6cafba21de', ...])
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:41: AssertionError
+_ test_activity_poll_copies_only_bounded_recent_and_active_records[False-10000] _
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_activity_poll_copies_only3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d89150>
+count = 10000, active = False
+
+    @pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+    @pytest.mark.parametrize('active', [False, True])
+    def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
+        store = JobStore(tmp_path/'jobs')
+        seed_history(store,count)
+        current = store.create(dict(id='live-doc'),dict(kind='width_delta')) if active else None
+        touched = []
+        original = job_module.copy.deepcopy
+        def copy(value, *args, **kwargs):
+            if isinstance(value,list):
+                touched.extend(item['id'] for item in value if isinstance(item,dict) and 'id' in item)
+            elif isinstance(value,dict) and 'id' in value:
+                touched.append(value['id'])
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(job_module.copy,'deepcopy',copy)
+        owner = SimpleNamespace(jobs=store)
+        result = ServiceLifecycle(owner,RuntimeError).snapshot()
+        assert result['activeCount'] == int(active)
+        assert len(result['jobs']) == min(count+int(active),5)
+        if active: assert result['jobs'][0]['jobId'] == current['id']
+>       assert len(touched) <= 11, (count,len(touched))
+E       AssertionError: (10000, 20000)
+E       assert 20000 <= 11
+E        +  where 20000 = len(['job_4d3b857d401c46d28c315d2694c13f20', 'job_735702fd0266498da6666f6a593868c9', 'job_8ab0c7b153cc43cb838392ea33a63dd3...293659e198ca4b378868484eb0266e84', 'job_a595fca9022d4f79b9de7dbd2663ce9e', 'job_32f311a18fd94bc884928bf5f4523668', ...])
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:41: AssertionError
+__ test_activity_poll_copies_only_bounded_recent_and_active_records[True-100] __
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_activity_poll_copies_only5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d47350>
+count = 100, active = True
+
+    @pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+    @pytest.mark.parametrize('active', [False, True])
+    def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
+        store = JobStore(tmp_path/'jobs')
+        seed_history(store,count)
+        current = store.create(dict(id='live-doc'),dict(kind='width_delta')) if active else None
+        touched = []
+        original = job_module.copy.deepcopy
+        def copy(value, *args, **kwargs):
+            if isinstance(value,list):
+                touched.extend(item['id'] for item in value if isinstance(item,dict) and 'id' in item)
+            elif isinstance(value,dict) and 'id' in value:
+                touched.append(value['id'])
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(job_module.copy,'deepcopy',copy)
+        owner = SimpleNamespace(jobs=store)
+        result = ServiceLifecycle(owner,RuntimeError).snapshot()
+        assert result['activeCount'] == int(active)
+        assert len(result['jobs']) == min(count+int(active),5)
+        if active: assert result['jobs'][0]['jobId'] == current['id']
+>       assert len(touched) <= 11, (count,len(touched))
+E       AssertionError: (100, 202)
+E       assert 202 <= 11
+E        +  where 202 = len(['job_1215f4966e434637b22a9bdafe8c0cad', 'job_c1c18e7a5d5d4a148ca73f6645d3006d', 'job_08bb8b7289174b9f94f5036b8c734d61...bed3a60d58f540a8b13253f97fe00a69', 'job_d1fb3ba47eb6408eafcf9ab07e3e1525', 'job_fb3c4e85604647ed841b97788a33db3d', ...])
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:41: AssertionError
+_ test_activity_poll_copies_only_bounded_recent_and_active_records[True-1000] __
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_activity_poll_copies_only6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d47c50>
+count = 1000, active = True
+
+    @pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+    @pytest.mark.parametrize('active', [False, True])
+    def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
+        store = JobStore(tmp_path/'jobs')
+        seed_history(store,count)
+        current = store.create(dict(id='live-doc'),dict(kind='width_delta')) if active else None
+        touched = []
+        original = job_module.copy.deepcopy
+        def copy(value, *args, **kwargs):
+            if isinstance(value,list):
+                touched.extend(item['id'] for item in value if isinstance(item,dict) and 'id' in item)
+            elif isinstance(value,dict) and 'id' in value:
+                touched.append(value['id'])
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(job_module.copy,'deepcopy',copy)
+        owner = SimpleNamespace(jobs=store)
+        result = ServiceLifecycle(owner,RuntimeError).snapshot()
+        assert result['activeCount'] == int(active)
+        assert len(result['jobs']) == min(count+int(active),5)
+        if active: assert result['jobs'][0]['jobId'] == current['id']
+>       assert len(touched) <= 11, (count,len(touched))
+E       AssertionError: (1000, 2002)
+E       assert 2002 <= 11
+E        +  where 2002 = len(['job_87c387aed9aa4dd8b18de3516c7f2d66', 'job_4b3877e9157c4155b2344d719d6501c4', 'job_5fe0a20b825f498cae9dd2025baa3dba...8a98af31a6874caaa6ed0491b543bb73', 'job_1c055b051e0e4c84b954e9960f96f065', 'job_dc9cfc2749fc4dd1a5dd18a5b055ab1b', ...])
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:41: AssertionError
+_ test_activity_poll_copies_only_bounded_recent_and_active_records[True-10000] _
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_activity_poll_copies_only7')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106de8410>
+count = 10000, active = True
+
+    @pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+    @pytest.mark.parametrize('active', [False, True])
+    def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
+        store = JobStore(tmp_path/'jobs')
+        seed_history(store,count)
+        current = store.create(dict(id='live-doc'),dict(kind='width_delta')) if active else None
+        touched = []
+        original = job_module.copy.deepcopy
+        def copy(value, *args, **kwargs):
+            if isinstance(value,list):
+                touched.extend(item['id'] for item in value if isinstance(item,dict) and 'id' in item)
+            elif isinstance(value,dict) and 'id' in value:
+                touched.append(value['id'])
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(job_module.copy,'deepcopy',copy)
+        owner = SimpleNamespace(jobs=store)
+        result = ServiceLifecycle(owner,RuntimeError).snapshot()
+        assert result['activeCount'] == int(active)
+        assert len(result['jobs']) == min(count+int(active),5)
+        if active: assert result['jobs'][0]['jobId'] == current['id']
+>       assert len(touched) <= 11, (count,len(touched))
+E       AssertionError: (10000, 20002)
+E       assert 20002 <= 11
+E        +  where 20002 = len(['job_6b6258a41242418ea3dedb4cc63ad023', 'job_0910f192a3614447b706d9b4daa9468d', 'job_338c165740cb474aadf5c03a98ac1c69...6c222f85ab7341eca2f48119cacf29fd', 'job_818d6877c09c45a4943e56af18ea709b', 'job_0dcd66be6ff243a79b7391770bbb8067', ...])
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:41: AssertionError
+_________ test_unchanged_job_poll_does_not_write_or_change_timestamps __________
+
+env = (<glyphs_mcp_sidecar.service.SidecarService object at 0x109504ec0>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_unchanged_job_poll_does_n0/Test.glyphs'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1094bd400>
+
+    def test_unchanged_job_poll_does_not_write_or_change_timestamps(env, monkeypatch):
+        service, _, _, _ = env
+        workflow = wait(service,start(env,auto_keep=False),'applied')
+        service.get_job(workflow['jobId'])  # Establish optional fields on old evidence.
+        before = service.jobs.get(workflow['jobId'])
+        writes = []
+        write = service.jobs.write_json
+        def measured(*args):
+            writes.append(args[1]); return write(*args)
+        monkeypatch.setattr(service.jobs,'write_json',measured)
+        for _ in range(10): service.get_job(workflow['jobId'])
+>       assert writes == []
+E       AssertionError: assert ['state.json'...te.json', ...] == []
+E
+E         Left contains 10 more items, first extra item: 'state.json'
+E         Use -v to get more diff
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:55: AssertionError
+________ test_workflow_supervisor_does_not_enumerate_completed_history _________
+
+env = (<glyphs_mcp_sidecar.service.SidecarService object at 0x109473890>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-125/test_workflow_supervisor_does_0/Test.glyphs'))
+
+    def test_workflow_supervisor_does_not_enumerate_completed_history(env):
+        service, _, _, _ = env
+        flows = service.edit_workflows
+        # Seed through persistence so the same path also builds the volatile index.
+        for index in range(100):
+            value = flows.store.create(dict(id='old-doc'),dict(),dict(kind='width_delta'),
+                                       'apply','history-'+str(index))
+            flows.store.update(value,state='executed')
+        active = flows.store.create(dict(id='live-doc'),dict(),dict(kind='width_delta'),
+                                   'apply','active')
+        flows.store.update(active,state='preparing')
+        class NoHistoryScan(dict):
+            def values(self): raise AssertionError('supervisor must not enumerate completed history')
+        flows.store.records = NoHistoryScan(flows.store.records)
+        class OneTick:
+            def __init__(self): self.count=0
+            def wait(self,_): self.count+=1; return self.count>1
+            def is_set(self): return False
+            def set(self): pass
+        flows.stopped = OneTick()
+        advanced=[]
+        flows._advance=lambda value: advanced.append(value['id'])
+>       flows._run()
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:93:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/sidecar/glyphs_mcp_sidecar/edit_workflow.py:39: in _run
+    for value in list(self.store.records.values()):
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = {'edit_22ad80b609e54710aaa6f63fd8be75c3': {'version': 1, 'id': 'edit_22ad80b609e54710aaa6f63fd8be75c3', 'nonce': 'c15b... 'createdAt': 1790552875.853677, 'autoKeepRequested': False, 'autoKeepEnabled': False, 'updatedAt': 1790552875.853933}}
+
+>   def values(self): raise AssertionError('supervisor must not enumerate completed history')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: supervisor must not enumerate completed history
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:83: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           4     8     0     1   16.88s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_activity_poll_copies_only_bounded_recent_and_active_records[False-100]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_activity_poll_copies_only_bounded_recent_and_active_records[False-1000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_activity_poll_copies_only_bounded_recent_and_active_records[False-10000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_activity_poll_copies_only_bounded_recent_and_active_records[True-100]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_activity_poll_copies_only_bounded_recent_and_active_records[True-1000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_activity_poll_copies_only_bounded_recent_and_active_records[True-10000]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_unchanged_job_poll_does_not_write_or_change_timestamps
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_workflow_supervisor_does_not_enumerate_completed_history
+8 failed, 4 passed in 17.02s

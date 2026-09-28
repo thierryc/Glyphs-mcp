@@ -1,0 +1,8 @@
+0 False five paired repetitions complete
+0 True five paired repetitions complete
+100 False five paired repetitions complete
+100 True five paired repetitions complete
+1000 False five paired repetitions complete
+1000 True five paired repetitions complete
+10000 False five paired repetitions complete
+10000 True five paired repetitions complete

@@ -1,0 +1,34 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_font_inventory_materializes_native_proxy_once_per_fresh_read _______
+
+    def test_font_inventory_materializes_native_proxy_once_per_fresh_read():
+        bridge, _ = adapter()
+        original = bridge.glyphs.fonts[0]
+        inventory = LiveFonts([original])
+        bridge.glyphs = SimpleNamespace(fonts=inventory)
+>       assert bridge._fonts() == [original]
+               ^^^^^^^^^^^^^^^
+
+src/glyphs-mcp/tests/test_simple_v2_live_font_inventory.py:31:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/bridge/glyphs_mcp_bridge/glyphs_adapter.py:61: in _fonts
+    values = _value(self.glyphs, "fonts", []) or []
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <test_simple_v2_live_font_inventory.LiveFonts object at 0x1095097f0>
+
+    def __len__(self):
+>       raise AssertionError('Do not enumerate the live window order for truthiness')
+E       AssertionError: Do not enumerate the live window order for truthiness
+
+src/glyphs-mcp/tests/test_simple_v2_live_font_inventory.py:20: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           1     1     0     1    0.04s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_live_font_inventory.py::test_font_inventory_materializes_native_proxy_once_per_fresh_read
+1 failed, 1 passed in 0.11s

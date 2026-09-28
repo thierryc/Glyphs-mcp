@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "flipCallbacks": 10000,
+  "observedInstalledApplyingToResultSeconds": 160.9342110157013,
+  "timingCaveat": "One interactive observation with callback assertions and concurrent regression tests; not an isolated benchmark or a before/after comparison.",
+  "actualEditorSaveReceipts": {
+    "glyphs": "save_df4a1f31113a49499af69642d1dcbbef",
+    "glyphspackage": "save_b305ba4b3d2c49b4bea11141d2068157"
+  },
+  "nativeSaveCallInstrumentation": false,
+  "cleanRunSaveReceipt": null,
+  "restoredWithFreshBinding": true,
+  "restoredFractionalPathReadsMatch": true,
+  "packageKeepPreservedDirty": true,
+  "callLatencyMilliseconds": {
+    "glyphs": {
+      "start": 187,
+      "run": 7125,
+      "duplicate_run": 5985,
+      "after_samples": 3969,
+      "restore": 4544,
+      "editor_save_run": 5165,
+      "cancel_remaining": 3763,
+      "cancel_restore": 3563
+    },
+    "glyphspackage": {
+      "save_run": 7639,
+      "cancel": 2532,
+      "restore": 4843
+    }
+  }
+}

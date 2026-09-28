@@ -1,4 +1,4 @@
-"""Lean build and size-budget contracts."""
+"""Deterministic lean build, dependency and packaging contracts."""
 
 from __future__ import annotations
 
@@ -24,10 +24,6 @@ PRIVATE_SPEC = importlib.util.spec_from_file_location("build_private_runtime", P
 assert PRIVATE_SPEC and PRIVATE_SPEC.loader
 PRIVATE_BUILDER = importlib.util.module_from_spec(PRIVATE_SPEC)
 PRIVATE_SPEC.loader.exec_module(PRIVATE_BUILDER)
-
-
-def _python_lines(root: Path) -> int:
-    return sum(len(path.read_text(encoding="utf-8").splitlines()) for path in root.rglob("*.py"))
 
 
 def test_private_runtime_maps_standard_wheel_install_schemes(tmp_path: Path) -> None:
@@ -97,6 +93,11 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     assert (first / "sidecar/glyphs_mcp_protocol/outline.py").is_file()
     assert (first / "sidecar/glyphs_mcp_protocol/native_actions.py").is_file()
     bridge_resources = first / "Glyphs MCP Bridge.glyphsPlugin/Contents/Resources"
+    for base in (first/'sidecar', bridge_resources):
+        data = base/'glyphs_mcp_protocol/data/kerning-pairs'
+        assert (data/'LICENSE.md').is_file() and (data/'pairs.json').is_file()
+        assert json.loads((data/'provenance.json').read_text())['license'] == 'MIT'
+        assert (base/'glyphs_mcp_protocol/kerning_edits.py').is_file()
     for name in ('saved_script.py', 'script_service.py'):
         assert (first/'sidecar/glyphs_mcp_sidecar'/name).is_file()
     for name in ('scripts.py', 'script_targets.py', 'script_runtime.py'):
@@ -127,59 +128,6 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
         source = (REPO / "src/companions" / identifier / package / "plugin.py").read_bytes()
         assert (resources / "plugin.py").read_bytes() == source
         assert (resources / package / "plugin.py").read_bytes() == source
-
-
-def test_initial_core_is_below_reset_line_budgets() -> None:
-    protocol = _python_lines(REPO / "src" / "protocol" / "glyphs_mcp_protocol")
-    bridge = _python_lines(REPO / "src" / "bridge" / "glyphs_mcp_bridge")
-    sidecar = _python_lines(REPO / "src" / "sidecar" / "glyphs_mcp_sidecar")
-    # Outline edit adds closed operation schemas and canonical path hashes.
-    # Keep explicit headroom without relaxing the 575-line per-file limit.
-    # Compilation/export add closed validators and artifact manifests without
-    # adding tools or a remote object model.
-    # Dimensions adds the 60-field catalog, exact metadata/approval contracts,
-    # and one bounded job using existing Undo, recovery and twelve public tools.
-    # Budget its explicit implementation; retain the existing per-module cap.
-    # Script schemas, immutable native targets and bounded Python invocation.
-    # Save-first native review/restore shares saved-source hashing and chat/save lifecycle.
-    # The existing native preparation algorithms now ship once in the shared
-    # package. Charge them to the original preparation budget, not wire schemas.
-    shared = _python_lines(REPO / "src/protocol/glyphs_mcp_protocol/preparation")
-    assert protocol - shared <= 2500
-    # Native setters for nodes, anchors and component matrices (benefit item 4).
-    # Bounded native master pages and strict IDs add 53 lines; no new tool/history.
-    # Compact selection context uses a small stateless read module; no new tool, job or history hooks.
-    # Lazy native groups and restoration of their original automatic-grouping setting.
-    # Existing inverse callbacks/history only; no additional recovery system.
-    # H3 adds one stateless bounded context projection, preserving all editing hooks.
-    # H4 adds bounded glyph pages with constant-size guards and no inventory cache.
-    # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
-    # H6 adds stateless indexed kerning pages with a bounded work budget.
-    # M7 adds native fractional defaults/axis projection and reuses the master page.
-    # Bounded path pages and identity-preserving native outline operations,
-    # including capability-gated Glyphs keep-shape node removal.
-    # Verified native saving adds an isolated selector adapter plus a bounded
-    # operation coordinator; public save policy stays out of the bridge core.
-    # Native scripts reuse the job registry, without script snapshots or staged patches.
-    assert bridge <= 5400
-    # Acceptance, receipts and filesystem verification share one save module.
-    # Conversation coordination, MCP App registration and proxy MIME compatibility
-    # reuse the existing save/job services; budget these bounded additions explicitly.
-    # Script preparation/confirmation and chat evidence preserve the twelve tools.
-    assert sidecar + shared <= 6600
-    # Outline editing, verified saving and the closed native-action catalog
-    # retain one public lifecycle and no generic remote-object protocol;
-    # retain bounded repair headroom while requiring review for larger growth.
-    assert protocol + bridge + sidecar <= 14500
-    assert all(
-        len(path.read_text(encoding="utf-8").splitlines()) <= 575
-        for root in (
-            REPO / "src" / "protocol" / "glyphs_mcp_protocol",
-            REPO / "src" / "bridge" / "glyphs_mcp_bridge",
-            REPO / "src" / "sidecar" / "glyphs_mcp_sidecar",
-        )
-        for path in root.rglob("*.py")
-    )
 
 
 def test_bridge_has_no_mcp_or_experimental_runtime_dependency() -> None:

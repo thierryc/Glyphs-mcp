@@ -1,11 +1,16 @@
 ---
 name: glyphs-mcp-kerning
-description: Discover native kerning groups and stored pairs, inspect exact values, and review collision repairs.
+description: Set or remove exact kerning pairs, inspect language-tagged proofs and stored group coverage, and review collision repairs.
 metadata:
   surface: glyphs-mcp-v2
 ---
 
 # glyphs-mcp-kerning
+
+Use [exact typed kerning edits](../glyphs/references/kerning-edits.md) for setting
+or removing supplied glyph/group pair values. Use [language proofing](../glyphs/references/kerning-proofing.md)
+for bounded pairs to inspect. Keep discovery, assignments and collision repair
+separate; one does not authorize another.
 
 For unknown group assignments or stored pairs, use [kerning discovery](../glyphs/references/kerning-discovery.md). Require the matching private capability; reuse connection/document context and request only needed fields. Discovery needs no job.
 
@@ -37,8 +42,8 @@ preparation, and never save, export,
 close, or overwrite a font unless the user's task authorizes it. Do not retry
 an uncertain write or save as a new job; reconcile the existing job identity first.
 
-For applying an approved pair map, a numeric transformation of selected stored
-values or a coordinated group reassignment, offer **direct native scripting**
+Apply supplied pair maps through `kerning_edit` in bounded batches. For a numeric
+transformation with broader computed scope or a coordinated group reassignment, use **direct native scripting**
 under the [shared route and recovery guide](../glyphs/references/python-scripts.md#choose-the-route).
 Use one whole script with exact master IDs, direction and pair/group keys in
 `params`; preserve untargeted exceptions and check for collisions when renaming

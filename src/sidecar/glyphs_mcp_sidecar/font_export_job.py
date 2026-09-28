@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import io
 from pathlib import Path
 from typing import Any, Mapping
@@ -15,6 +14,7 @@ from glyphs_mcp_protocol.compile_export import (
 )
 
 from .worker import WorkerError
+from .source import file_hash as _sha256
 
 
 COMMON_TABLES = {"head", "hhea", "maxp", "hmtx", "cmap", "name", "post", "OS/2"}
@@ -50,14 +50,6 @@ def _instance(font: Any, identity: str) -> Any:
                 raise WorkerError("the exact Glyphs instance is not enabled for export")
             return candidate
     raise WorkerError(f"instance {identity!r} is unavailable in the saved source")
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return "sha256:" + digest.hexdigest()
 
 
 def verify_font(path: Path, *, requested_format: str, container: str, variable: bool) -> dict[str, Any]:

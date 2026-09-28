@@ -7,7 +7,7 @@ import math
 
 from glyphs_mcp_protocol.outline import outline_state_hash, path_hash, validate_options
 
-from . import PreparationError as WorkerError
+from . import PreparationError as WorkerError, set_node_name
 
 
 def _value(owner, name, default=None):
@@ -276,7 +276,7 @@ def _new_path(operation):
     for item in operation["nodes"]:
         node = GSNode(); node.position = (item["x"], item["y"]); node.type = item["type"]
         node.smooth = item.get("smooth", False)
-        if "name" in item: node.name = "" if item["name"] is None else item["name"]
+        if "name" in item: set_node_name(node, item["name"])
         nodes.append(node)
     _set_nodes(path, nodes); _validate(path)
     return path
@@ -316,7 +316,7 @@ def _apply(layer, operation):
                 x, y = _point(node); node.position = (x+update["delta"]["dx"], y+update["delta"]["dy"])
             for key in ("type", "smooth"):
                 if key in update: setattr(node, key, update[key])
-            if "name" in update: node.name = "" if update["name"] is None else update["name"]
+            if "name" in update: set_node_name(node, update["name"])
     elif op == "delete_nodes":
         nodes = list(path.nodes)
         if any(item >= len(nodes) for item in operation["nodes"]): raise WorkerError("node deletion index is unavailable")

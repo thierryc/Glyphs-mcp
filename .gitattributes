@@ -5,3 +5,4 @@
 macos-installer/GlyphsMCPInstaller/Resources/Notices/Sparkle-LICENSE.txt -whitespace
 third_party/glyphs-file-format-v4/GlyphsFileFormatv4.md -whitespace
 website/versioned_docs/version-1.11.0/** -whitespace
+src/protocol/glyphs_mcp_protocol/data/kerning-pairs/LICENSE.md -whitespace

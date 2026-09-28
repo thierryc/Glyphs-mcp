@@ -1,0 +1,556 @@
+{
+  "targetsBefore": {
+    "ok": true,
+    "data": [
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "6825D31D-5B3D-46C4-B419-A0158C275CED"
+        },
+        "values": {
+          "width": 2053.97,
+          "outlineHash": "sha256:283bba4554a9913f3ee2d8c911525d2b1600b3700d5f38e4a3cf5da3d4adedf3",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "AF94AE23-1910-4859-814C-A48A47EEDF58"
+        },
+        "values": {
+          "width": 1070.01,
+          "outlineHash": "sha256:baed338c2d7e0219156acb000414eeea337dc2159bda6fda49cff3022366ebbf",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "926F7910-9E82-41CD-9117-571F75F96159"
+        },
+        "values": {
+          "width": 1594.02,
+          "outlineHash": "sha256:daa330b335be009ffe1c42291db5de4ff9a7410d64ccbdf6df38c4f08582c620",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "20B80D33-B5FE-4CBE-AB86-1B0C04FA398E"
+        },
+        "values": {
+          "width": 1271.01,
+          "outlineHash": "sha256:6578bda9352712c8a1d343bdae6d0ea49fb8c2f3959343c348d2ce57ae71ca52",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+        },
+        "values": {
+          "width": 1394.37271,
+          "outlineHash": "sha256:539158a729358384f29125e6e4d309c0934435aa93515dcc6d6e5a1897d49c38",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "2E77CFE9-4347-4996-916C-66BA704F6DA5"
+        },
+        "values": {
+          "width": 1349.36,
+          "outlineHash": "sha256:ee513ddffaf96824ba58dadd8af488016f715ccb1af97e2e7ed0d9d5ead84fc2",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "F6800DE0-8362-44AC-BD73-6321DA3A4F97"
+        },
+        "values": {
+          "width": 1135.495,
+          "outlineHash": "sha256:7e68c9fde6b4200e12e7e5b956c3ada12aaa17f57a6f3acbcfc04be4a4ad7376",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "112BA480-1628-43E5-92BC-AE80BCA529EB"
+        },
+        "values": {
+          "width": 1750.775,
+          "outlineHash": "sha256:ca9152a7e8578d464be867487b19099091ecba8d834c5bf7d4eb7e8defc58ae4",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "CC51697B-BB46-485D-9A47-70AE762A7DC7"
+        },
+        "values": {
+          "width": 1512.01,
+          "outlineHash": "sha256:f320aefb5753989674b74e829593344027a3d7b3e48d240ec8872d52771f1676",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "B",
+          "id": "0578215A-7423-43EB-8AD4-4C95A1C78DFA"
+        },
+        "values": {
+          "width": 1209.42583,
+          "outlineHash": "sha256:4ca9a249e96a27658c79831e3fc72824c7d0794553b6849ceb50be36d416ace4",
+          "leftMetricsKey": null,
+          "rightMetricsKey": null,
+          "widthMetricsKey": null
+        }
+      }
+    ]
+  },
+  "workflowBefore": {
+    "ok": true,
+    "data": {
+      "id": "edit_bc03ecc881a3484295751558fa908e22",
+      "revision": 21,
+      "document": {
+        "dirty": true,
+        "familyName": "Dactylotype",
+        "generation": 0,
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "isCurrent": false,
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage"
+      },
+      "mode": "preview",
+      "state": "applied",
+      "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "activity": {
+          "completed": null,
+          "document": "Dactylotype",
+          "finishedAt": 1790599896.9631438,
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "kind": "python_script",
+          "message": null,
+          "phase": "applied",
+          "startedAt": 1790599896.9631062,
+          "total": null
+        },
+        "bridgeOperation": {
+          "completedChanges": null,
+          "documentAfter": null,
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "error": null,
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "longestPreparationChunk": 0.014222041994798928,
+          "message": null,
+          "nativeSave": null,
+          "receipt": null,
+          "scriptResult": {
+            "changesVerified": false,
+            "documentAfter": {
+              "dirty": true,
+              "generation": 0,
+              "id": "doc_c26e68634bb5439db81f0f36d5679205",
+              "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage"
+            },
+            "entrypoint": "script",
+            "executed": true,
+            "executedTargets": 0,
+            "executionSucceeded": true,
+            "output": "Milestone 5 single-card check completed once.\n",
+            "totalTargets": 0
+          },
+          "status": "applied",
+          "totalChanges": null
+        },
+        "changeCount": null,
+        "checkpointEnabled": false,
+        "error": null,
+        "id": "job_6d260d4e530949ec89f3bee5232b5831",
+        "manifest": null,
+        "message": null,
+        "outcome": null,
+        "receipt": null,
+        "report": {
+          "targetCount": 0,
+          "skippedCount": 0,
+          "sample": []
+        },
+        "resultKind": "script",
+        "status": "applied",
+        "summary": "Milestone 5 \u2014 click Wait before Run"
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": {
+        "available": true,
+        "generation": 0,
+        "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring.",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "sourceHash": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f"
+      },
+      "scope": {
+        "kind": "python_script",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877",
+      "documentStateConfirmed": true,
+      "summary": "Milestone 5 \u2014 click Wait before Run",
+      "entrypoint": "script",
+      "scriptReview": {
+        "entrypoint": "script",
+        "params": {},
+        "source": "# Disposable card test: diagnostic output only.\nprint('Milestone 5 single-card check completed once.')\n",
+        "summary": "Milestone 5 \u2014 click Wait before Run",
+        "targets": []
+      },
+      "actions": [
+        {
+          "action": "finish_script",
+          "label": "Keep changes without saving",
+          "token": "8cea999837a219ec391f945b197b7f3d5a2e46d3b8d7cc712ff31e3d5ec2357e",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result",
+          "label": "Save font",
+          "token": "c45bba79fbdee2160f78a95e7de3709c4cf069e888a34e43e1399b8041d5f7e8",
+          "requiresDestination": false
+        },
+        {
+          "action": "restore_saved_script",
+          "label": "Restore saved version",
+          "token": "e16dda1957c3427093e69be31a253bdb7b83b7c4eecd96ca25bb17437b5f780e",
+          "requiresDestination": false
+        }
+      ],
+      "message": "Script finished. Verify the intended result in Glyphs.\nThe font has unsaved edits.",
+      "verification": "Intended changes have not been verified by the wrapper.",
+      "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nScript finished. Verify the intended result in Glyphs.\nThe font has unsaved edits.\nIntended change: Milestone 5 \u2014 click Wait before Run\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nScript details: {\"entrypoint\": \"script\", \"params\": {}, \"source\": \"# Disposable card test: diagnostic output only.\\nprint('Milestone 5 single-card check completed once.')\\n\", \"summary\": \"Milestone 5 \u2014 click Wait before Run\", \"targets\": []}\nScript output (text): \"Milestone 5 single-card check completed once.\\n\"\nAvailable choices: Keep changes without saving; Save font; Restore saved version. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_bc03ecc881a3484295751558fa908e22\",\"expected_revision\":21,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_script\",\"label\":\"Keep changes without saving\",\"action_token\":\"8cea999837a219ec391f945b197b7f3d5a2e46d3b8d7cc712ff31e3d5ec2357e\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"c45bba79fbdee2160f78a95e7de3709c4cf069e888a34e43e1399b8041d5f7e8\",\"requiresDestination\":false},{\"action\":\"restore_saved_script\",\"label\":\"Restore saved version\",\"action_token\":\"e16dda1957c3427093e69be31a253bdb7b83b7c4eecd96ca25bb17437b5f780e\",\"requiresDestination\":false}]}"
+    }
+  },
+  "saveDispatch": {
+    "ok": true,
+    "data": {
+      "id": "edit_bc03ecc881a3484295751558fa908e22",
+      "revision": 25,
+      "document": {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": true,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      "mode": "preview",
+      "state": "saving",
+      "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_6d260d4e530949ec89f3bee5232b5831",
+        "checkpointEnabled": false,
+        "status": "accepting",
+        "summary": "Milestone 5 \u2014 click Wait before Run",
+        "resultKind": "script",
+        "changeCount": null,
+        "report": {
+          "targetCount": 0,
+          "skippedCount": 0,
+          "sample": []
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "documentAfter": null,
+          "status": "accepting",
+          "completedChanges": null,
+          "longestPreparationChunk": 0.014222041994798928,
+          "totalChanges": null,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": {
+            "executed": true,
+            "entrypoint": "script",
+            "executionSucceeded": true,
+            "changesVerified": false,
+            "executedTargets": 0,
+            "totalTargets": 0,
+            "documentAfter": {
+              "id": "doc_c26e68634bb5439db81f0f36d5679205",
+              "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+              "dirty": true,
+              "generation": 0
+            }
+          },
+          "receipt": null,
+          "message": null
+        },
+        "activity": {
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "accepting",
+          "startedAt": 1790602341.216579,
+          "finishedAt": null,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": {
+        "available": true,
+        "generation": 0,
+        "message": "Restore saved version replaces all current edits since the saved baseline, including later manual edits. The saved file is checked again before restoring.",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "sourceHash": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f"
+      },
+      "scope": {
+        "kind": "python_script",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877",
+      "documentStateConfirmed": true,
+      "summary": "Milestone 5 \u2014 click Wait before Run",
+      "entrypoint": "script",
+      "actions": [],
+      "message": "Saving font\u2026",
+      "verification": "Intended changes have not been verified by the wrapper.",
+      "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nSaving font\u2026\nIntended change: Milestone 5 \u2014 click Wait before Run\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.\nShow script: get_edit_workflow with include_review=true.",
+      "poll": true,
+      "modelContext": "{\"workflow_id\":\"edit_bc03ecc881a3484295751558fa908e22\",\"expected_revision\":25,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"saving\",\"poll\":true,\"requestFingerprint\":\"sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+    }
+  },
+  "result": {
+    "ok": true,
+    "data": {
+      "id": "edit_bc03ecc881a3484295751558fa908e22",
+      "revision": 29,
+      "document": {
+        "id": "doc_c26e68634bb5439db81f0f36d5679205",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      "mode": "preview",
+      "state": "saved",
+      "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_6d260d4e530949ec89f3bee5232b5831",
+        "checkpointEnabled": false,
+        "status": "accepted",
+        "summary": "Milestone 5 \u2014 click Wait before Run",
+        "resultKind": "script",
+        "changeCount": null,
+        "report": {
+          "targetCount": 0,
+          "skippedCount": 0,
+          "sample": []
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": {
+          "saveId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+          "sourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790602343.064702
+        },
+        "bridgeOperation": {
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+          "documentAfter": null,
+          "status": "accepted",
+          "completedChanges": null,
+          "longestPreparationChunk": 0.014222041994798928,
+          "totalChanges": null,
+          "error": null,
+          "nativeSave": {
+            "writeAttempted": true,
+            "nativeSaveSucceeded": true,
+            "nativeError": null,
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+            "dirty": false,
+            "generation": 0
+          },
+          "scriptResult": {
+            "executed": true,
+            "entrypoint": "script",
+            "executionSucceeded": true,
+            "changesVerified": false,
+            "executedTargets": 0,
+            "totalTargets": 0,
+            "documentAfter": {
+              "id": "doc_c26e68634bb5439db81f0f36d5679205",
+              "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+              "dirty": true,
+              "generation": 0
+            }
+          },
+          "receipt": {
+            "saveId": "job_6d260d4e530949ec89f3bee5232b5831",
+            "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+            "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+            "saveMode": "save",
+            "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+            "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+            "dirtyBefore": true,
+            "dirtyAfter": false,
+            "nativeSaveSucceeded": true,
+            "writeAttempted": true,
+            "sourceHashBefore": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+            "sourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+            "sourceChangedSinceJob": false,
+            "originalSourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+            "originalSourceUnchanged": null,
+            "verification": "native_and_source_hash",
+            "savedAt": 1790602343.064702
+          },
+          "message": null
+        },
+        "activity": {
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "accepted",
+          "startedAt": 1790602343.069375,
+          "finishedAt": 1790602343.069396,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": {
+        "saveId": "job_6d260d4e530949ec89f3bee5232b5831",
+        "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+        "documentId": "doc_c26e68634bb5439db81f0f36d5679205",
+        "saveMode": "save",
+        "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirtyBefore": true,
+        "dirtyAfter": false,
+        "nativeSaveSucceeded": true,
+        "writeAttempted": true,
+        "sourceHashBefore": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+        "sourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+        "sourceChangedSinceJob": false,
+        "originalSourceHashAfter": "sha256:3c64b127d785fabd7ea381769f04944da237f2440c6d5cfabebbfb41077c492f",
+        "originalSourceUnchanged": null,
+        "verification": "native_and_source_hash",
+        "savedAt": 1790602343.064702
+      },
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "python_script",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": []
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877",
+      "documentStateConfirmed": true,
+      "summary": "Milestone 5 \u2014 click Wait before Run",
+      "entrypoint": "script",
+      "actions": [],
+      "message": "Font saved.",
+      "verification": "Intended changes have not been verified by the wrapper.",
+      "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nFont saved.\nIntended change: Milestone 5 \u2014 click Wait before Run\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nIntended changes have not been verified by the wrapper.\nShow script: get_edit_workflow with include_review=true.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_bc03ecc881a3484295751558fa908e22\",\"expected_revision\":29,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"saved\",\"poll\":false,\"requestFingerprint\":\"sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+    }
+  }
+}

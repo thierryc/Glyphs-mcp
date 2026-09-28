@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_cleanup_error_does_not_skip_other_groups_or_flags[rounding_exception] __
+
+failure = 'rounding_exception'
+
+    @pytest.mark.parametrize('failure', ['manager', 'rounding', 'rounding_exception'])
+    def test_cleanup_error_does_not_skip_other_groups_or_flags(failure):
+        core, queue, native, layers, managers, request = fixture(bad_manager=failure=='manager', bad_rounding=failure=='rounding')
+        if failure == 'rounding_exception':
+            setter = native._set_rounding
+            def failing_setter(layer, value):
+                if layer is layers[-1] and not value: raise RuntimeError('closed native layer')
+                return setter(layer, value)
+            native._set_rounding = failing_setter
+        core.begin_apply(request)
+        while queue.items:
+            before = cleanup_count(layers, managers);queue.run_one()
+            assert cleanup_count(layers, managers)-before <= core.chunk_limit
+        result = core.operation(request['jobId'])
+        assert result['status'] == 'failed' and 'cleanup' in result['error']['details']
+        assert all(m.level == 0 and m.automatic and m.events.count('end') == 1 for m in managers)
+>       assert all(not l.temporarilyDisableRounding for l in layers[:-1])
+E       assert False
+E        +  where False = all(<generator object test_cleanup_error_does_not_skip_other_groups_or_flags.<locals>.<genexpr> at 0x10be80a00>)
+
+src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py:99: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    0.06s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_incremental_cleanup.py::test_cleanup_error_does_not_skip_other_groups_or_flags[rounding_exception]
+1 failed, 12 deselected in 0.16s

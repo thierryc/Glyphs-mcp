@@ -7,11 +7,11 @@ metadata:
 
 # glyphs-mcp-outlines-docs
 
-For every outline task, first inspect the current Edit View with compact
-`context` and native `selection` summary reads, even when the user supplied
-explicit targets. Record whether selection informed the target. Explicit
-glyph/layer/path/node targets always win; unrelated selection never retargets a
-mutation. Request bounded selected-node details only to resolve an implicit target.
+When the target depends on the current selection, read compact `context` and
+native `selection`, then bounded selected-node details as needed. Record whether
+selection informed the target. Explicit glyph/layer/path/node targets always win;
+unrelated selection never retargets a mutation. Skip context/selection reads for fully explicit targets;
+read their exact geometry and guards instead.
 
 For layer identity, advances and bounds, use `read_entities` and the
 [native layer read reference](../glyphs/references/layer-reads.md). An
@@ -34,8 +34,9 @@ ID for reads of the same font; rediscover after `document_not_found` or target
 change, not a missing glyph. Never silently substitute another open font.
 Each read is fresh; check source/dirty state when preparing edits.
 
-For typed outline jobs, prepare with `start_job`, inspect `get_job` until ready, and
-review its report before `apply_job`. Application is a reversible live change;
+Prefer the shared [conversation workflow](../glyphs/references/edit-workflow.md)
+for typed outline edits, with one request and compact polling. Explicit low-level
+job work can use `start_job`, `get_job` and `apply_job`. Application is a reversible live change;
 it does not save. Use `accept_job` only when the user's task authorizes saving
 the reviewed whole document; it closes the rollback window. Use `discard_job`
 for whole-job restoration or cancellation. Native Undo and Redo are grouped per

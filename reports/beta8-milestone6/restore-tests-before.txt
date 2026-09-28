@@ -1,0 +1,31 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_restore_is_in_memory_exactly_once_and_returns_fresh_binding _______
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-142/test_restore_is_in_memory_exac0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109853230>
+
+    def test_restore_is_in_memory_exactly_once_and_returns_fresh_binding(tmp_path,monkeypatch):
+>       from glyphs_mcp_bridge import checkpoint_restore
+E       ImportError: cannot import name 'checkpoint_restore' from 'glyphs_mcp_bridge' (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/bridge/glyphs_mcp_bridge/__init__.py)
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_restore.py:9: ImportError
+_________________ test_stale_restore_does_not_load_or_replace __________________
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-142/test_stale_restore_does_not_lo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1095a8fc0>
+
+    def test_stale_restore_does_not_load_or_replace(tmp_path,monkeypatch):
+>       from glyphs_mcp_bridge import checkpoint_restore
+E       ImportError: cannot import name 'checkpoint_restore' from 'glyphs_mcp_bridge' (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/bridge/glyphs_mcp_bridge/__init__.py)
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_restore.py:31: ImportError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     2     0     1    0.01s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_restore.py::test_restore_is_in_memory_exactly_once_and_returns_fresh_binding
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_restore.py::test_stale_restore_does_not_load_or_replace
+2 failed in 0.10s

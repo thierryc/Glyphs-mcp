@@ -1,5 +1,9 @@
 # Discover native kerning groups and stored pairs
 
+For language-filtered pairs to inspect, use [proofing](kerning-proofing.md).
+For explicit assignments or deletion, use [typed edits](kerning-edits.md).
+Stored-pair inventory below remains a separate read operation.
+
 Reuse the verified connection, known document ID and exact master IDs. Require
 `kerning.groups.v1` for group/key fields and `kerning.pairs.v1` for pair pages in
 negotiated `get_status.readCapabilities`. If absent, update bridge, sidecar and

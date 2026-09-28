@@ -6,6 +6,7 @@ def public_job(job: Mapping[str, Any], *, include_preview: bool = True) -> dict[
     status = str(job["status"])
     result = {
         "id": job["id"],
+        "checkpointEnabled": bool(job.get("checkpointPolicy")),
         "status": status,
         "summary": job.get("summary"),
         "resultKind": job.get("resultKind") or "mutation",
@@ -28,6 +29,9 @@ def public_job(job: Mapping[str, Any], *, include_preview: bool = True) -> dict[
     }
     if status == "applied" and job.get("request", {}).get("kind") == "dimensions_edit":
         result["message"] = "Dimensions changed without saving. Native document Undo/Redo or discard_job restores the notes. Save separately when authorized."
+    if job.get('resultKind') == 'historical_restore':
+        result['changeCount'] = None
+        result['message'] = 'Whole-font historical reload. Keep or save separately; selective Undo is unavailable.'
     if job.get('resultKind') == 'script':
         evidence = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
         result['changeCount'] = None

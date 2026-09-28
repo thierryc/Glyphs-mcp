@@ -1,0 +1,236 @@
+{
+  "start": {
+    "ok": true,
+    "data": {
+      "id": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+      "checkpointEnabled": false,
+      "status": "preparing",
+      "summary": null,
+      "resultKind": "mutation",
+      "changeCount": 0,
+      "sample": [],
+      "report": null,
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+        "document": "Checkpoint qualification glyphs",
+        "kind": "font_export",
+        "phase": "preparing",
+        "startedAt": 1790598363.678676,
+        "finishedAt": null,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    }
+  },
+  "prepared": {
+    "ok": true,
+    "data": {
+      "id": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+      "checkpointEnabled": false,
+      "status": "ready",
+      "summary": "Exported and verified Thin Condensed",
+      "resultKind": "artifact",
+      "changeCount": 0,
+      "sample": [],
+      "report": {
+        "claim": "Staged and structurally verified font export",
+        "containers": [
+          "plain"
+        ],
+        "format": "otf",
+        "generation": {
+          "autoHint": false,
+          "decomposeSmartComponents": true,
+          "removeOverlap": true,
+          "useProductionNames": true,
+          "useSubroutines": true
+        },
+        "instanceId": "93E51F5A-FCAD-42AD-B907-8BD62055A139",
+        "instanceName": "Thin Condensed",
+        "instanceType": "static",
+        "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_ad77040e7f374e95b9151a0a1ccbd50a/report.json",
+        "success": true,
+        "verification": {
+          "files": [
+            {
+              "path": "Checkpointqualificationglyphs-ThinCondensed.otf",
+              "shapingCases": [],
+              "tables": {
+                "container": "plain",
+                "format": "otf",
+                "glyphCount": 419,
+                "tables": [
+                  "BASE",
+                  "CFF ",
+                  "GDEF",
+                  "GPOS",
+                  "GSUB",
+                  "GlyphOrder",
+                  "OS/2",
+                  "cmap",
+                  "head",
+                  "hhea",
+                  "hmtx",
+                  "maxp",
+                  "name",
+                  "post"
+                ],
+                "variable": false
+              }
+            }
+          ],
+          "shapingCases": [],
+          "tables": true
+        },
+        "warnings": []
+      },
+      "manifest": {
+        "files": [
+          {
+            "container": "plain",
+            "format": "otf",
+            "mediaType": "font/otf",
+            "path": "Checkpointqualificationglyphs-ThinCondensed.otf",
+            "sha256": "sha256:ed0703f903b46c7c6578c2b0c10f61c3d625dbf2655679248ccdf18e946c2b01",
+            "size": 52668
+          }
+        ],
+        "totalBytes": 52668
+      },
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+        "document": "Checkpoint qualification glyphs",
+        "kind": "font_export",
+        "phase": "ready",
+        "startedAt": 1790598366.2303529,
+        "finishedAt": 1790598366.230387,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": "Review the verified manifest and report. Call accept_job with a new absolute destination directory to publish it."
+    }
+  },
+  "accepted": {
+    "ok": true,
+    "data": {
+      "id": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+      "checkpointEnabled": false,
+      "status": "accepted",
+      "summary": "Exported and verified Thin Condensed",
+      "resultKind": "artifact",
+      "changeCount": 0,
+      "sample": [],
+      "report": {
+        "claim": "Staged and structurally verified font export",
+        "containers": [
+          "plain"
+        ],
+        "format": "otf",
+        "generation": {
+          "autoHint": false,
+          "decomposeSmartComponents": true,
+          "removeOverlap": true,
+          "useProductionNames": true,
+          "useSubroutines": true
+        },
+        "instanceId": "93E51F5A-FCAD-42AD-B907-8BD62055A139",
+        "instanceName": "Thin Condensed",
+        "instanceType": "static",
+        "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_ad77040e7f374e95b9151a0a1ccbd50a/report.json",
+        "success": true,
+        "verification": {
+          "files": [
+            {
+              "path": "Checkpointqualificationglyphs-ThinCondensed.otf",
+              "shapingCases": [],
+              "tables": {
+                "container": "plain",
+                "format": "otf",
+                "glyphCount": 419,
+                "tables": [
+                  "BASE",
+                  "CFF ",
+                  "GDEF",
+                  "GPOS",
+                  "GSUB",
+                  "GlyphOrder",
+                  "OS/2",
+                  "cmap",
+                  "head",
+                  "hhea",
+                  "hmtx",
+                  "maxp",
+                  "name",
+                  "post"
+                ],
+                "variable": false
+              }
+            }
+          ],
+          "shapingCases": [],
+          "tables": true
+        },
+        "warnings": []
+      },
+      "manifest": {
+        "files": [
+          {
+            "container": "plain",
+            "format": "otf",
+            "mediaType": "font/otf",
+            "path": "Checkpointqualificationglyphs-ThinCondensed.otf",
+            "sha256": "sha256:ed0703f903b46c7c6578c2b0c10f61c3d625dbf2655679248ccdf18e946c2b01",
+            "size": 52668
+          }
+        ],
+        "totalBytes": 52668
+      },
+      "error": null,
+      "outcome": null,
+      "receipt": {
+        "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+        "documentId": "doc_8b59fef6ac764fe4a6eb3a77a5938508",
+        "destination": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone7/export",
+        "sourceHash": "sha256:9aeb411072add357fb231fad7e85be52f92e286339609268f4d946adb45c435b",
+        "manifestHash": "sha256:548a05d90d6ee0284b30e2a89e3719345a66fe51dcb1fee59490ffbd3f0aabc8",
+        "files": [
+          {
+            "path": "Checkpointqualificationglyphs-ThinCondensed.otf",
+            "size": 52668,
+            "sha256": "sha256:ed0703f903b46c7c6578c2b0c10f61c3d625dbf2655679248ccdf18e946c2b01",
+            "format": "otf",
+            "container": "plain",
+            "mediaType": "font/otf"
+          }
+        ],
+        "verification": "staged_artifacts_and_source_hash",
+        "publishedAt": 1790598404.0005708
+      },
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+        "document": "Checkpoint qualification glyphs",
+        "kind": "font_export",
+        "phase": "accepted",
+        "startedAt": 1790598404.002562,
+        "finishedAt": 1790598404.002579,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    }
+  }
+}

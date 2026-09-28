@@ -1,0 +1,837 @@
+FFFF.FF.                                                                 [100%]
+=================================== FAILURES ===================================
+_____ test_card_reuses_matching_evidence_and_reconciles_changes[duplicate] _____
+
+scenario = 'duplicate'
+
+    @pytest.mark.parametrize('scenario', ['duplicate','reopen','document','late_read','visibility','typed_summary'])
+    def test_card_reuses_matching_evidence_and_reconciles_changes(scenario):
+        node=shutil.which('node')
+        if not node: pytest.skip('Node is needed to exercise the actual card script')
+>       subprocess.run([node,str(Path(__file__).parent/'fixtures/conversation_overhead_host.js'),
+                        str(HTML),scenario],check=True,timeout=15)
+
+src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py:18:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = False, timeout = 15, check = True
+popenargs = (['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests...erryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'duplicate'],)
+kwargs = {}
+process = <Popen: returncode: 1 args: ['/Users/thierryc/.local/bin/node', '/Users/thie...>
+stdout = None, stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'duplicate']' returned non-zero exit status 1.
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+AssertionError [ERR_ASSERTION]: matching verified host notifications need no new read
+
+11 !== 1
+
+    at Object.duplicate (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:24:48)
+    at async /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:80:105 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 11,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+______ test_card_reuses_matching_evidence_and_reconciles_changes[reopen] _______
+
+scenario = 'reopen'
+
+    @pytest.mark.parametrize('scenario', ['duplicate','reopen','document','late_read','visibility','typed_summary'])
+    def test_card_reuses_matching_evidence_and_reconciles_changes(scenario):
+        node=shutil.which('node')
+        if not node: pytest.skip('Node is needed to exercise the actual card script')
+>       subprocess.run([node,str(Path(__file__).parent/'fixtures/conversation_overhead_host.js'),
+                        str(HTML),scenario],check=True,timeout=15)
+
+src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py:18:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = False, timeout = 15, check = True
+popenargs = (['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests...thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'reopen'],)
+kwargs = {}
+process = <Popen: returncode: 1 args: ['/Users/thierryc/.local/bin/node', '/Users/thie...>
+stdout = None, stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'reopen']' returned non-zero exit status 1.
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+AssertionError [ERR_ASSERTION]: reuse details for the same verified request
+
+5 !== 1
+
+    at Object.reopen (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:36:48)
+    at async /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:80:105 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 5,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+_____ test_card_reuses_matching_evidence_and_reconciles_changes[document] ______
+
+scenario = 'document'
+
+    @pytest.mark.parametrize('scenario', ['duplicate','reopen','document','late_read','visibility','typed_summary'])
+    def test_card_reuses_matching_evidence_and_reconciles_changes(scenario):
+        node=shutil.which('node')
+        if not node: pytest.skip('Node is needed to exercise the actual card script')
+>       subprocess.run([node,str(Path(__file__).parent/'fixtures/conversation_overhead_host.js'),
+                        str(HTML),scenario],check=True,timeout=15)
+
+src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py:18:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = False, timeout = 15, check = True
+popenargs = (['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests...ierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'document'],)
+kwargs = {}
+process = <Popen: returncode: 1 args: ['/Users/thierryc/.local/bin/node', '/Users/thie...>
+stdout = None, stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'document']' returned non-zero exit status 1.
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+AssertionError [ERR_ASSERTION]: a new document binding clears old source and output
++ actual - expected
+
++ '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</script>\n' +
++   '# <script>text, not markup</'... 15200 more characters
+- ''
+
+    at Object.document (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:44:12)
+    at async /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:80:105 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '# <script>text, not markup</script>\n' +
+    '...',
+  expected: '',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+_____ test_card_reuses_matching_evidence_and_reconciles_changes[late_read] _____
+
+scenario = 'late_read'
+
+    @pytest.mark.parametrize('scenario', ['duplicate','reopen','document','late_read','visibility','typed_summary'])
+    def test_card_reuses_matching_evidence_and_reconciles_changes(scenario):
+        node=shutil.which('node')
+        if not node: pytest.skip('Node is needed to exercise the actual card script')
+>       subprocess.run([node,str(Path(__file__).parent/'fixtures/conversation_overhead_host.js'),
+                        str(HTML),scenario],check=True,timeout=15)
+
+src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py:18:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = False, timeout = 15, check = True
+popenargs = (['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests...erryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'late_read'],)
+kwargs = {}
+process = <Popen: returncode: 1 args: ['/Users/thierryc/.local/bin/node', '/Users/thie...>
+stdout = None, stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'late_read']' returned non-zero exit status 1.
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+AssertionError [ERR_ASSERTION]: late A response must not redirect reconciliation to A
++ actual - expected
+
++ 'edit_example'
+- 'edit_B'
+        ^
+
+    at Object.late_read (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:55:12)
+    at async /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:80:105 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'edit_example',
+  expected: 'edit_B',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+___ test_card_reuses_matching_evidence_and_reconciles_changes[typed_summary] ___
+
+scenario = 'typed_summary'
+
+    @pytest.mark.parametrize('scenario', ['duplicate','reopen','document','late_read','visibility','typed_summary'])
+    def test_card_reuses_matching_evidence_and_reconciles_changes(scenario):
+        node=shutil.which('node')
+        if not node: pytest.skip('Node is needed to exercise the actual card script')
+>       subprocess.run([node,str(Path(__file__).parent/'fixtures/conversation_overhead_host.js'),
+                        str(HTML),scenario],check=True,timeout=15)
+
+src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py:18:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = False, timeout = 15, check = True
+popenargs = (['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests...c/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'typed_summary'],)
+kwargs = {}
+process = <Popen: returncode: 1 args: ['/Users/thierryc/.local/bin/node', '/Users/thie...>
+stdout = None, stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/thierryc/.local/bin/node', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js', '/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/sidecar/glyphs_mcp_sidecar/edit_workflow_v1.html', 'typed_summary']' returned non-zero exit status 1.
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+AssertionError [ERR_ASSERTION]: typed summaries must not invent unresolved script surfaces
+    at Object.typed_summary (/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:76:5)
+    at async /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/src/glyphs-mcp/tests/fixtures/conversation_overhead_host.js:80:105 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+_____ test_typed_text_leads_with_intended_effect_without_an_extra_job_read _____
+
+env = (<glyphs_mcp_sidecar.service.SidecarService object at 0x1078fd160>, <test_simple_v2_edit_workflow.Bridge object at 0x1...olders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-130/test_typed_text_leads_with_int0/Test.glyphs'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107944b00>
+
+    def test_typed_text_leads_with_intended_effect_without_an_extra_job_read(env, monkeypatch):
+        service, bridge, _, _=env
+        value=wait(service,start(env,auto_keep=False),'applied')
+>       assert value['summary']=='Add 8 units'
+               ^^^^^^^^^^^^^^^^
+E       KeyError: 'summary'
+
+src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py:25: KeyError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           2     6     0     1    1.10s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py::test_card_reuses_matching_evidence_and_reconciles_changes[duplicate]
+FAILED src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py::test_card_reuses_matching_evidence_and_reconciles_changes[reopen]
+FAILED src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py::test_card_reuses_matching_evidence_and_reconciles_changes[document]
+FAILED src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py::test_card_reuses_matching_evidence_and_reconciles_changes[late_read]
+FAILED src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py::test_card_reuses_matching_evidence_and_reconciles_changes[typed_summary]
+FAILED src/glyphs-mcp/tests/test_simple_v2_conversation_overhead.py::test_typed_text_leads_with_intended_effect_without_an_extra_job_read
+6 failed, 2 passed in 1.50s

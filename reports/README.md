@@ -1,5 +1,59 @@
 # Lean v2 qualification records
 
+[Beta 8 milestone 7 — consolidation](beta8-milestone7/README.md) shortens the
+catalog by 25.51% in description bytes, corrects current guidance and shares
+export hashing. The final suite passes 2,414 tests; the rebuilt/installed runtime,
+matching desktop app and a real Codex export are verified. No edit-speed or new
+capacity claim is made. Milestone 8 has not started. Milestone 5’s later card
+qualification closes the visual-card gap; signed-update qualification remains open.
+
+[Beta 8 milestone 6 — Git checkpoints](beta8-milestone6/README.md) adds opt-in
+font-only checkpoints, durable action evidence, history/comparison/restoration
+and the Git-enabled project template. The installed MCP, native editor and
+desktop app checks pass, with 2,404 Python tests, 214 desktop tests and 20 fresh
+native-process controls. Actual editor Save/checkpoint medians were 1.99 seconds
+for `.glyphs` and 2.56 seconds for `.glyphspackage`; package restoration dropped
+to 2.88 seconds after bounded Git batching. Checkpointing adds latency; full
+methodology and limits are disclosed. Its then-open milestone-5 card gate was
+subsequently closed by the qualification below.
+
+[Beta 8 milestone 5 — conversation overhead](beta8-milestone5/README.md)
+reduces repeated card reads, binds cached details to the document and prevents
+late responses replacing a newer workflow. It is rebuilt and installed, with
+2,348 passing implementation regressions and installed path/spacing/kerning checks.
+The final Codex card gate passed September 28 through user-observed Details,
+literal output, countdown, hidden-card and Wait checks, matching server evidence,
+and actual sidecar disconnect/reconnect. Current focused checks pass 47 tests.
+The final typed test was selectively undone and saved with its original file hash.
+
+[Beta 8 milestone 4 — active-work polling](beta8-milestone4/README.md)
+replaces completed-history scans with volatile indexes and skips unchanged job
+writes. Its 2,338 regressions (two skips), 80 final paired benchmarks and installed
+Codex Keep/blocker/reconnect checks pass. At 10,000 completed jobs, idle activity
+reads decreased from 377 ms to 0.069 ms; this is registry timing, not edit latency.
+Milestone 5’s actual card checks subsequently passed with manual observations;
+Computer Use still cannot access Codex.
+
+[Beta 8 milestone 3 — incremental native cleanup](beta8-milestone3/README.md)
+keeps operation ownership until Undo groups and precision settings finish
+cleanup. Its 2,320 regressions, native harness checks and 100 benchmark runs pass;
+the report records shorter cleanup pauses and increased typed elapsed time.
+Installed/editor qualification now passes in both formats; the follow-up records
+an editor-specific inventory correction, 2,322 passing tests and separate Codex/local timings.
+
+[Beta 8 milestone 2 — scope-proportional typed preparation](beta8-milestone2/README.md)
+implements exact named-width lookups, metadata-only color preparation and exact
+nullable-node-name recovery. Source/native parity checks and 140 benchmark runs pass, with the small-case
+polling regression disclosed. The rebuilt candidate is installed and qualified
+in the joint milestone 2/3 editor report.
+
+[Beta 8 milestone 1 — native-script capacity](beta8-milestone1/README.md)
+removes the script target-count ceiling while retaining the 4 MiB request budget.
+Tests-first regressions, native capacity/recovery checks and installed Codex
+workflows pass; the rebuilt MCP candidate is installed. All 150 benchmark runs
+(five per case) pass. This record preserves the timing trade-offs and editor
+limitations and does not supersede earlier unperformed release/card gates.
+
 [Unified results and faster typed edits — September 26, 2026](unified-results-20260926/README.md)
 adds typed Keep, shares successful-result countdowns, and prepares selected simple
 typed edits natively without source copies or workers. Source checks, native
@@ -135,6 +189,7 @@ update; the runtime was unchanged during that update.
 
 | Record | Scope and later status |
 |---|---|
+| [Beta 8 milestone 6](beta8-milestone6/README.md) | Opt-in font checkpoints, action evidence, history/restoration and project template. Installed editor, Codex and desktop qualification; costs and remaining limits disclosed. |
 | [Repository consolidation](repository-cleanup-20260914/report.md) | Remaining Beta 1 desktop/docs/release work validated for commit: 1,914 Python and 179 macOS tests passed, two optional skips. Test isolation corrected; installed runtimes unchanged. |
 | [M7](beta1-m7-master-properties-20260914/report.md) | Native master metrics, angle and axes; installed and qualified, step 8 paused. |
 | [Gaps 7–14 plan](beta1-medium-gap-fixes-plan-20260914/plan.md) | Accepted read extensions and native recipes; step 7 is delivered in M7. |

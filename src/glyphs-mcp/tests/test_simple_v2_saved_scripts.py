@@ -21,12 +21,14 @@ class NoWorker:
 def env(tmp_path):
     source=tmp_path/'Test.glyphs';source.write_text('600')
     bridge=Bridge(source);bridge.runs=[];bridge.restores=[];bridge.reviews=[];bridge.ops={}
-    bridge.status=lambda:dict(jobCapabilities=[scripts.NATIVE],writeCapabilities=[])
+    bridge.status=lambda:dict(jobCapabilities=[scripts.NATIVE],scriptPreparationVersion=scripts.PREPARATION_VERSION,writeCapabilities=[])
     def review(request):
         bridge.reviews.append(deepcopy(request));options=request['options']
-        return dict(claim='saved version',targetCount=1,skippedCount=0,targets=[],review=options,
+        bridge.review_report=dict(claim='saved version',targetCount=1,skippedCount=0,targets=[],review=options,
             requestHash=scripts.digest(options),manifest=[dict(glyph='A',layer='M1',surface='foreground')])
+        return dict(status='ready',jobId=request['jobId'])
     bridge.review_script=review
+    bridge.reviewed_script=lambda identity:deepcopy(bridge.review_report)
     def run(request):
         assert not bridge.adapter.dirty and source.read_text()=='600'
         bridge.runs.append(request);bridge.adapter.value=620;bridge.adapter.dirty=True

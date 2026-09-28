@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_partial_restore_is_unresolved_until_explicit_acknowledgment _______
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-153/test_partial_restore_is_unreso0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109bab100>
+
+    def test_partial_restore_is_unresolved_until_explicit_acknowledgment(tmp_path,monkeypatch):
+        from glyphs_mcp_bridge import checkpoint_restore
+        path=tmp_path/'Test.glyphs';path.write_text('600');bridge=Bridge(path);core=bridge.core
+        request=dict(jobId='job_partial_restore',documentId='doc_1',generation=1,sourcePath=str(path),sourceHash=source_hash(path),historicalPath=str(path),historicalHash=source_hash(path))
+        monkeypatch.setattr(checkpoint_restore,'load',lambda *args:object())
+        monkeypatch.setattr(checkpoint_restore,'replace',lambda *args:(_ for _ in ()).throw(RuntimeError('replacement interrupted')))
+        value=checkpoint_restore.restore(core,request,BridgeError)
+        assert value['status']=='failed' and value['error']['details']['writeAttempted']
+>       with pytest.raises(BridgeError):core._check_owner('doc_1')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'glyphs_mcp_bridge.core.BridgeError'>
+
+src/glyphs-mcp/tests/test_simple_v2_checkpoint_restore.py:46: Failed
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     1     0     1    0.06s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_checkpoint_restore.py::test_partial_restore_is_unresolved_until_explicit_acknowledgment
+1 failed, 2 deselected in 0.16s

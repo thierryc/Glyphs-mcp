@@ -1,0 +1,8 @@
+........................................................................ [ 85%]
+............                                                             [100%]
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge          84     0     0     5   24.27s
+Markdown test report: build/test-report.md
+84 passed in 24.45s

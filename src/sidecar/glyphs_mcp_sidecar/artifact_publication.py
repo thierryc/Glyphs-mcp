@@ -10,15 +10,7 @@ import time
 from pathlib import Path
 from uuid import uuid4
 from glyphs_mcp_protocol import canonical_json, validate_artifact_manifest
-from .source import SourceError, source_hash
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return "sha256:" + digest.hexdigest()
+from .source import SourceError, source_hash, file_hash as _sha256
 
 
 def _destination(value, error_type) -> Path:

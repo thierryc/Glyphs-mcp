@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from glyphs_mcp_protocol.outline import outline_state_hash
+from glyphs_mcp_protocol.preparation import set_node_name
 
 
 def native_remove_available():
@@ -175,7 +176,7 @@ def restore(layer, snapshot):
                     node.smooth = state["smooth"]
             else:
                 node.smooth = state["smooth"]
-            node.name = "" if state["name"] is None else state["name"]
+            set_node_name(node, state["name"])
             if state["orientation"] is not None:
                 try:
                     node.orientation = state["orientation"]
@@ -271,7 +272,7 @@ def _new_path(spec):
         node.type = raw["type"]
         node.smooth = raw.get("smooth", False)
         if "name" in raw:
-            node.name = "" if raw["name"] is None else raw["name"]
+            set_node_name(node, raw["name"])
         nodes.append(node)
     _set_nodes(path, nodes)
     _validate(path)
@@ -337,7 +338,7 @@ def apply_operation(layer, operation):
                 if key in update:
                     setattr(node, key, update[key])
             if "name" in update:
-                node.name = "" if update["name"] is None else update["name"]
+                set_node_name(node, update["name"])
     elif op == "delete_nodes":
         nodes = list(path.nodes)
         removed = [nodes[item] for item in operation["nodes"] if item < len(nodes)]

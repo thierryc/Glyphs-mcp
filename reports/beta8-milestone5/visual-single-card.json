@@ -1,0 +1,95 @@
+{
+  "ok": true,
+  "data": {
+    "id": "edit_bc03ecc881a3484295751558fa908e22",
+    "revision": 6,
+    "document": {
+      "id": "doc_c26e68634bb5439db81f0f36d5679205",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    },
+    "mode": "preview",
+    "state": "waiting_run",
+    "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_6d260d4e530949ec89f3bee5232b5831",
+      "checkpointEnabled": false,
+      "status": "ready",
+      "summary": "Milestone 5 \u2014 click Wait before Run",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 0,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+        "document": "Dactylotype",
+        "kind": "python_script",
+        "phase": "ready",
+        "startedAt": 1790599600.3151848,
+        "finishedAt": 1790599600.3151958,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": null,
+    "requestFingerprint": "sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877",
+    "documentStateConfirmed": false,
+    "summary": "Milestone 5 \u2014 click Wait before Run",
+    "entrypoint": "script",
+    "actions": [
+      {
+        "action": "run_script",
+        "label": "Run script",
+        "token": "37e0796ec85083f0d87e99b611379d91b46099dae225d3b22e105bd74d800bcf",
+        "requiresDestination": false
+      },
+      {
+        "action": "cancel",
+        "label": "Cancel",
+        "token": "e60b48d31901484c4c83ac007655fb76f03bf892c2d813f0b98eb537f83b25d9",
+        "requiresDestination": false
+      },
+      {
+        "action": "wait_for_answer",
+        "label": "Wait for my answer",
+        "token": "36c1d80835a238f47c8b1c231217d70d9c63b7272361152c388bea519a034823",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Script ready.",
+    "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nScript ready.\nIntended change: Milestone 5 \u2014 click Wait before Run\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nShow script: get_edit_workflow with include_review=true.\nAvailable choices: Run script; Cancel; Wait for my answer. You can reply in ordinary language.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_bc03ecc881a3484295751558fa908e22\",\"expected_revision\":6,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"waiting_run\",\"poll\":false,\"requestFingerprint\":\"sha256:fee444f44cd8aaa0d2006fafb95835a03397bccea7081f7167478c62f0182877\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"run_script\",\"label\":\"Run script\",\"action_token\":\"37e0796ec85083f0d87e99b611379d91b46099dae225d3b22e105bd74d800bcf\",\"requiresDestination\":false},{\"action\":\"cancel\",\"label\":\"Cancel\",\"action_token\":\"e60b48d31901484c4c83ac007655fb76f03bf892c2d813f0b98eb537f83b25d9\",\"requiresDestination\":false},{\"action\":\"wait_for_answer\",\"label\":\"Wait for my answer\",\"action_token\":\"36c1d80835a238f47c8b1c231217d70d9c63b7272361152c388bea519a034823\",\"requiresDestination\":false}]}"
+  }
+}

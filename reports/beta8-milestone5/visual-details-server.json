@@ -1,0 +1,104 @@
+{
+  "ok": true,
+  "data": {
+    "id": "edit_7d6e4f20165e4cc38ae37abda7d1dcfd",
+    "revision": 5,
+    "document": {
+      "id": "doc_c26e68634bb5439db81f0f36d5679205",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "Dactylotype"
+    },
+    "mode": "preview",
+    "state": "waiting_run",
+    "jobId": "job_6de0d49779554f29b23e662737676a9a",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_6de0d49779554f29b23e662737676a9a",
+      "checkpointEnabled": false,
+      "status": "ready",
+      "summary": "Milestone 5 card check \u2014 diagnostic output only, no font edits",
+      "resultKind": "script",
+      "changeCount": null,
+      "report": {
+        "targetCount": 0,
+        "skippedCount": 0,
+        "sample": []
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": null,
+      "bridgeOperation": null,
+      "activity": {
+        "jobId": "job_6de0d49779554f29b23e662737676a9a",
+        "document": "Dactylotype",
+        "kind": "python_script",
+        "phase": "ready",
+        "startedAt": 1790598670.099741,
+        "finishedAt": 1790598670.099751,
+        "completed": null,
+        "total": null,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": null,
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "python_script",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": []
+    },
+    "autoKeep": {
+      "enabled": true,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": null,
+    "requestFingerprint": "sha256:b6898ac560ac6481e3a251c650147fa2645503899d1e2d662bc78e857b81bcda",
+    "documentStateConfirmed": false,
+    "summary": "Milestone 5 card check \u2014 diagnostic output only, no font edits",
+    "entrypoint": "script",
+    "scriptReview": {
+      "source": "# Milestone 5 card check: prints only; no font data is changed.\nprint(params['message'])\n",
+      "params": {
+        "message": "Milestone 5 finished. Literal text: <b>not bold</b>."
+      },
+      "entrypoint": "script",
+      "targets": [],
+      "summary": "Milestone 5 card check \u2014 diagnostic output only, no font edits"
+    },
+    "actions": [
+      {
+        "action": "run_script",
+        "label": "Run script",
+        "token": "b8dd62b0499fd1c7945182b8284c2f83f65e65fb6dd4fcf8ee1273a2cab57d8a",
+        "requiresDestination": false
+      },
+      {
+        "action": "cancel",
+        "label": "Cancel",
+        "token": "d6e5fd244ed772462f26811cd62874d632bfd4d938621c05bd4d07ee83545d3f",
+        "requiresDestination": false
+      },
+      {
+        "action": "wait_for_answer",
+        "label": "Wait for my answer",
+        "token": "0c56e8bb043104e7a39e1b3b20f4f9f96e0f4227035b8ff38853d96b109b50df",
+        "requiresDestination": false
+      }
+    ],
+    "message": "Script ready.",
+    "text": "Dactylotype \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage\nScript ready.\nIntended change: Milestone 5 card check \u2014 diagnostic output only, no font edits\nOperation: python script\nScope: 0 resolved surfaces; 0 skipped.\nScript details: {\"source\": \"# Milestone 5 card check: prints only; no font data is changed.\\nprint(params['message'])\\n\", \"params\": {\"message\": \"Milestone 5 finished. Literal text: <b>not bold</b>.\"}, \"entrypoint\": \"script\", \"targets\": [], \"summary\": \"Milestone 5 card check \u2014 diagnostic output only, no font edits\"}\nAvailable choices: Run script; Cancel; Wait for my answer. You can reply in ordinary language.",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_7d6e4f20165e4cc38ae37abda7d1dcfd\",\"expected_revision\":5,\"document_id\":\"doc_c26e68634bb5439db81f0f36d5679205\",\"state\":\"waiting_run\",\"poll\":false,\"requestFingerprint\":\"sha256:b6898ac560ac6481e3a251c650147fa2645503899d1e2d662bc78e857b81bcda\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":true,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"run_script\",\"label\":\"Run script\",\"action_token\":\"b8dd62b0499fd1c7945182b8284c2f83f65e65fb6dd4fcf8ee1273a2cab57d8a\",\"requiresDestination\":false},{\"action\":\"cancel\",\"label\":\"Cancel\",\"action_token\":\"d6e5fd244ed772462f26811cd62874d632bfd4d938621c05bd4d07ee83545d3f\",\"requiresDestination\":false},{\"action\":\"wait_for_answer\",\"label\":\"Wait for my answer\",\"action_token\":\"0c56e8bb043104e7a39e1b3b20f4f9f96e0f4227035b8ff38853d96b109b50df\",\"requiresDestination\":false}]}"
+  }
+}

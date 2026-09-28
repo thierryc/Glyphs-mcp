@@ -1,0 +1,169 @@
+....................................................s................... [  3%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+............................s........................................... [ 36%]
+.................................................FF..................... [ 40%]
+..........F............................................................. [ 43%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+........................................................................ [ 98%]
+....................................                                     [100%]
+=================================== FAILURES ===================================
+______ test_executed_failures_remain_in_working_set_until_settled[failed] ______
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-127/test_executed_failures_remain_0')
+status = 'failed'
+
+    @pytest.mark.parametrize('status', ['failed', 'cancelled'])
+    def test_executed_failures_remain_in_working_set_until_settled(tmp_path, status):
+        store = JobStore(tmp_path/'jobs')
+        job = store.create(dict(id='doc'), dict(kind='python_script'))
+        store.update(job['id'], status=status, resultKind='script',
+                     bridgeOperation=dict(scriptResult=dict(executed=True)))
+        other = store.create(dict(id='elsewhere'), dict(kind='python_script'))
+        store.update(other['id'], status=status, resultKind='script',
+                     bridgeOperation=dict(scriptResult=dict(executed=False)))
+        for current in (store, JobStore(store.root)):
+            assert [j['id'] for j in current.select(set(), include_unresolved=True)] == [job['id']]
+            assert current.select(set(), document_id='elsewhere', include_unresolved=True) == []
+            current.update(job['id'], status='completed')
+>           assert current.select(set(), include_unresolved=True) == []
+E           AssertionError: assert [{'bridgeOper... 'doc'}, ...}] == []
+E
+E             Left contains one more item: {'bridgeOperation': {'scriptResult': {'executed': True}}, 'changeCount': 0, 'createdAt': 1790553191.0069828, 'document': {'id': 'doc'}, ...}
+E             Use -v to get more diff
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:131: AssertionError
+____ test_executed_failures_remain_in_working_set_until_settled[cancelled] _____
+
+tmp_path = PosixPath('/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/pytest-of-thierryc/pytest-127/test_executed_failures_remain_1')
+status = 'cancelled'
+
+    @pytest.mark.parametrize('status', ['failed', 'cancelled'])
+    def test_executed_failures_remain_in_working_set_until_settled(tmp_path, status):
+        store = JobStore(tmp_path/'jobs')
+        job = store.create(dict(id='doc'), dict(kind='python_script'))
+        store.update(job['id'], status=status, resultKind='script',
+                     bridgeOperation=dict(scriptResult=dict(executed=True)))
+        other = store.create(dict(id='elsewhere'), dict(kind='python_script'))
+        store.update(other['id'], status=status, resultKind='script',
+                     bridgeOperation=dict(scriptResult=dict(executed=False)))
+        for current in (store, JobStore(store.root)):
+            assert [j['id'] for j in current.select(set(), include_unresolved=True)] == [job['id']]
+            assert current.select(set(), document_id='elsewhere', include_unresolved=True) == []
+            current.update(job['id'], status='completed')
+>           assert current.select(set(), include_unresolved=True) == []
+E           AssertionError: assert [{'bridgeOper... 'doc'}, ...}] == []
+E
+E             Left contains one more item: {'bridgeOperation': {'scriptResult': {'executed': True}}, 'changeCount': 0, 'createdAt': 1790553191.0671308, 'document': {'id': 'doc'}, ...}
+E             Use -v to get more diff
+
+src/glyphs-mcp/tests/test_simple_v2_active_work.py:131: AssertionError
+________________ test_initial_core_is_below_reset_line_budgets _________________
+
+    def test_initial_core_is_below_reset_line_budgets() -> None:
+        protocol = _python_lines(REPO / "src" / "protocol" / "glyphs_mcp_protocol")
+        bridge = _python_lines(REPO / "src" / "bridge" / "glyphs_mcp_bridge")
+        sidecar = _python_lines(REPO / "src" / "sidecar" / "glyphs_mcp_sidecar")
+        # Outline edit adds closed operation schemas and canonical path hashes.
+        # Keep explicit headroom without relaxing the 575-line per-file limit.
+        # Compilation/export add closed validators and artifact manifests without
+        # adding tools or a remote object model.
+        # Dimensions adds the 60-field catalog, exact metadata/approval contracts,
+        # and one bounded job using existing Undo, recovery and twelve public tools.
+        # Budget its explicit implementation; retain the existing per-module cap.
+        # Script schemas, immutable native targets and bounded Python invocation.
+        # Save-first native review/restore shares saved-source hashing and chat/save lifecycle.
+        # The existing native preparation algorithms now ship once in the shared
+        # package. Charge them to the original preparation budget, not wire schemas.
+        shared = _python_lines(REPO / "src/protocol/glyphs_mcp_protocol/preparation")
+        assert protocol - shared <= 2500
+        # Native setters for nodes, anchors and component matrices (benefit item 4).
+        # Bounded native master pages and strict IDs add 53 lines; no new tool/history.
+        # Compact selection context uses a small stateless read module; no new tool, job or history hooks.
+        # Lazy native groups and restoration of their original automatic-grouping setting.
+        # Existing inverse callbacks/history only; no additional recovery system.
+        # H3 adds one stateless bounded context projection, preserving all editing hooks.
+        # H4 adds bounded glyph pages with constant-size guards and no inventory cache.
+        # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
+        # H6 adds stateless indexed kerning pages with a bounded work budget.
+        # M7 adds native fractional defaults/axis projection and reuses the master page.
+        # Bounded path pages and identity-preserving native outline operations,
+        # including capability-gated Glyphs keep-shape node removal.
+        # Verified native saving adds an isolated selector adapter plus a bounded
+        # operation coordinator; public save policy stays out of the bridge core.
+        # Native scripts reuse the job registry, without script snapshots or staged patches.
+        assert bridge <= 5400
+        # Acceptance, receipts and filesystem verification share one save module.
+        # Conversation coordination, MCP App registration and proxy MIME compatibility
+        # reuse the existing save/job services; budget these bounded additions explicitly.
+        # Script preparation/confirmation and chat evidence preserve the twelve tools.
+        # Incremental script review polling and pre-Save byte checks reuse the same
+        # job registry. Keep the per-module and combined budgets unchanged.
+>       assert sidecar + shared <= 6700
+E       assert (5729 + 1015) <= 6700
+
+src/glyphs-mcp/tests/test_simple_v2_build.py:171: AssertionError
+=============================== warnings summary ===============================
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/__init__.py:4: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/fs/opener/__init__.py:6
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fs/opener/__init__.py:6: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs.opener')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
+
+../../../../../Library/Python/3.14/lib/python/site-packages/pkg_resources/__init__.py:2558
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/pkg_resources/__init__.py:2558: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('fs')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(parent)
+
+src/glyphs-mcp/tests/test_simple_v2_compile_export.py::test_harfbuzz_cases_compare_feature_on_off_and_unchanged_controls
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fontTools/ttLib/tables/otBase.py:672: DeprecationWarning: 'repack_with_tag' is deprecated, use serialize_with_tag() instead
+    return hb.repack_with_tag(str(tableTag), data, obj_list)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge        1322     3     0    57   96.65s
+Public MCP tools                       377     0     0    30    5.47s
+Installer and release                  262     0     1    20   11.05s
+Font behavior and companions           286     0     0    27    2.16s
+Docs, skills, and host plugins          58     0     1    11    4.89s
+Other regressions                       30     0     0     6    1.60s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_executed_failures_remain_in_working_set_until_settled[failed]
+FAILED src/glyphs-mcp/tests/test_simple_v2_active_work.py::test_executed_failures_remain_in_working_set_until_settled[cancelled]
+FAILED src/glyphs-mcp/tests/test_simple_v2_build.py::test_initial_core_is_below_reset_line_budgets
+3 failed, 2335 passed, 2 skipped, 5 warnings in 123.80s (0:02:03)

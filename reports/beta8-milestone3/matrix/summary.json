@@ -1,0 +1,1672 @@
+[
+  {
+    "workload": "width",
+    "targets": 1000,
+    "format": "glyphs",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.19507920899195597,
+        "min": 0.19218708298285492,
+        "max": 0.2026932909793686
+      },
+      "applicationPollingSeconds": {
+        "median": 0.4644081659789663,
+        "min": 0.4540157500014175,
+        "max": 0.547691332991235
+      },
+      "totalSeconds": {
+        "median": 0.6576204579905607,
+        "min": 0.6522745420224965,
+        "max": 0.7399597079784144
+      },
+      "verificationSeconds": {
+        "median": 1.1327472919947468,
+        "min": 1.1267040000238921,
+        "max": 1.1408192079979926
+      },
+      "selectiveRecoverySeconds": {
+        "median": 0.5415584580041468,
+        "min": 0.5337694580084644,
+        "max": 0.542489209008636
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 714506240,
+        "min": 693895168,
+        "max": 715849728
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.024088375008432195,
+        "min": 0.02303320899954997,
+        "max": 0.0320389169792179
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.0036845830036327243,
+        "min": 0.0035004999954253435,
+        "max": 0.003937875007977709
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.000665250001475215,
+        "min": 0.000651875016046688,
+        "max": 0.0008258750021923333
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.21456837499863468,
+        "min": 0.21188970797811635,
+        "max": 0.2588259579788428
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 0.4216791660001036,
+        "min": 0.41942166798980907,
+        "max": 0.46161487500648946
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.21420774998841807,
+        "min": 0.2118617089872714,
+        "max": 0.2489718750002794
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.21456712498911656,
+        "min": 0.2118881250207778,
+        "max": 0.25882483401801437
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.19164350000210106,
+        "min": 0.18444620800437406,
+        "max": 0.19661412498680875
+      },
+      "applicationPollingSeconds": {
+        "median": 0.7089112079993356,
+        "min": 0.7037859999982174,
+        "max": 1.0075902079988737
+      },
+      "totalSeconds": {
+        "median": 0.900102457992034,
+        "min": 0.8933574160037097,
+        "max": 1.2042043329856824
+      },
+      "verificationSeconds": {
+        "median": 1.1532767910102848,
+        "min": 1.1457079159736168,
+        "max": 1.2196619579917751
+      },
+      "selectiveRecoverySeconds": {
+        "median": 0.9033340829773806,
+        "min": 0.7302072920138016,
+        "max": 0.9108286249975208
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 716357632,
+        "min": 715145216,
+        "max": 717864960
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.02293574999202974,
+        "min": 0.021906792011577636,
+        "max": 0.023616834019776434
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.0037666249845642596,
+        "min": 0.0034822499728761613,
+        "max": 0.003848083986667916
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0007098330243024975,
+        "min": 0.0006575000006705523,
+        "max": 0.0007271660142578185
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.010416834003990516,
+        "min": 0.01026058301795274,
+        "max": 0.02235245899646543
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 0.43509985230048187,
+        "min": 0.4251981190755032,
+        "max": 0.5913949838140979
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.0007765839982312173,
+        "min": 0.0007504580134991556,
+        "max": 0.022313624998787418
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.01041612500557676,
+        "min": 0.010259333008434623,
+        "max": 0.022350457991706207
+      }
+    }
+  },
+  {
+    "workload": "width",
+    "targets": 1000,
+    "format": "glyphspackage",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.4709722090046853,
+        "min": 0.45029412501025945,
+        "max": 0.5529092499928083
+      },
+      "applicationPollingSeconds": {
+        "median": 0.7537218339857645,
+        "min": 0.7170484590169508,
+        "max": 0.875771041988628
+      },
+      "totalSeconds": {
+        "median": 1.2539703339862172,
+        "min": 1.1861017500341404,
+        "max": 1.4286802919814363
+      },
+      "verificationSeconds": {
+        "median": 1.1396653749980032,
+        "min": 1.1172849579888862,
+        "max": 1.1561352499993518
+      },
+      "selectiveRecoverySeconds": {
+        "median": 0.6206846249988303,
+        "min": 0.5369348750100471,
+        "max": 0.7311212499917019
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 723468288,
+        "min": 699842560,
+        "max": 724058112
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.024059582996414974,
+        "min": 0.021815291984239593,
+        "max": 0.02708412500214763
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.003816167009063065,
+        "min": 0.0032391670101787895,
+        "max": 0.0039242919883690774
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0007070830033626407,
+        "min": 0.0006327909941319376,
+        "max": 0.0015296250057872385
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.23293941700831056,
+        "min": 0.22365104101481847,
+        "max": 0.2565617079962976
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 0.4415003339818213,
+        "min": 0.4213232919864822,
+        "max": 0.4806129999924451
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.23083233399665914,
+        "min": 0.21627999999327585,
+        "max": 0.254800750000868
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.23293774999910966,
+        "min": 0.22365004100720398,
+        "max": 0.25656008400255814
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.5073823339771479,
+        "min": 0.4625184999895282,
+        "max": 0.5191970000159927
+      },
+      "applicationPollingSeconds": {
+        "median": 1.1126822500082199,
+        "min": 1.080782916978933,
+        "max": 1.1447320420120377
+      },
+      "totalSeconds": {
+        "median": 1.629649457987398,
+        "min": 1.5433014169684611,
+        "max": 1.6609355830296408
+      },
+      "verificationSeconds": {
+        "median": 1.1499937920016237,
+        "min": 1.1423359580221586,
+        "max": 1.3569150840048678
+      },
+      "selectiveRecoverySeconds": {
+        "median": 0.9025512090011034,
+        "min": 0.7659958750009537,
+        "max": 0.9975126250064932
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 723238912,
+        "min": 698843136,
+        "max": 723910656
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.022511416987981647,
+        "min": 0.021421040990389884,
+        "max": 0.025664999993750826
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.0035142090055160224,
+        "min": 0.003256416996009648,
+        "max": 0.0038692090020049363
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0006275839987210929,
+        "min": 0.0006226669938769192,
+        "max": 0.0006443749880418181
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.021030041010817513,
+        "min": 0.018415958009427413,
+        "max": 0.03482699999585748
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 0.4351995909237303,
+        "min": 0.4299229650059715,
+        "max": 0.48184071425930597
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.0006545829819515347,
+        "min": 0.0006342499982565641,
+        "max": 0.012666750000789762
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.010453916998812929,
+        "min": 0.01038975000847131,
+        "max": 0.016582457988988608
+      }
+    }
+  },
+  {
+    "workload": "width",
+    "targets": 4096,
+    "format": "glyphs",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.6144944170082454,
+        "min": 0.5990913329878822,
+        "max": 0.705802041979041
+      },
+      "applicationPollingSeconds": {
+        "median": 1.9503394170023967,
+        "min": 1.8197978750104085,
+        "max": 2.140873374999501
+      },
+      "totalSeconds": {
+        "median": 2.5957462920050602,
+        "min": 2.432712458015885,
+        "max": 2.8466754169785418
+      },
+      "verificationSeconds": {
+        "median": 1.1690060829860158,
+        "min": 1.1677511659800075,
+        "max": 1.4349103339773137
+      },
+      "selectiveRecoverySeconds": {
+        "median": 1.9750143749988638,
+        "min": 1.9078817919944413,
+        "max": 2.715511833986966
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 749060096,
+        "min": 651968512,
+        "max": 749436928
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.025460292003117502,
+        "min": 0.023156457988079637,
+        "max": 0.05134720800560899
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.012744167004711926,
+        "min": 0.011958957999013364,
+        "max": 0.014005250006448478
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0006834169907961041,
+        "min": 0.0006368749891407788,
+        "max": 0.00070766601129435
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.9328469579922967,
+        "min": 0.8967115420091432,
+        "max": 1.1438682090083603
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.8106369169836398,
+        "min": 1.771348540991312,
+        "max": 2.1452150420227554
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.9297877500066534,
+        "min": 0.8896034999925178,
+        "max": 1.1344832920003682
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.932845666015055,
+        "min": 0.8967097089916933,
+        "max": 1.1438665419991594
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.6108023749839049,
+        "min": 0.6073731249780394,
+        "max": 0.6292662089981604
+      },
+      "applicationPollingSeconds": {
+        "median": 2.4246027909975965,
+        "min": 2.3488273750117514,
+        "max": 2.4424805419985205
+      },
+      "totalSeconds": {
+        "median": 3.032099873991683,
+        "min": 2.978093584009912,
+        "max": 3.04985366697656
+      },
+      "verificationSeconds": {
+        "median": 1.158793250011513,
+        "min": 1.1556506250053644,
+        "max": 1.1811722920101602
+      },
+      "selectiveRecoverySeconds": {
+        "median": 2.768298666982446,
+        "min": 2.557221124996431,
+        "max": 2.798399666993646
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 727547904,
+        "min": 724779008,
+        "max": 750141440
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.02380187500966713,
+        "min": 0.021880915999645367,
+        "max": 0.02474720901227556
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.012597374996403232,
+        "min": 0.01242808299139142,
+        "max": 0.01311333299963735
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0006249160214792937,
+        "min": 0.000607750000199303,
+        "max": 0.0007308750064112246
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.03592537500662729,
+        "min": 0.034531042008893564,
+        "max": 0.03844916701200418
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.824815381609369,
+        "min": 1.780274131160695,
+        "max": 1.8894988638639916
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.0032954170019365847,
+        "min": 0.001777875004336238,
+        "max": 0.01091741700656712
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.010603666974930093,
+        "min": 0.010462417005328462,
+        "max": 0.012556416011648253
+      }
+    }
+  },
+  {
+    "workload": "width",
+    "targets": 4096,
+    "format": "glyphspackage",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.9615421670023352,
+        "min": 0.8792528749909252,
+        "max": 1.0298745000036433
+      },
+      "applicationPollingSeconds": {
+        "median": 2.0700505420099944,
+        "min": 2.0314137499954086,
+        "max": 2.227434708009241
+      },
+      "totalSeconds": {
+        "median": 2.999026834004326,
+        "min": 2.927377374988282,
+        "max": 3.2573092080128845
+      },
+      "verificationSeconds": {
+        "median": 1.1592301669879816,
+        "min": 1.153606084000785,
+        "max": 1.1610283750051167
+      },
+      "selectiveRecoverySeconds": {
+        "median": 1.8987244169984479,
+        "min": 1.8264175420044921,
+        "max": 1.992485916998703
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 753860608,
+        "min": 733200384,
+        "max": 759300096
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.02304062500479631,
+        "min": 0.021973625000100583,
+        "max": 0.024720167013583705
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.012445041007595137,
+        "min": 0.011996790999546647,
+        "max": 0.013065750012174249
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0006528329977300018,
+        "min": 0.0006393340008798987,
+        "max": 0.0008586249896325171
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.8564046669926029,
+        "min": 0.8486902079894207,
+        "max": 0.9695730420062318
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.689790708012879,
+        "min": 1.6855534580245148,
+        "max": 1.8850483759888448
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.8497423750231974,
+        "min": 0.8443501669971738,
+        "max": 0.9621810419776011
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.8564033749862574,
+        "min": 0.8486882909783162,
+        "max": 0.9695717499998864
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.9291993340011686,
+        "min": 0.887258708011359,
+        "max": 0.9637532090127934
+      },
+      "applicationPollingSeconds": {
+        "median": 2.70404891599901,
+        "min": 2.6940475000010338,
+        "max": 2.801838499988662
+      },
+      "totalSeconds": {
+        "median": 3.6232468340022024,
+        "min": 3.592429124022601,
+        "max": 3.7655917090014555
+      },
+      "verificationSeconds": {
+        "median": 1.1637365829956252,
+        "min": 1.1494719170150347,
+        "max": 1.1746902919840068
+      },
+      "selectiveRecoverySeconds": {
+        "median": 2.5828294999955688,
+        "min": 2.533974040998146,
+        "max": 2.793952000007266
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "peakRSSBytes": {
+        "median": 757710848,
+        "min": 756547584,
+        "max": 758464512
+      },
+      "longestPreparationCallSeconds": {
+        "median": 0.023496749985497445,
+        "min": 0.022332374996040016,
+        "max": 0.027817291993414983
+      },
+      "longestApplicationCallSeconds": {
+        "median": 0.012704041990218684,
+        "min": 0.012190749985165894,
+        "max": 0.01311095801065676
+      },
+      "longestRecoveryCallSeconds": {
+        "median": 0.0006432500085793436,
+        "min": 0.000628707988653332,
+        "max": 0.0007252089853864163
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.03708795801503584,
+        "min": 0.03463454102165997,
+        "max": 0.04025250000995584
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.797161698632408,
+        "min": 1.755112760438351,
+        "max": 1.835489633231191
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 0.0023849170247558504,
+        "min": 0.001205000007757917,
+        "max": 0.007347250008024275
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.01069141601328738,
+        "min": 0.010555582994129509,
+        "max": 0.010813375003635883
+      }
+    }
+  },
+  {
+    "workload": "script",
+    "targets": 1000,
+    "format": "glyphs",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.14688704200671054,
+        "min": 0.14450100000249222,
+        "max": 0.24783120802021585
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.42405145801603794,
+        "min": 0.416462583001703,
+        "max": 0.42660058301407844
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 0.5703518750378862,
+        "min": 0.5637384589936119,
+        "max": 0.6642937910219189
+      },
+      "requestBytes": {
+        "median": 92397,
+        "min": 92397,
+        "max": 92397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.002841124980477616,
+        "min": 0.00277875000028871,
+        "max": 0.00302920799003914
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.023607582988915965,
+        "min": 0.022469582996563986,
+        "max": 0.11567062500398606
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.010572958999546245,
+        "min": 0.009864540974376723,
+        "max": 0.010616540996124968
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.255442372901598,
+        "min": 0.25358316602068953,
+        "max": 0.261960211180849
+      },
+      "verificationSeconds": {
+        "median": 0.0768059580004774,
+        "min": 0.07475429199985228,
+        "max": 0.07838474999880418
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 189382656,
+        "min": 187564032,
+        "max": 191741952
+      },
+      "restoreSeconds": {
+        "median": 0.02176512501318939,
+        "min": 0.01979445799952373,
+        "max": 0.022765957983210683
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.018404083006316796,
+        "min": 0.01620837501832284,
+        "max": 0.018846374994609505
+      },
+      "peakRSSBytes": {
+        "median": 199032832,
+        "min": 197165056,
+        "max": 201424896
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.18750031106174e-05,
+        "min": 9.25001222640276e-06,
+        "max": 1.4749995898455381e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 1.18750031106174e-05,
+        "min": 9.25001222640276e-06,
+        "max": 1.4749995898455381e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.00039075000677257776,
+        "min": 0.0003252080059610307,
+        "max": 0.0004706250037997961
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.1450776669953484,
+        "min": 0.14187991598737426,
+        "max": 0.1519976670097094
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.41919200000120327,
+        "min": 0.4145464999892283,
+        "max": 0.43293416599044576
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 0.5665441669989377,
+        "min": 0.5610719159885775,
+        "max": 0.5790763319819234
+      },
+      "requestBytes": {
+        "median": 92397,
+        "min": 92397,
+        "max": 92397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.002733750006882474,
+        "min": 0.002653834002558142,
+        "max": 0.002930167014710605
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.023677916993619874,
+        "min": 0.022523749998072162,
+        "max": 0.025264833006076515
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.010605207993648946,
+        "min": 0.01045687499572523,
+        "max": 0.010750082990853116
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.2501212912320625,
+        "min": 0.2498577931546606,
+        "max": 0.258616168925073
+      },
+      "verificationSeconds": {
+        "median": 0.07643616601126269,
+        "min": 0.07291124999755993,
+        "max": 0.08036900000297464
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 189235200,
+        "min": 189087744,
+        "max": 190775296
+      },
+      "restoreSeconds": {
+        "median": 0.02206233300967142,
+        "min": 0.021450667001772672,
+        "max": 0.0225823329819832
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.018257749994518235,
+        "min": 0.017792792001273483,
+        "max": 0.019036499987123534
+      },
+      "peakRSSBytes": {
+        "median": 198967296,
+        "min": 198852608,
+        "max": 200572928
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.3790995581075549e-05,
+        "min": 1.0459014447405934e-05,
+        "max": 2.2499996703118086e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 1.3790995581075549e-05,
+        "min": 1.0459014447405934e-05,
+        "max": 2.2499996703118086e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.00041104102274402976,
+        "min": 0.00036087498301640153,
+        "max": 0.0005812500021420419
+      }
+    }
+  },
+  {
+    "workload": "script",
+    "targets": 1000,
+    "format": "glyphspackage",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.26339624999673106,
+        "min": 0.24338604201329872,
+        "max": 0.3099887919961475
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.703920832980657,
+        "min": 0.5842784999986179,
+        "max": 0.7106337919831276
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 0.9524904169957153,
+        "min": 0.8942672919947654,
+        "max": 0.9748376659990754
+      },
+      "requestBytes": {
+        "median": 92404,
+        "min": 92404,
+        "max": 92404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.0029783339996356517,
+        "min": 0.0024883330042939633,
+        "max": 0.007691915991017595
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.02398766699479893,
+        "min": 0.02242175000719726,
+        "max": 0.02519958300399594
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.05398179200710729,
+        "min": 0.051319707999937236,
+        "max": 0.05678570899181068
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.3004674598341808,
+        "min": 0.29597358009777963,
+        "max": 0.3339920378930401
+      },
+      "verificationSeconds": {
+        "median": 0.07351449999259785,
+        "min": 0.07166874999529682,
+        "max": 0.07512695802142844
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 191037440,
+        "min": 188284928,
+        "max": 193888256
+      },
+      "restoreSeconds": {
+        "median": 0.13149620898184367,
+        "min": 0.12975583301158622,
+        "max": 0.2582012500206474
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.12802979099797085,
+        "min": 0.1259747080039233,
+        "max": 0.2545431249891408
+      },
+      "peakRSSBytes": {
+        "median": 200785920,
+        "min": 198246400,
+        "max": 203653120
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.1249998351559043e-05,
+        "min": 1.0875024599954486e-05,
+        "max": 4.3041014578193426e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 1.1249998351559043e-05,
+        "min": 1.0875024599954486e-05,
+        "max": 4.3041014578193426e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.00037045800127089024,
+        "min": 0.00032500000088475645,
+        "max": 0.0005765419919043779
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.2589056669967249,
+        "min": 0.24004729199805297,
+        "max": 0.27518850000342354
+      },
+      "dispatchToResultSeconds": {
+        "median": 0.7054044159885962,
+        "min": 0.6904624580056407,
+        "max": 0.7127160000090953
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 0.9643100829853211,
+        "min": 0.9305097500036936,
+        "max": 0.9879045000125188
+      },
+      "requestBytes": {
+        "median": 92404,
+        "min": 92404,
+        "max": 92404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.002607166999951005,
+        "min": 0.002386624983046204,
+        "max": 0.0027317909989506006
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.023604334011906758,
+        "min": 0.02304737499798648,
+        "max": 0.02571516699390486
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.05426891698152758,
+        "min": 0.0527795419911854,
+        "max": 0.05589091600268148
+      },
+      "scheduledNativeSeconds": {
+        "median": 0.30116541401366703,
+        "min": 0.29511920997174457,
+        "max": 0.3067985400557518
+      },
+      "verificationSeconds": {
+        "median": 0.07353912500548176,
+        "min": 0.07263862501713447,
+        "max": 0.07398587500210851
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 192151552,
+        "min": 189841408,
+        "max": 193019904
+      },
+      "restoreSeconds": {
+        "median": 0.13324854100937955,
+        "min": 0.13202954200096428,
+        "max": 0.13681654198444448
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.1296450000081677,
+        "min": 0.128685832984047,
+        "max": 0.13338258300791495
+      },
+      "peakRSSBytes": {
+        "median": 201900032,
+        "min": 198672384,
+        "max": 203112448
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 1.3167009456083179e-05,
+        "min": 1.2124975910410285e-05,
+        "max": 1.5249999705702066e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 1.3167009456083179e-05,
+        "min": 1.2124975910410285e-05,
+        "max": 1.5249999705702066e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.00044229099876247346,
+        "min": 0.00040862499736249447,
+        "max": 0.0005166250048205256
+      }
+    }
+  },
+  {
+    "workload": "script",
+    "targets": 10000,
+    "format": "glyphs",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 0.8937946670048404,
+        "min": 0.8796811250213068,
+        "max": 1.0481144169752952
+      },
+      "dispatchToResultSeconds": {
+        "median": 3.060323832993163,
+        "min": 3.0276454580016434,
+        "max": 3.196368332981365
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 3.9400049580144696,
+        "min": 3.922365291015012,
+        "max": 4.24448274995666
+      },
+      "requestBytes": {
+        "median": 920397,
+        "min": 920397,
+        "max": 920397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.011007458000676706,
+        "min": 0.010429415997350588,
+        "max": 0.02877249999437481
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.026166708004893735,
+        "min": 0.02594450002652593,
+        "max": 0.027772832982009277
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.02955937501974404,
+        "min": 0.02877000000444241,
+        "max": 0.030840166989946738
+      },
+      "scheduledNativeSeconds": {
+        "median": 2.5426366662723012,
+        "min": 2.50815837024129,
+        "max": 2.66169740256737
+      },
+      "verificationSeconds": {
+        "median": 0.7469623329816386,
+        "min": 0.7415757919952739,
+        "max": 0.7520021249947604
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 318406656,
+        "min": 317112320,
+        "max": 319111168
+      },
+      "restoreSeconds": {
+        "median": 0.16688645898830146,
+        "min": 0.16028287500375882,
+        "max": 0.17165895900689065
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.16085441698669456,
+        "min": 0.1542431249981746,
+        "max": 0.16569887500372715
+      },
+      "peakRSSBytes": {
+        "median": 412762112,
+        "min": 411385856,
+        "max": 413794304
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 2.662499900907278e-05,
+        "min": 2.4999986635521054e-05,
+        "max": 3.9000005926936865e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 2.662499900907278e-05,
+        "min": 2.4999986635521054e-05,
+        "max": 3.9000005926936865e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.0024964170006569475,
+        "min": 0.0023874999897088856,
+        "max": 0.0030279160127975047
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 0.9275172089983243,
+        "min": 0.8825362500210758,
+        "max": 0.9557782499759924
+      },
+      "dispatchToResultSeconds": {
+        "median": 3.050717167003313,
+        "min": 3.024708583019674,
+        "max": 3.298972499993397
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 3.9782343760016374,
+        "min": 3.9315703330212273,
+        "max": 4.227691499982029
+      },
+      "requestBytes": {
+        "median": 920397,
+        "min": 920397,
+        "max": 920397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.011077584000304341,
+        "min": 0.010007582983234897,
+        "max": 0.012857791996793821
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.02610908300266601,
+        "min": 0.02517679097945802,
+        "max": 0.02644950000103563
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.028818833001423627,
+        "min": 0.028379625000525266,
+        "max": 0.029457958007697016
+      },
+      "scheduledNativeSeconds": {
+        "median": 2.4970891754201148,
+        "min": 2.4777560837974306,
+        "max": 2.5094030410109553
+      },
+      "verificationSeconds": {
+        "median": 0.7419725829968229,
+        "min": 0.7329078750044573,
+        "max": 0.7436921669868752
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 319438848,
+        "min": 318783488,
+        "max": 321241088
+      },
+      "restoreSeconds": {
+        "median": 0.169912082987139,
+        "min": 0.1665611659991555,
+        "max": 0.17109795799478889
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.16395141600514762,
+        "min": 0.16062737500760704,
+        "max": 0.16490520801744424
+      },
+      "peakRSSBytes": {
+        "median": 414203904,
+        "min": 412221440,
+        "max": 415514624
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 3.3459014957770705e-05,
+        "min": 2.3708009393885732e-05,
+        "max": 7.654199725948274e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 3.3459014957770705e-05,
+        "min": 2.3708009393885732e-05,
+        "max": 7.654199725948274e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.0018263750243932009,
+        "min": 0.0006624590023420751,
+        "max": 0.004494499997235835
+      }
+    }
+  },
+  {
+    "workload": "script",
+    "targets": 10000,
+    "format": "glyphspackage",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 2.0639345000090543,
+        "min": 2.0395219170022756,
+        "max": 2.2045841249928344
+      },
+      "dispatchToResultSeconds": {
+        "median": 5.632081792020472,
+        "min": 5.282359875011025,
+        "max": 6.021724417019868
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 7.675671042030444,
+        "min": 7.346294375020079,
+        "max": 8.139262917015003
+      },
+      "requestBytes": {
+        "median": 920404,
+        "min": 920404,
+        "max": 920404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.010901625006226823,
+        "min": 0.010839458991540596,
+        "max": 0.011609707988100126
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.03805995799484663,
+        "min": 0.03658995797741227,
+        "max": 0.03850770799908787
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.6225957499991637,
+        "min": 0.5527825829922222,
+        "max": 0.7544155830109958
+      },
+      "scheduledNativeSeconds": {
+        "median": 3.188649503834313,
+        "min": 3.0270083222421817,
+        "max": 3.4069421485473868
+      },
+      "verificationSeconds": {
+        "median": 0.7389999580045696,
+        "min": 0.7229549580079038,
+        "max": 0.7543846670014318
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 335659008,
+        "min": 334381056,
+        "max": 336396288
+      },
+      "restoreSeconds": {
+        "median": 1.3881459160184022,
+        "min": 1.3466651249909773,
+        "max": 1.5699262089910917
+      },
+      "longestRestoreCallSeconds": {
+        "median": 1.382577541982755,
+        "min": 1.3402419170015492,
+        "max": 1.563159999990603
+      },
+      "peakRSSBytes": {
+        "median": 432242688,
+        "min": 431833088,
+        "max": 432668672
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 3.0750001315027475e-05,
+        "min": 2.5792018277570605e-05,
+        "max": 3.295802162028849e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 3.0750001315027475e-05,
+        "min": 2.5792018277570605e-05,
+        "max": 3.295802162028849e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.003055416978895664,
+        "min": 0.00261199998203665,
+        "max": 0.0032842090004123747
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 2.081142250011908,
+        "min": 2.0171835420187563,
+        "max": 2.2978280409879517
+      },
+      "dispatchToResultSeconds": {
+        "median": 5.421677834005095,
+        "min": 5.236775833007414,
+        "max": 5.690143542014994
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 7.534603873995366,
+        "min": 7.2885766249964945,
+        "max": 7.7958297500154
+      },
+      "requestBytes": {
+        "median": 920404,
+        "min": 920404,
+        "max": 920404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.01170379199902527,
+        "min": 0.011151917016832158,
+        "max": 0.011761416011722758
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.03651508298935369,
+        "min": 0.035539041011361405,
+        "max": 0.03764366699033417
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.6195704590063542,
+        "min": 0.5415884169924539,
+        "max": 0.7011738749861252
+      },
+      "scheduledNativeSeconds": {
+        "median": 3.1106252984609455,
+        "min": 2.975989287457196,
+        "max": 3.269880671869032
+      },
+      "verificationSeconds": {
+        "median": 0.7320264579902869,
+        "min": 0.7190857920213602,
+        "max": 0.738585624989355
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 335806464,
+        "min": 308756480,
+        "max": 340017152
+      },
+      "restoreSeconds": {
+        "median": 1.463273625005968,
+        "min": 1.3261253329983447,
+        "max": 1.6885274999949615
+      },
+      "longestRestoreCallSeconds": {
+        "median": 1.4572305840265471,
+        "min": 1.3195844169822522,
+        "max": 1.6823223749815952
+      },
+      "peakRSSBytes": {
+        "median": 432324608,
+        "min": 391725056,
+        "max": 436371456
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 2.7709000278264284e-05,
+        "min": 2.5249988539144397e-05,
+        "max": 5.3750001825392246e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 2.7709000278264284e-05,
+        "min": 2.5249988539144397e-05,
+        "max": 5.3750001825392246e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.0009535420103929937,
+        "min": 0.0006452079978771508,
+        "max": 0.008608375006588176
+      }
+    }
+  },
+  {
+    "workload": "script",
+    "targets": 20000,
+    "format": "glyphs",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 1.731572042015614,
+        "min": 1.7018244579958264,
+        "max": 2.460024792002514
+      },
+      "dispatchToResultSeconds": {
+        "median": 6.144475291017443,
+        "min": 5.882814875018084,
+        "max": 7.098769000003813
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 7.850805624970235,
+        "min": 7.608450083003845,
+        "max": 9.558793792006327
+      },
+      "requestBytes": {
+        "median": 1850397,
+        "min": 1850397,
+        "max": 1850397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.02219012498972006,
+        "min": 0.02134395801112987,
+        "max": 0.041263499995693564
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.056129541975678876,
+        "min": 0.053927999979350716,
+        "max": 0.10223287498229183
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.05852787499316037,
+        "min": 0.05540374998236075,
+        "max": 0.06115033300011419
+      },
+      "scheduledNativeSeconds": {
+        "median": 5.146431306813611,
+        "min": 5.090155755897285,
+        "max": 6.476963869470637
+      },
+      "verificationSeconds": {
+        "median": 1.4707276670087595,
+        "min": 1.4544457079900894,
+        "max": 1.7924091670138296
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 471646208,
+        "min": 390594560,
+        "max": 473661440
+      },
+      "restoreSeconds": {
+        "median": 0.3636042500147596,
+        "min": 0.3253231660055462,
+        "max": 0.46245554101187736
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.35486508399480954,
+        "min": 0.31656116698286496,
+        "max": 0.43970829198951833
+      },
+      "peakRSSBytes": {
+        "median": 658194432,
+        "min": 579026944,
+        "max": 663060480
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 4.3167005060240626e-05,
+        "min": 3.745799767784774e-05,
+        "max": 4.458398325368762e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 4.3167005060240626e-05,
+        "min": 3.745799767784774e-05,
+        "max": 4.458398325368762e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.004919125000014901,
+        "min": 0.004539249988738447,
+        "max": 0.0052602920040953904
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 1.842012999986764,
+        "min": 1.7999434160010424,
+        "max": 1.867253874981543
+      },
+      "dispatchToResultSeconds": {
+        "median": 6.320886959001655,
+        "min": 6.228949457989074,
+        "max": 6.5800907500088215
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 8.162899958988419,
+        "min": 8.028892873990117,
+        "max": 8.447344624990365
+      },
+      "requestBytes": {
+        "median": 1850397,
+        "min": 1850397,
+        "max": 1850397
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.02207395900040865,
+        "min": 0.02156679198378697,
+        "max": 0.02300279200426303
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.055070499976864085,
+        "min": 0.053125834005186334,
+        "max": 0.05855316700763069
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 0.05808666700613685,
+        "min": 0.05591345898574218,
+        "max": 0.05991149999317713
+      },
+      "scheduledNativeSeconds": {
+        "median": 5.153676882444415,
+        "min": 5.0332824944052845,
+        "max": 5.252032347547356
+      },
+      "verificationSeconds": {
+        "median": 1.486542583006667,
+        "min": 1.4571097499865573,
+        "max": 1.8492217500170227
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 469630976,
+        "min": 467206144,
+        "max": 471154688
+      },
+      "restoreSeconds": {
+        "median": 0.3205057500163093,
+        "min": 0.3156539579795208,
+        "max": 0.3386243330023717
+      },
+      "longestRestoreCallSeconds": {
+        "median": 0.31188949997886084,
+        "min": 0.3073200420185458,
+        "max": 0.3299075830145739
+      },
+      "peakRSSBytes": {
+        "median": 658866176,
+        "min": 655704064,
+        "max": 660815872
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 4.583297413773835e-05,
+        "min": 3.274998744018376e-05,
+        "max": 7.654097862541676e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 4.583297413773835e-05,
+        "min": 3.274998744018376e-05,
+        "max": 7.654097862541676e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.005459292005980387,
+        "min": 0.0039949579804670066,
+        "max": 0.02063366599031724
+      }
+    }
+  },
+  {
+    "workload": "script",
+    "targets": 20000,
+    "format": "glyphspackage",
+    "baseline": {
+      "preparationSeconds": {
+        "median": 4.430344125023112,
+        "min": 4.2857218330027536,
+        "max": 4.903868249995867
+      },
+      "dispatchToResultSeconds": {
+        "median": 11.303700374992331,
+        "min": 10.966660250007408,
+        "max": 11.503033584012883
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 15.755797707970487,
+        "min": 15.284066082997015,
+        "max": 16.40690183400875
+      },
+      "requestBytes": {
+        "median": 1850404,
+        "min": 1850404,
+        "max": 1850404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.022211791976587847,
+        "min": 0.020719833992188796,
+        "max": 0.02260295901214704
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.050469125009840354,
+        "min": 0.04973929101834074,
+        "max": 0.05082095900434069
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 1.179232750000665,
+        "min": 1.1446167920075823,
+        "max": 1.2802772919822019
+      },
+      "scheduledNativeSeconds": {
+        "median": 6.419122525112471,
+        "min": 6.3625875494326465,
+        "max": 6.66570988483727
+      },
+      "verificationSeconds": {
+        "median": 1.4765067920088768,
+        "min": 1.4493537090020254,
+        "max": 1.5859798330056947
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 470859776,
+        "min": 451067904,
+        "max": 505462784
+      },
+      "restoreSeconds": {
+        "median": 2.9668066250160336,
+        "min": 2.857017333008116,
+        "max": 3.0174041660211515
+      },
+      "longestRestoreCallSeconds": {
+        "median": 2.958589750021929,
+        "min": 2.8491839169873856,
+        "max": 3.008038250001846
+      },
+      "peakRSSBytes": {
+        "median": 653131776,
+        "min": 645087232,
+        "max": 692731904
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 4.137499490752816e-05,
+        "min": 3.908301005139947e-05,
+        "max": 4.675000673159957e-05
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 4.137499490752816e-05,
+        "min": 3.908301005139947e-05,
+        "max": 4.675000673159957e-05
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.005064625001978129,
+        "min": 0.004368624999187887,
+        "max": 0.007470874988939613
+      }
+    },
+    "candidate": {
+      "preparationSeconds": {
+        "median": 4.201500791998114,
+        "min": 4.134563291998347,
+        "max": 4.572528874996351
+      },
+      "dispatchToResultSeconds": {
+        "median": 11.076273750019027,
+        "min": 10.83955733300536,
+        "max": 11.15440545801539
+      },
+      "saveSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "totalSeconds": {
+        "median": 15.23848637501942,
+        "min": 15.07467041601194,
+        "max": 15.72693433301174
+      },
+      "requestBytes": {
+        "median": 1850404,
+        "min": 1850404,
+        "max": 1850404
+      },
+      "longestPreparationChunkSeconds": {
+        "median": 0.022522458020830527,
+        "min": 0.020901457988657057,
+        "max": 0.023226791992783546
+      },
+      "longestMainThreadCallSeconds": {
+        "median": 0.050473000010242686,
+        "min": 0.049591500021051615,
+        "max": 0.05168058298295364
+      },
+      "longestScheduledChunkSeconds": {
+        "median": 1.240593374997843,
+        "min": 1.1487829590041656,
+        "max": 1.2510262920113746
+      },
+      "scheduledNativeSeconds": {
+        "median": 6.326995593786705,
+        "min": 6.302966756280512,
+        "max": 6.383085194946034
+      },
+      "verificationSeconds": {
+        "median": 1.4707324159971904,
+        "min": 1.451931791001698,
+        "max": 1.599579875008203
+      },
+      "peakRSSBeforeRestoreBytes": {
+        "median": 505036800,
+        "min": 488554496,
+        "max": 511066112
+      },
+      "restoreSeconds": {
+        "median": 3.086215084011201,
+        "min": 2.9651477090083063,
+        "max": 3.4574680830119178
+      },
+      "longestRestoreCallSeconds": {
+        "median": 3.07470587498392,
+        "min": 2.9571995419973973,
+        "max": 3.4485956669959705
+      },
+      "peakRSSBytes": {
+        "median": 695140352,
+        "min": 679329792,
+        "max": 705314816
+      },
+      "cleanup.totalNativeSeconds": {
+        "median": 6.183297955431044e-05,
+        "min": 3.4707976737990975e-05,
+        "max": 0.00010899998596869409
+      },
+      "cleanup.longestStepSeconds": {
+        "median": 6.183297955431044e-05,
+        "min": 3.4707976737990975e-05,
+        "max": 0.00010899998596869409
+      },
+      "cleanup.longestScheduledCleanupSeconds": {
+        "median": 0.007006250001722947,
+        "min": 0.00465708298725076,
+        "max": 0.015959458018187433
+      }
+    }
+  }
+]

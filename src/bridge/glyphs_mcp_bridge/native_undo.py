@@ -55,8 +55,14 @@ class NativeUndoScope:
         return self._include(self.fallback)
 
     def finish(self, name):
+        for _ in self.finish_steps(name):
+            pass
+
+    def finish_steps(self, name):
+        """Close one owned manager per step, retaining reverse native order."""
         first_error = None
-        for manager, automatic in reversed(tuple(self.managers.values())):
+        while self.managers:
+            _, (manager, automatic) = self.managers.popitem()
             try:
                 if manager.groupingLevel() != 1:
                     raise RuntimeError("Glyphs Undo grouping changed during the operation")
@@ -73,7 +79,7 @@ class NativeUndoScope:
                         raise RuntimeError("Glyphs did not restore automatic Undo grouping")
                 except Exception as error:
                     first_error = first_error or error
-        self.managers.clear()
+            yield
         if first_error:
             raise first_error
 

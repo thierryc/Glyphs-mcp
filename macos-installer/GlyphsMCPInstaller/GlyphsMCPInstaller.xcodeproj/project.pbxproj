@@ -68,6 +68,10 @@
 		B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000001 /* DesktopGitWorkspace.swift */; };
 		B20000000000000000000002 /* GlyphDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* GlyphDiff.swift */; };
 		B20000000000000000000003 /* PierreDiffsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B40000000000000000000002 /* PierreDiffsSwift */; };
+		F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */; };
+		3D18FD498AF3CE854AEB2965 /* FontCheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */; };
+		2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */; };
+		B01C71A90038DB5D628E74EA /* CheckpointClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103A5E6F347BF504A3C03F62 /* CheckpointClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -177,6 +181,10 @@
 		0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectSettings.swift"; sourceTree = "<group>"; };
 		B30000000000000000000001 /* DesktopGitWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopGitWorkspace.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* GlyphDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphDiff.swift; sourceTree = "<group>"; };
+		A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckpointProjectTests.swift"; sourceTree = "<group>"; };
+		CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontCheckpointPolicy.swift"; sourceTree = "<group>"; };
+		CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopCheckpointHistory.swift"; sourceTree = "<group>"; };
+		103A5E6F347BF504A3C03F62 /* CheckpointClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckpointClient.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -230,6 +238,7 @@
 		AA0000000000000000000003 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */,
 				B30000000000000000000001 /* DesktopGitWorkspace.swift */,
 				0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */,
 				51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */,
@@ -291,6 +300,7 @@
 		AA0000000000000000000008 /* GlyphsMCPInstallerTests */ = {
 			isa = PBXGroup;
 			children = (
+				A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */,
 				742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */,
 				F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */,
 				B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */,
@@ -304,6 +314,8 @@
 		AA00000000000000000000C7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				103A5E6F347BF504A3C03F62 /* CheckpointClient.swift */,
+				CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */,
 				B30000000000000000000002 /* GlyphDiff.swift */,
 				611B6383133A9E1FBE188607 /* DesktopProjectNavigation.swift */,
 				539F5D88BEEFE4B6685E8438 /* DesktopTemplateCatalog.swift */,
@@ -516,6 +528,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */,
 				B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */,
 				236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */,
 				BB8FED442C37149356C19DC9 /* DesktopProjectWizard.swift in Sources */,
@@ -537,6 +550,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */,
 				F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */,
 				222E1FD38019AA402B7856A5 /* DesktopTemplateCatalogTests.swift in Sources */,
 				3F59FD997BDD3F90653A6CF7 /* DesktopActivityTests.swift in Sources */,
@@ -550,6 +564,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B01C71A90038DB5D628E74EA /* CheckpointClient.swift in Sources */,
+				3D18FD498AF3CE854AEB2965 /* FontCheckpointPolicy.swift in Sources */,
 				B20000000000000000000002 /* GlyphDiff.swift in Sources */,
 				0B32DBB6D0B856B5E6F921FE /* DesktopProjectNavigation.swift in Sources */,
 				7DD0EBB293F1D78408B15D9C /* DesktopTemplateCatalog.swift in Sources */,

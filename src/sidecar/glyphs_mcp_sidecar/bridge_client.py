@@ -89,6 +89,15 @@ class BridgeClient:
     def review_script(self, request):
         return self._post('/v1/script/review', {'script': request})
 
+    def reviewed_script(self, job_id):
+        return self._post('/v1/script/reviewed', {'jobId': job_id})
+
+    def acknowledge_checkpoint_restore(self, identity):
+        return self._post('/v1/checkpoint/finish', {'jobId': identity})
+
+    def restore_checkpoint(self, request):
+        return self._post('/v1/checkpoint/restore', {'restore': request})
+
     def restore_saved_script(self, request):
         return self._post('/v1/script/restore-saved', {'script': request})
 

@@ -63,7 +63,10 @@ contract](../glyphs/references/python-scripts.md). Choose the smallest useful fo
 
 **Direct native scripting** requires `script.native.v1`. Use `source`, `params`,
 `entrypoint`, `targets` and optional `summary`; no execution/recovery mode or
-count threshold. Clean saved fonts require no extra Save. Dirty fonts require
+count threshold. Scripts have no fixed surface-count ceiling; the complete
+request must fit the existing 4 MiB budget. Keep one bulk job and report all
+eligible targets or a clear preparation failure, never a truncated edit.
+Clean saved fonts require no extra Save. Dirty fonts require
 an authorized **Save and run**, and new fonts use Save As/manual saving.
 
 Intent controls the workflow. Perform a requested task by generating, validating

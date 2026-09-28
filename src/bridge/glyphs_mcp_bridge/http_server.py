@@ -116,10 +116,19 @@ class BridgeHTTPServer:
                     )
                 if self.path == "/v1/compile-features":
                     return owner.core.compile_features(payload.get("compile"))
+                if self.path == '/v1/checkpoint/finish':
+                    from .checkpoint_restore import acknowledge
+                    return acknowledge(owner.core, str(payload.get('jobId') or ''), BridgeError)
+                if self.path == '/v1/checkpoint/restore':
+                    from .checkpoint_restore import restore
+                    return restore(owner.core, payload.get('restore'), BridgeError)
                 if self.path in {'/v1/script/review', '/v1/script/restore-saved'}:
                     from . import saved_script
                     call = saved_script.review if self.path.endswith('/review') else saved_script.restore
                     return call(owner.core, payload.get('script'), BridgeError)
+                if self.path == '/v1/script/reviewed':
+                    from . import saved_script
+                    return saved_script.review_result(owner.core, str(payload.get('jobId') or ''), BridgeError)
                 if self.path == '/v1/script/run':
                     return owner.core.begin_script(payload.get('script'))
                 if self.path == '/v1/script/finish':

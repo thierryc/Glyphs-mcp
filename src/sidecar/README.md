@@ -1,5 +1,9 @@
 # Glyphs MCP Sidecar
 
+The [current twelve-tool contract](../../content/reference/command-set.mdx) owns
+the public interface and result semantics. Follow [Beta 8 milestones](../../BETA8-MILESTONES.md)
+for current delivery scope; the algorithm notes below describe retained behavior.
+
 This process owns MCP, saved-source copies, hashes, temporary jobs, and
 `glyphs-cli`. It connects to the loopback-only Glyphs bridge on port 9681.
 
@@ -8,13 +12,25 @@ Conversation edits use `start_edit_workflow`, `get_edit_workflow` and
 is available through `ui://glyphs-mcp/edit-workflow-v1.html`; all actions also
 work through text. The coordinator owns request retention, idempotency and
 revisions, while existing job/save services retain native validation and recovery.
+Activity reads copy active jobs and a bounded recent summary. The supervisor
+visits active workflows; unchanged job observations do not rewrite their records
+or advance timestamps. Volatile indexes are rebuilt from persisted evidence on
+startup. Failed/cancelled scripts that executed remain unresolved until their
+existing Keep/Restore workflow is settled; reconnect never replays code.
 Complete authorized edits apply automatically; previews and report warnings
 wait for review. A prerequisite Save and continue saves existing work once;
 the resulting edit remains unsaved until separately authorized.
 
-The original nine tools keep their signatures. Low-level jobs change nothing
-until `apply_job`; application is reversible and never saves. `accept_job`
-verifies and saves the whole font. Undo/Redo and guarded discard remain native.
+Twelve tools share the existing job/save services. Low-level typed jobs change
+nothing until `apply_job`; application never saves. Conversation results offer
+Keep without saving, authorized Save, and selective typed Undo or whole-font
+script restoration. `accept_job` verifies and saves the whole font. Keep ends
+wrapper recovery without clearing native Undo/Redo. `python_script` uses only
+the conversation route and `script.native.v1`; preparation/polling never run code.
+Widths, Dimensions, glyph colors and coordinate-only outlines prepare through
+the negotiated native route without full-font copying or a worker launch.
+Spacing, collision analysis, start-node matching, slant and other complex typed
+preparation retain their external algorithms, as do analysis/export.
 
 `start_job(kind="spacing", options={...})` adds external spacing suggestions
 without another tool. Options are `reference` (default `auto`; `*` means self),
@@ -43,6 +59,16 @@ and unavailable targets. The report separates measured suggestions from skipped
 targets. These are reference-selection and metric-preservation improvements,
 not a claim of universally optimal optical spacing. The initial area workflow
 does not add a balanced italic-spacing engine or custom outline corrections.
+
+`kerning_edit` prepares 1–100 exact `options.edits` through the native route,
+without an external worker or source copy. Each edit names `op: set/remove`, an
+exact master, direction and glyph/group sides; only set accepts `value`. Zero
+and fractional values remain distinct from deletion. It requires
+`kerning.edit.exact.v1`, uses the existing scalar kerning patch, and retains
+guarded application, selective recovery and Keep/Save. The read-only
+`kerning_proof` selector requires `kerning.proof.v1`; it pages language-tagged
+candidates, Unicode mapping evidence and native group/exception coverage from
+the pinned MIT dataset. It neither suggests values nor starts a job.
 
 `start_job(kind="kerning_collision", options={"pairs": [["A", "V"]]})`
 measures explicit LTR glyph pairs outside the editor. Options are `masters`
@@ -106,8 +132,9 @@ For local evaluation, build with `scripts/build_simple_v2.py` and run
 The installer backs up replacements and starts the external sidecar with a user
 LaunchAgent. It uses the supplied Python environment, which must contain FastMCP.
 The existing Codex connector uses `http://127.0.0.1:9680/mcp/`. HTTP requests are
-stateless so clients keep working after a sidecar restart. Job IDs belong to the
-service; restarting the sidecar ends its in-memory job session. Restart Glyphs
+stateless so clients can reconnect after a sidecar restart. Persisted job and
+workflow evidence survives; interrupted requests require reconciliation and
+never replay an edit or save. Restart Glyphs
 to load changed native bundles. The sidecar can also run with stdio and no LaunchAgent.
 
 `dimensions_edit` prepares up to 100 per-master reference-note changes. Blank fills

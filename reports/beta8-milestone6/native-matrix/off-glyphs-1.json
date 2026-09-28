@@ -1,0 +1,25 @@
+{
+  "data": {
+    "format": "glyphs",
+    "checkpoints": "off",
+    "stages": {
+      "nativeSaveSeconds": 0.014311541977804154,
+      "checkpointAfterSaveSeconds": 0.00020500001846812665,
+      "preparationSeconds": 0.06237649999093264,
+      "applicationAndBaselineSeconds": 0.23383566699340008,
+      "saveVerificationCheckpointPollingSeconds": 0.26034341598278843,
+      "verificationSeconds": 0.002463582990458235,
+      "historicalRestorationSeconds": 0.5683956670109183
+    },
+    "setupSeconds": 0.46105045900912955,
+    "longestMeasuredMainThreadSeconds": 0.042924416018649936,
+    "peakProcessRSSBytes": 241942528,
+    "methodology": "One fresh native process; identical real-font fixtures. Native GSFont save adapter, same candidate with project checkpoints on/off; not a v1 or editor Save comparison."
+  },
+  "passed": true,
+  "host": {
+    "version": "4.1",
+    "build": "4107.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised"
+}

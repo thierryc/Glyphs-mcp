@@ -1,0 +1,553 @@
+[
+  {
+    "name": "get_status",
+    "description": "Return sidecar, worker and bridge availability, negotiated read/write/jobCapabilities, job kinds, and the filtered closed nativeActions catalog.",
+    "inputSchema": {
+      "properties": {},
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "list_documents",
+    "description": "Discover open Glyphs documents once for the intended target. With document.context.v1, isCurrent is native current-font evidence (true/false, null if unavailable); never infer it from list order. Retain its document_id on this connection for subsequent fresh reads; rediscover after document_not_found or changed target intent.",
+    "inputSchema": {
+      "properties": {},
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "read_entities",
+    "description": "Read fresh, bounded evidence for a known document_id. Dirty and unsaved fonts need no Save. Request 1-100 entities and 1-32 fields. Reuse the binding; rediscover on document_not_found, not target_not_found. Never substitute another font. Check get_status readCapabilities; missing support requires a coordinated installation update.\n\nExact selectors: {kind:glyph,id:name}; {kind:layer,glyph:name,id:nativeLayerId}; {kind:master,id:exactId}. Layers require layer.read.exact.v1; fields include id/name, width/vertWidth/vertOrigin, left/right/widthMetricsKey, bounds and outlineHash. Glyphs support name/unicode/category/subCategory/export/color (0-11 or null), plus left/right/top/bottomKerningGroup and KerningKey with kerning.groups.v1. Group names, lookup keys and raw storage IDs differ. Master properties (master.properties.v1): id/name, ascender/capHeight/xHeight/descender/italicAngle/axes. Axes are native-order internal/external values, at most 32 per master and 256 master-axis items per request; incomplete/null means unavailable. Dimensions: master.dimensions.read.v1, 1-4 exact masters, fields [dimensions]; persisted reference notes, zero is set, no outline measurement.\n\nInventories require one sole selector {kind:glyphs|masters|layers,limit:100,cursor:opaque}; layers also requires glyph. Capabilities: glyphs.list.v1, masters.list.v1, layers.list.v1. Fields: glyphs [name]; masters requested master properties except dimensions; layers id/name/associatedMasterId/isMasterLayer/isSpecialLayer/isBraceLayer/isBracketLayer. Page limit 1-100; follow values.nextCursor until complete. Keep document/selector unchanged. On stale cursor errors or observed edits, discard partial results and restart. Pages are live, not atomic; known targets need no inventory.\n\nContext (document.context.v1): sole {kind:context,glyphLimit:100}, fields view/master/selectedGlyphs. Native selection order; incomplete/unavailable selection is not an edit scope. Selection (selection.context.v1): {kind:selection}, fields glyph/layer, selectedNodeCount/selectedAnchorCount/selectedComponentCount/selectedGuideCount/selectedOtherCount. Optional nodes requires a sole selector with nodeLimit 1-256 (default 64); items include x/y/type/smooth/pathIndex/nodeIndex, counts and completeness. No implicit node details.\n\nKerning uses {kind:kerning,master:<exact native master ID>,direction:LTR,left:A,right:V}, fields [value] only. Direction is LTR, RTL or vertical. Keys are glyph names or stored @MMK_ keys; null means no entry, zero is stored. This is exact storage, not effective class/exception kerning. With kerning.pairs.v1, sole {kind:kerning_pairs,master,direction,limit:100,leftKey?,rightKey?,cursor?}, fields left/right/value, pages raw keys and resolved names. Filters are exact raw keys. Scan budget 256; empty incomplete pages still require continuation; total may be null.\n\nPaths require paths.list.v1/path.geometry.v1: sole {kind:paths,glyph,layer,limit?,cursor?} with fields [items]; {kind:path,glyph,layer,index,limit?,cursor?} with fields [nodes]; or {kind:segment,glyph,layer,path,endNode} with type/startNode/endNode/controlNodes/points/length/pathHash. Path/node limits 100/256. outline.background.read.v1 allows surface:background on layer/path selectors; IDs identify the owning foreground layer. Never substitute foreground geometry or create missing backgrounds.\n\nWith features.read.v1, sole {kind:feature_blocks,blockType:prefix|class|feature,limit:100,cursor?}, fields [items], or exact {kind:feature_block,blockType,id}. With instances.read.v1, sole {kind:instances,limit:100,cursor?}, fields [items], or exact {kind:instance,id}; returned persistent IDs feed export jobs. With font.checkpoints.v1, fields [checkpoint] and one checkpoint_history/checkpoint_details/checkpoint_compare/checkpoint_scope selector read bounded Git evidence using full revisions/cursors. Invalid selector input returns invalid_request; keep the document binding and correct the input. Full selectors/fields: shipped Glyphs references and the twelve-tool command reference.",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "entities": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "document_id",
+        "entities",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "start_job",
+    "description": "Prepare a low-level job without applying or saving. Prefer start_edit_workflow for conversation edits. Typed kinds: width_delta (delta and optional glyphs), spacing, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and native_action. Use negotiated jobCapabilities for feature_compile diagnostic or font_export artifact jobs; analysis/export retain external processing. python_script requires script.native.v1 and start_edit_workflow; it cannot start here.\n\nUse typed options and exact targets. outline_edit supports surface:background only with outline.background.edit.v1; layer/reference IDs identify owning foregrounds. native_action uses only get_status.nativeActions: e.g. options={action:set_glyph_color,arguments:{color:orange},targets:[{glyph:A}]}; color:none clears. dimensions_edit requires master.dimensions.edit.v1 and options.changes of 1-100 {master,key,value} entries (number or null to clear), without delta/glyphs. Inspect full report.targets/requiredOverwrites; existing-value overwrites or clears require conversational approval.\n\nMutation preparation requires a saved clean font. Application remains separate and never saves. checkpoint_restore, with font.checkpoint-restore.v1 and options={revision:full_revision}, prepares a whole-font historical reload; applying replaces later unsaved edits and clears Undo, returning a fresh binding without saving. Retain job_id and reconcile after timeouts; never replace an uncertain operation.",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delta"
+        },
+        "glyphs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glyphs"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        }
+      },
+      "required": [
+        "document_id",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "get_job",
+    "description": "Return progress and a typed mutation, diagnostic or artifact result with report, manifest, warnings and bounded previews. Use include_preview=false for compact polling.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "apply_job",
+    "description": "Apply mutation jobs only; diagnostic or artifact results cannot be applied. This is not acceptance and never saves. Typed application verifies guarded targets and retains selective Undo. checkpoint_restore replaces the whole font, later unsaved edits and Undo history.\n\nDimensions blank fills need no confirmation. Before overwriting/clearing existing values, show every master/field and exact old/new value and obtain explicit conversational approval. Then pass exact report.requiredOverwrites as approved_overwrites. This records assistant-reported approval, not authenticated consent. Mixed batches wait together; prepare a reduced job for declined changes.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        },
+        "approved_overwrites": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved Overwrites"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "accept_job",
+    "description": "With save authorization, verify an applied mutation and save the whole font (including later edits), ending workflow recovery. Optional destination is an absolute new Save As path and must not exist. Native Undo remains. For artifact jobs, publish verified export artifacts to a new absolute destination directory. Return source-bound receipts; reconcile uncertain outcomes instead of replaying.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "discard_job",
+    "description": "Cancel preparation, delete private artifact staging, or selectively undo a still-current typed mutation. Conflicting later edits reject recovery. Terminal diagnostics need no discard. Script Keep/Restore and historical restore results use their original conversation workflow.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "save_document",
+    "description": "With explicit or existing save authorization, save one document's whole live contents without a dialog. Optional destination is an absolute new .glyphs or .glyphspackage Save As path; never overwrite a Save As destination. Applied-job owners require accept_job or their workflow Save action. With font.checkpoints.v1, enabled projects create a local checkpoint after verified Save. Git failure does not undo the Save; retry_checkpoint_job_id retries only that recorded checkpoint and never saves again.",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination"
+        },
+        "retry_checkpoint_job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Checkpoint Job Id"
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "start_edit_workflow",
+    "description": "Perform an authorized edit; reuse the connection/document_id and retain idempotency_key for retries. Typed kinds include width_delta, spacing, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and closed native_action. mode=apply prepares and applies complete typed results; preview waits. Warnings/skipped targets and Dimensions overwrites retain report review. Compilation/export use start_job. Preparation never saves; dirty/new fonts require separately authorized Save/Save As/manual saving. Reuse existing save authorization; prerequisite saving does not authorize saving the result.\n\npython_script requires script.native.v1. Options: exact source, JSON params, entrypoint=per_target|script, targets and optional summary (500 characters). Callback run(layer,params,context); whole scripts may use targets:[]. Targets: explicit {glyph,layer,surface} entries or {master:exactId,glyphs:all|names,surface}; IDs identify owning foregrounds. No fixed script target-count ceiling; complete request limit 4 MiB, never truncate. Typed/read limits remain. Retired executionMode/recovery are rejected. Preparation validates syntax/targets without executing Python. For an in-scope edit request, dispatch the offered Run action under original authorization without mandatory source review, human click or another question. Write-only/review-only requests never authorize execution; writing includes code review. Explicit previews wait. Show the script warning once; exact source stays optional Script details.\n\nResults offer Keep changes without saving, Save and selective typed Undo or whole-font script Restore saved version. Keep ends workflow recovery and preserves native Undo/Redo. auto_keep=true lets a visible connected successful card Keep after 30 seconds. Set false for 'wait for my answer', disabled automatic feedback or inspection before deciding; honor that directive until changed. Existing workflows use wait_for_answer. Text-only clients remain manual.\n\ncheckpoint_restore loads the selected whole-font version under a clear restore request: replaces later unsaved edits, clears Undo and returns a fresh binding without saving. Opt-in Git checkpoint failure is separate from Save success. Retain workflow_id; poll until a choice/outcome. Missing cards never block authorized work.",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "mode": {
+          "default": "apply",
+          "title": "Mode",
+          "type": "string"
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delta"
+        },
+        "glyphs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glyphs"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "auto_keep": {
+          "default": true,
+          "title": "Auto Keep",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "document_id",
+        "kind",
+        "idempotency_key"
+      ],
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://glyphs-mcp/edit-workflow-v1.html",
+        "visibility": [
+          "model",
+          "app"
+        ]
+      },
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "get_edit_workflow",
+    "description": "Read compact state, request fingerprint, revision, actions and progress. Ordinary polling needs no health/job reads. A read never executes Python, saves or applies edits. Use include_review=true for Show script or requested source/output details. Cache only matching workflow/document/job/fingerprint; omitted fields preserve evidence, explicit empty values replace it. Refresh open Script details on execution completion.\n\nText includes the same workflow_id, expected_revision and action_token controls as cards; retain them internally for natural-language replies. Poll the same workflow while poll=true until a choice/outcome; never restart after a timeout or narrate unchanged polls. Preparing is not Applied. blockingWorkflowId identifies earlier unresolved work; use its original choices, including manual typed Keep. Scripts use Keep/Save/Restore, not typed Undo. Restoration availability is display evidence and is validated again at use. Document edits during preparation require fresh preparation.",
+    "inputSchema": {
+      "properties": {
+        "workflow_id": {
+          "title": "Workflow Id",
+          "type": "string"
+        },
+        "include_review": {
+          "default": false,
+          "title": "Include Review",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "workflow_id"
+      ],
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://glyphs-mcp/edit-workflow-v1.html",
+        "visibility": [
+          "model",
+          "app"
+        ]
+      },
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "respond_edit_workflow",
+    "description": "Execute one offered action using workflow_id, expected_revision and action_token. Map conversational replies internally; users need not supply identifiers. Refresh get_edit_workflow before a later reply; use its matching revision/token. Retry the SAME token/arguments to reconcile, never substitute a new action after an uncertain outcome.\n\nIn-scope edit authorization permits Apply or Run script without mandatory source inspection or a human click. Explicit previews wait for acceptance; write-only/review-only requests never authorize Run. Dimensions overwrites require explicit approval of every old/new value and exact approved_overwrites. Save choices require separate existing/explicit authorization for the whole document; Save As needs an absolute new destination shown to the user. Prerequisite Save does not authorize saving the result.\n\nKeep ends workflow recovery without saving and preserves native Undo. Typed Undo covers only recorded targets; Restore saved version reloads the whole font, discards later unsaved edits, clears Undo and returns a fresh binding. A clear restore request authorizes it. It never saves, reruns Python or restores external effects. Keep/Save ends the recovery offer.\n\nMap 'wait for my answer' immediately to wait_for_answer, disabling the countdown without cancelling the edit. automatic=true is reserved for the visible connected card's successful-result Keep; never auto Run, Save, Undo, Restore or settle failed/unknown/blocked results. Timeout evidence is not human approval. Cancellation stops remaining callbacks, not a currently running invocation. Client permission dialogs still apply.",
+    "inputSchema": {
+      "properties": {
+        "workflow_id": {
+          "title": "Workflow Id",
+          "type": "string"
+        },
+        "expected_revision": {
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "action_token": {
+          "title": "Action Token",
+          "type": "string"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination"
+        },
+        "approved_overwrites": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved Overwrites"
+        },
+        "automatic": {
+          "default": false,
+          "title": "Automatic",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "workflow_id",
+        "expected_revision",
+        "action_token"
+      ],
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "_meta": {
+      "ui": {
+        "visibility": [
+          "model",
+          "app"
+        ]
+      },
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  }
+]

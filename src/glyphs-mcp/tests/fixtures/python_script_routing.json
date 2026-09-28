@@ -140,5 +140,31 @@
     "entrypoint": "per_target",
     "runAction": "run_script",
     "authorization": "original_task"
+  },
+  {
+    "name": "large-master-backgrounds",
+    "requiredCapabilities": [
+      "script.native.v1"
+    ],
+    "request": {
+      "kind": "python_script",
+      "mode": "apply",
+      "options": {
+        "source": "def run(layer, params, context):\n    for path in layer.paths:\n        for node in path.nodes:\n            node.y = 2 * params[\"pivotY\"] - node.y",
+        "params": {
+          "pivotY": 0
+        },
+        "targets": {
+          "master": "REGULAR-ID",
+          "glyphs": "all",
+          "surface": "background"
+        },
+        "summary": "Flip every eligible Regular background around the baseline"
+      }
+    },
+    "entrypoint": "per_target",
+    "runAction": "run_script",
+    "authorization": "original_task",
+    "expectedEligibleTargets": 12000
   }
 ]

@@ -76,7 +76,6 @@
     "concepts/how-glyphs-mcp-works.mdx": "34a36dc46b6a95d1de3cd87701a5ba946c6abb4b939d3485061b52c3afe59dc1",
     "concepts/safety-model.mdx": "51d872f70beadd624175e302fbdeba02a54290428e15b239813b462d41b8061b",
     "contributor/ai-font-proofreading-plan.mdx": "18ca544b81d208481d17b3fcd243450541fc5b1b147c8f56f509fd21c463f490",
-    "contributor/beztrace-integration-gate.mdx": "bf8e4158bad5c2ee55c69262f79c3eb5cf9478f0d798e51aa1f61237b6a70897",
     "contributor/curve-geometry-cleanroom.mdx": "77e111a0c47fcdf16b51452330b12dc8a1c0b658e5afbcd7a54d66ee0b102edc",
     "contributor/icon-font-skill-community-posts.md": "2530becb901023b57bb9f2c8d533fc89f5dd04021797ee83ece07569a9b8d19e",
     "contributor/images/italic-balanced-ibm-plex-sans-71d012bc-broad-audit-diff.png": "c023b57ccdc79d8372c3b5bcd229250da1ee6d638f05b350cad63e216f8d0fdc",
@@ -129,5 +128,8 @@
     "workflows/outlines-selected-nodes.mdx": "8718dd73376e01e44fc29acd717db49971725b07b1c2bf2dec1f204875100dfd",
     "workflows/style-set-inspection.mdx": "fb32eee8ce09ec0add3627d7513979b4d4fbb5f6466d241425a4bc8f6f455384",
     "workflows/visual-review.mdx": "2fac2aa9956b176ec35fc83bf43e9dc187b9bf4585de6425e1e22504616c4de1"
+  },
+  "removals": {
+    "contributor/beztrace-integration-gate.mdx": "Removed after review on 2026-09-27: the standalone viability hold is superseded by the released beztrace v0.1.0 and its documented completed gates. Evidence: https://github.com/thierryc/beztrace/releases/tag/v0.1.0 and https://github.com/thierryc/beztrace/blob/main/README.md. Glyphs integration remains separate work."
   }
 }

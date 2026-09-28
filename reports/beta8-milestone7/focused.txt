@@ -1,0 +1,15 @@
+........................................................................ [ 91%]
+.......                                                                  [100%]
+=============================== warnings summary ===============================
+src/glyphs-mcp/tests/test_simple_v2_compile_export.py::test_harfbuzz_cases_compare_feature_on_off_and_unchanged_controls
+  /Users/thierryc/Library/Python/3.14/lib/python/site-packages/fontTools/ttLib/tables/otBase.py:672: DeprecationWarning: 'repack_with_tag' is deprecated, use serialize_with_tag() instead
+    return hb.repack_with_tag(str(tableTag), data, obj_list)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge          76     0     0     5    4.39s
+Docs, skills, and host plugins           3     0     0     1    0.03s
+Markdown test report: build/test-report.md
+79 passed, 1 warning in 4.66s

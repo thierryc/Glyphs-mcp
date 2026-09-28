@@ -1,0 +1,37 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_conversation_reuse_guidance_and_routing_preserve_target_resolution ____
+
+    def test_conversation_reuse_guidance_and_routing_preserve_target_resolution():
+        rows=json.loads((Path(__file__).parent/'fixtures/conversation_reuse_routing.json').read_text())
+        assert all(not r['discoveryReads'] for r in rows if r['knownBinding'])
+        assert all(r['selectionReads'] != r['explicitTarget'] for r in rows)
+        assert [r['includeReview'] for r in rows] == [False, False, True]
+        for path in ('SKILL.md', 'references/path-editing.md'):
+            text=(ROOT/'skills/glyphs-mcp-outlines-docs'/path).read_text()
+>           assert 'When the target depends on the current selection' in text
+E           AssertionError: assert 'When the target depends on the current selection' in '---\nname: glyphs-mcp-outlines-docs\ndescription: Inspect curves and safely prepare typed outline path edits.\nmetada...nversion reloads the whole font and discards later unsaved edits; typed operations\nretain their selective recovery.\n'
+
+src/glyphs-mcp/tests/test_simple_v2_skill_routing.py:19: AssertionError
+_ test_outline_skill_routes_bounded_reads_and_typed_mutations_with_selection_precedence _
+
+    def test_outline_skill_routes_bounded_reads_and_typed_mutations_with_selection_precedence():
+        root = ROOT/'skills/glyphs-mcp-outlines-docs'
+        entry = (root/'SKILL.md').read_text()
+        reference = (root/'references/path-editing.md').read_text()
+        for phrase in ('When the target depends on the current selection', 'Explicit', 'selection informed',
+                       'path-editing.md', 'outline.edit.v1', 'outline.remove-node.v1',
+                       'remove_node', 'saved clean baseline'):
+>           assert phrase in entry
+E           AssertionError: assert 'When the target depends on the current selection' in '---\nname: glyphs-mcp-outlines-docs\ndescription: Inspect curves and safely prepare typed outline path edits.\nmetada...nversion reloads the whole font and discards later unsaved edits; typed operations\nretain their selective recovery.\n'
+
+src/glyphs-mcp/tests/test_simple_v2_skill_routing.py:178: AssertionError
+======================== passing tests by product area =========================
+Product area                          Pass  Fail  Skip Files     Time
+---------------------------------------------------------------------
+Lean runtime and native bridge           0     2     0     1    0.00s
+Markdown test report: build/test-report.md
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_skill_routing.py::test_conversation_reuse_guidance_and_routing_preserve_target_resolution
+FAILED src/glyphs-mcp/tests/test_simple_v2_skill_routing.py::test_outline_skill_routes_bounded_reads_and_typed_mutations_with_selection_precedence
+2 failed, 22 deselected in 0.10s

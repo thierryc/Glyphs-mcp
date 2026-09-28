@@ -1,0 +1,5 @@
+[
+  {"prompt":"Move node 0 of path 0 in Regular o by +0.25, -0.5", "knownBinding":true, "explicitTarget":true, "selectionReads":false, "discoveryReads":false, "includeReview":false},
+  {"prompt":"Move the selected nodes up 5 units", "knownBinding":true, "explicitTarget":false, "selectionReads":true, "discoveryReads":false, "includeReview":false},
+  {"prompt":"Show the script for this workflow", "knownBinding":true, "explicitTarget":true, "selectionReads":false, "discoveryReads":false, "includeReview":true}
+]

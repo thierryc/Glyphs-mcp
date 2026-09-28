@@ -1,0 +1,207 @@
+[
+  {
+    "case": "baseline-width-1-glyphs-1",
+    "passed": true,
+    "processSeconds": 8.836735749995569
+  },
+  {
+    "case": "baseline-width-1-glyphs-2",
+    "passed": true,
+    "processSeconds": 8.890442375006387
+  },
+  {
+    "case": "baseline-width-1-glyphs-3",
+    "passed": true,
+    "processSeconds": 8.828549708006904
+  },
+  {
+    "case": "baseline-width-1-glyphs-4",
+    "passed": true,
+    "processSeconds": 8.816224084002897
+  },
+  {
+    "case": "baseline-width-1-glyphs-5",
+    "passed": true,
+    "processSeconds": 9.054495999997016
+  },
+  {
+    "case": "baseline-width-100-glyphs-1",
+    "passed": true,
+    "processSeconds": 9.01477279199753
+  },
+  {
+    "case": "baseline-width-100-glyphs-2",
+    "passed": true,
+    "processSeconds": 9.089116250019288
+  },
+  {
+    "case": "baseline-width-100-glyphs-3",
+    "passed": true,
+    "processSeconds": 9.241689916001633
+  },
+  {
+    "case": "baseline-width-100-glyphs-4",
+    "passed": true,
+    "processSeconds": 8.998529167001834
+  },
+  {
+    "case": "baseline-width-100-glyphs-5",
+    "passed": true,
+    "processSeconds": 9.064239957981044
+  },
+  {
+    "case": "baseline-width-1000-glyphs-1",
+    "passed": true,
+    "processSeconds": 9.95326149999164
+  },
+  {
+    "case": "baseline-width-1000-glyphs-2",
+    "passed": true,
+    "processSeconds": 11.086737000005087
+  },
+  {
+    "case": "baseline-width-1000-glyphs-3",
+    "passed": true,
+    "processSeconds": 11.732282209006371
+  },
+  {
+    "case": "baseline-width-1000-glyphs-4",
+    "passed": true,
+    "processSeconds": 10.830718790995888
+  },
+  {
+    "case": "baseline-width-1000-glyphs-5",
+    "passed": true,
+    "processSeconds": 11.972645208006725
+  },
+  {
+    "case": "baseline-width-4096-glyphs-1",
+    "passed": true,
+    "processSeconds": 15.342604415985988
+  },
+  {
+    "case": "baseline-width-4096-glyphs-2",
+    "passed": true,
+    "processSeconds": 15.23930745900725
+  },
+  {
+    "case": "baseline-width-4096-glyphs-3",
+    "passed": true,
+    "processSeconds": 15.307092916977126
+  },
+  {
+    "case": "baseline-width-4096-glyphs-4",
+    "passed": true,
+    "processSeconds": 15.165208166989032
+  },
+  {
+    "case": "baseline-width-4096-glyphs-5",
+    "passed": true,
+    "processSeconds": 15.479377583018504
+  },
+  {
+    "case": "fixture-width-glyphspackage",
+    "passed": true,
+    "processSeconds": 14.561601791996509
+  },
+  {
+    "case": "baseline-width-1-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 11.438018875021953
+  },
+  {
+    "case": "baseline-width-1-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 11.40257066700724
+  },
+  {
+    "case": "baseline-width-1-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 11.148704166000243
+  },
+  {
+    "case": "baseline-width-1-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 11.600842583022313
+  },
+  {
+    "case": "baseline-width-1-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 12.30561412498355
+  },
+  {
+    "case": "baseline-width-100-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 13.060941957985051
+  },
+  {
+    "case": "baseline-width-100-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 12.731447625003057
+  },
+  {
+    "case": "baseline-width-100-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 13.039201124978717
+  },
+  {
+    "case": "baseline-width-100-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 12.764587250014301
+  },
+  {
+    "case": "baseline-width-100-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 12.787422499997774
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 13.723623458005022
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 13.87780141600524
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 13.633121792023303
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 14.516203207982471
+  },
+  {
+    "case": "baseline-width-1000-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 13.971361167001305
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-1",
+    "passed": true,
+    "processSeconds": 18.805323334003333
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-2",
+    "passed": true,
+    "processSeconds": 18.398096459015505
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-3",
+    "passed": true,
+    "processSeconds": 17.85893975000363
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-4",
+    "passed": true,
+    "processSeconds": 18.500345167005435
+  },
+  {
+    "case": "baseline-width-4096-glyphspackage-5",
+    "passed": true,
+    "processSeconds": 17.796536000008928
+  }
+]
