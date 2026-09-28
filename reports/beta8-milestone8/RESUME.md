@@ -1,6 +1,10 @@
 # Milestone 8 resumption record
 
-September 28, 2026. **Incomplete: do not advance or publish.**
+September 28, 2026. **Historical blocked-install handoff.**
+
+The later user request authorizes consolidation, installation and local signing.
+The installation blockage below is resolved; see the [combined candidate report](../beta8-release-candidate/README.md) for current evidence and remaining acceptance gates.
+The original observations below are retained unchanged.
 
 ## Completed
 

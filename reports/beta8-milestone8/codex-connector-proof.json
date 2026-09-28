@@ -1,0 +1,2413 @@
+{
+  "checkedAt": "2026-09-28T15:14:49.431Z",
+  "transport": "installed Codex MCP connector",
+  "documentPath": "build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+  "scope": "Read-only English/French LTR proof pagination after disposable fixture qualification",
+  "complete": true,
+  "pages": [
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjowfQ==",
+            "scannedGlyphs": 3,
+            "scannedCandidates": 0,
+            "skippedMissing": 0,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "mapping",
+            "mappedGlyphs": 3,
+            "totalGlyphs": 3
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjowfQ=="
+          },
+          "values": {
+            "items": [
+              {
+                "characters": "AV",
+                "left": "A",
+                "right": "V",
+                "languages": [
+                  "en",
+                  "fr"
+                ],
+                "proof": "AV",
+                "coverage": {
+                  "glyphPair": -64.25,
+                  "glyphGroup": 0,
+                  "groupGlyph": 0,
+                  "groupPair": 0,
+                  "leftGroup": "@MMK_L_right_A",
+                  "rightGroup": "@MMK_R_left_V",
+                  "effective": {
+                    "status": "native",
+                    "value": -64.25
+                  }
+                }
+              },
+              {
+                "characters": "VA",
+                "left": "V",
+                "right": "A",
+                "languages": [
+                  "en",
+                  "fr"
+                ],
+                "proof": "VA",
+                "coverage": {
+                  "glyphPair": null,
+                  "glyphGroup": null,
+                  "groupGlyph": null,
+                  "groupPair": null,
+                  "leftGroup": "@MMK_L_right_V",
+                  "rightGroup": "@MMK_R_left_A",
+                  "effective": {
+                    "status": "none",
+                    "value": null
+                  }
+                }
+              }
+            ],
+            "returned": 2,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyNTZ9",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 254,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "E ",
+                "reason": "missing"
+              },
+              {
+                "characters": "e ",
+                "reason": "missing"
+              },
+              {
+                "characters": " T",
+                "reason": "missing"
+              },
+              {
+                "characters": " d",
+                "reason": "missing"
+              },
+              {
+                "characters": " t",
+                "reason": "missing"
+              },
+              {
+                "characters": "T ",
+                "reason": "missing"
+              },
+              {
+                "characters": " A",
+                "reason": "missing"
+              },
+              {
+                "characters": "t ",
+                "reason": "missing"
+              },
+              {
+                "characters": "D ",
+                "reason": "missing"
+              },
+              {
+                "characters": "nt",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyNTZ9"
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo1MTJ9",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "Ho",
+                "reason": "missing"
+              },
+              {
+                "characters": "No",
+                "reason": "missing"
+              },
+              {
+                "characters": "Po",
+                "reason": "missing"
+              },
+              {
+                "characters": "Wa",
+                "reason": "missing"
+              },
+              {
+                "characters": "Pr",
+                "reason": "missing"
+              },
+              {
+                "characters": " ;",
+                "reason": "missing"
+              },
+              {
+                "characters": "\".",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ja",
+                "reason": "missing"
+              },
+              {
+                "characters": "T-",
+                "reason": "missing"
+              },
+              {
+                "characters": "SY",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo1MTJ9"
+          },
+          "values": {
+            "items": [
+              {
+                "characters": "AA",
+                "left": "A",
+                "right": "A",
+                "languages": [
+                  "en",
+                  "fr"
+                ],
+                "proof": "AA",
+                "coverage": {
+                  "glyphPair": null,
+                  "glyphGroup": null,
+                  "groupGlyph": null,
+                  "groupPair": null,
+                  "leftGroup": "@MMK_L_right_A",
+                  "rightGroup": "@MMK_R_left_A",
+                  "effective": {
+                    "status": "none",
+                    "value": null
+                  }
+                }
+              }
+            ],
+            "returned": 1,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo3Njh9",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 255,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "Pu",
+                "reason": "missing"
+              },
+              {
+                "characters": "gè",
+                "reason": "missing"
+              },
+              {
+                "characters": "Es",
+                "reason": "missing"
+              },
+              {
+                "characters": "KU",
+                "reason": "missing"
+              },
+              {
+                "characters": "U.",
+                "reason": "missing"
+              },
+              {
+                "characters": "BJ",
+                "reason": "missing"
+              },
+              {
+                "characters": "W,",
+                "reason": "missing"
+              },
+              {
+                "characters": "LW",
+                "reason": "missing"
+              },
+              {
+                "characters": "Lu",
+                "reason": "missing"
+              },
+              {
+                "characters": "OJ",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo3Njh9"
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxMDI0fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "rz",
+                "reason": "missing"
+              },
+              {
+                "characters": "(v",
+                "reason": "missing"
+              },
+              {
+                "characters": "cœ",
+                "reason": "missing"
+              },
+              {
+                "characters": " Î",
+                "reason": "missing"
+              },
+              {
+                "characters": "8T",
+                "reason": "missing"
+              },
+              {
+                "characters": "ZY",
+                "reason": "missing"
+              },
+              {
+                "characters": ",\"",
+                "reason": "missing"
+              },
+              {
+                "characters": "? ",
+                "reason": "missing"
+              },
+              {
+                "characters": "(n",
+                "reason": "missing"
+              },
+              {
+                "characters": "'«",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxMDI0fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxMjgwfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "ï ",
+                "reason": "missing"
+              },
+              {
+                "characters": "7e",
+                "reason": "missing"
+              },
+              {
+                "characters": "p;",
+                "reason": "missing"
+              },
+              {
+                "characters": "z)",
+                "reason": "missing"
+              },
+              {
+                "characters": "RX",
+                "reason": "missing"
+              },
+              {
+                "characters": "LJ",
+                "reason": "missing"
+              },
+              {
+                "characters": "’Y",
+                "reason": "missing"
+              },
+              {
+                "characters": "Kö",
+                "reason": "missing"
+              },
+              {
+                "characters": "c)",
+                "reason": "missing"
+              },
+              {
+                "characters": "Aq",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxMjgwfQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxNTM2fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "O]",
+                "reason": "missing"
+              },
+              {
+                "characters": "JÄ",
+                "reason": "missing"
+              },
+              {
+                "characters": "VM",
+                "reason": "missing"
+              },
+              {
+                "characters": "CÍ",
+                "reason": "missing"
+              },
+              {
+                "characters": "cV",
+                "reason": "missing"
+              },
+              {
+                "characters": "ïm",
+                "reason": "missing"
+              },
+              {
+                "characters": "J,",
+                "reason": "missing"
+              },
+              {
+                "characters": "tō",
+                "reason": "missing"
+              },
+              {
+                "characters": "TÓ",
+                "reason": "missing"
+              },
+              {
+                "characters": "PV",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxNTM2fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxNzkyfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "A’",
+                "reason": "missing"
+              },
+              {
+                "characters": "Uc",
+                "reason": "missing"
+              },
+              {
+                "characters": "r}",
+                "reason": "missing"
+              },
+              {
+                "characters": "b/",
+                "reason": "missing"
+              },
+              {
+                "characters": "ræ",
+                "reason": "missing"
+              },
+              {
+                "characters": "ŒC",
+                "reason": "missing"
+              },
+              {
+                "characters": " >",
+                "reason": "missing"
+              },
+              {
+                "characters": "ÄG",
+                "reason": "missing"
+              },
+              {
+                "characters": "$,",
+                "reason": "missing"
+              },
+              {
+                "characters": "P/",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoxNzkyfQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyMDQ4fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "GÁ",
+                "reason": "missing"
+              },
+              {
+                "characters": "u?",
+                "reason": "missing"
+              },
+              {
+                "characters": ")}",
+                "reason": "missing"
+              },
+              {
+                "characters": ".}",
+                "reason": "missing"
+              },
+              {
+                "characters": ",\\",
+                "reason": "missing"
+              },
+              {
+                "characters": "B]",
+                "reason": "missing"
+              },
+              {
+                "characters": "r7",
+                "reason": "missing"
+              },
+              {
+                "characters": "QW",
+                "reason": "missing"
+              },
+              {
+                "characters": "rø",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ká",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyMDQ4fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyMzA0fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "Yl",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ff",
+                "reason": "missing"
+              },
+              {
+                "characters": "E_",
+                "reason": "missing"
+              },
+              {
+                "characters": "Nc",
+                "reason": "missing"
+              },
+              {
+                "characters": "4Y",
+                "reason": "missing"
+              },
+              {
+                "characters": "C+",
+                "reason": "missing"
+              },
+              {
+                "characters": "ê.",
+                "reason": "missing"
+              },
+              {
+                "characters": "P?",
+                "reason": "missing"
+              },
+              {
+                "characters": "ÀC",
+                "reason": "missing"
+              },
+              {
+                "characters": "Uj",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyMzA0fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyNTYwfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "Fâ",
+                "reason": "missing"
+              },
+              {
+                "characters": "5f",
+                "reason": "missing"
+              },
+              {
+                "characters": "YÇ",
+                "reason": "missing"
+              },
+              {
+                "characters": "7m",
+                "reason": "missing"
+              },
+              {
+                "characters": "B}",
+                "reason": "missing"
+              },
+              {
+                "characters": "G7",
+                "reason": "missing"
+              },
+              {
+                "characters": "rë",
+                "reason": "missing"
+              },
+              {
+                "characters": "\\&",
+                "reason": "missing"
+              },
+              {
+                "characters": "ĀG",
+                "reason": "missing"
+              },
+              {
+                "characters": "yç",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyNTYwfQ=="
+          },
+          "values": {
+            "items": [
+              {
+                "characters": "Vn",
+                "left": "V",
+                "right": "n",
+                "languages": [
+                  "en"
+                ],
+                "proof": "Vn",
+                "coverage": {
+                  "glyphPair": null,
+                  "glyphGroup": null,
+                  "groupGlyph": null,
+                  "groupPair": null,
+                  "leftGroup": "@MMK_L_right_V",
+                  "rightGroup": "@MMK_R_left_n",
+                  "effective": {
+                    "status": "none",
+                    "value": null
+                  }
+                }
+              }
+            ],
+            "returned": 1,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyODE2fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 255,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "ôv",
+                "reason": "missing"
+              },
+              {
+                "characters": "öv",
+                "reason": "missing"
+              },
+              {
+                "characters": "öw",
+                "reason": "missing"
+              },
+              {
+                "characters": "‘a",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ö.",
+                "reason": "missing"
+              },
+              {
+                "characters": "oV",
+                "reason": "missing"
+              },
+              {
+                "characters": "fā",
+                "reason": "missing"
+              },
+              {
+                "characters": ",d",
+                "reason": "missing"
+              },
+              {
+                "characters": "ÖZ",
+                "reason": "missing"
+              },
+              {
+                "characters": "FÓ",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjoyODE2fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozMDcyfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "BÅ",
+                "reason": "missing"
+              },
+              {
+                "characters": "K=",
+                "reason": "missing"
+              },
+              {
+                "characters": "OŻ",
+                "reason": "missing"
+              },
+              {
+                "characters": "T»",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ág",
+                "reason": "missing"
+              },
+              {
+                "characters": "V9",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ā-",
+                "reason": "missing"
+              },
+              {
+                "characters": "c(",
+                "reason": "missing"
+              },
+              {
+                "characters": "ÿs",
+                "reason": "missing"
+              },
+              {
+                "characters": "k=",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozMDcyfQ=="
+          },
+          "values": {
+            "items": [
+              {
+                "characters": "nV",
+                "left": "n",
+                "right": "V",
+                "languages": [
+                  "en",
+                  "fr"
+                ],
+                "proof": "nV",
+                "coverage": {
+                  "glyphPair": null,
+                  "glyphGroup": null,
+                  "groupGlyph": null,
+                  "groupPair": null,
+                  "leftGroup": "@MMK_L_right_n",
+                  "rightGroup": "@MMK_R_left_V",
+                  "effective": {
+                    "status": "none",
+                    "value": null
+                  }
+                }
+              }
+            ],
+            "returned": 1,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozMzI4fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 255,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "*W",
+                "reason": "missing"
+              },
+              {
+                "characters": "Žo",
+                "reason": "missing"
+              },
+              {
+                "characters": "ŚV",
+                "reason": "missing"
+              },
+              {
+                "characters": "(Ö",
+                "reason": "missing"
+              },
+              {
+                "characters": "ó'",
+                "reason": "missing"
+              },
+              {
+                "characters": "(è",
+                "reason": "missing"
+              },
+              {
+                "characters": "gT",
+                "reason": "missing"
+              },
+              {
+                "characters": "F_",
+                "reason": "missing"
+              },
+              {
+                "characters": "‘O",
+                "reason": "missing"
+              },
+              {
+                "characters": "ŚĀ",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozMzI4fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozNTg0fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "Rà",
+                "reason": "missing"
+              },
+              {
+                "characters": "Lò",
+                "reason": "missing"
+              },
+              {
+                "characters": "Lœ",
+                "reason": "missing"
+              },
+              {
+                "characters": "SĂ",
+                "reason": "missing"
+              },
+              {
+                "characters": "{j",
+                "reason": "missing"
+              },
+              {
+                "characters": "\"à",
+                "reason": "missing"
+              },
+              {
+                "characters": "śv",
+                "reason": "missing"
+              },
+              {
+                "characters": "Bv",
+                "reason": "missing"
+              },
+              {
+                "characters": "Y&",
+                "reason": "missing"
+              },
+              {
+                "characters": "á\"",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozNTg0fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozODQwfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "ĂŢ",
+                "reason": "missing"
+              },
+              {
+                "characters": "vē",
+                "reason": "missing"
+              },
+              {
+                "characters": "}*",
+                "reason": "missing"
+              },
+              {
+                "characters": "kę",
+                "reason": "missing"
+              },
+              {
+                "characters": "}7",
+                "reason": "missing"
+              },
+              {
+                "characters": "LČ",
+                "reason": "missing"
+              },
+              {
+                "characters": "âf",
+                "reason": "missing"
+              },
+              {
+                "characters": "éA",
+                "reason": "missing"
+              },
+              {
+                "characters": "‘o",
+                "reason": "missing"
+              },
+              {
+                "characters": "ó:",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0IjozODQwfQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0MDk2fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": ":d",
+                "reason": "missing"
+              },
+              {
+                "characters": "CÃ",
+                "reason": "missing"
+              },
+              {
+                "characters": "=J",
+                "reason": "missing"
+              },
+              {
+                "characters": ">)",
+                "reason": "missing"
+              },
+              {
+                "characters": "é?",
+                "reason": "missing"
+              },
+              {
+                "characters": "A‛",
+                "reason": "missing"
+              },
+              {
+                "characters": "øf",
+                "reason": "missing"
+              },
+              {
+                "characters": "ÛJ",
+                "reason": "missing"
+              },
+              {
+                "characters": "RŮ",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ò)",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0MDk2fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0MzUyfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "Cä",
+                "reason": "missing"
+              },
+              {
+                "characters": "ĻT",
+                "reason": "missing"
+              },
+              {
+                "characters": "Rù",
+                "reason": "missing"
+              },
+              {
+                "characters": "êz",
+                "reason": "missing"
+              },
+              {
+                "characters": "PŢ",
+                "reason": "missing"
+              },
+              {
+                "characters": "yś",
+                "reason": "missing"
+              },
+              {
+                "characters": "ĽA",
+                "reason": "missing"
+              },
+              {
+                "characters": "Dā",
+                "reason": "missing"
+              },
+              {
+                "characters": "Jè",
+                "reason": "missing"
+              },
+              {
+                "characters": "gò",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0MzUyfQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0NjA4fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "İp",
+                "reason": "missing"
+              },
+              {
+                "characters": "İŞ",
+                "reason": "missing"
+              },
+              {
+                "characters": "İş",
+                "reason": "missing"
+              },
+              {
+                "characters": "Tě",
+                "reason": "missing"
+              },
+              {
+                "characters": "ŋt",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ây",
+                "reason": "missing"
+              },
+              {
+                "characters": "ō;",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ő,",
+                "reason": "missing"
+              },
+              {
+                "characters": "Yā",
+                "reason": "missing"
+              },
+              {
+                "characters": "ŐZ",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0NjA4fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0ODY0fQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "vš",
+                "reason": "missing"
+              },
+              {
+                "characters": "Æc",
+                "reason": "missing"
+              },
+              {
+                "characters": "ÃS",
+                "reason": "missing"
+              },
+              {
+                "characters": "n*",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ře",
+                "reason": "missing"
+              },
+              {
+                "characters": "f‘",
+                "reason": "missing"
+              },
+              {
+                "characters": "ČČ",
+                "reason": "missing"
+              },
+              {
+                "characters": "cö",
+                "reason": "missing"
+              },
+              {
+                "characters": "ŒO",
+                "reason": "missing"
+              },
+              {
+                "characters": "tč",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo0ODY0fQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": false,
+            "nextCursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo1MTIwfQ==",
+            "scannedGlyphs": 0,
+            "scannedCandidates": 256,
+            "skippedMissing": 256,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "-ż",
+                "reason": "missing"
+              },
+              {
+                "characters": "/?",
+                "reason": "missing"
+              },
+              {
+                "characters": "/~",
+                "reason": "missing"
+              },
+              {
+                "characters": "1_",
+                "reason": "missing"
+              },
+              {
+                "characters": ".`",
+                "reason": "missing"
+              },
+              {
+                "characters": "2&",
+                "reason": "missing"
+              },
+              {
+                "characters": ".à",
+                "reason": "missing"
+              },
+              {
+                "characters": "2o",
+                "reason": "missing"
+              },
+              {
+                "characters": ".ä",
+                "reason": "missing"
+              },
+              {
+                "characters": "4”",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning_proof",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "languages": [
+              "en",
+              "fr"
+            ],
+            "limit": 10,
+            "cursor": "kp1.eyJtYXAiOiI5NGIxOTZkMjIzMDg0MGVlYTJiZDk5NzNkOTkzNjRiNCIsInNjb3BlIjpbImRvY18xMjJhYWEyMDQ3ZGQ0OTZlODQxMmY5MGY4NzI1ZmI5NSIsIjAwMjlFRjFELUEzQzItNEQ5MS1BQUMxLTQzREI3MUQ1RjYzRSIsIkxUUiIsWyJlbiIsImZyIl0sMTBdLCJwaGFzZSI6InBhaXJzIiwib2Zmc2V0Ijo1MTIwfQ=="
+          },
+          "values": {
+            "items": [],
+            "returned": 0,
+            "complete": true,
+            "nextCursor": null,
+            "scannedGlyphs": 0,
+            "scannedCandidates": 30,
+            "skippedMissing": 30,
+            "skippedAmbiguous": 0,
+            "skippedExamples": [
+              {
+                "characters": "’3",
+                "reason": "missing"
+              },
+              {
+                "characters": "ĩr",
+                "reason": "missing"
+              },
+              {
+                "characters": "”?",
+                "reason": "missing"
+              },
+              {
+                "characters": "ĭn",
+                "reason": "missing"
+              },
+              {
+                "characters": "ĭp",
+                "reason": "missing"
+              },
+              {
+                "characters": "ļ ",
+                "reason": "missing"
+              },
+              {
+                "characters": "ļā",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ľ ",
+                "reason": "missing"
+              },
+              {
+                "characters": "ľ ",
+                "reason": "missing"
+              },
+              {
+                "characters": "Ō]",
+                "reason": "missing"
+              }
+            ],
+            "supportedLanguages": [
+              "cs",
+              "da",
+              "de",
+              "en",
+              "es",
+              "et",
+              "fi",
+              "fr",
+              "hr",
+              "hu",
+              "it",
+              "lt",
+              "lv",
+              "nl",
+              "no",
+              "pl",
+              "pt",
+              "ro",
+              "se",
+              "sk",
+              "sl",
+              "sq",
+              "sv",
+              "tr"
+            ],
+            "provenance": {
+              "source": "https://github.com/andre-fuchs/kerning-pairs",
+              "revision": "b7a0e29ed81a8edee7b4b6cb1935ebf7d29ca611",
+              "license": "MIT",
+              "normalizedSha256": "6933e3a1834b3ef9918cddac93815f76424a75ce48388e5b041a8bd4ff6d096e",
+              "limitations": "Corpus-derived Basic Latin through Latin Extended A and quotes. Candidate pairs for inspection, not exhaustive language or shaping coverage."
+            },
+            "claim": "Pairs to inspect. Existing coverage is not a spacing judgement. Primary Unicode mapping only; ambiguous mappings are skipped. Proof strings are unshaped character pairs.",
+            "phase": "pairs",
+            "totalCandidates": 5150
+          }
+        }
+      ]
+    }
+  ]
+}

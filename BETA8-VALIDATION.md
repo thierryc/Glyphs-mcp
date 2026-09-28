@@ -1,7 +1,7 @@
 # Beta 8 development validation
 
 Source target: `2.0.0-beta.8`, desktop build **50**, branch `lit/v2-beta`.
-Status: **milestones 1–7 complete locally and installed. Milestone 8 source/native benchmarks and the integrated checkpoint browser are implemented. Combined release qualification and installation are in progress; remaining editor/client and signed-update gates are recorded separately. No Beta 8 publication.**
+Status: **all accumulated source is consolidated in `3cf956ab`; the combined release gate passes, and the matching desktop/MCP components are installed locally. A universal Developer ID signed candidate is built. Apple notarization awaits explicit upload authorization. Milestone 8 group-pair native UI Undo, new pair-card visual acceptance, and signed-update/migration gates remain open. No Beta 8 publication.**
 
 The [Beta 8 milestone plan](BETA8-MILESTONES.md) starts with removing the native
 script target-count ceiling. Every milestone begins with regression tests and
@@ -11,7 +11,7 @@ Milestone 5 has installed path, spacing and kerning qualification. Milestone 6 a
 and a Git-enabled font project template; consolidation moves to milestone 7 and
 exact typed kerning edits/language-aware discovery move to milestone 8.
 The [checkpoint contract](BETA8-GIT-CHECKPOINTS.md) is implemented; checkpointing
-remains disabled unless explicitly enabled for a project. Consolidation (milestone 7) is complete. Milestone 8 implementation and standalone native qualification are recorded in [its report](reports/beta8-milestone8/README.md); installed qualification is being resumed.
+remains disabled unless explicitly enabled for a project. Consolidation (milestone 7) is complete. Milestone 8 implementation and standalone native qualification are recorded in [its report](reports/beta8-milestone8/README.md); installed follow-up is recorded below.
 
 - Advanced `release.json`, app beta identity and both Xcode build configurations
   with the existing version helper, after a dry run.
@@ -220,4 +220,23 @@ The earlier blocked installer processes have exited. The existing transactional
 MCP-only installation completed successfully from `build/simple-native-scripting`,
 retaining port 9680, auto-start and both installed companion identities. This
 updates installed files; loaded bridge and editor qualification are recorded
-separately below. Complete release-gate and signing results are pending.
+in the [combined candidate report](reports/beta8-release-candidate/README.md).
+
+The complete local release gate passes 2,464 Python tests (two skips) and 219
+desktop tests. Both installed kerning formats pass all 36 lifecycle cases each.
+The actual Codex connector completed proof pagination and exact-edit
+preview/apply/Keep/Save checks. Glyph-pair native Undo/Redo passed; group-pair
+Undo through the ordinary Glyphs menu did not change the value, so that gate
+remains unresolved. The disposable values were restored and saved; all seven
+open documents are clean, including the five reopened documents from the prior
+session. Dactylotype was neither edited nor saved.
+
+The fresh verified desktop app is installed at `/Applications/Glyphs MCP.app`;
+the previous app is retained under `build/local-install-backups/beta8-20260928/`.
+The installed picker, empty comparison, glyph comparison, details sheet, restore
+confirmation/cancel and return to working selection passed a native UI smoke
+check. The universal release app at `dist/installer-app/Glyphs MCP.app` is
+Developer ID signed with a secure timestamp; 94 Mach-O binaries and 47 bundles
+verify. It is not notarized. Automatic approval review rejected Apple submission
+until the user explicitly authorizes uploading those artifacts to Apple.
+No Beta 8 release tag, public release or feed update was created.

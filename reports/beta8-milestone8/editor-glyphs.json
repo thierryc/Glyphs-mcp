@@ -1,0 +1,4635 @@
+{
+  "fixture": {
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+    "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+    "otherMaster": "6AC367B1-3E6B-4EFA-92B7-A38A0CD3AA11",
+    "familyName": "M8 Kerning qualification glyphs"
+  },
+  "calls": [
+    {
+      "tool": "list_documents",
+      "seconds": 0.04570420898380689,
+      "ok": true
+    },
+    {
+      "tool": "get_status",
+      "seconds": 0.034682458004681394,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.030677917005959898,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02492875000461936,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.1948324590048287,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.006702416983898729,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01963312501902692,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.017579250008566305,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02648116697673686,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09920141700422391,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010113625001395121,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008748042018851265,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020036458008689806,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05630795800243504,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.04441395800677128,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.008115333010209724,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.012142332998337224,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01982729200972244,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03589224998722784,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.0502826249867212,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010337332991184667,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02317112500895746,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.12302924998220988,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019737708003958687,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.06830320801236667,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.025877666979795322,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.030033874994842336,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012643499998375773,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08826233301078901,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.18497287499485537,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.042920875013805926,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.022640832990873605,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.05248979199677706,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.011159249988850206,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02794150001136586,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.044775917020160705,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0188660410058219,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016841917007695884,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.08086391698452644,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020125916984397918,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08766516600735486,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012120208004489541,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.033851167012471706,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.006224708020454273,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.0859516249911394,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009086707985261455,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03093429098953493,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016919124987907708,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.016864749981323257,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0177282499789726,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016918957990128547,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.030555125005776063,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.040868209005566314,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012051875004544854,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009355249989312142,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016004375007469207,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.08670875002280809,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01647866700659506,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10731612500967458,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.022074750013416633,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.017662250000284985,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014907708013197407,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06125941697973758,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04118404199834913,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.025068875023862347,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.008572082995669916,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023670208000112325,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021722958015743643,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.027074167010141537,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.037559499993221834,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020661457994719967,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010595416009891778,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.031169791996944696,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.08936191597604193,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021595750004053116,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.0714359580015298,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.022033916000509635,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019151874992530793,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014131208998151124,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.056973124999785796,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012309167010243982,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.038640832994133234,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.029792874993290752,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.014662458997918293,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.014913874998455867,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.033761250000679865,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03747941702022217,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05447087500942871,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01412854198133573,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023747125000227243,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.07721766698523425,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.017776291992049664,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.0939246249909047,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012042332993587479,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01541641601943411,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.013434957974823192,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01925345798372291,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0202474579855334,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.019041124993236735,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.033669708005618304,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.06527195801027119,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.18660816599731334,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03594116598833352,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08223945798818022,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.021996709023369476,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.04105566701036878,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012707957997918129,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.062075458001345396,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014703166001709178,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02153958397684619,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03823162498883903,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.041141416993923485,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.013084415986668319,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02112525000120513,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021637332974933088,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.025072624994209036,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.0967265409999527,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010019584005931392,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.025614290992962196,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.1029571249964647,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.024313333007739857,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09004887499031611,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03340512499562465,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.038372915994841605,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.007132375001674518,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09320095900329761,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0387832919950597,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02241875001345761,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.018167833011830226,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.037605874997098,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03716041601728648,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.024719334003748372,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05588383402209729,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.013041166996117681,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02025279199006036,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.12435454200021923,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.027421750011853874,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09747979199164547,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.015976249997038394,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03392849999363534,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.00537862500641495,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05452604201855138,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04292095798882656,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026750999997602776,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.006182417011586949,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.017072292015654966,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.012424958986230195,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.027763291989685968,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.10292599999229424,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.019463457982055843,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.017682624980807304,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.032971749984426424,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.09385287499753758,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03369729098631069,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.16800404101377353,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.017915582982823253,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.033120291016530246,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.023022999987006187,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01642508400254883,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01673254100023769,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03969120801775716,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.033986916998401284,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.15155808301642537,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009709625010145828,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.028414166998118162,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.07921933301258832,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014123957982519642,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.038387374981539324,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.005016750015784055,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08641983298002742,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012141499988501891,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05238879201351665,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.05985308301751502,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.010400250001112,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016811749985208735,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01496837500599213,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03091483301250264,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04250462498748675,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01185075001558289,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.017842750006821007,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11698670897749253,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020056334004038945,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10826400000951253,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01690891699399799,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03008999998564832,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014519832999212667,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07837895801640116,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.034432999993441626,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.034964790975209326,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.015892583993263543,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0143315420136787,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020844791986746714,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.024305083003127947,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.054741499974625185,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01998487501987256,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012731374998111278,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020524125022348017,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10335324998595752,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03315087500959635,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09851329101365991,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014924375020200387,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019959458004450426,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009688709018519148,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07229279101011343,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03820741601521149,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0168054589885287,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.007389459002297372,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019214959000237286,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01735999999800697,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03007808400434442,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.033217917021829635,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010259917005896568,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014073667000047863,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02542449999600649,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.1766472919844091,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016998040984617546,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.0931678750202991,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.017149167018942535,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.09810195799218491,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.06500116700772196,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.029473415983375162,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04242495898506604,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04213404099573381,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09173141600331292,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.028821124986279756,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.15672370899119414,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014526916987961158,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.06088474998250604,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.06328366699744947,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09100749998469837,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01100920801400207,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03236220800317824,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021333749988116324,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.018898499984061345,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.029447416978655383,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0258470410190057,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.029306584008736536,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.10955391699098982,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014753541996469721,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01989112500450574,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11281454199342988,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.028551499999593943,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.0672497920168098,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012846291007008404,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018279917014297098,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008645334019092843,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06957687498652376,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05342954202205874,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026332834007916972,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.009543708001729101,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02588954198290594,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.047095707996049896,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05604799999855459,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09365220900508575,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01253837501280941,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026121792005142197,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.12536000000545755,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.032601249986328185,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.11698237500968389,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.06419070798438042,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.022227292007301003,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008730166009627283,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.050401250016875565,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04966791599872522,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03203629201743752,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.023191416985355318,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026407166995340958,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03814337501535192,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02895129201351665,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09921204202692024,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009387625003000721,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.04352400000789203,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.1096208340022713,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02934212499530986,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10274104101699777,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03847879098611884,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.035930249985540286,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014700083003845066,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07717041700379923,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03654083298170008,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.044025750015862286,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.011120708979433402,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.014421625004615635,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018282375007402152,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05612216697772965,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.03877308301161975,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.007172582991188392,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021359374979510903,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11386179202236235,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03306725001311861,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10570625000400469,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.015378041978692636,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020329666003817692,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009629832988139242,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.1619069589942228,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.030417790985666215,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018687374977162108,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.01478108300943859,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019921917002648115,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02216049999697134,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.026994499989086762,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04907941599958576,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008217416994739324,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.013018041994655505,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02516783299506642,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11797983400174417,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.025193374982336536,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.18907591598690487,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.015561124979285523,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02325949998339638,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01295279202167876,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07233799999812618,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03480549997766502,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018850249995011836,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.02701245798380114,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.017343792016617954,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018396500003291294,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.025296332983998582,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06281704097636975,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010209083993686363,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021559207991231233,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10846529202535748,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020578291994752362,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08509537499048747,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.023006040981272236,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.022331582993501797,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011273874988546595,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.015813374979188666,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02367687498917803,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.031460250000236556,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.028848999994806945,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02642220800044015,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.10463779198471457,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0350495410093572,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09791712500737049,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02744279202306643,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019748916005482897,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.00792804200318642,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08101925000664778,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011659374984446913,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008578125009080395,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03541900002164766,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02271074999589473,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.018546415987657383,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020419249980477616,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021585957991192117,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01790845798677765,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.03456416699918918,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.016262250021100044,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03083500001230277,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10095220798393711,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018942249997053295,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.07573591702384874,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.013933208014350384,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023940667015267536,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010721832979470491,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08818916699965484,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.032086499995784834,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.034803417016519234,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0199159579933621,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.01091704101418145,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018883333017583936,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.015496708016144112,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.024301291996380314,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.051626665983349085,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01153762498870492,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0168070420040749,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11027499998454005,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02014541599783115,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08720650000032037,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010394292010460049,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02509404200827703,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010280499991495162,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07058879101532511,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010498874995391816,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05441454201354645,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.030073833011556417,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.02554141599102877,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02077166599337943,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01584904099581763,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01980566600104794,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04338295798515901,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010301707981852815,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.024590291985077783,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10516083400580101,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016041541995946318,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.07650462500168942,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.10752345898072235,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012633208010811359,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008828457997879013,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.086056208005175,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02244445899850689,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.14187566700275056,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04071758399368264,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.14331174999824725,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04144429101143032,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.030504833004670218,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0170042910031043,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.0892161249939818,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01037908298894763,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.026236666017211974,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.028567165980348364,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.0183041249983944,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02686095901299268,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.025839916022960097,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.038497083995025605,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.03791924999677576,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011380332987755537,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021217499976046383,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.1518768339883536,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016648874996462837,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10285079199820757,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.022747500013792887,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01586495799710974,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.00462554200203158,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.10984625000855885,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.08079487501527183,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026273374998709187,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.006317708001006395,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01885945798130706,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023366749985143542,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.025437042000703514,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.055477374990005046,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.07792104198597372,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026352833985583857,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10853854101151228,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01876383399940096,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09437316699768417,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.015184584015514702,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03156770899659023,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012864582997281104,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05915749998530373,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010022208007285371,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.036006499984068796,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02486516599310562,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.02611945799435489,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.016321916016750038,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019866667018504813,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02313250000588596,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.03464483402785845,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.029377833008766174,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020842957979766652,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10927425001864322,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02358483400894329,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09277437499258667,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0189327500120271,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01449508298537694,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012867000012192875,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.018331167026190087,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014663042005850002,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.00933850000728853,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03188624998438172,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02868025001953356,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.12177262498880737,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.015891707997070625,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0276000410085544,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08140854199882597,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02289254099014215,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02782470898819156,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011992666986770928,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07434691701200791,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014763167011551559,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.052795999974478036,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02664420797373168,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.007406166987493634,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018312083004275337,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.028310833004070446,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.024172665987862274,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.03807958398829214,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.014410208008484915,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01566933299181983,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.025581541995052248,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.1182689169945661,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02083879100973718,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.09193354198941961,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03487016697181389,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026391124993097037,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0076630410039797425,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09775437499047257,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04321999999228865,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02933987500728108,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.013349082990316674,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020286790997488424,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01841304198023863,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.031713917007436976,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05657120799878612,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009850500005995855,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.06276512501062825,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.22029562498209998,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03002516698325053,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.11061712499940768,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020685458002844825,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.022468916984507814,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008467250008834526,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07515479100402445,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.13644529198063537,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01918204198591411,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.014023208990693092,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03686412499519065,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03717358299763873,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020950250007444993,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05047341698082164,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.023759667004924268,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.017465332988649607,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.018183042004238814,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03887604098417796,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.12398004200076684,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.043826165987411514,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.15827016599359922,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020616790978237987,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.04013558299629949,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008201624994399026,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07434125000145286,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.017748459009453654,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020997167011955753,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03385420801350847,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02969983298680745,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.025727667001774535,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02158866700483486,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023904417001176625,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.029417541984003037,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06790837500011548,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008296166022773832,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01940120800281875,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.16022362498915754,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.07116616700659506,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10486345901153982,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05523458300740458,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020014792011352256,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.017284874978940934,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.11454074998619035,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02089666700339876,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009637332987040281,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03527387499343604,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023916375008411705,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.015157542016822845,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01695341701270081,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.0137632499972824,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0340753750060685,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.049146040983032435,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.019090416986728087,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026051374996313825,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.14225933302077465,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02308799998718314,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.11497666701325215,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.021616291982354596,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.022630666004261002,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012533417000668123,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04977875002077781,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04761408400372602,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03196358299464919,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.01232158302445896,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.013585583015810698,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.015441750001627952,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.024484708003001288,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04851208298350684,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011140165996039286,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02902300001005642,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.025958457990782335,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11641566597972997,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02326866699149832,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08846216602250934,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.024606082995887846,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012938290979946032,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.10922770801698789,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011265042005106807,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011585416999878362,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.043445332994451746,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03320095798699185,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.1041057090042159,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012957166007254273,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01858112498302944,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.17821891600033268,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02401929098414257,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.012546958983875811,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009676499990746379,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06855495797935873,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.016041541995946318,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0449354579905048,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02833291600109078,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.013768208009423688,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.012711833987850696,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019245917006628588,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02177354198647663,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.05335479200584814,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.013691125001059845,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02619829200557433,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.14220545897842385,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.028117084002587944,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.11549204200855456,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02193020799313672,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026684166979976,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.007462082983693108,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09048833299311809,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02807804199983366,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03074420799384825,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.017657791991950944,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02221341701806523,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.027668666996760294,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.023175124981207773,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.042405375017551705,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02301729199825786,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.018053167004836723,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.027299000008497387,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.14632929099025205,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.030872291012201458,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.14684649999253452,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01148304101661779,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03372466698056087,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.008172792004188523,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06489858400891535,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05895962502108887,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.024639292008941993,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.017994708992773667,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.028963541000848636,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018270708998898044,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0472597919870168,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04058004199760035,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02115012501599267,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01276495901402086,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.016353666986105964,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02271070799906738,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.11503183300374076,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.020254167000530288,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.0909705420199316,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.016585500008659437,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04237304098205641,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.026947334001306444,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01503470799070783,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.007936125010019168,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.07062166702235118,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.07372850002138875,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.22643504198640585,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.028608292021090165,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.096548207977321,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.019444083998678252,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.04550383301102556,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.00573637499473989,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.09949766600038856,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01298266599769704,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02884920799988322,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.022482208005385473,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.009997625020332634,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.014088458992773667,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.015501165995374322,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03175570801249705,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04950004199054092,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02038383300532587,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.027478542004246265,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.14362587497453205,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.026224875007756054,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.10472487498191185,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01894933299627155,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.028676665999228135,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0123797080013901,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.07997550000436604,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.06438850000267848,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01847141599864699,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.016214875009609386,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018303709017345682,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01880658298614435,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.027621750021353364,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06580508398474194,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009794832993065938,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01122458401368931,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.023195708985440433,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.1617484169837553,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.07033108299947344,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.14191862498410046,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02169054199475795,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02186537499073893,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010789374995511025,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08488212499651127,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.036032374977367,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.05301233401405625,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.014893459010636434,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01607320798211731,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.030743332987185568,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.033627958997385576,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.04572466597892344,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009060208016308025,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009057124989340082,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01805520898778923,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.019151165994117036,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.13201062500593252,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018753957992885262,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.08060841698898003,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.026700249989517033,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.013333292008610442,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04914666700642556,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009661166986916214,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.020819416997255757,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0463691659970209,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03542937501333654,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08545395798864774,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012709542002994567,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03000416699796915,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.11988562499755062,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.026381584000773728,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.02027629199437797,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.011035208008252084,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.0752214580134023,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.021231209015240893,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03376416701939888,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01876220799749717,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.014292750012828037,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018532584013883024,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.021480875002453104,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02291820800746791,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.043839249992743134,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.054263792000710964,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.03125,
+      "ok": true
+    },
+    {
+      "tool": "save_document",
+      "seconds": 0.10873725000419654,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.0779425409855321,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.05579429099452682,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.012979958002688363,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.01442629101802595,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.042355708981631324,
+      "ok": true
+    },
+    {
+      "tool": "start_edit_workflow",
+      "seconds": 0.05829704200732522,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.03902150000794791,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.035275708010885864,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.006151791982119903,
+      "ok": true
+    },
+    {
+      "tool": "list_documents",
+      "seconds": 0.014078000007430092,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.036202500021317974,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010747082997113466,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.2351147919835057,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009791749995201826,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.01959383301436901,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.010542333999183029,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.06663812501938082,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.009476125007495284,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.0353063749789726,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.02065666698035784,
+      "ok": true
+    },
+    {
+      "tool": "respond_edit_workflow",
+      "seconds": 0.08425791602348909,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.016327833000104874,
+      "ok": true
+    },
+    {
+      "tool": "get_edit_workflow",
+      "seconds": 0.04365566701744683,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.022685042000375688,
+      "ok": true
+    },
+    {
+      "tool": "read_entities",
+      "seconds": 0.018278625007951632,
+      "ok": true
+    },
+    {
+      "tool": "list_documents",
+      "seconds": 0.023873500002082437,
+      "ok": true
+    }
+  ],
+  "cases": [
+    {
+      "direction": "LTR",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": -72.5,
+      "preparationSeconds": 0.4255416249798145,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": 0,
+      "preparationSeconds": 0.19608595801400952,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": null,
+      "preparationSeconds": 0.20163829199736938,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "@MMK_L_right_A",
+      "right": "V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.23191266600042582,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "@MMK_L_right_A",
+      "right": "V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.19468666601460427,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "@MMK_L_right_A",
+      "right": "V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.206730208999943,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "A",
+      "right": "@MMK_R_left_V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.22841529198922217,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "A",
+      "right": "@MMK_R_left_V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.21546345800743438,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "A",
+      "right": "@MMK_R_left_V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.19489708301262,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "@MMK_L_right_A",
+      "right": "@MMK_R_left_V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.22717104200273752,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "@MMK_L_right_A",
+      "right": "@MMK_R_left_V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.2150406249857042,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "LTR",
+      "left": "@MMK_L_right_A",
+      "right": "@MMK_R_left_V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.27314416598528624,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": -72.5,
+      "preparationSeconds": 0.1822152910172008,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": 0,
+      "preparationSeconds": 0.28332633298123255,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": null,
+      "preparationSeconds": 0.2435781250242144,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "@MMK_R_left_A",
+      "right": "V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.2233800409885589,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "@MMK_R_left_A",
+      "right": "V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.3069626660144422,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "@MMK_R_left_A",
+      "right": "V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.227708167018136,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "A",
+      "right": "@MMK_L_right_V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.19200979100423865,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "A",
+      "right": "@MMK_L_right_V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.20005616699927486,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "A",
+      "right": "@MMK_L_right_V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.29064125000149943,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "@MMK_R_left_A",
+      "right": "@MMK_L_right_V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.22989908402087167,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "@MMK_R_left_A",
+      "right": "@MMK_L_right_V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.2122824169928208,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "RTL",
+      "left": "@MMK_R_left_A",
+      "right": "@MMK_L_right_V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.21213025000179186,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": -72.5,
+      "preparationSeconds": 0.23298687499482185,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": 0,
+      "preparationSeconds": 0.2332717500103172,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "A",
+      "right": "V",
+      "before": -10.125,
+      "after": null,
+      "preparationSeconds": 0.28171758400276303,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "@MMK_T_bottom_A",
+      "right": "V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.2677722919906955,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "@MMK_T_bottom_A",
+      "right": "V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.24316395798814483,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "@MMK_T_bottom_A",
+      "right": "V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.304284625017317,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "A",
+      "right": "@MMK_B_top_V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.24108400000841357,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "A",
+      "right": "@MMK_B_top_V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.26137054100399837,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "A",
+      "right": "@MMK_B_top_V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.22616925000329502,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "@MMK_T_bottom_A",
+      "right": "@MMK_B_top_V",
+      "before": null,
+      "after": -72.5,
+      "preparationSeconds": 0.22887774999253452,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "@MMK_T_bottom_A",
+      "right": "@MMK_B_top_V",
+      "before": null,
+      "after": 0,
+      "preparationSeconds": 0.267581042018719,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    },
+    {
+      "direction": "vertical",
+      "left": "@MMK_T_bottom_A",
+      "right": "@MMK_B_top_V",
+      "before": 0,
+      "after": null,
+      "preparationSeconds": 0.2496827499999199,
+      "duplicateApply": true,
+      "selectiveRecovery": true,
+      "actualEditorSave": true
+    }
+  ],
+  "client": "fresh local FastMCP HTTP connection; not Codex connector latency",
+  "document": {
+    "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+    "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+    "dirty": false,
+    "generation": 0,
+    "isCurrent": true,
+    "familyName": "M8 Kerning qualification glyphs"
+  },
+  "status": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.8",
+      "channel": "beta",
+      "betaNumber": 8,
+      "installerBuild": 50
+    },
+    "runtimeId": "2.0.0-beta.8+40e3344a8968",
+    "codeHash": "sha256:40e3344a89687224d514fb34d38df6018c60c9e38710efe74064d51b48326752",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant",
+      "checkpoint_restore",
+      "python_script",
+      "outline_edit",
+      "native_action",
+      "dimensions_edit",
+      "kerning_edit",
+      "feature_compile",
+      "font_export"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1",
+      "layers.list.v1",
+      "kerning.groups.v1",
+      "kerning.pairs.v1",
+      "master.properties.v1",
+      "paths.list.v1",
+      "path.geometry.v1",
+      "outline.background.read.v1",
+      "features.read.v1",
+      "instances.read.v1",
+      "master.dimensions.read.v1",
+      "kerning.proof.v1"
+    ],
+    "writeCapabilities": [
+      "outline.edit.v1",
+      "outline.remove-node.v1",
+      "outline.background.edit.v1",
+      "native.action.v1",
+      "master.dimensions.edit.v1",
+      "kerning.edit.exact.v1",
+      "font.checkpoint-restore.v1"
+    ],
+    "nativeActions": [
+      "add_extremes",
+      "add_missing_anchors",
+      "align_components",
+      "cleanup_paths",
+      "connect_open_paths",
+      "correct_path_direction",
+      "decompose_components",
+      "decompose_corners",
+      "make_components",
+      "reinterpolate",
+      "remove_overlap",
+      "round_coordinates",
+      "set_glyph_color",
+      "swap_foreground_background",
+      "update_automatic_feature_block",
+      "update_features",
+      "update_glyph_info",
+      "update_metrics"
+    ],
+    "jobCapabilities": [
+      "feature.compile.live.v1",
+      "feature.compile.saved.v1",
+      "font.export.static.v1",
+      "font.export.variable.v1",
+      "font.export.web.v1",
+      "font.verify.shaping.v1",
+      "font.verify.tables.v1",
+      "script.native.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "accept_job",
+      "discard_job",
+      "save_document",
+      "start_edit_workflow",
+      "get_edit_workflow",
+      "respond_edit_workflow"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.8",
+        "channel": "beta",
+        "betaNumber": 8,
+        "installerBuild": 50
+      },
+      "runtimeId": "2.0.0-beta.8+c853dee2cd1b",
+      "codeHash": "sha256:c853dee2cd1bbf400ab03ba06ff2312a9bffd9b820aea92835593ee79421a1c7",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1",
+        "paths.list.v1",
+        "path.geometry.v1",
+        "outline.background.read.v1",
+        "features.read.v1",
+        "instances.read.v1",
+        "master.dimensions.read.v1",
+        "kerning.proof.v1"
+      ],
+      "writeCapabilities": [
+        "outline.edit.v1",
+        "outline.background.edit.v1",
+        "outline.remove-node.v1",
+        "master.dimensions.edit.v1",
+        "native.action.v1",
+        "font.checkpoint-restore.v1",
+        "kerning.edit.exact.v1"
+      ],
+      "nativeActions": [
+        "add_extremes",
+        "add_missing_anchors",
+        "align_components",
+        "cleanup_paths",
+        "connect_open_paths",
+        "correct_path_direction",
+        "decompose_components",
+        "decompose_corners",
+        "make_components",
+        "reinterpolate",
+        "remove_overlap",
+        "round_coordinates",
+        "set_glyph_color",
+        "swap_foreground_background",
+        "update_automatic_feature_block",
+        "update_features",
+        "update_glyph_info",
+        "update_metrics"
+      ],
+      "jobCapabilities": [
+        "feature.compile.live.v1",
+        "script.native.v1",
+        "edit.prepare.native.v1"
+      ],
+      "scriptPreparationVersion": 2,
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": [],
+      "jobCapabilities": [
+        "feature.compile.saved.v1",
+        "font.export.static.v1",
+        "font.export.variable.v1",
+        "font.export.web.v1",
+        "font.verify.shaping.v1",
+        "font.verify.tables.v1"
+      ]
+    },
+    "controlProtocol": 1,
+    "workflowCapabilities": [
+      "edit.workflow.v1",
+      "font.checkpoints.v1"
+    ],
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_4d45f9c249a147a9b84690156e270408",
+          "document": "Dactylotype",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1790602547.635148,
+          "finishedAt": 1790602547.635181,
+          "completed": 9,
+          "total": 9,
+          "message": null
+        },
+        {
+          "jobId": "job_6d260d4e530949ec89f3bee5232b5831",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "accepted",
+          "startedAt": 1790602343.069375,
+          "finishedAt": 1790602343.069396,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_cb40622e4c5941b38501e2aa8daf9d39",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "completed",
+          "startedAt": 1790599526.487915,
+          "finishedAt": 1790599526.48793,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_6de0d49779554f29b23e662737676a9a",
+          "document": "Dactylotype",
+          "kind": "python_script",
+          "phase": "accepted",
+          "startedAt": 1790599000.930567,
+          "finishedAt": 1790599000.930594,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        {
+          "jobId": "job_ad77040e7f374e95b9151a0a1ccbd50a",
+          "document": "Checkpoint qualification glyphs",
+          "kind": "font_export",
+          "phase": "accepted",
+          "startedAt": 1790598404.002562,
+          "finishedAt": 1790598404.002579,
+          "completed": null,
+          "total": null,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+  },
+  "workflow": {
+    "id": "edit_a8e06e44449040629ec321e9214746a8",
+    "revision": 30,
+    "document": {
+      "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "M8 Kerning qualification glyphs"
+    },
+    "mode": "preview",
+    "state": "saved",
+    "jobId": "job_5751ef62a83f4b368a2deb267127993d",
+    "blockerId": null,
+    "blockingWorkflowId": null,
+    "job": {
+      "id": "job_5751ef62a83f4b368a2deb267127993d",
+      "checkpointEnabled": false,
+      "status": "accepted",
+      "summary": "Exact kerning edits for 1 pairs",
+      "resultKind": "mutation",
+      "changeCount": 1,
+      "sample": [
+        {
+          "after": -64.25,
+          "before": -63.125,
+          "direction": "LTR",
+          "kind": "kerning",
+          "left": "A",
+          "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+          "right": "V",
+          "targetGuard": {
+            "left": {
+              "glyph": "A",
+              "groups": [
+                "left_A",
+                "right_A",
+                "top_A",
+                "bottom_A"
+              ],
+              "id": "1349343360"
+            },
+            "right": {
+              "glyph": "V",
+              "groups": [
+                "left_V",
+                "right_V",
+                "top_V",
+                "bottom_V"
+              ],
+              "id": "1349350080"
+            }
+          }
+        }
+      ],
+      "report": {
+        "changedCount": 1,
+        "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+        "noChangeCount": 0,
+        "pairCount": 1,
+        "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_5751ef62a83f4b368a2deb267127993d/report.json",
+        "sample": [
+          {
+            "after": -64.25,
+            "before": -63.125,
+            "direction": "LTR",
+            "left": "A",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "op": "set",
+            "right": "V",
+            "status": "changed"
+          }
+        ],
+        "targetCount": 1,
+        "unavailableCount": 0
+      },
+      "manifest": null,
+      "error": null,
+      "outcome": null,
+      "receipt": {
+        "saveId": "job_5751ef62a83f4b368a2deb267127993d",
+        "jobId": "job_5751ef62a83f4b368a2deb267127993d",
+        "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "saveMode": "save",
+        "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "dirtyBefore": true,
+        "dirtyAfter": false,
+        "nativeSaveSucceeded": true,
+        "writeAttempted": true,
+        "sourceHashBefore": "sha256:070291c42a6159cc231bab9977392d22fca3c3682f15bf24dda4285c71263ebc",
+        "sourceHashAfter": "sha256:e622b2f0bbcc0a98fd77f654a1e4e72dcf378ce5a1f0d774c46c1ab0a9008aad",
+        "sourceChangedSinceJob": false,
+        "originalSourceHashAfter": "sha256:e622b2f0bbcc0a98fd77f654a1e4e72dcf378ce5a1f0d774c46c1ab0a9008aad",
+        "originalSourceUnchanged": null,
+        "verification": "native_and_source_hash",
+        "savedAt": 1790608075.477798
+      },
+      "bridgeOperation": {
+        "jobId": "job_5751ef62a83f4b368a2deb267127993d",
+        "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "documentAfter": null,
+        "status": "accepted",
+        "completedChanges": 1,
+        "longestPreparationChunk": null,
+        "totalChanges": 1,
+        "error": null,
+        "nativeSave": {
+          "writeAttempted": true,
+          "nativeSaveSucceeded": true,
+          "nativeError": null,
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+          "dirty": false,
+          "generation": 0
+        },
+        "scriptResult": null,
+        "receipt": {
+          "saveId": "job_5751ef62a83f4b368a2deb267127993d",
+          "jobId": "job_5751ef62a83f4b368a2deb267127993d",
+          "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+          "saveMode": "save",
+          "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+          "dirtyBefore": true,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": "sha256:070291c42a6159cc231bab9977392d22fca3c3682f15bf24dda4285c71263ebc",
+          "sourceHashAfter": "sha256:e622b2f0bbcc0a98fd77f654a1e4e72dcf378ce5a1f0d774c46c1ab0a9008aad",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": "sha256:e622b2f0bbcc0a98fd77f654a1e4e72dcf378ce5a1f0d774c46c1ab0a9008aad",
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790608075.477798
+        },
+        "message": null
+      },
+      "activity": {
+        "jobId": "job_5751ef62a83f4b368a2deb267127993d",
+        "document": "M8 Kerning qualification glyphs",
+        "kind": "kerning_edit",
+        "phase": "accepted",
+        "startedAt": 1790608075.483996,
+        "finishedAt": 1790608075.484044,
+        "completed": 1,
+        "total": 1,
+        "message": null
+      },
+      "message": null
+    },
+    "error": null,
+    "receipt": {
+      "saveId": "job_5751ef62a83f4b368a2deb267127993d",
+      "jobId": "job_5751ef62a83f4b368a2deb267127993d",
+      "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+      "saveMode": "save",
+      "previousPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+      "dirtyBefore": true,
+      "dirtyAfter": false,
+      "nativeSaveSucceeded": true,
+      "writeAttempted": true,
+      "sourceHashBefore": "sha256:070291c42a6159cc231bab9977392d22fca3c3682f15bf24dda4285c71263ebc",
+      "sourceHashAfter": "sha256:e622b2f0bbcc0a98fd77f654a1e4e72dcf378ce5a1f0d774c46c1ab0a9008aad",
+      "sourceChangedSinceJob": false,
+      "originalSourceHashAfter": "sha256:e622b2f0bbcc0a98fd77f654a1e4e72dcf378ce5a1f0d774c46c1ab0a9008aad",
+      "originalSourceUnchanged": null,
+      "verification": "native_and_source_hash",
+      "savedAt": 1790608075.477798
+    },
+    "reviewInConversation": false,
+    "savedVersion": null,
+    "scope": {
+      "kind": "kerning_edit",
+      "glyphs": [],
+      "glyphCount": 0,
+      "masters": null,
+      "targets": [
+        {
+          "op": "set",
+          "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+          "direction": "LTR",
+          "left": {
+            "kind": "glyph",
+            "name": "A"
+          },
+          "right": {
+            "kind": "glyph",
+            "name": "V"
+          },
+          "value": -64.25
+        }
+      ]
+    },
+    "autoKeep": {
+      "enabled": false,
+      "delaySeconds": 30,
+      "action": null
+    },
+    "responseOrigin": "explicit_action",
+    "requestFingerprint": "sha256:be4cc92b0e8dbc8622cef546699443501d6f2dbb300627ecb3f42a9b2a3c7a23",
+    "documentStateConfirmed": true,
+    "summary": "Exact kerning edits for 1 pairs",
+    "actions": [],
+    "message": "Font saved.",
+    "text": "M8 Kerning qualification glyphs \u2014 /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nFont saved.\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\nA / V \u00b7 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E \u00b7 LTR: -63.125 \u2192 -64.25",
+    "poll": false,
+    "modelContext": "{\"workflow_id\":\"edit_a8e06e44449040629ec321e9214746a8\",\"expected_revision\":30,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"saved\",\"poll\":false,\"requestFingerprint\":\"sha256:be4cc92b0e8dbc8622cef546699443501d6f2dbb300627ecb3f42a9b2a3c7a23\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+  },
+  "keepNextTask": {
+    "kept": "edit_2311bdc3746643a69342dd174785264b",
+    "waiting": "edit_a8e06e44449040629ec321e9214746a8",
+    "dirtyPreserved": true,
+    "reconnected": true,
+    "saved": true
+  },
+  "documentsAfter": [
+    {
+      "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "M8 Kerning qualification glyphs"
+    },
+    {
+      "id": "doc_9bf9b8eb4dc643f98b50a5e95cee7ee4",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphspackage/Kerning.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "M8 Kerning qualification glyphspackage"
+    }
+  ],
+  "passed": true
+}

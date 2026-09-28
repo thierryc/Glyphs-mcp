@@ -1,0 +1,1199 @@
+{
+  "date": "2026-09-28T15:26:29.274Z",
+  "sourceCommit": "3cf956ab",
+  "document": "build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+  "glyphPair": {
+    "preview": {
+      "id": "edit_74bc3b4111694e6d9a0cd16c2f7262bc",
+      "revision": 6,
+      "document": {
+        "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "dirty": false,
+        "generation": 5,
+        "isCurrent": true,
+        "familyName": "M8 Kerning qualification glyphs"
+      },
+      "mode": "preview",
+      "state": "ready",
+      "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+        "checkpointEnabled": false,
+        "status": "ready",
+        "summary": "Exact kerning edits for 1 pairs",
+        "resultKind": "mutation",
+        "changeCount": 1,
+        "sample": [
+          {
+            "after": -71.375,
+            "before": -64.25,
+            "direction": "LTR",
+            "kind": "kerning",
+            "left": "A",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "right": "V",
+            "targetGuard": {
+              "left": {
+                "glyph": "A",
+                "groups": [
+                  "left_A",
+                  "right_A",
+                  "top_A",
+                  "bottom_A"
+                ],
+                "id": "1349343360"
+              },
+              "right": {
+                "glyph": "V",
+                "groups": [
+                  "left_V",
+                  "right_V",
+                  "top_V",
+                  "bottom_V"
+                ],
+                "id": "1349350080"
+              }
+            }
+          }
+        ],
+        "report": {
+          "changedCount": 1,
+          "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+          "noChangeCount": 0,
+          "pairCount": 1,
+          "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_8368bd3d7cc14435a4ed27ca86fb6a57/report.json",
+          "sample": [
+            {
+              "after": -71.375,
+              "before": -64.25,
+              "direction": "LTR",
+              "left": "A",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "op": "set",
+              "right": "V",
+              "status": "changed"
+            }
+          ],
+          "targetCount": 1,
+          "unavailableCount": 0
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": null,
+        "activity": {
+          "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+          "document": "M8 Kerning qualification glyphs",
+          "kind": "kerning_edit",
+          "phase": "ready",
+          "startedAt": 1790608608.207924,
+          "finishedAt": 1790608608.207981,
+          "completed": null,
+          "total": null,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "kerning_edit",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": [
+          {
+            "op": "set",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": {
+              "kind": "glyph",
+              "name": "A"
+            },
+            "right": {
+              "kind": "glyph",
+              "name": "V"
+            },
+            "value": -71.375
+          }
+        ]
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": null,
+      "requestFingerprint": "sha256:422889ae107b97728c4fa9ee089ed84081796ec080bff10fae0af910763da056",
+      "documentStateConfirmed": false,
+      "summary": "Exact kerning edits for 1 pairs",
+      "actions": [
+        {
+          "action": "apply",
+          "label": "Apply changes",
+          "token": "91290d8fc1f230a3b8d47a1c248f3b7da55aa95e7849c4d6cea1420d27192644",
+          "requiresDestination": false
+        },
+        {
+          "action": "discard",
+          "label": "Discard preview",
+          "token": "db76e690a4af7b143a34b42d551d923d4f8ac1768e690b284d8ccefd84019167",
+          "requiresDestination": false
+        }
+      ],
+      "message": "Changes ready to review.\nReview the preview, then apply or discard it.",
+      "text": "M8 Kerning qualification glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nChanges ready to review.\nReview the preview, then apply or discard it.\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\nA / V · 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E · LTR: -64.25 → -71.375\nAvailable choices: Apply changes; Discard preview. You can reply in ordinary language.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_74bc3b4111694e6d9a0cd16c2f7262bc\",\"expected_revision\":6,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"ready\",\"poll\":false,\"requestFingerprint\":\"sha256:422889ae107b97728c4fa9ee089ed84081796ec080bff10fae0af910763da056\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"apply\",\"label\":\"Apply changes\",\"action_token\":\"91290d8fc1f230a3b8d47a1c248f3b7da55aa95e7849c4d6cea1420d27192644\",\"requiresDestination\":false},{\"action\":\"discard\",\"label\":\"Discard preview\",\"action_token\":\"db76e690a4af7b143a34b42d551d923d4f8ac1768e690b284d8ccefd84019167\",\"requiresDestination\":false}]}"
+    },
+    "applied": {
+      "id": "edit_74bc3b4111694e6d9a0cd16c2f7262bc",
+      "revision": 13,
+      "document": {
+        "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "dirty": true,
+        "generation": 6,
+        "isCurrent": true,
+        "familyName": "M8 Kerning qualification glyphs"
+      },
+      "mode": "preview",
+      "state": "applied",
+      "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+        "checkpointEnabled": false,
+        "status": "applied",
+        "summary": "Exact kerning edits for 1 pairs",
+        "resultKind": "mutation",
+        "changeCount": 1,
+        "sample": [
+          {
+            "after": -71.375,
+            "before": -64.25,
+            "direction": "LTR",
+            "kind": "kerning",
+            "left": "A",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "right": "V",
+            "targetGuard": {
+              "left": {
+                "glyph": "A",
+                "groups": [
+                  "left_A",
+                  "right_A",
+                  "top_A",
+                  "bottom_A"
+                ],
+                "id": "1349343360"
+              },
+              "right": {
+                "glyph": "V",
+                "groups": [
+                  "left_V",
+                  "right_V",
+                  "top_V",
+                  "bottom_V"
+                ],
+                "id": "1349350080"
+              }
+            }
+          }
+        ],
+        "report": {
+          "changedCount": 1,
+          "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+          "noChangeCount": 0,
+          "pairCount": 1,
+          "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_8368bd3d7cc14435a4ed27ca86fb6a57/report.json",
+          "sample": [
+            {
+              "after": -71.375,
+              "before": -64.25,
+              "direction": "LTR",
+              "left": "A",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "op": "set",
+              "right": "V",
+              "status": "changed"
+            }
+          ],
+          "targetCount": 1,
+          "unavailableCount": 0
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+          "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+          "documentAfter": null,
+          "status": "applied",
+          "completedChanges": 1,
+          "longestPreparationChunk": null,
+          "totalChanges": 1,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": null,
+          "receipt": null,
+          "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+        },
+        "activity": {
+          "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+          "document": "M8 Kerning qualification glyphs",
+          "kind": "kerning_edit",
+          "phase": "applied",
+          "startedAt": 1790608621.753546,
+          "finishedAt": 1790608621.7535732,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "kerning_edit",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": [
+          {
+            "op": "set",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": {
+              "kind": "glyph",
+              "name": "A"
+            },
+            "right": {
+              "kind": "glyph",
+              "name": "V"
+            },
+            "value": -71.375
+          }
+        ]
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:422889ae107b97728c4fa9ee089ed84081796ec080bff10fae0af910763da056",
+      "documentStateConfirmed": true,
+      "summary": "Exact kerning edits for 1 pairs",
+      "actions": [
+        {
+          "action": "finish_edit",
+          "label": "Keep changes without saving",
+          "token": "e36f0f9613ff7fc325912ba250194397aa135ccdc8f1364b633596420cdb59b0",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result",
+          "label": "Save font",
+          "token": "14a321bf1099ad14f9bb0f632dff18d940908a03f0b3843f5bc9cf0f05b00f5f",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result_as",
+          "label": "Save As…",
+          "token": "e9f5851fc03bb31fa3067bbbd97a3eee2b91721027238d3c6cb80a15548fcb24",
+          "requiresDestination": true
+        },
+        {
+          "action": "discard",
+          "label": "Undo these changes",
+          "token": "522f10a9ad901eb10ea3a766c06e2f498c1a66ae9303bb3f7d7a702cd0ea5981",
+          "requiresDestination": false
+        }
+      ],
+      "message": "Changes applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.",
+      "text": "M8 Kerning qualification glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nChanges applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\nA / V · 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E · LTR: -64.25 → -71.375\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As…; Undo these changes. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_74bc3b4111694e6d9a0cd16c2f7262bc\",\"expected_revision\":13,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:422889ae107b97728c4fa9ee089ed84081796ec080bff10fae0af910763da056\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_edit\",\"label\":\"Keep changes without saving\",\"action_token\":\"e36f0f9613ff7fc325912ba250194397aa135ccdc8f1364b633596420cdb59b0\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"14a321bf1099ad14f9bb0f632dff18d940908a03f0b3843f5bc9cf0f05b00f5f\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"e9f5851fc03bb31fa3067bbbd97a3eee2b91721027238d3c6cb80a15548fcb24\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"522f10a9ad901eb10ea3a766c06e2f498c1a66ae9303bb3f7d7a702cd0ea5981\",\"requiresDestination\":false}]}"
+    },
+    "kept": {
+      "ok": true,
+      "data": {
+        "id": "edit_74bc3b4111694e6d9a0cd16c2f7262bc",
+        "revision": 16,
+        "document": {
+          "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+          "dirty": true,
+          "generation": 6,
+          "isCurrent": true,
+          "familyName": "M8 Kerning qualification glyphs"
+        },
+        "mode": "preview",
+        "state": "executed",
+        "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+          "checkpointEnabled": false,
+          "status": "completed",
+          "summary": "Exact kerning edits for 1 pairs",
+          "resultKind": "mutation",
+          "changeCount": 1,
+          "sample": [
+            {
+              "after": -71.375,
+              "before": -64.25,
+              "direction": "LTR",
+              "kind": "kerning",
+              "left": "A",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "right": "V",
+              "targetGuard": {
+                "left": {
+                  "glyph": "A",
+                  "groups": [
+                    "left_A",
+                    "right_A",
+                    "top_A",
+                    "bottom_A"
+                  ],
+                  "id": "1349343360"
+                },
+                "right": {
+                  "glyph": "V",
+                  "groups": [
+                    "left_V",
+                    "right_V",
+                    "top_V",
+                    "bottom_V"
+                  ],
+                  "id": "1349350080"
+                }
+              }
+            }
+          ],
+          "report": {
+            "changedCount": 1,
+            "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+            "noChangeCount": 0,
+            "pairCount": 1,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_8368bd3d7cc14435a4ed27ca86fb6a57/report.json",
+            "sample": [
+              {
+                "after": -71.375,
+                "before": -64.25,
+                "direction": "LTR",
+                "left": "A",
+                "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+                "op": "set",
+                "right": "V",
+                "status": "changed"
+              }
+            ],
+            "targetCount": 1,
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+            "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+            "documentAfter": null,
+            "status": "completed",
+            "completedChanges": 1,
+            "longestPreparationChunk": null,
+            "totalChanges": 1,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": null,
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_8368bd3d7cc14435a4ed27ca86fb6a57",
+            "document": "M8 Kerning qualification glyphs",
+            "kind": "kerning_edit",
+            "phase": "completed",
+            "startedAt": 1790608635.2540421,
+            "finishedAt": 1790608635.254053,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "kerning_edit",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "op": "set",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "direction": "LTR",
+              "left": {
+                "kind": "glyph",
+                "name": "A"
+              },
+              "right": {
+                "kind": "glyph",
+                "name": "V"
+              },
+              "value": -71.375
+            }
+          ]
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:422889ae107b97728c4fa9ee089ed84081796ec080bff10fae0af910763da056",
+        "documentStateConfirmed": true,
+        "summary": "Exact kerning edits for 1 pairs",
+        "actions": [],
+        "message": "Changes kept without saving.",
+        "text": "M8 Kerning qualification glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nChanges kept without saving.\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\nA / V · 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E · LTR: -64.25 → -71.375",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_74bc3b4111694e6d9a0cd16c2f7262bc\",\"expected_revision\":16,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:422889ae107b97728c4fa9ee089ed84081796ec080bff10fae0af910763da056\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+      }
+    },
+    "undo": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": "A",
+            "right": "V"
+          },
+          "values": {
+            "value": -64.25
+          }
+        }
+      ]
+    },
+    "redo": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": "A",
+            "right": "V"
+          },
+          "values": {
+            "value": -71.375
+          }
+        }
+      ]
+    }
+  },
+  "groupPair": {
+    "applied": {
+      "id": "edit_88f317dd7e14422e91f3889e3966e43b",
+      "revision": 10,
+      "document": {
+        "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "dirty": true,
+        "generation": 9,
+        "isCurrent": true,
+        "familyName": "M8 Kerning qualification glyphs"
+      },
+      "mode": "apply",
+      "state": "applied",
+      "jobId": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+        "checkpointEnabled": false,
+        "status": "applied",
+        "summary": "Exact kerning edits for 1 pairs",
+        "resultKind": "mutation",
+        "changeCount": 1,
+        "sample": [
+          {
+            "after": -19.125,
+            "before": 0,
+            "direction": "LTR",
+            "kind": "kerning",
+            "left": "@MMK_L_right_A",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "right": "@MMK_R_left_V",
+            "targetGuard": {
+              "left": {
+                "glyph": "A",
+                "groups": [
+                  "left_A",
+                  "right_A",
+                  "top_A",
+                  "bottom_A"
+                ],
+                "id": "1349343360"
+              },
+              "right": {
+                "glyph": "V",
+                "groups": [
+                  "left_V",
+                  "right_V",
+                  "top_V",
+                  "bottom_V"
+                ],
+                "id": "1349350080"
+              }
+            }
+          }
+        ],
+        "report": {
+          "changedCount": 1,
+          "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+          "noChangeCount": 0,
+          "pairCount": 1,
+          "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_8db84a8713cc4b288c3e2c977cc22cb5/report.json",
+          "sample": [
+            {
+              "after": -19.125,
+              "before": 0,
+              "direction": "LTR",
+              "left": "@MMK_L_right_A",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "op": "set",
+              "right": "@MMK_R_left_V",
+              "status": "changed"
+            }
+          ],
+          "targetCount": 1,
+          "unavailableCount": 0
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+          "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+          "documentAfter": null,
+          "status": "applied",
+          "completedChanges": 1,
+          "longestPreparationChunk": null,
+          "totalChanges": 1,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": null,
+          "receipt": null,
+          "message": "Review the change in Glyphs. Call accept_job to save it; Undo restores each glyph. Revert or discard_job restores the whole job."
+        },
+        "activity": {
+          "jobId": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+          "document": "M8 Kerning qualification glyphs",
+          "kind": "kerning_edit",
+          "phase": "applied",
+          "startedAt": 1790608704.18826,
+          "finishedAt": 1790608704.1882849,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        "message": "Review the change in Glyphs. Call accept_job to verify and save it; Undo is per glyph. Revert or discard_job restores the whole job."
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "kerning_edit",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": [
+          {
+            "op": "set",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": {
+              "kind": "group",
+              "key": "@MMK_L_right_A"
+            },
+            "right": {
+              "kind": "group",
+              "key": "@MMK_R_left_V"
+            },
+            "value": -19.125
+          }
+        ]
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": null,
+      "requestFingerprint": "sha256:0d08c4522b818139cd76c90398218c375737babe3a1fc61500f6ef36eca2c7d5",
+      "documentStateConfirmed": true,
+      "summary": "Exact kerning edits for 1 pairs",
+      "actions": [
+        {
+          "action": "finish_edit",
+          "label": "Keep changes without saving",
+          "token": "12c16ec48dacd0c7925cbbe76af23fe5c8ec4c5e2d47ae6ca460820f34e2db2d",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result",
+          "label": "Save font",
+          "token": "2b8dc5ba57d5725a8f4834fed88ffab2f1428892ef14e28cd565891824f51218",
+          "requiresDestination": false
+        },
+        {
+          "action": "save_result_as",
+          "label": "Save As…",
+          "token": "f6e5b78a3bed5de0fefa9a89d0dab4fa06d10f7209e517fde1c00a7e789bb802",
+          "requiresDestination": true
+        },
+        {
+          "action": "discard",
+          "label": "Undo these changes",
+          "token": "376e800bd253d20b39b120bed25e8aad4cbf348d8331f66504175454dfa7cc3d",
+          "requiresDestination": false
+        }
+      ],
+      "message": "Changes applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.",
+      "text": "M8 Kerning qualification glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nChanges applied.\nKeep ends this workflow’s selective Undo offer without saving. Glyphs’ native Undo/Redo remains available. Saving includes the whole font.\nThe font has unsaved edits.\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\n@MMK_L_right_A / @MMK_R_left_V · 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E · LTR: 0.0 → -19.125\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.\nAvailable choices: Keep changes without saving; Save font; Save As…; Undo these changes. You can reply in ordinary language.\nAutomatic Keep is off; waiting for your answer.",
+      "poll": false,
+      "modelContext": "{\"workflow_id\":\"edit_88f317dd7e14422e91f3889e3966e43b\",\"expected_revision\":10,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"applied\",\"poll\":false,\"requestFingerprint\":\"sha256:0d08c4522b818139cd76c90398218c375737babe3a1fc61500f6ef36eca2c7d5\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[{\"action\":\"finish_edit\",\"label\":\"Keep changes without saving\",\"action_token\":\"12c16ec48dacd0c7925cbbe76af23fe5c8ec4c5e2d47ae6ca460820f34e2db2d\",\"requiresDestination\":false},{\"action\":\"save_result\",\"label\":\"Save font\",\"action_token\":\"2b8dc5ba57d5725a8f4834fed88ffab2f1428892ef14e28cd565891824f51218\",\"requiresDestination\":false},{\"action\":\"save_result_as\",\"label\":\"Save As…\",\"action_token\":\"f6e5b78a3bed5de0fefa9a89d0dab4fa06d10f7209e517fde1c00a7e789bb802\",\"requiresDestination\":true},{\"action\":\"discard\",\"label\":\"Undo these changes\",\"action_token\":\"376e800bd253d20b39b120bed25e8aad4cbf348d8331f66504175454dfa7cc3d\",\"requiresDestination\":false}]}"
+    },
+    "kept": {
+      "ok": true,
+      "data": {
+        "id": "edit_88f317dd7e14422e91f3889e3966e43b",
+        "revision": 13,
+        "document": {
+          "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+          "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+          "dirty": true,
+          "generation": 9,
+          "isCurrent": true,
+          "familyName": "M8 Kerning qualification glyphs"
+        },
+        "mode": "apply",
+        "state": "executed",
+        "jobId": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+        "blockerId": null,
+        "blockingWorkflowId": null,
+        "job": {
+          "id": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+          "checkpointEnabled": false,
+          "status": "completed",
+          "summary": "Exact kerning edits for 1 pairs",
+          "resultKind": "mutation",
+          "changeCount": 1,
+          "sample": [
+            {
+              "after": -19.125,
+              "before": 0,
+              "direction": "LTR",
+              "kind": "kerning",
+              "left": "@MMK_L_right_A",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "right": "@MMK_R_left_V",
+              "targetGuard": {
+                "left": {
+                  "glyph": "A",
+                  "groups": [
+                    "left_A",
+                    "right_A",
+                    "top_A",
+                    "bottom_A"
+                  ],
+                  "id": "1349343360"
+                },
+                "right": {
+                  "glyph": "V",
+                  "groups": [
+                    "left_V",
+                    "right_V",
+                    "top_V",
+                    "bottom_V"
+                  ],
+                  "id": "1349350080"
+                }
+              }
+            }
+          ],
+          "report": {
+            "changedCount": 1,
+            "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+            "noChangeCount": 0,
+            "pairCount": 1,
+            "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_8db84a8713cc4b288c3e2c977cc22cb5/report.json",
+            "sample": [
+              {
+                "after": -19.125,
+                "before": 0,
+                "direction": "LTR",
+                "left": "@MMK_L_right_A",
+                "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+                "op": "set",
+                "right": "@MMK_R_left_V",
+                "status": "changed"
+              }
+            ],
+            "targetCount": 1,
+            "unavailableCount": 0
+          },
+          "manifest": null,
+          "error": null,
+          "outcome": null,
+          "receipt": null,
+          "bridgeOperation": {
+            "jobId": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+            "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+            "documentAfter": null,
+            "status": "completed",
+            "completedChanges": 1,
+            "longestPreparationChunk": null,
+            "totalChanges": 1,
+            "error": null,
+            "nativeSave": null,
+            "scriptResult": null,
+            "receipt": null,
+            "message": null
+          },
+          "activity": {
+            "jobId": "job_8db84a8713cc4b288c3e2c977cc22cb5",
+            "document": "M8 Kerning qualification glyphs",
+            "kind": "kerning_edit",
+            "phase": "completed",
+            "startedAt": 1790608716.326336,
+            "finishedAt": 1790608716.326436,
+            "completed": null,
+            "total": null,
+            "message": null
+          },
+          "message": null
+        },
+        "error": null,
+        "receipt": null,
+        "reviewInConversation": false,
+        "savedVersion": null,
+        "scope": {
+          "kind": "kerning_edit",
+          "glyphs": [],
+          "glyphCount": 0,
+          "masters": null,
+          "targets": [
+            {
+              "op": "set",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "direction": "LTR",
+              "left": {
+                "kind": "group",
+                "key": "@MMK_L_right_A"
+              },
+              "right": {
+                "kind": "group",
+                "key": "@MMK_R_left_V"
+              },
+              "value": -19.125
+            }
+          ]
+        },
+        "autoKeep": {
+          "enabled": false,
+          "delaySeconds": 30,
+          "action": null
+        },
+        "responseOrigin": "explicit_action",
+        "requestFingerprint": "sha256:0d08c4522b818139cd76c90398218c375737babe3a1fc61500f6ef36eca2c7d5",
+        "documentStateConfirmed": true,
+        "summary": "Exact kerning edits for 1 pairs",
+        "actions": [],
+        "message": "Changes kept without saving.",
+        "text": "M8 Kerning qualification glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nChanges kept without saving.\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\n@MMK_L_right_A / @MMK_R_left_V · 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E · LTR: 0.0 → -19.125",
+        "poll": false,
+        "modelContext": "{\"workflow_id\":\"edit_88f317dd7e14422e91f3889e3966e43b\",\"expected_revision\":13,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"executed\",\"poll\":false,\"requestFingerprint\":\"sha256:0d08c4522b818139cd76c90398218c375737babe3a1fc61500f6ef36eca2c7d5\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+      }
+    },
+    "editViewUndo": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": "@MMK_L_right_A",
+            "right": "@MMK_R_left_V"
+          },
+          "values": {
+            "value": -19.125
+          }
+        }
+      ]
+    },
+    "fontViewUndo": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": "@MMK_L_right_A",
+            "right": "@MMK_R_left_V"
+          },
+          "values": {
+            "value": -19.125
+          }
+        },
+        {
+          "entity": {
+            "kind": "kerning",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": "A",
+            "right": "V"
+          },
+          "values": {
+            "value": -64.25
+          }
+        }
+      ]
+    },
+    "fontViewMenuUndo": {
+      "ok": true,
+      "data": [
+        {
+          "entity": {
+            "kind": "kerning",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": "@MMK_L_right_A",
+            "right": "@MMK_R_left_V"
+          },
+          "values": {
+            "value": -19.125
+          }
+        }
+      ]
+    },
+    "qualification": "Unresolved. Normal UI Undo did not change the group pair; no claim of document-manager Undo qualification.",
+    "recoveryWorkflow": {
+      "id": "edit_dfe9be56738345cf87b145cbae5ae00b",
+      "revision": 13,
+      "document": {
+        "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "dirty": true,
+        "generation": 12,
+        "isCurrent": true,
+        "familyName": "M8 Kerning qualification glyphs"
+      },
+      "mode": "apply",
+      "state": "saving",
+      "jobId": "job_1acfb56f4c0a47c9b67876c59f238a3f",
+      "blockerId": null,
+      "blockingWorkflowId": null,
+      "job": {
+        "id": "job_1acfb56f4c0a47c9b67876c59f238a3f",
+        "checkpointEnabled": false,
+        "status": "accepting",
+        "summary": "Exact kerning edits for 1 pairs",
+        "resultKind": "mutation",
+        "changeCount": 1,
+        "sample": [
+          {
+            "after": 0,
+            "before": -19.125,
+            "direction": "LTR",
+            "kind": "kerning",
+            "left": "@MMK_L_right_A",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "right": "@MMK_R_left_V",
+            "targetGuard": {
+              "left": {
+                "glyph": "A",
+                "groups": [
+                  "left_A",
+                  "right_A",
+                  "top_A",
+                  "bottom_A"
+                ],
+                "id": "1349343360"
+              },
+              "right": {
+                "glyph": "V",
+                "groups": [
+                  "left_V",
+                  "right_V",
+                  "top_V",
+                  "bottom_V"
+                ],
+                "id": "1349350080"
+              }
+            }
+          }
+        ],
+        "report": {
+          "changedCount": 1,
+          "claim": "Exact stored entries only. Zero is stored; remove deletes an entry and may reveal inherited kerning. No collision analysis or group expansion. Application never saves.",
+          "noChangeCount": 0,
+          "pairCount": 1,
+          "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/jobs/job_1acfb56f4c0a47c9b67876c59f238a3f/report.json",
+          "sample": [
+            {
+              "after": 0,
+              "before": -19.125,
+              "direction": "LTR",
+              "left": "@MMK_L_right_A",
+              "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+              "op": "set",
+              "right": "@MMK_R_left_V",
+              "status": "changed"
+            }
+          ],
+          "targetCount": 1,
+          "unavailableCount": 0
+        },
+        "manifest": null,
+        "error": null,
+        "outcome": null,
+        "receipt": null,
+        "bridgeOperation": {
+          "jobId": "job_1acfb56f4c0a47c9b67876c59f238a3f",
+          "documentId": "doc_122aaa2047dd496e8412f90f8725fb95",
+          "documentAfter": null,
+          "status": "accepting",
+          "completedChanges": 0,
+          "longestPreparationChunk": null,
+          "totalChanges": 1,
+          "error": null,
+          "nativeSave": null,
+          "scriptResult": null,
+          "receipt": null,
+          "message": null
+        },
+        "activity": {
+          "jobId": "job_1acfb56f4c0a47c9b67876c59f238a3f",
+          "document": "M8 Kerning qualification glyphs",
+          "kind": "kerning_edit",
+          "phase": "accepting",
+          "startedAt": 1790608976.1750982,
+          "finishedAt": null,
+          "completed": 0,
+          "total": 1,
+          "message": null
+        },
+        "message": null
+      },
+      "error": null,
+      "receipt": null,
+      "reviewInConversation": false,
+      "savedVersion": null,
+      "scope": {
+        "kind": "kerning_edit",
+        "glyphs": [],
+        "glyphCount": 0,
+        "masters": null,
+        "targets": [
+          {
+            "op": "set",
+            "master": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E",
+            "direction": "LTR",
+            "left": {
+              "kind": "group",
+              "key": "@MMK_L_right_A"
+            },
+            "right": {
+              "kind": "group",
+              "key": "@MMK_R_left_V"
+            },
+            "value": 0
+          }
+        ]
+      },
+      "autoKeep": {
+        "enabled": false,
+        "delaySeconds": 30,
+        "action": null
+      },
+      "responseOrigin": "explicit_action",
+      "requestFingerprint": "sha256:b288d21656f110f7c00e147a63529420c6fc2bf4f03f18b9b5e3b59040a94007",
+      "documentStateConfirmed": true,
+      "summary": "Exact kerning edits for 1 pairs",
+      "actions": [],
+      "message": "Saving font…",
+      "text": "M8 Kerning qualification glyphs — /Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs\nSaving font…\nIntended change: Exact kerning edits for 1 pairs\nOperation: kerning edit\nScope: 1 exact pair edits; master and direction are explicit for each pair.\n@MMK_L_right_A / @MMK_R_left_V · 0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E · LTR: -19.125 → 0",
+      "poll": true,
+      "modelContext": "{\"workflow_id\":\"edit_dfe9be56738345cf87b145cbae5ae00b\",\"expected_revision\":13,\"document_id\":\"doc_122aaa2047dd496e8412f90f8725fb95\",\"state\":\"saving\",\"poll\":true,\"requestFingerprint\":\"sha256:b288d21656f110f7c00e147a63529420c6fc2bf4f03f18b9b5e3b59040a94007\",\"blockingWorkflowId\":null,\"autoKeep\":{\"enabled\":false,\"delaySeconds\":30,\"action\":null},\"actions\":[]}"
+    }
+  },
+  "controlsBefore": {
+    "ok": true,
+    "data": [
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E"
+        },
+        "values": {
+          "width": 500,
+          "outlineHash": "sha256:8b6fde331da8334c019492e2b2d978e38a3cf492793acd05fad1551a2507df81"
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "V",
+          "id": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E"
+        },
+        "values": {
+          "width": 500,
+          "outlineHash": "sha256:8b6fde331da8334c019492e2b2d978e38a3cf492793acd05fad1551a2507df81"
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "n",
+          "id": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E"
+        },
+        "values": {
+          "width": 500,
+          "outlineHash": "sha256:8b6fde331da8334c019492e2b2d978e38a3cf492793acd05fad1551a2507df81"
+        }
+      }
+    ]
+  },
+  "controlsAfter": {
+    "ok": true,
+    "data": [
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "A",
+          "id": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E"
+        },
+        "values": {
+          "width": 500,
+          "outlineHash": "sha256:8b6fde331da8334c019492e2b2d978e38a3cf492793acd05fad1551a2507df81"
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "V",
+          "id": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E"
+        },
+        "values": {
+          "width": 500,
+          "outlineHash": "sha256:8b6fde331da8334c019492e2b2d978e38a3cf492793acd05fad1551a2507df81"
+        }
+      },
+      {
+        "entity": {
+          "kind": "layer",
+          "glyph": "n",
+          "id": "0029EF1D-A3C2-4D91-AAC1-43DB71D5F63E"
+        },
+        "values": {
+          "width": 500,
+          "outlineHash": "sha256:8b6fde331da8334c019492e2b2d978e38a3cf492793acd05fad1551a2507df81"
+        }
+      }
+    ]
+  },
+  "finalState": {
+    "glyphPair": -64.25,
+    "groupPair": 0,
+    "saved": true
+  },
+  "documentsAfter": {
+    "ok": true,
+    "data": [
+      {
+        "id": "doc_031a8f85fb804293b86fd30832bd795b",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphs/Checkpoint.glyphs",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": true,
+        "familyName": "Checkpoint qualification glyphs"
+      },
+      {
+        "id": "doc_c70121e2019247c1a0da1a7ce8d51e08",
+        "path": "/Users/thierryc/Documents/fonts/Dactylotype/Dactylotype.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      {
+        "id": "doc_ef910beb33434bac973c756f34b77fa7",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone3/editor/Cleanup.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Native workflow probe"
+      },
+      {
+        "id": "doc_4153c12de5af4233a7189be9b013f203",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone5/editor/Conversation.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Dactylotype"
+      },
+      {
+        "id": "doc_c4bb69f071ca4f709c369d88fd0742fd",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone6/editor/glyphspackage/Checkpoint.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "Checkpoint qualification glyphspackage"
+      },
+      {
+        "id": "doc_122aaa2047dd496e8412f90f8725fb95",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphs/Kerning.glyphs",
+        "dirty": false,
+        "generation": 12,
+        "isCurrent": false,
+        "familyName": "M8 Kerning qualification glyphs"
+      },
+      {
+        "id": "doc_9bf9b8eb4dc643f98b50a5e95cee7ee4",
+        "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/beta8-milestone8/editor/glyphspackage/Kerning.glyphspackage",
+        "dirty": false,
+        "generation": 0,
+        "isCurrent": false,
+        "familyName": "M8 Kerning qualification glyphspackage"
+      }
+    ]
+  }
+}
