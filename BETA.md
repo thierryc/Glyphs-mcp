@@ -1,9 +1,12 @@
 # Glyphs MCP 2.0.0 Beta
 
-**Beta 8/build 50 is published as a signed and notarized GitHub prerelease.
+**Beta 9/build 51 is published as a signed and notarized GitHub prerelease.
 Stable Latest remains v1.11.1.**
 
-Beta 8 adds opt-in local font checkpoints and integrates history into the
+Beta 9 adds a Beztrace companion card with plugin requirements and setup
+guidance. Its separate development plugin is excluded from Install All.
+
+Beta 8 introduced opt-in local font checkpoints and integrates history into the
 existing comparison workspace. A compact picker shows readable titles and local
 times; selecting a checkpoint compares it with the latest saved checkpoint.
 Unsaved font edits are excluded. Restore and Action details open separate sheets.
@@ -23,30 +26,23 @@ and do not save; external effects are not restored. Saving requires authorizatio
 Visible connected successful result cards offer automatic Keep and **Wait for my
 answer**. Text-only clients remain manual.
 
-The published identity is `2.0.0-beta.8`, desktop build 50, on `lit/v2-beta`.
-See [qualification](BETA8-VALIDATION.md) and the
-[release report](reports/beta8-release-candidate/README.md).
-
-## Beta 9 preparation
-
-The working source now targets **Beta 9/build 51**. Beta 9 adds the Beztrace
-companion card described below. Beta 8 remains the available download and update
-feed until Beta 9 is qualified, signed and published.
-See [Beta 9 validation](BETA9-VALIDATION.md).
+The published identity is `2.0.0-beta.9`, desktop build 51, on `lit/v2-beta`.
+See [qualification](BETA9-VALIDATION.md) and the
+[release report](reports/beta9-release-candidate/README.md).
 
 ## Requirements and availability
 
-Beta 8 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 9 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
 required for end-user installation. Glyphs still needs its own **Python
 (Glyphs)** environment selected under **Glyphs → Settings → Addons**.
 Glyphs 3 remains on its separate pinned v1.11.0 release.
 
 Download the signed and notarized
-[Beta 8 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.8/Glyphs-MCP-2.0.0-beta.8.dmg)
-from the [Beta 8 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.8).
+[Beta 9 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.9/Glyphs-MCP-2.0.0-beta.9.dmg)
+from the [Beta 9 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9).
 Verify it against the release's `SHA256SUMS` file.
-Beta 8 remains a prerelease and does not replace Stable Latest.
+Beta 9 remains a prerelease and does not replace Stable Latest.
 
 ## First session
 

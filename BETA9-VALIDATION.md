@@ -1,4 +1,4 @@
-# Beta 9 preparation — build 51
+# Beta 9 release — build 51
 
 Date: 2026-09-28. Source branch: `lit/v2-beta`.
 Product version: `2.0.0`; release identity: `2.0.0-beta.9`.
@@ -40,12 +40,24 @@ stale Beta 8 metadata references; they were corrected and synchronized, their
 
 Narrow-window/dark-mode review, cross-machine checks and the exact signed-update
 trial remain unperformed. The user approved publication with these limits.
-Signing and notarization are in progress. Carry forward the outstanding acceptance limits documented in
+Developer ID signing and all three Apple notarization submissions passed.
+The app and DMG are stapled and accepted by Gatekeeper. All nested signatures
+and signature-preserving install copies verified. Both signed private runtimes
+passed startup, catalog, packaged installer and proxy checks. The guarded
+publisher reran the complete release gate successfully. Carry forward the
+outstanding acceptance limits documented in
 [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 
 ## Distribution
 
-Beta 8/build 50 remains the published signed and notarized prerelease. Its exact
-appcast and release assets are unchanged. The user approved signing and publication after reviewing this note. Source
-commits are `35387474` and `8d71cbeb`; the signed tag and distribution evidence
-will identify the final candidate. Stable Latest remains unchanged.
+[Beta 9/build 51](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9)
+is a published signed and notarized GitHub prerelease. Signed tag
+`v2.0.0-beta.9` points to `68bf1fdf673285988a886fdf5a3c6471e2f533c0`.
+The DMG, Sparkle ZIP, appcast and checksums were downloaded without authentication
+and matched the verified local artifacts. Feed and archive signatures passed.
+The exact signed beta feed now serves Beta 9. Stable Latest remains v1.11.1.
+
+The user approved this validation scope and explicitly authorized signing and
+publication. Beta 8 assets and tag remain unchanged. No Beta 9 app or runtime
+was installed over the existing copy in Applications.
+See [distribution evidence](reports/beta9-release-candidate/README.md).

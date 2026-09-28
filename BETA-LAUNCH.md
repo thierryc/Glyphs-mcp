@@ -3,8 +3,8 @@
 ## Decision
 
 Prepare **2.0.0 Beta 9**, tag `v2.0.0-beta.9`, build **51**, on `lit/v2-beta`.
-Beta 8/build 50 is the current signed and notarized prerelease; keep its exact
-published update feed until Beta 9 publication. Beta 9 introduces the Beztrace
+Beta 9/build 51 is published as a signed and notarized prerelease, with verified
+public downloads and the exact signed beta feed. Beta 9 introduces the Beztrace
 companion setup card. Its independent plugin remains an unsigned development
 preview and is excluded from bundled installation. See [BETA9-VALIDATION.md](BETA9-VALIDATION.md).
 Beta 8's remaining acceptance limits are recorded in [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
@@ -72,7 +72,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    release. Publish the communication below only after the beta download works.
 
 Beta 9 uses `--beta 9 --installer-build 51`. Signing, notarization and
-publication are pending. Carry forward the outstanding native UI and signed-update
+publication passed. Carry forward the outstanding native UI and signed-update
 acceptance checks from the published Beta 8 qualification record.
 Published Beta 7 evidence and its open qualification limits are recorded in
 [BETA7-VALIDATION.md](BETA7-VALIDATION.md). Historical Beta 6 evidence remains in
@@ -267,3 +267,14 @@ Group-pair native UI Undo, new pair-card visual acceptance and the exact-release
 signed-update/component-migration trial remain incomplete and are disclosed.
 The user explicitly authorized publication after those limits were reported.
 See [the distribution evidence](reports/beta8-release-candidate/README.md).
+
+## Beta 9 publication — 28 September 2026
+
+Signed tag `v2.0.0-beta.9` identifies `68bf1fdf`. The complete local and
+publisher gates passed: 2,464 Python tests (two skips) and 220 desktop tests.
+All three Apple notarization submissions passed. The app, DMG, nested code,
+installed copies and both signed private runtimes verified. All four public
+assets matched local bytes, and Sparkle feed/archive signatures passed.
+The exact Beta 9 appcast is published. Stable Latest remains v1.11.1.
+Beztrace remains an informational development-preview card. The user approved
+publication with the limits in [BETA9-VALIDATION.md](BETA9-VALIDATION.md).

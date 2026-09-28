@@ -1,0 +1,38 @@
+{
+  "tag": "v2.0.0-beta.9",
+  "url": "https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9",
+  "prerelease": true,
+  "stableLatest": "v1.11.1",
+  "unauthenticatedDownloads": true,
+  "sparkleFeedAndArchiveVerified": true,
+  "assets": [
+    {
+      "name": "appcast.xml",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.9/appcast.xml",
+      "size": 1377,
+      "sha256": "30f41777891f5fa833436ed62db12144c30005ddc89098254ce8aec423fbf463",
+      "matchesLocal": true
+    },
+    {
+      "name": "Glyphs-MCP-2.0.0-beta.9.dmg",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.9/Glyphs-MCP-2.0.0-beta.9.dmg",
+      "size": 156611204,
+      "sha256": "0cc0273db1d784bd49e4ccb28f6c39af4c73e8b30e6fa0ce0f0376437eb2a25c",
+      "matchesLocal": true
+    },
+    {
+      "name": "Glyphs-MCP-2.0.0-beta.9.zip",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.9/Glyphs-MCP-2.0.0-beta.9.zip",
+      "size": 154695901,
+      "sha256": "a0412832f8506e310467f0f2110aa7726a53c7e33c32317db97b6932e555ca03",
+      "matchesLocal": true
+    },
+    {
+      "name": "SHA256SUMS",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.9/SHA256SUMS",
+      "size": 266,
+      "sha256": "fc578e96058b918d321a1a5510b6765d352da5ecd04dd243d6044ecf136681fb",
+      "matchesLocal": true
+    }
+  ]
+}

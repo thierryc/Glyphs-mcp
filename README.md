@@ -1,10 +1,9 @@
 # Glyphs MCP Desktop 2.0.0 Beta 9
 
-**Beta 9 preparation — release `2.0.0-beta.9`, desktop build 51.**
-Beta 8/build 50 is the current signed and notarized prerelease. Beta 9 is in
-local preparation; its release artifacts have not been signed or published.
-Stable Latest remains v1.11.1. See [Beta 9 preparation](BETA9-VALIDATION.md),
-[Beta 8 qualification](BETA8-VALIDATION.md), and the [beta guide](BETA.md).
+**Beta 9/build 51 is published as a signed and notarized prerelease.**
+Release identity: `2.0.0-beta.9`. Stable Latest remains v1.11.1.
+See [Beta 9 qualification](BETA9-VALIDATION.md),
+[distribution evidence](reports/beta9-release-candidate/README.md), and the [beta guide](BETA.md).
 The [twelve-tool contract](content/reference/command-set.mdx) remains unchanged.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
@@ -70,9 +69,9 @@ See [installation](content/getting-started/installation.mdx) and the
 
 The Beta 9 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. Beta 8 is available
+documentation tracks describe these versions separately. Beta 9 is available
 as a signed and notarized
-[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.8).
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9).
 
 Documentation sources: [v2 · 2.0.0 Beta 9](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
@@ -86,7 +85,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Future Beta 9 artifacts will use `Glyphs-MCP-2.0.0-beta.9.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta 9 artifacts use `Glyphs-MCP-2.0.0-beta.9.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

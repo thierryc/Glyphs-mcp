@@ -1,12 +1,14 @@
 # Changelog
 
-## 2.0.0 Beta 9 — in preparation, build 51
+## 2.0.0 Beta 9 — 2026-09-28, build 51
 
 - Add Beztrace to Setup with plugin version, development availability, Glyphs
   requirements, usage guidance and links to its independent engine and setup.
 - Keep Beztrace separate from the bundled component transaction and Install All;
   its unsigned plugin is awaiting native qualification and a signed release.
-- Preserve the published Beta 8 update feed during Beta 9 preparation.
+- Publish the signed and notarized Beta 9 prerelease and exact signed beta
+  feed. Public downloads and signatures are verified; stable Latest remains
+  v1.11.1. Accepted qualification limits are recorded in BETA9-VALIDATION.md.
 
 ## 2.0.0 Beta 8 — 2026-09-28, build 50
 
