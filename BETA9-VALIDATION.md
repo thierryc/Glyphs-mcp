@@ -32,13 +32,20 @@ are unchanged. An explicit development-install workflow is not implemented.
 - No runtime component installation, engine installation, Glyphs restart or font
   mutation was performed. The copy in Applications remains unchanged.
 
-The full release suite, narrow-window/dark-mode review, cross-machine checks,
-Developer ID signing, notarization, signed-update trial and publication remain
-pending. Carry forward the outstanding acceptance limits documented in
+The full local release gate passed: 2,464 Python tests (two skips, five
+warnings), 220 desktop tests, deterministic payloads, both private runtimes,
+package/skill checks and the documentation build. The initial gate found two
+stale Beta 8 metadata references; they were corrected and synchronized, their
+17 focused tests passed, and the complete gate then passed.
+
+Narrow-window/dark-mode review, cross-machine checks and the exact signed-update
+trial remain unperformed. The user approved publication with these limits.
+Signing and notarization are in progress. Carry forward the outstanding acceptance limits documented in
 [BETA8-VALIDATION.md](BETA8-VALIDATION.md).
 
 ## Distribution
 
 Beta 8/build 50 remains the published signed and notarized prerelease. Its exact
-appcast and release assets are unchanged. No Beta 9 tag, commit, push or GitHub
-release was created by this preparation. Stable Latest remains unchanged.
+appcast and release assets are unchanged. The user approved signing and publication after reviewing this note. Source
+commits are `35387474` and `8d71cbeb`; the signed tag and distribution evidence
+will identify the final candidate. Stable Latest remains unchanged.
