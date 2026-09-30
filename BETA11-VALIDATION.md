@@ -1,0 +1,46 @@
+# Beta 11 qualification — build 53
+
+Date: 2026-09-30. Branch: `lit/v2-beta`.
+Product: `2.0.0`; release: `2.0.0-beta.11`.
+
+## Scope
+
+Beta 11 advances release identity and installer build from published Beta 10.
+Current source, packaging, release guidance and the changelog describe Beta 11;
+the public catalog remains thirteen tools with eleven managed skills.
+No runtime or native font behavior changed in this release.
+
+The font-creation, checkpoint-history and bundled Beztrace engine behavior is
+inherited from Beta 10. Its native acceptance evidence is historical, recorded in
+[Beta 10 qualification](BETA10-VALIDATION.md) and the
+[creation report](reports/document-creation-20260930/README.md); no new live-font
+test or installed-runtime replacement is claimed for Beta 11.
+
+## Release gates
+
+The 50 focused release-identity, build, documentation and synchronization tests
+passed during preparation. The full local release gate passed: 2,492 Python tests (two skips, five
+warnings), all 222 desktop tests, deterministic payloads, both private runtimes,
+the website build and source/package checks. Signed-distribution gates are pending. See [distribution evidence](reports/beta11-release-candidate/README.md).
+
+## Remaining acceptance limits
+
+Physical Intel/minimum-macOS testing, the exact signed older-to-Beta-11 desktop
+update/component-migration trial, and narrow-window/dark-mode visual acceptance
+remain unperformed. Automated runtime checks cover both bundled architectures
+on the maintainer's Apple silicon Mac, including x86_64 through Rosetta.
+The carried-forward group-pair native UI Undo issue and exact-pair card visual
+acceptance are documented in [Beta 8 qualification](BETA8-VALIDATION.md).
+The independent Beztrace Glyphs plugin's native qualification and signed release
+remain separate. Its bundled engine is a development preview from a recorded
+dirty source tree; signing does not establish tracing quality or plugin acceptance.
+
+The user explicitly requested publication of Beta 11. These limits will be
+disclosed in the release notes. Full automated checks and signed-distribution
+verification must pass before publication.
+
+## Distribution
+
+Beta 11 is not yet published. Beta 10's tag, assets and qualification records
+remain preserved; the beta update feed stays on Beta 10 until Beta 11's public
+archives and signatures are verified. Stable Latest remains v1.11.1.

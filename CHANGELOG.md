@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0 Beta 11 — Unreleased, build 53
+
+- Begin the next beta with release identity `2.0.0-beta.11` and installer build 53.
+- Align current source, packaging and release guidance with Beta 11 while
+  preserving the published Beta 10 downloads, signed feed and qualification records.
+
 ## 2.0.0 Beta 10 — 2026-09-30, build 52
 
 - Add `create_document` to open a new unsaved font with one Regular master and

@@ -10,7 +10,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-The beta branch prepares product 2.0.0 Beta 10, release `2.0.0-beta.10`, installer build 52. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany thirteen tools and up to eleven capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
+The beta branch prepares product 2.0.0 Beta 11, release `2.0.0-beta.11`, installer build 53. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany thirteen tools and up to eleven capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
@@ -32,7 +32,7 @@ reading upgrade choices. Ports, automatic start, authentication and welcome
 preferences remain outside component replacement. Unrelated files are retained.
 The Mac's normal Glyphs quit/save workflow must finish before replacement.
 
-The Beta 10 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
+The Beta 11 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
 release, original Python dependency installation and version-specific skills;
 the pinned v1 source metadata remains unchanged and is not embedded in this
 desktop payload. Legacy updater paths reject partial upgrades to the new

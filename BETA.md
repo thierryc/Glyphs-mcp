@@ -1,5 +1,8 @@
 # Glyphs MCP 2.0.0 Beta
 
+**Beta 11/build 53 (`2.0.0-beta.11`) is in development and is not published.**
+The downloads and update feed below continue to serve the published Beta 10.
+
 **Beta 10/build 52 (`2.0.0-beta.10`) is published as a signed and notarized prerelease.**
 All four public downloads and Sparkle signatures are verified. Stable Latest remains v1.11.1.
 

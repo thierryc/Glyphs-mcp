@@ -1,5 +1,8 @@
 # Lean v2 qualification records
 
+[Beta 11 release](beta11-release-candidate/README.md) records qualification of
+the next release identity and build, inheriting Beta 10's runtime behavior.
+
 [Beta 10 release](beta10-release-candidate/README.md) records the creation,
 checkpoint and bundled-engine release checks.
 [Font creation and installation](document-creation-20260930/README.md) records

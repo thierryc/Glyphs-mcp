@@ -1,6 +1,11 @@
-# Glyphs MCP 2.0.0 Beta 10 â€” release and launch plan
+# Glyphs MCP 2.0.0 Beta 11 â€” release and launch plan
 
 ## Decision
+
+Prepare **2.0.0 Beta 11**, planned tag `v2.0.0-beta.11`, build **53**, on
+`lit/v2-beta`. Qualification, signing, notarization and publication are pending.
+Keep the published Beta 10 downloads, signed feed and qualification records intact
+until the new release is qualified and separately authorized for publication.
 
 Published **2.0.0 Beta 10**, tag `v2.0.0-beta.10`, build **52**, on `lit/v2-beta`.
 Beta 10 passed the complete local and publisher gates, signing, all three Apple
@@ -20,7 +25,7 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
 
 ## Distribution
 
-- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 10**. Keep
+- Use a GitHub **prerelease**, titled **Glyphs MCP 2.0.0 Beta 11**. Keep
   `make_latest=false`. A public beta branch, tag and prerelease are public by
   design. [GitHub release controls](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 - Publish the versioned DMG, versioned Sparkle ZIP, `appcast.xml` and
@@ -37,7 +42,7 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
   [Sparkle publishing model](https://sparkle-project.org/documentation/publishing/).
 - Preserve the service identity. Qualify upgrades and rollback, including
   restored settings and component receipts; do not market side-by-side server
-  isolation. The Beta 10 payload is Glyphs 4-only; Glyphs 3 remains on its
+  isolation. The Beta 11 payload is Glyphs 4-only; Glyphs 3 remains on its
   separate pinned v1.11.0 release.
 
 ## Release sequence
@@ -63,7 +68,7 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
    before publishing. Example final command, only at that stage:
 
    ```sh
-   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.10 --publish --confirm-publish v2.0.0-beta.10
+   ./scripts/publish_release_assets.sh --tag v2.0.0-beta.11 --publish --confirm-publish v2.0.0-beta.11
    ```
 
 6. Verify the exact public download and checksum, then commit the exact signed
@@ -73,8 +78,9 @@ The public promise is a beta to try and help improve. Avoid â€œ2.0 is released,â
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 10 uses `--beta 10 --installer-build 52`. Signing, notarization and
-publication passed; remaining manual acceptance limits are disclosed. Carry forward the outstanding native UI and signed-update
+Beta 11 uses `--beta 11 --installer-build 53`. Its exact candidate requires
+fresh qualification before signing, notarization and publication. Carry forward
+the outstanding native UI and signed-update
 acceptance checks from the published Beta 8 qualification record.
 Published Beta 7 evidence and its open qualification limits are recorded in
 [BETA7-VALIDATION.md](BETA7-VALIDATION.md). Historical Beta 6 evidence remains in
