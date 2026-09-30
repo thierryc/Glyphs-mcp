@@ -1,0 +1,9 @@
+{
+  "version": "0.1.1-dev.4",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "sourceRevision": "4f7c9db68443b20e8933f2038e8ec3a159f0d467",
+  "engineSHA256": "42524b6dc4c6be3cb4afa5ede329625818966e503982c14a405febe61363fc17"
+}

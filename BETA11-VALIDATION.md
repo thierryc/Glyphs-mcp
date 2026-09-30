@@ -21,7 +21,13 @@ test or installed-runtime replacement is claimed for Beta 11.
 The 50 focused release-identity, build, documentation and synchronization tests
 passed during preparation. The full local release gate passed: 2,492 Python tests (two skips, five
 warnings), all 222 desktop tests, deterministic payloads, both private runtimes,
-the website build and source/package checks. Signed-distribution gates are pending. See [distribution evidence](reports/beta11-release-candidate/README.md).
+the website build and source/package checks. Developer ID signing verified 94 native binaries and 47 bundles, plus the
+separately bundled Beztrace engine. Both signed runtimes passed offline startup,
+HTTP/stdio catalogs, packaged installer CLI and MCP App checks; their bytes match
+the final stapled payload. Apple accepted payload, app and DMG submissions.
+Tickets are stapled and verified; Gatekeeper accepts the app and DMG. Sparkle
+archive and feed signatures verify. The guarded publisher and public-download
+checks are pending. See [distribution evidence](reports/beta11-release-candidate/README.md).
 
 ## Remaining acceptance limits
 
