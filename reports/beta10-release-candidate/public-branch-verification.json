@@ -1,0 +1,19 @@
+{
+  "branch": "lit/v2-beta",
+  "commit": "c90a828e94ab9ac0dd4a264bc421948cf9d62599",
+  "files": [
+    {
+      "name": "appcast.xml",
+      "url": "https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml",
+      "sha256": "2bee0166321ddd6ff7a608ab7d810a2f2c8723a40d1635aea2bd8dfb7106e5ca",
+      "matchesSource": true
+    },
+    {
+      "name": "templates/registry.json",
+      "url": "https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/templates/registry.json",
+      "sha256": "32ad80ac54b721cd4b7d2a219db93ecc81d741518aafb0122e9dd2520f674a59",
+      "matchesSource": true
+    }
+  ],
+  "signedRawFeedVerified": true
+}

@@ -27,5 +27,7 @@ Signed tag `v2.0.0-beta.10` identifies `e1e71ef8`.
 Fresh unauthenticated downloads of all four assets matched local bytes and
 Sparkle archive/feed signatures verified; see `public-download-verification.json`
 and `github-published.json`. Stable Latest remains v1.11.1. The exact signed
-beta appcast is copied to the beta branch after public archive verification.
+beta appcast is published on the beta branch after public archive verification.
+The public raw feed and registry match committed bytes, and the raw feed
+signature verifies; see `public-branch-verification.json`.
 Remaining manual acceptance limits remain disclosed in the qualification note.

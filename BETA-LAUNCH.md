@@ -290,7 +290,8 @@ notarization tickets, Gatekeeper, installed copies and both signed private
 runtimes passed. New-font creation/save/reopen passed in both source formats.
 
 All four public assets matched local bytes and Sparkle archive/feed signatures
-verified. The exact signed beta appcast is copied for publication on `lit/v2-beta`.
+verified. The exact signed beta appcast is published on `lit/v2-beta`; the public raw feed
+and registry match committed bytes and the raw feed signature verifies.
 Stable Latest remains v1.11.1. The physical Intel/minimum-macOS, exact signed
 update/migration and carried-forward native UI limits remain disclosed in
 [BETA10-VALIDATION.md](BETA10-VALIDATION.md). No email or social announcement was sent.

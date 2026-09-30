@@ -71,5 +71,6 @@ is a published signed and notarized prerelease. Signed tag `v2.0.0-beta.10`
 identifies `e1e71ef8`. The user authorized committing all changes and publication.
 See `github-published.json` and `public-download-verification.json` in the
 [distribution evidence](reports/beta10-release-candidate/README.md).
-The exact signed beta appcast is copied to the beta branch after public archive
-verification. No previous beta asset/tag or stable release was changed.
+The exact signed beta appcast is published on the beta branch after public
+archive verification. Public raw feed and registry bytes match committed source,
+and the raw feed signature verifies; see `public-branch-verification.json`. No previous beta asset/tag or stable release was changed.
