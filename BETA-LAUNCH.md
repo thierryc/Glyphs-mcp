@@ -2,10 +2,11 @@
 
 ## Decision
 
-Prepare **2.0.0 Beta 11**, planned tag `v2.0.0-beta.11`, build **53**, on
-`lit/v2-beta`. Qualification, signing, notarization and publication are pending.
-Keep the published Beta 10 downloads, signed feed and qualification records intact
-until the new release is qualified and separately authorized for publication.
+Published **2.0.0 Beta 11**, signed tag `v2.0.0-beta.11`, build **53**, on
+`lit/v2-beta`. Full automated gates, signing, all three Apple notarizations and
+public download verification passed. The signed beta feed advances after archive
+verification. See [BETA11-VALIDATION.md](BETA11-VALIDATION.md). Beta 10 tags, assets
+and qualification records remain preserved; Stable Latest remains v1.11.1.
 
 Published **2.0.0 Beta 10**, tag `v2.0.0-beta.10`, build **52**, on `lit/v2-beta`.
 Beta 10 passed the complete local and publisher gates, signing, all three Apple
@@ -78,8 +79,8 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
 7. Confirm GitHub's stable Latest release still identifies the previous stable
    release. Publish the communication below only after the beta download works.
 
-Beta 11 uses `--beta 11 --installer-build 53`. Its exact candidate requires
-fresh qualification before signing, notarization and publication. Carry forward
+Beta 11 uses `--beta 11 --installer-build 53`. Full automated qualification, signing,
+notarization and publication passed; remaining manual limits are disclosed. Carry forward
 the outstanding native UI and signed-update
 acceptance checks from the published Beta 8 qualification record.
 Published Beta 7 evidence and its open qualification limits are recorded in
@@ -301,3 +302,14 @@ and registry match committed bytes and the raw feed signature verifies.
 Stable Latest remains v1.11.1. The physical Intel/minimum-macOS, exact signed
 update/migration and carried-forward native UI limits remain disclosed in
 [BETA10-VALIDATION.md](BETA10-VALIDATION.md). No email or social announcement was sent.
+
+## Beta 11 publication — 30 September 2026
+
+Signed tag `v2.0.0-beta.11` identifies `d89068ee`, desktop build 53. The complete
+local and guarded publisher gates passed, including 2,492 Python and 222 desktop
+tests. All three Apple submissions are accepted, tickets are stapled and
+Gatekeeper checks pass. All four fresh public downloads match local bytes;
+Sparkle archive/feed signatures verify. The exact signed beta feed is updated
+after archive verification. Stable Latest remains v1.11.1. See
+[BETA11-VALIDATION.md](BETA11-VALIDATION.md) and the
+[distribution evidence](reports/beta11-release-candidate/README.md).

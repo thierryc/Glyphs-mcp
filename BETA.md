@@ -1,19 +1,17 @@
 # Glyphs MCP 2.0.0 Beta
 
-**Beta 11/build 53 (`2.0.0-beta.11`) is in development and is not published.**
-The downloads and update feed below continue to serve the published Beta 10.
-
-**Beta 10/build 52 (`2.0.0-beta.10`) is published as a signed and notarized prerelease.**
+**Beta 11/build 53 (`2.0.0-beta.11`) is published as a signed and notarized prerelease.**
 All four public downloads and Sparkle signatures are verified. Stable Latest remains v1.11.1.
 
-Beta 10 adds new-font creation with `create_document`, duplicate-safe retries
+Beta 11 advances release metadata and documentation with unchanged runtime behavior.
+It retains Beta 10's new-font creation with `create_document`, duplicate-safe retries
 and native master/instance IDs. Save separately using `save_document` as
 `.glyphs` or `.glyphspackage`. It ships thirteen public tools and eleven managed
 skills. Checkpoint history now discovers project fonts, opens selected/all fonts
 in Glyphs, marks the latest/reference versions and uses green/pink comparisons.
 The desktop app bundles the universal Beztrace 0.1.1-dev.4 development engine;
 its independent Glyphs plugin remains outside Install All.
-See [Beta 10 qualification](BETA10-VALIDATION.md).
+See [Beta 11 qualification](BETA11-VALIDATION.md).
 
 Beta 9 adds a Beztrace companion card with plugin requirements and setup
 guidance. Its separate development plugin is excluded from Install All.
@@ -38,23 +36,23 @@ and do not save; external effects are not restored. Saving requires authorizatio
 Visible connected successful result cards offer automatic Keep and **Wait for my
 answer**. Text-only clients remain manual.
 
-The published identity is `2.0.0-beta.10`, desktop build 52, on `lit/v2-beta`.
-See [qualification](BETA10-VALIDATION.md) and the
-[release report](reports/beta10-release-candidate/README.md).
+The published identity is `2.0.0-beta.11`, desktop build 53, on `lit/v2-beta`.
+See [qualification](BETA11-VALIDATION.md) and the
+[release report](reports/beta11-release-candidate/README.md).
 
 ## Requirements and availability
 
-Beta 10 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 11 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
 required for end-user installation. Glyphs still needs its own **Python
 (Glyphs)** environment selected under **Glyphs → Settings → Addons**.
 Glyphs 3 remains on its separate pinned v1.11.0 release.
 
 Download the signed and notarized
-[Beta 10 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.10/Glyphs-MCP-2.0.0-beta.10.dmg)
-from the [Beta 10 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.10).
+[Beta 11 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.11/Glyphs-MCP-2.0.0-beta.11.dmg)
+from the [Beta 11 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.11).
 Verify it against the release's `SHA256SUMS` file.
-Beta 10 remains a prerelease and does not replace Stable Latest.
+Beta 11 remains a prerelease and does not replace Stable Latest.
 
 ## First session
 
@@ -142,7 +140,7 @@ in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
 
 ## Beztrace
 
-Beta 10 Setup includes **Beztrace**, an independent Glyphs plugin for tracing
+Beta 11 Setup includes **Beztrace**, an independent Glyphs plugin for tracing
 PNG/JPEG images into editable paths. The card identifies plugin 0.1.0/build 11
 and the bundled universal 0.1.1-dev.4 development engine. The engine is signed
 and notarized inside the distributed desktop app; both architectures passed

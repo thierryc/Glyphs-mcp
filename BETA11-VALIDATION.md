@@ -26,8 +26,12 @@ separately bundled Beztrace engine. Both signed runtimes passed offline startup,
 HTTP/stdio catalogs, packaged installer CLI and MCP App checks; their bytes match
 the final stapled payload. Apple accepted payload, app and DMG submissions.
 Tickets are stapled and verified; Gatekeeper accepts the app and DMG. Sparkle
-archive and feed signatures verify. The guarded publisher and public-download
-checks are pending. See [distribution evidence](reports/beta11-release-candidate/README.md).
+archive and feed signatures verify. The guarded publisher reran the full gate
+and verified nested signatures,
+signature-preserving install copies, the extracted ZIP and checksums, then
+verified uploaded digests before publishing. Fresh unauthenticated downloads
+matched all four local assets; Sparkle archive/feed signatures verify. See
+[distribution evidence](reports/beta11-release-candidate/README.md).
 
 ## Remaining acceptance limits
 
@@ -41,12 +45,16 @@ The independent Beztrace Glyphs plugin's native qualification and signed release
 remain separate. Its bundled engine is a development preview from a recorded
 dirty source tree; signing does not establish tracing quality or plugin acceptance.
 
-The user explicitly requested publication of Beta 11. These limits will be
+The user explicitly requested publication of Beta 11. These limits are
 disclosed in the release notes. Full automated checks and signed-distribution
 verification must pass before publication.
 
 ## Distribution
 
-Beta 11 is not yet published. Beta 10's tag, assets and qualification records
-remain preserved; the beta update feed stays on Beta 10 until Beta 11's public
-archives and signatures are verified. Stable Latest remains v1.11.1.
+[Beta 11/build 53](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.11)
+is published as a signed and notarized non-Latest prerelease. Signed tag
+`v2.0.0-beta.11` identifies `d89068ee`. All four public downloads match the
+verified local assets. The exact signed beta appcast is updated after public
+archive verification. Beta 10 tags, assets and qualification records remain
+preserved. Stable Latest remains v1.11.1. See the distribution evidence for
+public download and branch verification results.

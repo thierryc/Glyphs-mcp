@@ -2,7 +2,7 @@
 title: Packaging and release discovery
 ---
 
-This checkout prepares the unpublished Glyphs MCP **2.0.0 Beta 11**, release `2.0.0-beta.11`, desktop build **53**. Beta 11 release qualification, signing and notarization are pending. Beta 10/build 52 remains published; its creation/install checks and distribution qualification are recorded in [BETA10-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA10-VALIDATION.md). Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, thirteen tools and up to eleven capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The candidate includes the Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes, plus the desktop's universal Beztrace development engine. Glyphs 3 remains on its separate pinned v1.11.0 release. The exact signed-update/component-migration acceptance trial remains open and is disclosed in the qualification report.
+This checkout packages the published Glyphs MCP **2.0.0 Beta 11**, release `2.0.0-beta.11`, desktop build **53**. Full automated gates, signing, notarization and public download verification passed. Qualification and remaining manual limits are recorded in [BETA11-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA11-VALIDATION.md). Native creation/install evidence is inherited from Beta 10; no installed-runtime replacement is claimed for Beta 11. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, thirteen tools and up to eleven capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The candidate includes the Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes, plus the desktop's universal Beztrace development engine. Glyphs 3 remains on its separate pinned v1.11.0 release. The exact signed-update/component-migration acceptance trial remains open and is disclosed in the qualification report.
 
 Build, sign, notarize and verify on the maintainer's Mac. No GitHub Actions are required or used for release publishing. The full maintained procedure is in `macos-installer/RELEASING.md` in the candidate repository.
 
@@ -12,12 +12,12 @@ Beta 6 passed signing, notarization, Gatekeeper, signed-update rejection and
 recovery, and component migration checks. See the exact evidence in
 [BETA6-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA6-VALIDATION.md).
 
-## Planned Beta 11 deliverables
+## Deliverables
 
-- `Glyphs-MCP-2.0.0-beta.11.dmg`: installer to be signed and notarized.
-- `Glyphs-MCP-2.0.0-beta.11.zip`: desktop application archive to be Sparkle-signed.
+- `Glyphs-MCP-2.0.0-beta.11.dmg`: signed and notarized installer.
+- `Glyphs-MCP-2.0.0-beta.11.zip`: Sparkle-signed desktop application archive.
 - No `Glyphs-MCP-latest.dmg` for a beta. That byte-identical alias is reserved for stable releases.
-- `appcast.xml`: the future signed Beta 11 feed, to be published after public archive verification. The current feed remains on Beta 10.
+- `appcast.xml`: the exact signed Beta 11 feed, published after public archive verification.
 - Checksums, source manifest, installation receipt and acceptance report associated with the exact candidate.
 
 Keep local acceptance evidence containing private font paths out of public release assets unless reviewed for sharing. Store notarization credentials in Keychain.
@@ -29,7 +29,7 @@ receipts verify the Pierre package resource bundle and the exact bundled
 `@pierre/diffs` and Shiki JavaScript identities. **Check for Updates** runs on
 demand; automatic checking is enabled by default and can be disabled in Settings. Beta 11 uses
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`
-and archives under its planned `v2.0.0-beta.11` prerelease tag. Stable builds use
+and archives under its `v2.0.0-beta.11` prerelease tag. Stable builds use
 their separate stable feed. Sparkle update ordering uses increasing installer
 builds, not the marketing-version label. A configured feed is not proof that
 it is publicly available.

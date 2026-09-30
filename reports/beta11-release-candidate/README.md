@@ -14,4 +14,12 @@ passed startup and packaged catalog/resource checks; see `signed-runtimes.json`.
 Their bytes match the final stapled payload. All three Apple submissions are
 accepted; IDs are in `distribution-state.json`. App and DMG tickets and Gatekeeper
 acceptance passed. Sparkle archive/feed signatures verify. The guarded publisher
-and public-download checks are pending.
+reran the full gate and final artifact verification,
+including nested signatures, installed copies, extracted ZIP and checksums.
+All uploaded digests verified before publication.
+[Beta 11 is public](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.11).
+Signed tag `v2.0.0-beta.11` identifies `d89068ee`. Fresh unauthenticated
+downloads match all four local assets and Sparkle archive/feed signatures
+verify; see `github-published.json` and `public-download-verification.json`.
+Stable Latest remains v1.11.1. The exact signed beta appcast is updated after
+public archive verification; no previous beta asset/tag or stable release changed.

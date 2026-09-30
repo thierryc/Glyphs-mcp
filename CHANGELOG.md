@@ -1,10 +1,12 @@
 # Changelog
 
-## 2.0.0 Beta 11 — Unreleased, build 53
+## 2.0.0 Beta 11 — 2026-09-30, build 53
 
 - Begin the next beta with release identity `2.0.0-beta.11` and installer build 53.
 - Align current source, packaging and release guidance with Beta 11 while
-  preserving the published Beta 10 downloads, signed feed and qualification records.
+  preserving the published Beta 10 assets and qualification records.
+- Publish the signed and notarized Beta 11 prerelease and exact signed beta feed
+  after verifying all public downloads. Stable Latest remains v1.11.1.
 
 ## 2.0.0 Beta 10 — 2026-09-30, build 52
 

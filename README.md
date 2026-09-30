@@ -1,13 +1,10 @@
 # Glyphs MCP Desktop 2.0.0 Beta 11
 
-**Beta 11/build 53 is the unpublished development target**, release identity
-`2.0.0-beta.11`. Release qualification, signing and notarization are pending.
-
-**Beta 10/build 52 is published as a signed and notarized GitHub prerelease.**
-Release identity: `2.0.0-beta.10`. All four public downloads and Sparkle signatures are verified.
+**Beta 11/build 53 is published as a signed and notarized GitHub prerelease.**
+Release identity: `2.0.0-beta.11`. All four public downloads and Sparkle signatures are verified.
 Stable Latest remains v1.11.1.
-See [Beta 10 qualification](BETA10-VALIDATION.md),
-[distribution evidence](reports/beta10-release-candidate/README.md), and the [beta guide](BETA.md).
+See [Beta 11 qualification](BETA11-VALIDATION.md),
+[distribution evidence](reports/beta11-release-candidate/README.md), and the [beta guide](BETA.md).
 The [thirteen-tool contract](content/reference/command-set.mdx) adds font creation
 through `create_document`; `save_document` persists the resulting open font.
 
@@ -74,9 +71,9 @@ See [installation](content/getting-started/installation.mdx) and the
 
 The Beta 11 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. Beta 10 is available
+documentation tracks describe these versions separately. Beta 11 is available
 as a signed and notarized
-[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.10).
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.11).
 
 Documentation sources: [v2 · 2.0.0 Beta 11](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
@@ -90,7 +87,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Planned Beta 11 artifacts use `Glyphs-MCP-2.0.0-beta.11.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Beta 11 artifacts use `Glyphs-MCP-2.0.0-beta.11.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

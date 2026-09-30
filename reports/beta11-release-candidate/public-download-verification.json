@@ -1,31 +1,6 @@
 {
   "tag": "v2.0.0-beta.11",
-  "sourceCommit": "947cd3d5384341243b7e22061a948a7abf1bf18e",
-  "installerBuild": 53,
-  "developerID": "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)",
-  "notarization": [
-    {
-      "kind": "payload",
-      "id": "7f52ef82-3019-453b-aa9d-057111a99b91",
-      "status": "Accepted"
-    },
-    {
-      "kind": "app",
-      "id": "b0c7c8cd-fd5b-486a-b2d6-213d484f9859",
-      "status": "Accepted"
-    },
-    {
-      "kind": "dmg",
-      "id": "00867d75-aaf2-4ea7-8f89-0702199f480c",
-      "status": "Accepted"
-    }
-  ],
-  "published": true,
-  "gatekeeperAppAndDMG": true,
-  "sparkleArchiveAndFeedVerified": true,
-  "testedRuntimesMatchFinalPayload": true,
-  "guardedPublisherGatePassed": true,
-  "releaseCommit": "d89068eee5c4380cacf29e8fb69c03f4def101c4",
+  "unauthenticated": true,
   "assets": [
     {
       "name": "appcast.xml",
@@ -56,14 +31,6 @@
       "matchesLocal": true
     }
   ],
-  "stableLatest": "v1.11.1",
-  "artifactVerification": {
-    "developerID": true,
-    "notarizationTickets": true,
-    "gatekeeperAppAndDMG": true,
-    "nestedSignatures": true,
-    "signaturePreservingInstallCopies": true,
-    "extractedZIP": true,
-    "checksums": true
-  }
+  "sparkleArchiveAndFeedVerified": true,
+  "stableLatest": "v1.11.1"
 }
