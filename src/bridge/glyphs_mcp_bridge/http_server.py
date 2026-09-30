@@ -97,6 +97,9 @@ class BridgeHTTPServer:
                     save_id = payload.get("saveId") or save.get("saveId")
                     if save_id:
                         details["saveId"] = save_id
+                    creation = payload.get("creation") if isinstance(payload.get("creation"), dict) else {}
+                    if creation.get("creationId"):
+                        details["creationId"] = creation["creationId"]
                     self._reply(503, {"ok": False, "error": {"code": "glyphs_busy", "message": str(exc), "details": details}})
                 except Exception as exc:
                     self._reply(500, {"ok": False, "error": {"code": "bridge_failed", "message": str(exc) or exc.__class__.__name__}})
@@ -108,6 +111,8 @@ class BridgeHTTPServer:
                     return owner.core.status()
                 if self.path == "/v1/documents":
                     return owner.core.list_documents()
+                if self.path == "/v1/documents/create":
+                    return owner.core.create_document(payload.get("creation"))
                 if self.path == "/v1/entities":
                     return owner.core.read_entities(
                         str(payload.get("documentId") or ""),

@@ -55,6 +55,7 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     assert manifest_a["tools"] == [
         "get_status",
         "list_documents",
+        "create_document",
         "read_entities",
         "start_job",
         "get_job",

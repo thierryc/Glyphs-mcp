@@ -1,0 +1,46 @@
+{
+.appVersion = "4107";
+.formatVersion = 4;
+date = "2026-09-30 19:04:01 +0000";
+fontMaster = (
+{
+id = "A9A4DB6A-A642-4487-A3CB-CE3DC587065E";
+name = Regular;
+},
+);
+glyphs = (
+);
+instances = (
+{
+id = "DBBFCAAA-2BED-44A1-9EDE-653B8CBA7543";
+instanceInterpolations = {
+"A9A4DB6A-A642-4487-A3CB-CE3DC587065E" = 1;
+};
+properties = (
+{
+key = styleNames;
+values = (
+{
+language = dflt;
+value = Regular;
+},
+);
+},
+);
+},
+);
+properties = (
+{
+key = familyNames;
+values = (
+{
+language = dflt;
+value = "MCP Creation Qualification";
+},
+);
+},
+);
+unitsPerEm = 2048;
+versionMajor = 1;
+versionMinor = 0;
+}

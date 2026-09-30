@@ -1,0 +1,75 @@
+beztrace third-party notices
+
+Reference capture is complete. This repository bundles two font binaries and
+one UFO source solely to reproduce test fixtures; none is a runtime dependency.
+
+The implementation is a derivative Swift port of img2bez:
+
+  Project: img2bez
+  Repository: https://github.com/eliheuer/img2bez
+  Source revision: 23073ca08ecdac61ad0e838bfae49a590bc2c7cc
+  Copyright: Copyright 2026 the img2bez Authors
+  License: Apache-2.0 OR MIT
+
+The corresponding license texts are distributed as LICENSE-APACHE and
+LICENSE-MIT.
+
+The Swift implementation and standalone executable add no third-party runtime
+dependencies. Image decoding and hashing use Apple system frameworks, and
+local geometry replaces Rust dependency implementations.
+
+  Project: Noto Sans
+  Repository: https://github.com/google/fonts
+  Source revision: c28e08582e7bd36751febb3391142a5eb18bbb34
+  File: ofl/notosans/NotoSans[wdth,wght].ttf
+  Copyright: Copyright 2022 The Noto Project Authors
+  License: SIL Open Font License 1.1
+
+The exact font, metadata, and license text are stored under
+Tests/Fixtures/sources/noto-sans.
+
+  Project: Material Symbols
+  Repository: https://github.com/google/material-design-icons
+  Source revision: 50f0603134ce7b70b2d71b686cc13e8b57ccb74c
+  File: variablefont/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].ttf
+  Copyright: Google LLC and contributors
+  License: Apache License 2.0
+
+The exact font, codepoint map, and license text are stored under
+Tests/Fixtures/sources/material-symbols.
+
+  Project: Virtua Grotesk
+  Repository: https://github.com/eliheuer/virtua-grotesk
+  Source revision: 797c1065abd0c1318217b7c44aff3d61074f7280
+  File: sources/VirtuaGrotesk-Regular.ufo
+  Copyright: Eli Heuer
+  License: SIL Open Font License 1.1
+
+The exact reference UFO and license text are stored under
+Tests/Fixtures/oracle/v1/reference-source.
+
+This file must be updated before any additional third-party source or binary
+dependency is added.
+
+CI and explicit fixture-maintenance commands use, but do not distribute:
+
+  Project: Pillow
+  Repository: https://github.com/python-pillow/Pillow
+  Version: 12.0.0
+  License: MIT-CMU
+
+Pillow is not linked into, bundled with, or required by the beztrace Swift
+library, executable, ZIP, or installer.
+
+The separately distributed optional Glyphs companion additionally includes:
+
+  Project: GlyphsSDK
+  Repository: https://github.com/schriftgestalt/GlyphsSDK
+  Source revision: 0f5422db727b78cb42abfb386f33ae0b382b0c4d
+  Files: General Plugin universal loader and adapted Python entry template
+  License: Apache-2.0
+
+The companion retains the SDK license, source revision, and loader SHA-256 in
+Contents/Resources/GlyphsSDK-LICENSE.txt and GlyphsSDK-SOURCE.json. The SDK
+loader is not included in the standalone engine distributions. The companion
+uses the host Glyphs Python/PyObjC runtime; it does not bundle that runtime.

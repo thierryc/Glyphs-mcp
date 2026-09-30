@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0 Beta 10 — Unreleased, build 52
+
+- Add `create_document` to open a new unsaved font with one Regular master and
+  instance, configurable units per em, native identities and duplicate-safe
+  retries. Save separately as `.glyphs` or `.glyphspackage` using `save_document`.
+- Expand the public catalog to thirteen tools and synchronize creation guidance
+  across the eleven managed skills and documentation.
+- Improve checkpoint selection with explicit latest/reference markers, project
+  font discovery, Open/Open all in Glyphs and green/pink comparison colors.
+- Bundle the universal Beztrace 0.1.1-dev.4 development engine with provenance,
+  licenses and checksums. Sign and verify its release copy with the desktop app;
+  the independent Glyphs plugin remains separate from Install All.
+- Align desktop build fixtures and current release guidance with Beta 10.
+
 ## 2.0.0 Beta 9 — 2026-09-28, build 51
 
 - Add Beztrace to Setup with plugin version, development availability, Glyphs

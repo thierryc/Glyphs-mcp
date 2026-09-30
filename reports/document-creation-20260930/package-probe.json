@@ -1,0 +1,26 @@
+[
+  {
+    "seeded": false,
+    "version": 3,
+    "direct": "(<GSFont objective-c instance 0x9ed214200>, None)",
+    "document": "(None, Error Domain=NSCocoaErrorDomain Code=256 \"The file \u201cpackage-probe-False-3.glyphspackage\u201d couldn\u2019t be opened.\" UserInfo={NSURL=file:///Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-False-3.glyphspackage/, NSFilePath=/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-False-3.glyphspackage, NSUnderlyingError=0x9ea498570 {Error Domain=NSOSStatusErrorDomain Code=-10813 \"kLSDataUnavailableErr: E.g. no kind string\"}})"
+  },
+  {
+    "seeded": false,
+    "version": 4,
+    "direct": "(<GSFont objective-c instance 0x9ed215800>, None)",
+    "document": "(None, Error Domain=NSCocoaErrorDomain Code=256 \"The file \u201cpackage-probe-False-4.glyphspackage\u201d couldn\u2019t be opened.\" UserInfo={NSURL=file:///Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-False-4.glyphspackage/, NSFilePath=/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-False-4.glyphspackage, NSUnderlyingError=0x9ea8792f0 {Error Domain=NSOSStatusErrorDomain Code=-10813 \"kLSDataUnavailableErr: E.g. no kind string\"}})"
+  },
+  {
+    "seeded": true,
+    "version": 3,
+    "direct": "(<GSFont objective-c instance 0x9ed216000>, None)",
+    "document": "(None, Error Domain=NSCocoaErrorDomain Code=256 \"The file \u201cpackage-probe-True-3.glyphspackage\u201d couldn\u2019t be opened.\" UserInfo={NSURL=file:///Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-True-3.glyphspackage/, NSFilePath=/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-True-3.glyphspackage, NSUnderlyingError=0x9ea499e30 {Error Domain=NSOSStatusErrorDomain Code=-10813 \"kLSDataUnavailableErr: E.g. no kind string\"}})"
+  },
+  {
+    "seeded": true,
+    "version": 4,
+    "direct": "(<GSFont objective-c instance 0x9ed216800>, None)",
+    "document": "(None, Error Domain=NSCocoaErrorDomain Code=256 \"The file \u201cpackage-probe-True-4.glyphspackage\u201d couldn\u2019t be opened.\" UserInfo={NSURL=file:///Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-True-4.glyphspackage/, NSFilePath=/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/document-creation-20260930/package-probe-True-4.glyphspackage, NSUnderlyingError=0x9ea879ce0 {Error Domain=NSOSStatusErrorDomain Code=-10813 \"kLSDataUnavailableErr: E.g. no kind string\"}})"
+  }
+]

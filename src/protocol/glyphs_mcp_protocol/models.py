@@ -18,6 +18,7 @@ PATCH_VERSION = 1
 TOOL_NAMES = (
     "get_status",
     "list_documents",
+    "create_document",
     "read_entities",
     "start_job",
     "get_job",

@@ -42,6 +42,7 @@ def bundle(tmp_path, monkeypatch):
         (catalog / (name + '.imageset')).mkdir(parents=True)
     monkeypatch.setattr(verifier, 'load', lambda root: {'version': '2.0.0', 'installerBuild': 43})
     monkeypatch.setattr(verifier, 'validate_embedded_payload', lambda app: {'schemaVersion': 4})
+    monkeypatch.setattr(verifier, 'validate_embedded_beztrace', lambda app: {'version': '0.1.1-dev.4'})
     monkeypatch.setattr(verifier.subprocess, 'check_output', lambda command: json.dumps([
         {'Name': 'GlyphsMCPMenu'}, {'Name': 'GitHubMark'}]).encode())
     return app, tmp_path

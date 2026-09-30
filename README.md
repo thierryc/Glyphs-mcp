@@ -1,10 +1,12 @@
-# Glyphs MCP Desktop 2.0.0 Beta 9
+# Glyphs MCP Desktop 2.0.0 Beta 10
 
-**Beta 9/build 51 is published as a signed and notarized prerelease.**
-Release identity: `2.0.0-beta.9`. Stable Latest remains v1.11.1.
+**Beta 10/build 52 is in development and has not been published.**
+Source release identity: `2.0.0-beta.10`. The latest published beta is Beta 9/build 51.
+Stable Latest remains v1.11.1.
 See [Beta 9 qualification](BETA9-VALIDATION.md),
 [distribution evidence](reports/beta9-release-candidate/README.md), and the [beta guide](BETA.md).
-The [twelve-tool contract](content/reference/command-set.mdx) remains unchanged.
+The [thirteen-tool contract](content/reference/command-set.mdx) adds font creation
+through `create_document`; `save_document` persists the resulting open font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -54,7 +56,7 @@ Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The twelve tools are `get_status`, `list_documents`, `read_entities`,
+The thirteen tools are `get_status`, `list_documents`, `create_document`, `read_entities`,
 `start_job`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
 `respond_edit_workflow`. The shared MCP App supports preparation, saving and
@@ -67,13 +69,13 @@ source stays optional; fresh server checks still guard actions. See
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-The Beta 9 source targets Glyphs 4 only. Glyphs 3 remains available through the
+The Beta 10 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. Beta 9 is available
 as a signed and notarized
 [GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9).
 
-Documentation sources: [v2 · 2.0.0 Beta 9](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 Beta 10](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 Beta 7 qualification and publication are recorded in [BETA7-VALIDATION.md](BETA7-VALIDATION.md).
 Historical Beta 6 evidence remains in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
@@ -85,7 +87,7 @@ The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta 9 artifacts use `Glyphs-MCP-2.0.0-beta.9.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). Planned Beta 10 artifacts use `Glyphs-MCP-2.0.0-beta.10.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 
@@ -117,7 +119,7 @@ limits are unchanged. Qualification is tracked in [the milestone plan](BETA8-MIL
 The opt-in project setting records exact saved baselines and authorized MCP saves
 as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be
 retried without another Save. Bounded history, recorded actions, comparison and
-whole-font historical reload share the existing twelve tools and app project UI.
+whole-font historical reload share the existing thirteen tools and app project UI.
 See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.

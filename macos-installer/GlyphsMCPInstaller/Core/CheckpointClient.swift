@@ -78,6 +78,39 @@ public struct CheckpointDocument: Identifiable, Equatable {
     }
 }
 
+public struct CheckpointFontSource: Identifiable, Equatable, Sendable {
+    public let path: String
+    public var id: String { path }
+    public var filename: String { URL(fileURLWithPath: path).lastPathComponent }
+
+    public static func discover(project: String, fileManager: FileManager = .default) -> [Self] {
+        let root = URL(fileURLWithPath: project, isDirectory: true).standardizedFileURL
+        guard let enumerator = fileManager.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey],
+            options: [.skipsHiddenFiles],
+            errorHandler: { _, _ in true }
+        ) else { return [] }
+
+        var fonts: [Self] = []
+        while let url = enumerator.nextObject() as? URL {
+            let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            if values?.isSymbolicLink == true {
+                if values?.isDirectory == true { enumerator.skipDescendants() }
+                continue
+            }
+            let ext = url.pathExtension.lowercased()
+            if ext == "glyphspackage", values?.isDirectory == true {
+                fonts.append(.init(path: url.standardizedFileURL.path))
+                enumerator.skipDescendants()
+            } else if ext == "glyphs", values?.isRegularFile == true {
+                fonts.append(.init(path: url.standardizedFileURL.path))
+            }
+        }
+        return fonts.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+    }
+}
+
 public struct CheckpointComparisonContext: Equatable {
     public let document: CheckpointDocument
     public let checkpoint: FontCheckpoint
@@ -98,6 +131,7 @@ import Combine
 public final class CheckpointHistoryStore: ObservableObject {
     public typealias Call = ([String: Any]) async throws -> Any
     @Published public private(set) var documents: [CheckpointDocument] = []
+    @Published public private(set) var projectFonts: [CheckpointFontSource] = []
     @Published public private(set) var documentID = ""
     @Published public private(set) var rows: [FontCheckpoint] = []
     @Published public private(set) var cursor: String?
@@ -110,15 +144,22 @@ public final class CheckpointHistoryStore: ObservableObject {
     private var task: Task<Void, Never>?
     public init(call: @escaping Call = { try await CheckpointClient.call($0) }) { self.call = call }
     public var document: CheckpointDocument? { documents.first { $0.id == documentID } }
+    public var latestRevision: String? { rows.first?.revision }
+    public var unopenedFonts: [CheckpointFontSource] {
+        let openPaths = Set(documents.map { URL(fileURLWithPath: $0.path).standardizedFileURL.path })
+        return projectFonts.filter { !openPaths.contains($0.path) }
+    }
     public func cancel() { generation = UUID(); task?.cancel(); busy = false }
     public func open(project: String, preferredDocument: String?) {
         cancel(); let request = generation
-        documents = []; documentsLoaded = false; rows = []; cursor = nil; head = ""; error = ""; busy = true
+        documents = []; projectFonts = []; documentsLoaded = false; rows = []; cursor = nil; head = ""; error = ""; busy = true
         task = Task {
             do {
+                let fontTask = Task.detached(priority: .userInitiated) { CheckpointFontSource.discover(project: project) }
                 let values = try await call(["action": "documents"]) as? [[String: Any]] ?? []
+                let fonts = await fontTask.value
                 guard generation == request, !Task.isCancelled else { return }
-                documents = CheckpointDocument.eligible(values, project: project); documentsLoaded = true
+                documents = CheckpointDocument.eligible(values, project: project); projectFonts = fonts; documentsLoaded = true
                 documentID = documents.first(where: { $0.id == preferredDocument })?.id ?? (documents.count == 1 ? documents[0].id : "")
                 busy = false
                 if !documentID.isEmpty { load(more: false) }

@@ -29,7 +29,7 @@ def catalog():
 def test_current_catalog_examples_remain_valid_and_discoverable(catalog):
     from glyphs_mcp_protocol import TOOL_NAMES
     from glyphs_mcp_sidecar.service import SidecarService
-    assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 12
+    assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 13
     cases = json.loads((Path(__file__).parent/'fixtures/current_tool_routing.json').read_text())
     for case in cases:
         tool = catalog[case['tool']]
@@ -102,7 +102,7 @@ def test_current_guidance_identifies_history_and_shared_contract():
     assert 'script.native.v1' in bridge and 'verified Save' in bridge
     contributor = (ROOT/'CODEX.md').read_text()
     assert 'Core budgets:' not in contributor and 'seven MCP tools' not in contributor
-    assert 'script.native.v1' in contributor and 'twelve' in contributor
+    assert 'script.native.v1' in contributor and 'thirteen' in contributor
 
 
 def test_protocol_and_bridge_import_boundaries_replace_line_limits():

@@ -8,7 +8,7 @@ Require `paths.list.v1` and `path.geometry.v1` in negotiated
 `readCapabilities`, plus `outline.edit.v1` in bridge `writeCapabilities` and
 `outline_edit` in sidecar `jobKinds`. A missing capability means the bridge,
 sidecar and skills must be updated together. The public tool count remains
-twelve; never substitute arbitrary Python or direct font-file editing to bypass
+thirteen; never substitute arbitrary Python or direct font-file editing to bypass
 missing typed capabilities or rejected writes.
 Shape-preserving removal additionally requires `outline.remove-node.v1`.
 

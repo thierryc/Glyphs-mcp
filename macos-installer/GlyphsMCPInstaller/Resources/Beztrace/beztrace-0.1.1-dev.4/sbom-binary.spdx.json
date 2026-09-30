@@ -1,0 +1,60 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "annotations": [
+    {
+      "annotationDate": "2026-08-26T00:00:00Z",
+      "annotationType": "OTHER",
+      "annotator": "Tool: beztrace-generate-sbom-v1",
+      "comment": "No third-party runtime dependencies. Linked Apple system frameworks are platform prerequisites and are not distributed in the artifact."
+    }
+  ],
+  "creationInfo": {
+    "created": "2026-08-26T00:00:00Z",
+    "creators": [
+      "Tool: beztrace-generate-sbom-v1"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://beztrace.dev/spdx/0.1.1-dev.4/binary-b2ceadc199f6e6b07429b21d839fac2443d3dbfda1920ea87ca3bd10bedcb9f9",
+  "files": [
+    {
+      "SPDXID": "SPDXRef-Binary-beztrace",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b2ceadc199f6e6b07429b21d839fac2443d3dbfda1920ea87ca3bd10bedcb9f9"
+        }
+      ],
+      "copyrightText": "Copyright 2026 beztrace contributors and the img2bez Authors",
+      "fileName": "bin/beztrace",
+      "licenseConcluded": "Apache-2.0 OR MIT"
+    }
+  ],
+  "name": "beztrace binary SBOM",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-beztrace-binary",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "name": "beztrace",
+      "supplier": "Organization: beztrace contributors",
+      "versionInfo": "0.1.1-dev.4"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-Package-beztrace-binary",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Binary-beztrace",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-binary"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}

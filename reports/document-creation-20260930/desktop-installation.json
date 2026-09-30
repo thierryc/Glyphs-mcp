@@ -1,0 +1,71 @@
+{
+  "installedPath": "/Applications/Glyphs MCP.app",
+  "backup": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/local-install-backups/font-creation-bcf9f87738fa/Glyphs MCP.app",
+  "verified": {
+    "version": "2.0.0",
+    "build": "52",
+    "assets": [
+      "ClaudeCodeLogo",
+      "ClaudeLogo",
+      "CodexLogo",
+      "CursorLogo",
+      "GitHubMark",
+      "GlyphsMCPMenu"
+    ],
+    "beztrace": {
+      "version": "0.1.1-dev.4",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "sourceRevision": "4f7c9db68443b20e8933f2038e8ec3a159f0d467",
+      "engineSHA256": "b2ceadc199f6e6b07429b21d839fac2443d3dbfda1920ea87ca3bd10bedcb9f9"
+    },
+    "pierre": {
+      "version": "1.2.4",
+      "commit": "c2249d7890de957a96480711152d90a06fa1222b",
+      "bundleSHA256": "ae5aa8dd4fda867fa77510ac0390f5d5c144814f73f2f3f0c8cd6e4b95211fa8",
+      "resources": {
+        "pierre-diffs-bundle.js": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2",
+        "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+      }
+    },
+    "appSHA256": "230fda707e6801a50a7bd2c887bb3c58919b058c3d2c4c34793ece5c91a8b4ae"
+  },
+  "buildReceipt": {
+    "sourceRoot": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2",
+    "sourceSHA256": "445d0b2bf59a6518d92d81b41401fce200d0656308dc29dcfb0a31528b7d1783",
+    "bundle": {
+      "version": "2.0.0",
+      "build": "52",
+      "assets": [
+        "ClaudeCodeLogo",
+        "ClaudeLogo",
+        "CodexLogo",
+        "CursorLogo",
+        "GitHubMark",
+        "GlyphsMCPMenu"
+      ],
+      "beztrace": {
+        "version": "0.1.1-dev.4",
+        "architectures": [
+          "arm64",
+          "x86_64"
+        ],
+        "sourceRevision": "4f7c9db68443b20e8933f2038e8ec3a159f0d467",
+        "engineSHA256": "b2ceadc199f6e6b07429b21d839fac2443d3dbfda1920ea87ca3bd10bedcb9f9"
+      },
+      "pierre": {
+        "version": "1.2.4",
+        "commit": "c2249d7890de957a96480711152d90a06fa1222b",
+        "bundleSHA256": "ae5aa8dd4fda867fa77510ac0390f5d5c144814f73f2f3f0c8cd6e4b95211fa8",
+        "resources": {
+          "pierre-diffs-bundle.js": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2",
+          "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+        }
+      },
+      "appSHA256": "230fda707e6801a50a7bd2c887bb3c58919b058c3d2c4c34793ece5c91a8b4ae"
+    },
+    "builtAt": "2026-09-30T19:22:25.085914+00:00"
+  }
+}

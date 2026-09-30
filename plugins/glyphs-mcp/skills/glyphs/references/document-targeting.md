@@ -1,5 +1,8 @@
 # Reuse a known live document ID
 
+An authorized `create_document` result supplies a new valid binding directly;
+retain its `id` without a preliminary or confirming `list_documents` call.
+
 Use the verified connection context already available; load
 [connection setup](connection-session.md) only if missing or changed. Start with
 the retained ID for the intended font on this connection. Discover the intended

@@ -1,0 +1,52 @@
+{
+  "release": {
+    "version": "2.0.0",
+    "releaseVersion": "2.0.0-beta.10",
+    "channel": "beta",
+    "betaNumber": 10,
+    "installerBuild": 52
+  },
+  "tools": [
+    "get_status",
+    "list_documents",
+    "create_document",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "accept_job",
+    "discard_job",
+    "save_document",
+    "start_edit_workflow",
+    "get_edit_workflow",
+    "respond_edit_workflow"
+  ],
+  "bridge": {
+    "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+    "identity": "sha256:8cf9853c6c9230ec59c7689129df3a9ce322401b997927ebcca65c8835419e4d",
+    "codeHash": "sha256:8cf9853c6c9230ec59c7689129df3a9ce322401b997927ebcca65c8835419e4d",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.10",
+      "channel": "beta",
+      "betaNumber": 10,
+      "installerBuild": 52
+    }
+  },
+  "sidecar": {
+    "identity": "sha256:8bc96ab6bf468b83169edb8553a04d7934bad33b930fd3ac689c0d0f969945bc",
+    "codeHash": "sha256:8bc96ab6bf468b83169edb8553a04d7934bad33b930fd3ac689c0d0f969945bc",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.10",
+      "channel": "beta",
+      "betaNumber": 10,
+      "installerBuild": 52
+    },
+    "glyphDiffReader": {
+      "schemaVersion": 3,
+      "protocolAPIVersion": 1,
+      "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker"
+    }
+  }
+}

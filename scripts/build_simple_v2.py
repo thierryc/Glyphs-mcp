@@ -237,6 +237,7 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
         "tools": [
             "get_status",
             "list_documents",
+            "create_document",
             "read_entities",
             "start_job",
             "get_job",

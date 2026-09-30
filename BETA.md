@@ -1,5 +1,17 @@
 # Glyphs MCP 2.0.0 Beta
 
+**Development target: Beta 10/build 52 (`2.0.0-beta.10`), not yet published.**
+The downloads and release evidence below refer to the latest published beta.
+
+Beta 10 adds new-font creation with `create_document`, duplicate-safe retries
+and native master/instance IDs. Save separately using `save_document` as
+`.glyphs` or `.glyphspackage`. It ships thirteen public tools and eleven managed
+skills. Checkpoint history now discovers project fonts, opens selected/all fonts
+in Glyphs, marks the latest/reference versions and uses green/pink comparisons.
+The desktop app bundles the universal Beztrace 0.1.1-dev.4 development engine;
+its independent Glyphs plugin remains outside Install All.
+See [Beta 10 qualification](BETA10-VALIDATION.md).
+
 **Beta 9/build 51 is published as a signed and notarized GitHub prerelease.
 Stable Latest remains v1.11.1.**
 

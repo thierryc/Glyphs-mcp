@@ -1,0 +1,715 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2026-08-26T00:00:00Z",
+    "creators": [
+      "Tool: beztrace-generate-sbom-v1"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://beztrace.dev/spdx/0.1.1-dev.4/source-4f7c9db68443b20e8933f2038e8ec3a159f0d467",
+  "files": [
+    {
+      "SPDXID": "SPDXRef-SourceFile-0000",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9fa9fbec87cbfce1e052e441b70e4c895ac2600bbfac36a5c45889c5832f3b80"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Package.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0001",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a3838cf90031e5681be1506b3cd140daaa247d2b2507f64f09dcce1dfe0cfec0"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Schemas/release-manifest-v1.schema.json",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0002",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b05b8cea12a25287ffb388ac813c2cc29b1982aa5aeb5a7281ea9f6a79d331be"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Schemas/trace-result-v1.schema.json",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0003",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "10e14c5a3e799f8ed4119cb19727b1e9f795701706f460611653b2c2820d52ea"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCommand/BeztraceMain.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0004",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2d634a497e1b6b74cb66f2a6318de0cc5578c0b94ec4b052333ea3b38e1d3497"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCommand/CLIApplication.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0005",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6d54b0e42aefda37538fbbd887307b95d6ec3ae41f652542efbf47a54da173e0"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/BezierTraceCore.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0006",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0d8e0be81feae6a1f8c3426ad4f49d867a2f5d19da320ff8a5c3425d4daaa869"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/BezierTracer.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0007",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "553b85b2b3246a622b8e91b6d9468d0de0706a3a095b07ef4d790f42f9fe11fa"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupChamfer.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0008",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "62846e7b6459d81486330bdddbbc560825f2df33b5a65739d7c428df7fe2c59d"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupDirection.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0009",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9d710d95fc6a801eeb1486617e87ec243f0b932bad7b084021c08b5e863ad75d"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupEven.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0010",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8ba6b96536f86fceacdf0ede21a7bc61e2bff2b79484530f9d5a3b238c8a4737"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupInflection.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0011",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fc7197af79df11bd4205fc1fd06a8773649853f23e1bc877114e3d8538813fd0"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupPipeline.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0012",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e69976b5a3d8b86a1e07068a1b40d2fd17c8c0f4eb7424f10d2816a86391074c"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupSimplify.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0013",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b514ddacb6fc0c9a6dc272e41a60cdeeb6cd1c736236ef1ed95b421cde6bad6e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupSnap.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0014",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c9dac455677b224c29707896d3cc666bce0c1dfdc55b07713e89355990160422"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupStraighten.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0015",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "84adcde42b50d9f5e272f2a64b6a5b5487273cd26a6a6a68b08bf843e6eb422c"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/ContourPipeline.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0016",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e49ae1626303f71d7f26b1fea5b2bb4c2ed381b2780c931b82914a454d915d60"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CoreError.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0017",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e806ca53e9c6e888aa691f23bfb0ad3d984f9047e15d776e120b636776724d32"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CornerDetection.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0018",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "857e5adfb81362a0e3a2ada2127b1af82324ab7a62e4e57c4e61a9541b65ee2e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CubicFitting.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0019",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ac484659b774df971a8c28daa9aa8852cde3258e711054ff49d7841dec7a1c74"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/FittedGeometry.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0020",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c1b868ce88ebe57953eb704ff1b869e7a41c12c750c5e00840f16d7c052b8efc"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/FittingFinish.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0021",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4c0f22c952c3f34f673e040a3302def31575612646b803f6dc1e6ce2761c2528"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/Geometry.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0022",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "02c662601729d79a96d1f1b658bd031cc77ebd291c702059b7c50220aa690555"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/HandleSafety.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0023",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7d4951a5724cc8fd8504b71c4fcffe30ed4485984c682b194833a15ad8b90f62"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/OutlineValidation.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0024",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dd9e5521c0c42862ecc694a4dcd546c206f518adf00afa5f0e13df58c2012bd3"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/Placement.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0025",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ff250767e896d88ce0889d3c4ecaad18ff1c5a21fa42782d5f607c4d632f4be2"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/PublicGeometry.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0026",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6c475b209764f1f15c6cdff6c5af3392f2baf5c05dc19b939645d3044b0d5306"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/PublicModels.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0027",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "393d2e6a0d8dca04e01a876eb78676b017c04e1bc17db9a9c97be438dd58ac1f"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/Raster.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0028",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5a7eecef21e253cdc53b82dfef13610b9b7ef9def444e04f661fb961ebc02e30"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RasterRefinement.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0029",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "91279b82fb36186ef3a56a1658bac7277a3daa6b369bc377b21683a21579b85d"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RasterTarget.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0030",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "836cb64b3896afed1aa0c84e24fdff12d65e0b2804be6eef8aed1a73db50de23"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RefinementFlats.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0031",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5220e0230b9c8698462d062e55192b179b85a4a375570010a366d63b0773b473"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RefinementLines.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0032",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "65119a88794e5e2e068f59f04a667f0cc8a972dcef0b30535ab73506bd6e3de0"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RefinementMerge.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0033",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "431d519753ac11ef17a7faab96e45b4fbb4cd0f5a147eb1c61915424193531c5"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RefinementPolish.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0034",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b52887217b91ae1e6a6aa1a39e19f47433b49487f41aaf98b47d0dab34a0d743"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RefinementVerify.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0035",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1da22cd65f7ce4890402c70cbeec73e47ac1d32a1563ab5a28e2d00509166130"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/RefinementWelds.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0036",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7f1c8f885a3641b69128e4f55379668a1da8cdf673471cd36b11f70af4606f57"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/StraightRuns.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0037",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0ebcfcc5198345a8ead616a8fc7920afa2b6961430835b48b8baf487b7644ee3"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/StructuralPlanning.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0038",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8e0188079e0fe6285e2bee52ed5a6c647a504e2b4c309812a5401054f62663d5"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/SubpixelContours.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0039",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "92f5743b7500ac7bcedf3c146b474e017a26914438b54a599fab98361c1a216d"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/TraceSerializer.swift",
+      "licenseConcluded": "NOASSERTION"
+    }
+  ],
+  "name": "beztrace source SBOM",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-beztrace-source",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 OR MIT",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "name": "beztrace",
+      "supplier": "Organization: beztrace contributors",
+      "versionInfo": "0.1.1-dev.4"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-Package-beztrace-source",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0000",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0001",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0002",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0003",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0004",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0005",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0006",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0007",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0008",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0009",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0010",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0011",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0012",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0013",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0014",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0015",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0016",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0017",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0018",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0019",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0020",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0021",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0022",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0023",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0024",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0025",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0026",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0027",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0028",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0029",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0030",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0031",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0032",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0033",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0034",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0035",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0036",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0037",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0038",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0039",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}

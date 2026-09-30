@@ -1,0 +1,25 @@
+{
+  "checks": [
+    {
+      "format": ".glyphs",
+      "masterIds": [
+        "BD1DA5E9-99DA-4A95-AB02-3D09901DFDE6"
+      ],
+      "instanceIds": [
+        "BC555750-C863-4612-81A2-2748975800E2"
+      ],
+      "reopenVerified": true
+    },
+    {
+      "format": ".glyphspackage",
+      "masterIds": [
+        "963091AF-7128-4530-995A-DE071298ACBE"
+      ],
+      "instanceIds": [
+        "A9B96CCE-B678-46A8-A6DA-8C2291028FFC"
+      ],
+      "reopenVerified": true
+    }
+  ],
+  "scope": "detached production constructor and native serialization; live MCP document opening and NSDocument Save As unverified"
+}

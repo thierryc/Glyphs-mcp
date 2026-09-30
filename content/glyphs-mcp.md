@@ -3,12 +3,12 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.0.0** connects AI applications to Glyphs 4 through twelve tools. A
+Glyphs MCP **2.0.0** connects AI applications to Glyphs 4 through thirteen tools. A
 small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes the **2.0.0 Beta 9 release**, desktop build **51**, with coordinated sidecar and bridge product version **2.0.0**. Signing, notarization and public release evidence are recorded separately. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
+This guide describes the **2.0.0 Beta 10 development target**, desktop build **52**, with coordinated sidecar and bridge product version **2.0.0**. Beta 10 has not been published; signing, notarization and release qualification are pending. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
 
 ## Start here
 

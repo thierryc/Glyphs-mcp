@@ -81,6 +81,42 @@ final class CheckpointHistoryTests: XCTestCase {
         XCTAssertEqual(documents.map(\.id), ["a", "b"])
     }
 
+    func testProjectFontDiscoveryFindsFilesAndPackagesWithoutEnteringPackagesOrSymlinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sources = root.appendingPathComponent("sources")
+        let package = sources.appendingPathComponent("Family.glyphspackage")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        try Data("font".utf8).write(to: sources.appendingPathComponent("Family.glyphs"))
+        try Data("nested".utf8).write(to: package.appendingPathComponent("Nested.glyphs"))
+        try Data("ignore".utf8).write(to: sources.appendingPathComponent("notes.txt"))
+        try FileManager.default.createSymbolicLink(
+            at: sources.appendingPathComponent("Linked.glyphs"),
+            withDestinationURL: sources.appendingPathComponent("Family.glyphs")
+        )
+
+        let fonts = CheckpointFontSource.discover(project: root.path)
+        XCTAssertEqual(fonts.map(\.filename), ["Family.glyphs", "Family.glyphspackage"])
+    }
+
+    @MainActor
+    func testUnopenedFontsExcludeDocumentsAlreadyOpenInGlyphs() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let open = root.appendingPathComponent("Open.glyphs")
+        let closed = root.appendingPathComponent("Closed.glyphs")
+        try Data().write(to: open); try Data().write(to: closed)
+        let store = CheckpointHistoryStore { body in
+            if body["action"] as? String == "documents" { return [["id":"open", "path":open.path]] }
+            return [["checkpoint":["head":"head", "checkpoints":[]]]]
+        }
+        store.open(project: root.path, preferredDocument: nil)
+        try await settle(store)
+        XCTAssertEqual(store.unopenedFonts.map(\.filename), ["Closed.glyphs"])
+    }
+
     @MainActor
     private func settle(_ store: CheckpointHistoryStore) async throws {
         for _ in 0..<200 {
@@ -106,12 +142,15 @@ final class CheckpointHistoryTests: XCTestCase {
         XCTAssertEqual(store.documentID, "font")
         XCTAssertEqual(selectors.first?["limit"] as? Int, 20)
         XCTAssertEqual(store.rows.map(\.id), ["two"])
+        XCTAssertEqual(store.latestRevision, "two")
         store.load(more: true); try await settle(store)
         XCTAssertEqual(store.rows.map(\.id), ["two", "one"])
+        XCTAssertEqual(store.latestRevision, "two")
         XCTAssertNil(store.cursor)
         XCTAssertEqual(selectors.last?["cursor"] as? String, "next")
         store.open(project: "/project", preferredDocument: "font"); try await settle(store)
         XCTAssertEqual(store.rows.map(\.id), ["two"])
+        XCTAssertEqual(store.latestRevision, "two")
         XCTAssertNil(selectors.last?["cursor"])
     }
 

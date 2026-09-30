@@ -1,0 +1,44 @@
+{
+.appVersion = "4107";
+.formatVersion = 4;
+date = "2026-09-30 19:05:46 +0000";
+fontMaster = (
+{
+id = "E7DF81F5-FCB9-4583-A92B-9469370C92FF";
+name = Regular;
+},
+);
+instances = (
+{
+id = "95D32110-57B3-4B08-A2CF-3788D560F910";
+instanceInterpolations = {
+"E7DF81F5-FCB9-4583-A92B-9469370C92FF" = 1;
+};
+properties = (
+{
+key = styleNames;
+values = (
+{
+language = dflt;
+value = Regular;
+},
+);
+},
+);
+},
+);
+properties = (
+{
+key = familyNames;
+values = (
+{
+language = dflt;
+value = Probe;
+},
+);
+},
+);
+unitsPerEm = 1000;
+versionMajor = 1;
+versionMinor = 0;
+}

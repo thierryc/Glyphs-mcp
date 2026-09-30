@@ -123,6 +123,7 @@ payload_archive_sha256_before_signing="$(/usr/bin/shasum -a 256 "$payload_archiv
 rm -rf "$payload_root"
 echo "Embedded immutable signed payload archive: $payload_archive"
 
+"$python_bin" "$repo_root/scripts/sign_embedded_beztrace.py" sign "$out_dir/$product.app" --identity "$identity"
 "$python_bin" "$repo_root/scripts/sign_desktop_frameworks.py" "$out_dir/$product.app/Contents/Frameworks" --identity "$identity"
 
 echo "Signing exported app from a clean signature slot…"

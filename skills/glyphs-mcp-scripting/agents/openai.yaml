@@ -1,4 +1,4 @@
 interface:
   display_name: "glyphs-mcp-scripting"
   short_description: "Native scripts with saved-version recovery"
-  default_prompt: "Use the lean twelve-tool Glyphs MCP workflow for this task."
+  default_prompt: "Use the lean thirteen-tool Glyphs MCP workflow for this task."

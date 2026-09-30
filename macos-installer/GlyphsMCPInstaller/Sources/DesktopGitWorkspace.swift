@@ -6,6 +6,7 @@ import PierreDiffsSwift
 
 struct DesktopGitWorkspace: View {
     @ObservedObject var model: DesktopProjectsModel
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showCheckpoints = false
     @State private var checkpointSheet: CheckpointSheet?
 
@@ -477,8 +478,8 @@ struct DesktopGitWorkspace: View {
                 HStack {
                     Text(pair.changed ? "Changed layer" : "No visual geometry difference; see Text").foregroundStyle(.secondary)
                     Spacer()
-                    legendSwatch(color: .orange, label: "Reference")
-                    legendSwatch(color: .blue, label: "Current")
+                    legendSwatch(color: GlyphComparisonPalette.reference(colorScheme), label: "Reference")
+                    legendSwatch(color: GlyphComparisonPalette.current(colorScheme), label: "Current")
                     if let before = pair.before, let after = pair.after {
                         Text("Width \(number(before.width)) → \(number(after.width))").foregroundStyle(.secondary)
                     }
@@ -865,9 +866,9 @@ private struct GlyphDiffWebView: NSViewRepresentable {
                      control: colorScheme == .dark ? "#a8a8a8" : "#858585",
                      handle: colorScheme == .dark ? "#707070" : "#b8b8b8",
                      guide: colorScheme == .dark ? "#66594d" : "#d7b28a",
-                     reference: colorScheme == .dark ? "#ff9f0a" : "#c93400",
-                     current: colorScheme == .dark ? "#0a84ff" : "#0066cc",
-                     delta: colorScheme == .dark ? "#0a84ff5c" : "#0066cc4d",
+                     reference: GlyphComparisonPalette.referenceHex(colorScheme),
+                     current: GlyphComparisonPalette.currentHex(colorScheme),
+                     delta: GlyphComparisonPalette.deltaHex(colorScheme),
                      hasBefore: layer.before != nil, hasAfter: layer.after != nil)
     }
 
@@ -907,7 +908,7 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         let pieces = layer.difference.map { deltaPieces($0, minY: minY, maxY: maxY) }
         return """
         <!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'none'">
-        <style>:root{--background:#fff;--neutral:#242424;--preview-fill:#000;--control:#858585;--handle:#b8b8b8;--guide:#d7b28a;--reference:#c93400;--current:#0066cc;--delta:#0066cc4d;--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;--inverse-zoom:1}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--background);user-select:none}svg{width:100%;height:100%;min-width:520px;min-height:420px}.guide{stroke:var(--guide);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.72}.label{fill:var(--guide);font:500 12px -apple-system;text-anchor:end}.component-fill{fill:var(--neutral);fill-opacity:.08;stroke:none;fill-rule:nonzero}.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);fill-rule:evenodd;vector-effect:non-scaling-stroke}.neutral-node,.neutral-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.open{fill:none}.advance{stroke-dasharray:5 4;opacity:.55}.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;stroke-linecap:round;opacity:.9;vector-effect:non-scaling-stroke}.delta{fill:var(--delta);stroke:none;fill-rule:evenodd}.width-change{fill:var(--delta)}.reference-change{fill:none;stroke:var(--reference);stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.current-change{fill:none;stroke:var(--current);stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.reference-handle,.current-handle{stroke-width:var(--detail-stroke);opacity:.72;vector-effect:non-scaling-stroke}.reference-handle{stroke:var(--reference)}.current-handle{stroke:var(--current)}.reference-node,.reference-control{fill:none;stroke:var(--reference);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.current-node,.current-control{fill:none;stroke:var(--current);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.anchor-link{stroke:var(--current);stroke-width:var(--detail-stroke);opacity:.65;vector-effect:non-scaling-stroke}.anchor{stroke-width:var(--detail-stroke);fill:none;vector-effect:non-scaling-stroke}.anchor-label{font:12px -apple-system}.reference-change.anchor-label{fill:var(--reference);stroke:none;text-anchor:end}.current-change.anchor-label{fill:var(--current);stroke:none;text-anchor:start}.fixed-control{transform-box:fill-box;transform-origin:center;transform:scale(var(--inverse-zoom))}.fill-preview path.neutral:not(.open){fill:var(--preview-fill);stroke:var(--preview-fill)}.fill-preview .component-fill{fill:var(--preview-fill);fill-opacity:1}.fill-preview .neutral-node,.fill-preview .neutral-control,.fill-preview .neutral-handle,.fill-preview .advance,.fill-preview #delta-fill,.fill-preview #reference-changes,.fill-preview #current-changes{display:none}</style></head>
+        <style>:root{--background:#fff;--neutral:#242424;--preview-fill:#000;--control:#858585;--handle:#b8b8b8;--guide:#d7b28a;--reference:#db2e8c;--current:#137a55;--delta:#137a554d;--outline-stroke:.5;--delta-stroke:.65;--detail-stroke:.25;--inverse-zoom:1}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--background);user-select:none}svg{width:100%;height:100%;min-width:520px;min-height:420px}.guide{stroke:var(--guide);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.72}.label{fill:var(--guide);font:500 12px -apple-system;text-anchor:end}.component-fill{fill:var(--neutral);fill-opacity:.08;stroke:none;fill-rule:nonzero}.neutral{fill:none;stroke:var(--neutral);stroke-width:var(--outline-stroke);fill-rule:evenodd;vector-effect:non-scaling-stroke}.neutral-node,.neutral-control{fill:none;stroke:var(--control);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.neutral-handle{stroke:var(--handle);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.open{fill:none}.advance{stroke-dasharray:5 4;opacity:.55}.origin-advance{stroke:var(--guide);stroke-width:1.25;stroke-dasharray:6 4;stroke-linecap:round;opacity:.9;vector-effect:non-scaling-stroke}.delta{fill:var(--delta);stroke:none;fill-rule:evenodd}.width-change{fill:var(--delta)}.reference-change{fill:none;stroke:var(--reference);stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.current-change{fill:none;stroke:var(--current);stroke-width:var(--delta-stroke);vector-effect:non-scaling-stroke}.reference-handle,.current-handle{stroke-width:var(--detail-stroke);opacity:.72;vector-effect:non-scaling-stroke}.reference-handle{stroke:var(--reference)}.current-handle{stroke:var(--current)}.reference-node,.reference-control{fill:none;stroke:var(--reference);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.current-node,.current-control{fill:none;stroke:var(--current);stroke-width:var(--detail-stroke);vector-effect:non-scaling-stroke}.anchor-link{stroke:var(--current);stroke-width:var(--detail-stroke);opacity:.65;vector-effect:non-scaling-stroke}.anchor{stroke-width:var(--detail-stroke);fill:none;vector-effect:non-scaling-stroke}.anchor-label{font:12px -apple-system}.reference-change.anchor-label{fill:var(--reference);stroke:none;text-anchor:end}.current-change.anchor-label{fill:var(--current);stroke:none;text-anchor:start}.fixed-control{transform-box:fill-box;transform-origin:center;transform:scale(var(--inverse-zoom))}.fill-preview path.neutral:not(.open){fill:var(--preview-fill);stroke:var(--preview-fill)}.fill-preview .component-fill{fill:var(--preview-fill);fill-opacity:1}.fill-preview .neutral-node,.fill-preview .neutral-control,.fill-preview .neutral-handle,.fill-preview .advance,.fill-preview #delta-fill,.fill-preview #reference-changes,.fill-preview #current-changes{display:none}</style></head>
         <body><svg id="glyph-canvas" role="img" aria-label="Read-only glyph difference for \(escape(layer.label))" viewBox="\(viewBox.minX) \(viewBox.minY) \(viewBox.width) \(viewBox.height)" preserveAspectRatio="xMidYMid meet"><g id="camera"><g id="metric-guides" class="guide-dependent">\(metricGuides)</g><g id="before-neutral">\(before)</g><g id="after-neutral">\(after)</g><g id="delta-fill">\(pieces?.fill ?? "")</g><g id="reference-changes">\(pieces?.reference ?? "")</g><g id="current-changes">\(pieces?.current ?? "")</g></g></svg></body></html>
         """
     }
@@ -1224,8 +1225,9 @@ private struct GlyphDiffWebView: NSViewRepresentable {
         var presentation = Presentation(overlay: "both", guides: true, background: "#fff",
                                         neutral: "#242424", previewFill: "#000000",
                                         control: "#858585", handle: "#b8b8b8",
-                                        guide: "#d7b28a", reference: "#c93400", current: "#0066cc",
-                                        delta: "#0066cc4d",
+                                        guide: "#d7b28a", reference: GlyphComparisonPalette.referenceLightHex,
+                                        current: GlyphComparisonPalette.currentLightHex,
+                                        delta: GlyphComparisonPalette.deltaLightHex,
                                         hasBefore: true, hasAfter: true)
         var sentPresentation: Presentation?
         var currentState = GlyphViewportState(centerX: 380, centerY: -300, magnification: 1)

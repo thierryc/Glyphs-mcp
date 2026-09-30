@@ -7,6 +7,7 @@ import math
 import numbers
 import time
 from threading import RLock
+from uuid import uuid4
 from typing import Any, Callable, Mapping, Protocol
 
 from glyphs_mcp_protocol import PROTOCOL_VERSION, ProtocolError, validate_patch
@@ -34,6 +35,7 @@ class BridgeError(RuntimeError):
 
 class BridgeAdapter(Protocol):
     def list_documents(self) -> list[dict[str, Any]]: ...
+    def create_document(self, request: Mapping[str, Any], operation: dict[str, Any]) -> dict[str, Any]: ...
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]: ...
     def document_state(self, document_id: str) -> dict[str, Any]: ...
     def current_value(self, document_id: str, change: Mapping[str, Any], *, reverse: bool = False) -> Any: ...
@@ -59,6 +61,8 @@ class BridgeCore:
         self.companions = companions or CompanionRegistry()
         self._operations: dict[str, dict[str, Any]] = {}
         self._saves: dict[str, dict[str, Any]] = {}
+        self._creations: dict[str, dict[str, Any]] = {}
+        self.bridge_session_id = uuid4().hex
         self._lock = RLock()
         self.paused = False
 
@@ -84,6 +88,9 @@ class BridgeCore:
             active = sum(item["status"] in ACTIVE for item in self._operations.values())
             active += sum(item["status"] == "saving" for item in self._saves.values())
         write_capabilities = ["outline.edit.v1", "outline.background.edit.v1"]
+        from . import document_creation
+        if document_creation.available():
+            write_capabilities.append("document.create.v1")
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
         if dimensions.available():
@@ -102,6 +109,7 @@ class BridgeCore:
             write_capabilities.append("kerning.edit.exact.v1")
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
+            "bridgeSessionId": self.bridge_session_id,
             **IDENTITY, "host": self.host,
             "readCapabilities": list(READ_CAPABILITIES),
             "writeCapabilities": write_capabilities,
@@ -114,6 +122,10 @@ class BridgeCore:
 
     def list_documents(self) -> list[dict[str, Any]]:
         return self.adapter.list_documents()
+
+    def create_document(self, request) -> dict[str, Any]:
+        from . import document_creation
+        return document_creation.create(self, request, BridgeError)
 
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         if not isinstance(entities, list) or not 1 <= len(entities) <= 100:

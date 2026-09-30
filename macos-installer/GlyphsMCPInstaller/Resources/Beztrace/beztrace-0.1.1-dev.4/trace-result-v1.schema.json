@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beztrace.dev/schema/trace-result-v1.json",
+  "title": "beztrace trace result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "engine",
+    "source",
+    "resolvedOptions",
+    "pathDataVersion",
+    "metadataPolicy",
+    "paths",
+    "bounds",
+    "placement",
+    "statistics",
+    "timingsMs",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "portSourceRevision"],
+      "properties": {
+        "name": {"const": "beztrace"},
+        "version": {"type": "string"},
+        "portSourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "format", "width", "height", "usedAlphaMask"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "format": {"enum": ["png", "jpeg"]},
+        "width": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "height": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "usedAlphaMask": {"type": "boolean"}
+      }
+    },
+    "resolvedOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile", "thresholdMethod", "threshold", "invert", "minimumContourArea",
+        "targetHeight", "accuracy", "smoothing", "cornerThresholdDegrees", "grid",
+        "structureGrid", "refineRaster", "rtlStart", "diagnostics"
+      ],
+      "properties": {
+        "profile": {"const": "clean-generated"},
+        "thresholdMethod": {"enum": ["automatic", "fixed"]},
+        "threshold": {"type": "integer", "minimum": 0, "maximum": 255},
+        "invert": {"type": "boolean"},
+        "minimumContourArea": {"type": "number", "minimum": 0},
+        "targetHeight": {"type": "number", "exclusiveMinimum": 0},
+        "accuracy": {"type": "number", "exclusiveMinimum": 0},
+        "smoothing": {"type": "number", "exclusiveMinimum": 0},
+        "cornerThresholdDegrees": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 180},
+        "grid": {"type": "integer", "minimum": 0},
+        "structureGrid": {"type": "integer", "minimum": 0},
+        "refineRaster": {"type": "boolean"},
+        "rtlStart": {"type": "boolean"},
+        "diagnostics": {"enum": ["none", "summary"]}
+      }
+    },
+    "pathDataVersion": {"const": 2},
+    "metadataPolicy": {"const": "preserve"},
+    "paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/contour"}
+    },
+    "bounds": {
+      "oneOf": [
+        {"$ref": "#/$defs/rect"},
+        {"type": "null"}
+      ]
+    },
+    "placement": {
+      "oneOf": [
+        {"$ref": "#/$defs/placement"},
+        {"type": "null"}
+      ]
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contourCount", "nodeCount", "lineCount", "curveCount", "offCurveCount"],
+      "properties": {
+        "contourCount": {"type": "integer", "minimum": 1},
+        "nodeCount": {"type": "integer", "minimum": 1},
+        "lineCount": {"type": "integer", "minimum": 0},
+        "curveCount": {"type": "integer", "minimum": 0},
+        "offCurveCount": {"type": "integer", "minimum": 0}
+      }
+    },
+    "timingsMs": {
+      "type": "object",
+      "additionalProperties": {"type": "number", "minimum": 0}
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "rect": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "number"},
+        {"type": "number"},
+        {"type": "number"},
+        {"type": "number"}
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "type", "smooth"],
+      "properties": {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+        "type": {"enum": ["line", "curve", "offcurve"]},
+        "smooth": {"type": "boolean"}
+      }
+    },
+    "contour": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["closed", "nodes"],
+      "properties": {
+        "closed": {"const": true},
+        "nodes": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"$ref": "#/$defs/node"}}
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "imageWidth", "imageHeight", "inkBoundsPixels", "sourceBoundsPixels",
+        "targetYMin", "targetYMax", "scale", "translationX", "translationY",
+        "finalBounds", "advanceWidth", "leftSideBearing", "rightSideBearing", "outOfTarget"
+      ],
+      "properties": {
+        "imageWidth": {"type": "integer", "minimum": 1},
+        "imageHeight": {"type": "integer", "minimum": 1},
+        "inkBoundsPixels": {"$ref": "#/$defs/rect"},
+        "sourceBoundsPixels": {"$ref": "#/$defs/rect"},
+        "targetYMin": {"type": "number"},
+        "targetYMax": {"type": "number"},
+        "scale": {"type": "number", "exclusiveMinimum": 0},
+        "translationX": {"type": "number"},
+        "translationY": {"type": "number"},
+        "finalBounds": {"$ref": "#/$defs/rect"},
+        "advanceWidth": {"type": "number", "exclusiveMinimum": 0},
+        "leftSideBearing": {"type": "number"},
+        "rightSideBearing": {"type": "number"},
+        "outOfTarget": {"type": "boolean"}
+      }
+    }
+  }
+}

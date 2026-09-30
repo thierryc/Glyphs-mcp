@@ -29,19 +29,19 @@ def test_kerning_dataset_package_rejects_changed_license_or_pair_payload(tmp_pat
 
 
 @pytest.mark.parametrize('replacement', ['renamed_tool', 'tool_1'])
-def test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_twelve_declarations(tmp_path, replacement):
+def test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_thirteen_declarations(tmp_path, replacement):
     server = tmp_path/'src/sidecar/glyphs_mcp_sidecar'
     protocol = tmp_path/'src/protocol/glyphs_mcp_protocol'
     server.mkdir(parents=True); protocol.mkdir(parents=True)
-    names = [f'tool_{index}' for index in range(12)]
+    names = [f'tool_{index}' for index in range(13)]
     (protocol/'models.py').write_text('TOOL_NAMES = '+repr(tuple(names)))
     def declaration(name):
         return '@mcp.tool(name='+repr(name)+')\ndef f(): pass\n'
-    (server/'server.py').write_text(''.join(declaration(name) for name in names[:9]))
-    (server/'edit_workflow_ui.py').write_text(''.join(declaration(name) for name in names[9:]))
+    (server/'server.py').write_text(''.join(declaration(name) for name in names[:10]))
+    (server/'edit_workflow_ui.py').write_text(''.join(declaration(name) for name in names[10:]))
     assert checker.check_tool_catalog(tmp_path) == set(names)
     names[0] = replacement
-    (server/'server.py').write_text(''.join(declaration(name) for name in names[:9]))
+    (server/'server.py').write_text(''.join(declaration(name) for name in names[:10]))
     with pytest.raises(AssertionError, match='tool contract'):
         checker.check_tool_catalog(tmp_path)
 

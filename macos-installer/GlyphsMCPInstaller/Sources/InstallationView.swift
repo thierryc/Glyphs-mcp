@@ -162,7 +162,7 @@ private struct BeztraceSetupView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
-                Text("The plugin is an unsigned development preview. Native Glyphs testing and a signed plugin release are pending. Install All manages the bundled MCP components; Beztrace setup is separate.")
+                Text("The bundled 0.1.1-dev.4 engine is a development preview; distributed desktop releases sign and notarize it with the app. The separate Glyphs plugin remains unsigned, with native qualification and a signed plugin release pending. Install All manages the bundled MCP components; Beztrace plugin setup remains separate.")
                 Link("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {

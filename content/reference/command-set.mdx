@@ -1,5 +1,5 @@
 ---
-title: The twelve v2 tools
+title: The thirteen v2 tools
 ---
 
 This is the current private **Glyphs MCP 2.0.0 Beta 8** tool contract. Product release
@@ -12,6 +12,7 @@ independent sidecar/bridge identities and negotiated `readCapabilities`,
 | --- | --- | --- |
 | `get_status` | None | Read sidecar, worker and bridge availability plus negotiated read/write/job capabilities. |
 | `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
+| `create_document` | `family_name`, `idempotency_key`, optional `units_per_em` (1000) | Create and open an unsaved font with one Regular master and instance. Requires `document.create.v1`. |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job without applying it; the negotiated route may use detached native targets or the external worker. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
@@ -22,6 +23,32 @@ independent sidecar/bridge identities and negotiated `readCapabilities`,
 | `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options`, `auto_keep` (default true) | Retain a requested edit; successful edit cards may Keep after 30 seconds. Honor “wait for my answer” with `auto_keep=false`. |
 | `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance. |
 | `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false) | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. |
+
+## Create a font
+
+`create_document` requires font-creation authorization and no existing document or
+saved baseline. It opens a new font with the requested family name, one Regular
+master, one Regular instance and no initial glyphs. `family_name` and the
+idempotency key are 1–255 characters without control characters. `units_per_em`
+is an integer from 16 to 16384, defaulting to 1000. Native default axes and master
+metrics are retained. Templates and configurable masters/axes are not supported.
+
+The result contains `id`, `familyName`, `unitsPerEm`, `path`, `dirty`, `generation`,
+`masterIds`, `instanceIds`, `creationId` and `bridgeSessionId`. Retain `id` as the
+document binding for reads, edits and saving. Creation never saves; under save
+authorization, use `save_document(document_id=id, destination=...)` with a new
+absolute `.glyphs` or `.glyphspackage` path. Existing edit-job saved-baseline
+requirements still apply to this new document.
+
+Use a fresh idempotency key for each intended font. After a lost response, retry
+the same key and arguments: the bridge retains the outcome and the sidecar journals
+the request before dispatch. Different arguments give `creation_conflict`. Closing
+the created font gives `document_not_found` on retry, without creating a replacement.
+After a bridge restart, `creation_outcome_unknown` requires reconciling the original
+font; a new key must not be used merely to bypass an uncertain result. A partial
+native failure reports `creation_failed` and, when discoverable, its `documentId`;
+it never silently closes the font or repeats construction. The bridge retains at
+most 1024 creation keys per session, then refuses new keys without evicting old ones.
 
 ## Conversation workflow
 
@@ -518,7 +545,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the public count is twelve.
+not extra MCP tools; the public count is thirteen.
 
 ### Kerning discovery
 
@@ -532,7 +559,7 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays twelve tools.
+require a coordinated bridge/sidecar/skills update. The catalog stays thirteen tools.
 
 
 ## Native scripts

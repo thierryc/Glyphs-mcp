@@ -2,10 +2,38 @@ import AppKit
 import SwiftUI
 import GlyphsMCPInstallerCore
 
+enum GlyphComparisonPalette {
+    static let currentLightHex = "#137a55"
+    static let currentDarkHex = "#4cc38a"
+    static let referenceLightHex = "#db2e8c"
+    static let referenceDarkHex = "#f15ba6"
+    static let deltaLightHex = "#137a554d"
+    static let deltaDarkHex = "#4cc38a5c"
+
+    static func current(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 76.0 / 255, green: 195.0 / 255, blue: 138.0 / 255)
+            : Color(red: 19.0 / 255, green: 122.0 / 255, blue: 85.0 / 255)
+    }
+
+    static func reference(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 241.0 / 255, green: 91.0 / 255, blue: 166.0 / 255)
+            : Color(red: 219.0 / 255, green: 46.0 / 255, blue: 140.0 / 255)
+    }
+
+    static func currentHex(_ scheme: ColorScheme) -> String { scheme == .dark ? currentDarkHex : currentLightHex }
+    static func referenceHex(_ scheme: ColorScheme) -> String { scheme == .dark ? referenceDarkHex : referenceLightHex }
+    static func deltaHex(_ scheme: ColorScheme) -> String { scheme == .dark ? deltaDarkHex : deltaLightHex }
+}
+
 struct DesktopCheckpointHistory: View {
     @ObservedObject var model: DesktopProjectsModel
     @ObservedObject var history: CheckpointHistoryStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var openingPaths: Set<String> = []
+    @State private var openError = ""
 
     private var groups: [(String, [FontCheckpoint])] {
         var result: [(String, [FontCheckpoint])] = []
@@ -18,9 +46,8 @@ struct DesktopCheckpointHistory: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Font checkpoints").font(.headline)
-            Text("Compare with latest checkpoint").font(.caption).foregroundStyle(.secondary)
-            if history.documents.count > 1 {
+            Text("Compare font checkpoints").font(.title2.bold())
+            if !history.documents.isEmpty {
                 Picker("Font", selection: Binding(get: { history.documentID }, set: { history.choose($0) })) {
                     Text("Choose a font").tag("")
                     ForEach(history.documents) { document in
@@ -28,38 +55,40 @@ struct DesktopCheckpointHistory: View {
                             .help(document.path).tag(document.id)
                     }
                 }
-            } else if let document = history.document {
-                Text(document.filename).font(.caption).foregroundStyle(.secondary).help(document.path)
+                .pickerStyle(.menu)
+                .disabled(history.documents.count == 1)
             }
-            if history.documentsLoaded && history.documents.isEmpty {
-                Text("Open the intended saved font in Glyphs to view its checkpoints.").foregroundStyle(.secondary)
+            if history.documentsLoaded && history.documents.isEmpty && history.unopenedFonts.isEmpty {
+                Text("No saved Glyphs font sources were found in this project.").foregroundStyle(.secondary)
             } else if !history.rows.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Choose a version to compare with the latest checkpoint")
+                        .font(.subheadline.weight(.medium))
+                    Text("Unsaved edits in Glyphs are not included.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.top, 4)
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
-                            Text(group.0).font(.caption).foregroundStyle(.secondary).padding(.top, 8).padding(.horizontal, 8)
+                            Text(group.0)
+                                .font(.caption).foregroundStyle(.secondary)
+                                .padding(.top, 12).padding(.bottom, 4).padding(.horizontal, 8)
                             ForEach(group.1) { checkpoint in
-                                Button {
-                                    guard let document = history.document, let project = model.selectedProject else { return }
-                                    model.showCheckpointComparison(.init(document: document, checkpoint: checkpoint, after: history.head, projectRoot: project))
-                                    dismiss()
-                                } label: {
-                                    HStack(alignment: .firstTextBaseline, spacing: 16) {
-                                        Text(checkpoint.title).lineLimit(2).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
-                                        Text(checkpoint.timeLabel).font(.caption).monospacedDigit().foregroundStyle(.secondary)
-                                    }.padding(8).contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .background(model.historicalComparison?.before == checkpoint.revision && model.historicalComparison?.documentID == history.documentID ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
-                                .help(checkpoint.helpText)
-                                .accessibilityLabel(checkpoint.title + ", " + checkpoint.dateLabel)
-                                .disabled(history.head.isEmpty)
+                                checkpointRow(checkpoint)
                             }
                         }
                     }
                 }.frame(height: min(330, CGFloat(history.rows.count) * 44 + CGFloat(groups.count) * 28))
+                if history.rows.count == 1 {
+                    Text("No earlier checkpoints for this font yet.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             } else if !history.busy && history.error.isEmpty && !history.documentID.isEmpty {
                 Text("No checkpoints for this font yet.").foregroundStyle(.secondary)
+            }
+            if history.documentsLoaded && !history.unopenedFonts.isEmpty {
+                unopenedFonts
             }
             if history.busy { ProgressView("Loading checkpoints…").controlSize(.small) }
             if !history.error.isEmpty {
@@ -76,14 +105,137 @@ struct DesktopCheckpointHistory: View {
                 Divider()
                 Button("Load older checkpoints…") { history.load(more: true) }.disabled(history.busy)
             }
+            if !openError.isEmpty {
+                Text(openError).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+            }
         }
-        .padding(16).frame(width: 420)
+        .padding(16).frame(width: 520)
         .onAppear { open() }
         .onDisappear { history.cancel() }
+    }
+
+    @ViewBuilder private func checkpointRow(_ checkpoint: FontCheckpoint) -> some View {
+        let latest = checkpoint.revision == history.latestRevision
+        let selected = !latest && model.historicalComparison?.before == checkpoint.revision
+            && model.historicalComparison?.documentID == history.documentID
+        Group {
+            if latest {
+                checkpointRowContents(checkpoint, latest: true, selected: false)
+            } else {
+                Button {
+                    guard let document = history.document, let project = model.selectedProject else { return }
+                    model.showCheckpointComparison(.init(document: document, checkpoint: checkpoint, after: history.head, projectRoot: project))
+                    dismiss()
+                } label: {
+                    checkpointRowContents(checkpoint, latest: false, selected: selected)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(history.head.isEmpty)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(selected ? GlyphComparisonPalette.reference(colorScheme).opacity(colorScheme == .dark ? 0.18 : 0.10) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 8))
+        .help(checkpoint.helpText)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(rowAccessibilityLabel(checkpoint, latest: latest, selected: selected))
+    }
+
+    private func checkpointRowContents(_ checkpoint: FontCheckpoint, latest: Bool, selected: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Group {
+                if latest {
+                    Circle().fill(GlyphComparisonPalette.current(colorScheme))
+                } else if selected {
+                    Circle().fill(GlyphComparisonPalette.reference(colorScheme))
+                } else {
+                    Color.clear
+                }
+            }
+            .frame(width: 12, height: 12)
+            .accessibilityHidden(true)
+            Text(checkpoint.title)
+                .lineLimit(2).multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+            Text(checkpoint.timeLabel)
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                .frame(width: 72, alignment: .trailing)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+    }
+
+    private func rowAccessibilityLabel(_ checkpoint: FontCheckpoint, latest: Bool, selected: Bool) -> String {
+        let status = latest ? "Latest checkpoint, " : selected ? "Selected reference, " : ""
+        return status + checkpoint.title + ", " + checkpoint.dateLabel
     }
     private func open() {
         guard let project = model.selectedProject else { return }
         history.open(project: project, preferredDocument: model.historicalComparison?.documentID)
+    }
+
+    private var unopenedFonts: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+            Text(history.documents.isEmpty ? "Open a font in Glyphs to view its checkpoints" : "Fonts not open in Glyphs")
+                .font(.caption).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(history.unopenedFonts) { font in
+                        Button { openFonts([font]) } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "character.cursor.ibeam")
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(font.filename).lineLimit(1)
+                                    if let project = model.selectedProject {
+                                        Text(relativePath(font.path, project: project)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                }
+                                Spacer()
+                                if openingPaths.contains(font.path) { ProgressView().controlSize(.small) }
+                                else { Text("Open").foregroundStyle(Color.accentColor) }
+                            }.padding(7).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain).help(font.path).disabled(!openingPaths.isEmpty)
+                    }
+                }
+            }.frame(maxHeight: 180)
+            if history.unopenedFonts.count > 1 {
+                Button("Open all in Glyphs") { openFonts(history.unopenedFonts) }
+                    .disabled(!openingPaths.isEmpty)
+            }
+        }
+    }
+
+    private func relativePath(_ path: String, project: String) -> String {
+        let root = URL(fileURLWithPath: project).standardizedFileURL.path + "/"
+        let value = URL(fileURLWithPath: path).standardizedFileURL.path
+        return value.hasPrefix(root) ? String(value.dropFirst(root.count)) : value
+    }
+
+    private func openFonts(_ fonts: [CheckpointFontSource]) {
+        guard !fonts.isEmpty else { return }
+        var applications = GlyphsApplicationDetector.detect().filter { $0.majorVersion == .v4 }
+        let installation = DesktopInstallation()
+        if let installed = installation.application {
+            applications.append(contentsOf: GlyphsApplicationDetector.detect(candidates: [installed]).filter { $0.majorVersion == .v4 })
+        }
+        guard let application = applications.first(where: { $0.appURL.standardizedFileURL == installation.application?.standardizedFileURL }) ?? applications.first else {
+            openError = "Glyphs 4 was not found. Install or locate Glyphs, then try again."
+            return
+        }
+        openError = ""; openingPaths = Set(fonts.map(\.path))
+        let urls = fonts.map { URL(fileURLWithPath: $0.path) }
+        NSWorkspace.shared.open(urls, withApplicationAt: application.appURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            Task { @MainActor in
+                if let error { openError = "Could not open the selected font\(fonts.count == 1 ? "" : "s"): \(error.localizedDescription)" }
+                openingPaths = []
+                guard error == nil else { return }
+                try? await Task.sleep(for: .seconds(1))
+                open()
+            }
+        }
     }
 }
 

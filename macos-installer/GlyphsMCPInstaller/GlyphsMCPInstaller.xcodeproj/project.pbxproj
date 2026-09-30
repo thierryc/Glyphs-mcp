@@ -55,6 +55,7 @@
 		DE7100000000000000000003 /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE7100000000000000000001; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0F0E7AC6B007BE7D6C1B2A6E /* DesktopUpdates.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA980944FF0301D855003051 /* DesktopUpdates.swift */; };
 		DE7000000000000000000004 /* Notices in Resources */ = {isa = PBXBuildFile; fileRef = DE7000000000000000000003 /* Notices */; };
+		BE7000000000000000000002 /* Beztrace in Resources */ = {isa = PBXBuildFile; fileRef = BE7000000000000000000001 /* Beztrace */; };
 		E84CC28818E4CC99FCCB10CA /* DesktopJobEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8D0B383F3BAC6C5D8F4640 /* DesktopJobEvents.swift */; };
 		C77B301FEBD51A7A40A91B94 /* DesktopMenuImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60EC656C5A910DCFFD852637 /* DesktopMenuImage.swift */; };
 		3F59FD997BDD3F90653A6CF7 /* DesktopActivityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */; };
@@ -169,6 +170,7 @@
 		DE7100000000000000000001 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = "../../build/desktop-dependencies/Sparkle.framework"; sourceTree = SOURCE_ROOT; };
 		AA980944FF0301D855003051 /* DesktopUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopUpdates.swift"; sourceTree = "<group>"; };
 		DE7000000000000000000003 /* Notices */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Notices; sourceTree = "<group>"; };
+		BE7000000000000000000001 /* Beztrace */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Beztrace; sourceTree = "<group>"; };
 		AA8D0B383F3BAC6C5D8F4640 /* DesktopJobEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopJobEvents.swift"; sourceTree = "<group>"; };
 		60EC656C5A910DCFFD852637 /* DesktopMenuImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopMenuImage.swift"; sourceTree = "<group>"; };
 		B64094A83C1E97F7753C2BD5 /* DesktopActivityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopActivityTests.swift"; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				AA3000000000000000000021 /* Assets.xcassets */,
 				DE7000000000000000000001 /* Templates */,
 				DE7000000000000000000003 /* Notices */,
+				BE7000000000000000000001 /* Beztrace */,
 				AA3000000000000000000025 /* Localizable.strings */,
 				AA0000000000000000000007 /* Starter */,
 			);
@@ -364,6 +367,7 @@
 				AA0000000000000000000011 /* Sources */,
 				AA0000000000000000000012 /* Resources */,
 				AA0000000000000000000015 /* Copy Payload */,
+				BE7000000000000000000003 /* Restore Verified Beztrace */,
 				AA00000000000000000000D0 /* Embed Frameworks */,
 				AA0000000000000000000013 /* Frameworks */,
 			);
@@ -492,6 +496,7 @@
 				AA1111111111111111111129 /* Assets.xcassets in Resources */,
 				DE7000000000000000000002 /* Templates in Resources */,
 				DE7000000000000000000004 /* Notices in Resources */,
+				BE7000000000000000000002 /* Beztrace in Resources */,
 				AA1111111111111111111130 /* Localizable.strings in Resources */,
 				AA1111111111111111111136 /* GlyphsMCPUpdater in Resources */,
 				F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */,
@@ -520,6 +525,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nREPO_ROOT=\"$PROJECT_DIR/../..\"\nPYTHON_BIN=\"${PYTHON_BIN:-python3}\"\n\n\"$PYTHON_BIN\" \"$REPO_ROOT/scripts/build_installer_payload.py\" \\\n  --output-root \"$PAYLOAD_DIR\" \\\n  --allow-outside-worktree\n\n# Sign every generated plug-in loader only in signing-enabled builds. The\n# Release exporter later signs and seals all nested bundles from the deepest\n# bundle outward. Local closure builds pass CODE_SIGNING_ALLOWED=NO and must\n# remain genuinely unsigned.\nif [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then\n  echo \"Code signing disabled; leaving payload plug-in executables unsigned.\"\nelse\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  while IFS= read -r -d '' PLUGIN_BIN; do\n    if [ -n \"${SIGN_ID:-}\" ]; then\n      echo \"Signing payload plug-in executable with: $SIGN_ID\"\n      /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n      /usr/bin/codesign --verify --verbose=2 \"$PLUGIN_BIN\"\n    else\n      echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n    fi\n  done < <(/usr/bin/find \"$PAYLOAD_DIR/Plugins\" -type f -path '*/Contents/MacOS/plugin' -print0)\nfi\n\n: > \"$PAYLOAD_DIR/.payload-stamp\"\necho \"Target-aware payload staged at: $PAYLOAD_DIR\"\n";
+		};
+		BE7000000000000000000003 /* Restore Verified Beztrace */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Restore Verified Beztrace";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\n\n# Xcode strips Mach-O files copied as ordinary resources. Restore the verified\n# development distribution byte-for-byte after the Resources phase.\nSOURCE=\"$PROJECT_DIR/Resources/Beztrace\"\nDESTINATION=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Beztrace\"\n/usr/bin/ditto \"$SOURCE\" \"$DESTINATION\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -750,7 +774,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 51;
+				CURRENT_PROJECT_VERSION = 52;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -786,7 +810,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 51;
+				CURRENT_PROJECT_VERSION = 52;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;

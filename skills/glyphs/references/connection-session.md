@@ -8,6 +8,9 @@ connections or infer an interface from the host app name or skill location.
   `get_job`, `apply_job`, `accept_job`, `discard_job`, `save_document`, plus
   `start_edit_workflow`, `get_edit_workflow`, `respond_edit_workflow`: call that connection’s `get_status`. Use this lean
   workflow when `interface` is `glyphs-mcp-sidecar` and `interfaceVersion` is `1`.
+  Current builds also expose `create_document`; require `document.create.v1`
+  for font creation. Earlier twelve-tool catalogs remain usable for their
+  existing operations and need updating only to use this new capability.
   A private sidecar missing current interface/identity fields needs updating;
   do not route an earlier private build into a substitute workflow.
   An explicit different interface/revision requires its matching instructions.
@@ -59,7 +62,7 @@ do not treat its obsolete version gate as evidence of a stale runtime.
 Do not infer compatibility from a name or `surface` label. For failed setup,
 use [connection troubleshooting](connection-troubleshooting.md).
 
-Python capability discovery does not change the twelve-tool catalog. Require
+Python capability discovery does not change the thirteen-tool catalog. Require
 `script.native.v1` for direct native scripts. No worker or layer snapshots are
 needed. Retired scripting capabilities require a coordinated runtime update;
 see [script jobs](python-scripts.md).

@@ -58,6 +58,45 @@ def validate_embedded_payload(app):
     return validate_payload(payload)
 
 
+def validate_embedded_beztrace(app):
+    root = Path(app) / 'Contents/Resources/Beztrace/beztrace-0.1.1-dev.4'
+    manifest_path = root / 'development-engine.json'
+    checksums_path = root / 'SHA256SUMS'
+    if not manifest_path.is_file() or not checksums_path.is_file():
+        raise ValueError('Missing embedded beztrace 0.1.1-dev.4 distribution')
+    manifest = json.loads(manifest_path.read_text())
+    if manifest.get('version') != '0.1.1-dev.4':
+        raise ValueError('Embedded beztrace version mismatch')
+    if set(manifest.get('architectures', [])) != {'arm64', 'x86_64'}:
+        raise ValueError('Embedded beztrace architecture metadata is invalid')
+    expected = {}
+    for line in checksums_path.read_text().splitlines():
+        digest, separator, relative = line.partition('  ')
+        if not separator or len(digest) != 64 or not relative or relative.startswith('/') or '..' in Path(relative).parts:
+            raise ValueError('Embedded beztrace checksum manifest is invalid')
+        expected[relative] = digest
+    files = {
+        path.relative_to(root).as_posix()
+        for path in root.rglob('*')
+        if path.is_file()
+    }
+    if files != set(expected) | {'SHA256SUMS'}:
+        raise ValueError('Embedded beztrace distribution inventory mismatch')
+    for relative, digest in expected.items():
+        actual = hashlib.sha256((root / relative).read_bytes()).hexdigest()
+        if actual != digest:
+            raise ValueError('Embedded beztrace checksum mismatch: ' + relative)
+    engine = root / 'bin/beztrace'
+    if not os.access(engine, os.X_OK):
+        raise ValueError('Embedded beztrace engine is not executable')
+    architectures = set(subprocess.check_output(['/usr/bin/lipo', '-archs', str(engine)], text=True).split())
+    if architectures != {'arm64', 'x86_64'}:
+        raise ValueError('Embedded beztrace binary is not universal')
+    return {'version': manifest['version'], 'architectures': sorted(architectures),
+            'sourceRevision': manifest.get('sourceRevision'),
+            'engineSHA256': expected['bin/beztrace']}
+
+
 def verify(app, root=ROOT):
     app = Path(app)
     info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
@@ -73,6 +112,7 @@ def verify(app, root=ROOT):
         if not (app / 'Contents/Frameworks' / (name + '.framework') / name).is_file():
             raise ValueError(f'Missing linked framework: {name}')
     validate_embedded_payload(app)
+    beztrace = validate_embedded_beztrace(app)
     pierre_lock = json.loads((root / 'third_party/pierre-diffs-swift.json').read_text())
     pierre_bundle = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle'
     if not pierre_bundle.is_dir():
@@ -98,6 +138,7 @@ def verify(app, root=ROOT):
         raise ValueError('Missing compiled assets: ' + ', '.join(sorted(missing)))
     return {'version': info['CFBundleShortVersionString'], 'build': info['CFBundleVersion'],
             'assets': sorted(required),
+            'beztrace': beztrace,
             'pierre': {'version': pierre_lock['version'], 'commit': pierre_lock['commit'],
                        'bundleSHA256': tree_digest(pierre_bundle), 'resources': pierre_hashes},
             'appSHA256': tree_digest(app)}

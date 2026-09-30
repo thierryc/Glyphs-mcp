@@ -15,6 +15,9 @@ OpenType source work uses [the native feature skill](../glyphs-mcp-opentype-feat
 
 ## Continue from known context
 
+To create a new font, use [font creation](references/font-creation.md). No
+existing document or saved baseline is required; creation itself never saves.
+
 Reuse the verified catalog, identity and capabilities of the **specific MCP
 connection**, plus the intended font's `document_id`. A follow-up or switch to a
 focused skill does not restart setup. If the connection is unverified or changed,
@@ -112,7 +115,7 @@ closes the rollback window. Use `save_document` only for a specifically
 identified document with no active or applied MCP job. Inspect fresh source and
 dirty state for preparation, and never save merely to satisfy `start_job`.
 Never save, publish an export, close or overwrite a font unless the user's task
-authorizes it. The twelve tools expose trusted Python through the separate advertised
+authorizes it. The thirteen tools expose trusted Python through the separate advertised
 `python_script` job; follow [its execution contract](references/python-scripts.md).
 There is no plugin reload tool; do not invent an MCP command. An advertised `native_action` is a closed typed job,
 not a general script or remote-object interface.

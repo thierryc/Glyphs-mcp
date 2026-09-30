@@ -120,6 +120,10 @@ class GlyphsAdapter:
     def document_state(self, document_id: str) -> dict[str, Any]:
         return self._document_state(self._font(document_id))
 
+    def create_document(self, request, operation) -> dict[str, Any]:
+        from . import document_creation
+        return document_creation.native(self, request, operation, BridgeError)
+
     def save_document(
         self, document_id: str, target: str, mode: str
     ) -> dict[str, Any]:

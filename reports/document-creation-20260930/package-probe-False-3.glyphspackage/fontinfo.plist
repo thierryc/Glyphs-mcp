@@ -1,0 +1,23 @@
+{
+.appVersion = "4107";
+.formatVersion = 3;
+date = "2026-09-30 19:05:46 +0000";
+familyName = Probe;
+fontMaster = (
+{
+id = "305D1143-F6B5-450E-A1AA-B46602079499";
+name = Regular;
+}
+);
+instances = (
+{
+instanceInterpolations = {
+"305D1143-F6B5-450E-A1AA-B46602079499" = 1;
+};
+name = Regular;
+}
+);
+unitsPerEm = 1000;
+versionMajor = 1;
+versionMinor = 0;
+}

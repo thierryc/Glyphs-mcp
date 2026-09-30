@@ -1,5 +1,10 @@
 # Lean v2 qualification records
 
+[Beta 10 release](beta10-release-candidate/README.md) records the creation,
+checkpoint and bundled-engine release checks.
+[Font creation and installation](document-creation-20260930/README.md) records
+live creation, duplicate reuse, save and native reopen in both source formats.
+
 [Beta 8 milestone 7 — consolidation](beta8-milestone7/README.md) shortens the
 catalog by 25.51% in description bytes, corrects current guidance and shares
 export hashing. The final suite passes 2,414 tests; the rebuilt/installed runtime,

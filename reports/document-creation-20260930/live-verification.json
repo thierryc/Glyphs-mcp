@@ -1,0 +1,614 @@
+{
+  "calls": [
+    {
+      "name": "get_status",
+      "arguments": {},
+      "result": {
+        "ok": true,
+        "data": {
+          "protocol": 1,
+          "sidecarVersion": "2.0.0",
+          "release": {
+            "version": "2.0.0",
+            "releaseVersion": "2.0.0-beta.10",
+            "channel": "beta",
+            "betaNumber": 10,
+            "installerBuild": 52
+          },
+          "runtimeId": "2.0.0-beta.10+8bc96ab6bf46",
+          "codeHash": "sha256:8bc96ab6bf468b83169edb8553a04d7934bad33b930fd3ac689c0d0f969945bc",
+          "identityEvidence": "initialization-time file fingerprint",
+          "interface": "glyphs-mcp-sidecar",
+          "interfaceVersion": 1,
+          "jobKinds": [
+            "width_delta",
+            "spacing",
+            "kerning_collision",
+            "start_nodes",
+            "slant",
+            "checkpoint_restore",
+            "python_script",
+            "outline_edit",
+            "native_action",
+            "kerning_edit",
+            "feature_compile",
+            "font_export"
+          ],
+          "readCapabilities": [
+            "master.read.exact.v1",
+            "masters.list.v1",
+            "layer.read.exact.v1",
+            "selection.nodes.native.v1",
+            "selection.context.v1",
+            "document.context.v1",
+            "glyphs.list.v1",
+            "layers.list.v1",
+            "kerning.groups.v1",
+            "kerning.pairs.v1",
+            "master.properties.v1",
+            "paths.list.v1",
+            "path.geometry.v1",
+            "outline.background.read.v1",
+            "features.read.v1",
+            "instances.read.v1",
+            "master.dimensions.read.v1",
+            "kerning.proof.v1"
+          ],
+          "writeCapabilities": [
+            "outline.edit.v1",
+            "outline.remove-node.v1",
+            "outline.background.edit.v1",
+            "native.action.v1",
+            "kerning.edit.exact.v1",
+            "font.checkpoint-restore.v1",
+            "document.create.v1"
+          ],
+          "nativeActions": [
+            "add_extremes",
+            "add_missing_anchors",
+            "align_components",
+            "cleanup_paths",
+            "connect_open_paths",
+            "correct_path_direction",
+            "decompose_components",
+            "decompose_corners",
+            "make_components",
+            "reinterpolate",
+            "remove_overlap",
+            "round_coordinates",
+            "set_glyph_color",
+            "swap_foreground_background",
+            "update_automatic_feature_block",
+            "update_features",
+            "update_glyph_info",
+            "update_metrics"
+          ],
+          "jobCapabilities": [
+            "feature.compile.live.v1",
+            "feature.compile.saved.v1",
+            "font.export.static.v1",
+            "font.export.variable.v1",
+            "font.export.web.v1",
+            "font.verify.shaping.v1",
+            "font.verify.tables.v1",
+            "script.native.v1"
+          ],
+          "tools": [
+            "get_status",
+            "list_documents",
+            "create_document",
+            "read_entities",
+            "start_job",
+            "get_job",
+            "apply_job",
+            "accept_job",
+            "discard_job",
+            "save_document",
+            "start_edit_workflow",
+            "get_edit_workflow",
+            "respond_edit_workflow"
+          ],
+          "bridge": {
+            "reachable": true,
+            "protocol": 1,
+            "bridgeVersion": "2.0.0",
+            "bridgeSessionId": "b43497fbc6544d01aa16cbbcfecd018f",
+            "release": {
+              "version": "2.0.0",
+              "releaseVersion": "2.0.0-beta.10",
+              "channel": "beta",
+              "betaNumber": 10,
+              "installerBuild": 52
+            },
+            "runtimeId": "2.0.0-beta.10+8cf9853c6c92",
+            "codeHash": "sha256:8cf9853c6c9230ec59c7689129df3a9ce322401b997927ebcca65c8835419e4d",
+            "identityEvidence": "initialization-time file fingerprint",
+            "host": {
+              "identifier": "com.GeorgSeifert.Glyphs4",
+              "version": "4.1.1",
+              "build": "4108"
+            },
+            "readCapabilities": [
+              "master.read.exact.v1",
+              "masters.list.v1",
+              "layer.read.exact.v1",
+              "selection.nodes.native.v1",
+              "selection.context.v1",
+              "document.context.v1",
+              "glyphs.list.v1",
+              "layers.list.v1",
+              "kerning.groups.v1",
+              "kerning.pairs.v1",
+              "master.properties.v1",
+              "paths.list.v1",
+              "path.geometry.v1",
+              "outline.background.read.v1",
+              "features.read.v1",
+              "instances.read.v1",
+              "master.dimensions.read.v1",
+              "kerning.proof.v1"
+            ],
+            "writeCapabilities": [
+              "outline.edit.v1",
+              "outline.background.edit.v1",
+              "document.create.v1",
+              "outline.remove-node.v1",
+              "native.action.v1",
+              "font.checkpoint-restore.v1",
+              "kerning.edit.exact.v1"
+            ],
+            "nativeActions": [
+              "add_extremes",
+              "add_missing_anchors",
+              "align_components",
+              "cleanup_paths",
+              "connect_open_paths",
+              "correct_path_direction",
+              "decompose_components",
+              "decompose_corners",
+              "make_components",
+              "reinterpolate",
+              "remove_overlap",
+              "round_coordinates",
+              "set_glyph_color",
+              "swap_foreground_background",
+              "update_automatic_feature_block",
+              "update_features",
+              "update_glyph_info",
+              "update_metrics"
+            ],
+            "jobCapabilities": [
+              "feature.compile.live.v1",
+              "script.native.v1",
+              "edit.prepare.native.v1"
+            ],
+            "scriptPreparationVersion": 2,
+            "activity": "ready",
+            "activeOperations": 0,
+            "companions": [
+              {
+                "protocol": 1,
+                "id": "curve-inspector",
+                "version": "0.1.0",
+                "capabilities": [
+                  "curve.measure",
+                  "curve.overlay"
+                ]
+              },
+              {
+                "protocol": 1,
+                "id": "reference-inspector",
+                "version": "0.1.0",
+                "capabilities": [
+                  "reference.file",
+                  "reference.git",
+                  "reference.github",
+                  "reference.overlay",
+                  "reference.saved"
+                ]
+              }
+            ]
+          },
+          "worker": {
+            "available": true,
+            "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+            "application": "/Applications/Glyphs 4.app",
+            "plugins": "disabled",
+            "processModel": "one_shot",
+            "executions": [],
+            "jobCapabilities": [
+              "feature.compile.saved.v1",
+              "font.export.static.v1",
+              "font.export.variable.v1",
+              "font.export.web.v1",
+              "font.verify.shaping.v1",
+              "font.verify.tables.v1"
+            ]
+          },
+          "controlProtocol": 1,
+          "workflowCapabilities": [
+            "edit.workflow.v1",
+            "font.checkpoints.v1"
+          ],
+          "activity": {
+            "jobs": [
+              {
+                "jobId": "job_d260936589604c34bdc425c82c16a257",
+                "document": "Hershey Roman Simplex",
+                "kind": "python_script",
+                "phase": "completed",
+                "startedAt": 1790795603.8981519,
+                "finishedAt": 1790795603.898186,
+                "completed": null,
+                "total": null,
+                "message": null
+              },
+              {
+                "jobId": "job_d2d9df0b53d544e995a459b91b112327",
+                "document": "Hershey Roman Simplex",
+                "kind": "python_script",
+                "phase": "accepted",
+                "startedAt": 1790795389.3004959,
+                "finishedAt": 1790795389.300517,
+                "completed": null,
+                "total": null,
+                "message": null
+              },
+              {
+                "jobId": "job_266fe8f00336482080be0ea40cb9f532",
+                "document": "Hershey Roman Simplex",
+                "kind": "python_script",
+                "phase": "completed",
+                "startedAt": 1790795167.054841,
+                "finishedAt": 1790795167.0548842,
+                "completed": null,
+                "total": null,
+                "message": "invalid or duplicate annotated path index"
+              },
+              {
+                "jobId": "job_4a0df1880a804649ba458434743cf97c",
+                "document": "Hershey Roman Simplex",
+                "kind": "python_script",
+                "phase": "accepted",
+                "startedAt": 1790794505.19434,
+                "finishedAt": 1790794505.194396,
+                "completed": null,
+                "total": null,
+                "message": null
+              },
+              {
+                "jobId": "job_1ac872feb1c34a20b9293955e2032421",
+                "document": "Hershey Roman Simplex",
+                "kind": "python_script",
+                "phase": "discarded",
+                "startedAt": 1790794374.315456,
+                "finishedAt": 1790794374.3154671,
+                "completed": null,
+                "total": null,
+                "message": null
+              }
+            ],
+            "activeCount": 0,
+            "moreCount": 0
+          },
+          "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves."
+        }
+      }
+    },
+    {
+      "name": "list_documents",
+      "arguments": {},
+      "result": {
+        "ok": true,
+        "data": [
+          {
+            "id": "doc_b7e687e765aa42b1b19bf6fb8797d2ed",
+            "path": "/Users/thierryc/Dev/github/thierryc/PlotFont/fonts/hershey-roman-simplex/HersheyRomanSimplex.glyphspackage",
+            "dirty": false,
+            "generation": 0,
+            "isCurrent": true,
+            "familyName": "Hershey Roman Simplex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_document",
+      "arguments": {
+        "family_name": "MCP Creation Live glyphs",
+        "idempotency_key": "d99f7e8c-aaeb-410e-9e8d-62fa67de9d96"
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "id": "doc_95f930442291432dbcf12c6ccbae2c9d",
+          "path": null,
+          "dirty": false,
+          "generation": 0,
+          "familyName": "MCP Creation Live glyphs",
+          "unitsPerEm": 1000,
+          "masterIds": [
+            "D88FBEBC-57F9-4144-8586-63BD588E6C16"
+          ],
+          "instanceIds": [
+            "15A6F826-02EE-483E-B6C1-B0E1CC50DDA1"
+          ],
+          "creationId": "create_cab6a167f4b2131771152314dbd966ea8f76ea0471949cd4af82dbc417df845e",
+          "bridgeSessionId": "b43497fbc6544d01aa16cbbcfecd018f"
+        }
+      }
+    },
+    {
+      "name": "create_document",
+      "arguments": {
+        "family_name": "MCP Creation Live glyphs",
+        "idempotency_key": "d99f7e8c-aaeb-410e-9e8d-62fa67de9d96"
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "id": "doc_95f930442291432dbcf12c6ccbae2c9d",
+          "path": null,
+          "dirty": false,
+          "generation": 0,
+          "familyName": "MCP Creation Live glyphs",
+          "unitsPerEm": 1000,
+          "masterIds": [
+            "D88FBEBC-57F9-4144-8586-63BD588E6C16"
+          ],
+          "instanceIds": [
+            "15A6F826-02EE-483E-B6C1-B0E1CC50DDA1"
+          ],
+          "creationId": "create_cab6a167f4b2131771152314dbd966ea8f76ea0471949cd4af82dbc417df845e",
+          "bridgeSessionId": "b43497fbc6544d01aa16cbbcfecd018f"
+        }
+      }
+    },
+    {
+      "name": "read_entities",
+      "arguments": {
+        "document_id": "doc_95f930442291432dbcf12c6ccbae2c9d",
+        "entities": [
+          {
+            "kind": "masters",
+            "limit": 100
+          }
+        ],
+        "fields": [
+          "id",
+          "name"
+        ]
+      },
+      "result": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "masters",
+              "limit": 100
+            },
+            "values": {
+              "items": [
+                {
+                  "id": "D88FBEBC-57F9-4144-8586-63BD588E6C16",
+                  "name": "Regular"
+                }
+              ],
+              "total": 1,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "save_document",
+      "arguments": {
+        "document_id": "doc_95f930442291432dbcf12c6ccbae2c9d",
+        "destination": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphs"
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "saveId": "save_d278eae3e0a543b19754d2ba2e36b8f3",
+          "jobId": null,
+          "documentId": "doc_95f930442291432dbcf12c6ccbae2c9d",
+          "saveMode": "save_as",
+          "previousPath": null,
+          "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphs",
+          "dirtyBefore": false,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": null,
+          "sourceHashAfter": "sha256:0e57efb3672687a717bff4d8621df10b8a9310e02131330a33952c2b900c1a1b",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": null,
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790796274.2132769
+        }
+      }
+    },
+    {
+      "name": "create_document",
+      "arguments": {
+        "family_name": "MCP Creation Live glyphspackage",
+        "idempotency_key": "8ff9ecc3-2301-4b70-8319-03bf9aee99b9"
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "id": "doc_f98abedab44e4925808e9299e48ca596",
+          "path": null,
+          "dirty": false,
+          "generation": 0,
+          "familyName": "MCP Creation Live glyphspackage",
+          "unitsPerEm": 1000,
+          "masterIds": [
+            "1F071F00-4F14-48BB-914E-AEBC69348A76"
+          ],
+          "instanceIds": [
+            "9B71BA2E-5B9F-45FF-BBC0-6DDCE310A255"
+          ],
+          "creationId": "create_93a3078e6735a9cddf426d60d48956f775264806acb95d12a3afe523946cd714",
+          "bridgeSessionId": "b43497fbc6544d01aa16cbbcfecd018f"
+        }
+      }
+    },
+    {
+      "name": "create_document",
+      "arguments": {
+        "family_name": "MCP Creation Live glyphspackage",
+        "idempotency_key": "8ff9ecc3-2301-4b70-8319-03bf9aee99b9"
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "id": "doc_f98abedab44e4925808e9299e48ca596",
+          "path": null,
+          "dirty": false,
+          "generation": 0,
+          "familyName": "MCP Creation Live glyphspackage",
+          "unitsPerEm": 1000,
+          "masterIds": [
+            "1F071F00-4F14-48BB-914E-AEBC69348A76"
+          ],
+          "instanceIds": [
+            "9B71BA2E-5B9F-45FF-BBC0-6DDCE310A255"
+          ],
+          "creationId": "create_93a3078e6735a9cddf426d60d48956f775264806acb95d12a3afe523946cd714",
+          "bridgeSessionId": "b43497fbc6544d01aa16cbbcfecd018f"
+        }
+      }
+    },
+    {
+      "name": "read_entities",
+      "arguments": {
+        "document_id": "doc_f98abedab44e4925808e9299e48ca596",
+        "entities": [
+          {
+            "kind": "masters",
+            "limit": 100
+          }
+        ],
+        "fields": [
+          "id",
+          "name"
+        ]
+      },
+      "result": {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "masters",
+              "limit": 100
+            },
+            "values": {
+              "items": [
+                {
+                  "id": "1F071F00-4F14-48BB-914E-AEBC69348A76",
+                  "name": "Regular"
+                }
+              ],
+              "total": 1,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "save_document",
+      "arguments": {
+        "document_id": "doc_f98abedab44e4925808e9299e48ca596",
+        "destination": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphspackage"
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "saveId": "save_1ba44d8cf83742e19f4ffeb441e9bc28",
+          "jobId": null,
+          "documentId": "doc_f98abedab44e4925808e9299e48ca596",
+          "saveMode": "save_as",
+          "previousPath": null,
+          "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphspackage",
+          "dirtyBefore": false,
+          "dirtyAfter": false,
+          "nativeSaveSucceeded": true,
+          "writeAttempted": true,
+          "sourceHashBefore": null,
+          "sourceHashAfter": "sha256:48c0072989012617081726ab5649c7869f954514a01d6d45a83ee71c6f4dbe21",
+          "sourceChangedSinceJob": false,
+          "originalSourceHashAfter": null,
+          "originalSourceUnchanged": null,
+          "verification": "native_and_source_hash",
+          "savedAt": 1790796275.3447611
+        }
+      }
+    },
+    {
+      "name": "list_documents",
+      "arguments": {},
+      "result": {
+        "ok": true,
+        "data": [
+          {
+            "id": "doc_f98abedab44e4925808e9299e48ca596",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphspackage",
+            "dirty": false,
+            "generation": 0,
+            "isCurrent": true,
+            "familyName": "MCP Creation Live glyphspackage"
+          },
+          {
+            "id": "doc_95f930442291432dbcf12c6ccbae2c9d",
+            "path": "/private/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphs",
+            "dirty": false,
+            "generation": 0,
+            "isCurrent": false,
+            "familyName": "MCP Creation Live glyphs"
+          },
+          {
+            "id": "doc_b7e687e765aa42b1b19bf6fb8797d2ed",
+            "path": "/Users/thierryc/Dev/github/thierryc/PlotFont/fonts/hershey-roman-simplex/HersheyRomanSimplex.glyphspackage",
+            "dirty": false,
+            "generation": 0,
+            "isCurrent": false,
+            "familyName": "Hershey Roman Simplex"
+          }
+        ]
+      }
+    }
+  ],
+  "checks": [
+    {
+      "destination": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphs",
+      "documentId": "doc_95f930442291432dbcf12c6ccbae2c9d",
+      "duplicateReused": true,
+      "masterReadVerified": true,
+      "saveVerified": true
+    },
+    {
+      "destination": "/var/folders/x5/fygm197n4zg2k5l0shskngr80000gr/T/glyphs-mcp-create-live-0whe9jas/Created.glyphspackage",
+      "documentId": "doc_f98abedab44e4925808e9299e48ca596",
+      "duplicateReused": true,
+      "masterReadVerified": true,
+      "saveVerified": true
+    }
+  ],
+  "originalDocuments": [
+    {
+      "id": "doc_b7e687e765aa42b1b19bf6fb8797d2ed",
+      "path": "/Users/thierryc/Dev/github/thierryc/PlotFont/fonts/hershey-roman-simplex/HersheyRomanSimplex.glyphspackage",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "Hershey Roman Simplex"
+    }
+  ],
+  "passed": true
+}

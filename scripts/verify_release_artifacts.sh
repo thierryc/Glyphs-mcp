@@ -106,6 +106,7 @@ verify_payload_executables() {
 verify_runtime_signature "$app" 1
 verify_runtime_signature "$core_framework" 0
 verify_runtime_signature "$updater_helper" 0
+"$python_bin" "$repo_root/scripts/sign_embedded_beztrace.py" verify "$app" --identity "$expected_identity"
 verify_developer_id "$dmg_versioned" 0
 
 "$xcrun_bin" stapler validate "$app"
@@ -128,6 +129,7 @@ if [[ ! -d "$zipped_app" ]]; then
   exit 1
 fi
 verify_runtime_signature "$zipped_app" 1
+"$python_bin" "$repo_root/scripts/sign_embedded_beztrace.py" verify "$zipped_app" --identity "$expected_identity"
 zipped_payload_archive="$zipped_app/Contents/Resources/Payload.gmcparchive"
 if [[ ! -f "$zipped_payload_archive" ]]; then
   echo "error: installer ZIP is missing Payload.gmcparchive" >&2

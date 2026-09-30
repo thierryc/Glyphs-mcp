@@ -26,7 +26,7 @@ class BridgeClient:
         request = value or {}
         save = request.get("save") if isinstance(request.get("save"), dict) else {}
         uncertain = {}
-        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save", "/v1/script/run", "/v1/script/finish", "/v1/script/restore-saved"):
+        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save", "/v1/script/run", "/v1/script/finish", "/v1/script/restore-saved", "/v1/documents/create"):
             patch = request.get("patch") if isinstance(request.get("patch"), dict) else {}
             uncertain["execution"] = "uncertain"
             job_id = request.get("jobId") or patch.get("jobId") or (request.get("script") or {}).get("jobId")
@@ -35,6 +35,8 @@ class BridgeClient:
                 uncertain["jobId"] = job_id
             if save_id:
                 uncertain["saveId"] = save_id
+            if path == "/v1/documents/create":
+                uncertain["creationId"] = (request.get("creation") or {}).get("creationId")
         body = json.dumps(value or {}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         if len(body) > 4 * 1024 * 1024:
             raise BridgeClientError('request_too_large', 'bridge request exceeds 4 MiB; reduce script source or target manifest')
@@ -73,6 +75,9 @@ class BridgeClient:
 
     def documents(self) -> list[dict[str, Any]]:
         return self._post("/v1/documents")
+
+    def create_document(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/documents/create", {"creation": request})
 
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         return self._post(
