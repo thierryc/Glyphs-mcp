@@ -44,7 +44,9 @@ signed private runtimes passed startup, HTTP/stdio catalogs, packaged installer
 and MCP App resource checks. App and DMG notarization passed; all three submissions were accepted.
 Stapling, Gatekeeper, nested signatures, signature-preserving install copies,
 extracted ZIP and checksum verification passed. Sparkle archive and feed
-signatures verified. Publication and public download checks are pending. Evidence is in [the distribution report](reports/beta10-release-candidate/README.md).
+signatures verified. The guarded publisher reran the full gate successfully and published the four
+assets as a non-Latest prerelease. Fresh unauthenticated downloads matched local
+bytes and Sparkle archive/feed signatures verified. Stable Latest remains v1.11.1. Evidence is in [the distribution report](reports/beta10-release-candidate/README.md).
 
 ## Remaining acceptance limits
 
@@ -61,3 +63,13 @@ tree; bundling/signing does not establish tracing quality or plugin acceptance.
 The user explicitly requested committing all changes and publishing Beta 10.
 These limits are disclosed in the release notes; full automated checks and
 signed-distribution verification must pass before publication.
+
+## Distribution
+
+[Beta 10/build 52](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.10)
+is a published signed and notarized prerelease. Signed tag `v2.0.0-beta.10`
+identifies `e1e71ef8`. The user authorized committing all changes and publication.
+See `github-published.json` and `public-download-verification.json` in the
+[distribution evidence](reports/beta10-release-candidate/README.md).
+The exact signed beta appcast is copied to the beta branch after public archive
+verification. No previous beta asset/tag or stable release was changed.

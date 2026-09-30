@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 Beta 10 — Unreleased, build 52
+## 2.0.0 Beta 10 — 2026-09-30, build 52
 
 - Add `create_document` to open a new unsaved font with one Regular master and
   instance, configurable units per em, native identities and duplicate-safe
@@ -13,6 +13,8 @@
   licenses and checksums. Sign and verify its release copy with the desktop app;
   the independent Glyphs plugin remains separate from Install All.
 - Align desktop build fixtures and current release guidance with Beta 10.
+- Publish the signed and notarized prerelease and verified public assets. Stable
+  Latest remains v1.11.1; qualification limits are disclosed in BETA10-VALIDATION.md.
 
 ## 2.0.0 Beta 9 — 2026-09-28, build 51
 

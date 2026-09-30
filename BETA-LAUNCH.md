@@ -2,9 +2,10 @@
 
 ## Decision
 
-Prepare **2.0.0 Beta 10**, tag `v2.0.0-beta.10`, build **52**, on `lit/v2-beta`.
-Beta 10 is in development; qualification, signing, notarization and publication
-are pending. Beta 9/build 51 is published as a signed and notarized prerelease, with verified
+Published **2.0.0 Beta 10**, tag `v2.0.0-beta.10`, build **52**, on `lit/v2-beta`.
+Beta 10 passed the complete local and publisher gates, signing, all three Apple
+notarization submissions and public download verification. See
+[BETA10-VALIDATION.md](BETA10-VALIDATION.md). Beta 9/build 51 is published as a signed and notarized prerelease, with verified
 public downloads and the exact signed beta feed. Beta 9 introduces the Beztrace
 companion setup card. Its independent plugin remains an unsigned development
 preview and is excluded from bundled installation. See [BETA9-VALIDATION.md](BETA9-VALIDATION.md).
@@ -73,7 +74,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    release. Publish the communication below only after the beta download works.
 
 Beta 10 uses `--beta 10 --installer-build 52`. Signing, notarization and
-publication are pending. Carry forward the outstanding native UI and signed-update
+publication passed; remaining manual acceptance limits are disclosed. Carry forward the outstanding native UI and signed-update
 acceptance checks from the published Beta 8 qualification record.
 Published Beta 7 evidence and its open qualification limits are recorded in
 [BETA7-VALIDATION.md](BETA7-VALIDATION.md). Historical Beta 6 evidence remains in
@@ -279,3 +280,17 @@ assets matched local bytes, and Sparkle feed/archive signatures passed.
 The exact Beta 9 appcast is published. Stable Latest remains v1.11.1.
 Beztrace remains an informational development-preview card. The user approved
 publication with the limits in [BETA9-VALIDATION.md](BETA9-VALIDATION.md).
+
+## Beta 10 publication — 30 September 2026
+
+Signed tag `v2.0.0-beta.10` identifies `e1e71ef8`. The complete local and guarded
+publisher gates passed 2,492 Python tests (two skips) and 222 desktop tests.
+All three Apple submissions were accepted. Developer ID signatures, stapled
+notarization tickets, Gatekeeper, installed copies and both signed private
+runtimes passed. New-font creation/save/reopen passed in both source formats.
+
+All four public assets matched local bytes and Sparkle archive/feed signatures
+verified. The exact signed beta appcast is copied for publication on `lit/v2-beta`.
+Stable Latest remains v1.11.1. The physical Intel/minimum-macOS, exact signed
+update/migration and carried-forward native UI limits remain disclosed in
+[BETA10-VALIDATION.md](BETA10-VALIDATION.md). No email or social announcement was sent.

@@ -1,4 +1,4 @@
-# Beta 10 release candidate — September 30, 2026
+# Beta 10 release — September 30, 2026
 
 Release `2.0.0-beta.10`, desktop build 52, on `lit/v2-beta`.
 The user authorized committing all publishable changes and publishing this beta.
@@ -21,4 +21,11 @@ see `signed-runtimes.json`. App and DMG notarization passed. All three Apple sub
 submission IDs are in `distribution-state.json`. Stapling, Gatekeeper acceptance,
 nested signatures, signature-preserving installation copies, extracted ZIP and
 checksums passed. Sparkle archive/feed signatures verified.
-Publication and public download verification are pending.
+The guarded publisher reran the complete gate and artifact verification, then
+verified all uploaded digests before publication. [Beta 10 is public](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.10).
+Signed tag `v2.0.0-beta.10` identifies `e1e71ef8`.
+Fresh unauthenticated downloads of all four assets matched local bytes and
+Sparkle archive/feed signatures verified; see `public-download-verification.json`
+and `github-published.json`. Stable Latest remains v1.11.1. The exact signed
+beta appcast is copied to the beta branch after public archive verification.
+Remaining manual acceptance limits remain disclosed in the qualification note.

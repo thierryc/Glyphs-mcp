@@ -1,10 +1,10 @@
 # Glyphs MCP Desktop 2.0.0 Beta 10
 
-**Beta 10/build 52 is in development and has not been published.**
-Source release identity: `2.0.0-beta.10`. The latest published beta is Beta 9/build 51.
+**Beta 10/build 52 is published as a signed and notarized GitHub prerelease.**
+Release identity: `2.0.0-beta.10`. All four public downloads and Sparkle signatures are verified.
 Stable Latest remains v1.11.1.
-See [Beta 9 qualification](BETA9-VALIDATION.md),
-[distribution evidence](reports/beta9-release-candidate/README.md), and the [beta guide](BETA.md).
+See [Beta 10 qualification](BETA10-VALIDATION.md),
+[distribution evidence](reports/beta10-release-candidate/README.md), and the [beta guide](BETA.md).
 The [thirteen-tool contract](content/reference/command-set.mdx) adds font creation
 through `create_document`; `save_document` persists the resulting open font.
 
@@ -19,8 +19,8 @@ update, removal and retry. Upgrades preserve ports, startup settings and
 unrelated agent configuration.
 
 Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
-with requirements, development availability and links to its separate engine
-and setup guide. See [Beztrace setup](BETA.md#beztrace).
+with requirements, development availability and setup guidance. The app bundles
+the universal 0.1.1-dev.4 development engine; the Glyphs plugin remains separate. See [Beztrace setup](BETA.md#beztrace).
 
 The permanent app includes Setup and Project destinations, a static menu-bar
 popover, a dedicated troubleshooting-log window, local and public templates,
@@ -71,9 +71,9 @@ See [installation](content/getting-started/installation.mdx) and the
 
 The Beta 10 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
-documentation tracks describe these versions separately. Beta 9 is available
+documentation tracks describe these versions separately. Beta 10 is available
 as a signed and notarized
-[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9).
+[GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.10).
 
 Documentation sources: [v2 · 2.0.0 Beta 10](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).

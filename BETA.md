@@ -1,7 +1,7 @@
 # Glyphs MCP 2.0.0 Beta
 
-**Development target: Beta 10/build 52 (`2.0.0-beta.10`), not yet published.**
-The downloads and release evidence below refer to the latest published beta.
+**Beta 10/build 52 (`2.0.0-beta.10`) is published as a signed and notarized prerelease.**
+All four public downloads and Sparkle signatures are verified. Stable Latest remains v1.11.1.
 
 Beta 10 adds new-font creation with `create_document`, duplicate-safe retries
 and native master/instance IDs. Save separately using `save_document` as
@@ -11,9 +11,6 @@ in Glyphs, marks the latest/reference versions and uses green/pink comparisons.
 The desktop app bundles the universal Beztrace 0.1.1-dev.4 development engine;
 its independent Glyphs plugin remains outside Install All.
 See [Beta 10 qualification](BETA10-VALIDATION.md).
-
-**Beta 9/build 51 is published as a signed and notarized GitHub prerelease.
-Stable Latest remains v1.11.1.**
 
 Beta 9 adds a Beztrace companion card with plugin requirements and setup
 guidance. Its separate development plugin is excluded from Install All.
@@ -27,8 +24,8 @@ It also adds exact glyph/group kerning assignments and removals in LTR, RTL and
 vertical directions, plus bounded language-filtered proof pairs from a pinned
 MIT-licensed dataset. Proofing reports coverage without suggesting kerning values.
 The fixed 4,096-surface native-script ceiling is removed; the request byte budget,
-exact targeting and saved-version recovery remain. Twelve public tools and eleven
-managed skills are retained.
+exact targeting and saved-version recovery remain. Beta 10 extends the public surface to thirteen tools while retaining eleven
+managed skills.
 
 Finish an edit with **Keep changes without saving**, **Save font**, or its
 recovery action. Typed **Undo these changes** covers the recorded edit and ends
@@ -38,23 +35,23 @@ and do not save; external effects are not restored. Saving requires authorizatio
 Visible connected successful result cards offer automatic Keep and **Wait for my
 answer**. Text-only clients remain manual.
 
-The published identity is `2.0.0-beta.9`, desktop build 51, on `lit/v2-beta`.
-See [qualification](BETA9-VALIDATION.md) and the
-[release report](reports/beta9-release-candidate/README.md).
+The published identity is `2.0.0-beta.10`, desktop build 52, on `lit/v2-beta`.
+See [qualification](BETA10-VALIDATION.md) and the
+[release report](reports/beta10-release-candidate/README.md).
 
 ## Requirements and availability
 
-Beta 9 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
+Beta 10 targets macOS 14 or later, Apple silicon and Intel, and Glyphs 4. The
 installer bundles architecture-matched private runtimes; terminal setup is not
 required for end-user installation. Glyphs still needs its own **Python
 (Glyphs)** environment selected under **Glyphs → Settings → Addons**.
 Glyphs 3 remains on its separate pinned v1.11.0 release.
 
 Download the signed and notarized
-[Beta 9 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.9/Glyphs-MCP-2.0.0-beta.9.dmg)
-from the [Beta 9 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.9).
+[Beta 10 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.10/Glyphs-MCP-2.0.0-beta.10.dmg)
+from the [Beta 10 prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.10).
 Verify it against the release's `SHA256SUMS` file.
-Beta 9 remains a prerelease and does not replace Stable Latest.
+Beta 10 remains a prerelease and does not replace Stable Latest.
 
 ## First session
 
@@ -142,18 +139,21 @@ in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
 
 ## Beztrace
 
-Beta 9 Setup includes **Beztrace**, a separately versioned Glyphs plugin for
-tracing PNG/JPEG images into editable paths. **Setup details…** shows version
-0.1.0/build 2, requirements, engine download and plugin setup documentation.
-The plugin is an unsigned development preview; native Glyphs qualification and
-a signed companion release are pending. Availability does not imply installation
-or that Glyphs has loaded it. Install All continues to handle the three bundled
-components and agent connections.
+Beta 10 Setup includes **Beztrace**, an independent Glyphs plugin for tracing
+PNG/JPEG images into editable paths. The card identifies plugin 0.1.0/build 11
+and the bundled universal 0.1.1-dev.4 development engine. The engine is signed
+and notarized inside the distributed desktop app; both architectures passed
+startup checks. Its recorded dirty source provenance, licenses and SBOMs are
+included. These checks do not establish tracing quality or plugin acceptance.
 
-Beztrace requires Glyphs 4.1 build 4107 or later, Python 3.9 or later in Glyphs,
-and the separate [beztrace 0.1.0 engine](https://github.com/thierryc/beztrace/releases/tag/v0.1.0).
-After plugin installation and a Glyphs relaunch, select one layer and use
-**Path → Trace Image…**. The plugin works without the MCP server. Its shared
-engine remains installed when the plugin is removed.
+The separate Glyphs plugin remains an unsigned development preview, with native
+qualification and a signed plugin release pending. Install All manages the three
+bundled MCP components and agent connections; it does not install the Beztrace
+Glyphs plugin. Availability does not establish that Glyphs has loaded it.
 
-Integration source: [Beztrace companion 0.1.0/build 2](https://github.com/thierryc/beztrace/blob/45b1108fb7f51d5877c964a296a867412eb167cb/Companions/Glyphs/README.md).
+Beztrace requires Glyphs 4.1/build 4107 or later and Python 3.9 or later in Glyphs.
+After separate plugin setup and a Glyphs relaunch, use **Path → Trace Image…**.
+The plugin works without the MCP server. See the card's setup documentation;
+the separate [0.1.0 engine release](https://github.com/thierryc/beztrace/releases/tag/v0.1.0)
+and [pinned integration reference](https://github.com/thierryc/beztrace/blob/45b1108fb7f51d5877c964a296a867412eb167cb/Companions/Glyphs/README.md)
+remain available independently.
