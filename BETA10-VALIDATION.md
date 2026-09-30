@@ -39,8 +39,12 @@ The initial run found a stale desktop assertion expecting twelve tools; it was
 corrected and the complete gate passed. Earlier desktop Python fixtures and a
 stale release-skill reference were also corrected with focused verification.
 Developer ID signing verified 94 Mach-O files and 47 nested bundles, plus the
-separately bundled Beztrace engine. Apple notarization and final artifact checks
-are pending. Evidence is in [the distribution report](reports/beta10-release-candidate/README.md).
+separately bundled Beztrace engine. The payload notarization passed and tickets were stapled and verified. Both
+signed private runtimes passed startup, HTTP/stdio catalogs, packaged installer
+and MCP App resource checks. App and DMG notarization passed; all three submissions were accepted.
+Stapling, Gatekeeper, nested signatures, signature-preserving install copies,
+extracted ZIP and checksum verification passed. Sparkle archive and feed
+signatures verified. Publication and public download checks are pending. Evidence is in [the distribution report](reports/beta10-release-candidate/README.md).
 
 ## Remaining acceptance limits
 

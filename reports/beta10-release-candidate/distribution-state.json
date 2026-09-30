@@ -1,0 +1,33 @@
+{
+  "tag": "v2.0.0-beta.10",
+  "sourceCommit": "8a359fe9f8014244f245a9395aa9a578cf59d0fe",
+  "installerBuild": 52,
+  "developerID": "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)",
+  "notarization": [
+    {
+      "kind": "payload",
+      "id": "7ea9ae77-6347-4a7b-9fcb-8ac975c3f2bd",
+      "status": "Accepted"
+    },
+    {
+      "kind": "app",
+      "id": "2a1751cc-3ea9-422b-bb40-61a210b6f029",
+      "status": "Accepted"
+    },
+    {
+      "kind": "dmg",
+      "id": "7bcc88a3-66b0-4e40-adb4-f26aefc5d409",
+      "status": "Accepted"
+    }
+  ],
+  "published": false,
+  "artifactVerification": {
+    "developerID": true,
+    "notarizationTickets": true,
+    "gatekeeperAppAndDMG": true,
+    "nestedSignatures": true,
+    "signaturePreservingInstallCopies": true,
+    "extractedZIP": true,
+    "checksums": true
+  }
+}

@@ -43,6 +43,12 @@ reference still describes Beta 9 while the pre-existing source target is Beta 10
 Those unrelated sources were preserved. The initial report is
 `full-suite-initial.md`; the full suite is not claimed green.
 
+Later release follow-up: the desktop fixtures, tool-count assertions and stale
+release-skill metadata were corrected for publication. The complete Beta 10
+release gate passed 2,492 Python tests and 222 desktop tests. The initial results
+above are retained as historical evidence; see
+[Beta 10 qualification](../../BETA10-VALIDATION.md).
+
 ## Installation state
 
 Build, installation, relaunch and live verification are complete. The installed

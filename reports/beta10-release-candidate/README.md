@@ -14,5 +14,11 @@ assertion; it was corrected and the complete gate rerun successfully.
 Developer ID signing verified 94 native binaries and 47 bundles. The separately
 bundled universal Beztrace engine is signed and its refreshed release-copy
 checksums verified; see `signed-engine.json`.
-Apple notarization, final artifact verification, signed-runtime qualification
-and public download evidence are pending.
+Apple accepted the expanded payload submission and all three native plugin
+tickets were stapled and verified. Both signed private runtimes passed startup,
+HTTP/stdio catalogs, packaged installer CLI and MCP App resource/response checks;
+see `signed-runtimes.json`. App and DMG notarization passed. All three Apple submissions were accepted;
+submission IDs are in `distribution-state.json`. Stapling, Gatekeeper acceptance,
+nested signatures, signature-preserving installation copies, extracted ZIP and
+checksums passed. Sparkle archive/feed signatures verified.
+Publication and public download verification are pending.
