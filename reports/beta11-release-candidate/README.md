@@ -23,3 +23,7 @@ downloads match all four local assets and Sparkle archive/feed signatures
 verify; see `github-published.json` and `public-download-verification.json`.
 Stable Latest remains v1.11.1. The exact signed beta appcast is updated after
 public archive verification; no previous beta asset/tag or stable release changed.
+
+The public raw beta feed and registry match committed bytes, and the raw feed
+signature verifies; see `public-branch-verification.json`. The published-docs
+build and all 25 post-publication release/docs tests passed.

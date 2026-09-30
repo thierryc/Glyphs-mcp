@@ -58,3 +58,7 @@ verified local assets. The exact signed beta appcast is updated after public
 archive verification. Beta 10 tags, assets and qualification records remain
 preserved. Stable Latest remains v1.11.1. See the distribution evidence for
 public download and branch verification results.
+
+The public raw beta feed and registry match committed source, and the raw feed
+signature verifies; see `public-branch-verification.json` in the distribution
+evidence. The published documentation builds successfully.
