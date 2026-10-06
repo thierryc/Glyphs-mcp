@@ -18,6 +18,13 @@ Check the menu reference indicators, active-layer-only status text and Glyphs' n
 
 Record idle and loaded responsiveness separately. A 200 ms HTTP probe is diagnostic rather than an automatic rejection; investigate reproducible stalls attributable to the plugin and distinguish modal waiting from native execution.
 
+Verify Glyphs application detection with Finder Quick Look and thumbnail
+extensions active while Glyphs itself is closed. Extensions must not mark the
+application as running; the real Glyphs 4 application must still block its
+component installation until it quits. Detector fixtures cover exact stable
+and beta bundle IDs; those fixtures do not qualify native launch or a Glyphs 3
+v2 port.
+
 ## Packaging and identity
 
 Validate component combinations, upgrades, removal, interrupted installation and complete transactional rollback. Verify preservation of unrelated files and user preferences. Sign nested code from the inside out, notarize and staple, then reverify exact payload identities and the installed receipt.

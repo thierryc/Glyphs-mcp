@@ -2036,6 +2036,115 @@ exit 0
 		))
 	}
 
+	func testGlyphsApplicationClassifierRejectsFinderExtensions() {
+		let extensionBundleIdentifiers = [
+			"com.GeorgSeifert.Glyphs4.GlyphsQuickLookExtension",
+			"com.GeorgSeifert.Glyphs4.GlyphsThumbnailExtension",
+		]
+
+		for bundleIdentifier in extensionBundleIdentifiers {
+			XCTAssertNil(
+				GlyphsApplicationDetector.classify(
+					bundleIdentifier: bundleIdentifier,
+					shortVersion: "4.1",
+					displayName: "Glyphs 4 Finder Extension",
+					fileName: "Glyphs 4 Finder Extension"
+				),
+				bundleIdentifier
+			)
+		}
+	}
+
+	func testGlyphsRunningProcessDetectorReturnsNoVersionsForExtensionsOnly() {
+		let processes = [
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsQuickLookExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Quick Look Extension",
+				fileName: "GlyphsQuickLookExtension"
+			),
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsThumbnailExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Thumbnail Extension",
+				fileName: "GlyphsThumbnailExtension"
+			),
+		]
+
+		XCTAssertTrue(GlyphsRunningProcessDetector.runningVersions(in: processes).isEmpty)
+	}
+
+	func testFinderExtensionsDoNotBlockEitherInstallerTarget() {
+		let processes = [
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsQuickLookExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Quick Look Extension",
+				fileName: "GlyphsQuickLookExtension"
+			),
+			GlyphsRunningProcessInfo(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4.GlyphsThumbnailExtension",
+				shortVersion: "4.1",
+				displayName: "Glyphs Thumbnail Extension",
+				fileName: "GlyphsThumbnailExtension"
+			),
+		]
+		let runningVersions = GlyphsRunningProcessDetector.runningVersions(in: processes)
+		let targets = GlyphsMajorVersion.allCases.map {
+			makeTargetStatus(version: $0, detected: true, isRunning: runningVersions.contains($0))
+		}
+
+		for version in GlyphsMajorVersion.allCases {
+			XCTAssertNil(
+				InstallerTargetSelectionPolicy.installFailureReason(
+					selectedVersions: [version],
+					targets: targets
+				),
+				version.displayName
+			)
+		}
+	}
+
+	func testGlyphsRunningProcessDetectorRecognizesSupportedStableAndBetaBundleIDs() {
+		let expectedVersions: [(GlyphsRunningProcessInfo, GlyphsMajorVersion)] = [
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs3", shortVersion: "3.5", displayName: "Glyphs 3", fileName: "Glyphs 3"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs3Beta", shortVersion: "3.6", displayName: "Glyphs 3 Beta", fileName: "Glyphs 3 Beta"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs4", shortVersion: "4.1", displayName: "Glyphs 4", fileName: "Glyphs 4"), .v4),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs4Beta", shortVersion: "4.2", displayName: "Glyphs 4 Beta", fileName: "Glyphs 4 Beta"), .v4),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.GlyphsBeta", shortVersion: "3.6", displayName: "Glyphs Beta", fileName: "Glyphs Beta"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.GlyphsBeta", shortVersion: "4.1", displayName: "Glyphs Beta", fileName: "Glyphs Beta"), .v4),
+		]
+
+		for (process, expectedVersion) in expectedVersions {
+			XCTAssertEqual(GlyphsRunningProcessDetector.classify(process), expectedVersion)
+		}
+	}
+
+	func testGenuineGlyphsProcessesBlockOnlyTheirCorrespondingInstallerTarget() {
+		let genuineProcesses: [(GlyphsRunningProcessInfo, GlyphsMajorVersion)] = [
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs3", shortVersion: "3.5", displayName: "Glyphs 3", fileName: "Glyphs 3"), .v3),
+			(GlyphsRunningProcessInfo(bundleIdentifier: "com.GeorgSeifert.Glyphs4", shortVersion: "4.1", displayName: "Glyphs 4", fileName: "Glyphs 4"), .v4),
+		]
+
+		for (process, runningVersion) in genuineProcesses {
+			let runningVersions = GlyphsRunningProcessDetector.runningVersions(in: [process])
+			let targets = GlyphsMajorVersion.allCases.map {
+				makeTargetStatus(version: $0, detected: true, isRunning: runningVersions.contains($0))
+			}
+			for version in GlyphsMajorVersion.allCases {
+				let failureReason = InstallerTargetSelectionPolicy.installFailureReason(
+					selectedVersions: [version],
+					targets: targets
+				)
+				if version == runningVersion {
+					XCTAssertNotNil(failureReason, version.displayName)
+				} else {
+					XCTAssertNil(failureReason, version.displayName)
+				}
+			}
+		}
+	}
+
 	func testGlyphsApplicationDetectorFindsBothAndPrefersStableBundle() throws {
 		let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let glyphs3Beta = try makeFakeGlyphsApplication(
