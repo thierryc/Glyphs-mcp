@@ -178,7 +178,7 @@ struct DesktopCheckpointHistory: View {
     private var unopenedFonts: some View {
         VStack(alignment: .leading, spacing: 8) {
             Divider()
-            Text(history.documents.isEmpty ? "Open a font in Glyphs to view its checkpoints" : "Fonts not open in Glyphs")
+            Text(LocalizedStringKey(history.documents.isEmpty ? "Open a font in Glyphs to view its checkpoints" : "Fonts not open in Glyphs"))
                 .font(.caption).foregroundStyle(.secondary)
             ScrollView {
                 VStack(spacing: 4) {

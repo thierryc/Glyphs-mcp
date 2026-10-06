@@ -16,16 +16,16 @@ and the Xcode project. The managed skill inventory comes from
 | Item | Value |
 | --- | --- |
 | Product version | `2.0.0` |
-| Release version | `2.0.0-beta.11` |
-| Channel | `beta` |
-| Beta number | `11` |
-| Installer build | `53` |
+| Release version | `2.0.0` |
+| Channel | `stable` |
+| Beta number | `0` |
+| Installer build | `55` |
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
 | MCP tools | `13` |
-| Job kinds | `up to 11` |
+| Job kinds | `up to 13`, capability-derived |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
@@ -63,7 +63,7 @@ manifest and receipt:
   `codeHash` gives the complete fingerprint. Check `bridge.release`,
   `bridge.runtimeId` and `bridge.codeHash` independently.
 - `bridge.host` identifies the native application by bundle identifier, version
-  and build. The Beta 11 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
+  and build. The v2 payload accepts `com.GeorgSeifert.Glyphs4`. Glyphs 3
   uses its separate v1.11.0 distribution.
 
 The fingerprint is computed from component files at initialization. It is not a
@@ -78,6 +78,14 @@ identification. During font work, retain the connection's known document ID and
 read fresh data; rediscover after stale-ID rejection or a known host/bridge restart.
 
 ## Source, installation and release evidence
+
+The current **2.0.0/build 55** candidate is unpublished. It uses planned tag
+`v2.0.0`, archive names `Glyphs-MCP-2.0.0.dmg` and `Glyphs-MCP-2.0.0.zip`, and
+stable feed `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`.
+These are future distribution coordinates, not verified public v2 downloads.
+Final signing, supported-minimum and exact signed update qualification remain
+pending. Beta 12/build 54 and its native evidence are retained separately; no
+Beta tag or distributed asset is relabelled by the source identity change.
 
 A source version states what a checkout is preparing. An installation receipt
 states which files were installed. A live status response identifies the loaded
@@ -95,6 +103,13 @@ Beta 6’s earlier successful update and migration test remains historical
 evidence in [BETA6-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA6-VALIDATION.md).
 Physical Intel hardware and the broader manual/client matrix remain unverified
 beta coverage. A configured URL alone does not prove a feed or release is valid.
+
+Beta 12/build 54 was the preceding unpublished local candidate with unsigned builds and
+scoped native qualification. No signed public Beta 12 distribution is available.
+Its planned tag is `v2.0.0-beta.12`; planned distribution filenames are
+`Glyphs-MCP-2.0.0-beta.12.dmg` and `Glyphs-MCP-2.0.0-beta.12.zip`.
+See [BETA12-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA12-VALIDATION.md).
+The committed signed appcast remains the published Beta 11 feed.
 
 Beta 11/build 53 is published under signed tag `v2.0.0-beta.11`, with
 `Glyphs-MCP-2.0.0-beta.11.dmg` and `Glyphs-MCP-2.0.0-beta.11.zip`.

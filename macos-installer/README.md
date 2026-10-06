@@ -10,7 +10,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-The beta branch packages published product 2.0.0 Beta 11, release `2.0.0-beta.11`, installer build 53. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany thirteen tools and up to eleven capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
+This checkout prepares unpublished product 2.0.0, stable-channel identity, installer build 55. Final signing and distribution qualification remain pending. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany thirteen tools and up to thirteen capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
@@ -19,6 +19,14 @@ independently distributed Beztrace development preview with setup details; it
 is excluded from Install All and from the bundled payload. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
+
+Claude Desktop and Claude Code connection removal requires an ownership receipt
+and an exact match of the complete managed entry. Custom environment values,
+arguments and other fields are preserved as a conflict. For an installation
+created before these receipts were introduced, run the connection's **Update**
+once before removal. Update retains extra user fields without adopting them;
+such entries remain protected. Receipts sit beside the corresponding JSON
+configuration with the `.glyphs-mcp-ownership.json` suffix.
 
 Glyphs 4 uses an architecture-matched private CPython 3.14.7 runtime and locked
 FastMCP 2.12.0 / glyphs-cli 0.6.1 dependencies. Installations require no package
@@ -32,7 +40,7 @@ reading upgrade choices. Ports, automatic start, authentication and welcome
 preferences remain outside component replacement. Unrelated files are retained.
 The Mac's normal Glyphs quit/save workflow must finish before replacement.
 
-The Beta 11 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
+The v2 payload is Glyphs 4-only. Glyphs 3 retains its separate v1.11.0
 release, original Python dependency installation and version-specific skills;
 the pinned v1 source metadata remains unchanged and is not embedded in this
 desktop payload. Legacy updater paths reject partial upgrades to the new

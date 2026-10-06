@@ -76,6 +76,48 @@ final class DesktopTests: XCTestCase {
         XCTAssertEqual(DesktopDiagnostics.controlProgress("port"), "Applying…")
     }
 
+    func testFailedRefreshCannotPresentCachedReadyOrWorkingAsLiveStatus() throws {
+        for activeCount in [0, 1] {
+            let status = try JSONDecoder().decode(DesktopServerStatus.self, from: Data("""
+                {"sidecarVersion":"2.0.0","bridge":{"reachable":true},"worker":{"available":true},
+                 "activity":{"jobs":[],"activeCount":\(activeCount)},"controlProtocol":1}
+                """.utf8))
+            for running in [true, nil] as [Bool?] {
+                XCTAssertEqual(DesktopDiagnostics.serverTitle(hasServer: true, running: running,
+                    status: status, hasNotice: true, stale: true), "Status unavailable")
+                XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: running, stale: true, status: status),
+                               "exclamationmark.circle")
+                XCTAssertFalse(status.showsActivityDot(stale: true, running: running))
+            }
+            XCTAssertEqual(DesktopDiagnostics.serverTitle(hasServer: true, running: false,
+                status: status, hasNotice: true, stale: true), "Server stopped")
+            XCTAssertEqual(DesktopDiagnostics.serverTitle(hasServer: true, running: true,
+                status: status, hasNotice: false, stale: false), activeCount == 0 ? "Ready" : "Working")
+        }
+    }
+
+    func testGlyphsRecoveryCoversFirstFailureCachedFailureAndUnreachableBridge() throws {
+        let ready = try JSONDecoder().decode(DesktopServerStatus.self,
+            from: Data(#"{"sidecarVersion":"2.0.0","bridge":{"reachable":true},"worker":{"available":true}}"#.utf8))
+        let waiting = try JSONDecoder().decode(DesktopServerStatus.self,
+            from: Data(#"{"sidecarVersion":"2.0.0","bridge":{"reachable":false},"worker":{"available":true}}"#.utf8))
+        XCTAssertTrue(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
+            stale: false, status: nil, hasNotice: true))
+        XCTAssertTrue(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: nil,
+            stale: true, status: ready, hasNotice: true))
+        XCTAssertTrue(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
+            stale: false, status: waiting, hasNotice: true))
+        // An identity notice on a reachable bridge is not a startup-dialog signal.
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
+            stale: false, status: ready, hasNotice: true))
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: false,
+            stale: true, status: ready, hasNotice: false))
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: false, running: nil,
+            stale: true, status: waiting, hasNotice: true))
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: nil,
+            stale: false, status: nil, hasNotice: false))
+    }
+
     func testStoppedAndUnreachableServersDoNotUseTheReadySymbol() throws {
         let status = try JSONDecoder().decode(DesktopServerStatus.self, from: Data(#"{"sidecarVersion":"2.1.0","bridge":{"reachable":true},"worker":{"available":true},"controlProtocol":1}"#.utf8))
         XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: true, stale: false, status: status), "checkmark.circle.fill")
@@ -277,6 +319,21 @@ final class DesktopTests: XCTestCase {
         XCTAssertEqual(policy.interval(busy: true), 2)
         policy.surfaces.remove("popover")
         XCTAssertNil(policy.interval(busy: true))
+    }
+
+    func testWelcomeCompletionPersistsWithoutChangingBridgeOrMenuPreferences() {
+        let name = UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        XCTAssertTrue(DesktopLaunchPolicy.showsWelcome(loginLaunch: false, defaults: defaults))
+        XCTAssertFalse(DesktopLaunchPolicy.showsWelcome(loginLaunch: true, defaults: defaults))
+        XCTAssertNil(defaults.object(forKey: DesktopLaunchPolicy.welcomeCompletedKey))
+        DesktopLaunchPolicy.completeWelcome(defaults: defaults)
+        let reopened = UserDefaults(suiteName: name)!
+        XCTAssertFalse(DesktopLaunchPolicy.showsWelcome(loginLaunch: false, defaults: reopened))
+        XCTAssertFalse(DesktopLaunchPolicy.showsWelcome(loginLaunch: true, defaults: reopened))
+        XCTAssertNil(defaults.object(forKey: "com.ap.cx.glyphs-mcp.welcomeShown"))
+        XCTAssertNil(defaults.object(forKey: DesktopIdentity.showMenuBarKey))
     }
 
     func testMenuDefaultAndLoginLaunchRemainSeparate() {

@@ -16,12 +16,30 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
-def test_current_checkout_is_beta_11_build_53():
+def test_current_checkout_is_stable_candidate_build_55():
     release = load(REPO)
     assert release['version'] == '2.0.0'
-    assert release['tag'] == 'v2.0.0-beta.11'
-    assert release['label'] == '2.0.0 Beta 11'
-    assert release['installerBuild'] == 53
+    assert release['tag'] == 'v2.0.0'
+    assert release['label'] == '2.0.0'
+    assert release['channel'] == 'stable'
+    assert release['betaNumber'] == 0
+    assert release['installerBuild'] == 55
+    assert '/main/' in release['feedURL']
+    assert '/main/' in release['registryURL']
+
+
+def test_beta_12_identity_remains_separate_from_stable_candidate(tmp_path):
+    project = tmp_path / 'macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj'
+    project.parent.mkdir(parents=True)
+    project.write_text('MARKETING_VERSION = 2.0.0;\nCURRENT_PROJECT_VERSION = 54;\n')
+    (tmp_path / 'release.json').write_text('{"channel":"beta","betaNumber":12}')
+    beta = load(tmp_path)
+    stable = load(REPO)
+    assert beta['tag'] == 'v2.0.0-beta.12'
+    assert beta['label'] == '2.0.0 Beta 12'
+    assert beta['installerBuild'] < stable['installerBuild']
+    assert beta['feedURL'] != stable['feedURL']
+    assert beta['registryURL'] != stable['registryURL']
 
 
 def test_beta_5_validation_records_the_published_signed_release():

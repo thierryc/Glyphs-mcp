@@ -9,6 +9,7 @@ import plistlib
 import re
 import shutil
 import subprocess
+import tempfile
 import xml.etree.ElementTree as ET
 
 from prepare_desktop_dependencies import prepare
@@ -42,8 +43,8 @@ def candidate(app, output):
     if info['CFBundleIdentifier'] != 'cx.ap.glyphsMcp': raise ValueError('Not a Glyphs MCP desktop application')
     version, build = info['CFBundleShortVersionString'], info['CFBundleVersion']
     release = identity(version, info.get('GMCPReleaseChannel', 'stable'), info.get('GMCPBetaNumber', 0))
-    if release['channel'] == 'beta' and info.get('SUFeedURL') != release['feedURL']:
-        raise ValueError('Beta app must use the beta update feed')
+    if info.get('SUFeedURL') != release['feedURL']:
+        raise ValueError('App must use its release channel update feed')
     verify_code(app)
     subprocess.run(['/usr/bin/xcrun','stapler','validate',str(app)],check=True)
     dependencies = prepare()
@@ -68,7 +69,69 @@ def candidate(app, output):
     return result
 
 
+def verify_metadata(app, output):
+    """Fail closed on missing assets or mismatched feed/candidate identity."""
+    info = plistlib.loads((app/'Contents/Info.plist').read_bytes())
+    release = identity(info['CFBundleShortVersionString'], info.get('GMCPReleaseChannel', 'stable'),
+                       info.get('GMCPBetaNumber', 0))
+    if info.get('CFBundleIdentifier') != 'cx.ap.glyphsMcp' or info.get('SUFeedURL') != release['feedURL']:
+        raise ValueError('Update app identity/feed mismatch')
+    archive = output/('Glyphs-MCP-'+release['releaseVersion']+'.zip')
+    appcast = output/'appcast.xml'
+    for path in (archive, appcast, output/'update-candidate.json'):
+        if not path.is_file() or path.is_symlink():
+            raise ValueError('Missing regular update asset: '+str(path))
+    record = json.loads((output/'update-candidate.json').read_text())
+    items = ET.fromstring(appcast.read_bytes()).findall('channel/item')
+    if len(items) != 1:
+        raise ValueError('Expected one update candidate')
+    item = items[0]
+    enclosures = item.findall('enclosure')
+    if len(enclosures) != 1:
+        raise ValueError('Expected one update enclosure')
+    enclosure = enclosures[0]
+    url = 'https://github.com/thierryc/Glyphs-mcp/releases/download/'+release['tag']+'/'+archive.name
+    signature = enclosure.get('{'+SPARKLE+'}edSignature')
+    if (enclosure.get('url') != url or enclosure.get('length') != str(archive.stat().st_size)
+            or not signature or enclosure.get('type') != 'application/octet-stream'
+            or item.findtext('{'+SPARKLE+'}version') != str(info['CFBundleVersion'])
+            or item.findtext('{'+SPARKLE+'}shortVersionString') != release['label']
+            or item.findtext('{'+SPARKLE+'}minimumSystemVersion') != '14.0'):
+        raise ValueError('Update enclosure/version mismatch')
+    expected = {'releaseVersion':release['releaseVersion'], 'channel':release['channel'],
+                'tag':release['tag'], 'version':release['version'], 'build':info['CFBundleVersion'],
+                'bundleIdentifier':info['CFBundleIdentifier'], 'publicKey':info.get('SUPublicEDKey'),
+                'archive':archive.name, 'signature':signature, 'published':False,
+                'checksums':{path.name:hashlib.sha256(path.read_bytes()).hexdigest()
+                             for path in (archive, appcast)}}
+    if any(record.get(key) != value for key,value in expected.items()):
+        raise ValueError('Update candidate metadata/checksum mismatch')
+    return archive, appcast, signature, expected
+
+
+def verify_candidate(app, output):
+    app, output = app.resolve(), output.resolve()
+    archive, appcast, signature, record = verify_metadata(app, output)
+    dependencies = prepare()
+    signer = str(dependencies/'bin/sign_update')
+    public_key = subprocess.check_output([str(dependencies/'bin/generate_keys'), '--account',
+                                          'cx.ap.glyphsMcp', '-p'], text=True).strip()
+    if public_key != record['publicKey']:
+        raise ValueError('The update signing key does not match the application')
+    subprocess.run([signer,'--account','cx.ap.glyphsMcp','--verify',str(archive),signature],check=True)
+    subprocess.run([signer,'--account','cx.ap.glyphsMcp','--verify',str(appcast)],check=True)
+    from verify_desktop_app import tree_digest
+    with tempfile.TemporaryDirectory(prefix='glyphs-update-verify-') as temporary:
+        subprocess.run(['/usr/bin/ditto','-x','-k',str(archive),temporary],check=True)
+        extracted = Path(temporary)/app.name
+        if not extracted.is_dir() or tree_digest(extracted) != tree_digest(app):
+            raise ValueError('Sparkle ZIP does not contain the exact release app')
+        verify_code(extracted)
+        subprocess.run(['/usr/bin/xcrun','stapler','validate',str(extracted)],check=True)
+    return record
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--app',required=True,type=Path); parser.add_argument('--output',required=True,type=Path)
-    args = parser.parse_args(); print(json.dumps(candidate(args.app,args.output),sort_keys=True))
+    parser.add_argument('--verify',action='store_true'); parser.add_argument('--app',required=True,type=Path); parser.add_argument('--output',required=True,type=Path)
+    args = parser.parse_args(); print(json.dumps((verify_candidate if args.verify else candidate)(args.app,args.output),sort_keys=True))

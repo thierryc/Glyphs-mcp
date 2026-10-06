@@ -141,19 +141,15 @@ if [[ "$skip_build" != "1" ]]; then
   ./scripts/make_installer_dmg.sh
 fi
 
-if [[ "$release_channel" == "beta" ]]; then
-  "$python_bin" "$repo_root/scripts/prepare_desktop_update.py" \
-    --app "$repo_root/dist/installer-app/$product.app" --output "$repo_root/dist/desktop-update"
-fi
+"$python_bin" "$repo_root/scripts/prepare_desktop_update.py" \
+  --app "$repo_root/dist/installer-app/$product.app" --output "$repo_root/dist/desktop-update"
 verify_args=(--tag "$tag" --write-checksums)
 ./scripts/verify_release_artifacts.sh "${verify_args[@]}"
 
-assets=("$repo_root/dist/Glyphs-MCP-$release_version.dmg" "$repo_root/dist/SHA256SUMS")
-if [[ "$release_channel" == "beta" ]]; then
-  assets+=("$repo_root/dist/desktop-update/Glyphs-MCP-$release_version.zip" "$repo_root/dist/desktop-update/appcast.xml")
-else
-  assets+=("$repo_root/dist/Glyphs-MCP-latest.dmg" "$repo_root/dist/installer-app/$product.zip")
-fi
+asset_list="$("$python_bin" "$repo_root/scripts/release_asset_inventory.py" \
+  --repo-root "$repo_root" --product "$product" --include-manifest)"
+assets=()
+while IFS= read -r asset; do assets+=("$asset"); done <<<"$asset_list"
 
 for asset in "${assets[@]}"; do
   if [[ ! -f "$asset" ]]; then

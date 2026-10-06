@@ -13,8 +13,17 @@ struct GlyphsMCPInstallerApp: App {
                 CommandGroup(after: .appInfo) {
                     Button("Check for Updates…") { delegate.updates.check() }
                 }
+                CommandGroup(replacing: .appTermination) {
+                    Button("Quit Glyphs MCP") { NSApp.terminate(nil) }
+                        .keyboardShortcut("q")
+                }
+                CommandGroup(replacing: .appSettings) {
+                    Button("Settings…") { delegate.showSettings() }
+                        .keyboardShortcut(",")
+                }
                 CommandGroup(replacing: .newItem) {
                     Button("Open Glyphs MCP") { delegate.showDashboard() }.keyboardShortcut("0")
+                    Button("Welcome & Support") { delegate.showWelcome() }
                 }
                 CommandGroup(replacing: .help) {
                     Button("Glyphs MCP Documentation") { NSWorkspace.shared.open(DesktopIdentity.documentation) }

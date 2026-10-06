@@ -14,29 +14,33 @@ public struct DesktopActivity: Decodable, Equatable, Identifiable {
     public var isBusy: Bool { ["copying_source", "preparing", "applying", "cancelling", "discarding"].contains(phase) }
     public var title: String {
         let name = taskName.prefix(1).uppercased() + taskName.dropFirst()
+        let key: String
+        let argument: String
         switch phase {
-        case "copying_source": return "Copying source for \(taskName)"
-        case "preparing": return "Preparing \(taskName)"
-        case "ready": return "\(name) ready to review"
-        case "applying": return "Applying \(taskName)"
-        case "applied": return "\(name) applied"
-        case "cancelling": return "Cancelling \(taskName)"
-        case "discarding": return "Reverting \(taskName)"
-        case "discarded": return (completed ?? 0) > 0 ? "\(name) reverted" : "\(name) proposal discarded"
-        case "cancelled": return "\(name) cancelled"
-        case "interrupted": return "\(name) interrupted"
-        default: return "\(name) needs attention"
+        case "copying_source": key = "Copying source for %@"; argument = taskName
+        case "preparing": key = "Preparing %@"; argument = taskName
+        case "ready": key = "%@ ready to review"; argument = name
+        case "applying": key = "Applying %@"; argument = taskName
+        case "applied": key = "%@ applied"; argument = name
+        case "cancelling": key = "Cancelling %@"; argument = taskName
+        case "discarding": key = "Reverting %@"; argument = taskName
+        case "discarded": key = (completed ?? 0) > 0 ? "%@ reverted" : "%@ proposal discarded"; argument = name
+        case "cancelled": key = "%@ cancelled"; argument = name
+        case "interrupted": key = "%@ interrupted"; argument = name
+        default: key = "%@ needs attention"; argument = name
         }
+        return String(format: NSLocalizedString(key, comment: "Font task activity"), argument)
     }
     public var taskName: String {
-        ["spacing": "spacing", "width_delta": "width changes", "slant": "slant",
-         "kerning_collision": "kerning", "start_nodes": "start nodes"][kind] ?? "font changes"
+        let key = ["spacing": "spacing", "width_delta": "width changes", "slant": "slant",
+                   "kerning_collision": "kerning", "start_nodes": "start nodes"][kind] ?? "font changes"
+        return NSLocalizedString(key, comment: "Font task name")
     }
     public var progressText: String? {
         guard let completed, let total, total > 0 else { return nil }
-        if isBusy { return "\(completed.formatted()) of \(total.formatted()) changes" }
+        if isBusy { return String(format: NSLocalizedString("%@ of %@ changes", comment: "Task progress"), completed.formatted(), total.formatted()) }
         guard completed > 0 else { return nil }
-        return "\(completed.formatted()) changes"
+        return String(format: NSLocalizedString("%@ changes", comment: "Task change count"), completed.formatted())
     }
     public var detailMessage: String? {
         guard let message, !message.isEmpty else { return nil }
@@ -124,13 +128,21 @@ public enum DesktopDiagnostics {
         hasServer: Bool,
         running: Bool?,
         status: DesktopServerStatus?,
-        hasNotice: Bool
+        hasNotice: Bool,
+        stale: Bool = false
     ) -> String {
         if !hasServer { return "MCP server not installed" }
         if running == false { return "Server stopped" }
+        if stale { return "Status unavailable" }
         if let status { return status.title }
         if running == true { return "Server running" }
         return hasNotice ? "Server unavailable" : "Checking server"
+    }
+
+    public static func needsGlyphsRecovery(hasServer: Bool, running: Bool?, stale: Bool,
+                                          status: DesktopServerStatus?, hasNotice: Bool) -> Bool {
+        guard hasServer, running != false else { return false }
+        return stale || status?.bridge.reachable == false || (status == nil && hasNotice)
     }
 
     public static func statusFailure(_ code: Int?) -> String {

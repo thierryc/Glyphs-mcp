@@ -17,7 +17,7 @@ struct DesktopProjectWizard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(step == 0 ? "Name your font project" : "Preview your project").font(.title.bold())
+                Text(LocalizedStringKey(step == 0 ? "Name your font project" : "Preview your project")).font(.title.bold())
                 Text("Template: \(model.templateName(template))").foregroundStyle(.secondary)
             }
             if step == 0 {
@@ -50,12 +50,12 @@ struct DesktopProjectWizard: View {
                 Button("Save as Local Template…", action: duplicateTemplate)
             }
             if !error.isEmpty { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
-            if busy { Text(step == 0 ? "Preparing template…" : "Creating project…").font(.callout).foregroundStyle(.secondary) }
+            if busy { Text(LocalizedStringKey(step == 0 ? "Preparing template…" : "Creating project…")).font(.callout).foregroundStyle(.secondary) }
             HStack {
                 Button("Cancel") { operation?.cancel(); dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
                 if step > 0 { Button("Back") { step -= 1 }.disabled(busy) }
-                Button(step == 1 ? "Create Project" : "Preview Project", action: advance)
+                Button(LocalizedStringKey(step == 1 ? "Create Project" : "Preview Project"), action: advance)
                     .keyboardShortcut(.defaultAction).disabled(busy || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }.padding(28).frame(width: 570).onDisappear { operation?.cancel() }

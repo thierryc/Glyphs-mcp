@@ -2,12 +2,37 @@
 title: Install Glyphs MCP v2
 ---
 
-The **2.0.0 Beta 6** desktop application, build **48**, is a signed and
+The published **2.0.0 Beta 11** desktop application, build **53**, is a signed and
 notarized public Glyphs 4 prerelease. Download its
-[disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.6/Glyphs-MCP-2.0.0-beta.6.dmg) and read the
+[disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0-beta.11/Glyphs-MCP-2.0.0-beta.11.dmg) and read the
 [beta guide](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA.md)
 for requirements, limitations and exact qualification results. The stable
 Latest release remains v1.11.1.
+
+This guide follows the unpublished 2.0.0/build 55 source candidate. Earlier
+Beta 12 local builds have scoped native qualification; final signing and exact
+stable distribution acceptance remain pending. The guided Python controls and
+six-slide desktop introduction below are local v2 additions; the download above
+remains Beta 11.
+
+## Install Glyphs and Python first
+
+The v2 desktop requires **macOS 14+** and **Glyphs 4**. Install official Glyphs 4
+before the MCP components, then launch it with your license or **Continue Trial**.
+Glyphs has a separate scripting runtime from the companion's private server runtime:
+
+1. Open **Window → Plugin Manager → Modules** in Glyphs and install **Python**.
+2. Restart Glyphs, then open **Glyphs → Settings → Addons**.
+3. Under **Python version**, explicitly select the installed version labelled
+   **(Glyphs)**, even if it already appears selected. Sonoma tests used 3.14.6;
+   the official module manager controls available versions and updates.
+4. Save current work and quit Glyphs normally before installing MCP components.
+
+The local v2 companion offers **Open Python in Plugin Manager** and
+**Check again**. Missing or invalid selected Python blocks component installation
+with recovery guidance. The module is installed and managed by Glyphs' official
+Plugin Manager; the companion does not install an alternative Python framework.
+In Beta 11, follow the same prerequisite steps manually and use Retry if setup fails.
 
 ## Install from Setup
 
@@ -49,20 +74,20 @@ The Glyphs 4 payload includes private Python, locked sidecar packages and
 architecture-matched `glyphs-cli` 0.6.1 for Apple silicon and Intel. End users
 do not need to configure shell Python paths or install sidecar packages.
 
-Glyphs still needs a working scripting environment. On a fresh installation:
-
-1. Open **Window → Plugin Manager → Modules** in Glyphs and install **Python**.
-2. Restart Glyphs, then open **Glyphs → Settings → Addons**.
-3. Under **Python version**, explicitly select the version labelled
-   **(Glyphs)**, even if it already appears selected.
-4. Quit Glyphs normally, then choose **Retry** on the failed Setup card.
+The server's private runtime does not replace the official Python module inside
+Glyphs. See the prerequisite steps above. Physical Intel testing is deferred;
+the scoped native VM evidence covers macOS 14.6.1 on arm64, not exact macOS 14.0.
 
 System Git is required only for **Local Git** and **Public GitHub** references.
 **Last Saved** and **Font File** do not need it.
 
 ## After installation
 
-Subsequent launches open [Setup](desktop.mdx). Start or stop the server, inspect
+The local v2 introduction appears on first interactive launch. Replay it
+through **File → Welcome & Support** or the sidebar; use **Skip to setup** or
+**Start setup** to reach Setup. Once completed, normal dashboard launches open
+[Setup](desktop.mdx); optional desktop login opens the menu-bar interface quietly.
+Start or stop the server, inspect
 component and connection status, update individual cards, open Glyphs and
 refresh detection there. **Project** manages local folders and templates. The
 menu-bar popover shares Setup's activity and service controls.
@@ -76,7 +101,7 @@ product and protocol fields.
 
 ## Updates, logs and recovery
 
-Use **Check for Updates…** to check the configured channel. Beta 6 uses the feed
+Use **Check for Updates…** to check the configured channel. V2 betas use the feed
 on `lit/v2-beta`; verify the release and checksum rather than trusting a
 configured URL alone. Component replacement stages and verifies selected files before
 an atomic rename. Failure restores affected components, launch-agent
@@ -88,5 +113,5 @@ sidecar sources plus a redacted diagnostic-report action. Resolve active jobs
 before replacing or restarting the server; stop is refused during an active
 native write.
 
-Beta 6 does not embed Glyphs 3 or v1 skills. For Glyphs 3, use the separate
+The v2 payload does not embed Glyphs 3 or v1 skills. For Glyphs 3, use the separate
 v1.11.0 release and its [v1 installation guide](/docs/getting-started/installation).

@@ -208,7 +208,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                     installer_build=43,
                 )
 
-    def test_lean_candidate_reports_the_twelve_tool_surface(self) -> None:
+    def test_lean_candidate_reports_its_protocol_tool_inventory(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-lean-candidate.") as temp:
             root = Path(temp)
             _candidate_tree(root)
@@ -218,6 +218,9 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             manifest = root / "skills/manifest.json"
             manifest.parent.mkdir(parents=True)
             manifest.write_text('{"managedSkills": []}\n', encoding="utf-8")
+            protocol = root / "src/protocol/glyphs_mcp_protocol/models.py"
+            protocol.parent.mkdir(parents=True)
+            protocol.write_bytes((REPO / "src/protocol/glyphs_mcp_protocol/models.py").read_bytes())
 
             result = self.security.validate_unsigned_candidate(
                 root,
@@ -225,7 +228,24 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                 installer_build=42,
             )
 
-            self.assertEqual(result["publicToolCount"], 12)
+            self.assertEqual(result["publicToolCount"], 13)
+            protocol.write_text('TOOL_NAMES = ("one", "two")\n', encoding="utf-8")
+            result = self.security.validate_unsigned_candidate(
+                root, expected_version="2.3.4", installer_build=42,
+            )
+            self.assertEqual(result["publicToolCount"], 2)
+            for malformed in ('TOOL_NAMES = ("one", "one")\n',
+                              'TOOL_NAMES = ()\n', 'TOOL_NAMES = build_catalog()\n'):
+                protocol.write_text(malformed, encoding="utf-8")
+                with self.assertRaisesRegex(self.security.ReleaseSecurityError, "lean tool inventory"):
+                    self.security.validate_unsigned_candidate(
+                        root, expected_version="2.3.4", installer_build=42,
+                    )
+            protocol.unlink()
+            with self.assertRaisesRegex(self.security.ReleaseSecurityError, "lean tool inventory"):
+                self.security.validate_unsigned_candidate(
+                    root, expected_version="2.3.4", installer_build=42,
+                )
 
     def test_knowledge_gate_fails_closed_on_vendored_hash_drift(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-knowledge-security.") as temp:
@@ -476,7 +496,8 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn("--confirm-publish", publish)
         self.assertIn("verify_release_artifacts.sh", publish)
         self.assertIn("run_local_release_tests.sh", publish)
-        self.assertIn("SHA256SUMS", publish)
+        self.assertIn("release_asset_inventory.py", publish)
+        self.assertIn("--include-manifest", publish)
         self.assertNotIn("--clobber", publish)
         self.assertIn("release-state", publish)
         self.assertIn(
@@ -555,9 +576,15 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        for script in (publish, make_dmg, verify):
-            self.assertRegex(script, r"Glyphs-MCP-\$(?:version|release_version)\.dmg")
-            self.assertIn("Glyphs-MCP-latest.dmg", script)
+        from release_asset_inventory import assets
+        from desktop_release_identity import identity
+        names = {path.name for path in assets(REPO, identity("2.0.0"), include_manifest=True)}
+        self.assertEqual(names, {"Glyphs-MCP-2.0.0.dmg", "Glyphs-MCP-latest.dmg",
+                                "Glyphs-MCP-2.0.0.zip", "Glyphs MCP.zip", "appcast.xml", "SHA256SUMS"})
+        self.assertRegex(make_dmg, r"Glyphs-MCP-\$(?:version|release_version)\.dmg")
+        self.assertIn("Glyphs-MCP-latest.dmg", make_dmg)
+        for script in (publish, verify):
+            self.assertIn("release_asset_inventory.py", script)
             self.assertNotIn("GlyphsMCPInstaller-$version.dmg", script)
         self.assertIn("Glyphs-MCP-latest.dmg", readme)
         self.assertIn("Choose **Install All** on Setup", installation)

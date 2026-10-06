@@ -6,11 +6,15 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import subprocess
 
 from desktop_release_identity import load
 
 ROOT = Path(__file__).resolve().parents[1]
+BEZTRACE_VERSION = '0.1.1'
+BEZTRACE_DIRECTORY = 'Beztrace/beztrace-' + BEZTRACE_VERSION
+BEZTRACE_MANIFEST = 'integration-manifest.json'
 
 
 def tree_digest(root):
@@ -59,22 +63,28 @@ def validate_embedded_payload(app):
 
 
 def validate_embedded_beztrace(app):
-    root = Path(app) / 'Contents/Resources/Beztrace/beztrace-0.1.1-dev.4'
-    manifest_path = root / 'development-engine.json'
+    root = Path(app) / 'Contents/Resources' / BEZTRACE_DIRECTORY
+    manifest_path = root / BEZTRACE_MANIFEST
     checksums_path = root / 'SHA256SUMS'
     if not manifest_path.is_file() or not checksums_path.is_file():
-        raise ValueError('Missing embedded beztrace 0.1.1-dev.4 distribution')
+        raise ValueError('Missing embedded beztrace ' + BEZTRACE_VERSION + ' distribution')
     manifest = json.loads(manifest_path.read_text())
-    if manifest.get('version') != '0.1.1-dev.4':
+    if manifest.get('version') != BEZTRACE_VERSION:
         raise ValueError('Embedded beztrace version mismatch')
+    if manifest.get('schemaVersion') != 1 or manifest.get('pathDataVersion') != 2:
+        raise ValueError('Embedded beztrace contract version mismatch')
     if set(manifest.get('architectures', [])) != {'arm64', 'x86_64'}:
         raise ValueError('Embedded beztrace architecture metadata is invalid')
     expected = {}
     for line in checksums_path.read_text().splitlines():
         digest, separator, relative = line.partition('  ')
-        if not separator or len(digest) != 64 or not relative or relative.startswith('/') or '..' in Path(relative).parts:
+        if (not separator or not re.fullmatch(r'[0-9a-f]{64}', digest)
+                or not relative or relative.startswith('/') or '..' in Path(relative).parts
+                or relative in expected):
             raise ValueError('Embedded beztrace checksum manifest is invalid')
         expected[relative] = digest
+    if any(path.is_symlink() for path in root.rglob('*')):
+        raise ValueError('Embedded beztrace distribution contains a symlink')
     files = {
         path.relative_to(root).as_posix()
         for path in root.rglob('*')
@@ -86,6 +96,21 @@ def validate_embedded_beztrace(app):
         actual = hashlib.sha256((root / relative).read_bytes()).hexdigest()
         if actual != digest:
             raise ValueError('Embedded beztrace checksum mismatch: ' + relative)
+    if manifest.get('files') != {name: digest for name, digest in expected.items()
+                                if name != BEZTRACE_MANIFEST}:
+        raise ValueError('Embedded beztrace provenance inventory mismatch')
+    upstream_path = root / 'upstream-release-manifest.json'
+    upstream = json.loads(upstream_path.read_text())
+    provenance = manifest.get('upstreamRelease', {})
+    if (upstream.get('version') != BEZTRACE_VERSION
+            or upstream.get('sourceRevision') != manifest.get('sourceRevision')
+            or upstream.get('minimumMacOS') != manifest.get('minimumMacOS')
+            or set(upstream.get('architectures', [])) != {'arm64', 'x86_64'}
+            or provenance.get('manifestSHA256') != expected.get('upstream-release-manifest.json')
+            or not any(item.get('sha256') == provenance.get('archiveSHA256')
+                       and item.get('path') == 'beztrace-' + BEZTRACE_VERSION + '-macos-universal.zip'
+                       for item in upstream.get('artifacts', []))):
+        raise ValueError('Embedded beztrace upstream provenance mismatch')
     engine = root / 'bin/beztrace'
     if not os.access(engine, os.X_OK):
         raise ValueError('Embedded beztrace engine is not executable')

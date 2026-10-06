@@ -11,6 +11,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     lazy var updates = DesktopUpdates(installationBusy: { [weak self] in self?.installer.busy == true })
     private var dashboard: NSWindow?
     private var welcome: NSWindow?
+    private var settingsWindow: NSWindow?
+    private var initialWelcome = false
     private var troubleshootingLogs: NSWindow?
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
@@ -41,11 +43,15 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         desktop.onWelcome = { [weak self] in self?.showWelcome() }
         let event = NSAppleEventManager.shared().currentAppleEvent
         let login = event?.paramDescriptor(forKeyword: AEKeyword(keyAEPropData))?.enumCodeValue == OSType(keyAELaunchedAsLogInItem)
-        if DesktopLaunchPolicy.showsDashboard(loginLaunch: login) { showDashboard() }
+        if DesktopLaunchPolicy.showsWelcome(loginLaunch: login, defaults: .standard) {
+            initialWelcome = true
+            showWelcome()
+        } else if DesktopLaunchPolicy.showsDashboard(loginLaunch: login) { showDashboard() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        showDashboard(); return true
+        if initialWelcome { showWelcome() } else { showDashboard() }
+        return true
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -84,25 +90,50 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
 
     func showSettings() {
         popover.performClose(nil)
+        if settingsWindow == nil {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 532, height: 580),
+                styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            window.title = NSLocalizedString("Settings…", comment: "Settings window title")
+            window.identifier = NSUserInterfaceItemIdentifier("glyphs-mcp-settings")
+            window.isReleasedWhenClosed = false
+            window.contentViewController = NSHostingController(rootView:
+                DesktopSettings(updates: updates).environmentObject(desktop)
+                    .frame(height: 580))
+            window.center()
+            settingsWindow = window
+        }
+        NSApp.setActivationPolicy(.regular)
+        settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     func showWelcome() {
         popover.performClose(nil)
         if welcome == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 610),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 640),
                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            window.title = "Welcome & Support"
+            window.title = NSLocalizedString("Welcome & Support", comment: "Welcome window title")
             window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true
             window.isReleasedWhenClosed = false
-            window.contentViewController = NSHostingController(rootView: DesktopWelcomeView(close: { [weak self] in self?.welcome?.close() }))
+            window.delegate = self
             window.center(); welcome = window
         }
+        // A new root resets slide navigation on manual replay.
+        welcome?.contentViewController = NSHostingController(rootView: DesktopWelcomeView(
+            startSetup: { [weak self] in self?.finishWelcome() }))
+        NSApp.setActivationPolicy(.regular)
         welcome?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         // Desktop presentation is manual and never changes the bridge's
         // first-successful-display preference.
+    }
+
+    private func finishWelcome() {
+        DesktopLaunchPolicy.completeWelcome(defaults: .standard)
+        initialWelcome = false
+        welcome?.close()
+        desktop.requestSetup()
+        showDashboard()
     }
 
     func showTroubleshootingLogs() {
@@ -131,7 +162,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
                 menuImages = [false: DesktopMenuImage.make(logo: logo, active: false),
                               true: DesktopMenuImage.make(logo: logo, active: true)]
             }
-            item.button?.setAccessibilityLabel("Glyphs MCP — server status")
+            item.button?.setAccessibilityLabel(NSLocalizedString("Glyphs MCP — server status", comment: "Menu bar accessibility label"))
             item.button?.target = self; item.button?.action = #selector(togglePopover)
             if let button = item.button {
                 let dot = DesktopActivityDot(frame: .zero)
@@ -159,8 +190,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private func updateMenuActivity(_ active: Bool) {
         statusItem?.button?.image = menuImages[active]
         activityDot?.isHidden = !active
-        statusItem?.button?.toolTip = active ? "Glyphs MCP — task in progress" : "Glyphs MCP — open server status"
-        statusItem?.button?.setAccessibilityValue(active ? "Task in progress" : "No activity indicated")
+        statusItem?.button?.toolTip = NSLocalizedString(active ? "Glyphs MCP — task in progress" : "Glyphs MCP — open server status", comment: "Menu bar tooltip")
+        statusItem?.button?.setAccessibilityValue(NSLocalizedString(active ? "Task in progress" : "No activity indicated", comment: "Menu bar activity"))
     }
 
     @objc private func togglePopover() {
@@ -171,6 +202,14 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     func popoverDidShow(_ notification: Notification) { desktop.setVisible("popover", true) }
     func popoverDidClose(_ notification: Notification) { desktop.setVisible("popover", false) }
     func windowWillClose(_ notification: Notification) {
+        if notification.object as? NSWindow === welcome {
+            DesktopLaunchPolicy.completeWelcome(defaults: .standard)
+            if initialWelcome {
+                initialWelcome = false
+                showDashboard()
+            }
+            return
+        }
         guard notification.object as? NSWindow === dashboard else { return }
         desktop.setDashboardVisible(false)
         if statusItem != nil { NSApp.setActivationPolicy(.accessory) }
@@ -200,10 +239,13 @@ struct DesktopPopover: View {
                     }
                 }
                 Spacer()
-                Text(desktop.title).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(desktop.title)).foregroundStyle(.secondary)
             }
             DesktopActivityView()
             if !desktop.notice.isEmpty { Text(desktop.notice).font(.caption).foregroundStyle(.secondary) }
+            if desktop.needsGlyphsRecovery {
+                Button("Check Glyphs in Setup") { desktop.requestSetup(); open() }
+            }
             Divider()
             HStack { DesktopServerButton(); Spacer(); Button("Open Glyphs MCP", action: open) }
             HStack {
@@ -211,7 +253,7 @@ struct DesktopPopover: View {
                 Spacer()
                 Button(action: support) { Image(systemName: "heart.circle") }.help("Welcome & Support").accessibilityLabel("Welcome & Support")
                 Button("Quit Glyphs MCP") { NSApp.terminate(nil) }
-                    .help(desktop.serviceRunning == true ? "Quit the desktop app. The MCP server keeps running." : "Quit the desktop app.")
+                    .help(LocalizedStringKey(desktop.serviceRunning == true ? "Quit the desktop app. The MCP server keeps running." : "Quit the desktop app."))
             }.font(.callout)
         }.padding(18).frame(width: 340)
     }
@@ -230,7 +272,7 @@ struct DesktopSettings: View {
                 Toggle("Show Glyphs MCP in the menu bar", isOn: $showMenuBar)
                 Toggle("Open Glyphs MCP at login", isOn: Binding(get: { loginEnabled }, set: setLogin))
                 if showMenuBar { Text("At login, open in the menu bar without showing the main window.").font(.caption).foregroundStyle(.secondary) }
-                if !loginError.isEmpty { Text(loginError).foregroundStyle(.secondary) }
+                if !loginError.isEmpty { Text(LocalizedStringKey(loginError)).foregroundStyle(.secondary) }
             }
             Section("MCP Server") {
                 Toggle("Start the MCP server at login", isOn: Binding(get: { desktop.installation.autoStart }, set: { desktop.control($0 ? "auto-on" : "auto-off") }))

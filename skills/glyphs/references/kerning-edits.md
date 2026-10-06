@@ -37,9 +37,11 @@ Verify exact stored entries after application, including unaffected controls.
 **Undo these changes** restores only recorded values and presence, with conflict
 checks. **Keep changes without saving** ends wrapper recovery, leaves unsaved
 edits dirty and preserves native Undo/Redo. **Save font** follows the verified
-whole-document save workflow. Native history belongs to the first glyph when
-that side is a glyph, or document history for a first-side group; it is separate
-from whole-job selective recovery. Reconcile uncertain outcomes using the same
+whole-document save workflow. Native history belongs to a first-side glyph. For a first-side group,
+guarded exact edits prefer a selected member in the target master whose
+direction-specific group matches, otherwise the prepared representative.
+Select that glyph to access its native history; unavailable history refuses the
+edit. Native history is separate from whole-job selective recovery. Reconcile uncertain outcomes using the same
 job/workflow instead of dispatching another edit.
 
 An exact assignment is not optical kerning. Use [proofing](kerning-proofing.md)

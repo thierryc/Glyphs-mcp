@@ -1,0 +1,43 @@
+---
+title: Compile features and export fonts
+---
+
+Compilation and export use a saved, clean source and the connected bridge's
+advertised capabilities. They use diagnostic/artifact jobs, separately from the
+conversation's live-edit card. Identify the font and intended instance first.
+
+## Check feature compilation
+
+Ask to compile the saved features and report diagnostics without changing or
+saving the font. The agent uses `feature_compile` in supported saved or live mode.
+A completed job can still contain compiler rejection: inspect `report.success`
+and its diagnostics. Compiler acceptance does not establish exported shaping.
+These diagnostic results cannot be applied, accepted or discarded as edits.
+
+## Prepare an export
+
+> Prepare an OTF export of my Regular instance. Show the verification results and do not publish files yet.
+
+The agent resolves an exact persistent instance ID through instance reads;
+instance names can repeat. Supported formats are OTF/TTF and supported containers
+are plain, WOFF and WOFF2, subject to negotiated static/variable/web capabilities.
+Variable export and TTF impose their own generation-flag constraints; use the
+[export contract](../reference/command-set.mdx#verified-font-export) for details.
+
+Generation runs against the saved snapshot in an external Glyphs worker. Outputs
+remain in private staging. Verification parses each file and checks required
+tables, outline type, variable state and container. Requested shaping cases need
+the shaping capability; absent cases are not evidence of feature behavior.
+
+## Publish the verified files
+
+Review the artifact manifest, warnings, file sizes/hashes and verification
+results. When ready, authorize publication to a **new absolute directory**.
+`accept_job` rechecks the clean source and staged files, then publishes without
+overwriting an existing directory. The receipt binds the source, destination and
+manifest. This publishes local files; it does not upload them.
+
+Export artifacts cannot be applied to the open font. Discard releases private
+staging without changing it. On uncertain publication, check the existing job and
+destination evidence rather than exporting or publishing again automatically.
+Saving your Glyphs source is a separate action.

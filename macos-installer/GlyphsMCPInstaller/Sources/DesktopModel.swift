@@ -20,6 +20,9 @@ final class DesktopModel: ObservableObject {
     }
     @Published private(set) var serviceRunning: Bool?
     @Published private(set) var recentMessages: [String] = []
+    @Published private(set) var setupRequested = false
+    func requestSetup() { setupRequested = true }
+    func consumeSetupRequest() { setupRequested = false }
     var onWelcome: (() -> Void)?
     func showWelcome() { onWelcome?() }
     private var visibility = DesktopMonitorPolicy()
@@ -36,8 +39,13 @@ final class DesktopModel: ObservableObject {
             hasServer: installation.hasServer,
             running: serviceRunning,
             status: status,
-            hasNotice: !notice.isEmpty
+            hasNotice: !notice.isEmpty,
+            stale: stale
         )
+    }
+    var needsGlyphsRecovery: Bool {
+        DesktopDiagnostics.needsGlyphsRecovery(hasServer: installation.hasServer,
+            running: serviceRunning, stale: stale, status: status, hasNotice: !notice.isEmpty)
     }
     var canControl: Bool { !controlling && !stale && status?.controlProtocol == 1 && status?.isBusy == false }
     var canChangeSettings: Bool { installation.hasServer && !controlling && (serviceRunning == false || canControl) }
@@ -183,7 +191,7 @@ final class DesktopModel: ObservableObject {
         guard !controlling else { throw InstallerError.userFacing("A service control is already in progress.") }
         await refresh()
         guard installation.hasServer, serviceRunning != false else { return }
-        guard canControl else { throw InstallerError.userFacing(status?.isBusy == true ? "Wait for the current font task to finish before closing Glyphs." : "The MCP server could not be stopped safely. Open Setup and check the troubleshooting logs before changing components.") }
+        guard canControl else { throw InstallerError.userFacing(!stale && status?.isBusy == true ? "Wait for the current font task to finish before closing Glyphs." : "The MCP server could not be stopped safely. Open Glyphs and finish any pending dialogs, then Refresh Setup. If it still fails, check the troubleshooting logs before changing components.") }
         controlAction = "stop"
         defer { controlAction = nil }
         _ = try await serviceAction("stop")

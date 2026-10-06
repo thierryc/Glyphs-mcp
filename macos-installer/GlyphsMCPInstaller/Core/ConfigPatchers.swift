@@ -127,7 +127,7 @@ public struct ClaudeCodeConfigurator {
 		return server.url == endpointURL.absoluteString
 	}
 
-	private func patchClaudeCodeConfig(at url: URL) throws {
+	func patchClaudeCodeConfig(at url: URL) throws {
         let (existing, _) = try JsonConfig.loadJSON(at: url)
         var root = existing
         _ = try FileIO.backupIfExists(url)
@@ -139,8 +139,8 @@ public struct ClaudeCodeConfigurator {
 		mcpServers[InstallerConstants.claudeCodeServerName] = server
 		root["mcpServers"] = mcpServers
 
-		let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
-		try FileIO.writeAtomically(data, to: url)
+		try ClaudeConfigurationOwnership.write(root: root, managedEntry: ["type": "http", "url": endpointURL.absoluteString],
+            client: .claudeCode, serverName: InstallerConstants.claudeCodeServerName, to: url)
 		log("Wrote: \(url.path)")
 	}
 }
@@ -180,22 +180,79 @@ public struct ClaudeDesktopConfigurator {
 		var mcpServers = root["mcpServers"] as? [String: Any] ?? [:]
 		var server = mcpServers[InstallerConstants.claudeDesktopServerName] as? [String: Any] ?? [:]
 		var env = server["env"] as? [String: Any] ?? [:]
-		env["PATH"] = ToolRuntimeEnvironment.mergedPath()
+		var managedEnv: [String: Any] = ["PATH": ToolRuntimeEnvironment.mergedPath()]
+		var managedEntry: [String: Any]
 		if let proxyCommand, let command = proxyCommand.first {
-            server["command"] = command
-            server["args"] = Array(proxyCommand.dropFirst()) + [endpointURL.absoluteString]
-            env["PYTHONDONTWRITEBYTECODE"] = "1"; env["PYTHONNOUSERSITE"] = "1"
+            managedEntry = ["command": command, "args": Array(proxyCommand.dropFirst()) + [endpointURL.absoluteString]]
+            managedEnv["PYTHONDONTWRITEBYTECODE"] = "1"; managedEnv["PYTHONNOUSERSITE"] = "1"
         } else {
-            server["command"] = "npx"
-            server["args"] = ["mcp-remote", endpointURL.absoluteString]
+            managedEntry = ["command": "npx", "args": ["mcp-remote", endpointURL.absoluteString]]
         }
+		managedEntry["env"] = managedEnv
+		server.merge(managedEntry) { _, managed in managed }
+		env.merge(managedEnv) { _, managed in managed }
 		server["env"] = env
 		mcpServers[InstallerConstants.claudeDesktopServerName] = server
 		root["mcpServers"] = mcpServers
 
-		try JsonConfig.writeJSON(root, to: url)
+		try ClaudeConfigurationOwnership.write(root: root, managedEntry: managedEntry,
+            client: .claudeDesktop, serverName: InstallerConstants.claudeDesktopServerName, to: url)
 		log("Wrote: \(url.path)")
 	}
+}
+
+// MARK: - Claude configuration ownership
+
+// The receipt describes only fields written by the installer, never user fields
+// retained by the configurator. Installing again must not adopt those fields.
+enum ClaudeConfigurationOwnership {
+    private struct Receipt: Codable {
+        var schemaVersion = 1
+        var owner = "glyphs-mcp-installer"
+        let configPath: String
+        let client: Int
+        let serverName: String
+        let managedEntry: Data
+    }
+
+    static func receiptURL(for config: URL) -> URL {
+        config.appendingPathExtension("glyphs-mcp-ownership.json")
+    }
+
+    private static func canonical(_ entry: [String: Any]) throws -> Data {
+        try JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys])
+    }
+
+    static func matches(_ entry: [String: Any], client: InstallerClientKind, serverName: String, at config: URL) -> Bool {
+        guard let data = try? Data(contentsOf: receiptURL(for: config)),
+              let receipt = try? JSONDecoder().decode(Receipt.self, from: data),
+              receipt.schemaVersion == 1, receipt.owner == "glyphs-mcp-installer",
+              receipt.configPath == config.standardizedFileURL.path,
+              receipt.client == client.rawValue, receipt.serverName == serverName,
+              let current = try? canonical(entry) else { return false }
+        return current == receipt.managedEntry
+    }
+
+    static func write(root: [String: Any], managedEntry: [String: Any], client: InstallerClientKind,
+                      serverName: String, to config: URL) throws {
+        let receiptURL = receiptURL(for: config)
+        let previousReceipt = try? Data(contentsOf: receiptURL)
+        let receipt = Receipt(configPath: config.standardizedFileURL.path, client: client.rawValue,
+                              serverName: serverName, managedEntry: try canonical(managedEntry))
+        // Write ownership first: an interrupted config write fails closed because
+        // the old entry will not match the new receipt.
+        try FileIO.writeAtomically(try JSONEncoder().encode(receipt), to: receiptURL)
+        do {
+            try JsonConfig.writeJSON(root, to: config)
+        } catch {
+            if let previousReceipt {
+                try FileIO.writeAtomically(previousReceipt, to: receiptURL)
+            } else {
+                try FileManager.default.removeItem(at: receiptURL)
+            }
+            throw error
+        }
+    }
 }
 
 // MARK: - Agent skills
@@ -440,7 +497,7 @@ public struct AgentSkillBundleInstaller {
             current.contains("`" + $0 + "`") || current.contains("`" + $0 + "(")
         }
         guard !retired.isEmpty else { return nil }
-        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean nine-tool interface."
+        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean thirteen-tool interface."
     }
 
 	private func itemExists(at url: URL) -> Bool {
@@ -656,25 +713,25 @@ public enum ConnectorConfigurationRemover {
         guard var root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               var servers = root["mcpServers"] as? [String: Any],
               let server = servers[serverName] as? [String: Any] else { return }
-        let matches: Bool
+        let endpointMatches: Bool
         switch client {
         case .claudeCode:
-            matches = server["type"] as? String == "http" && server["url"] as? String == endpoint.absoluteString
+            endpointMatches = server["type"] as? String == "http" && server["url"] as? String == endpoint.absoluteString
         case .claudeDesktop:
             let args = server["args"] as? [String] ?? []
-            let command = server["command"] as? String ?? ""
-            matches = args.contains(endpoint.absoluteString)
-                && ((command == "npx" && args.contains("mcp-remote")) || command.hasSuffix("/python3"))
+            endpointMatches = args.last == endpoint.absoluteString
         case .codex, .cursor:
-            matches = false
+            endpointMatches = false
         }
-        guard matches else {
-            throw InstallerError.userFacing("The \(client.displayName) Glyphs MCP entry is modified and was preserved.")
+        guard endpointMatches,
+              ClaudeConfigurationOwnership.matches(server, client: client, serverName: serverName, at: url) else {
+            throw InstallerError.userFacing("The \(client.displayName) Glyphs MCP entry is modified or unowned and was preserved. Use Update to establish installer ownership; custom fields remain protected.")
         }
         servers.removeValue(forKey: serverName)
         root["mcpServers"] = servers
         _ = try FileIO.backupIfExists(url)
         try JsonConfig.writeJSON(root, to: url)
+        try FileManager.default.removeItem(at: ClaudeConfigurationOwnership.receiptURL(for: url))
     }
 }
 

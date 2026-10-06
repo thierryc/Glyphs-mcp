@@ -1,0 +1,51 @@
+---
+title: Local font checkpoints
+---
+
+Checkpoints are optional local Git records attached to verified MCP saves. They
+are separate from live Undo, workflow recovery and automatic backups.
+
+## Enable checkpoints for a project
+
+In **Project → Edit Settings…**, enable **Create a Git checkpoint when saving
+through MCP.** The project must already have a usable local Git repository and
+Git author identity. This setting authorizes checkpoint commits, including a
+starting saved baseline; it does not authorize extra font Saves or a push.
+
+The **Font project with Git checkpoints** template explicitly initializes a new
+local repository and enables the setting when you create that project. It makes
+no initial commit or font Save. Put your own source font in the project's `sources`
+folder. Existing projects are not initialized by enabling the setting.
+
+Before an authorized edit, MCP can record the saved baseline without another
+Save. After a verified MCP Save, it commits that font and its action record.
+Keep without saving creates no result checkpoint. Unrelated staged files are
+excluded; unsafe repository conditions require resolution rather than silent
+changes to hooks, attributes or the index.
+
+## Read and compare history
+
+Ask to show the font's checkpoints, inspect action details or compare exact
+versions. With `font.checkpoints.v1`, bounded checkpoint selectors return history,
+details, comparison and scope evidence. Follow returned cursors/full revisions;
+do not infer that one page is all history. Action records distinguish execution,
+verification and possible manual edits; they are not chat transcripts.
+
+The companion's checkpoint comparison selects an earlier version against the
+latest checkpoint. **Unsaved edits in Glyphs are not included** in that comparison.
+This differs from the [Reference Inspector](visual-review.mdx), which compares
+current layer geometry against a reference.
+
+## Restore a checkpoint
+
+Review the intended font and exact revision, then use the offered restoration
+workflow with `font.checkpoint-restore.v1`. Restoration loads that font version
+in Glyphs, replaces all subsequent unsaved edits and clears Undo history. It
+leaves the disk font and Git history intact and returns a fresh document binding.
+It is not selective **Undo these changes**. Save the restored result separately
+when authorized; that save can create a new checkpoint.
+
+If font Save succeeds but Git fails, the result reports a separate failed
+checkpoint. **Retry checkpoint without saving** retries that record, not the
+font Save. On an uncertain restore, use **Check result** on the original workflow
+and inspect its outcome before issuing another restoration.

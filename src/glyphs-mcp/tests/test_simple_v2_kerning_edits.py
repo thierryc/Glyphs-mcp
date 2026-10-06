@@ -129,8 +129,10 @@ def test_prepared_identity_guard_rejects_replaced_glyph_or_changed_group():
     with pytest.raises(ValueError): adapter.current_value(doc['id'],changes[0])
 
 
-def test_glyph_history_suppresses_native_document_registration():
-    f = font(); changes, _ = prepared(f, edit())
+@pytest.mark.parametrize('left,right', [('A','V'), ('A','@MMK_R_V'),
+                                      ('@MMK_L_A','V'), ('@MMK_L_A','@MMK_R_V')])
+def test_glyph_history_suppresses_native_document_registration(left, right):
+    f = font(); changes, _ = prepared(f, edit(left, right))
     document_history, glyph_history = History(), History()
     for h in (document_history, glyph_history): h.isUndoRegistrationEnabled = lambda h=h: h.enabled
     f.parent.undoManager = lambda: document_history
@@ -150,6 +152,60 @@ def test_glyph_history_suppresses_native_document_registration():
     adapter=GlyphsAdapter(NS(fonts=[f]));doc=adapter.list_documents()[0]
     f.glyphs['A'].rightKerningGroup='another'
     with pytest.raises(ValueError): adapter.current_value(doc['id'],changes[0])
+
+
+@pytest.mark.parametrize('direction,left', [('LTR','@MMK_L_A'), ('RTL','@MMK_R_V'),
+                                           ('vertical','@MMK_T_bottom_A')])
+@pytest.mark.parametrize('wanted', [-72.5, 0, None])
+@pytest.mark.parametrize('selected', ['member', 'unrelated', 'other_master', 'none'])
+def test_group_history_uses_matching_active_member_or_prepared_anchor(direction, left, wanted, selected):
+    f = font()
+    # Add a second member after the representative, with a distinct history.
+    anchor = f.glyphs['V' if direction == 'RTL' else 'A']
+    member = NS(**vars(anchor)); member.name = 'member'; member.id = 'id_member'
+    member.layers = Collection(M1=NS(layerId='M1', parent=member))
+    f.glyphs['member'] = member
+    unrelated = f.glyphs['A' if direction == 'RTL' else 'V']
+    unrelated.layers['M1'].layerId = 'M1'; unrelated.layers['M1'].parent = unrelated
+    f.selectedLayers = {'member':[member.layers['M1']], 'unrelated':[unrelated.layers['M1']],
+                        'other_master':[NS(layerId='M2', parent=member)], 'none':[]}[selected]
+    document_history, anchor_history, member_history = History(), History(), History()
+    for h in (document_history, anchor_history, member_history):
+        h.isUndoRegistrationEnabled = lambda h=h: h.enabled
+    f.parent.undoManager = lambda: document_history
+    anchor.layers['M1'].undoManager = lambda: anchor_history
+    member.layers['M1'].undoManager = lambda: member_history
+    native = api().DIRECTIONS[direction]; key = ('M1',native,left,'V')
+    f.store[key] = -40.125
+    before = deepcopy(f.store)
+    changes, _ = prepared(f, edit(left,'V',direction=direction,
+                                 op='remove' if wanted is None else 'set', value=wanted))
+    adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+    adapter.begin_undo(doc['id']); adapter.apply_change(doc['id'],changes[0]); adapter.end_undo(doc['id'],'Kerning')
+    history = member_history if selected == 'member' else anchor_history
+    other = anchor_history if selected == 'member' else member_history
+    assert len(history.actions) == 1 and not other.actions and not document_history.actions
+    assert history.level == 0 and history.automatic and history.enabled
+    after = deepcopy(f.store)
+    assert after.get(key) == wanted and (key in after) == (wanted is not None)
+    history.undo(); assert f.store == before
+    history.undo(); assert f.store == after
+    assert not other.actions and not document_history.actions and document_history.enabled
+
+
+def test_guarded_group_edit_refuses_missing_glyph_history_without_document_fallback():
+    f = font(); changes, _ = prepared(f, edit('@MMK_L_A','V'))
+    document_history = History(); document_history.isUndoRegistrationEnabled = lambda: True
+    f.parent.undoManager = lambda: document_history
+    before = deepcopy(f.store)
+    adapter = GlyphsAdapter(NS(fonts=[f])); doc = adapter.list_documents()[0]
+    adapter.begin_undo(doc['id'])
+    try:
+        with pytest.raises(ValueError,match='Native kerning Undo is unavailable'):
+            adapter.apply_change(doc['id'],changes[0])
+    finally:
+        adapter.end_undo(doc['id'],'Refused')
+    assert f.store == before and not document_history.actions and document_history.level == 0
 
 
 def test_exact_native_table_read_does_not_turn_large_values_into_absence():

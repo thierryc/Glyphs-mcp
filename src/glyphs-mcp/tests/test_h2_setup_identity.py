@@ -5,16 +5,37 @@ from pathlib import Path
 import plistlib
 import re
 import sys
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT/'scripts'))
 from desktop_release_identity import load
 
 
-def test_identity_table_matches_release_source_protocol_and_inventory():
+def test_identity_table_matches_release_source_protocol_and_inventory(tmp_path):
     release = load(ROOT)
     text = (ROOT/'content/reference/version-identity.mdx').read_text()
-    values = dict(re.findall(r'^\| ([^|]+?) \| `([^`]+)` \|$', text, re.M))
+    values = dict(re.findall(r'^\| ([^|]+?) \| `([^`]+)`(?:, capability-derived)? \|$', text, re.M))
+    for source in ('protocol', 'sidecar'):
+        sys.path.insert(0, str(ROOT/'src'/source))
+    from glyphs_mcp_protocol import JOB_CAPABILITIES, NATIVE_ACTIONS, dimensions
+    from glyphs_mcp_sidecar.jobs import JobStore
+    from glyphs_mcp_sidecar.service import SidecarService
+    bridge = SimpleNamespace(status=lambda: {
+        'writeCapabilities': ['font.checkpoint-restore.v1', 'outline.edit.v1',
+                              'native.action.v1', dimensions.WRITE_CAPABILITY,
+                              'kerning.edit.exact.v1'],
+        'jobCapabilities': list(JOB_CAPABILITIES),
+        'nativeActions': list(NATIVE_ACTIONS),
+    })
+    worker = SimpleNamespace(status=lambda: {'jobCapabilities': list(JOB_CAPABILITIES)})
+    service = SidecarService(bridge, jobs=JobStore(tmp_path/'jobs'), worker=worker)
+    try:
+        job_kinds = service.get_status()['jobKinds']
+    finally:
+        service.close()
+    assert len(job_kinds) == len(set(job_kinds))
+    assert f'| Job kinds | `up to {len(job_kinds)}`, capability-derived |' in text
     protocol_spec = importlib.util.spec_from_file_location('h2_protocol', ROOT/'src/protocol/glyphs_mcp_protocol/models.py')
     protocol = importlib.util.module_from_spec(protocol_spec)
     protocol_spec.loader.exec_module(protocol)
@@ -27,10 +48,12 @@ def test_identity_table_matches_release_source_protocol_and_inventory():
                 'Lean interface':'glyphs-mcp-sidecar', 'Interface revision':'1',
                 'Bridge protocol':str(protocol.PROTOCOL_VERSION),
                 'Managed skills':str(len(manifest['managedSkills'])),
-                'MCP tools':str(len(protocol.TOOL_NAMES)), 'Job kinds':'up to 11',
+                'MCP tools':str(len(protocol.TOOL_NAMES)), 'Job kinds':f'up to {len(job_kinds)}',
                 'Desktop payload targets':'Glyphs 4 only',
                 'Separate pinned v1 release':legacy['CFBundleShortVersionString']}
     assert values == expected
+    reference = (ROOT/'skills/glyphs-mcp-release/references/release-identity.md').read_text()
+    assert f'up to {len(job_kinds)}\ncapability-gated job kinds' in reference
     assert release['feedURL'] in text and release['tag'] in text
     for extension in ('dmg','zip'):
         assert f"Glyphs-MCP-{release['releaseVersion']}.{extension}" in text

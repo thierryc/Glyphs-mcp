@@ -10,7 +10,7 @@ Start with `get_status` and the status in **Edit → Glyphs MCP Server…**. The
 | Extension shows Ready but the client cannot connect | Use the server window's MCP URL, normally port 9680. |
 | Skill requests `apiMajor == 2` | Identify its exact path and the selected connection. An obsolete private skill does not imply a stale lean server; see [skill conflicts](use-agent-skills.mdx#preserved-conflicts-and-retired-private-skills). |
 | Client shows v1 tools | Check for an old server, duplicate connection or outdated agent package. Refresh the intended v2 connection. |
-| Scripting preflight fails | Follow the [Glyphs Python setup steps](installation.mdx#requirements). After installing Python and restarting Glyphs, explicitly select its **(Glyphs)** version under **Settings → Addons**, quit Glyphs, and retry. |
+| Scripting preflight fails | Follow the [Glyphs Python setup steps](installation.mdx#install-glyphs-and-python-first). After installing Python and restarting Glyphs, explicitly select its **(Glyphs)** version under **Settings → Addons**, quit Glyphs, and retry. |
 | Worker unavailable | Open the Setup log window. The managed private runtime and CLI must match this Mac and the selected Glyphs application. |
 | Port change rejected | Choose an available port other than the reserved bridge port, then update the client URL after applying it. |
 | Git reference unavailable | Install or repair system Git, or use Last Saved or Font File. Verify repository, revision and font path. |

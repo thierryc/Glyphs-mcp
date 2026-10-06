@@ -5,6 +5,7 @@ title: Your first v2 session
 Open a **disposable copy** of a font in Glyphs for this first session. The
 conversation will help with saving if necessary; preparation still requires
 an explicitly identified saved, clean font.
+For a new font, start with [creation and saving](../workflows/fonts-and-saving.mdx).
 
 ## Connect and identify the font
 
@@ -20,10 +21,10 @@ need to enter document IDs or tool names.
 
 Choose a glyph that exists in the test font. For example:
 
-> Preview a width increase of 8.125 font units for H only. Show me the proposal before applying it.
+> Preview a width increase of 8.125 font units for H only. Show me the proposal before applying it. Wait for my answer after application too.
 
 The client uses `start_edit_workflow` with `mode="preview"`, the retained document,
-`kind="width_delta"`, `glyphs=["H"]`, `delta=8.125`, and a stable idempotency key.
+`kind="width_delta"`, `glyphs=["H"]`, `delta=8.125`, `auto_keep=false`, and a stable idempotency key.
 If the font is dirty, choose **Save and continue** to save existing work once
 and prepare the preview. For a new font, choose **Save As…**, or save manually
 in Glyphs and reply **Check and continue**. Saving includes the whole font.

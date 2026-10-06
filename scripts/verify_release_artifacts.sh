@@ -168,12 +168,14 @@ fi
 # release_payload.py verifies signature-preserving installed copies of Glyphs 3,
 # the lean bridge, both companions and both complete private runtimes.
 
-checksum_assets=("$dmg_versioned" "$zip")
-if [[ "$release_channel" == "stable" ]]; then
-  checksum_assets+=("$dmg_latest")
-else
-  checksum_assets=("$dmg_versioned" "$repo_root/dist/desktop-update/Glyphs-MCP-$release_version.zip" "$repo_root/dist/desktop-update/appcast.xml")
-fi
+# Verify feed identity/signatures and the exact enclosure before checksumming.
+"$python_bin" "$repo_root/scripts/prepare_desktop_update.py" --verify \
+  --app "$app" --output "$repo_root/dist/desktop-update"
+asset_list="$("$python_bin" "$repo_root/scripts/release_asset_inventory.py" \
+  --repo-root "$repo_root" --product "$product")"
+checksum_assets=()
+while IFS= read -r artifact; do checksum_assets+=("$artifact"); done <<<"$asset_list"
+
 checksum_stage="$tmp_root/release-assets"
 mkdir -p "$checksum_stage"
 flat_checksum_assets=()

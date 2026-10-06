@@ -8,7 +8,7 @@ small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes the **published 2.0.0 Beta 11 release**, desktop build **53**, with coordinated sidecar and bridge product version **2.0.0**. Beta 11 is a signed and notarized prerelease with verified public downloads and a signed beta update feed. Remaining manual acceptance limits are disclosed in the qualification record. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
+This guide describes the **unpublished 2.0.0 source candidate**, desktop build **55**, with coordinated sidecar and bridge product version **2.0.0**. Beta 12's local unsigned builds have scoped native qualification; final stable signing and exact distribution acceptance remain pending. Beta 11 remains the published signed and notarized prerelease. See [version and identity](reference/version-identity.mdx) for the source, installed and release distinctions. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
 
 ## Start here
 
@@ -31,4 +31,4 @@ Prepare [spacing](spacing-tools.md), [collision kerning](kerning-workflow.md), a
 
 The [tool reference](reference/command-set.mdx) explains exact signatures and limits. The [migration guide](getting-started/migrate-from-v1.mdx) explains which v1 workflows are different or unavailable.
 
-Created by **Thierry Charbonnel**. [Report an issue](https://github.com/thierryc/Glyphs-mcp/issues) or [support the project](https://github.com/sponsors/thierryc). The heart button in the extension panel opens Welcome & Support; its content is currently a placeholder.
+Created by **Thierry Charbonnel**. [Report an issue](https://github.com/thierryc/Glyphs-mcp/issues) or [support the project](https://github.com/sponsors/thierryc). The heart button in Glyphs opens a nonmodal Welcome/support panel with documentation, issue and support links. The local v2 desktop companion separately adds a six-slide first-launch introduction, replayable through **File → Welcome & Support** or the sidebar; Skip/Start setup opens Setup.

@@ -63,3 +63,30 @@ def test_interrupted_install_retains_server_running_intent_for_recovery(tmp_path
     assert recovered[0]['launchAgentWasLoaded'] is True
     assert target.read_text()=='previous agent'
     assert InstallationTransaction.recover(tmp_path,{target})==[]
+
+
+def test_failed_rollback_retains_original_and_recovers_before_retry(tmp_path, monkeypatch):
+    target = tmp_path/'plugin'; target.write_text('original')
+    source = tmp_path/'source'; source.write_text('replacement')
+    transaction = InstallationTransaction(tmp_path, [(source, target)])
+    rename = Path.rename
+
+    def inaccessible_destination(path, destination):
+        if path in (transaction.stage/'0', transaction.backup/target.name):
+            raise OSError('destination temporarily inaccessible')
+        return rename(path, destination)
+
+    with monkeypatch.context() as failure:
+        failure.setattr(Path, 'rename', inaccessible_destination)
+        with pytest.raises(RuntimeError, match='retained journal'):
+            transaction.apply()
+
+    journal = json.loads(transaction.journal.read_text())
+    assert journal['state'] == 'recovery_failed' and journal['errors']
+    assert (transaction.backup/target.name).read_text() == 'original'
+    assert not target.exists()
+    InstallationTransaction.recover(tmp_path, {target})
+    assert target.read_text() == 'original'
+    assert InstallationTransaction.recover(tmp_path, {target}) == []
+    InstallationTransaction(tmp_path, [(source, target)]).apply()
+    assert target.read_text() == 'replacement'

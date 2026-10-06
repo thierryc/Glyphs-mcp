@@ -2,7 +2,9 @@
 title: Edit fonts in the conversation
 ---
 
-Ask for a supported adjustment and specify its glyphs and masters. A saved,
+Ask for a supported adjustment and specify its glyphs and masters. The agent
+resolves the exact font, native master/layer IDs and foreground/background scope,
+then checks advertised capabilities; a layer name is not an ID. A saved,
 clean font begins preparation immediately. The conversation shows the intended
 font and full path so similarly named documents remain distinguishable.
 
@@ -27,16 +29,35 @@ targets are reviewed in the conversation first. Existing Dimensions values
 still require approval of the exact proposed replacements.
 
 After application the card says **Changes applied. Save your font to keep them.**
-Review the result in Glyphs, then choose **Save font**, **Save As…**, or **Undo
-these changes**. Saving includes the entire current font. Undo checks for
-conflicts with later edits instead of overwriting them.
+Review the result in Glyphs, then choose **Keep changes without saving**, **Save
+font**, **Save As…**, or **Undo these changes**. Saving includes the entire
+current font. Undo checks for conflicts with later edits instead of overwriting them.
+
+## Keep and the review countdown
+
+New successful edit and script cards show a **30-second** countdown to **Keep
+changes without saving**. Keep ends that workflow's recovery offer; it does not
+save the font. For typed edits, native Glyphs Undo/Redo remains available. Say or
+choose **Wait for my answer** to disable the countdown for this workflow, and
+include that instruction in later requests when you want manual review.
+
+Hidden cards and open Details pause the countdown; returning reconciles the
+result and starts a fresh countdown. Failed, uncertain and partial outcomes do
+not auto-Keep. Older records and text-only clients remain manual. The countdown
+does not run a script, save a font, restore a version or verify the design.
+
+For your first experiment, say **Wait for my answer** before trying recovery.
+[Native scripts](../workflows/scripts.mdx) use whole-font **Restore saved version**;
+typed **Undo these changes** restores only the edit's still-current targets.
+
+## Save, undo and continue
 
 A successful save says **Font saved.** Discarding a preview or undoing the
 changes says **Changes discarded.** A cancelled request says **Request cancelled.**
 Technical information is available under **Details**; warnings that need your
 attention stay visible.
 
-If a previous edit blocks another request, choose **Save earlier changes and continue**
+If a previous edit blocks another request, choose **Keep earlier changes without saving**, **Save earlier changes and continue**
 or **Undo earlier changes and continue**. One next request can wait. If a connection drops or an operation's
 outcome is uncertain, choose **Check result**; do not repeat the edit.
 After a service restart the workflow reports interruption and does not replay
@@ -48,8 +69,10 @@ authorization is reused. If a card fails to load, or interactive tool calls are
 unavailable, continue through the same choices in text.
 
 The implementation follows the [MCP Apps standard](https://apps.extensions.modelcontextprotocol.io/api/documents/overview.html).
-[Cursor documents MCP Apps support](https://cursor.com/docs/mcp), and
-[Claude supports Apps through local desktop connections](https://apps.extensions.modelcontextprotocol.io/api/documents/quickstart.html).
+[Cursor documents MCP Apps support](https://cursor.com/docs/mcp).
+The [MCP Apps quickstart](https://apps.extensions.modelcontextprotocol.io/api/documents/quickstart.html)
+describes interactive hosts such as Claude Desktop; Glyphs MCP's actual local
+proxy/card qualification is separate from that standard's examples.
 Codex rendering depends on its actual host capabilities, following
 [capability detection guidance](https://developers.openai.com/plugins/build/chatgpt-ui).
 Client names do not decide which interface is rendered. Installed-version

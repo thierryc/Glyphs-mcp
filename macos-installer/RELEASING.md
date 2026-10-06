@@ -3,14 +3,18 @@
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
-The current candidate is Glyphs MCP Desktop 2.0.0 Beta 11 / build 53,
+The current unpublished candidate is Glyphs MCP Desktop 2.0.0 / build 55,
 with coordinated sidecar/bridge product version `2.0.0`, interface revision `1`
-and bridge protocol `1`. Follow [the beta release plan](../BETA-LAUNCH.md)
-for its prerelease tag, beta update feed and download names.
+and bridge protocol `1`. Follow the [v2 launch procedure](../reports/v2-release-readiness/m5-launch-procedure.md)
+for stable source history, tag, feed and download ordering. The
+[beta release plan](../BETA-LAUNCH.md) retains historical prerelease guidance.
+The local source identity selects the stable channel; final signing,
+qualification and publication remain pending. Retain Beta 12/build 54 evidence
+separately, and follow the two-stage launch procedure before changing public copy.
 The Glyphs 4-only payload has thirteen tools, eleven managed skills, two optional
 companions, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Glyphs 3 remains available through its separate pinned v1.11.0 release
-at v1.11.0 / 13ca805; it is not packaged in Beta 11.
+at v1.11.0 / 13ca805; it is not packaged in v2.
 
 ## Prerequisites
 
@@ -53,7 +57,7 @@ disposable-font acceptance evidence and original-source hash separately.
 scripts/build_installer_app.sh
 scripts/notarize_installer_app.sh
 scripts/make_installer_dmg.sh
-scripts/verify_release_artifacts.sh --tag v2.0.0-beta.11 --write-checksums
+scripts/verify_release_artifacts.sh --tag v2.0.0 --write-checksums
 ```
 
 The Release installer is universal. `release_payload.py` discovers every
@@ -65,8 +69,8 @@ runtime, then seals code bundles from the inside out. Only glyphs-cli receives
 Glyphs framework. This entitlement is not applied to the installer or Python.
 
 After signing, the release tool regenerates bridge, companion and runtime
-identities in the lean manifest, then the outer payload identity. The bundled Beztrace development engine is
-signed separately in the exported app; its release-copy provenance and checksum
+identities in the lean manifest, then the outer payload identity. The bundled stable Beztrace 0.1.1 engine is
+signed separately in the exported app; its integration-copy provenance and checksum
 inventory are refreshed and verified before sealing the app and again in the
 extracted release ZIP. The source distribution is preserved unchanged. Installer
 verification remains exact; signing is never performed during installation.
@@ -95,9 +99,11 @@ Sparkle 2.9.6 is checksum-pinned in `third_party/sparkle.json`. Its separate Ed2
 
 Run `scripts/build_desktop_release.sh` for the signed/notarized app, DMG and local update candidate. The product is `dist/installer-app/Glyphs MCP.app`. `dist/desktop-update/` contains the signed versioned ZIP, signed appcast, SHA256SUMS and an unpublished candidate record. The Xcode scheme remains GlyphsMCPInstaller. Sparkle nested apps, XPC services and frameworks are signed inside out with their entitlements preserved.
 
-The Beta 11 feed candidate is `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`; archives use the exact prerelease tag and versioned GitHub Releases URLs. Stable releases use `main/appcast.xml` after their separate release decision. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is enabled by default and can be disabled in Settings and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
+The 2.0.0/build 55 candidate selects `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`; its planned archives use tag `v2.0.0`. Generate and publish this stable feed only after final qualification and verified public archives. The preserved Beta feed uses `lit/v2-beta/appcast.xml`. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is enabled by default and can be disabled in Settings and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
 
-Publication is a separate approved step. Publish verified archives first, then the exact signed appcast. Never edit signed feed bytes. There are no GitHub Actions. Keep v1 documentation and download guidance intact; the legacy installer updater is not the desktop updater.
+Both beta and stable publishers now prepare the versioned Sparkle ZIP and signed appcast. Uploads and SHA256SUMS use the shared `release_asset_inventory.py` inventory. Stable retains its versioned/latest DMGs and compatibility app ZIP. `prepare_desktop_update.py --verify --app "dist/installer-app/Glyphs MCP.app" --output dist/desktop-update` checks channel/build/enclosure identity, candidate hashes, both signatures and the archive’s app contents before upload. Exact signed upgrade acceptance remains a separate gate.
+
+Publication is a separate approved step. Publish verified archives first, then the exact signed appcast. Never edit signed feed bytes. GitHub Actions do not publish release artifacts; the separate Pages workflow deploys documentation on every push to `main`. Follow the [v2 launch sequence](../reports/v2-release-readiness/m5-launch-procedure.md) so website release claims follow verified public downloads. Keep v1 documentation and download guidance intact; the legacy installer updater is not the desktop updater.
 
 Application replacement and component migration are separate recoverable stages. A new manager must remain usable with previous components if migration fails. Test an actual signed older-to-newer update, invalid signatures, interrupted downloads, cancelled Glyphs closure and failed component migration before release.
 

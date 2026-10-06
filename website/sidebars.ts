@@ -13,8 +13,10 @@ const sidebars: SidebarsConfig = {
       'concepts/how-glyphs-mcp-works', 'concepts/safety-model', 'concepts/agent-skills'
     ]},
     {type: 'category', label: 'Workflows', items: [
-      'workflows/projects', 'spacing-tools', 'kerning-workflow', 'italic-first-pass',
-      'workflows/start-node-correspondence', 'workflows/visual-review'
+      'tutorial/conversation-edits', 'workflows/fonts-and-saving', 'workflows/scripts',
+      'workflows/exports', 'workflows/checkpoints', 'workflows/projects',
+      'spacing-tools', 'kerning-workflow', 'italic-first-pass',
+      'workflows/start-node-correspondence', 'workflows/visual-review', 'workflows/beztrace'
     ]},
     {type: 'category', label: 'Reference', items: [
       'reference/command-set', 'reference/version-identity', 'reference/settings', 'reference/resources',

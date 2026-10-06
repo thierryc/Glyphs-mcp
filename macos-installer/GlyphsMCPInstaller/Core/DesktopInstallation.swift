@@ -61,12 +61,12 @@ public struct ExternalGlyphsCompanion: Identifiable {
 
     public static let beztrace = ExternalGlyphsCompanion(
         id: "beztrace-glyphs", title: "Beztrace",
-        detail: "Trace PNG and JPEG images into editable outlines. Preview and fit the result to font metrics in Glyphs.",
-        versionLabel: "Plugin 0.1.0 · Build 11 · Engine 0.1.1-dev.4",
-        availability: "Bundled development preview",
-        requirements: "Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The Glyphs MCP app includes the universal beztrace 0.1.1-dev.4 development engine.",
-        documentation: URL(string: "https://github.com/thierryc/beztrace/blob/45b1108fb7f51d5877c964a296a867412eb167cb/Companions/Glyphs/README.md")!,
-        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases/tag/v0.1.0")!
+        detail: "Trace PNG and JPEG images into editable outlines in Glyphs.",
+        versionLabel: "Bundled engine 0.1.1 · Plugin installed separately",
+        availability: "Signed plugin release · Build 15",
+        requirements: "Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The Glyphs MCP app includes the universal beztrace 0.1.1 stable engine.",
+        documentation: URL(string: "https://github.com/thierryc/beztrace/blob/dbd7a696afda9a215c8e8a4aa42315cd799116f9/Companions/Glyphs/README.md")!,
+        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases")!
     )
 }
 

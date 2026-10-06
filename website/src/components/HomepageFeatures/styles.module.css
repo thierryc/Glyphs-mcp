@@ -31,6 +31,8 @@ html[data-theme='dark'] .card {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+html[data-theme='dark'] .card a { color: #9bb5ff; }
+
 .card h3 {
   font-size: 1.05rem;
   margin-bottom: 0.5rem;

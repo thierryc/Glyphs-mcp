@@ -51,6 +51,19 @@ Tests/Fixtures/oracle/v1/reference-source.
 This file must be updated before any additional third-party source or binary
 dependency is added.
 
+The static project website additionally uses:
+
+  Project: @ap.cx/gl-marquee
+  Package: https://www.npmjs.com/package/@ap.cx/gl-marquee
+  Version: 0.1.0
+  Copyright: Copyright (c) 2026 Thierry C
+  License: MIT
+
+Unmodified published JavaScript modules, package metadata, README and license
+are under site/vendor/ap.cx-gl-marquee-0.1.0. SOURCE.json records the npm
+tarball integrity and file hashes. This is a website-only dependency; it is
+not included in the Swift library, CLI, release ZIP or installer.
+
 CI and explicit fixture-maintenance commands use, but do not distribute:
 
   Project: Pillow

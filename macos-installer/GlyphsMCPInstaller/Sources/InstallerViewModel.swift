@@ -16,6 +16,10 @@ final class InstallerViewModel: ObservableObject {
     @Published private(set) var running = false
     @Published private(set) var receiptURL: URL?
     @Published var updateStatus: PluginUpdateStatus = .idle
+    @Published private(set) var pythonReady = false
+    @Published private(set) var checkingPython = false
+    @Published private(set) var pythonVersion: String?
+    @Published private(set) var pythonSetupError: String?
 
     var stopServiceBeforeQuit: (() async throws -> Void)?
     var showTroubleshootingLogs: (() -> Void)?
@@ -27,6 +31,7 @@ final class InstallerViewModel: ObservableObject {
     private let root = InstallerPaths.home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2")
     private var payload: InstallerPayload?
     private var task: Task<Void, Never>?
+    private var pythonCheckTask: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
 
     var message: String { notice.text }
@@ -38,8 +43,8 @@ final class InstallerViewModel: ObservableObject {
             && Set(InstallerClientKind.allCases).isSubset(of: installedConnectors)
     }
     var bulkActionTitle: String { allInstalled ? "Update All" : "Install All" }
-    var canChangeComponents: Bool { !busy && application != nil && !running }
-    var canRunBulkAction: Bool { canChangeComponents }
+    var canChangeComponents: Bool { !busy && !checkingPython && application != nil && !running }
+    var canRunBulkAction: Bool { canChangeComponents && pythonReady }
     var installedConnectors: Set<InstallerClientKind> {
         Set(InstallerClientKind.allCases.filter { connectorStates[$0] == .installed })
     }
@@ -67,6 +72,7 @@ final class InstallerViewModel: ObservableObject {
     deinit {
         for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
         task?.cancel()
+        pythonCheckTask?.cancel()
     }
 
     func checkForUpdates() {
@@ -102,6 +108,7 @@ final class InstallerViewModel: ObservableObject {
         }
         refreshConnectorDetection(resetFailures: resetFailures)
         refreshRunning()
+        checkGlyphsPython()
     }
 
     func refreshRunning() {
@@ -136,7 +143,59 @@ final class InstallerViewModel: ObservableObject {
 
     func openGlyphs() {
         guard let application else { return }
-        NSWorkspace.shared.openApplication(at: application.appURL, configuration: NSWorkspace.OpenConfiguration())
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.openApplication(at: application.appURL, configuration: configuration)
+    }
+
+    func openPythonInPluginManager() {
+        guard !busy, !checkingPython, let application,
+              let url = URL(string: "glyphsapp4://showplugin/Python") else { return }
+        NSWorkspace.shared.open([url], withApplicationAt: application.appURL,
+                                configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
+            if let error {
+                Task { @MainActor in
+                    self?.notice = .failure("Open Window → Plugin Manager → Modules in Glyphs and choose Python. " + error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    func checkGlyphsPython() {
+        guard !busy, !checkingPython else { return }
+        pythonReady = false
+        pythonVersion = nil
+        pythonSetupError = nil
+        guard let application else { return }
+        checkingPython = true
+        pythonCheckTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.checkingPython = false }
+            do {
+                let payload = try self.resolvePayload()
+                let lean = payload.payloadDir.appendingPathComponent("Lean")
+                #if arch(arm64)
+                let architecture = "arm64"
+                #else
+                let architecture = "x86_64"
+                #endif
+                let python = lean.appendingPathComponent("runtimes/\(architecture)/bin/python3")
+                let helper = payload.payloadDir.appendingPathComponent("Installer/install_simple_v2.py")
+                let result = try await self.runner.runCapturing(executable: python,
+                    args: ["-I", "-B", helper.path, "--build", lean.path,
+                           "--glyphs-app", application.appURL.path, "--preflight-only"], timeout: 60)
+                let response = (try? JSONSerialization.jsonObject(with: result.stdoutData)) as? [String: Any]
+                guard result.exitCode == 0, response?["ok"] as? Bool == true else {
+                    let detail = (response?["error"] as? [String: Any])?["message"] as? String
+                    throw InstallerError.userFacing(detail ?? result.stderr)
+                }
+                self.pythonVersion = response?["pythonVersion"] as? String
+                self.pythonReady = true
+            } catch {
+                self.pythonSetupError = error.localizedDescription
+                self.record("Glyphs Python readiness check failed: \(error.localizedDescription)")
+            }
+        }
     }
 
     func installAll() {
@@ -268,6 +327,10 @@ final class InstallerViewModel: ObservableObject {
     private func performComponent(_ id: String, operation: SetupOperation) {
         refreshRunning()
         guard DesktopComponent.ids.contains(id), canChangeComponents else { return }
+        guard operation == .remove || pythonReady else {
+            notice = .failure("Complete Glyphs Python setup and choose Check again before installing components.")
+            return
+        }
         busy = true
         componentStates[id] = .active(operation)
         notice = .information(operation.progressLabel.replacingOccurrences(of: "…", with: "") + " " + componentTitle(id) + "…")

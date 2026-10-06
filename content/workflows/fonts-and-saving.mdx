@@ -1,0 +1,57 @@
+---
+title: Create fonts and save your work
+---
+
+Ask for a new font, or identify an existing one by its name and path. When fonts
+have similar names, confirm which one you mean. The agent retains the exact
+document binding instead of substituting whichever window is frontmost.
+
+## Create a font
+
+> Create an unsaved font named MCP Practice with 1000 units per em. Do not save it yet.
+
+With `document.create.v1`, `create_document` opens a font with one Regular master,
+one Regular instance and no glyphs. It does not use project templates or build
+custom masters/axes. Add the glyphs you need in Glyphs before trying a glyph edit.
+The companion's [project templates](projects.mdx) create folders separately.
+
+After a lost response, the agent checks the original creation request with the
+same key and arguments. It does not create another font to guess the outcome.
+After a bridge restart, reconcile an uncertain creation with the open documents.
+
+## Save or Save As
+
+Ask to save the identified font, or give a new absolute destination ending in
+`.glyphs` or `.glyphspackage`. For a pathless font, Save As is required. The
+destination must not already exist or belong to another open document.
+
+Saving persists **the whole current font**, including unrelated unsaved edits.
+The verified receipt reports the observed path, clean state and saved-source
+hash. For an edit owned by an MCP job, use its **Save font**/**Save As…** action;
+generic `save_document` cannot bypass active job ownership. A prior manual Save
+does not complete the job's acceptance automatically.
+
+**Save and continue** or **Save and run** establishes a prerequisite baseline;
+the resulting edit still needs its own save authorization. **Keep changes without
+saving** leaves the edit unsaved and ends the workflow's recovery offer.
+See [conversation edits](../tutorial/conversation-edits.mdx).
+
+If a save outcome is uncertain, use **Check result** on the existing operation.
+Do not repeat Save or edit the source file outside Glyphs to force a result.
+
+## Exact targets and capabilities
+
+Reads can inspect dirty/unsaved fonts. Typed edit preparation needs a saved,
+clean baseline; historical restoration has its own broader scope.
+
+| Intent | Resolve before editing |
+| --- | --- |
+| Glyph/master scope | Exact glyph names and native master IDs; discovery pages can be incomplete. |
+| Layer scope | Owning glyph and native layer ID; repeated layer/master names are not selectors. |
+| Background outlines | Owning foreground layer ID, explicit background surface and `outline.background.edit.v1`. |
+| Native commands | Only the connected bridge's advertised closed `nativeActions`; no guessed menu selector. |
+
+The agent checks `get_status` read/write/job capabilities and uses bounded
+selectors from the [tool reference](../reference/command-set.mdx). Missing
+capabilities or stale targets must be resolved before editing. A script request
+uses the separate [native-script workflow](scripts.mdx) and its recovery limits.

@@ -1,0 +1,49 @@
+---
+title: Native scripts and their recovery
+---
+
+Native Python handles tasks through `script.native.v1` and the existing
+conversation workflow. Specify the font, glyphs, masters, layers and
+foreground/background surface that the task should affect. Start on a disposable
+font when experimenting.
+
+## Write, review or run
+
+> Write a script for my selected layers, but do not run it. Explain what it will change.
+
+A write-only/review-only request does not execute. A request to perform a font
+task can already authorize its in-scope execution; a separate code-review click
+is not required. Ask for an explicit preview when you want to review before
+execution. **Wait for my answer** separately disables automatic Keep after
+execution. Optional **Script details** shows source/parameters.
+
+Preparation checks syntax and resolves targets without running module code.
+A clean saved font needs no extra Save. A dirty font offers **Save and run** or
+manual saving; a new font needs Save As before Run. Prerequisite saving includes
+existing work and does not authorize saving the script's result.
+
+The script runs once on Glyphs' main thread. Per-target callbacks yield between
+batches; cancellation stops remaining callbacks, not a running invocation.
+Whole scripts run once without per-target cancellation. Execution success does
+not prove the intended design result: inspect the font and verify relevant values.
+
+## Decide what to keep
+
+After execution, use the offered **Keep changes without saving**, **Save font**
+or **Restore saved version** actions. Successful new cards can Keep after 30
+seconds; **Wait for my answer** disables that countdown. Failed or partial
+execution remains a manual decision and can leave edits behind.
+
+**Restore saved version** reloads the unchanged saved baseline for the **whole
+font**. It replaces all later unsaved edits, including manual edits outside the
+script's targets, clears Undo history and returns a fresh document binding. It
+does not save or rerun the script. Keep or Save ends this offer; a changed baseline
+or closed font can make restoration unavailable.
+
+Scripts can also affect files, network services or other computer state. Reloading
+the font does not reverse those effects. Typed **Undo these changes** and its
+target snapshots do not provide script rollback.
+
+If the connection times out, use **Check result** on the retained workflow.
+Never submit a new script request merely to bypass an uncertain result. See
+[Safety and recovery](../concepts/safety-model.mdx).

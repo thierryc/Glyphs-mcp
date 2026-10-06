@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beztrace.dev/schema/release-manifest-v1.json",
+  "title": "beztrace release manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "name", "version", "minimumMacOS", "architectures", "artifacts", "sbom"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "name": {"const": "beztrace"},
+    "version": {"const": "0.1.0"},
+    "candidate": {"const": "rc.1"},
+    "sourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "minimumMacOS": {"const": "13.0"},
+    "architectures": {"const": ["arm64", "x86_64"]},
+    "artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "size", "signed", "notarized"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "size": {"type": "integer", "minimum": 1},
+          "signed": {"type": "boolean"},
+          "notarized": {"type": "boolean"}
+        }
+      }
+    },
+    "sbom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "version", "source", "binary"],
+      "properties": {
+        "format": {"const": "SPDX"},
+        "version": {"const": "2.3"},
+        "source": {"type": "string", "minLength": 1},
+        "binary": {"type": "string", "minLength": 1},
+        "releaseSource": {"type": "string", "minLength": 1},
+        "releaseBinary": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"not": {"required": ["candidate"]}},
+      "then": {
+        "required": ["sourceRevision"],
+        "properties": {
+          "sbom": {"required": ["releaseSource", "releaseBinary"]}
+        }
+      }
+    }
+  ]
+}

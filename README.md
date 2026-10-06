@@ -1,16 +1,21 @@
-# Glyphs MCP Desktop 2.0.0 Beta 11
+# Glyphs MCP Desktop 2.0.0 — local release candidate
 
-**Beta 11/build 53 is published as a signed and notarized GitHub prerelease.**
-Release identity: `2.0.0-beta.11`. All four public downloads and Sparkle signatures are verified.
-Stable Latest remains v1.11.1.
-See [Beta 11 qualification](BETA11-VALIDATION.md),
-[distribution evidence](reports/beta11-release-candidate/README.md), and the [beta guide](BETA.md).
+**Unpublished 2.0.0 candidate — stable-channel identity, desktop build 55.**
+This checkout prepares the final release from the tested Beta 12 source. Final
+signing, exact macOS 14.0 and signed upgrade qualification remain pending;
+no public stable v2 download is available. Beta 11/build 53 remains the published
+signed and notarized prerelease; Stable Latest remains v1.11.1.
+See [Beta 12 preparation](BETA12-VALIDATION.md),
+[Beta 11 qualification](BETA11-VALIDATION.md), and the [beta guide](BETA.md).
 The [thirteen-tool contract](content/reference/command-set.mdx) adds font creation
 through `create_document`; `save_document` persists the resulting open font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
-no terminal setup is required for the Glyphs 4 sidecar.
+no terminal setup is required for the Glyphs 4 sidecar. Install official Glyphs 4
+first and launch it in trial mode or with your license. Install Python through
+Glyphs' Plugin Manager and select the **(Glyphs)** framework in Addons before
+installing the MCP components.
 
 Open **Glyphs MCP.app** and use **Setup**. **Install All** reconciles Glyphs MCP,
 Curve Inspector and Reference Inspector, then configures Codex, Claude Code,
@@ -19,8 +24,8 @@ update, removal and retry. Upgrades preserve ports, startup settings and
 unrelated agent configuration.
 
 Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
-with requirements, development availability and setup guidance. The app bundles
-the universal 0.1.1-dev.4 development engine; the Glyphs plugin remains separate. See [Beztrace setup](BETA.md#beztrace).
+with requirements, its independently signed build 15 release and setup guidance. The app bundles
+the universal stable 0.1.1 engine; the Glyphs plugin remains separate. See [Beztrace setup](BETA.md#beztrace).
 
 The permanent app includes Setup and Project destinations, a static menu-bar
 popover, a dedicated troubleshooting-log window, local and public templates,
@@ -32,8 +37,14 @@ launch at login is a separate opt-in setting.
 
 In Glyphs, **Edit → Glyphs MCP Server…** opens Start/Stop and port settings.
 The compact extension panel displays the project and bridge versions and
-"Ready". Its heart button reopens a placeholder welcome window.
-That window appears automatically once; its final design is in progress.
+"Ready". Its heart button reopens Glyphs' nonmodal Welcome/support panel with
+documentation, issue and support links.
+
+The local v2 desktop companion adds a six-slide introduction covering
+control, connections, prerequisites, v2 changes and community support. It appears
+on first interactive launch and can be replayed through **File → Welcome & Support**
+or the sidebar. **Skip to setup** and **Start setup** open Setup. Desktop login
+launch stays quiet. See [local qualification and remaining manual checks](V2-RELEASE-CHECKLIST.md).
 
 Prepare supported spacing, kerning, slant, start-node, outline and negotiated
 closed native-action jobs; run feature compiler diagnostics; or stage verified
@@ -69,25 +80,27 @@ source stays optional; fresh server checks still guard actions. See
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
-The Beta 11 source targets Glyphs 4 only. Glyphs 3 remains available through the
+The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. Beta 11 is available
 as a signed and notarized
 [GitHub prerelease](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.11).
 
-Documentation sources: [v2 · 2.0.0 Beta 11](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.0 candidate](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 Beta 7 qualification and publication are recorded in [BETA7-VALIDATION.md](BETA7-VALIDATION.md).
 Historical Beta 6 evidence remains in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
 Beta 5 qualification is recorded in
 [BETA5-VALIDATION.md](BETA5-VALIDATION.md); the published Beta 4 record remains
 in [BETA4-VALIDATION.md](BETA4-VALIDATION.md).
-The site has a version selector; existing v1 URLs stay at `/docs/`, and v2 uses
-`/docs/v2/`. Both are built together from `website/`.
+The local site build has a version selector; existing v1 URLs stay at `/docs/`,
+and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
+The public v2 route returned 404 in the 4 October audit; deployment and public
+route verification remain release tasks. Use [BETA.md](BETA.md) for current beta guidance.
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). Beta 11 artifacts use `Glyphs-MCP-2.0.0-beta.11.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The planned stable disk image is `Glyphs-MCP-2.0.0.dmg`; it is not yet available. See [local candidate evidence](reports/v2-release-readiness/m61-stable-candidate-20261005/report.md).
 Stable releases retain `Glyphs-MCP-latest.dmg`. The beta stays on `lit/v2-beta`
 and does not replace the stable download.
 

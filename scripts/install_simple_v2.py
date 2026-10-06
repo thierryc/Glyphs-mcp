@@ -11,9 +11,14 @@ import re
 import plistlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
+
+# The desktop preflight runs with Python's isolated mode, which omits the
+# script directory. Load only the helper modules shipped beside this script.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_simple_v2 import _identity
 from installation_transaction import InstallationTransaction, write_json
@@ -251,10 +256,16 @@ def preflight(build, application):
     cli = build/runtime['path']/runtime['glyphsCLI']
     # The native worker uses the exact selected Glyphs application's scripting
     # environment. Private sidecar Python is intentionally a separate process.
+    # The parent's -B flag does not reach this embedded Python interpreter.
+    # Keep imports from creating __pycache__ inside the signed Glyphs app bundle.
+    environment = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1')
     result = subprocess.run([str(cli),'run','--quiet','--app',str(application),'--plugins','',
-        '-c','from GlyphsApp import GSFont; print("GLYPHS_MCP_NATIVE_READY")'],capture_output=True,text=True,timeout=45)
+        '-c','from GlyphsApp import GSFont; import sys; print("GLYPHS_MCP_NATIVE_READY:" + sys.version.split()[0])'],capture_output=True,text=True,timeout=45,env=environment)
     if result.returncode or 'GLYPHS_MCP_NATIVE_READY' not in result.stdout:
-        raise ValueError('Glyphs scripting is not ready. Enable Python in Glyphs Plugin Manager, then try again. '+result.stderr[-600:])
+        raise ValueError('Glyphs scripting is not ready. Install Python from Window → Plugin Manager → Modules in Glyphs, relaunch Glyphs, select the Python marked “(Glyphs)” in Settings → Addons, then relaunch and check again. '+result.stderr[-600:])
+    version = next(line.split(':', 1)[1].strip() for line in result.stdout.splitlines()
+                   if line.startswith('GLYPHS_MCP_NATIVE_READY:'))
+    return version
 
 
 def main():
@@ -272,9 +283,9 @@ def main():
     parser.add_argument('--preflight-only',action='store_true')
     args=parser.parse_args()
     if args.preflight_only or not (args.no_mcp and not args.companion and args.remove):
-        preflight(args.build,args.glyphs_app)
+        python_version = preflight(args.build,args.glyphs_app)
     if args.preflight_only:
-        print(json.dumps({'ok':True})); return
+        print(json.dumps({'ok':True, 'pythonVersion':python_version})); return
     executable = args.glyphs_app.resolve() / 'Contents/MacOS'
     for pattern in ('^'+re.escape(str(executable))+'/', 'glyphs_mcp_sidecar.native_worker'):
         if subprocess.run(['/usr/bin/pgrep','-f',pattern],stdout=subprocess.DEVNULL).returncode == 0:

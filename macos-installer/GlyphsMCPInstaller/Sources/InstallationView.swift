@@ -74,7 +74,8 @@ struct InstallationView: View {
                     ComponentSetupCard(
                         component: component,
                         state: model.state(for: component),
-                        disabled: model.busy,
+                        disabled: !model.canChangeComponents,
+                        pythonReady: model.pythonReady,
                         install: { model.installComponent(component.id) },
                         update: { model.updateComponent(component.id) },
                         remove: { pendingRemoval = .component(component) },
@@ -125,9 +126,9 @@ private struct BeztraceSetupCard: View {
         } title: {
             Text(companion.title).font(.headline)
         } detail: {
-            Text(companion.detail)
+            Text(LocalizedStringKey(companion.detail))
         } status: {
-            Label(companion.availability, systemImage: "hammer")
+            Label(LocalizedStringKey(companion.availability), systemImage: "hammer")
                 .font(.caption.weight(.medium)).foregroundStyle(.secondary)
         } actions: {
             HStack {
@@ -153,22 +154,22 @@ private struct BeztraceSetupView: View {
                 Spacer()
                 Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
             }
-            Text(companion.versionLabel).foregroundStyle(.secondary)
-            Text(companion.detail)
+            Text(LocalizedStringKey(companion.versionLabel)).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(companion.detail))
             VStack(alignment: .leading, spacing: 8) {
                 Text("Requirements").font(.headline)
-                Text(companion.requirements)
-                Link("Get the beztrace engine", destination: companion.engineRelease)
+                Text(LocalizedStringKey(companion.requirements))
+                Link("Engine release history", destination: companion.engineRelease)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
-                Text("The bundled 0.1.1-dev.4 engine is a development preview; distributed desktop releases sign and notarize it with the app. The separate Glyphs plugin remains unsigned, with native qualification and a signed plugin release pending. Install All manages the bundled MCP components; Beztrace plugin setup remains separate.")
+                Text("The app bundles engine 0.1.1. The separate plugin is 0.1.0 build 15, independently Developer ID-signed and notarized. Native qualification covers macOS 14.6.1 on Apple Silicon with Glyphs build 4108 and Python 3.14.6; Intel execution is untested. Install All does not install this plugin.")
                 Link("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Using Beztrace").font(.headline)
-                Text("After installing the plugin and relaunching Glyphs, select one glyph layer and choose Path → Trace Image…. Choose an image, trace, review the preview, then Apply.")
-                Text("The plugin works independently of the MCP server. The engine is shared and stays installed when the plugin is removed.")
+                Text("Build 15 workflow: place a PNG or JPEG in the glyph layer, then choose Path → Beztrace…. Position the image on the canvas, choose Trace, adjust the result, then Done. See the source guide for engine verification before installing.")
+                Text("The plugin works independently of the MCP server. Trace adds editable paths; Done keeps them without saving the font.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -221,6 +222,7 @@ private struct ComponentSetupCard: View {
     let component: DesktopComponent
     let state: SetupItemState
     let disabled: Bool
+    let pythonReady: Bool
     let install: () -> Void
     let update: () -> Void
     let remove: () -> Void
@@ -232,11 +234,11 @@ private struct ComponentSetupCard: View {
         } title: {
             Text(component.title).font(.headline)
         } detail: {
-            Text(component.detail)
+            Text(LocalizedStringKey(component.detail))
         } status: {
             SetupStatus(state: state)
         } actions: {
-            SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
+            SetupCardActions(state: state, disabled: disabled, canInstall: pythonReady, install: install, update: update, remove: remove, retry: retry)
         } footer: {
             Link("Documentation", destination: component.documentation).font(.caption)
                 .accessibilityLabel("\(component.title) documentation")
@@ -368,6 +370,7 @@ private struct SetupStatus: View {
 private struct SetupCardActions: View {
     let state: SetupItemState
     let disabled: Bool
+    var canInstall = true
     let install: () -> Void
     let update: () -> Void
     let remove: () -> Void
@@ -377,15 +380,15 @@ private struct SetupCardActions: View {
         HStack {
             switch state {
             case .notInstalled:
-                Button("Install", action: install).buttonStyle(.borderedProminent).disabled(disabled)
+                Button("Install", action: install).buttonStyle(.borderedProminent).disabled(disabled || !canInstall)
             case .installed:
-                Button("Update", action: update).disabled(disabled)
+                Button("Update", action: update).disabled(disabled || !canInstall)
                 Button("Remove", role: .destructive, action: remove).disabled(disabled)
             case .developmentLinked:
-                Button("Install bundled version", action: update).disabled(disabled)
+                Button("Install bundled version", action: update).disabled(disabled || !canInstall)
                 Button("Remove", role: .destructive, action: remove).disabled(disabled)
-            case .failed:
-                Button("Retry", action: retry).buttonStyle(.borderedProminent).disabled(disabled)
+            case .failed(let operation, _):
+                Button("Retry", action: retry).buttonStyle(.borderedProminent).disabled(disabled || (operation != .remove && !canInstall))
             case .queued, .active:
                 Text(LocalizedStringKey(state.statusLabel)).font(.caption).foregroundStyle(.secondary)
             }

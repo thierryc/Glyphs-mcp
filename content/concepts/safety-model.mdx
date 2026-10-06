@@ -23,6 +23,20 @@ revisions/tokens deduplicate repeated clicks and text replies. A closed card
 is not cancellation. Restarted workflows reconcile existing operations and
 never replay saves or mutations automatically.
 
+| Review choice | Effect and recovery scope |
+| --- | --- |
+| Keep changes without saving | Leaves the edit unsaved and ends the workflow recovery offer. Native history remains for typed edits. |
+| Save font / Save As… | Persists the whole font, including unrelated edits; ends the workflow recovery offer. |
+| Undo these changes | Restores only the typed edit's still-current affected targets; later conflicts are refused. |
+| Restore saved version (script) | Reloads the whole unchanged baseline, removes later unsaved edits and clears Undo history. |
+| Restore a checkpoint | Loads the historical whole-font version without saving or resetting Git history; removes later unsaved edits and clears Undo history. |
+
+Successful new typed-edit and script cards can Keep after a visible 30-second
+countdown. **Wait for my answer** disables it. Hidden cards and open Details
+pause it; failed/uncertain outcomes and text-only clients remain manual. This
+timer does not authorize Run, Save or Restore. See the
+[conversation walkthrough](../tutorial/conversation-edits.mdx).
+
 ## Baseline and ownership
 
 Typed preparation requires a saved, clean font. Before application, the sidecar checks the document path, edit generation and source hash. The bridge also checks affected targets before writing. Outline jobs add exact path guards during preparation and exact before/after outline-state hashes at application. An external edit or a stale source rejects the operation instead of silently overwriting it.
@@ -69,20 +83,13 @@ stops remaining callbacks, not a running invocation. Failures can leave partial
 edits; restoration is never automatic. Successful execution does not establish
 that the intended result was verified.
 
-Successful new typed-edit and script cards default to keeping changes without saving after a
-visible 30-second countdown. This ends their workflow recovery offer. **Wait for my
-answer** disables the timer for that workflow; agents honor the same directive
-with `auto_keep=false` on later requests. Hidden cards and open Details
-stop the timer; returning starts a fresh countdown after reconciliation. Older
-records, failed/cancelled outcomes and text-only clients remain manual. The
-countdown never authorizes Run, Save or Restore, and never verifies the result.
-
 **Restore saved version** reloads the unchanged baseline, replaces all later
 unsaved edits throughout the font, clears Undo history and returns a fresh binding.
 It never saves or reruns Python. Keep or Save ends the restoration offer. An
 overwritten baseline or closed document cannot provide this restoration. There is
-no backup or crash-recovery system. The typed snapshot/Undo rules below do not
-apply to scripts.
+no automatic backup or crash-recovery guarantee from this reload. Optional
+[local Git checkpoints](../workflows/checkpoints.mdx) have their own enablement
+and receipts. The typed snapshot/Undo rules below do not apply to scripts.
 
 ## Native Undo, Redo and discard
 

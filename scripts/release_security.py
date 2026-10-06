@@ -22,12 +22,28 @@ MARKETING_VERSION_RE = re.compile(r"\bMARKETING_VERSION\s*=\s*(\d+\.\d+\.\d+)\s*
 BUILD_VERSION_RE = re.compile(r"\bCURRENT_PROJECT_VERSION\s*=\s*(\d+)\s*;")
 CHECKSUM_RE = re.compile(r"^([0-9a-f]{64})  (.+)$")
 CURRENT_V2_PUBLIC_TOOL_COUNT = 20
-CURRENT_LEAN_PUBLIC_TOOL_COUNT = 12
 CURRENT_V2_CANONICAL_SCHEMA_VERSION = 8
 
 
 class ReleaseSecurityError(ValueError):
     pass
+
+
+def read_lean_public_tool_count(root: Path) -> int:
+    source = root / "src/protocol/glyphs_mcp_protocol/models.py"
+    try:
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        node = next(node for node in tree.body if isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == "TOOL_NAMES"
+                            for target in node.targets))
+        names = ast.literal_eval(node.value)
+        if (not isinstance(names, (tuple, list)) or not names
+                or not all(isinstance(name, str) and name for name in names)
+                or len(names) != len(set(names))):
+            raise ValueError("TOOL_NAMES must contain distinct nonempty names")
+    except Exception as exc:
+        raise ReleaseSecurityError(f"could not read lean tool inventory {source}: {exc}") from exc
+    return len(names)
 
 
 def read_plist_version(path: Path, *, require_matching_build: bool = True) -> tuple[str, str]:
@@ -250,7 +266,7 @@ def validate_unsigned_candidate(
         "installerBuild": installer_build,
         "targets": {"4": version} if lean else {"3": PINNED_GLYPHS3_VERSION, "4": version},
         "canonicalSchemaVersion": None if lean else CURRENT_V2_CANONICAL_SCHEMA_VERSION,
-        "publicToolCount": CURRENT_LEAN_PUBLIC_TOOL_COUNT if lean else CURRENT_V2_PUBLIC_TOOL_COUNT,
+        "publicToolCount": read_lean_public_tool_count(root) if lean else CURRENT_V2_PUBLIC_TOOL_COUNT,
         "managedSkillCount": len(json.loads((root / "skills/manifest.json").read_text())["managedSkills"]) if lean else 18,
         "runtimeIdentity": runtime_identity,
         "payloadValidated": payload_root is not None,

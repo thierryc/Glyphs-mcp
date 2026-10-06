@@ -15,14 +15,14 @@
     ]
   },
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://beztrace.dev/spdx/0.1.1-dev.4/binary-b2ceadc199f6e6b07429b21d839fac2443d3dbfda1920ea87ca3bd10bedcb9f9",
+  "documentNamespace": "https://beztrace.dev/spdx/0.1.1/binary-3695e8fa41e941a21003052add1b65aea758fb8cd72addfd037288a94265e0cf",
   "files": [
     {
       "SPDXID": "SPDXRef-Binary-beztrace",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "b2ceadc199f6e6b07429b21d839fac2443d3dbfda1920ea87ca3bd10bedcb9f9"
+          "checksumValue": "3695e8fa41e941a21003052add1b65aea758fb8cd72addfd037288a94265e0cf"
         }
       ],
       "copyrightText": "Copyright 2026 beztrace contributors and the img2bez Authors",
@@ -41,7 +41,7 @@
       "licenseDeclared": "Apache-2.0 OR MIT",
       "name": "beztrace",
       "supplier": "Organization: beztrace contributors",
-      "versionInfo": "0.1.1-dev.4"
+      "versionInfo": "0.1.1"
     }
   ],
   "relationships": [

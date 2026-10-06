@@ -3254,6 +3254,104 @@ extension GlyphsMCPInstallerTests {
         XCTAssertTrue(json.contains("python3"))
         XCTAssertEqual(ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeDesktopServerName)?.url, endpoint.absoluteString)
     }
+
+    func testClaudeRemovalPreservesModifiedAndUnownedEntries() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.json")
+        let endpoint = URL(string: "http://127.0.0.1:9790/mcp/")!
+        let installer = ClaudeDesktopConfigurator(endpointURL: endpoint,
+            proxyCommand: ["/managed/runtime/bin/python3", "-B", "/managed/sidecar/proxy.py"], log: { _ in })
+        let name = InstallerConstants.claudeDesktopServerName
+        func remove() throws {
+            try ConnectorConfigurationRemover.removeClaude(client: .claudeDesktop, at: config, serverName: name, endpoint: endpoint)
+        }
+        let mutations: [(inout [String: Any]) -> Void] = [
+            { entry in var env = entry["env"] as! [String: Any]; env["CUSTOM"] = "user value"; entry["env"] = env },
+            { entry in var env = entry["env"] as! [String: Any]; env["PATH"] = "/user/bin"; entry["env"] = env },
+            { $0["command"] = "/another/python3" },
+            { $0["args"] = ["-B", "/another/proxy.py", endpoint.absoluteString] },
+            { $0["args"] = ["-B", "/managed/sidecar/proxy.py", "--custom", endpoint.absoluteString] },
+            { $0["args"] = ["-B", "/managed/sidecar/proxy.py", "http://127.0.0.1:19680/mcp/"] },
+            { $0["userField"] = ["enabled": true] }
+        ]
+        for mutate in mutations {
+            try JsonConfig.writeJSON([:], to: config)
+            try installer.patchClaudeDesktopConfig(at: config)
+            var (json, _) = try JsonConfig.loadJSON(at: config)
+            var servers = json["mcpServers"] as! [String: Any]
+            var entry = servers[name] as! [String: Any]
+            mutate(&entry)
+            servers[name] = entry; json["mcpServers"] = servers
+            try JsonConfig.writeJSON(json, to: config)
+            let before = try Data(contentsOf: config)
+            let receiptBefore = try Data(contentsOf: ClaudeConfigurationOwnership.receiptURL(for: config))
+            XCTAssertThrowsError(try remove())
+            XCTAssertEqual(try Data(contentsOf: config), before)
+            XCTAssertEqual(try Data(contentsOf: ClaudeConfigurationOwnership.receiptURL(for: config)), receiptBefore)
+        }
+        try JsonConfig.writeJSON([:], to: config)
+        try installer.patchClaudeDesktopConfig(at: config)
+        let before = try Data(contentsOf: config)
+        try FileManager.default.removeItem(at: ClaudeConfigurationOwnership.receiptURL(for: config))
+        XCTAssertThrowsError(try remove())
+        XCTAssertEqual(try Data(contentsOf: config), before)
+    }
+
+    func testClaudeReinstallDoesNotAdoptCustomFieldsAndOwnedRemovalPreservesOtherSettings() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.json")
+        let name = InstallerConstants.claudeDesktopServerName
+        let endpoint = URL(string: "http://127.0.0.1:9790/mcp/")!
+        let installer = ClaudeDesktopConfigurator(endpointURL: endpoint, log: { _ in })
+        let other: [String: Any] = ["command": "other", "args": ["--user"]]
+        let initial: [String: Any] = ["preferences": ["enabled": true], "mcpServers": ["other": other,
+            name: ["env": ["CUSTOM": "keep"], "userField": true]]]
+        try JsonConfig.writeJSON(initial, to: config)
+        for _ in 0..<2 {
+            try installer.patchClaudeDesktopConfig(at: config)
+            let before = try Data(contentsOf: config)
+            XCTAssertThrowsError(try ConnectorConfigurationRemover.removeClaude(client: .claudeDesktop,
+                at: config, serverName: name, endpoint: endpoint))
+            XCTAssertEqual(try Data(contentsOf: config), before)
+        }
+        // Start a clean managed entry; unrelated preferences/server remain user owned.
+        try JsonConfig.writeJSON(["preferences": ["enabled": true], "mcpServers": ["other": other]], to: config)
+        try installer.patchClaudeDesktopConfig(at: config)
+        try ConnectorConfigurationRemover.removeClaude(client: .claudeDesktop, at: config, serverName: name, endpoint: endpoint)
+        let (result, _) = try JsonConfig.loadJSON(at: config)
+        XCTAssertEqual(result["preferences"] as? [String: Bool], ["enabled": true])
+        let servers = result["mcpServers"] as! [String: Any]
+        XCTAssertNil(servers[name])
+        XCTAssertEqual(servers["other"] as? NSDictionary, other as NSDictionary)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: ClaudeConfigurationOwnership.receiptURL(for: config).path))
+        // Removal remains idempotent when the entry is already absent.
+        XCTAssertNoThrow(try ConnectorConfigurationRemover.removeClaude(client: .claudeDesktop, at: config, serverName: name, endpoint: endpoint))
+    }
+
+    func testClaudeCodeRemovalRequiresOwnershipAndPreservesCustomFields() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.json")
+        let endpoint = URL(string: "http://127.0.0.1:9790/mcp/")!
+        let installer = ClaudeCodeConfigurator(runner: ProcessRunner(), endpointURL: endpoint, log: { _ in })
+        let name = InstallerConstants.claudeCodeServerName
+        try installer.patchClaudeCodeConfig(at: config)
+        var (json, _) = try JsonConfig.loadJSON(at: config)
+        var servers = json["mcpServers"] as! [String: Any]
+        var entry = servers[name] as! [String: Any]
+        entry["env"] = ["CUSTOM": "keep"]
+        servers[name] = entry; json["mcpServers"] = servers
+        try JsonConfig.writeJSON(json, to: config)
+        try installer.patchClaudeCodeConfig(at: config)
+        let before = try Data(contentsOf: config)
+        XCTAssertThrowsError(try ConnectorConfigurationRemover.removeClaude(client: .claudeCode, at: config, serverName: name, endpoint: endpoint))
+        XCTAssertEqual(try Data(contentsOf: config), before)
+        try JsonConfig.writeJSON([:], to: config)
+        try installer.patchClaudeCodeConfig(at: config)
+        XCTAssertNoThrow(try ConnectorConfigurationRemover.removeClaude(client: .claudeCode, at: config, serverName: name, endpoint: endpoint))
+    }
 }
 
 extension GlyphsMCPInstallerTests {

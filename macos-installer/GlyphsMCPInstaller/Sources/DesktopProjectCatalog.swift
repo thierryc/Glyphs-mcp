@@ -81,12 +81,12 @@ private struct DesktopTemplateCard: View {
                     Image(systemName: "star.fill").foregroundStyle(Color.accentColor)
                         .accessibilityLabel("Favorite template").help("Favorite")
                 }
-                Text(entry.source).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(entry.source)).font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Color.primary.opacity(0.04), in: Capsule())
                 Menu {
                     Button { model.toggleFavorite(entry.choice) } label: {
-                        Label(isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                        Label(LocalizedStringKey(isFavorite ? "Remove from Favorites" : "Add to Favorites"),
                               systemImage: isFavorite ? "star.slash" : "star")
                     }
                     if let template = entry.template {

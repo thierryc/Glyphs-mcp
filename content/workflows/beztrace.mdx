@@ -1,0 +1,71 @@
+---
+title: Beztrace companion setup
+---
+
+Beztrace traces images into editable outlines through a separate Glyphs plugin.
+It works independently of the MCP server. **Install All does not install that
+plugin**. Verify the installed plugin build and its matching instructions before
+tracing. Current MCP source links to the pinned build 15 guide; older installed
+Beta candidates may show earlier links and controls.
+
+## Current candidate status
+
+On **5 October 2026**, the public [stable engine 0.1.1](https://github.com/thierryc/beztrace/releases/tag/v0.1.1)
+passed the input audit and replaced 0.1.1-dev.4 in the MCP source. Its executable
+is universal, Developer ID-signed and Apple-notarized. This is local MCP
+integration; no signed public Beta 12 or stable v2 MCP release is claimed.
+
+The independent [Glyphs companion 0.1.0/build 15](https://github.com/thierryc/beztrace/releases/tag/glyphs-v0.1.0)
+is published as an official **Developer ID-signed and Apple-notarized release**
+supporting engine 0.1.1. Its final manifest records native qualification for
+**macOS 14.6.1 arm64, Glyphs 4.1.1/build 4108 trial, official Python 3.14.6**.
+The release qualification report describes the tested scope, 114 tests, native
+tracing/recovery/placement and installation lifecycle. Intel native execution is
+**untested**; universal slices and signature checks are not Intel runtime tests.
+
+The companion has its own signature and notarization evidence. Engine signing
+alone does not qualify it. The Setup card does not detect an installed plugin
+build. Older build 13/14 failures and prerelease artifacts remain historical.
+The ZIP has no stapled ticket; no offline-installation guarantee is claimed.
+
+## Set up the matching pair
+
+1. Identify the plugin build, compatible engine and required Glyphs Python. Use
+   the [pinned build 15 source guide](https://github.com/thierryc/beztrace/blob/dbd7a696afda9a215c8e8a4aa42315cd799116f9/Companions/Glyphs/README.md)
+   and matching release qualification information. Older installed app labels
+   and links are historical candidate text, not installed-version evidence.
+   Do not replace the required 0.1.1 engine with historical 0.1.0.
+2. Follow the independent plugin installation instructions. Save your work and
+   relaunch Glyphs when required to load the plugin.
+   In **⋯ → Choose Engine…**, explicitly select the stable executable. When
+   using the newly built MCP app in `/Applications`, it is at
+   `/Applications/Glyphs MCP.app/Contents/Resources/Beztrace/beztrace-0.1.1/bin/beztrace`;
+   adjust the location if the app lives elsewhere. This explicit choice applies
+   to the current panel; repeat it after reopening Beztrace. The plugin does not
+   automatically discover the MCP app bundle. Alternatively, use the independently
+   installed stable engine at `/Library/Application Support/beztrace/bin/beztrace`.
+   A source-linked plugin can otherwise prefer a preserved development engine.
+   Verify **0.1.1** before relying on the stable minimum-node correction.
+3. Select the intended glyph layer, place a PNG/JPEG there using Glyphs' normal
+   image workflow, then choose **Path → Beztrace…**. In background editing,
+   that background must own its own image; a foreground image is not automatically
+   used. Position/crop the native image, choose settings, then click **Trace**.
+   Paths are inserted at the image's canvas placement. Setting changes update
+   this session's paths; **Done** closes the panel and keeps the latest trace.
+   This panel has no preview, metric-fitting or Apply controls.
+4. Verify the resulting outlines and recovery on a disposable font before using
+   the pair in production work. Tracing writes directly to the captured layer
+   and never saves the font. Native recovery does not imply MCP typed-job rollback.
+
+## Stable release handoff
+
+Stable engine inputs and the independently qualified build 15 companion assets
+are verified. Final signed-byte native foreground/background first Trace, Done,
+Undo/Redo, image placement/alignment, panel persistence/Reset, error/recovery
+and installation/update/rollback/removal pass in the recorded Apple Silicon VM.
+The plugin remains independently installed; Install All does not install it.
+
+Final signed MCP packaging, upgrades, exact minimum-OS acceptance and approved
+public screenshots remain separate gates. Human accessibility/language review
+remains in the maintainer TODO. Physical Intel testing stays explicitly deferred
+for MCP, and the companion release discloses its untested Intel execution.

@@ -7,7 +7,7 @@
     ]
   },
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://beztrace.dev/spdx/0.1.1-dev.4/source-4f7c9db68443b20e8933f2038e8ec3a159f0d467",
+  "documentNamespace": "https://beztrace.dev/spdx/0.1.1/source-9737f21fabfda0dc9e6728bd34df2f83380238e9",
   "files": [
     {
       "SPDXID": "SPDXRef-SourceFile-0000",
@@ -86,7 +86,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0d8e0be81feae6a1f8c3426ad4f49d867a2f5d19da320ff8a5c3425d4daaa869"
+          "checksumValue": "8a3e1ea5545fb52450a23de4d0575f927f25b3dd46c0121f5a12732e6fcdfb37"
         }
       ],
       "copyrightText": "NOASSERTION",
@@ -146,7 +146,19 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "fc7197af79df11bd4205fc1fd06a8773649853f23e1bc877114e3d8538813fd0"
+          "checksumValue": "dd3b627f14fc4ee75415338063cebb7d3f8d5ae0ce14e38afe68bdbedbfd6e47"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "Sources/BezierTraceCore/CleanupMinimumNodes.swift",
+      "licenseConcluded": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-SourceFile-0012",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "082b6e4b100be5e2bbba58dc4e4e69dac8c4fe347eb6706437eaa6f7eca91084"
         }
       ],
       "copyrightText": "NOASSERTION",
@@ -154,7 +166,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0012",
+      "SPDXID": "SPDXRef-SourceFile-0013",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -166,7 +178,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0013",
+      "SPDXID": "SPDXRef-SourceFile-0014",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -178,7 +190,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0014",
+      "SPDXID": "SPDXRef-SourceFile-0015",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -190,7 +202,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0015",
+      "SPDXID": "SPDXRef-SourceFile-0016",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -202,11 +214,11 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0016",
+      "SPDXID": "SPDXRef-SourceFile-0017",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "e49ae1626303f71d7f26b1fea5b2bb4c2ed381b2780c931b82914a454d915d60"
+          "checksumValue": "e5d202c73a9c5425c5705c1b872354ecadfd47858ee208fd11424dc56c9d0faa"
         }
       ],
       "copyrightText": "NOASSERTION",
@@ -214,7 +226,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0017",
+      "SPDXID": "SPDXRef-SourceFile-0018",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -226,7 +238,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0018",
+      "SPDXID": "SPDXRef-SourceFile-0019",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -238,7 +250,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0019",
+      "SPDXID": "SPDXRef-SourceFile-0020",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -250,7 +262,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0020",
+      "SPDXID": "SPDXRef-SourceFile-0021",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -262,7 +274,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0021",
+      "SPDXID": "SPDXRef-SourceFile-0022",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -274,7 +286,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0022",
+      "SPDXID": "SPDXRef-SourceFile-0023",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -286,11 +298,11 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0023",
+      "SPDXID": "SPDXRef-SourceFile-0024",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "7d4951a5724cc8fd8504b71c4fcffe30ed4485984c682b194833a15ad8b90f62"
+          "checksumValue": "87a6ef21608a2d53fcb765e30f202b868acc5fb63591f2706f02fbe03b3a6294"
         }
       ],
       "copyrightText": "NOASSERTION",
@@ -298,7 +310,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0024",
+      "SPDXID": "SPDXRef-SourceFile-0025",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -310,7 +322,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0025",
+      "SPDXID": "SPDXRef-SourceFile-0026",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -322,7 +334,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0026",
+      "SPDXID": "SPDXRef-SourceFile-0027",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -334,7 +346,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0027",
+      "SPDXID": "SPDXRef-SourceFile-0028",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -346,7 +358,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0028",
+      "SPDXID": "SPDXRef-SourceFile-0029",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -358,7 +370,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0029",
+      "SPDXID": "SPDXRef-SourceFile-0030",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -370,7 +382,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0030",
+      "SPDXID": "SPDXRef-SourceFile-0031",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -382,7 +394,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0031",
+      "SPDXID": "SPDXRef-SourceFile-0032",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -394,7 +406,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0032",
+      "SPDXID": "SPDXRef-SourceFile-0033",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -406,7 +418,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0033",
+      "SPDXID": "SPDXRef-SourceFile-0034",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -418,7 +430,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0034",
+      "SPDXID": "SPDXRef-SourceFile-0035",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -430,7 +442,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0035",
+      "SPDXID": "SPDXRef-SourceFile-0036",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -442,7 +454,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0036",
+      "SPDXID": "SPDXRef-SourceFile-0037",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -454,7 +466,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0037",
+      "SPDXID": "SPDXRef-SourceFile-0038",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -466,7 +478,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0038",
+      "SPDXID": "SPDXRef-SourceFile-0039",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -478,7 +490,7 @@
       "licenseConcluded": "NOASSERTION"
     },
     {
-      "SPDXID": "SPDXRef-SourceFile-0039",
+      "SPDXID": "SPDXRef-SourceFile-0040",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -501,7 +513,7 @@
       "licenseDeclared": "Apache-2.0 OR MIT",
       "name": "beztrace",
       "supplier": "Organization: beztrace contributors",
-      "versionInfo": "0.1.1-dev.4"
+      "versionInfo": "0.1.1"
     }
   ],
   "relationships": [
@@ -707,6 +719,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-SourceFile-0039",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-beztrace-source"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-SourceFile-0040",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-Package-beztrace-source"
     }

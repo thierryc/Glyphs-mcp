@@ -126,7 +126,7 @@ struct DesktopGitWorkspace: View {
                     }
                     Spacer()
                     Button(action: model.refreshComparison) { Image(systemName: "arrow.clockwise") }
-                        .buttonStyle(.borderless).help(model.historicalComparison == nil ? "Refresh working changes" : "Refresh this checkpoint comparison")
+                        .buttonStyle(.borderless).help(LocalizedStringKey(model.historicalComparison == nil ? "Refresh working changes" : "Refresh this checkpoint comparison"))
                         .accessibilityLabel("Refresh comparison").disabled(model.inspecting || model.loadingCheckpoint)
                 }.padding(12)
                 Divider()
@@ -142,7 +142,7 @@ struct DesktopGitWorkspace: View {
                     Text(model.checkpointPageError).font(.caption).foregroundStyle(.red).padding(8)
                 }
                 if model.checkpointNextOffset != nil {
-                    Button(model.checkpointPageError.isEmpty ? "Load more files…" : "Retry loading files") { model.moreCheckpointChanges() }
+                    Button(LocalizedStringKey(model.checkpointPageError.isEmpty ? "Load more files…" : "Retry loading files")) { model.moreCheckpointChanges() }
                         .disabled(model.loadingCheckpointPage).padding(8)
                 }
                 if model.loadingCheckpointPage { ProgressView().controlSize(.small).padding(8) }
@@ -292,6 +292,7 @@ struct DesktopGitWorkspace: View {
                     glyphModePicker
                     Spacer(minLength: 12)
                     glyphControls(document)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     glyphModePicker
@@ -300,10 +301,16 @@ struct DesktopGitWorkspace: View {
                 }
             }
         } else {
-            HStack(spacing: 12) {
-                glyphModePicker
-                Spacer(minLength: 12)
-                textControls
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    glyphModePicker
+                    Spacer(minLength: 12)
+                    textControls
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    glyphModePicker
+                    textControls
+                }
             }
         }
     }
@@ -419,27 +426,49 @@ struct DesktopGitWorkspace: View {
     }
 
     private func glyphControls(_ document: GlyphDiffDocument) -> some View {
-        let pair = selectedPair(document)
-        let regions = pair?.difference?.regions ?? []
-        return HStack(spacing: 8) {
-            Picker("Layer", selection: Binding(get: {
-                selectedLayerID ?? document.initialLayerID ?? ""
-            }, set: {
-                selectedLayerID = $0
-                selectedDifferenceIndex = nil
-                zoom = viewportStore.state(for: viewportKey(layerID: $0))?.magnification ?? 1
-                viewportRequest = .init(id: viewportRequest.id + 1, target: .restore)
-            })) {
-                ForEach(document.layers) { pair in
-                    Text(pair.label + (pair.changed ? "" : " · unchanged")).tag(pair.id)
-                }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                glyphLayerPicker(document)
+                glyphOverlayControls
+                glyphNavigationControls(document)
             }
-            .frame(minWidth: 140, idealWidth: 175, maxWidth: 190)
-            .layoutPriority(1)
+            VStack(alignment: .leading, spacing: 8) {
+                glyphLayerPicker(document)
+                glyphOverlayControls
+                glyphNavigationControls(document)
+            }
+        }
+    }
+
+    private func glyphLayerPicker(_ document: GlyphDiffDocument) -> some View {
+        Picker("Layer", selection: Binding(get: {
+            selectedLayerID ?? document.initialLayerID ?? ""
+        }, set: {
+            selectedLayerID = $0
+            selectedDifferenceIndex = nil
+            zoom = viewportStore.state(for: viewportKey(layerID: $0))?.magnification ?? 1
+            viewportRequest = .init(id: viewportRequest.id + 1, target: .restore)
+        })) {
+            ForEach(document.layers) { pair in
+                Text(pair.label + (pair.changed ? "" : " · unchanged")).tag(pair.id)
+            }
+        }
+        .frame(minWidth: 140, idealWidth: 175, maxWidth: 190)
+        .layoutPriority(1)
+    }
+
+    private var glyphOverlayControls: some View {
+        HStack(spacing: 8) {
             Picker("Overlay", selection: $overlay) {
                 ForEach(GlyphOverlayMode.allCases) { Text($0.rawValue).tag($0) }
             }.pickerStyle(.segmented).labelsHidden().frame(width: 170)
             Toggle("Guides", isOn: $guides).toggleStyle(.checkbox).fixedSize()
+        }
+    }
+
+    private func glyphNavigationControls(_ document: GlyphDiffDocument) -> some View {
+        let regions = selectedPair(document)?.difference?.regions ?? []
+        return HStack(spacing: 8) {
             Button { zoom = GlyphViewportMath.stepped(zoom, direction: -1) } label: { Image(systemName: "minus") }
                 .buttonStyle(.borderless).accessibilityLabel("Zoom out").help("Zoom Out (⌘−)")
             Text("\(Int((zoom * 100).rounded()))%")
@@ -476,7 +505,7 @@ struct DesktopGitWorkspace: View {
                     Divider()
                 }
                 HStack {
-                    Text(pair.changed ? "Changed layer" : "No visual geometry difference; see Text").foregroundStyle(.secondary)
+                    Text(LocalizedStringKey(pair.changed ? "Changed layer" : "No visual geometry difference; see Text")).foregroundStyle(.secondary)
                     Spacer()
                     legendSwatch(color: GlyphComparisonPalette.reference(colorScheme), label: "Reference")
                     legendSwatch(color: GlyphComparisonPalette.current(colorScheme), label: "Current")

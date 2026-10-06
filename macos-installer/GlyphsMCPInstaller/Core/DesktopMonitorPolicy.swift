@@ -12,6 +12,13 @@ public struct DesktopMonitorPolicy {
 }
 
 public enum DesktopLaunchPolicy {
+    public static let welcomeCompletedKey = "desktopWelcomeCompleted.v1"
+    public static func showsWelcome(loginLaunch: Bool, defaults: UserDefaults) -> Bool {
+        !loginLaunch && !defaults.bool(forKey: welcomeCompletedKey)
+    }
+    public static func completeWelcome(defaults: UserDefaults) {
+        defaults.set(true, forKey: welcomeCompletedKey)
+    }
     public static func showsDashboard(loginLaunch: Bool) -> Bool { !loginLaunch }
     public static func showsMenuBar(defaults: UserDefaults) -> Bool {
         defaults.object(forKey: DesktopIdentity.showMenuBarKey) as? Bool ?? true

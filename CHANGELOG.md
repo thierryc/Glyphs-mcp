@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.0.0 — unpublished release candidate, build 55
+
+- Prepare stable-channel source identity with a build above every preceding Beta
+  candidate. Signing, exact distribution, minimum-OS and upgrade gates remain open.
+- Retain the thirteen-tool/eleven-skill interface and scoped Beta native fixes.
+- Guide official Plugin Manager Python setup, check readiness without writing
+  bytecode into the Glyphs app, and add first-launch Welcome with menu replay.
+- Preserve connector configuration ownership and wrap narrow comparison controls.
+- Bundle stable Beztrace 0.1.1; link separately to its independently signed and
+  notarized Glyphs companion 0.1.0/build 15. Install All excludes that plugin.
+- Preserve published Beta downloads/feed and v1 documentation while preparing
+  truthful candidate copy. No stable MCP release is published by this change.
+
+## 2.0.0 Beta 12 — in preparation, 2026-09-30, build 54
+
+- Prepare release identity `2.0.0-beta.12` and installer build 54.
+- Align current release guidance and metadata checks with Beta 12; runtime
+  behavior is unchanged by this preparation.
+- Preserve published Beta 11 assets, its signed appcast and qualification records.
+- Fix exact group-first kerning Undo routing to the active matching glyph's
+  history, with the prepared group representative as fallback. Sonoma 14.6.1
+  Edit-menu Undo/Redo retests pass for fractional group/group set, group/glyph
+  zero and group/group removal; wider native release qualification is pending.
+
 ## 2.0.0 Beta 11 — 2026-09-30, build 53
 
 - Begin the next beta with release identity `2.0.0-beta.11` and installer build 53.

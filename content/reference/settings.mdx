@@ -11,16 +11,22 @@ Use **Edit → Glyphs MCP Server…** for application-wide server controls, even
 | Copy URL | Copies the current MCP endpoint, including the `/mcp/` path. |
 | Automatic start | Starts the external server at the next login. |
 | Open Logs | Opens diagnostic information. |
-| Heart button | Opens or focuses the shared Welcome & Support placeholder. |
+| Heart button | Opens or focuses Glyphs' nonmodal Welcome/support links panel. |
 
 The bridge uses a separate local connection on port 9681. This internal port is hidden from the Glyphs interface; the palette shows **Ready**. The visible MCP server port and URL are the ones to use in your agent. Product versions and interface/protocol revisions have different meanings. The coordinated sidecar and bridge product version is `2.0.0`; the bridge protocol remains `1`. Verify current release labels and fingerprints through `get_status`; see [version and identity](version-identity.mdx).
 
 Server preferences are application-wide. Comparison references are stored per saved font path. A native checkmark and filename/revision identify the current reference in **Edit → Comparison Reference**; the complete values are in its tooltip.
 
-The welcome window appears automatically once after a successful first display. Closing it does not disable the heart button. It is nonmodal and shared across documents, and can be opened without a font.
+Glyphs' Welcome/support panel appears automatically once after a successful first display. Closing it does not disable the heart button. It is nonmodal and shared across documents, and can be opened without a font.
 
 Upgrades preserve ports, startup choices, authentication and welcome preferences. Component and connector installation, updates and removals are managed on Setup. Use the discreet Setup log button for paths, per-card failures and redacted diagnostics.
 
 Legacy v1 environment-variable controls are documented in the [v1 settings guide](/docs/reference/settings). They are not the v2 configuration contract.
 
-Desktop Settings also controls menu-bar visibility, optional desktop launch at login and optional automatic update checks. Desktop login startup is independent of the sidecar service. See [desktop behavior](../getting-started/desktop.mdx).
+The local v2 desktop introduction has its own first-launch completion
+preference. Replay its six slides through **File → Welcome & Support** or the
+sidebar; Skip/Start setup opens Setup. Completed relaunches and quiet login
+startup do not automatically reopen it.
+
+Desktop Settings also controls menu-bar visibility, optional desktop launch at
+login and automatic update checks, which are enabled by default and can be disabled. Desktop login startup is independent of the sidecar service. See [desktop behavior](../getting-started/desktop.mdx).

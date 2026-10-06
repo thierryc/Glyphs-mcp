@@ -1,6 +1,8 @@
 """Local evaluation install preserves unrelated plugins and replacement backups."""
 import json
 import plistlib
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from contextlib import nullcontext
@@ -12,6 +14,19 @@ REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO/'scripts'))
 from build_simple_v2 import build
 from install_simple_v2 import install, service_controller as load_service_controller
+
+
+def test_packaged_installer_imports_sibling_helpers_in_isolated_mode(tmp_path):
+    packaged = tmp_path / 'Payload' / 'Installer'
+    packaged.mkdir(parents=True)
+    for name in ('install_simple_v2.py', 'build_simple_v2.py', 'installation_transaction.py'):
+        shutil.copy2(REPO / 'scripts' / name, packaged / name)
+    result = subprocess.run(
+        [sys.executable, '-I', '-B', str(packaged / 'install_simple_v2.py'), '--help'],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert '--preflight-only' in result.stdout
 
 
 @pytest.fixture(autouse=True)
@@ -256,3 +271,57 @@ def test_interrupted_upgrade_recovers_receipt_before_choosing_components(tmp_pat
     receipt.rename(transaction.backup/receipt.name); Path(transaction.data['entries'][0]['stage']).rename(receipt)
     result=install(output,home,None,app,mcp=False)
     assert result['components'] == ['curve-inspector']
+
+
+def test_native_python_preflight_keeps_application_imports_read_only(tmp_path, monkeypatch):
+    import install_simple_v2 as installer
+    output = tmp_path / 'payload'
+    cli = output / 'runtime/bin/glyphs'
+    cli.parent.mkdir(parents=True)
+    (output / 'manifest.json').write_text(json.dumps({'runtimes': {
+        installer.platform.machine(): {'path': 'runtime', 'glyphsCLI': 'bin/glyphs'}
+    }}))
+    app = tmp_path / 'Glyphs 4.app'
+    scripts = app / 'Contents/Scripts'
+    scripts.mkdir(parents=True)
+    (scripts / 'native_probe.py').write_text('ready = True\n')
+    cli.write_text(f'#!{sys.executable}\n' + '''import os, sys
+from pathlib import Path
+assert os.environ['PYTHONDONTWRITEBYTECODE'] == '1'
+assert os.environ['PYTHONNOUSERSITE'] == '1'
+assert os.environ['GLYPHS_PREFLIGHT_TEST_INHERITED'] == 'preserved'
+app = Path(sys.argv[sys.argv.index('--app') + 1])
+sys.path.insert(0, str(app / 'Contents/Scripts'))
+import native_probe
+assert native_probe.ready
+print('GLYPHS_MCP_NATIVE_READY:3.14.6')
+''')
+    cli.chmod(0o755)
+    monkeypatch.setenv('PYTHONDONTWRITEBYTECODE', '0')
+    monkeypatch.setenv('PYTHONNOUSERSITE', '0')
+    monkeypatch.setenv('GLYPHS_PREFLIGHT_TEST_INHERITED', 'preserved')
+    assert installer.preflight(output, app) == '3.14.6'
+    assert not list(app.rglob('__pycache__'))
+
+
+def test_native_python_preflight_reports_glyphs_version_and_rejects_missing_configuration(tmp_path, monkeypatch):
+    import install_simple_v2 as installer
+    output = tmp_path / 'payload'
+    output.mkdir()
+    (output / 'manifest.json').write_text(json.dumps({'runtimes': {
+        installer.platform.machine(): {'path': 'runtime', 'glyphsCLI': 'bin/glyphs'}
+    }}))
+    app = tmp_path / 'Glyphs 4.app'
+    calls = []
+    def ready(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=0, stdout='GLYPHS_MCP_NATIVE_READY:3.14.6\n', stderr='')
+    monkeypatch.setattr(installer.subprocess, 'run', ready)
+    assert installer.preflight(output, app) == '3.14.6'
+    assert calls[0][calls[0].index('--app') + 1] == str(app)
+    monkeypatch.setattr(installer.subprocess, 'run', lambda *a, **k:
+        SimpleNamespace(returncode=1, stdout='', stderr='No Python framework path configured.'))
+    with pytest.raises(ValueError, match='Plugin Manager → Modules') as failure:
+        installer.preflight(output, app)
+    assert 'No Python framework path configured' in str(failure.value)
+    assert not (tmp_path / 'home').exists()

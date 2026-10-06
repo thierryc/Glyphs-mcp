@@ -2,7 +2,16 @@
 title: Connect an AI application
 ---
 
-The installer can optionally connect detected AI applications. The native components and the AI connection are separate choices: install the components first, then connect a client to the server.
+Install the Glyphs components after completing the [Glyphs/Python prerequisites](installation.mdx#install-glyphs-and-python-first), then configure your AI client from **Setup**. Individual connection cards and **Install All** support all four clients below, including configuration when the client is not detected. Install the client itself separately; configuring a connection does not install that application.
+
+| Client | Setup connection | After configuration |
+| --- | --- | --- |
+| Codex | Local HTTP MCP connection and eleven managed skills | Reload the configured Codex host and check the Glyphs MCP tools. |
+| Claude Code | Local HTTP MCP connection and eleven managed skills | Start a new/reloaded client session so it reads the updated configuration. |
+| Claude Desktop | Local stdio proxy to the HTTP server | Quit and reopen Claude Desktop to load the local connection. |
+| Cursor | Installer-owned local plugin with connection metadata and skills | Reload/enable the local Glyphs MCP plugin and refresh its tools. |
+
+Configuration backs up existing settings and preserves unrelated entries. Modified or unowned Cursor plugin content is reported as a conflict; use the card's guidance rather than deleting it blindly. After a failure, retry the affected card. A configured card does not establish a live server or ready Glyphs bridge.
 
 ## HTTP connection
 
@@ -12,7 +21,7 @@ The installer can optionally connect detected AI applications. The native compon
 4. Refresh the client's tools and call `get_status`, then `list_documents`.
 
 A current v2 connection exposes these thirteen tools: `get_status`,
-`list_documents`, `read_entities`, `start_job`, `get_job`, `apply_job`,
+`list_documents`, `create_document`, `read_entities`, `start_job`, `get_job`, `apply_job`,
 `accept_job`, `discard_job`, `save_document`, `start_edit_workflow`,
 `get_edit_workflow`, and `respond_edit_workflow`. If you see the older v1
 catalog, check which server and port the client is using.
@@ -26,11 +35,17 @@ The matching 2.0.0 agent package adds workflow skills and connection metadata. I
 The conversation tools return one standard MCP App plus text and structured
 results. Claude Desktop can use its existing local stdio connection; its proxy
 forwards resources and UI metadata. Cursor documents standard MCP Apps support.
-Codex must be checked against its actual host build; ChatGPT support alone is
-not evidence. CLI clients and hosts without interactive support use the same
+Codex must be checked against its actual host build; installing ChatGPT alone
+does not configure this local connection or prove card support. CLI clients and hosts without interactive support use the same
 actions in text. Optional native choice controls can present these choices;
 separate client-specific cards are not required. See
 [conversation edits](../tutorial/conversation-edits.mdx). Installed-version qualification is recorded separately from documented support.
+
+The scoped Sonoma VM qualification used Claude Desktop. Cursor was excluded from
+that VM run at the maintainer's request; configuration/source checks and local
+Mac evidence do not qualify every client version. Use actual host capability
+negotiation and a small [first session](../tutorial/first-session.mdx) to verify
+your connection, with text replies if the interactive card is unavailable.
 
 ## After a change
 
