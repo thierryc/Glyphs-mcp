@@ -1,9 +1,14 @@
 # Glyphs MCP 2.0.0 Beta 12 — release and launch plan
 
+> Historical beta record. Current stable 2.0.0/build 55 qualification and known
+> limits are summarized in [the v2 release notes](V2-RELEASE.md). Statements
+> below describe their original beta checkpoints.
+
+
 > Historical Beta guidance: the local checkout now prepares unpublished
 > 2.0.0/build 55. Beta 12/build 54 evidence remains preserved; the public
 > download and signed Beta feed still target Beta 11/build 53. See the
-> [current release checklist](V2-RELEASE-CHECKLIST.md).
+> [current release checklist](V2-RELEASE.md).
 
 ## Decision
 
@@ -92,7 +97,7 @@ The public promise is a beta to try and help improve. Avoid “2.0 is released,�
    release. Publish the communication below only after the beta download works.
 
 Beta 12 uses `--beta 12 --installer-build 54`. Local unsigned builds and scoped
-native checks are recorded in [the current v2 checklist](V2-RELEASE-CHECKLIST.md).
+native checks are recorded in [the current v2 checklist](V2-RELEASE.md).
 Full release qualification, signing, notarization, exact signed updates and
 publication remain pending. Physical Intel and maintainer manual checks are
 deferred explicitly; do not carry obsolete Beta 8 local Undo/card gaps forward.

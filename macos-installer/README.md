@@ -1,5 +1,10 @@
 # Permanent desktop application
 
+> Current stable 2.0.0/build 55 signing and bounded native acceptance are complete.
+> See [release qualification](../V2-RELEASE.md) for actual results and outstanding
+> environment/manual limits. Candidate checkpoints below are historical.
+
+
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
 Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare

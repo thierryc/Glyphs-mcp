@@ -1,0 +1,50 @@
+---
+title: Release qualification and known limits
+---
+
+## Exact release
+
+Glyphs MCP **2.0.0/build 55** uses thirteen tools, eleven managed skills, lean
+interface revision 1 and bridge protocol 1. The universal app, payload and DMG
+are Developer ID-signed, Apple-notarized and stapled. The released archives are
+the unchanged package qualified before promotion; public downloads and the
+production feed are checked separately during launch.
+
+## Accepted evidence
+
+The release source passed **2,573 Python tests and 233 desktop tests**, package,
+skill, documentation, deterministic payload and private-runtime checks.
+Both runtime architectures passed startup; x86_64 used Rosetta.
+
+Native signed build 55 testing on **macOS 14.6.1/23G93 arm64**, **Glyphs 4.1.1/build
+4108 trial** and official **Glyphs Python 3.14.6** passed fresh MCP install,
+Welcome/Setup Ready, loaded identities, width apply/discard/save, real signed
+Beta 11/build 53 → stable55 desktop replacement and invalid-feed/archive/interrupted-
+download rejection. Component54 → 55 migration, failed migration/automatic rollback,
+retry, reboot/loaded checks and signed v1.11.0 migration also passed.
+
+Actual Claude Desktop 2.19675.0 read calls passed against signed build 55. Earlier
+conversation and native workflow evidence retains its original build scope;
+configuration checks alone do not establish every client's live behavior.
+
+## Limits
+
+- Packaging declares **macOS 14.0+**. Exact 14.0 and current-macOS native acceptance
+  remain unverified; 14.6.1 execution does not prove those environments.
+- Physical Intel execution is deferred. Universal binaries and Rosetta startup
+  do not establish an Intel hardware result.
+- Codex and Claude Code live smoke remains unperformed; Cursor VM testing was
+  waived based on the maintainer's reported host success.
+- Full VoiceOver, visual Reduce Motion timing, linguistic review and a new-user
+  documentation walkthrough remain unverified. Technical localization checks
+  and bounded native layouts are separate evidence.
+- Glyphs 3 preservation used a labelled fixture; live Glyphs 3 coexistence remains
+  unverified. Keep its separate [v1 distribution](/docs/).
+- Beztrace 0.1.1 engine and the independently signed/notarized Glyphs plugin
+  0.1.0/build 15 have separate installation and qualification. Install All does
+  not install that plugin.
+
+Keep does not save. Typed recovery checks for conflicting edits. Whole-font
+Restore replaces later unsaved edits; save persists the whole current font.
+Begin with disposable work and inspect results before using the release on
+production fonts.

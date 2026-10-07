@@ -2,23 +2,21 @@
 title: Packaging and release discovery
 ---
 
-This checkout prepares unpublished Glyphs MCP **2.0.0**, desktop build **55**, with a stable-channel source identity. Earlier Beta 12 local builds have scoped native qualification; final signing, exact distribution and supported-minimum acceptance remain pending. Beta 11 remains the published prerelease with its signed feed and historical qualification. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. The payload includes **eleven managed skills**, thirteen tools and up to thirteen capability-gated job kinds. See [version and identity](../reference/version-identity.mdx). The candidate includes the Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin and private runtimes, plus the desktop's universal stable Beztrace 0.1.1 engine. Glyphs 3 remains on its separate pinned v1.11.0 release. The exact signed-update/component-migration acceptance trial remains open and is disclosed in the qualification report.
+Glyphs MCP **2.0.0**, desktop build **55**, uses the stable channel. Its universal app, payload and DMG are Developer ID-signed and Apple-notarized. Signed fresh-install, beta-to-stable desktop update, component migration/recovery and v1 migration checks passed on macOS 14.6.1 Apple silicon with Glyphs 4.1.1/build 4108. Exact macOS 14.0/current-macOS native acceptance and physical Intel execution remain unverified.
 
-Build, sign, notarize and verify on the maintainer's Mac. No GitHub Actions are required or used for release publishing. The full maintained procedure is in `macos-installer/RELEASING.md` in the candidate repository.
+The payload includes **eleven managed skills**, thirteen tools, up to thirteen capability-gated job kinds, the Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin, private runtimes and stable Beztrace 0.1.1 engine. The independent Beztrace Glyphs plugin has its own installation. Glyphs 3 remains on its separate pinned v1.11.0 release. See [qualification](../reference/release-qualification.mdx) and [version identity](../reference/version-identity.mdx).
 
-The installer manifest and receipt describe the runtime, bridge and companions independently, with dependencies and verified identities. Signing changes file identities; regenerate and verify manifests after signing and stapling, before packaging the final installer. Unsigned/local checks alone do not establish Developer ID, notarization or signed-update acceptance; record those results for the exact final artifacts.
+Build, sign and notarize locally on the maintainer’s Mac. GitHub Actions deploys documentation, not release artifacts. The source tag records the exact build inputs; reuse sealed artifacts and accepted receipts when those inputs are unchanged.
 
-Beta 6 passed signing, notarization, Gatekeeper, signed-update rejection and
-recovery, and component migration checks. See the exact evidence in
-[BETA6-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA6-VALIDATION.md).
+The installer manifest and receipt describe the runtime, bridge and companions independently, with dependencies and verified identities. Signing changes file identities; regenerate and verify manifests after signing and stapling, before packaging the final installer. Unsigned/local checks alone do not establish Developer ID, notarization or signed-update acceptance. Record those results for the exact final artifacts.
 
-## Planned stable deliverables — not yet published
+## Stable deliverables
 
 - `Glyphs-MCP-2.0.0.dmg`: signed and notarized installer.
 - `Glyphs-MCP-2.0.0.zip`: Sparkle-signed desktop application archive.
-- `Glyphs-MCP-latest.dmg`: byte-identical alias of the verified stable DMG. The compatibility `Glyphs MCP.zip` and `SHA256SUMS` complete the inventory.
-- `appcast.xml`: the signed stable feed, to be generated and published after public archive verification. The committed feed remains Beta 11.
-- Checksums, source manifest, installation receipt and acceptance report associated with the exact candidate.
+- `Glyphs-MCP-latest.dmg`: byte-identical alias of the verified stable DMG. The compatibility `Glyphs.MCP.zip` and `SHA256SUMS` complete the inventory.
+- `appcast.xml`: the signed stable feed, published unchanged after public archive verification.
+- Checksums cover the exact release inventory; source and acceptance receipts identify the qualified build.
 
 Keep local acceptance evidence containing private font paths out of public release assets unless reviewed for sharing. Store notarization credentials in Keychain.
 

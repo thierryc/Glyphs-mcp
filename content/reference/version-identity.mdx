@@ -79,12 +79,14 @@ read fresh data; rediscover after stale-ID rejection or a known host/bridge rest
 
 ## Source, installation and release evidence
 
-The current **2.0.0/build 55** candidate is unpublished. It uses planned tag
+The **2.0.0/build 55** release uses signed source tag
 `v2.0.0`, archive names `Glyphs-MCP-2.0.0.dmg` and `Glyphs-MCP-2.0.0.zip`, and
 stable feed `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`.
-These are future distribution coordinates, not verified public v2 downloads.
-Final signing, supported-minimum and exact signed update qualification remain
-pending. Beta 12/build 54 and its native evidence are retained separately; no
+The app, payload and DMG are signed and notarized. Signed installation,
+private beta-to-stable desktop delivery and component recovery passed on
+macOS 14.6.1 Apple silicon; exact 14.0/current-macOS native checks remain
+unverified. Public download/feed checks occur during promotion. See
+[qualification](release-qualification.mdx). Beta 12/build 54 and its native evidence are retained separately; no
 Beta tag or distributed asset is relabelled by the source identity change.
 
 A source version states what a checkout is preparing. An installation receipt
@@ -109,7 +111,7 @@ scoped native qualification. No signed public Beta 12 distribution is available.
 Its planned tag is `v2.0.0-beta.12`; planned distribution filenames are
 `Glyphs-MCP-2.0.0-beta.12.dmg` and `Glyphs-MCP-2.0.0-beta.12.zip`.
 See [BETA12-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA12-VALIDATION.md).
-The committed signed appcast remains the published Beta 11 feed.
+The Beta branch retains the published Beta 11 feed; main uses the verified stable feed.
 
 Beta 11/build 53 is published under signed tag `v2.0.0-beta.11`, with
 `Glyphs-MCP-2.0.0-beta.11.dmg` and `Glyphs-MCP-2.0.0-beta.11.zip`.

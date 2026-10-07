@@ -49,7 +49,7 @@ const config: Config = {
           // Keep existing released v1 URLs; v2 has its own explicit route.
           lastVersion: 'current',
           versions: {
-            current: {label: `v2 · ${gmcpVersion} candidate`, path: 'v2', banner: 'none'},
+            current: {label: `v2 · ${gmcpVersion}`, path: 'v2', banner: 'none'},
             '1.11.0': {label: 'v1 · 1.11.0', path: '', banner: 'none'}
           }
         },

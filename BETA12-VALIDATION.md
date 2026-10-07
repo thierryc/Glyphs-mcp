@@ -1,9 +1,14 @@
 # Beta 12 preparation — build 54
 
+> Historical beta record. Current stable 2.0.0/build 55 qualification and known
+> limits are summarized in [the v2 release notes](V2-RELEASE.md). Statements
+> below describe their original beta checkpoints.
+
+
 > Historical Beta guidance: the local checkout now prepares unpublished
 > 2.0.0/build 55. Beta 12/build 54 evidence remains preserved; the public
 > download and signed Beta feed still target Beta 11/build 53. See the
-> [current release checklist](V2-RELEASE-CHECKLIST.md).
+> [current release checklist](V2-RELEASE.md).
 
 Date: 2026-09-30. Branch: `lit/v2-beta`.
 Product: `2.0.0`; release: `2.0.0-beta.12`.
@@ -12,7 +17,7 @@ Product: `2.0.0`; release: `2.0.0-beta.12`.
 below record the original 30 September metadata-only preparation. Subsequent
 authorized fixes produced unsigned Debug builds, VM installations and scoped
 native qualification. They do not qualify a signed public Beta 12 distribution.
-See [current milestone evidence](V2-RELEASE-CHECKLIST.md) and the follow-up below.
+See [current milestone evidence](V2-RELEASE.md) and the follow-up below.
 
 ## Scope
 
@@ -62,14 +67,14 @@ v1.11.1. No commit, tag, push, installation or runtime restart is part of this s
 ## Authorized local follow-ups — 1–4 October
 
 Local Beta 12 fixes and qualified candidate builds are recorded independently
-in [the v2 checklist](V2-RELEASE-CHECKLIST.md): group-pair Undo routing, guided
+in [the v2 checklist](V2-RELEASE.md): group-pair Undo routing, guided
 official Python setup, setup/recovery, Claude card layouts, scripts/saving,
 desktop Welcome, localization, keyboard navigation and quiet login. M2 is
 complete for the recorded local candidate scope; no full signed release suite
 or final distribution acceptance is inferred from these focused results.
 
 Full VoiceOver, visual Reduce Motion and other human checks are
-[deferred to the maintainer](V2-MANUAL-TESTS-TODO.md); Intel is also deferred.
+[deferred to the maintainer](V2-RELEASE.md); Intel is also deferred.
 Minimum macOS 14.0, stable Beztrace distribution/integration, exact signed
 upgrades and final artifact/site acceptance remain separate pending gates.
 Published Beta 11 assets and signed feed bytes remain unchanged.
@@ -81,6 +86,6 @@ dev.4 in the local source. Original public metadata/SBOMs/licenses and exact
 archive provenance are retained; the old distribution is preserved in staging.
 Signing/verifier logic and current setup guidance follow the stable engine
 while leaving the independent build-12 plugin native-unqualified.
-See [current integration evidence](reports/v2-release-readiness/beztrace-stable-011/report.md).
+See [current integration evidence](V2-RELEASE.md).
 The earlier missing-release finding is resolved for the engine. Native tracing,
 independent companion acceptance and final signed MCP qualification remain open.

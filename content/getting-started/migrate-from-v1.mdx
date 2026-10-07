@@ -2,11 +2,11 @@
 title: Moving from v1 to v2
 ---
 
-Choose documentation by the **actual MCP interface and product release**. This source targets the unpublished **2.0.0** candidate, desktop build **55**. Earlier local Beta builds have scoped qualification; final stable acceptance is pending; the published signed prerelease remains Beta 11/build 53. The sidecar and bridge product versions are both `2.0.0`; the lean interface revision and bridge protocol are independently `1`. See [version and identity](../reference/version-identity.mdx).
+Choose documentation by the **actual MCP interface and product release**. This guide targets **2.0.0**, desktop build **55**. Signed v1.11.0 → v2 migration passed in the macOS 14.6.1 Apple silicon/Glyphs 4.1.1/build 4108 test environment; live Glyphs 3 coexistence remains unverified. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are independently `1`. See [version and identity](../reference/version-identity.mdx) and [qualification](../reference/release-qualification.mdx).
 
 | Area | v1 · 1.11.0 | v2 · 2.0.0 |
 | --- | --- | --- |
-| Distribution | Released compatibility payload; retained for Glyphs 3. | Published signed Beta 11 for Glyphs 4; current 2.0.0 candidate source/local builds are unpublished. Stable Latest remains separate. |
+| Distribution | Released compatibility payload; retained for Glyphs 3. | Signed and notarized 2.0.0/build 55 for Glyphs 4. |
 | Server | MCP runs in the legacy Glyphs plugin. | MCP runs externally; a small native bridge handles live access. |
 | Tools | The [v1 command catalog](/docs/reference/command-set). | Exactly thirteen tools and up to thirteen capability-gated job kinds. |
 | Installation | Legacy dependency setup. | One Setup page with inline cards, a serialized queue and a private sidecar runtime. |
@@ -17,7 +17,7 @@ Choose documentation by the **actual MCP interface and product release**. This s
 ## Upgrade steps
 
 1. Finish current work and save accepted edits. Quit Glyphs normally.
-2. Install the candidate for Glyphs 4 from Setup. Existing components and preferences are preserved; component and connector removal is explicit.
+2. Install v2 for Glyphs 4 from Setup. Existing components and preferences are preserved; component and connector removal is explicit.
 3. Reopen Glyphs and check **Edit → Glyphs MCP Server…**.
 4. Refresh the client's connection and use the matching v2 skills. Confirm the thirteen tools with the [tool reference](../reference/command-set.mdx).
 5. Try the [first session](../tutorial/first-session.mdx) on a disposable font.

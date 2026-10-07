@@ -1,9 +1,14 @@
 # Glyphs MCP 2.0.0 Beta
 
+> Historical beta record. Current stable 2.0.0/build 55 qualification and known
+> limits are summarized in [the v2 release notes](V2-RELEASE.md). Statements
+> below describe their original beta checkpoints.
+
+
 > Historical Beta guidance: the local checkout now prepares unpublished
 > 2.0.0/build 55. Beta 12/build 54 evidence remains preserved; the public
 > download and signed Beta feed still target Beta 11/build 53. See the
-> [current release checklist](V2-RELEASE-CHECKLIST.md).
+> [current release checklist](V2-RELEASE.md).
 
 **Beta 12/build 54 (`2.0.0-beta.12`) is an unpublished local candidate.**
 Unsigned builds and scoped native qualification exist; no signed public Beta 12
@@ -14,7 +19,7 @@ Stable Latest remains v1.11.1. See [Beta 12 preparation](BETA12-VALIDATION.md).
 Beta 12 began as metadata preparation. Authorized follow-ups add group-pair
 native Undo routing, guided official Python setup, a six-slide desktop Welcome,
 and installer/localization fixes. Local qualification and remaining release
-gates are recorded in [the v2 checklist](V2-RELEASE-CHECKLIST.md).
+gates are recorded in [the v2 checklist](V2-RELEASE.md).
 It retains Beta 10's new-font creation with `create_document`, duplicate-safe retries
 and native master/instance IDs. Save separately using `save_document` as
 `.glyphs` or `.glyphspackage`. It ships thirteen public tools and eleven managed
@@ -144,12 +149,12 @@ Glyphs' heart button separately opens the native Welcome/support links panel.
 The local Beta 12 bridge passes the wider group-pair native Undo/Redo matrix;
 the companion passes scoped setup/recovery, Claude card visuals, scripts/saving,
 localized layouts, keyboard navigation and quiet login checks in Sonoma 14.6.1.
-See [the candidate-specific checklist](V2-RELEASE-CHECKLIST.md) for evidence and
+See [the candidate-specific checklist](V2-RELEASE.md) for evidence and
 boundaries. These are not signed final-artifact results or retroactive Beta 11 fixes.
 
 Exact signed update/component migration, macOS 14.0, final distribution and
 stable Beztrace integration remain pending. Full VoiceOver, visual Reduce Motion
-and other human checks are [deferred to the maintainer](V2-MANUAL-TESTS-TODO.md).
+and other human checks are [deferred to the maintainer](V2-RELEASE.md).
 Physical Intel remains deferred. Only Claude live calls were in the VM scope;
 configuration fixtures do not prove every client's live behavior.
 
@@ -192,5 +197,5 @@ without the MCP server. Select the compatible stable engine explicitly with
 **⋯ → Choose Engine…**; a source-linked plugin may otherwise prefer its preserved
 development engine. The separate
 [stable 0.1.1 engine release](https://github.com/thierryc/beztrace/releases/tag/v0.1.1)
-remains unchanged. See [qualified-input verification](reports/v2-release-readiness/m33-qualified-build15-20261005/report.md)
+remains unchanged. See [qualified-input verification](V2-RELEASE.md)
 for exact package, signing, native and lifecycle evidence.

@@ -8,7 +8,7 @@ small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes the **unpublished 2.0.0 source candidate**, desktop build **55**, with coordinated sidecar and bridge product version **2.0.0**. Beta 12's local unsigned builds have scoped native qualification; final stable signing and exact distribution acceptance remain pending. Beta 11 remains the published signed and notarized prerelease. See [version and identity](reference/version-identity.mdx) for the source, installed and release distinctions. For the released 1.11.0 workflow, use the [v1 guide](/docs/). The version selector keeps each guide's commands and setup separate.
+This guide describes **2.0.0**, desktop build **55**, with coordinated sidecar and bridge product version **2.0.0**. The release is signed and notarized; native installation, reversible first edits, signed updates and migration recovery passed on macOS 14.6.1 Apple silicon with Glyphs 4.1.1/build 4108. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/) and separate v1.11.0 download.
 
 ## Start here
 

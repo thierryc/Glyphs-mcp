@@ -1,11 +1,16 @@
 # Local releases of Glyphs MCP
 
+> Current stable 2.0.0/build 55 signing and bounded native acceptance are complete.
+> See [release qualification](../V2-RELEASE.md) for actual results and outstanding
+> environment/manual limits. Candidate checkpoints below are historical.
+
+
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
 The current unpublished candidate is Glyphs MCP Desktop 2.0.0 / build 55,
 with coordinated sidecar/bridge product version `2.0.0`, interface revision `1`
-and bridge protocol `1`. Follow the [v2 launch procedure](../reports/v2-release-readiness/m5-launch-procedure.md)
+and bridge protocol `1`. Follow the [v2 launch procedure](../V2-RELEASE.md)
 for stable source history, tag, feed and download ordering. The
 [beta release plan](../BETA-LAUNCH.md) retains historical prerelease guidance.
 The local source identity selects the stable channel; final signing,
@@ -103,7 +108,7 @@ The 2.0.0/build 55 candidate selects `https://raw.githubusercontent.com/thierryc
 
 Both beta and stable publishers now prepare the versioned Sparkle ZIP and signed appcast. Uploads and SHA256SUMS use the shared `release_asset_inventory.py` inventory. Stable retains its versioned/latest DMGs and compatibility app ZIP. `prepare_desktop_update.py --verify --app "dist/installer-app/Glyphs MCP.app" --output dist/desktop-update` checks channel/build/enclosure identity, candidate hashes, both signatures and the archive’s app contents before upload. Exact signed upgrade acceptance remains a separate gate.
 
-Publication is a separate approved step. Publish verified archives first, then the exact signed appcast. Never edit signed feed bytes. GitHub Actions do not publish release artifacts; the separate Pages workflow deploys documentation on every push to `main`. Follow the [v2 launch sequence](../reports/v2-release-readiness/m5-launch-procedure.md) so website release claims follow verified public downloads. Keep v1 documentation and download guidance intact; the legacy installer updater is not the desktop updater.
+Publication is a separate approved step. Publish verified archives first, then the exact signed appcast. Never edit signed feed bytes. GitHub Actions do not publish release artifacts; the separate Pages workflow deploys documentation on every push to `main`. Follow the [v2 launch sequence](../V2-RELEASE.md) so website release claims follow verified public downloads. Keep v1 documentation and download guidance intact; the legacy installer updater is not the desktop updater.
 
 Application replacement and component migration are separate recoverable stages. A new manager must remain usable with previous components if migration fails. Test an actual signed older-to-newer update, invalid signatures, interrupted downloads, cancelled Glyphs closure and failed component migration before release.
 

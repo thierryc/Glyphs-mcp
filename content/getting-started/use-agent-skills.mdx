@@ -9,13 +9,13 @@ The package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude C
 The agent plugin is optional for using the thirteen MCP tools; a manual MCP
 connection can use the same server catalog. **Install All** nevertheless
 includes all four supported Setup connectors by default, even if a host is not
-detected. For this local candidate, use the matching local package.
+detected. Use the matching 2.0.0 package from the release source tag.
 Configuration patching creates backups, preserves unrelated entries and custom
 options, and changes only Glyphs MCP. Cursor update and removal require an
 installer-owned bundle whose version and hash still match its receipt; modified
 or unowned content becomes a visible conflict. Public marketplace commands
-resolve published state and must not be assumed to install an unpublished
-candidate.
+resolve published state; verify that the installed package version matches
+your runtime before using its workflow instructions.
 
 ## Included skills
 
