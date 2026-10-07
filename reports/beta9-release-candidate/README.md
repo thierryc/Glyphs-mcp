@@ -19,7 +19,7 @@ Beztrace is an informational card with setup guidance. Its independent plugin
 is not installed, bundled, signed or qualified by this release. No Glyphs
 restart, runtime replacement or font mutation was performed for Beta 9.
 
-The user approved publication after reviewing [the validation note](../../BETA9-VALIDATION.md).
+The user approved publication after reviewing [the validation note](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA9-VALIDATION.md).
 The exact signed-update/component-migration trial, physical Intel/minimum macOS,
 narrow-window/dark-mode review, and carried-forward Beta 8 group-pair native UI
 Undo and exact-pair card visual acceptance remain unperformed or unresolved.

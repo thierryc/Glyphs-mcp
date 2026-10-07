@@ -1,7 +1,7 @@
 # MCP Apps-first conversation workflow
 
 > Historical accepted plan. Result actions, native scripting and optional Keep
-> countdowns have since evolved. Use [Beta 8 milestones](BETA8-MILESTONES.md)
+> countdowns have since evolved. Use [V2 release notes](V2-RELEASE.md)
 > and [current conversation guidance](skills/glyphs/references/edit-workflow.md).
 
 Accepted September 22, 2026. Preserve the saved-and-clean editing rules.

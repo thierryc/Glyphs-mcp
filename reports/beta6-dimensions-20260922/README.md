@@ -1,6 +1,6 @@
 # Beta 6 Dimensions evidence
 
-Run on September 22, 2026. See [BETA6-VALIDATION.md](../../BETA6-VALIDATION.md)
+Run on September 22, 2026. See [BETA6-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA6-VALIDATION.md)
 for scope, results and remaining release gates.
 
 - `native.json`: 204 checks of the real Glyphs 4.1 (4107) palette,

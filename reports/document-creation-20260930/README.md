@@ -47,7 +47,7 @@ Later release follow-up: the desktop fixtures, tool-count assertions and stale
 release-skill metadata were corrected for publication. The complete Beta 10
 release gate passed 2,492 Python tests and 222 desktop tests. The initial results
 above are retained as historical evidence; see
-[Beta 10 qualification](../../BETA10-VALIDATION.md).
+[Beta 10 qualification](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA10-VALIDATION.md).
 
 ## Installation state
 

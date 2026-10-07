@@ -8,14 +8,13 @@
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
-The current unpublished candidate is Glyphs MCP Desktop 2.0.0 / build 55,
+The published stable release is Glyphs MCP Desktop 2.0.0 / build 55,
 with coordinated sidecar/bridge product version `2.0.0`, interface revision `1`
-and bridge protocol `1`. Follow the [v2 launch procedure](../V2-RELEASE.md)
-for stable source history, tag, feed and download ordering. The
-[beta release plan](../BETA-LAUNCH.md) retains historical prerelease guidance.
-The local source identity selects the stable channel; final signing,
-qualification and publication remain pending. Retain Beta 12/build 54 evidence
-separately, and follow the two-stage launch procedure before changing public copy.
+and bridge protocol `1`. See [V2 release qualification](../V2-RELEASE.md) for
+completed checks and outstanding limits. Preserve the signed release tag and
+artifacts; product changes require a new build and renewed qualification.
+Historical prerelease guidance remains in the
+[archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
 The Glyphs 4-only payload has thirteen tools, eleven managed skills, two optional
 companions, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Glyphs 3 remains available through its separate pinned v1.11.0 release

@@ -25,6 +25,6 @@ Download `Glyphs-MCP-2.0.0-beta.8.dmg`, drag **Glyphs MCP.app** into Application
 - Visual acceptance of the new exact-pair result card and this release's signed desktop-update/component-migration trial remain incomplete. Earlier beta acceptance does not establish these checks for Beta 8.
 - Physical Intel, minimum-macOS and the complete manual client/failure matrix remain open. A universal build does not establish every hardware/OS combination.
 
-See [Beta 8 validation](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA8-VALIDATION.md) and [the beta guide](https://github.com/thierryc/Glyphs-mcp/blob/lit/v2-beta/BETA.md). Please include the beta/build number, macOS, processor, Glyphs version, AI client and reproduction steps in issue reports.
+See [Beta 8 validation](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA8-VALIDATION.md) and [the beta guide](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA.md). Please include the beta/build number, macOS, processor, Glyphs version, AI client and reproduction steps in issue reports.
 
 This is a prerelease. Stable Latest remains v1.11.1.

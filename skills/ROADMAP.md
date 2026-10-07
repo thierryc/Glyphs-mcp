@@ -1,6 +1,6 @@
 # Private lean v2 skill policy
 
-Current scope is tracked in [Beta 8 milestones](../BETA8-MILESTONES.md); the
+Current scope is tracked in [V2 release notes](../V2-RELEASE.md); the
 [thirteen-tool contract](../content/reference/command-set.mdx) is the interface
 reference. Shared skill contracts are [conversation edits](glyphs/references/edit-workflow.md),
 [native scripts](glyphs/references/python-scripts.md) and

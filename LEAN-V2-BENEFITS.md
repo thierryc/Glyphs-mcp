@@ -2,7 +2,7 @@
 
 > Historical benefit queue and measurements from the initial lean runtime.
 > Its seven-tool boundary is superseded; retain the algorithm evidence below.
-> Use [Beta 8 milestones](BETA8-MILESTONES.md) for current delivery scope.
+> Use [V2 release notes](V2-RELEASE.md) for current delivery scope.
 
 Implement one item at a time. Native Glyphs operations remain the write
 mechanism wherever they satisfy the requirement; additional workflow code must

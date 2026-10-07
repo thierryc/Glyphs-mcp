@@ -42,17 +42,6 @@ def test_beta_12_identity_remains_separate_from_stable_candidate(tmp_path):
     assert beta['registryURL'] != stable['registryURL']
 
 
-def test_beta_5_validation_records_the_published_signed_release():
-    text = (REPO / 'BETA5-VALIDATION.md').read_text()
-    assert '`2.0.0-beta.5`' in text
-    assert 'desktop build 47' in text
-    assert 'published signed and notarized GitHub prerelease' in text
-    assert 'https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0-beta.5' in text
-    assert 'cadfadac6779eeb0e2051f1c0b8c2feba1010ef4a8f43709594729f732e4c9eb' in text
-    assert '0756645c3675de7096761c07638d93bb1bc3d447fe89af9f34007c5d93c06fca' in text
-    assert 'd7b02fe610e343d085dfe9afb542e6091e745519d5c193ef8bc3e66655dcda0d' in text
-
-
 def test_beta_identity_preserves_numeric_bundle_version_and_build():
     release = identity('2.0.0', 'beta', 1)
     assert release['version'] == '2.0.0'

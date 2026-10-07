@@ -4,7 +4,7 @@ Release `2.0.0-beta.10`, desktop build 52, on `lit/v2-beta`.
 The user authorized committing all publishable changes and publishing this beta.
 Local-only routing instructions remain excluded.
 
-See [qualification](../../BETA10-VALIDATION.md) for scope, completed native checks
+See [qualification](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA10-VALIDATION.md) for scope, completed native checks
 and unperformed acceptance checks. The complete local gate passed:
 2,492 Python tests (two skips, five warnings), 222 desktop tests, deterministic
 payloads, both private runtimes, the website build and source/package checks.

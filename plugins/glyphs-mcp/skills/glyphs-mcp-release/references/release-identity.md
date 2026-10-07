@@ -21,18 +21,17 @@ These are initialization-time file fingerprints, not in-memory code hashes.
 Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
-Use the helper's release tag and channel URLs. The current source selects
-`v2.0.0` and `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
-with planned `Glyphs-MCP-2.0.0.dmg` and `Glyphs-MCP-2.0.0.zip`. These remain
-unpublished candidate coordinates; stable signing, minimum-OS and exact upgrade
-acceptance are pending. Source identity alone does not authorize publication.
-Preserved Beta 12 uses `v2.0.0-beta.12` and
-`lit/v2-beta`, including
-`https://raw.githubusercontent.com/thierryc/Glyphs-mcp/lit/v2-beta/appcast.xml`.
-Beta DMG and ZIP names include `2.0.0-beta.12`. Do not publish a beta Latest alias;
-its GitHub release is a prerelease with `make_latest=false`. Stable release feeds
-and Latest aliases belong to their separate release process. Read
-`BETA-LAUNCH.md` and `macos-installer/RELEASING.md` before release preparation.
+Use the helper's release tag and channel URLs. The published stable release uses
+`v2.0.0`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
+and `Glyphs-MCP-2.0.0.dmg` / `Glyphs-MCP-2.0.0.zip`. See the repository's
+`V2-RELEASE.md` for completed signing and scoped native acceptance, and remaining
+minimum-OS/manual limits. Source identity alone does not authorize publication.
+The separate `lit/v2-beta/appcast.xml` also serves the signed stable update to
+existing beta installations. New beta releases must use versioned beta filenames,
+be GitHub prereleases with `make_latest=false`, and never publish a Latest alias.
+Read `macos-installer/RELEASING.md` before release preparation; historical beta
+instructions remain in the
+[archived release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
 
 Describe unsigned local checks, installation checks, signed/notarized artifact
 checks and public availability separately. A successful build or source label

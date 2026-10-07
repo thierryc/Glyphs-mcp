@@ -1,7 +1,7 @@
 # Glyphs MCP Sidecar
 
 The [current thirteen-tool contract](../../content/reference/command-set.mdx) owns
-the public interface and result semantics. Follow [Beta 8 milestones](../../BETA8-MILESTONES.md)
+the public interface and result semantics. Follow [V2 release notes](../../V2-RELEASE.md)
 for current delivery scope; the algorithm notes below describe retained behavior.
 
 This process owns MCP, saved-source copies, hashes, temporary jobs, and

@@ -2,7 +2,7 @@
 
 > Historical reset decision and implementation record. Tool counts, no-Python
 > boundaries and source-line budgets below describe earlier stages, not current
-> requirements. Use [Beta 8 milestones](BETA8-MILESTONES.md) and the
+> requirements. Use [V2 release notes](V2-RELEASE.md) and the
 > [current tool contract](content/reference/command-set.mdx).
 
 ## Decision

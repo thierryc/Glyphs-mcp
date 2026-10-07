@@ -91,10 +91,10 @@ def test_shared_artifact_hash_propagates_io_errors_and_is_used_by_both_routes(tm
 
 
 def test_current_guidance_identifies_history_and_shared_contract():
-    for name in ('ROADMAP.md', 'LEAN-V2-BENEFITS.md', 'V2-SIMPLE-RESET.md', 'V2-CONVERSATION-WORKFLOW-PLAN.md', 'MILESTONE7-WORKLOG.md'):
+    for name in ('ROADMAP.md', 'LEAN-V2-BENEFITS.md', 'V2-SIMPLE-RESET.md', 'V2-CONVERSATION-WORKFLOW-PLAN.md'):
         intro = (ROOT/name).read_text().splitlines()[:12]
         assert 'historical' in '\n'.join(intro).lower(), name
-        assert 'BETA8-MILESTONES.md' in '\n'.join(intro), name
+        assert 'V2-RELEASE.md' in '\n'.join(intro), name
     for name in ('README.md', 'CODEX.md', 'src/bridge/README.md', 'src/sidecar/README.md', 'skills/ROADMAP.md'):
         assert 'command-set.mdx' in (ROOT/name).read_text(), name
     bridge = (ROOT/'src/bridge/README.md').read_text()

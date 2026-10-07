@@ -19,7 +19,7 @@ unrelated agent configuration.
 
 Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
 with requirements, its independently signed build 15 release and setup guidance. The app bundles
-the universal stable 0.1.1 engine; the Glyphs plugin remains separate. See [Beztrace setup](BETA.md#beztrace).
+the universal stable 0.1.1 engine; the Glyphs plugin remains separate. See [Beztrace setup](content/workflows/beztrace.mdx).
 
 The permanent app includes Setup and Project destinations, a static menu-bar
 popover, a dedicated troubleshooting-log window, local and public templates,
@@ -34,11 +34,11 @@ The compact extension panel displays the project and bridge versions and
 "Ready". Its heart button reopens Glyphs' nonmodal Welcome/support panel with
 documentation, issue and support links.
 
-The local v2 desktop companion adds a six-slide introduction covering
+The v2 desktop companion includes a six-slide introduction covering
 control, connections, prerequisites, v2 changes and community support. It appears
 on first interactive launch and can be replayed through **File → Welcome & Support**
 or the sidebar. **Skip to setup** and **Start setup** open Setup. Desktop login
-launch stays quiet. See [local qualification and remaining manual checks](V2-RELEASE.md).
+launch stays quiet. See [qualification and remaining manual checks](V2-RELEASE.md).
 
 Prepare supported spacing, kerning, slant, start-node, outline and negotiated
 closed native-action jobs; run feature compiler diagnostics; or stage verified
@@ -82,20 +82,16 @@ as a signed and notarized
 
 Documentation sources: [v2 · 2.0.0](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
-Beta 7 qualification and publication are recorded in [BETA7-VALIDATION.md](BETA7-VALIDATION.md).
-Historical Beta 6 evidence remains in [BETA6-VALIDATION.md](BETA6-VALIDATION.md).
-Beta 5 qualification is recorded in
-[BETA5-VALIDATION.md](BETA5-VALIDATION.md); the published Beta 4 record remains
-in [BETA4-VALIDATION.md](BETA4-VALIDATION.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
 See [release qualification](V2-RELEASE.md) for current results and limits.
-Historical beta evidence remains in [BETA.md](BETA.md).
+Historical beta reports remain in [the qualification archive](reports/README.md);
+the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
 in [macos-installer/README.md](macos-installer/README.md). The stable disk image is `Glyphs-MCP-2.0.0.dmg`. See [release qualification](V2-RELEASE.md).
-Stable releases retain `Glyphs-MCP-latest.dmg`. Historical beta releases remain on `lit/v2-beta` with a separate feed.
+Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed also delivers the stable update to existing beta installations.
 
 Author: Thierry Charbonnel. [Documentation](https://ap.cx/gmcp),
 [Issues](https://github.com/thierryc/Glyphs-mcp/issues),
@@ -104,8 +100,8 @@ Author: Thierry Charbonnel. [Documentation](https://ap.cx/gmcp),
 New stable versions appear on [GitHub Releases](https://github.com/thierryc/Glyphs-mcp/releases/latest). Use **Check for Updates** in the desktop app to check on demand; beta builds use a separate beta feed. Releases are built, signed and notarized locally; no GitHub Actions are used for release publishing.
 
 
-Private lean v2 qualification is indexed in [reports/README.md](reports/README.md).
-The latest RV02 follow-up covers the installed OpenType, precision and native API
+Historical lean v2 qualification is indexed in [reports/README.md](reports/README.md).
+The RV02 follow-up covers the installed OpenType, precision and native API
 guidance. Native Python uses the advertised `python_script` job and
 `script.native.v1` without adding tools. Preparation never executes code. An
 ordinary task authorizes Run without a separate source review; previews wait.
@@ -115,12 +111,12 @@ Successful edit cards offer a 30-second countdown to Keep changes without
 saving, ending the workflow recovery offer. Typed Keep preserves native Undo/Redo. Say **“wait for my answer”** to disable it.
 See [script execution and recovery](skills/glyphs/references/python-scripts.md).
 
-Beta 8 development removes the native-script 4,096-surface ceiling while retaining
+Native scripts have no 4,096-surface ceiling while retaining
 the complete 4 MiB request budget. Large selectors use incremental read-only
 preparation, one saved baseline and one result workflow. Typed edit and read
-limits are unchanged. Qualification is tracked in [the milestone plan](BETA8-MILESTONES.md).
+limits are unchanged. Qualification is tracked in [the V2 release notes](V2-RELEASE.md).
 
-### Local font checkpoints (Beta 8 candidate)
+### Local font checkpoints
 
 The opt-in project setting records exact saved baselines and authorized MCP saves
 as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be

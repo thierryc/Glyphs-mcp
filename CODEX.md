@@ -4,7 +4,7 @@ Glyphs 4 uses the external sidecar, bounded native bridge, and independent
 Curve Inspector and Reference Inspector. Glyphs 3 stays pinned to 1.11.0.
 The current interface has thirteen tools; use the
 [tool contract](content/reference/command-set.mdx) and
-[Beta 8 milestones](BETA8-MILESTONES.md), not historical roadmaps, for scope.
+[V2 release notes](V2-RELEASE.md), not historical roadmaps, for scope.
 Native scripts use `python_script` with `script.native.v1` in the conversation
 workflow. Preparation never executes code or saves. Typed results retain
 selective recovery; scripts restore the whole saved font and discard later

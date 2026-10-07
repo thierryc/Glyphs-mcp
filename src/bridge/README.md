@@ -1,7 +1,7 @@
 # Glyphs MCP Bridge
 
 See the [current thirteen-tool contract](../../content/reference/command-set.mdx)
-and [Beta 8 milestones](../../BETA8-MILESTONES.md) for shared behavior and scope.
+and [V2 release notes](../../V2-RELEASE.md) for shared behavior and scope.
 
 The bridge is a combined Glyphs plug-in with a small, fixed-height sidebar palette
 and an application-wide server settings controller. It exposes an authenticated local
