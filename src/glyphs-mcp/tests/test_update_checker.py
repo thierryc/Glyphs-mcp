@@ -567,7 +567,7 @@ class UpdateCheckerTests(unittest.TestCase):
             _repo_root() / "src/glyphs-mcp/scripts/install_cli.py"
         ).read_text(encoding="utf-8")
         self.assertIn('sidebarItem("Setup", icon:', content_view)
-        self.assertIn('case .setup: DesktopSetup()', content_view)
+        self.assertIn('case .setup: DesktopSetup', content_view)
         self.assertNotIn('sidebarItem("Components", icon:', content_view)
         self.assertNotIn("Enable verified update preparation", content_view)
         self.assertNotIn("Enable verified update preparation", content_view)

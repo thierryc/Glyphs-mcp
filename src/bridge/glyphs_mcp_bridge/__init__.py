@@ -5,4 +5,4 @@ from .core import BridgeCore, BridgeError
 
 __all__ = ["BridgeCore", "BridgeError", "CompanionRegistry"]
 
-PROJECT_VERSION = "2.0.0"
+PROJECT_VERSION = "2.0.1"

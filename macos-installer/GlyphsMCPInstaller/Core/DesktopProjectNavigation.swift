@@ -1,7 +1,7 @@
 import Foundation
 
 public enum DesktopDestination: Hashable {
-    case setup, templates
+    case setup, companions, agents, skills, templates
     case project(String)
 }
 

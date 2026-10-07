@@ -137,6 +137,10 @@ def verify(app, root=ROOT):
         if not (app / 'Contents/Frameworks' / (name + '.framework') / name).is_file():
             raise ValueError(f'Missing linked framework: {name}')
     validate_embedded_payload(app)
+    skills_snapshot = app / 'Contents/Resources/SkillsCatalog/registry.json'
+    expected_snapshot = root / 'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json'
+    if not skills_snapshot.is_file() or skills_snapshot.read_bytes() != expected_snapshot.read_bytes():
+        raise ValueError('Missing or mismatched offline skills catalog')
     beztrace = validate_embedded_beztrace(app)
     pierre_lock = json.loads((root / 'third_party/pierre-diffs-swift.json').read_text())
     pierre_bundle = app / 'Contents/Resources/PierreDiffsSwift_PierreDiffsSwift.bundle'

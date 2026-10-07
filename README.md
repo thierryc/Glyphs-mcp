@@ -1,8 +1,10 @@
-# Glyphs MCP Desktop 2.0.0
+# Glyphs MCP Desktop 2.0.1
 
-**2.0.0 · desktop build 55 · Glyphs 4.** Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0/Glyphs-MCP-2.0.0.dmg), read the [release notes and qualification](V2-RELEASE.md), or follow the [v2 installation guide](https://thierryc.github.io/Glyphs-mcp/docs/v2/getting-started/installation).
+**2.0.1 · desktop build 56 · Glyphs 4.** Browse skills and manage companion plugins and AI agent connections from focused setup pages. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for features, validation and remaining publication checks. The 2.0.1 app and ZIP have been signed and notarized locally; the public release and update feed remain at 2.0.0.
 
-The [thirteen-tool contract](content/reference/command-set.mdx) adds font creation through `create_document`; `save_document` persists the resulting open font. Native signed build 55 testing covers macOS 14.6.1 Apple silicon and Glyphs 4.1.1/build 4108. Declared macOS 14.0 and current-macOS native acceptance remain unverified; physical Intel testing is deferred.
+The previous **2.0.0/build 55** release remains available as a [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0/Glyphs-MCP-2.0.0.dmg). Its [release qualification](V2-RELEASE.md) does not qualify this new candidate.
+
+The [thirteen-tool contract](content/reference/command-set.mdx) includes font creation through `create_document`; `save_document` persists the resulting open font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -80,7 +82,7 @@ documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
 [GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0).
 
-Documentation sources: [v2 · 2.0.0](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.1](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
@@ -90,8 +92,8 @@ the original beta guides and plans are preserved in the [v2.0.0 source tag](http
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The stable disk image is `Glyphs-MCP-2.0.0.dmg`. See [release qualification](V2-RELEASE.md).
-Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed also delivers the stable update to existing beta installations.
+in [macos-installer/README.md](macos-installer/README.md). The planned candidate disk image is `Glyphs-MCP-2.0.1.dmg`; it has not been published. The previous stable disk image remains `Glyphs-MCP-2.0.0.dmg`.
+Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 Author: Thierry Charbonnel. [Documentation](https://ap.cx/gmcp),
 [Issues](https://github.com/thierryc/Glyphs-mcp/issues),

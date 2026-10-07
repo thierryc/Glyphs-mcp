@@ -1,17 +1,28 @@
 # Changelog
 
-## 2.0.0 — unpublished release candidate, build 55
+## 2.0.1 — skills catalog and focused setup, build 56
 
-- Prepare stable-channel source identity with a build above every preceding Beta
-  candidate. Signing, exact distribution, minimum-OS and upgrade gates remain open.
+- Add Companion Plugins, AI Agents and Skills below Setup; share component and connector operations across overview and focused pages.
+- Browse included, curated and reviewed community skills with a cached/offline catalog and personal public-GitHub imports.
+- Install supplemental skills into shared Codex/Cursor or Claude Code personal/project folders; keep edited content, backups and recoverable ownership receipts.
+- Export complete skill ZIPs for guided ChatGPT/Claude uploads; installing instructions does not establish access to the local Glyphs bridge.
+- Add compact text cards with short workflow goals, installation badges and a separate detail view for instructions, source and requirements.
+- Create the separate GitHub contribution catalog, schema, submission forms, starter and non-executing validation checks.
+- Preserve the thirteen-tool/eleven-bundled-skill interface and existing Setup installation paths. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for validation and remaining distribution checks.
+
+## 2.0.0 — stable release, build 55
+
+- Publish signed and notarized stable build 55, with a build above every preceding
+  Beta. See [release qualification](V2-RELEASE.md) for scoped native acceptance and
+  remaining minimum-OS and hardware limits.
 - Retain the thirteen-tool/eleven-skill interface and scoped Beta native fixes.
 - Guide official Plugin Manager Python setup, check readiness without writing
   bytecode into the Glyphs app, and add first-launch Welcome with menu replay.
 - Preserve connector configuration ownership and wrap narrow comparison controls.
 - Bundle stable Beztrace 0.1.1; link separately to its independently signed and
   notarized Glyphs companion 0.1.0/build 15. Install All excludes that plugin.
-- Preserve published Beta downloads/feed and v1 documentation while preparing
-  truthful candidate copy. No stable MCP release is published by this change.
+- Preserve published Beta downloads and v1 documentation; the Beta feed also
+  delivers the verified stable update to existing beta installations.
 
 ## 2.0.0 Beta 12 — in preparation, 2026-09-30, build 54
 

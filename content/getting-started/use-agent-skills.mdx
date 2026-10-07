@@ -4,12 +4,13 @@ title: Skills and optional plugins
 
 Skills tell an agent how to use the supported workflows. They do not add tools to the server or grant permission to edit a font.
 
-The package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. All four manifests use version `2.0.0` and share the same skills. Current v2 Setup configures Codex and Claude Code with MCP plus managed skills, configures Claude Desktop's MCP entry, and installs the complete local Cursor bundle at `~/.cursor/plugins/local/glyphs-mcp`. GitHub Copilot CLI remains a package-supported host without a v2 Setup card.
+The package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. All four manifests use version `2.0.1` and share the same skills. Current v2 Setup configures Codex and Claude Code with MCP plus managed skills, configures Claude Desktop's MCP entry, and installs the complete local Cursor bundle at `~/.cursor/plugins/local/glyphs-mcp`. GitHub Copilot CLI remains a package-supported host without a v2 Setup card.
 
 The agent plugin is optional for using the thirteen MCP tools; a manual MCP
 connection can use the same server catalog. **Install All** nevertheless
 includes all four supported Setup connectors by default, even if a host is not
-detected. Use the matching 2.0.0 package from the release source tag.
+detected. For this 2.0.1 candidate, use the matching local package. Published 2.0.0
+packages remain matched to the released 2.0.0 runtime.
 Configuration patching creates backups, preserves unrelated entries and custom
 options, and changes only Glyphs MCP. Cursor update and removal require an
 installer-owned bundle whose version and hash still match its receipt; modified
@@ -63,3 +64,48 @@ private instruction, not proof that a current lean runtime needs updating.
 Check its actual path and connection catalog. The installer does not edit plugin
 caches or source worktrees. Refresh the client's skill discovery after changes;
 an existing task may retain old instructions. Do not assume hot reload.
+
+## Skills catalog in 2.0.1
+
+Open **Skills** below Setup to browse included, curated and reviewed community
+workflows. **Companion Plugins** and **AI Agents** open focused pages that share
+the same operations and status with the complete Setup overview.
+
+Included means shipped with this app; it is separate from installation status.
+Compact text cards show each workflow’s goal and whether it is included, installed
+or available. Open Details for client copies, instructions, source and licensing.
+Included skills link to AI Agent Setup; additional skills offer installation,
+explicit updates and removal from their detail view.
+There is no global on/off switch: skill discovery belongs to each client and does
+not enable or disable the corresponding MCP tools.
+
+Supplemental Codex/Cursor skills share `~/.agents/skills`; Claude Code uses
+`~/.claude/skills`. Choose Project scope and select a folder to install into
+`.agents/skills` or `.claude/skills` inside that project. Installation does not
+commit project files or alter existing bundled-skill locations.
+
+**Import from GitHub** accepts a public repository URL with separate directory
+and optional revision fields. It resolves an immutable commit, lets you choose
+from multiple skills and keeps the import personal and unreviewed. Inspect its
+instructions, file list, license and dependencies before installation. Private
+repository authentication and Gist import are not included in this release.
+
+Updates apply only when selected. Edited or unmanaged copies are preserved;
+**Replace with backup** explicitly backs up the selected destination before
+replacement. Symlinked source folders and duplicate names in other known client
+locations are preserved. Backups are kept outside skill discovery with exact
+restoration paths. Supplemental receipts are independent of bundled Setup receipts.
+
+**Export ZIP** produces a complete skill folder for guided upload to ChatGPT or
+Claude where account permissions allow. Export is not installation. Upload and
+enable the package in the host and configure its dependencies separately;
+uploading instructions alone does not make Glyphs on this Mac accessible to
+hosted execution. The app does not execute downloaded scripts or install MCP
+connections/dependencies as part of skill installation.
+
+The [contribution repository](https://github.com/thierryc/glyphs-mcp-skills) accepts
+skill folders and pinned external GitHub entries through reviewed pull requests.
+Its template, submission forms and validator support a first contribution.
+Curated entries are selected by maintainers; Community entries are reviewed
+submissions. The app includes an offline snapshot and retains its last valid
+catalog if a refresh fails. Optional skills remain outside Install All.

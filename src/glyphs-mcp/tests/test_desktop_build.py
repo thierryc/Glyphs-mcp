@@ -37,6 +37,12 @@ def bundle(tmp_path, monkeypatch):
     lock_path = tmp_path / 'third_party/pierre-diffs-swift.json'
     lock_path.parent.mkdir(parents=True)
     lock_path.write_text(json.dumps(lock))
+    offline = tmp_path / 'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json'
+    offline.parent.mkdir(parents=True)
+    offline.write_text('{"schemaVersion":1,"skills":[]}')
+    embedded = app / 'Contents/Resources/SkillsCatalog/registry.json'
+    embedded.parent.mkdir(parents=True)
+    embedded.write_bytes(offline.read_bytes())
     catalog = tmp_path / 'macos-installer/GlyphsMCPInstaller/Resources/Assets.xcassets'
     for name in ['GlyphsMCPMenu', 'GitHubMark']:
         (catalog / (name + '.imageset')).mkdir(parents=True)
@@ -361,3 +367,14 @@ def test_failed_build_invalidates_old_candidate_and_cleans_temporary_directory(t
     assert not (output / 'build-receipt.json').exists()
     assert not (output / 'Glyphs MCP.app').exists()
     assert not list((tmp_path / 'build/local-app-runs').iterdir())
+
+
+def test_rejects_missing_or_changed_offline_skills_catalog(bundle):
+    app, root = bundle
+    snapshot = app / 'Contents/Resources/SkillsCatalog/registry.json'
+    snapshot.write_text('invalid')
+    with pytest.raises(ValueError, match='offline skills catalog'):
+        verifier.verify(app, root)
+    snapshot.unlink()
+    with pytest.raises(ValueError, match='offline skills catalog'):
+        verifier.verify(app, root)

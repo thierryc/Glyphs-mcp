@@ -5,8 +5,8 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current unpublished target is product **2.0.0**, release **2.0.0**, stable
-channel, beta number **0**, installer build **55**: **eleven managed skills**, thirteen MCP tools and up to 13
+The current unpublished target is product **2.0.1**, release **2.0.1**, stable
+channel, beta number **0**, installer build **56**: **eleven managed skills**, thirteen MCP tools and up to 13
 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
 **1**, bridge protocol **1**. The dated MCP transport version is negotiated
@@ -21,16 +21,17 @@ These are initialization-time file fingerprints, not in-memory code hashes.
 Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
-Use the helper's release tag and channel URLs. The published stable release uses
-`v2.0.0`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
-and `Glyphs-MCP-2.0.0.dmg` / `Glyphs-MCP-2.0.0.zip`. See the repository's
-`V2-RELEASE.md` for completed signing and scoped native acceptance, and remaining
-minimum-OS/manual limits. Source identity alone does not authorize publication.
-The separate `lit/v2-beta/appcast.xml` also serves the signed stable update to
-existing beta installations. New beta releases must use versioned beta filenames,
-be GitHub prereleases with `make_latest=false`, and never publish a Latest alias.
-Read `macos-installer/RELEASING.md` before release preparation; historical beta
-instructions remain in the
+Use the helper's release tag and channel URLs. This candidate selects
+`v2.0.1`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
+and planned `Glyphs-MCP-2.0.1.dmg` / `Glyphs-MCP-2.0.1.zip`. Its signing and
+native acceptance must be verified separately before publication.
+The published stable 2.0.0 release and its `V2-RELEASE.md` evidence remain intact;
+that evidence does not qualify this candidate. Source identity alone does not
+authorize publication. The separate `lit/v2-beta/appcast.xml` serves the
+published stable update to existing beta installations. New beta releases use
+versioned beta filenames, are GitHub prereleases with `make_latest=false`, and
+never publish a Latest alias. Read `macos-installer/RELEASING.md` before release
+preparation; historical beta instructions remain in the
 [archived release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
 
 Describe unsigned local checks, installation checks, signed/notarized artifact

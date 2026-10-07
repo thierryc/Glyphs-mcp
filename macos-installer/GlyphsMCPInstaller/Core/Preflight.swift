@@ -489,6 +489,17 @@ public enum InstallerClientKind: Int, CaseIterable, Identifiable, Sendable {
 	}
 }
 
+public extension InstallerClientKind {
+    var downloadURL: URL {
+        switch self {
+        case .codex: return URL(string: "https://developers.openai.com/codex/app/")!
+        case .claudeCode: return URL(string: "https://code.claude.com/docs/en/setup")!
+        case .claudeDesktop: return URL(string: "https://claude.ai/download")!
+        case .cursor: return URL(string: "https://cursor.com/downloads")!
+        }
+    }
+}
+
 public struct InstallerClientDescriptor: Equatable {
 	public let kind: InstallerClientKind
 	public let isDetected: Bool
