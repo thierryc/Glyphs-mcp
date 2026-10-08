@@ -6,12 +6,12 @@ import HomepageFeatures from '../components/HomepageFeatures';
 import styles from './index.module.css';
 
 // Keep the public download separate from the local documentation identity.
-// Replace this pinned beta only after stable artifact qualification/publication.
+// Advance only after stable artifact qualification and public hash verification.
 const publishedDownload = {
-  label: '2.0.0',
-  build: 55,
-  url: 'https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0/Glyphs-MCP-2.0.0.dmg',
-  release: 'https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0',
+  label: '2.0.1',
+  build: 56,
+  url: 'https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.1/Glyphs-MCP-2.0.1.dmg',
+  release: 'https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.1',
 };
 
 export default function Home(): React.JSX.Element {
@@ -72,7 +72,7 @@ export default function Home(): React.JSX.Element {
             <article className={`${styles.versionCard} ${styles.currentCard}`}>
               <p className={styles.eyebrow}>Primary guide · Glyphs 4</p>
               <h2>v2 <small>{gmcpVersion}</small></h2>
-              <p>Thirteen tools, a separate local server, a private runtime and optional inspectors. This guide follows 2.0.0/build 55. Setup includes guided Glyphs Python installation and a Welcome introduction.</p>
+              <p>Seventeen tools, a separate local server, a private runtime and optional inspectors. This guide follows 2.0.1/build 56. Setup includes guided Glyphs Python installation and a Welcome introduction.</p>
               <Link className="button button--primary button--lg" to="/docs/v2/">Read the v2 guide</Link>
               <p className={styles.secondaryLink}><Link to="/docs/v2/getting-started/migrate-from-v1">Moving from v1 to v2</Link></p>
             </article>
@@ -89,7 +89,7 @@ export default function Home(): React.JSX.Element {
           <div className={`container ${styles.quickstart}`}>
             <h2 id="limits-title">Before you try it</h2>
             <p>Begin with a disposable font and a small change. Supported operations depend on the connected bridge. Review results in Glyphs; accepting an edit and saving your font are separate actions.</p>
-            <p>Signed build 55 native tests cover Apple silicon on macOS 14.6.1 with Glyphs 4.1.1/build 4108. Exact macOS 14.0, current-macOS native qualification and physical Intel execution remain unverified. Beztrace has its own plugin installation.</p>
+            <p>Signed build 56 native tests cover Apple silicon on macOS 14.6.1 with Glyphs 4.1.1/build 4108. Exact macOS 14.0, current-macOS native qualification and physical Intel execution remain unverified. Beztrace has its own plugin installation.</p>
             <p><Link to="/docs/v2/reference/release-qualification">Read qualification and known limits</Link> or use <Link to="/docs/v2/getting-started/troubleshooting">troubleshooting</Link>.</p>
             <h2>Made with the community</h2>
             <p>Glyphs MCP is an open source project by Thierry Charbonnel. <Link href="https://github.com/thierryc/Glyphs-mcp/issues">Report an issue</Link>, explore the <Link href="https://github.com/thierryc/Glyphs-mcp">repository</Link>, or <Link href="https://github.com/sponsors/thierryc">support the project</Link>.</p>
