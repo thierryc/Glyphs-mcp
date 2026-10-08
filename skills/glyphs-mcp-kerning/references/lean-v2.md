@@ -4,7 +4,7 @@ For conversation edits, use the [shared edit workflow](../../glyphs/references/e
 with these same request fields when `edit.workflow.v1` is advertised. The
 low-level job examples below describe operation scope and existing guards.
 
-Use this workflow when `get_status` advertises the thirteen-tool lean catalog.
+Use this workflow when `get_status` advertises the seventeen-tool lean catalog.
 For inspection alone, use the [stored kerning read reference](../../glyphs/references/kerning-reads.md);
 dirty and unsaved fonts are readable without a job or Save. Reuse the intended
 document ID. Stop after reporting when no repair was requested.

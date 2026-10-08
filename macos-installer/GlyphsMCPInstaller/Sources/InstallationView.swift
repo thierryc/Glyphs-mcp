@@ -3,17 +3,19 @@ import SwiftUI
 import GlyphsMCPInstallerCore
 
 struct InstallationView: View {
+    enum Section { case overview, companions, agents }
+    var section: Section = .overview
     @EnvironmentObject private var model: InstallerViewModel
     @State private var pendingRemoval: RemovalTarget?
     @State private var showingBeztraceSetup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
-            setupActions
+            if section == .overview { setupActions }
             if !model.message.isEmpty { setupNotice }
-            components
-            connections
-            if !model.inspectorInstructions.isEmpty {
+            if section != .agents { components }
+            if section != .companions { connections }
+            if section != .agents && !model.inspectorInstructions.isEmpty {
                 Text(model.inspectorInstructions).font(.callout).foregroundStyle(.secondary)
             }
         }
@@ -70,7 +72,7 @@ struct InstallationView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Components").font(.title3.bold())
             SetupCardGrid {
-                ForEach(DesktopComponent.all) { component in
+                ForEach(DesktopComponent.all.filter { section != .companions || $0.id != "mcp" }) { component in
                     ComponentSetupCard(
                         component: component,
                         state: model.state(for: component),
@@ -91,7 +93,7 @@ struct InstallationView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Connections").font(.title3.bold())
-                Text("Install All configures every connection, even when its host app is not detected.")
+                Text(section == .overview ? LocalizedStringKey("Install All configures every connection, even when its host app is not detected.") : LocalizedStringKey("Choose Install or Update for the agent you want to connect."))
                     .font(.callout).foregroundStyle(.secondary)
             }
             SetupCardGrid {
@@ -103,7 +105,7 @@ struct InstallationView: View {
                         version: model.connectorVersions[client],
                         guidance: model.connectorGuidance(client),
                         logoAsset: model.connectorLogoAsset(client),
-                        disabled: model.busy,
+                        disabled: model.operationsBusy,
                         install: { model.installConnector(client) },
                         update: { model.updateConnector(client) },
                         remove: { pendingRemoval = .connector(client) },
@@ -181,7 +183,7 @@ private struct BeztraceSetupView: View {
 }
 
 // Measure each adaptive row before placing cards so shorter content fills its row.
-private struct SetupCardGrid: Layout {
+struct SetupCardGrid: Layout {
     private let minimumWidth: CGFloat = 230
     private let spacing: CGFloat = 16
 
@@ -293,7 +295,7 @@ private struct ConnectorSetupCard: View {
         } actions: {
             SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
         } footer: {
-            EmptyView()
+            if !detected { Link("Download app", destination: client.downloadURL).font(.caption) }
         }
     }
 }

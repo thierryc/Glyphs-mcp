@@ -8,7 +8,7 @@ import GlyphsMCPInstallerCore
 final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverDelegate {
     let desktop = DesktopModel()
     let installer = InstallerViewModel()
-    lazy var updates = DesktopUpdates(installationBusy: { [weak self] in self?.installer.busy == true })
+    lazy var updates = DesktopUpdates(installationBusy: { [weak self] in self?.installer.operationsBusy == true })
     private var dashboard: NSWindow?
     private var welcome: NSWindow?
     private var settingsWindow: NSWindow?
@@ -55,7 +55,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        installer.busy ? .terminateCancel : .terminateNow
+        installer.operationsBusy ? .terminateCancel : .terminateNow
     }
     func applicationWillTerminate(_ notification: Notification) {
         desktop.setVisible("popover", false); desktop.setDashboardVisible(false)

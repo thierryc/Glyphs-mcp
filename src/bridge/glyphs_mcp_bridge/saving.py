@@ -84,6 +84,11 @@ def preflight(core, value, error_type, *, accepting_job_id=None, generic=False):
     same = same_path(state.get("path"), target)
     if value["saveMode"] == "save" and not same:
         raise error_type("stale_document", "a current-path save no longer targets the document path")
+    previous = Path(str(state["path"])).resolve(strict=False) if state.get("path") else None
+    if previous is not None and previous.suffix.lower() in {".ufo", ".glyphspackage"}:
+        wanted = Path(target).resolve(strict=False)
+        if wanted != previous and previous in wanted.parents:
+            raise error_type("invalid_destination", "Save As cannot write inside the current font package")
     if value["saveMode"] == "save_as" and same:
         raise error_type("stale_document", "the Save As destination became the current document path")
     for document in core.adapter.list_documents():
@@ -97,7 +102,7 @@ def preflight(core, value, error_type, *, accepting_job_id=None, generic=False):
             )
         other = Path(str(other_path)).resolve(strict=False)
         wanted = Path(str(target)).resolve(strict=False)
-        if other.suffix.lower() == ".glyphspackage":
+        if other.suffix.lower() in {".glyphspackage", ".ufo"}:
             try:
                 wanted.relative_to(other)
             except ValueError:

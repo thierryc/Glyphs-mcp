@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "id": "builtin:glyphs",
+      "name": "glyphs",
+      "description": "Route Glyphs 4 font work to the lean MCP tools and independent companion plugins.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-spacing",
+      "name": "glyphs-mcp-spacing",
+      "description": "Prepare and review reference-based spacing suggestions with preserved native metrics.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-spacing",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-kerning",
+      "name": "glyphs-mcp-kerning",
+      "description": "Set or remove exact kerning pairs, inspect language-tagged proofs and stored group coverage, and review collision repairs.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-kerning",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-italic-first-pass",
+      "name": "glyphs-mcp-italic-first-pass",
+      "description": "Prepare a first-pass slant on a disposable or explicitly authorized font.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-italic-first-pass",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-master-compatibility",
+      "name": "glyphs-mcp-master-compatibility",
+      "description": "Review master-layer correspondence and prepare consistent contour start nodes.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-master-compatibility",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-outlines-docs",
+      "name": "glyphs-mcp-outlines-docs",
+      "description": "Inspect curves and safely prepare typed outline path edits.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-outlines-docs",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-development",
+      "name": "glyphs-mcp-development",
+      "description": "Create, test and iterate native Glyphs 4 scripts and plugins in a workspace, including vibe coding and debugging existing plugins.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-development",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-scripting",
+      "name": "glyphs-mcp-scripting",
+      "description": "Write and run focused Glyphs Python scripts, using direct native execution and saved-version recovery.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-scripting",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-opentype-features",
+      "name": "glyphs-mcp-opentype-features",
+      "description": "Review, write and debug OpenType feature source using native Glyphs 4 scripts, with compilation and exported behavior checks.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-opentype-features",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-release",
+      "name": "glyphs-mcp-release",
+      "description": "Prepare and verify a local Glyphs MCP candidate while keeping publication separate.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-release",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    },
+    {
+      "id": "builtin:glyphs-mcp-maintainer-feedback",
+      "name": "glyphs-mcp-maintainer-feedback",
+      "description": "Collect bounded reproduction evidence for a Glyphs MCP issue.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-maintainer-feedback",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true
+    }
+  ]
+}

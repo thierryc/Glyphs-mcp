@@ -73,6 +73,12 @@
 		3D18FD498AF3CE854AEB2965 /* FontCheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */; };
 		2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */; };
 		B01C71A90038DB5D628E74EA /* CheckpointClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103A5E6F347BF504A3C03F62 /* CheckpointClient.swift */; };
+		1BB13DF4F509BE935FEA1D28 /* SkillCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5760C7E839E3031946D81D8 /* SkillCatalog.swift */; };
+		B6063C687579F5CB1E4D58BF /* SkillStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B5629938134F8CE3F7BF1A5 /* SkillStore.swift */; };
+		4FAEDF09AFAE2EF0D6AE2B12 /* SupplementalSkillInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0563B0D8E6E674BE984FA5E /* SupplementalSkillInstaller.swift */; };
+		52BFFDF1CB210FC9AE032E93 /* DesktopSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */; };
+		5C1111111111111111111112 /* SkillsCatalog in Resources */ = {isa = PBXBuildFile; fileRef = 5C1111111111111111111111; };
+		5C2222222222222222222222 /* SkillCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2222222222222222222221; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -187,6 +193,12 @@
 		CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontCheckpointPolicy.swift"; sourceTree = "<group>"; };
 		CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopCheckpointHistory.swift"; sourceTree = "<group>"; };
 		103A5E6F347BF504A3C03F62 /* CheckpointClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckpointClient.swift"; sourceTree = "<group>"; };
+		E5760C7E839E3031946D81D8 /* SkillCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SkillCatalog.swift"; sourceTree = "<group>"; };
+		6B5629938134F8CE3F7BF1A5 /* SkillStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SkillStore.swift"; sourceTree = "<group>"; };
+		B0563B0D8E6E674BE984FA5E /* SupplementalSkillInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SupplementalSkillInstaller.swift"; sourceTree = "<group>"; };
+		3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopSkills.swift"; sourceTree = "<group>"; };
+		5C1111111111111111111111 /* SkillsCatalog */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SkillsCatalog; sourceTree = "<group>"; };
+		5C2222222222222222222221 /* SkillCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SkillCatalogTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -240,6 +252,7 @@
 		AA0000000000000000000003 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */,
 				CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */,
 				B30000000000000000000001 /* DesktopGitWorkspace.swift */,
 				0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */,
@@ -262,6 +275,7 @@
 		AA0000000000000000000004 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				5C1111111111111111111111 /* SkillsCatalog */,
 				F4C332F72F538E3E00BF5B52 /* AppIcon.icon */,
 				AA3000000000000000000021 /* Assets.xcassets */,
 				DE7000000000000000000001 /* Templates */,
@@ -303,6 +317,7 @@
 		AA0000000000000000000008 /* GlyphsMCPInstallerTests */ = {
 			isa = PBXGroup;
 			children = (
+				5C2222222222222222222221 /* SkillCatalogTests.swift */,
 				A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */,
 				742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */,
 				F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */,
@@ -317,6 +332,9 @@
 		AA00000000000000000000C7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				B0563B0D8E6E674BE984FA5E /* SupplementalSkillInstaller.swift */,
+				6B5629938134F8CE3F7BF1A5 /* SkillStore.swift */,
+				E5760C7E839E3031946D81D8 /* SkillCatalog.swift */,
 				103A5E6F347BF504A3C03F62 /* CheckpointClient.swift */,
 				CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */,
 				B30000000000000000000002 /* GlyphDiff.swift */,
@@ -495,6 +513,7 @@
 				AA1111111111111111111120 /* AGENTS.md in Resources */,
 				AA1111111111111111111129 /* Assets.xcassets in Resources */,
 				DE7000000000000000000002 /* Templates in Resources */,
+				5C1111111111111111111112 /* SkillsCatalog in Resources */,
 				DE7000000000000000000004 /* Notices in Resources */,
 				BE7000000000000000000002 /* Beztrace in Resources */,
 				AA1111111111111111111130 /* Localizable.strings in Resources */,
@@ -552,6 +571,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52BFFDF1CB210FC9AE032E93 /* DesktopSkills.swift in Sources */,
 				2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */,
 				B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */,
 				236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */,
@@ -574,6 +594,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5C2222222222222222222222 /* SkillCatalogTests.swift in Sources */,
 				F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */,
 				F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */,
 				222E1FD38019AA402B7856A5 /* DesktopTemplateCatalogTests.swift in Sources */,
@@ -588,6 +609,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FAEDF09AFAE2EF0D6AE2B12 /* SupplementalSkillInstaller.swift in Sources */,
+				B6063C687579F5CB1E4D58BF /* SkillStore.swift in Sources */,
+				1BB13DF4F509BE935FEA1D28 /* SkillCatalog.swift in Sources */,
 				B01C71A90038DB5D628E74EA /* CheckpointClient.swift in Sources */,
 				3D18FD498AF3CE854AEB2965 /* FontCheckpointPolicy.swift in Sources */,
 				B20000000000000000000002 /* GlyphDiff.swift in Sources */,
@@ -774,7 +798,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -788,7 +812,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.0.1;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";
@@ -810,7 +834,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -824,7 +848,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.0.1;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";

@@ -1,0 +1,17 @@
+name: Report a skill problem
+description: Report a catalog or skill issue
+title: "[Problem] "
+body:
+  - type: input
+    id: skill
+    attributes:
+      label: Skill ID and pinned revision
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Client version, prompt, expected result and actual result
+      description: Remove private font content, personal information and credentials.
+    validations:
+      required: true

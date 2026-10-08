@@ -124,6 +124,14 @@ class GlyphsAdapter:
         from . import document_creation
         return document_creation.native(self, request, operation, BridgeError)
 
+    def open_document(self, request, operation) -> dict[str, Any]:
+        from . import document_opening
+        return document_opening.native(self, request, operation, BridgeError)
+
+    def import_document(self, request, operation) -> dict[str, Any]:
+        from . import document_importing
+        return document_importing.native(self, request, operation, BridgeError)
+
     def save_document(
         self, document_id: str, target: str, mode: str
     ) -> dict[str, Any]:

@@ -67,7 +67,7 @@ intended document ID. Only missing or invalid bindings need
 [document targeting](../glyphs/references/document-targeting.md). Reads are fresh;
 dirty fonts need no Save. Native relaunch invalidates old document IDs.
 
-The thirteen-tool MCP can execute scripts through an advertised `python_script`
+The seventeen-tool MCP can execute scripts through an advertised `python_script`
 job; use the [shared execution contract](../glyphs/references/python-scripts.md).
 For a one-off bulk or font-level edit, direct native scripting avoids a
 plugin installation and layer patch preparation. Require `script.native.v1`;

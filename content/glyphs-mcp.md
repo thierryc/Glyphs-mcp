@@ -3,12 +3,12 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.0.0** connects AI applications to Glyphs 4 through thirteen tools. A
+Glyphs MCP **2.0.1** connects AI applications to Glyphs 4 through seventeen tools. A
 small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes **2.0.0**, desktop build **55**, with coordinated sidecar and bridge product version **2.0.0**. The release is signed and notarized; native installation, reversible first edits, signed updates and migration recovery passed on macOS 14.6.1 Apple silicon with Glyphs 4.1.1/build 4108. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/) and separate v1.11.0 download.
+This guide describes **2.0.1**, desktop build **56**, with coordinated sidecar and bridge product version **2.0.1**. Its skills catalog and focused setup views have passed local regression and desktop UI checks; the app and ZIP are signed and notarized locally. Final distribution and native qualification remain separate release checks. The public **2.0.0/build 55** release and its [qualification and limits](reference/release-qualification.mdx) remain unchanged. See [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/) and separate v1.11.0 download.
 
 ## Start here
 

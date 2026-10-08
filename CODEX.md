@@ -2,7 +2,7 @@
 
 Glyphs 4 uses the external sidecar, bounded native bridge, and independent
 Curve Inspector and Reference Inspector. Glyphs 3 stays pinned to 1.11.0.
-The current interface has thirteen tools; use the
+The current interface has seventeen tools; use the
 [tool contract](content/reference/command-set.mdx) and
 [V2 release notes](V2-RELEASE.md), not historical roadmaps, for scope.
 Native scripts use `python_script` with `script.native.v1` in the conversation
@@ -30,7 +30,7 @@ using scripts/build_private_runtime.py. Downloads are a maintainer preparation
 step, never an end-user installation step. The installer copies selected
 components transactionally, preserving unrelated files and preferences.
 
-Protect dependency boundaries, bounded reads/requests, the thirteen-tool surface,
+Protect dependency boundaries, bounded reads/requests, the seventeen-tool surface,
 capability negotiation and package isolation with behavioral tests. There are no
 source-line budgets. Consolidate proven duplication; do not split code merely
 to meet a file-length target. Preserve useful algorithms and external analysis/

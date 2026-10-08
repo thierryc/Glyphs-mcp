@@ -44,7 +44,7 @@ def test_v2_catalog_signatures_match_the_base_and_workflow_tools():
     documented = {}
     for name, args in re.findall(r'^\| `([a-z_]+)` \| (.*?) \|', reference, re.M):
         documented[name] = re.findall(r'`([a-z_]+)`', args)
-    assert len(actual) == 13
+    assert len(actual) == 17
     assert documented == actual
 
 

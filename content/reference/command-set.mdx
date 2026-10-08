@@ -1,14 +1,18 @@
 ---
-title: The thirteen v2 tools
+title: The seventeen v2 tools
 ---
 
-This is the **Glyphs MCP 2.0.0** thirteen-tool contract. Desktop build **55**, sidecar and bridge product version `2.0.0`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent sidecar/bridge identities and negotiated `readCapabilities`, `writeCapabilities`, `jobCapabilities` and closed `nativeActions`; see [version and identity](version-identity.mdx).
+This is the **Glyphs MCP 2.0.1** seventeen-tool contract. Desktop build **56**, sidecar and bridge product version `2.0.1`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. Opening is an additive capability; existing tool behavior is unchanged. The negotiated MCP transport version is separate. Inspect `get_status` for independent sidecar/bridge identities and negotiated `readCapabilities`, `writeCapabilities`, `jobCapabilities` and closed `nativeActions`; see [version and identity](version-identity.mdx).
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
 | `get_status` | None | Read sidecar, worker and bridge availability plus negotiated read/write/job capabilities. |
 | `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
 | `create_document` | `family_name`, `idempotency_key`, optional `units_per_em` (1000) | Create and open an unsaved font with one Regular master and instance. Requires `document.create.v1`. |
+| `open_document` | `path`, `idempotency_key` | Open an existing absolute local `.glyphs` file or `.glyphspackage` folder. Reuse an already-open source without reloading or saving; requires `document.open.v1`. |
+| `import_document` | `path`, `idempotency_key` | Import a local UFO, OTF or TTF without saving its source; requires `document.import.v1`. |
+| `activate_document` | `document_id` | Show the exact live font window and bring Glyphs to the front; requires `document.activate.v1`. |
+| `close_document` | `document_id`, `idempotency_key`, optional `unsaved_changes` (default refuse), `destination` | Close with explicit save/discard handling and pending-job protection; requires `document.close.v1`. |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job without applying it; the negotiated route may use detached native targets or the external worker. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
@@ -45,6 +49,81 @@ font; a new key must not be used merely to bypass an uncertain result. A partial
 native failure reports `creation_failed` and, when discoverable, its `documentId`;
 it never silently closes the font or repeats construction. The bridge retains at
 most 1024 creation keys per session, then refuses new keys without evicting old ones.
+
+## Open a font
+
+`open_document(path, idempotency_key)` opens a native local source in Glyphs 4,
+with no existing document or saved baseline required. Paths must be absolute and
+point to a `.glyphs` file or `.glyphspackage` folder. Symlinks resolve to their
+canonical source. URLs and binary/UFO imports are outside this operation.
+
+The result contains `id`, `path`, `familyName`, `dirty`, `generation`,
+`alreadyOpen`, `openId` and `bridgeSessionId`. Reuse `id` for subsequent reads,
+edits and saving. An already-open font is returned without reloading, discarding
+unsaved edits or explicitly changing window focus. Open never saves or closes
+another font. Its authorization does not authorize subsequent edits or saving.
+
+Retain a fresh key per intended Open and retry identical arguments after a lost
+response. Sidecar journals and bridge outcomes prevent duplicate openings. A
+changed path gives `opening_conflict`; a closed result gives `document_not_found`
+without reopening. After a bridge restart, `opening_outcome_unknown` requires
+reconciling the original document. A failed native call may include its
+`documentId`; inspect it without replaying Open. The bridge retains up to 1024
+Open keys per session and refuses additional keys without evicting earlier ones.
+
+## Import a font
+
+`import_document(path, idempotency_key)` imports an absolute local `.ufo` folder,
+`.otf` file or `.ttf` file through Glyphs' native importer. Native sources use
+`open_document`. Import needs no open font, saved baseline or script, and never
+changes import preferences, saves, exports or overwrites its source.
+
+The result binds the actual returned font by `id`, even when it is pathless.
+It includes `sourcePath`, `sourceFormat`, `importId`, `bridgeSessionId`,
+`alreadyOpen`, `requiresSaveAs`, `viewOnlyUntilSaveAs`, `nativeSourceFormats`
+and `warnings`. Compiled fonts are view-only until Save As to a new native source;
+decompilation can lose hinting or OpenType tables. Re-export may differ from the
+original. Saving needs separate authorization and a new `.glyphs` or
+`.glyphspackage` destination; source fingerprints verify that Save As preserves
+the original. Imported sources do not become edit-job baselines until saved in
+a native format.
+
+Retry the same key and path after a lost response. Conflicts give
+`importing_conflict`; closed results give `document_not_found` without reopening.
+A bridge restart or unreadable record gives `importing_outcome_unknown` and
+requires reconciliation. Partial failures remain open and are never retried
+implicitly. Up to 1024 import outcomes are retained per bridge session.
+
+## Activate or close a font
+
+`activate_document(document_id)` shows the exact live window and requests that
+Glyphs come to the front. It returns the fresh document state, `windowShown` and
+`activationRequested`; `isCurrent` reports the observed font selection. Repeated
+activation is safe. Closed IDs fail without reopening or selecting another font.
+
+`close_document(document_id, idempotency_key, unsaved_changes="refuse")` closes
+only that font. Default `refuse` leaves unsaved or unknown changes open and
+returns `unsaved_changes_required`. Choose `save` under save authorization, with
+an explicit new destination for pathless/imported fonts. The existing native save,
+source-hash verification and optional checkpoint complete before Close. Failed
+saves/checkpoints leave the font open. Choose `discard` only when the user has
+explicitly authorized losing **all unsaved edits in this font**. Cancel means
+make no tool call. A clean font can close without saving.
+
+Preparing, ready, active, applied or uncertain jobs block Close. Resolve them
+through their existing Keep/Save/Discard/recovery lifecycle; Close does not
+resolve jobs. Registration and Close serialize across sidecar transports, and
+native guards recheck ownership, path, dirty state and generation immediately
+before closing. There is no modal save prompt.
+
+The result includes `id`, `path`, `closed`, `discardedUnsavedChanges`, `closeId`,
+`bridgeSessionId` and, for Save-and-Close, `saveReceipt`. Retain one key and its
+options per intended Close. Lost responses return the original outcome without
+another save or close, even after the font has closed. Changed options give
+`closing_conflict`; later edits give `stale_document` and require renewed review.
+Restarted bridges, unreadable records or unobserved native outcomes require
+reconciliation. Retrying an uncertain native Close only observes its result;
+it never repeats the native call. Up to 1024 outcomes are retained per session.
 
 ## Conversation workflow
 
@@ -541,7 +620,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the public count is thirteen.
+not extra MCP tools; the public count is seventeen.
 
 ### Kerning discovery
 
@@ -555,7 +634,7 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays thirteen tools.
+require a coordinated bridge/sidecar/skills update. The catalog stays seventeen tools.
 
 
 ## Native scripts

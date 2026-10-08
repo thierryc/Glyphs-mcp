@@ -26,7 +26,7 @@ class BridgeClient:
         request = value or {}
         save = request.get("save") if isinstance(request.get("save"), dict) else {}
         uncertain = {}
-        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save", "/v1/script/run", "/v1/script/finish", "/v1/script/restore-saved", "/v1/documents/create"):
+        if path in ("/v1/apply", "/v1/discard", "/v1/accept", "/v1/save", "/v1/script/run", "/v1/script/finish", "/v1/script/restore-saved", "/v1/documents/create", "/v1/documents/open", "/v1/documents/import", "/v1/documents/close", "/v1/documents/activate"):
             patch = request.get("patch") if isinstance(request.get("patch"), dict) else {}
             uncertain["execution"] = "uncertain"
             job_id = request.get("jobId") or patch.get("jobId") or (request.get("script") or {}).get("jobId")
@@ -37,6 +37,14 @@ class BridgeClient:
                 uncertain["saveId"] = save_id
             if path == "/v1/documents/create":
                 uncertain["creationId"] = (request.get("creation") or {}).get("creationId")
+            if path == "/v1/documents/open":
+                uncertain["openId"] = (request.get("opening") or {}).get("openId")
+            if path == "/v1/documents/import":
+                uncertain["importId"] = (request.get("importing") or {}).get("importId")
+            if path == "/v1/documents/close":
+                uncertain["closeId"] = (request.get("closing") or {}).get("closeId")
+            if path == "/v1/documents/activate":
+                uncertain["documentId"] = request.get("documentId")
         body = json.dumps(value or {}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         if len(body) > 4 * 1024 * 1024:
             raise BridgeClientError('request_too_large', 'bridge request exceeds 4 MiB; reduce script source or target manifest')
@@ -78,6 +86,18 @@ class BridgeClient:
 
     def create_document(self, request: dict[str, Any]) -> dict[str, Any]:
         return self._post("/v1/documents/create", {"creation": request})
+
+    def open_document(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/documents/open", {"opening": request})
+
+    def import_document(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/documents/import", {"importing": request})
+
+    def close_document(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._post("/v1/documents/close", {"closing": request})
+
+    def activate_document(self, document_id: str) -> dict[str, Any]:
+        return self._post("/v1/documents/activate", {"documentId": document_id})
 
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         return self._post(

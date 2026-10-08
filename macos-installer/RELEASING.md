@@ -8,14 +8,17 @@
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
-The published stable release is Glyphs MCP Desktop 2.0.0 / build 55,
-with coordinated sidecar/bridge product version `2.0.0`, interface revision `1`
-and bridge protocol `1`. See [V2 release qualification](../V2-RELEASE.md) for
-completed checks and outstanding limits. Preserve the signed release tag and
-artifacts; product changes require a new build and renewed qualification.
+The next stable release is Glyphs MCP Desktop 2.0.1 / build 56,
+with coordinated sidecar/bridge product version `2.0.1`, interface revision `1`
+and bridge protocol `1`. The published stable 2.0.0/build 55 release and its
+[V2 qualification](../V2-RELEASE.md) remain separate. Preserve its signed tag and
+artifacts. Earlier 2.0.1 artifacts passed local signing and notarization; the new
+document routes require rebuilding, renewed signing and native qualification;
+see [2.0.1 release preparation](../V2.0.1-RELEASE.md) for remaining distribution
+and native qualification checks.
 Historical prerelease guidance remains in the
 [archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
-The Glyphs 4-only payload has thirteen tools, eleven managed skills, two optional
+The Glyphs 4-only payload has seventeen tools, eleven managed skills, two optional
 companions, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Glyphs 3 remains available through its separate pinned v1.11.0 release
 at v1.11.0 / 13ca805; it is not packaged in v2.
@@ -61,7 +64,7 @@ disposable-font acceptance evidence and original-source hash separately.
 scripts/build_installer_app.sh
 scripts/notarize_installer_app.sh
 scripts/make_installer_dmg.sh
-scripts/verify_release_artifacts.sh --tag v2.0.0 --write-checksums
+scripts/verify_release_artifacts.sh --tag v2.0.1 --write-checksums
 ```
 
 The Release installer is universal. `release_payload.py` discovers every
@@ -103,7 +106,7 @@ Sparkle 2.9.6 is checksum-pinned in `third_party/sparkle.json`. Its separate Ed2
 
 Run `scripts/build_desktop_release.sh` for the signed/notarized app, DMG and local update candidate. The product is `dist/installer-app/Glyphs MCP.app`. `dist/desktop-update/` contains the signed versioned ZIP, signed appcast, SHA256SUMS and an unpublished candidate record. The Xcode scheme remains GlyphsMCPInstaller. Sparkle nested apps, XPC services and frameworks are signed inside out with their entitlements preserved.
 
-The 2.0.0/build 55 candidate selects `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`; its planned archives use tag `v2.0.0`. Generate and publish this stable feed only after final qualification and verified public archives. The preserved Beta feed uses `lit/v2-beta/appcast.xml`. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is enabled by default and can be disabled in Settings and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
+The 2.0.1/build 56 release selects `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`; its planned archives use tag `v2.0.1`. The public feed still delivers 2.0.0/build 55. Advance it only after final qualification and verified public 2.0.1 archives. The preserved Beta feed uses `lit/v2-beta/appcast.xml`. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is enabled by default and can be disabled in Settings and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
 
 Both beta and stable publishers now prepare the versioned Sparkle ZIP and signed appcast. Uploads and SHA256SUMS use the shared `release_asset_inventory.py` inventory. Stable retains its versioned/latest DMGs and compatibility app ZIP. `prepare_desktop_update.py --verify --app "dist/installer-app/Glyphs MCP.app" --output dist/desktop-update` checks channel/build/enclosure identity, candidate hashes, both signatures and the archive’s app contents before upload. Exact signed upgrade acceptance remains a separate gate.
 

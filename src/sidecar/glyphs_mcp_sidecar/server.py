@@ -42,6 +42,26 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         """With font-creation authorization, create and open a new unsaved Glyphs font with one Regular master and one Regular instance; no existing document is required. Requires document.create.v1. family_name is 1-255 characters; units_per_em is an integer from 16 to 16384 (default 1000). Return its id for subsequent reads/edits/save_document, plus native masterIds and instanceIds. Creation never saves. Save As uses save_document with separate existing/explicit save authorization and a new absolute .glyphs or .glyphspackage destination. Retain a fresh idempotency_key per intended font and retry exactly the same arguments after a timeout. A reused key with different arguments conflicts; a closed created document is not recreated. After a bridge restart, creation_outcome_unknown requires reconciliation of the original font rather than another creation request. No saved baseline or edit workflow is required."""
         return _result(lambda: service.create_document(family_name, idempotency_key, units_per_em))
 
+    @mcp.tool(name="open_document")
+    def open_document(path: str, idempotency_key: str) -> dict[str, Any]:
+        """With file-opening authorization, open an existing absolute local .glyphs file or .glyphspackage folder in Glyphs 4. Requires document.open.v1; no existing document, saved baseline or script is needed. Reuse an already-open source without reloading, saving, discarding unsaved edits or duplicating its document. Return its id, path, familyName, dirty, generation, alreadyOpen, openId and bridgeSessionId; retain id for subsequent reads/edits/save_document. Opening never saves or closes another font. Use a fresh retained idempotency_key per intended Open and retry identical arguments after a timeout. A changed path conflicts; a closed result is not reopened by a retry. After a bridge restart, opening_outcome_unknown requires reconciling the original document. Missing paths and non-native formats reject; binary/UFO import is separate. A partial native failure may return documentId in error details; inspect it without repeating Open."""
+        return _result(lambda: service.open_document(path, idempotency_key))
+
+    @mcp.tool(name="import_document")
+    def import_document(path: str, idempotency_key: str) -> dict[str, Any]:
+        """Import an absolute local .ufo folder, .otf file or .ttf file through Glyphs. No open font is required. Reuse the same key after lost responses; never replay an uncertain import with a new key. Import never saves or overwrites its source. Compiled fonts are view-only until Save As to a new .glyphs/.glyphspackage source, and can lose hinting or OpenType tables. Use the returned exact document ID."""
+        return _result(lambda: service.import_document(path, idempotency_key))
+
+    @mcp.tool(name="activate_document")
+    def activate_document(document_id: str) -> dict[str, Any]:
+        """Show the window for an exact live document ID and bring Glyphs to the front. Resolve IDs with list_documents; never substitute the current font. Repeated activation is safe and never reopens a closed font. Does not change outlines, save or resolve jobs."""
+        return _result(lambda: service.activate_document(document_id))
+
+    @mcp.tool(name="close_document")
+    def close_document(document_id: str, idempotency_key: str, unsaved_changes: str = "refuse", destination: str | None = None) -> dict[str, Any]:
+        """Close an exact live font with explicit unsaved handling: refuse (default), save, or discard. Discard requires the user's explicit authorization to lose all unsaved edits in this font. Save verifies the native save and file hash first; pathless/imported fonts require a new .glyphs/.glyphspackage destination. Failure leaves the font open. Active, ready, applied or unresolved jobs block Close; resolve their existing lifecycle first. Cancel means do not call this tool. Reuse the same key and options after lost responses; a stale font requires renewed review before a new key. Never closes another font or prompts through a modal dialog."""
+        return _result(lambda: service.close_document(document_id, idempotency_key, unsaved_changes, destination))
+
     @mcp.tool(name="read_entities")
     def read_entities(
         document_id: str, entities: list[dict[str, Any]], fields: list[str]
@@ -58,7 +78,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
 
         Paths require paths.list.v1/path.geometry.v1: sole {kind:paths,glyph,layer,limit?,cursor?} with fields [items]; {kind:path,glyph,layer,index,limit?,cursor?} with fields [nodes]; or {kind:segment,glyph,layer,path,endNode} with type/startNode/endNode/controlNodes/points/length/pathHash. Path/node limits 100/256. outline.background.read.v1 allows surface:background on layer/path selectors; IDs identify the owning foreground layer. Never substitute foreground geometry or create missing backgrounds.
 
-        With features.read.v1, sole {kind:feature_blocks,blockType:prefix|class|feature,limit:100,cursor?}, fields [items], or exact {kind:feature_block,blockType,id}. With instances.read.v1, sole {kind:instances,limit:100,cursor?}, fields [items], or exact {kind:instance,id}; returned persistent IDs feed export jobs. With font.checkpoints.v1, fields [checkpoint] and one checkpoint_history/checkpoint_details/checkpoint_compare/checkpoint_scope selector read bounded Git evidence using full revisions/cursors. Invalid selector input returns invalid_request; keep the document binding and correct the input. Full selectors/fields: shipped Glyphs references and the thirteen-tool command reference."""
+        With features.read.v1, sole {kind:feature_blocks,blockType:prefix|class|feature,limit:100,cursor?}, fields [items], or exact {kind:feature_block,blockType,id}. With instances.read.v1, sole {kind:instances,limit:100,cursor?}, fields [items], or exact {kind:instance,id}; returned persistent IDs feed export jobs. With font.checkpoints.v1, fields [checkpoint] and one checkpoint_history/checkpoint_details/checkpoint_compare/checkpoint_scope selector read bounded Git evidence using full revisions/cursors. Invalid selector input returns invalid_request; keep the document binding and correct the input. Full selectors/fields: shipped Glyphs references and the seventeen-tool command reference."""
         return _result(lambda: service.read_entities(document_id, entities, fields))
 
     @mcp.tool(name="start_job")

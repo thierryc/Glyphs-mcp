@@ -13,6 +13,8 @@ final class InstallerViewModel: ObservableObject {
     @Published var notice: ComponentNotice = .none
     @Published private(set) var log = ""
     @Published private(set) var busy = false
+    @Published var supplementalSkillsBusy = false
+    var operationsBusy: Bool { busy || supplementalSkillsBusy }
     @Published private(set) var running = false
     @Published private(set) var receiptURL: URL?
     @Published var updateStatus: PluginUpdateStatus = .idle
@@ -43,7 +45,7 @@ final class InstallerViewModel: ObservableObject {
             && Set(InstallerClientKind.allCases).isSubset(of: installedConnectors)
     }
     var bulkActionTitle: String { allInstalled ? "Update All" : "Install All" }
-    var canChangeComponents: Bool { !busy && !checkingPython && application != nil && !running }
+    var canChangeComponents: Bool { !operationsBusy && !checkingPython && application != nil && !running }
     var canRunBulkAction: Bool { canChangeComponents && pythonReady }
     var installedConnectors: Set<InstallerClientKind> {
         Set(InstallerClientKind.allCases.filter { connectorStates[$0] == .installed })
@@ -121,7 +123,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     func quitGlyphs() {
-        guard !busy, let application else { return }
+        guard !operationsBusy, let application else { return }
         busy = true
         Task {
             defer { busy = false }
@@ -149,7 +151,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     func openPythonInPluginManager() {
-        guard !busy, !checkingPython, let application,
+        guard !operationsBusy, !checkingPython, let application,
               let url = URL(string: "glyphsapp4://showplugin/Python") else { return }
         NSWorkspace.shared.open([url], withApplicationAt: application.appURL,
                                 configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
@@ -162,7 +164,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     func checkGlyphsPython() {
-        guard !busy, !checkingPython else { return }
+        guard !operationsBusy, !checkingPython else { return }
         pythonReady = false
         pythonVersion = nil
         pythonSetupError = nil
@@ -359,7 +361,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     private func performConnector(_ client: InstallerClientKind, operation: SetupOperation) {
-        guard !busy else { return }
+        guard !operationsBusy else { return }
         if operation != .remove && !installed.contains("mcp") {
             connectorStates[client] = .failed(operation, "Install Glyphs MCP before configuring this connection.")
             return

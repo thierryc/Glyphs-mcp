@@ -15,7 +15,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout prepares unpublished product 2.0.0, stable-channel identity, installer build 55. Final signing and distribution qualification remain pending. Sidecar and bridge product versions are `2.0.0`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany thirteen tools and up to thirteen capability-gated job kinds. See [version and identity](../content/reference/version-identity.mdx).
+This checkout prepares product 2.0.1, stable-channel identity, installer build 56. Earlier local artifacts passed Developer ID signing, notarization and Gatekeeper; the new document routes require fresh distribution artifacts and qualification before publication. Sidecar and bridge product versions are `2.0.1`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seventeen tools and up to thirteen capability-gated job kinds. See [2.0.1 release preparation](../V2.0.1-RELEASE.md) and [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
@@ -93,3 +93,26 @@ component determinism, skill/docs checks and unsigned candidate verification.
 The actual Glyphs acceptance gate additionally requires an unlocked Mac and a
 disposable font. Record baseline and loaded timings independently; 200 ms is
 a diagnostic threshold, never an automatic rejection.
+
+## Skills catalog development
+
+Setup remains the overview. Companion Plugins, AI Agents and Skills reuse the
+same installer state and operation gates. Optional skills use their own hash
+receipts, advisory destination locks, atomic folder replacement and recovery
+journals; they do not change the managed eleven-skill bundle or MCP interface.
+
+`catalog-repository/` is the reproducible bootstrap for the independent
+`thierryc/glyphs-mcp-skills` repository. Its registry matches the offline snapshot
+in `Resources/SkillsCatalog`. Both reference the canonical bundled sources;
+contributed source folders belong to the separate repository or an external
+public GitHub repository. Validate with:
+
+```sh
+python catalog-repository/scripts/validate_catalog.py
+python -m unittest discover -s catalog-repository/tests
+```
+
+When established runtime cache links are unavailable, retain them and use a
+separate verified input folder through `GMCP_BUILD_RUNTIME_ROOT` or
+`build_installer_payload.py --runtime-root`. The input identity checks still
+apply. This selects build inputs only, not the installed/running runtime.

@@ -3,7 +3,7 @@
 Use `kind="python_script"` through `start_edit_workflow` when `script.native.v1`
 is advertised. Scripts run directly in Glyphs against the exact intended font,
 with an unchanged saved version available for whole-font restoration. This is
-trusted Python, not a security sandbox. The thirteen-tool surface is unchanged.
+trusted Python, not a security sandbox. The seventeen-tool surface is unchanged.
 `executionMode` and `recovery` are retired fields and are rejected, never converted
 from an old scoped request into live execution. Missing capabilities remain
 installation gaps; scripts must not bypass rejected writes or stale targets.

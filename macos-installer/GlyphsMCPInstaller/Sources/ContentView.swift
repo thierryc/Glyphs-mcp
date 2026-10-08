@@ -21,6 +21,7 @@ struct ContentView: View {
     @EnvironmentObject private var installer: InstallerViewModel
     @EnvironmentObject private var desktop: DesktopModel
     @StateObject private var projects = DesktopProjectsModel()
+    @StateObject private var skills = DesktopSkillsModel()
     @AppStorage("projectsExpanded") private var projectsExpanded = true
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
@@ -29,6 +30,9 @@ struct ContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
                     sidebarItem("Setup", icon: "shippingbox.and.arrow.backward", destination: .setup)
+                    sidebarItem("Companion Plugins", icon: "puzzlepiece.extension", destination: .companions)
+                    sidebarItem("AI Agents", icon: "sparkles", destination: .agents)
+                    sidebarItem("Skills", icon: "books.vertical", destination: .skills)
                     sidebarItem("Project", icon: "folder.badge.plus", destination: .templates)
                     HStack(spacing: 6) {
                         Button { projectsExpanded.toggle() } label: {
@@ -67,7 +71,10 @@ struct ContentView: View {
             )
         } detail: {
             switch projects.navigation.destination {
-            case .setup: DesktopSetup()
+            case .setup: DesktopSetup { projects.select($0) }
+            case .companions: DesktopFocusedSetup(section: .companions) { projects.select(.setup) }
+            case .agents: DesktopFocusedSetup(section: .agents) { projects.select(.setup) }
+            case .skills: DesktopSkillsView(model: skills, installer: installer, project: projects.navigation.lastProject) { projects.select(.agents) }
             case .templates: DesktopProjectCatalog(model: projects)
             case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
             }
@@ -151,6 +158,7 @@ private struct DesktopSidebarToolbarDefaults: ViewModifier {
 }
 
 struct DesktopSetup: View {
+    let navigate: (DesktopDestination) -> Void
     @EnvironmentObject private var installer: InstallerViewModel
     @EnvironmentObject private var desktop: DesktopModel
 
@@ -221,7 +229,7 @@ struct DesktopSetup: View {
                             HStack {
                                 Button("Open Python in Plugin Manager", action: installer.openPythonInPluginManager)
                                 Button("Check again", action: installer.checkGlyphsPython)
-                            }.disabled(installer.busy || installer.checkingPython)
+                            }.disabled(installer.operationsBusy || installer.checkingPython)
                         }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
@@ -231,7 +239,7 @@ struct DesktopSetup: View {
                             .font(.callout).foregroundStyle(.orange)
                         Spacer()
                         Button("Quit Glyphs", action: installer.quitGlyphs)
-                            .buttonStyle(.borderedProminent).tint(.orange).disabled(installer.busy)
+                            .buttonStyle(.borderedProminent).tint(.orange).disabled(installer.operationsBusy)
                     }
                 }
                 HStack(spacing: 12) {
@@ -239,10 +247,17 @@ struct DesktopSetup: View {
                     Button("Refresh") {
                         installer.refresh(resetFailures: true)
                         Task { await desktop.refresh() }
-                    }.disabled(installer.busy)
+                    }.disabled(installer.operationsBusy)
                     Spacer()
                     Text(installer.versionLabel).font(.caption).foregroundStyle(.secondary)
                 }
+                HStack {
+                    Button("Companion Plugins") { navigate(.companions) }
+                    Button("AI Agents") { navigate(.agents) }
+                    Button("Skills") { navigate(.skills) }
+                }
+                Text("Eleven included skills are managed with your agent connections. Browse Skills for their status and additional workflows.")
+                    .font(.callout).foregroundStyle(.secondary)
                 InstallationView()
             }
             .padding(DesktopSetupLayout.contentPadding)

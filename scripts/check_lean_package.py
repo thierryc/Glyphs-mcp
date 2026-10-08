@@ -3,6 +3,7 @@
 import ast
 import hashlib
 import json
+import runpy
 from pathlib import Path
 import re
 
@@ -40,7 +41,7 @@ def check_tool_catalog(root):
     model = ast.parse((root/'src/protocol/glyphs_mcp_protocol/models.py').read_text())
     expected = next(ast.literal_eval(node.value) for node in model.body
                     if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'TOOL_NAMES' for t in node.targets))
-    assert len(tools) == len(expected) == 13 and set(tools) == set(expected), f'Public tool contract mismatch: {tools}'
+    assert len(tools) == len(expected) == 17 and set(tools) == set(expected), f'Public tool contract mismatch: {tools}'
     return set(tools)
 
 
@@ -70,6 +71,7 @@ def check():
         assert set(re.findall(r'--hash=sha256:([a-f0-9]{64})',lock)) == set(hashes.values())
         assert 'glyphs-cli==0.6.1' in lock and 'fastmcp==2.12.0' in lock
     for path in (ROOT/'src').glob('*/glyphs_mcp_*/*.py'): ast.parse(path.read_text())
+    runpy.run_path(str(ROOT / "scripts/check_skill_catalog.py"))["check"](ROOT)
     tools = check_tool_catalog(ROOT)
     check_kerning_data(ROOT/'src/protocol/glyphs_mcp_protocol/data/kerning-pairs')
     return {'skills':len(names), 'runtimeArchitectures':['arm64','x86_64'], 'publicTools':len(tools)}

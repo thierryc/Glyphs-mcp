@@ -2,7 +2,7 @@
 title: How v2 works
 ---
 
-V2 separates typed preparation from live editing and also supports direct native scripting. The AI client uses thirteen MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
+V2 separates typed preparation from live editing and also supports direct native scripting. The AI client uses seventeen MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
 
 | Part | Responsibility |
 | --- | --- |
@@ -56,7 +56,7 @@ after Keep or Save; guarded workflow recovery ends when the result is settled. R
 Inspector compares against a selected source; it is not a log of tool calls or
 an acceptance interface.
 
-Use the [thirteen-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
+Use the [seventeen-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
 
 ## Faster preparation, shared results
 

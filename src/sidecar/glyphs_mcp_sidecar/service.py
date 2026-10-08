@@ -23,7 +23,7 @@ from . import checkpoints, checkpoint_restore
 from .bridge_client import BridgeClientError
 from .jobs import JobStore
 from .identity import IDENTITY, VERSION
-from .lifecycle import ServiceLifecycle, activity, mutation
+from .lifecycle import ServiceLifecycle, activity, mutation, document_dispatch
 from . import saving, saved_script
 from . import artifact_publication
 from .script_service import mutation_guard
@@ -158,7 +158,7 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1")
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1")
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
@@ -185,6 +185,43 @@ class SidecarService:
         except Exception as exc:
             raise self._error(exc) from exc
 
+    @mutation
+    def open_document(self, path: str, idempotency_key: str) -> dict[str, Any]:
+        from . import document_opening
+        try:
+            return document_opening.open_document(self, ServiceError, path, idempotency_key)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    @mutation
+    def import_document(self, path: str, idempotency_key: str) -> dict[str, Any]:
+        from . import document_opening
+        try:
+            return document_opening.dispatch(self, ServiceError, path, idempotency_key, importing=True)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    @mutation
+    def activate_document(self, document_id: str) -> dict[str, Any]:
+        from glyphs_mcp_protocol.document_creation import text
+        try:
+            identity = text(document_id, "document_id")
+            if "document.activate.v1" not in (self.bridge.status().get("writeCapabilities") or []):
+                raise ServiceError("unsupported_capability", "Activate requires document.activate.v1")
+            return self.bridge.activate_document(identity)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    @mutation
+    @document_dispatch
+    @mutation_guard
+    def close_document(self, document_id: str, idempotency_key: str, unsaved_changes: str = "refuse", destination: str | None = None) -> dict[str, Any]:
+        from . import document_closing
+        try:
+            return document_closing.close_document(self, ServiceError, document_id, idempotency_key, unsaved_changes, destination)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
     def read_entities(
         self, document_id: str, entities: list[dict[str, Any]], fields: list[str]
     ) -> list[dict[str, Any]]:
@@ -197,6 +234,7 @@ class SidecarService:
             raise self._error(exc) from exc
 
     @mutation
+    @document_dispatch
     @mutation_guard
     def start_job(
         self,

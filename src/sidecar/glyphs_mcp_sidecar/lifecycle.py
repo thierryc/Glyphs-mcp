@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 import fcntl
+import hashlib
 import os
 import time
 from uuid import uuid4
@@ -15,6 +16,19 @@ def mutation(method):
     def guarded(self, *args, **kwargs):
         with self.lifecycle.mutation():
             return method(self, *args, **kwargs)
+    return guarded
+
+
+def document_dispatch(method):
+    """Serialize job registration and Close across HTTP/stdio sidecars."""
+    @wraps(method)
+    def guarded(self, document_id, *args, **kwargs):
+        root = self.jobs.root / "document-dispatch-locks"
+        root.mkdir(mode=0o700, exist_ok=True)
+        name = hashlib.sha256(str(document_id).encode()).hexdigest()
+        with (root / name).open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            return method(self, document_id, *args, **kwargs)
     return guarded
 
 

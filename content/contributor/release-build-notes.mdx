@@ -4,7 +4,7 @@ title: Packaging and release discovery
 
 Glyphs MCP **2.0.0**, desktop build **55**, uses the stable channel. Its universal app, payload and DMG are Developer ID-signed and Apple-notarized. Signed fresh-install, beta-to-stable desktop update, component migration/recovery and v1 migration checks passed on macOS 14.6.1 Apple silicon with Glyphs 4.1.1/build 4108. Exact macOS 14.0/current-macOS native acceptance and physical Intel execution remain unverified.
 
-The payload includes **eleven managed skills**, thirteen tools, up to thirteen capability-gated job kinds, the Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin, private runtimes and stable Beztrace 0.1.1 engine. The independent Beztrace Glyphs plugin has its own installation. Glyphs 3 remains on its separate pinned v1.11.0 release. See [qualification](../reference/release-qualification.mdx) and [version identity](../reference/version-identity.mdx).
+The published 2.0.0 payload includes **eleven managed skills**, thirteen tools, up to thirteen capability-gated job kinds, the Glyphs 4 bridge, sidecar, two optional inspectors, Cursor plugin, private runtimes and stable Beztrace 0.1.1 engine. The 2.0.1 source adds four document tools: `open_document`, `import_document`, `activate_document` and `close_document`, bringing the catalog to seventeen. These require fresh distribution qualification. The independent Beztrace Glyphs plugin has its own installation. Glyphs 3 remains on its separate pinned v1.11.0 release. See [qualification](../reference/release-qualification.mdx) and [version identity](../reference/version-identity.mdx).
 
 Build, sign and notarize locally on the maintainer’s Mac. GitHub Actions deploys documentation, not release artifacts. The source tag records the exact build inputs; reuse sealed artifacts and accepted receipts when those inputs are unchanged.
 
@@ -42,6 +42,7 @@ Run `scripts/build_desktop_release.sh` with the verified Python build environmen
 
 The Sparkle signing key stays in Keychain under account `cx.ap.glyphsMcp`, separate from the Developer ID certificate. Never export it into the repository. Application updates are separate from component migrations; acceptance must exercise a signed older-to-newer app update and component rollback.
 
-The current development catalog adds `create_document` under `document.create.v1`,
-bringing the public tool count to thirteen. See the current command reference
-for creation and separate Save As behavior.
+The 2.0.1 development catalog adds Open, Import, Activate and Close under the
+matching `document.*.v1` capabilities, bringing the public tool count to seventeen.
+`create_document` remains available under `document.create.v1`. See the current
+command reference for explicit unsaved handling, retry safety and separate Save As.

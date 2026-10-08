@@ -214,7 +214,7 @@ def test_mcp_client_exposes_creation_without_document_id(host, tmp_path):
     async def exercise():
         async with Client(create_server(service)) as client:
             catalog = {tool.name: tool for tool in await client.list_tools()}
-            assert len(catalog) == 13
+            assert len(catalog) == 17
             assert set(catalog["create_document"].inputSchema["required"]) == {"family_name", "idempotency_key"}
             first = await client.call_tool("create_document", {"family_name": "Client", "idempotency_key": "client"})
             second = await client.call_tool("create_document", {"family_name": "Client", "idempotency_key": "client"})

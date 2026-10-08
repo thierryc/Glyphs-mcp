@@ -1,7 +1,7 @@
 # Private lean v2 skill policy
 
-Current scope is tracked in [V2 release notes](../V2-RELEASE.md); the
-[thirteen-tool contract](../content/reference/command-set.mdx) is the interface
+Current scope is tracked in [2.0.1 release notes](../V2.0.1-RELEASE.md); the
+[seventeen-tool contract](../content/reference/command-set.mdx) is the interface
 reference. Shared skill contracts are [conversation edits](glyphs/references/edit-workflow.md),
 [native scripts](glyphs/references/python-scripts.md) and
 [Git checkpoints](glyphs/references/git-checkpoints.md). Focused skills link to
@@ -13,7 +13,7 @@ its negotiated capabilities before routing a task. Missing required capabilities
 mean the installation needs updating; do not maintain workflows for earlier
 private v2 builds. V1 has separate instructions and is not changed by this policy.
 
-The public interface remains thirteen tools: `get_status`, `list_documents`, `create_document`,
+The public interface contains seventeen tools: `get_status`, `list_documents`, `create_document`, `open_document`,
 `read_entities`, `start_job`, `get_job`, `apply_job`, `accept_job`,
 `discard_job`, `save_document`, `start_edit_workflow`, `get_edit_workflow` and
 `respond_edit_workflow`.

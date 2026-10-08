@@ -1,0 +1,22 @@
+name: Submit a skill
+description: Request review of a Glyphs or font workflow
+title: "[Skill] "
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Public GitHub repository and skill directory
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow, author and redistribution license
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Tested clients, requirements, example prompts and expected results
+    validations:
+      required: true

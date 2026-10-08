@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import plistlib
 import shutil
 import tempfile
@@ -152,7 +153,7 @@ def build_payload(output_root=DEFAULT_OUTPUT_ROOT, *, allow_outside_worktree=Fal
     cursor = output / "AgentPlugins/Cursor/glyphs-mcp"
     cursor.parent.mkdir(parents=True)
     shutil.copytree(CURSOR_PLUGIN, cursor, ignore=_ignore_generated)
-    runtime_root = Path(runtime_root or REPO_ROOT / "build/private-runtime")
+    runtime_root = Path(runtime_root or os.environ.get("GMCP_BUILD_RUNTIME_ROOT") or REPO_ROOT / "build/private-runtime")
     lean = build(output / "Lean", runtime_root=runtime_root)
     helper = output / "Installer"; helper.mkdir()
     for name in ("install_simple_v2.py", "installation_transaction.py", "build_simple_v2.py"):
@@ -179,9 +180,10 @@ def main():
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--verify-root", type=Path)
     parser.add_argument("--release-version")
+    parser.add_argument("--runtime-root", type=Path, help="Verified private runtime inputs; preserves existing development links")
     args = parser.parse_args()
     result = validate_payload(args.verify_root or args.output_root, release_version=args.release_version) if args.validate_only or args.verify_root else build_payload(
-        args.output_root, allow_outside_worktree=args.allow_outside_worktree)
+        args.output_root, allow_outside_worktree=args.allow_outside_worktree, runtime_root=args.runtime_root)
     print(json.dumps(result, sort_keys=True))
 
 
