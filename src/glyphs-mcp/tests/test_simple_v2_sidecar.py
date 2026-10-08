@@ -245,7 +245,8 @@ def test_dirty_documents_are_rejected_before_job_creation(tmp_path: Path) -> Non
     with pytest.raises(ServiceError) as caught:
         value.start_job("doc_1", kind="width_delta", delta=8)
     assert caught.value.code == "document_not_clean"
-    assert not list(value.jobs.root.iterdir())
+    assert not value.jobs.records()
+    assert not list(value.jobs.root.glob("job_*"))
 
 
 def test_discarded_ready_job_removes_bulk_artifacts_but_keeps_state(tmp_path: Path) -> None:

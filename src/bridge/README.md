@@ -1,6 +1,6 @@
 # Glyphs MCP Bridge
 
-See the [current fourteen-tool contract](../../content/reference/command-set.mdx)
+See the [current seventeen-tool contract](../../content/reference/command-set.mdx)
 and [V2 release notes](../../V2-RELEASE.md) for shared behavior and scope.
 
 The bridge is a combined Glyphs plug-in with a small, fixed-height sidebar palette

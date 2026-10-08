@@ -2,7 +2,9 @@
 
 ## 2.0.1 — skills catalog and focused setup, build 56
 
-- Add `open_document` for native Glyphs sources, with retained retry keys and reuse of already-open fonts without reloading unsaved edits. The catalog now has fourteen tools; protocol and interface revision remain 1.
+- Add `open_document` for native Glyphs sources, with retained retry keys and reuse of already-open fonts without reloading unsaved edits. The catalog now has seventeen tools; protocol and interface revision remain 1.
+- Add `close_document` with explicit Save/Discard choices, verified Save-and-Close, pending-job protection and retained outcomes that preserve later edits on retry.
+- Add `activate_document` for an exact font window and `import_document` for UFO/OTF/TTF. Imports preserve their source and require native Save As; compiled imports report decompilation limitations.
 - Add Companion Plugins, AI Agents and Skills below Setup; share component and connector operations across overview and focused pages.
 - Browse included, curated and reviewed community skills with a cached/offline catalog and personal public-GitHub imports.
 - Install supplemental skills into shared Codex/Cursor or Claude Code personal/project folders; keep edited content, backups and recoverable ownership receipts.

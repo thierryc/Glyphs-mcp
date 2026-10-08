@@ -2,10 +2,10 @@
 title: Skills and tool boundaries
 ---
 
-A skill supplies workflow guidance to an AI client. The server remains the same fourteen-tool service whether or not the client loads a skill.
+A skill supplies workflow guidance to an AI client. The server remains the same seventeen-tool service whether or not the client loads a skill.
 
 Use the [included v2 skills](../getting-started/use-agent-skills.mdx) to identify the font, scope work, inspect reports and review live results. Keep font names, artistic decisions and task-specific recipes in the request or workspace, outside the bridge.
 
-The `glyphs-mcp-scripting` and `glyphs-mcp-development` skills can prepare reviewed native scripts or reusable plugins. Native execution uses `python_script` under `script.native.v1` in the fourteen-tool conversation workflow. Result tasks need no separate code review; writing a script includes review and does not itself authorize execution. Native scripting uses a saved baseline with whole-font restoration. Typed export and analysis retain their own workflows.
+The `glyphs-mcp-scripting` and `glyphs-mcp-development` skills can prepare reviewed native scripts or reusable plugins. Native execution uses `python_script` under `script.native.v1` in the seventeen-tool conversation workflow. Result tasks need no separate code review; writing a script includes review and does not itself authorize execution. Native scripting uses a saved baseline with whole-font restoration. Typed export and analysis retain their own workflows.
 
 Match the skill package to the server version. A v1 skill may request commands that do not exist in v2; the [migration guide](../getting-started/migrate-from-v1.mdx) describes the boundary.

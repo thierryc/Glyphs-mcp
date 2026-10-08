@@ -15,6 +15,9 @@ OpenType source work uses [the native feature skill](../glyphs-mcp-opentype-feat
 
 To open an existing native font file, use [font opening](references/font-opening.md).
 This needs no existing document, saved baseline or script and never saves.
+For UFO/OTF/TTF import, activation or closing, use
+[document lifecycle](references/document-lifecycle.md). Close requires explicit
+save/discard handling and resolves no pending jobs.
 
 ## Continue from known context
 
@@ -118,7 +121,7 @@ closes the rollback window. Use `save_document` only for a specifically
 identified document with no active or applied MCP job. Inspect fresh source and
 dirty state for preparation, and never save merely to satisfy `start_job`.
 Never save, publish an export, close or overwrite a font unless the user's task
-authorizes it. The fourteen tools expose trusted Python through the separate advertised
+authorizes it. The seventeen tools expose trusted Python through the separate advertised
 `python_script` job; follow [its execution contract](references/python-scripts.md).
 There is no plugin reload tool; do not invent an MCP command. An advertised `native_action` is a closed typed job,
 not a general script or remote-object interface.

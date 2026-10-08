@@ -37,6 +37,7 @@ class BridgeAdapter(Protocol):
     def list_documents(self) -> list[dict[str, Any]]: ...
     def create_document(self, request: Mapping[str, Any], operation: dict[str, Any]) -> dict[str, Any]: ...
     def open_document(self, request: Mapping[str, Any], operation: dict[str, Any]) -> dict[str, Any]: ...
+    def import_document(self, request: Mapping[str, Any], operation: dict[str, Any]) -> dict[str, Any]: ...
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]: ...
     def document_state(self, document_id: str) -> dict[str, Any]: ...
     def current_value(self, document_id: str, change: Mapping[str, Any], *, reverse: bool = False) -> Any: ...
@@ -64,6 +65,8 @@ class BridgeCore:
         self._saves: dict[str, dict[str, Any]] = {}
         self._creations: dict[str, dict[str, Any]] = {}
         self._openings: dict[str, dict[str, Any]] = {}
+        self._imports: dict[str, dict[str, Any]] = {}
+        self._closes: dict[str, dict[str, Any]] = {}
         self.bridge_session_id = uuid4().hex
         self._lock = RLock()
         self.paused = False
@@ -96,6 +99,12 @@ class BridgeCore:
         from . import document_opening
         if document_opening.available(self.adapter):
             write_capabilities.append("document.open.v1")
+            write_capabilities.append("document.import.v1")
+        from . import document_lifecycle
+        if document_lifecycle.available("close"):
+            write_capabilities.append("document.close.v1")
+        if document_lifecycle.available("show"):
+            write_capabilities.append("document.activate.v1")
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
         if dimensions.available():
@@ -135,6 +144,18 @@ class BridgeCore:
     def open_document(self, request) -> dict[str, Any]:
         from . import document_opening
         return document_opening.open_document(self, request, BridgeError)
+
+    def import_document(self, request) -> dict[str, Any]:
+        from . import document_importing
+        return document_importing.import_document(self, request, BridgeError)
+
+    def close_document(self, request) -> dict[str, Any]:
+        from . import document_lifecycle
+        return document_lifecycle.close(self, request, BridgeError)
+
+    def activate_document(self, document_id) -> dict[str, Any]:
+        from . import document_lifecycle
+        return document_lifecycle.activate(self, document_id, BridgeError)
 
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         if not isinstance(entities, list) or not 1 <= len(entities) <= 100:

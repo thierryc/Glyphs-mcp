@@ -9,7 +9,7 @@ from typing import Any, Mapping, Sequence
 from uuid import uuid4
 
 from .bridge_client import BridgeClientError
-from .source import SourceError, source_hash
+from .source import SourceError, source_hash, font_source_hash
 
 
 SUPPORTED_SUFFIXES = frozenset({".glyphs", ".glyphspackage"})
@@ -31,11 +31,12 @@ class SaveError(RuntimeError):
         self.write_attempted = bool(write_attempted)
 
 
-def _absolute(value: str, label: str) -> Path:
+def _absolute(value: str, label: str, *, allow_import=False) -> Path:
     path = Path(str(value))
     if not path.is_absolute():
         raise SaveError("invalid_destination", f"{label} must be an absolute path")
-    if path.suffix.lower() not in SUPPORTED_SUFFIXES:
+    formats = SUPPORTED_SUFFIXES | {".ufo", ".otf", ".ttf"} if allow_import else SUPPORTED_SUFFIXES
+    if path.suffix.lower() not in formats:
         raise SaveError(
             "unsupported_source_format",
             f"{label} must end in .glyphs or .glyphspackage",
@@ -60,7 +61,7 @@ def _same_path(left: Path | None, right: Path | None) -> bool:
 
 def _hash(path: Path, label: str) -> str:
     try:
-        return source_hash(path)
+        return font_source_hash(path)
     except SourceError as exc:
         raise SaveError("source_unavailable", f"{label}: {exc}") from exc
 
@@ -84,13 +85,15 @@ def prepare_save(
         )
 
     current_value = document.get("path")
-    current = _absolute(str(current_value), "the current document path") if current_value else None
+    current = _absolute(str(current_value), "the current document path", allow_import=True) if current_value else None
     if destination is None:
         if current is None:
             raise SaveError(
                 "document_path_required",
                 "A pathless document requires an explicit Save As destination",
             )
+        if current.suffix.lower() not in SUPPORTED_SUFFIXES:
+            raise SaveError("document_path_required", "An imported font requires a new .glyphs or .glyphspackage Save As destination")
         target = current
         mode = "save"
     else:
@@ -102,7 +105,7 @@ def prepare_save(
                 "destination_parent_missing",
                 "The Save As destination parent directory does not exist",
             )
-        if current is not None and current.suffix.lower() == ".glyphspackage":
+        if current is not None and current.suffix.lower() in {".glyphspackage", ".ufo"}:
             try:
                 target.relative_to(current)
             except ValueError:
@@ -116,13 +119,13 @@ def prepare_save(
     for other in documents:
         if str(other.get("id") or "") == document_id or not other.get("path"):
             continue
-        other_path = _absolute(str(other["path"]), "an open document path")
+        other_path = _absolute(str(other["path"]), "an open document path", allow_import=True)
         if _same_path(other_path, target):
             raise SaveError(
                 "destination_open_in_glyphs",
                 "The save destination belongs to another open Glyphs document",
             )
-        if other_path.suffix.lower() == ".glyphspackage":
+        if other_path.suffix.lower() in {".glyphspackage", ".ufo"}:
             try:
                 target.relative_to(other_path)
             except ValueError:

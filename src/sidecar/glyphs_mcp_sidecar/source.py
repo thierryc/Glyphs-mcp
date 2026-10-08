@@ -14,6 +14,35 @@ def file_hash(path: Path) -> str:
     return "sha256:" + digest.hexdigest()
 
 
+def font_source_hash(path: Path) -> str:
+    """Fingerprint imported sources for Save As without making them job baselines."""
+    suffix = path.suffix.lower()
+    if suffix not in {".ufo", ".otf", ".ttf"}:
+        return source_hash(path)
+    if path.is_symlink():
+        raise SourceError("the imported source contains a symbolic link")
+    if suffix != ".ufo":
+        if not path.is_file():
+            raise SourceError("the imported source file is unavailable")
+        return file_hash(path)
+    if not path.is_dir():
+        raise SourceError("the imported UFO source folder is unavailable")
+    entries = list(path.rglob("*"))
+    if any(item.is_symlink() or (not item.is_file() and not item.is_dir()) for item in entries):
+        raise SourceError("the UFO contains unsafe filesystem entries")
+    files = sorted((item for item in entries if item.is_file()), key=lambda item: item.relative_to(path).as_posix())
+    if not files:
+        raise SourceError("the imported UFO is empty")
+    digest = hashlib.sha256()
+    for item in files:
+        name = item.relative_to(path).as_posix().encode()
+        digest.update(len(name).to_bytes(8, "big")); digest.update(name)
+        with item.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+    return "sha256:" + digest.hexdigest()
+
+
 def snapshot_source(source: Path | str, job_root: Path) -> tuple[Path, str]:
     original = Path(source)
     before = source_hash(original)

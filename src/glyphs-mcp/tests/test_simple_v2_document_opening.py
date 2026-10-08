@@ -297,7 +297,7 @@ def test_mcp_open_needs_no_existing_document_or_save(tmp_path):
     async def exercise():
         async with Client(create_server(service)) as client:
             catalog = {tool.name: tool for tool in await client.list_tools()}
-            assert len(catalog) == 14
+            assert len(catalog) == 17
             assert set(catalog["open_document"].inputSchema["required"]) == {"path", "idempotency_key"}
             first = await client.call_tool("open_document", {"path": str(path), "idempotency_key": "client"})
             second = await client.call_tool("open_document", {"path": str(path), "idempotency_key": "client"})

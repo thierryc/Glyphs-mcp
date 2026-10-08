@@ -4,7 +4,7 @@ title: Version and identity
 
 Use the catalog of the **specific MCP connection** to select instructions. A
 product label, a skill name or the Glyphs display name cannot identify an MCP
-interface by itself. The current lean catalog has fourteen tools; the v1 catalog
+interface by itself. The current lean catalog has seventeen tools; the v1 catalog
 and its pinned Glyphs 3 skills remain separate.
 
 ## Current source target
@@ -24,13 +24,13 @@ and the Xcode project. The managed skill inventory comes from
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
-| MCP tools | `14` |
+| MCP tools | `17` |
 | Job kinds | `up to 13`, capability-derived |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
 `sidecarVersion` and `bridgeVersion` are coordinated product versions. The lean
-interface revision identifies the fourteen-tool contract; the bridge protocol
+interface revision identifies the seventeen-tool contract; the bridge protocol
 identifies the sidecar/native message contract. The dated MCP transport version
 is negotiated separately during initialization. These values need not match.
 The sixth job, `outline_edit`, is additive and appears only when the bridge

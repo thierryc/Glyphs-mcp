@@ -8,6 +8,8 @@ Under the user's file-opening request, call `open_document` with an absolute loc
 `path` and a fresh retained `idempotency_key`. Native `.glyphs` files and
 `.glyphspackage` directories are supported; URLs, missing sources and binary/UFO
 imports are not. File aliases are resolved to their canonical path.
+Use [document lifecycle](document-lifecycle.md) for the separate Import,
+Activate and Close operations.
 
 No existing document, saved baseline, prerequisite Save or edit job is required.
 An already-open source is reused without reloading or changing its unsaved edits.

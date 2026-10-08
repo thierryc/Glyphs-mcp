@@ -11,7 +11,7 @@ from .models import ProtocolError
 CAPABILITY = "document.open.v1"
 
 
-def source_path(value):
+def source_path(value, *, formats=None):
     if (not isinstance(value, str) or not 1 <= len(value) <= 4096
             or any(ord(character) < 32 or ord(character) == 127 for character in value)):
         raise ProtocolError("invalid_request", "path must be an absolute local path without control characters")
@@ -22,18 +22,21 @@ def source_path(value):
         path = path.resolve()
     except (OSError, RuntimeError, ValueError) as exc:
         raise ProtocolError("invalid_request", "the document path cannot be resolved") from exc
-    if path.suffix.lower() not in {".glyphs", ".glyphspackage"}:
+    if path.suffix.lower() not in (formats or {".glyphs", ".glyphspackage"}):
         raise ProtocolError("unsupported_format", "Open requires a .glyphs file or .glyphspackage folder")
     return str(path)
 
 
-def validate_source(path):
+def validate_source(path, *, formats=None):
     source = Path(path)
     if not source.exists():
         raise ProtocolError("file_not_found", "the requested Glyphs source does not exist")
-    if (source.suffix.lower() == ".glyphs" and not source.is_file()
-            or source.suffix.lower() == ".glyphspackage" and not source.is_dir()):
-        raise ProtocolError("invalid_request", ".glyphs must be a regular file and .glyphspackage a folder")
+    suffix = source.suffix.lower()
+    if suffix not in (formats or {".glyphs", ".glyphspackage"}):
+        raise ProtocolError("unsupported_format", "Unsupported font source format")
+    package = suffix in {".glyphspackage", ".ufo"}
+    if (package and not source.is_dir()) or (not package and not source.is_file()):
+        raise ProtocolError("invalid_request", "Font packages must be folders and font files must be regular files")
 
 
 def options(path, idempotency_key):
