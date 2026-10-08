@@ -1,6 +1,6 @@
-.. attribute:: previewRemoveOverlap
+.. attribute:: snapToObjects
 
-		disable preview remove overlap
+		disable snapping to nodes and background
 
 		:type: bool
 

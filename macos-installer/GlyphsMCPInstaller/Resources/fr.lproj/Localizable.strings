@@ -666,3 +666,24 @@
 "Add / Update Skill" = "Ajouter / mettre à jour";
 "Source and requirements" = "Source et prérequis";
 "Instructions and files" = "Instructions et fichiers";
+
+/* Skill installation dialog */
+"Codex & Cursor" = "Codex et Cursor";
+"Installed · locally modified" = "Installé · modifié localement";
+"Installed · existing copy" = "Installé · copie existante";
+"Installed · linked folder" = "Installé · dossier lié";
+"Install for your agents" = "Installer pour vos agents";
+"Install location" = "Emplacement d’installation";
+"This Project" = "Ce projet";
+"Available only in the selected project." = "Disponible uniquement dans le projet sélectionné.";
+"Available across your projects on this Mac." = "Disponible dans tous vos projets sur ce Mac.";
+"Locations and activity" = "Emplacements et activité";
+"Choose a project folder" = "Choisissez un dossier de projet";
+"Update this skill?" = "Mettre à jour cette compétence ?";
+"Your existing copy will be backed up before it is replaced with the catalog version." = "Votre copie existante sera sauvegardée avant son remplacement par la version du catalogue.";
+"Remove this skill?" = "Supprimer cette compétence ?";
+"A backup will be kept. If this is a linked folder, only the link is removed; the original folder stays untouched." = "Une sauvegarde sera conservée. Pour un dossier lié, seul le lien est supprimé ; le dossier original est préservé.";
+"This skill uses a linked local folder. Update installs a managed copy here; Remove detaches the link. Both keep your original folder." = "Cette compétence utilise un dossier local lié. Mettre à jour installe une copie gérée ici ; Supprimer retire le lien. Le dossier original est conservé dans les deux cas.";
+"Updating skill…" = "Mise à jour de la compétence…";
+"This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept." = "Le lien sera remplacé par une copie gérée de la version du catalogue. Votre dossier original sera préservé et une sauvegarde du lien sera conservée.";
+"Find and repair interpolation kinks while preserving your master outlines." = "Détectez et corrigez les cassures d’interpolation en préservant les contours de vos masters.";

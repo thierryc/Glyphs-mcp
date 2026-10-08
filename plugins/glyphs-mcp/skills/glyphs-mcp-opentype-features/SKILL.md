@@ -22,7 +22,7 @@ For compiler-only evidence, use the advertised closed `feature_compile` job and
 [feature-compilation workflow](../glyphs/references/feature-compilation.md).
 For a generated binary or feature-on/off behavior, use the advertised
 `font_export` job and [verified export workflow](../glyphs/references/font-export.md).
-These remain inside the same seventeen-tool surface and do not expose arbitrary code.
+These remain inside the same eighteen-tool surface and do not expose arbitrary code.
 
 For manual source edits or coordinated changes across prefixes, classes and
 features, offer **direct native scripting** under

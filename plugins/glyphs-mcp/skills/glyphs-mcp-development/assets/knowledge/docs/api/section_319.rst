@@ -1,3 +1,4 @@
-.. function:: beginUndo()
+.. attribute:: bottomKerningGroup
+		The bottomKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
 
-		Call this before you do a longer running change to the glyph. Be extra careful to call :meth:`glyph.endUndo() <GSGlyph.endUndo()>` when you are finished.
+		:type: str

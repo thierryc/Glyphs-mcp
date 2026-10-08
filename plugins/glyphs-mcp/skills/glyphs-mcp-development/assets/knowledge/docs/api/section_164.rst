@@ -1,5 +1,4 @@
-.. attribute:: alignmentZones
+.. attribute:: gridSubDivisionHorizontal
 
-		Collection of :class:`GSAlignmentZone` objects. Read-only.
-
-		:type: list
+		:type: float
+		.. versionadded:: 4.1

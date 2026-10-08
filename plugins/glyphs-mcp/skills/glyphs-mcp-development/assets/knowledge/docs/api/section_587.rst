@@ -1,19 +1,13 @@
-:mod:`NSAffineTransform`
+:mod:`GSInfoValueSingle`
 ===============================================================================
 
-The NSAffineTransform object.
+The GSInfoValueSingle
 
-.. class:: NSAffineTransform()
+.. class:: GSInfoValueSingle()
 
 	Properties
 
-		* :attr:`matrix`
+		* :attr:`key`
+		* :attr:`value`
 
-	Functions
-
-		* :meth:`shift`
-		* :meth:`scale`
-		* :meth:`rotate`
-		* :meth:`skew`
-
-	**Functions**
+	**Properties**

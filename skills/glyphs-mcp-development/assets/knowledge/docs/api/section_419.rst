@@ -1,6 +1,4 @@
-.. function:: decompose([doAnchors=True, doHints=True])
+.. attribute:: componentName
+		The glyph name the component is pointing to.
 
-		Decomposes the component.
-
-		:param doAnchors: get anchors from components
-		:param doHints: get hints from components
+		:type: str

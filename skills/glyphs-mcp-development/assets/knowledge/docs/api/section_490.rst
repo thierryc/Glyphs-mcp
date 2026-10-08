@@ -1,9 +1,16 @@
-.. attribute:: stem
+:mod:`GSAnnotation`
+===============================================================================
 
-		Index of TrueType stem that this hint is attached to. The stems are defined in the custom parameter "TTFStems" per master.
+Implementation of the annotation object.
 
-		For no stem, value is -1.
+For details on how to access them, please see :class:`GSLayer.annotations`
 
-		For automatic, value is -2.
+.. class:: GSAnnotation()
 
-		:type: int
+		* :attr:`position`
+		* :attr:`type`
+		* :attr:`text`
+		* :attr:`angle`
+		* :attr:`width`
+
+	**Properties**

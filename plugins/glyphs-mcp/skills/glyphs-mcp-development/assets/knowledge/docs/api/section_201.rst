@@ -1,7 +1,5 @@
-.. attribute:: description
+.. attribute:: windowsStyle
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+		This is computed from "isBold" and "isItalic". Read-only.
 
 		:type: str
-
-		.. versionadded:: 3.0.3

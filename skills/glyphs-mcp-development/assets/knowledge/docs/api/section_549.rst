@@ -1,5 +1,4 @@
-.. attribute:: case
+.. attribute:: textCursor
+		Position of text cursor in text, starting with 0.
 
-		e.g: GSUppercase, GSLowercase, GSSmallcaps
-
-		:type: int
+		:type: integer

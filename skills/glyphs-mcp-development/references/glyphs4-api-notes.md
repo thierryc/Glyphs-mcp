@@ -8,8 +8,9 @@ fetch the official IDs below only when their details are needed.
 
 ## Export: GSInstance.generate
 
-Official ID: `api-section-237`, SDK revision
-`0f5422db727b78cb42abfb386f33ae0b382b0c4d`.
+Current corpus ID: `api-section-245`, SDK revision
+`c0352321d30a06006f18e94d600f5caf43d06f1b`. The RV01 native observations
+below were made against the earlier `0f5422d…` documentation snapshot.
 The signature uses lower camel case; its older uppercase-keyword example failed
 in the qualified runtime. For an explicitly selected instance and new directory:
 
@@ -36,7 +37,7 @@ feature-on/off cases. Output stays private until create-only atomic publication.
 
 ## Native feature flags
 
-Official ID: `api-section-262` documents `GSFeature.automatic`. In the qualified
+Official ID: `api-section-282` documents `GSFeature.automatic`. In the qualified
 native CLI, feature `automatic` and `disabled` getters could be callable.
 Read their value before interpreting it:
 
@@ -55,7 +56,7 @@ native qualification and is not assigned an invented official API entry.
 
 ## Native compilation: GSFont.compileFeatures
 
-Official ID: `api-section-130`, same pinned SDK revision. RV01 observed native
+Official ID: `api-section-131`, current pinned SDK revision. RV01 observed native
 `(True, None)` and `(False, NSError)` results:
 
 ```python

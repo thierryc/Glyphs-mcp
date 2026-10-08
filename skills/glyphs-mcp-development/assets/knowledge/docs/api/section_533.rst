@@ -1,8 +1,6 @@
-.. attribute:: selectedLayerRange
-		range of of selection in the layers list
+.. attribute:: type
 
-		.. seealso:: `GSEditViewController.layers`
+		The gradient type.
+		Linear = 0, Circular = 1
 
-		:type: NSRange
-
-		.. versionadded:: 4
+		:type: int

@@ -39,6 +39,7 @@ struct InstallationView: View {
         } message: { target in
             Text(target.message)
         }
+        .onAppear { model.refreshOptionalTools() }
         .sheet(isPresented: $showingBeztraceSetup) {
             BeztraceSetupView()
         }
@@ -84,7 +85,12 @@ struct InstallationView: View {
                         retry: { model.retryComponent(component.id) }
                     )
                 }
-                BeztraceSetupCard { showingBeztraceSetup = true }
+                OptionalToolSetupCard(id: "beztrace-glyphs", title: "Beztrace", symbol: "pencil.and.outline",
+                    detail: "Trace PNG and JPEG images into editable outlines.") { showingBeztraceSetup = true }
+                OptionalToolSetupCard(id: "diffenator", title: "Diffenator", symbol: "doc.on.doc",
+                    detail: "Compare compiled TTF releases and review an HTML report.") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/googlefonts/diffenator2")!)
+                }
             }
         }
     }
@@ -165,7 +171,7 @@ private struct BeztraceSetupView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
-                Text("The app bundles engine 0.1.1. The separate plugin is 0.1.0 build 15, independently Developer ID-signed and notarized. Native qualification covers macOS 14.6.1 on Apple Silicon with Glyphs build 4108 and Python 3.14.6; Intel execution is untested. Install All does not install this plugin.")
+                Text("The app bundles engine 0.1.1. Managed optional setup awaits a separately signed companion update that remembers engine selection. Existing plugin 0.1.0 build 15 remains independently available; its qualification does not cover that update. Install All excludes Beztrace.")
                 Link("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {
@@ -300,7 +306,7 @@ private struct ConnectorSetupCard: View {
     }
 }
 
-private struct SetupCard<Preview: View, Title: View, Detail: View, Status: View, Actions: View, Footer: View>: View {
+struct SetupCard<Preview: View, Title: View, Detail: View, Status: View, Actions: View, Footer: View>: View {
     var compact = false
     @ViewBuilder var preview: () -> Preview
     @ViewBuilder var title: () -> Title

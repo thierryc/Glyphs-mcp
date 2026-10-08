@@ -20,17 +20,20 @@ Configuration backs up existing settings and preserves unrelated entries. Modifi
 3. Add that URL to a local client that supports **Streamable HTTP MCP**, or use the installer's supported connection option.
 4. Refresh the client's tools and call `get_status`, then `list_documents`.
 
-A current v2 connection exposes these seventeen tools: `get_status`,
-`list_documents`, `create_document`, `open_document`, `read_entities`, `start_job`, `get_job`, `apply_job`,
-`accept_job`, `discard_job`, `save_document`, `start_edit_workflow`,
-`get_edit_workflow`, and `respond_edit_workflow`. If you see the older v1
-catalog, check which server and port the client is using.
+A current 2.0.2 candidate connection exposes eighteen tools: `get_status`,
+`list_documents`, `create_document`, `open_document`, `import_document`,
+`activate_document`, `close_document`, `read_entities`, `start_job`,
+`compare_fonts`, `get_job`, `apply_job`, `accept_job`, `discard_job`,
+`save_document`, `start_edit_workflow`, `get_edit_workflow`, and
+`respond_edit_workflow`. Verify the specific server's catalog. The optional
+comparison runtime has its own capability; the tool's presence does not mean
+that runtime is installed.
 
 The bridge port 9681 is internal and is not an MCP endpoint. The loopback URL refers to this Mac: a remote cloud client cannot reach it directly. This guide does not configure a public tunnel.
 
 ## Optional agent plugin
 
-The matching 2.0.0 agent package adds workflow skills and connection metadata. It does not install the Glyphs components. Use the matching 2.0.0 package; an older marketplace package may describe another interface. See [Skills and optional plugins](use-agent-skills.mdx).
+The matching 2.0.2 agent package adds workflow skills and connection metadata. It does not install the Glyphs components. Use the matching 2.0.2 package; an older marketplace package may describe another interface. See [Skills and optional plugins](use-agent-skills.mdx).
 
 The conversation tools return one standard MCP App plus text and structured
 results. Claude Desktop can use its existing local stdio connection; its proxy

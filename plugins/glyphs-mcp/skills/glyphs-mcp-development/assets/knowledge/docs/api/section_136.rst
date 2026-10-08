@@ -1,5 +1,5 @@
-.. attribute:: id
+.. attribute:: axisTag
 
-		The id to link the values in the masters
+		The axisTag. this is a four letter string. see `OpenType Design-Variation Axis Tag Registry <https://docs.microsoft.com/en-us/typography/opentype/spec/dvaraxisreg>`_.
 
 		:type: str

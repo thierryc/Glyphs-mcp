@@ -1,5 +1,8 @@
-.. attribute:: unicode
+.. attribute:: layersRange
+		number of selected layers
 
-		Unicode value
+		.. seealso:: `GSEditViewController.layers`
 
-		:type: str
+		:type: integer
+
+		.. versionadded:: 4

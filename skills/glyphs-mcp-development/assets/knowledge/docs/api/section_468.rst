@@ -1,17 +1,7 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+.. attribute:: type
 
-		:type: dict
+		The type of the node, LINE, CURVE or OFFCURVE
 
-		.. code-block:: python
-			# set value
-			guide.userData['rememberToMakeCoffee'] = True
+		Always compare against the constants, never against the actual value.
 
-			# delete value
-			del guide.userData['rememberToMakeCoffee']
-
-	**Functions**
-
-	.. function:: copy()
-
-		Returns a full copy of the guide
+		:type: str

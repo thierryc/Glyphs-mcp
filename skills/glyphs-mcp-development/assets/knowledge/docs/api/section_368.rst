@@ -1,4 +1,7 @@
-.. attribute:: isBracketLayer
-		If it is a alternate layer
+.. attribute:: ascender
 
-		:type: bool
+		The ascender for this layer.
+
+		:type: float
+
+		.. versionadded:: 3.0.2

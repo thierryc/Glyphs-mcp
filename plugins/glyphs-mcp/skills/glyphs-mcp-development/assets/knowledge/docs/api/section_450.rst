@@ -1,12 +1,4 @@
-.. attribute:: selected
+.. attribute:: shapeType
+		the type of the shapes. can be GSShapeTypePath or GSShapeTypeComponent
 
-		Selection state of node in UI.
-
-		:type: bool
-
-		.. code-block:: python
-			# select node
-			layer.paths[0].nodes[0].selected = True
-
-			# print(selection state)
-			print(layer.paths[0].nodes[0].selected)
+		:type: int

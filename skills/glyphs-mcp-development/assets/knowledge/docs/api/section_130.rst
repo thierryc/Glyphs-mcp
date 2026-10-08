@@ -1,5 +1,5 @@
-.. function:: compileFeatures()
+.. function:: updateFeatures()
 
-		Compiles the features, thus making the new feature code functionally available in the editor. Equivalent to the "Compile" button in the features panel.
+		Updates all OpenType features and classes at once, including generating necessary new features and classes. Equivalent to the "Update" button in the features panel. This already includes the compilation of the features (see :meth:`font.compileFeatures() <GSFont.compileFeatures()>`).
 
-		.. versionadded:: 2.5
+		.. versionadded:: 2.4

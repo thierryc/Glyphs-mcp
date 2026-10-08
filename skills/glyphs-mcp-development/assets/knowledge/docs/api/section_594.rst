@@ -1,5 +1,14 @@
-.. function:: append(item)
+:mod:`GSMetricStore`
+===============================================================================
 
-		:param item: a NSMenuItem
+The GSMetricStore objects represent vertical metrics values and theirs overshoots.
 
-		adds the item to the menu
+.. class:: GSMetricStore()
+
+		* :attr:`position`
+		* :attr:`overshoot`
+		* :attr:`name`
+		* :attr:`filter`
+		* :attr:`metric`
+
+	**Properties**

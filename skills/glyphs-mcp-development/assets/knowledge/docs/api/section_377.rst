@@ -1,12 +1,7 @@
-.. function:: transform(transform, [selection=False, components=True])
+.. attribute:: metrics
 
-		Apply a :attr:`NSAffineTransform` to the layer.
+		The metrics layer are a list of horizontal metrics filtered specifically for this layer. Use this instead of :attr:`master.alignmentZones <GSFontMaster.alignmentZones>`.
 
-		:param transform: A :attr:`NSAffineTransform`
-		:param selection: check selection
-		:param components: if components should be transformed
+		:type: :class:`GSMetricStore`
 
-		.. code-block:: python
-			transformation = NSAffineTransform()
-			transformation.rotate(45, (200, 200))
-			layer.transform(transformation)
+		.. versionadded:: 3.0.1

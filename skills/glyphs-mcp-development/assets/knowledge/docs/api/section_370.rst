@@ -1,5 +1,4 @@
-.. attribute:: visible
+.. attribute:: leftMetricsKey
+		The leftMetricsKey of the layer. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		if the layer is visible (the eye icon in the layer panel)
-
-		:type: bool
+		:type: str

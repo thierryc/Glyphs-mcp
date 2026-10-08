@@ -1,23 +1,22 @@
-.. attribute:: hints
+.. attribute:: axes
 
-		List of :class:`GSHint` objects.
+		Collection of :class:`GSAxis`:
+
+		.. code-block:: python
+			for axis in font.axes:
+			    print(axis)
+
+			# to add a new axis
+			axis = GSAxis()
+			axis.name = "Some custom Axis"
+			axis.axisTag = "SCAX"
+			glyph.axes.append(axis)
+
+			# to delete an axis
+			del glyph.axes[0]
+
+						glyph.axes.remove(someAxis)
 
 		:type: list
 
-		.. code-block:: python
-			# access all hints
-			for hint in layer.hints:
-			    print(hint)
-
-			# add a new hint
-			newHint = GSHint()
-			# change behavior of hint here, like its attachment nodes
-			layer.hints.append(newHint)
-
-			# delete hint
-			del layer.hints[0]
-
-			# copy hints from another layer
-			import copy
-			layer.hints = copy.copy(anotherlayer.hints)
-			# remember to reconnect the hints’ nodes with the new layer’s nodes
+		.. versionadded:: 4

@@ -1,8 +1,9 @@
-.. attribute:: composedLayers
-		Similar to the above, but this list contains the :class:`GSLayer` objects after the OpenType features have been applied (see :class:`GSEditViewController.features`). Read-only.
+.. attribute:: position
 
-		Deprecated. .layers behave like this now.
+		Position of image in font units.
 
-		:type: list
+		:type: :class:`NSPoint`
 
-		.. versionadded:: 2.4
+	.. code-block:: python
+		# change position
+		layer.backgroundImage.position = NSPoint(50, 50)

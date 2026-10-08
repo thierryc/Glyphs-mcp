@@ -1,11 +1,15 @@
-.. attribute:: properties
+.. attribute:: externalAxesValues
 
-		Holds the fonts info properties. Can be instances of :class:`GSInfoValueSingle` and :class:`GSInfoValueLocalized`
-
-		The localized values use language tags defined in the middle column of `Language System Tags table`: <https://docs.microsoft.com/en-us/typography/opentype/spec/languagetags>.
-
-		To find specific values, use master.propertyForName_(name) or master.propertyForName_languageTag_(name, languageTag).
+		List of floats specifying the positions for each axis for the user facing values
 
 		:type: list
 
-		.. versionadded:: 3
+		.. code-block:: python
+			# setting a value for a specific axis
+			master.externalAxesValues[2] = 12
+			# or more precisely
+			master.externalAxesValues[axis.axisId] = 12
+			# setting all values at once
+			master.externalAxesValues = [100, 12, 3.5]
+
+		.. versionadded:: 3.2

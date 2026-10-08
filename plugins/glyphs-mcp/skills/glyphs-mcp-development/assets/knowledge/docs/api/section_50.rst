@@ -1,13 +1,6 @@
-:mod:`GSDocument`
-===============================================================================
+.. function:: deactivateReporter(reporter)
 
-The document class
+		Deactivate a reporter plug-in by its object (see Glyphs.reporters) or class name.
 
-.. class:: GSDocument()
-
-	Properties
-
-		* :attr:`font`
-		* :attr:`filePath`
-
-	**Properties**
+		.. code-block:: python
+			Glyphs.deactivateReporter('GlyphsMasterCompatibility')

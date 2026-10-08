@@ -1,18 +1,5 @@
-:mod:`GSMetric`
-===============================================================================
+.. attribute:: hidden
 
-Implementation of the metric object. It is used to link the metrics and stems in the masters.
+		If the axis should be shown to the user
 
-.. class:: GSMetric()
-
-	Properties
-
-		* :attr:`font`
-		* :attr:`name`
-		* :attr:`id`
-		* :attr:`title`
-		* :attr:`filter`
-		* :attr:`type`
-		* :attr:`horizontal`
-
-	**Properties**
+		:type: bool

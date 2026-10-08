@@ -1,13 +1,12 @@
-.. attribute:: bounds
+.. attribute:: selected
 
-		Bounding box of the segment as NSRect. Read-only.
+		Selection state of path in UI.
 
-		:type: NSRect
+		:type: bool
 
 		.. code-block:: python
-			bounds = segment.bounds
-			# origin
-			print(bounds.origin.x, bounds.origin.y)
+			# select path
+			layer.paths[0].selected = True
 
-			# size
-			print(bounds.size.width, bounds.size.height)
+			# print(selection state)
+			print(layer.paths[0].selected)

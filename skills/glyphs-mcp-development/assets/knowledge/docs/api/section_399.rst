@@ -1,7 +1,3 @@
-.. attribute:: name
+.. function:: endChanges()
 
-		The glyph name the component is pointing to.
-
-		:type: str
-
-		.. versionadded:: 2.5
+		Call this if you have called layer.beginChanges before. Make sure to group bot calls properly.

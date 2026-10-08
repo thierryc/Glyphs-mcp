@@ -1,5 +1,5 @@
-.. attribute:: storeGroupIdx
+.. attribute:: name
 
-		:type: int
+		The feature name
 
-		.. versionadded:: 4
+		:type: str

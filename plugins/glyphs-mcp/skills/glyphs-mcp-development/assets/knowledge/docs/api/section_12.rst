@@ -1,9 +1,5 @@
-.. function:: registerDefaults(dictionary)
-		give it a doct with key value pairs to set default values in the user defaults
+.. function:: registerDefault(key, value)
+		give it a key value pair to set a default value in the user defaults
 
 		.. code-block:: python
-			values = {
-				"com_MyName_foo": 12,
-				"com_MyName_bar": "foo",
-			}
-			Glyphs.registerDefaults(values)
+			Glyphs.registerDefault("com_MyName_foo_bar", 12)

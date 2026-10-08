@@ -1,3 +1,5 @@
-.. attribute:: note
+.. attribute:: upm
 
-		:type: str
+		Units per Em
+
+		:type: int

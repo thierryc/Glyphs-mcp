@@ -3,12 +3,18 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.0.1** connects AI applications to Glyphs 4 through seventeen tools. A
+Glyphs MCP **2.0.2** connects AI applications to Glyphs 4 through eighteen tools. A
 small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes **2.0.1**, desktop build **56**, with coordinated sidecar and bridge product version **2.0.1**. The universal desktop app, ZIP and DMG are signed, notarized and stapled. The skills catalog, focused setup views and native document routes passed regression and bounded VM acceptance. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/) and separate v1.11.0 download.
+This guide describes the local **2.0.2/build 57 candidate**, with eighteen tools.
+The latest published stable release remains 2.0.1; its signing and native
+acceptance evidence does not qualify this candidate. See [qualification and
+limits](reference/release-qualification.mdx) and [version and
+identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/).
+Compiled [font comparisons](workflows/font-comparison.mdx) use the optional
+Diffenator runtime and can run without an open Glyphs document.
 
 ## Start here
 

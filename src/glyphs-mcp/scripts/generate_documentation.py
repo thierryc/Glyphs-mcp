@@ -22,7 +22,7 @@ from urllib.parse import quote
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SDK_ROOT = REPO_ROOT / "GlyphsSDK"
-SDK_REVISION = "0f5422db727b78cb42abfb386f33ae0b382b0c4d"
+SDK_REVISION = "c0352321d30a06006f18e94d600f5caf43d06f1b"
 SDK_BLOB_BASE = "https://github.com/schriftgestalt/GlyphsSDK/blob/{}".format(SDK_REVISION)
 OBJECT_WRAPPER_PATH = SDK_ROOT / "ObjectWrapper" / "GlyphsApp" / "__init__.py"
 FILE_FORMAT_ROOT = SDK_ROOT / "GlyphsFileFormat"
@@ -636,15 +636,53 @@ def generate_lean_documentation(output: Path) -> dict[str, Any]:
                   category, source_path, revision, url, sourceChecksum=digest,
                   formatVersion=int(format_match.group(1)) if format_match and "GlyphsFileFormat" in source_path else None)
 
+    web_root = REPO_ROOT / "Documentations/WebSnapshots"
+    registry = json.loads((web_root / "sources.json").read_text())
+    for snapshot in registry["sources"]:
+        relative = snapshot["path"]
+        if Path(relative).is_absolute() or ".." in Path(relative).parts:
+            raise ValueError("Unsafe official web snapshot path")
+        content = (web_root / relative).read_bytes()
+        if hashlib.sha256(content).hexdigest() != snapshot["sha256"]:
+            raise ValueError("Official web snapshot checksum mismatch: " + relative)
+        source_path = "Documentations/WebSnapshots/" + relative
+        sources.append(dict(path=source_path, sha256=snapshot["sha256"]))
+        write(snapshot["id"], "official-web/" + relative, content.decode("utf-8"),
+              snapshot["title"], "glyphs-official-web", source_path, None,
+              snapshot["sourceUrl"], sourceChecksum=snapshot["sha256"],
+              retrievedAt=snapshot["retrievedAt"], symbol=snapshot.get("symbol"))
+
+    authority_revisions = {}
+    authority_root = REPO_ROOT / "third_party/glyphs-file-format-v4"
+    dependencies = json.loads((authority_root / "knowledge-dependencies.json").read_text())["dependencies"]
+    for dependency in dependencies:
+        if dependency["role"] not in ("machine_authority", "human_authority"):
+            continue
+        relative = dependency["localPath"]
+        if Path(relative).name != relative:
+            raise ValueError("Unsafe file-format authority path")
+        path = authority_root / relative
+        data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != dependency["sha256"]:
+            raise ValueError("File-format authority checksum mismatch")
+        source_path = "third_party/glyphs-file-format-v4/" + relative
+        sources.append(dict(path=source_path, sha256=dependency["sha256"]))
+        authority_revisions[dependency["id"]] = dependency["commit"]
+        write(dependency["id"], "file-format-authority/" + relative, data.decode("utf-8"),
+              "GlyphsFileFormatv4 — " + dependency["role"], "glyphs-file-format-authority", source_path,
+              dependency["commit"], dependency["source"] + "/blob/" + dependency["commit"] + "/" + dependency["path"],
+              sourceChecksum=dependency["sha256"], formatVersion=4, symbol="GlyphsFileFormatv4")
+
     documents.sort(key=lambda row: row["id"])
     payload = dict(schemaVersion=1, applicationTarget="4", sourceRevision=SDK_REVISION, documents=documents)
     index_bytes = (json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
     (output / "index.json").write_bytes(index_bytes)
     manifest = dict(schemaVersion=1, applicationTarget="4", sourceRevision=SDK_REVISION,
+                    authorityRevisions=authority_revisions,
                     indexSha256=hashlib.sha256(index_bytes).hexdigest(),
                     sourceInventory=sources, supportFiles=support_files,
                     documents={row["path"]: row["checksum"] for row in documents},
-                    scope="All available SDK sources/references, support assets and vendored handbook; text indexed; excludes generated caches/builds.",
+                    scope="Pinned SDK sources/references, support assets, vendored handbook, dated official web snapshots and separately pinned file-format authorities; text indexed; excludes generated caches/builds.",
                     handbookProvenance="Vendored snapshot identified by per-file SHA-256; exact upstream revision unavailable.",
                     nativeVerification="Source documentation is not a native compatibility test.")
     (output / "manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")

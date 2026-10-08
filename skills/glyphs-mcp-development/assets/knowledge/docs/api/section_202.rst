@@ -1,11 +1,5 @@
-.. attribute:: descriptions
+.. attribute:: windowsLinkedToStyle
 
-		This accesses all localized description values.
-		For details :attr:`GSInstance.properties`
+		windowsLinkedToStyle. Read-only.
 
-		:type: dict
-
-		.. code-block:: python
-			instance.descriptions["ENG"] = "This is my description"
-
-		.. versionadded:: 3.0.3
+		:type: str

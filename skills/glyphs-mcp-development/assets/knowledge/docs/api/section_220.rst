@@ -1,4 +1,4 @@
-.. attribute:: styleMapStyleName
+.. attribute:: preferredFamilyName
 
 		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 

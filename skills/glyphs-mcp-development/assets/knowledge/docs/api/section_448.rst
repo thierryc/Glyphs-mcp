@@ -1,5 +1,14 @@
-.. attribute:: smooth
+:mod:`GSShape`
+===============================================================================
 
-		If it is a smooth connection or not
+Implementation of the shape object. This a superclass for GSPath and GSComponent. You can’t instantiate GSShape directly
 
-		:type: BOOL
+For details on how to access them, please see :attr:`GSLayer.shapes`
+
+.. class:: GSShape()
+
+	Properties
+
+		* :attr:`position`
+		* :attr:`locked`
+		* :attr:`shapeType`

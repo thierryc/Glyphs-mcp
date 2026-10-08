@@ -1,5 +1,5 @@
-.. attribute:: id
+.. attribute:: name
 
-		An unique identifier for each glyph
+		The FeaturePrefix name
 
 		:type: str

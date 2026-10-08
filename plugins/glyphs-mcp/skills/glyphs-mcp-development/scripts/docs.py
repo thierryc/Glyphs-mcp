@@ -56,7 +56,13 @@ def load(corpus=CORPUS):
                 raise ValueError("Invalid documentation provenance")
             # The handbook snapshot has no known upstream revision. SDK sources
             # must agree with the pinned index; missing evidence is not a pin.
-            expected_revision = None if row["sourceKind"] == "glyphs-handbook" else revision
+            expected_revision = None if row["sourceKind"] in ("glyphs-handbook", "glyphs-official-web") else revision
+            if row["sourceKind"] == "glyphs-file-format-authority":
+                expected_revision = manifest.get("authorityRevisions", {}).get(row["id"])
+                if not isinstance(expected_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", expected_revision):
+                    raise ValueError("Missing file-format authority revision")
+            if row["sourceKind"] == "glyphs-official-web" and not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", row.get("retrievedAt", "")):
+                raise ValueError("Missing web snapshot retrieval date")
             if "sourceRevision" not in row or row["sourceRevision"] != expected_revision:
                 raise ValueError("Invalid source revision for " + row["id"])
             if not isinstance(row.get("searchTerms"), list) or not all(isinstance(t, str) for t in row["searchTerms"]):
@@ -91,7 +97,7 @@ def read(row, corpus=CORPUS):
 def metadata(row):
     return {key: row.get(key) for key in ("id", "title", "summary", "path", "symbol",
             "sourcePath", "sourceRevision", "sourceLine", "sourceUrl", "sourceKind",
-            "sourceChecksum", "checksum", "applicationTarget", "formatVersion", "nativeVerification")}
+            "sourceChecksum", "checksum", "applicationTarget", "formatVersion", "nativeVerification", "retrievedAt")}
 
 
 def tokens(text):

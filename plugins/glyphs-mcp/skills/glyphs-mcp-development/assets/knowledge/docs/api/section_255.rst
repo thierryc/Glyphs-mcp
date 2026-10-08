@@ -1,5 +1,5 @@
-.. attribute:: code
+.. attribute:: active
 
-		A String containing feature code.
+		If the particle is used to build the instance name.
 
-		:type: str
+		:type: bool

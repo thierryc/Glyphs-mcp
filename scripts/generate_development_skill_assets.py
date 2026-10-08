@@ -13,7 +13,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SDK_ROOT = REPO_ROOT / "GlyphsSDK"
 SKILL_ASSETS = REPO_ROOT / "skills" / "glyphs-mcp-development" / "assets"
-EXPECTED_REVISION = "0f5422db727b78cb42abfb386f33ae0b382b0c4d"
+EXPECTED_REVISION = "c0352321d30a06006f18e94d600f5caf43d06f1b"
 
 TEMPLATES = {
     "general": "Python Templates/General Plugin/____PluginName____.glyphsPlugin",
@@ -61,6 +61,11 @@ def main() -> int:
         "license": "Apache-2.0",
         "templates": TEMPLATES,
         "loaderSha256": loader_hashes,
+        "sdkFileSha256": {
+            path.relative_to(SDK_ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(SDK_ROOT.rglob("*"))
+            if path.is_file() and not any(part in (".git", "_build", "__pycache__") for part in path.parts)
+        },
     }
     (SKILL_ASSETS / "SOURCE.json").write_text(
         json.dumps(source_payload, indent=2, sort_keys=True) + "\n",

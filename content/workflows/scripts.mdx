@@ -15,7 +15,7 @@ A write-only/review-only request does not execute. A request to perform a font
 task can already authorize its in-scope execution; a separate code-review click
 is not required. Ask for an explicit preview when you want to review before
 execution. **Wait for my answer** separately disables automatic Keep after
-execution. Optional **Script details** shows source/parameters.
+execution. Optional **View details** shows source/parameters, output and the full request.
 
 Preparation checks syntax and resolves targets without running module code.
 A clean saved font needs no extra Save. A dirty font offers **Save and run** or
@@ -31,7 +31,10 @@ not prove the intended design result: inspect the font and verify relevant value
 
 After execution, use the offered **Keep changes without saving**, **Save font**
 or **Restore saved version** actions. Successful new cards can Keep after 30
-seconds; **Wait for my answer** disables that countdown. Failed or partial
+seconds; **Pause countdown** disables that countdown. Before it starts, use
+**Turn off automatic Keep**, or say **Wait for my answer** in the conversation.
+**Restore saved version** is under **More options** after success and remains
+a main choice when partial edits need recovery. Failed or partial
 execution remains a manual decision and can leave edits behind.
 
 **Restore saved version** reloads the unchanged saved baseline for the **whole
@@ -47,3 +50,10 @@ target snapshots do not provide script rollback.
 If the connection times out, use **Check result** on the retained workflow.
 Never submit a new script request merely to bypass an uncertain result. See
 [Safety and recovery](../concepts/safety-model.mdx).
+
+Visible cards refresh while choices remain, including recovery after cancellation.
+If an offered choice has expired, the card checks the current workflow and removes
+obsolete buttons. If the check fails, use **Check status**. Text-only clients use
+the same retained workflow and current choices; old conversation messages may
+remain visible as history. Opening View details or More options pauses automatic
+Keep; ordinary successful background checks do not reset an unchanged countdown.

@@ -1,5 +1,4 @@
-.. attribute:: master
+.. attribute:: widthMetricsKey
+		The widthMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Master that this layer is connected to. Read only.
-
-		:type: GSFontMaster
+		:type: str

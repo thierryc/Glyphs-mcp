@@ -40,7 +40,8 @@ def source_digest(root=ROOT):
     ).decode().split('\0')
     digest = hashlib.sha256()
     for name in sorted(set(names)):
-        if not name or not (name.startswith(('macos-installer/', 'scripts/', 'src/', 'third_party/')) or name == 'release.json'):
+        if not name or not (name.startswith(('macos-installer/', 'scripts/', 'src/', 'third_party/',
+                                             'skills/', 'plugins/glyphs-mcp/', 'integrations/')) or name == 'release.json'):
             continue
         path = root / name
         if path.is_symlink():

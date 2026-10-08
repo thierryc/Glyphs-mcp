@@ -1,20 +1,5 @@
-:mod:`GSSmartComponentAxis`
-===============================================================================
+.. attribute:: component
 
-Implementation of the Smart Component interpolation axis object.
-For details on how to access them, please see :attr:`GSGlyph.smartComponentAxes`
+		The :class:`GSGlyph` the component is pointing to. This is read-only. In order to change the referenced base glyph, set :attr:`componentName <GSComponent.componentName>` to the new glyph name.
 
-.. versionadded:: 2.3
-
-.. deprecated:: 4
-	Smart glyphs now use regular :class:`GSAxis` objects in :attr:`GSGlyph.axes` (exactly like :attr:`GSFont.axes`). Smart layers are positioned with :attr:`GSLayer.attributes` ["coordinates"], keyed by ``axis.axisId``.
-
-.. class:: GSSmartComponentAxis()
-
-	Properties
-
-		* :attr:`name`
-		* :attr:`topValue`
-		* :attr:`bottomValue`
-
-	**Properties**
+		:type: :class:`GSGlyph`

@@ -25,6 +25,7 @@ TOOL_NAMES = (
     "close_document",
     "read_entities",
     "start_job",
+    "compare_fonts",
     "get_job",
     "apply_job",
     "accept_job",

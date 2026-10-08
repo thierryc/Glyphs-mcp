@@ -1,16 +1,5 @@
-:mod:`GSAnnotation`
-===============================================================================
+.. attribute:: smooth
 
-Implementation of the annotation object.
+		If it is a smooth connection or not
 
-For details on how to access them, please see :class:`GSLayer.annotations`
-
-.. class:: GSAnnotation()
-
-		* :attr:`position`
-		* :attr:`type`
-		* :attr:`text`
-		* :attr:`angle`
-		* :attr:`width`
-
-	**Properties**
+		:type: BOOL

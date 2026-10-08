@@ -1,9 +1,5 @@
-.. attribute:: features
+.. attribute:: end
 
-		List of OpenType features applied to text in Edit view.
+		A NSPoint that relatively to the shapes bounding box defines the ending point of the gradient
 
-		:type: list
-
-	.. code-block:: python
-
-		font.currentTab.features = ['locl', 'ss01']
+		:type: NSPoint

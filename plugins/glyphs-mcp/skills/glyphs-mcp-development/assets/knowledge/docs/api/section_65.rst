@@ -1,19 +1,19 @@
-.. attribute:: features
+.. attribute:: classes
 
-		Collection of :class:`GSFeature` objects, representing OpenType features.
+		Collection of :class:`GSClass` objects, representing OpenType glyph classes.
 
 		:type: list
 
 		.. code-block:: python
-			# add a feature
-			font.features.append(GSFeature('liga', 'sub f i by fi;'))
+			# add a class
+			font.classes.append(GSClass('uppercaseLetters', 'A B C D E'))
 
-			# access all features
-			for feature in font.features:
-			    print(feature.code)
+			# access all classes
+			for class in font.classes:
+			    print(class.name)
 
-			# access one feature
-			print(font.features['liga'].code)
+			# access one class
+			print(font.classes['uppercaseLetters'].code)
 
-			# delete a feature
-			del font.features['liga']
+			# delete a class
+			del font.classes['uppercaseLetters']

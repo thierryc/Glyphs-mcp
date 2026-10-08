@@ -1,15 +1,9 @@
-.. attribute:: string
+.. attribute:: crop
 
-		The plain underlying string of the tab
+		Crop rectangle. This is relative to the image size in pixels, not the font’s em units (just in case the image is scaled to something other than 100%).
 
-		:type: str
+		:type: :class:`NSRect`
 
 		.. code-block:: python
-			string = ""
-			for layer in font.selectedLayers:
-			    char = font.characterForGlyph(layer.parent)
-			    string += chr(char)
-			tab = font.tabs[-1]
-			tab.text = string
-
-		.. versionadded:: 3.2
+			# change cropping
+			layer.backgroundImage.crop = NSRect(NSPoint(0, 0), NSPoint(1200, 1200))

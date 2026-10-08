@@ -14,6 +14,18 @@ import build_local_app as builder
 import prepare_desktop_dependencies as dependencies
 
 
+@pytest.mark.parametrize('name', ['skills/glyphs/SKILL.md', 'plugins/glyphs-mcp/.codex-plugin/plugin.json',
+                                 'integrations/optional-tools.json'])
+def test_source_receipt_changes_when_packaged_guidance_or_optional_catalog_changes(tmp_path, monkeypatch, name):
+    path = tmp_path / name
+    path.parent.mkdir(parents=True)
+    path.write_text('original packaged input')
+    monkeypatch.setattr(verifier.subprocess, 'check_output', lambda *args, **kwargs: (name + '\0').encode())
+    original = verifier.source_digest(tmp_path)
+    path.write_text('changed packaged input')
+    assert verifier.source_digest(tmp_path) != original
+
+
 @pytest.fixture
 def bundle(tmp_path, monkeypatch):
     app = tmp_path / 'Glyphs MCP.app'
@@ -358,6 +370,7 @@ def test_failed_build_invalidates_old_candidate_and_cleans_temporary_directory(t
     (output / 'build-receipt.json').write_text('old receipt')
     monkeypatch.setattr(builder, 'ROOT', tmp_path)
     monkeypatch.setattr(builder, 'source_digest', lambda: 'source')
+    monkeypatch.setattr(builder.subprocess, 'check_output', lambda *args, **kwargs: '')
     def run(command, **kwargs):
         if command[0] == 'xcodebuild':
             raise subprocess.CalledProcessError(65, command)
@@ -367,6 +380,44 @@ def test_failed_build_invalidates_old_candidate_and_cleans_temporary_directory(t
     assert not (output / 'build-receipt.json').exists()
     assert not (output / 'Glyphs MCP.app').exists()
     assert not list((tmp_path / 'build/local-app-runs').iterdir())
+
+
+def test_build_refuses_running_candidate_before_touching_bundle_or_receipt(tmp_path, monkeypatch):
+    app = tmp_path / 'dist/local/Glyphs MCP.app'
+    app.mkdir(parents=True)
+    (app / 'old-file').write_text('preserve')
+    receipt = app.parent / 'build-receipt.json'
+    receipt.write_text('old receipt')
+    monkeypatch.setattr(builder, 'ROOT', tmp_path)
+    executable = str(app / 'Contents/MacOS/Glyphs MCP')
+    monkeypatch.setattr(builder.subprocess, 'check_output', lambda *args, **kwargs: f'123 {executable}\n')
+    with pytest.raises(RuntimeError, match='Quit the local Glyphs MCP app'):
+        builder.build()
+    assert (app / 'old-file').read_text() == 'preserve'
+    assert receipt.read_text() == 'old receipt'
+
+
+def test_process_check_failure_preserves_candidate(tmp_path, monkeypatch):
+    app = tmp_path / 'dist/local/Glyphs MCP.app'
+    app.mkdir(parents=True)
+    receipt = app.parent / 'build-receipt.json'
+    receipt.write_text('old receipt')
+    monkeypatch.setattr(builder, 'ROOT', tmp_path)
+    def denied(*args, **kwargs):
+        raise OSError('process access denied')
+    monkeypatch.setattr(builder.subprocess, 'check_output', denied)
+    with pytest.raises(RuntimeError, match='Cannot verify whether'):
+        builder.build()
+    assert app.is_dir()
+    assert receipt.read_text() == 'old receipt'
+
+
+def test_process_check_ignores_other_installed_and_qa_apps(tmp_path, monkeypatch):
+    app = tmp_path / 'dist/local/Glyphs MCP.app'
+    monkeypatch.setattr(builder.subprocess, 'check_output', lambda *args, **kwargs:
+                        '123 /Applications/Glyphs MCP.app/Contents/MacOS/Glyphs MCP\n'
+                        '124 /private/tmp/Glyphs MCP QA.app/Contents/MacOS/Glyphs MCP\n')
+    builder.require_stopped(app)
 
 
 def test_rejects_missing_or_changed_offline_skills_catalog(bundle):

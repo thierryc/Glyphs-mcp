@@ -1,8 +1,5 @@
-.. attribute:: formatVersion
+.. attribute:: appVersion
 
-		The file-format the font should be written. possible values are '2' and '3'.
-		You can use :ref:`file-format-versions`
+		Returns the version that the file was last saved
 
-		:type: int
-
-		.. versionadded:: 3
+		.. versionadded:: 2.5

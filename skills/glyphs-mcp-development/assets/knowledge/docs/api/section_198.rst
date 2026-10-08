@@ -1,11 +1,5 @@
-.. attribute:: compatibleFullNames
+.. attribute:: linkStyle
 
-		This accesses all localized compatibleFullNames values.
-		For details :attr:`GSInstance.properties`
+		Linked style
 
-		:type: dict
-
-		.. code-block:: python
-			instance.compatibleFullNames["ENG"] = "MyFont Condensed Bold"
-
-		.. versionadded:: 3.0.3
+		:type: str

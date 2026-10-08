@@ -1,40 +1,31 @@
-:mod:`GSEditViewController`
+:mod:`GSBackgroundImage`
 ===============================================================================
 
-Implementation of the GSEditViewController object, which represents Edit tabs in the UI.
+Implementation of background image.
 
-For details on how to access them, please look at :class:`GSFont.tabs`
+For details on how to access it, please see :class:`GSLayer.backgroundImage`
 
+.. class:: GSBackgroundImage([path])
 
-.. class:: GSEditViewController()
+	:param path: Initialize with an image file (optional)
 
 	Properties
 
-		* :attr:`parent`
-		* :attr:`text`
-		* :attr:`textCursor`
-		* :attr:`textRange`
-		* :attr:`selectedTextRange`
-		* :attr:`layers`
-		* :attr:`layersCursor`
-		* :attr:`layersRange`
-		* :attr:`selectedLayerRange`
+		* :attr:`path`
+		* :attr:`image`
+		* :attr:`crop`
+		* :attr:`locked`
+		* :attr:`position`
 		* :attr:`scale`
-		* :attr:`viewPort`
-		* :attr:`bounds`
-		* :attr:`selectedLayerOrigin`
-		* :attr:`direction`
-		* :attr:`features`
-		* :attr:`previewInstances`
-		* :attr:`previewHeight`
-		* :attr:`bottomToolbarHeight`
-		* :attr:`masterIndex`
-		* :attr:`tempData`
+		* :attr:`rotation`
+		* :attr:`slant`
+		* :attr:`transform`
+		* :attr:`alpha`
 
 	Functions
 
-		* :meth:`close`
-		* :meth:`saveToPDF`
-		* :meth:`redraw`
+		* :meth:`resetCrop`
+		* :meth:`scaleWidthToEmUnits`
+		* :meth:`scaleHeightToEmUnits`
 
 	**Properties**

@@ -1,5 +1,4 @@
-.. attribute:: parent
+.. attribute:: leftMetricsKey
+		The leftMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Reference to the :class:`glyph <GSGlyph>` object that this layer is attached to.
-
-		:type: :class:`GSGlyph`
+		:type: str

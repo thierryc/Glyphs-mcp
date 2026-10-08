@@ -1,23 +1,11 @@
-.. attribute:: annotations
+.. attribute:: userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
-		List of :class:`GSAnnotation` objects.
-
-		:type: list
+		:type: dict
 
 		.. code-block:: python
-			# access all annotations
-			for annotation in layer.annotations:
-			    print(annotation)
+			# set value
+			glyph.userData['rememberToMakeCoffee'] = True
 
-			# add new annotation
-			newAnnotation = GSAnnotation()
-			newAnnotation.type = TEXT
-			newAnnotation.text = 'Fuck, this curve is ugly!'
-			layer.annotations.append(newAnnotation)
-
-			# delete annotation
-			del layer.annotations[0]
-
-			# copy annotations from another layer
-			import copy
-			layer.annotations = copy.copy(anotherLayer.annotations)
+			# delete value
+			del glyph.userData['rememberToMakeCoffee']

@@ -1,9 +1,4 @@
-.. attribute:: crop
+.. attribute:: targetNode
+		The the second node this hint is attached to. In the case of a ghost hint, this value will be empty.
 
-		Crop rectangle. This is relative to the image size in pixels, not the font’s em units (just in case the image is scaled to something other than 100%).
-
-		:type: :class:`NSRect`
-
-		.. code-block:: python
-			# change cropping
-			layer.backgroundImage.crop = NSRect(NSPoint(0, 0), NSPoint(1200, 1200))
+		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)

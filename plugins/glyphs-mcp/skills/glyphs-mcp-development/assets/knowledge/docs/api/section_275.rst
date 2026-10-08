@@ -1,5 +1,5 @@
-.. attribute:: locked
+.. attribute:: code
 
-		If the glyph is locked
+		A String containing feature code.
 
-		:type: bool
+		:type: str

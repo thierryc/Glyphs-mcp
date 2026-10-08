@@ -1,7 +1,11 @@
-.. attribute:: license
+.. attribute:: copyrights
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+		This accesses all localized copyright values.
+		For details :attr:`GSInstance.properties`
 
-		:type: str
+		:type: dict
+
+		.. code-block:: python
+			instance.copyrights["ENG"] = "All rights reserved"
 
 		.. versionadded:: 3.0.3

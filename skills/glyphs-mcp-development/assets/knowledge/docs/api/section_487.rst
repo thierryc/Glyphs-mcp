@@ -1,5 +1,5 @@
-.. attribute:: horizontal
+.. attribute:: filter
 
-		True if hint is horizontal, False if vertical.
+		A filter to only show the guide in certain glyphs. Only relevant in global guides
 
-		:type: bool
+		:type: NSPredicate

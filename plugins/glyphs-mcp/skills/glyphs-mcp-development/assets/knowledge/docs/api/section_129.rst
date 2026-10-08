@@ -1,5 +1,14 @@
-.. function:: updateFeatures()
+.. function:: newTab([tabText])
 
-		Updates all OpenType features and classes at once, including generating necessary new features and classes. Equivalent to the "Update" button in the features panel. This already includes the compilation of the features (see :meth:`font.compileFeatures() <GSFont.compileFeatures()>`).
+		Opens a new tab in the current document window, optionally with text, and return that tab object
 
-		.. versionadded:: 2.4
+		:param tabText: Text or glyph names escaped with '/' OR list of layers
+
+		.. code-block:: python
+			# open new tab
+			tab = font.newTab('abcdef')
+			print(tab)
+
+			# or
+			tab = font.newTab([layer1, layer2])
+			print(tab)

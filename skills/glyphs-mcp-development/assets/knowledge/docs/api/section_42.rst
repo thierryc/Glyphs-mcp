@@ -1,5 +1,5 @@
-.. attribute:: message
+.. attribute:: subtitle
 
-		the message of the notification
+		the subtitle of the notification
 
 		:type: str

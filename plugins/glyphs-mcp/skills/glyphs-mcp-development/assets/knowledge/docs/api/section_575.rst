@@ -1,5 +1,4 @@
-.. attribute:: overshoot
+.. attribute:: unicode2
+		a second unicode value it present
 
-		Value of overshoot’s width.
-
-		:type: float
+		:type: str

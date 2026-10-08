@@ -1,16 +1,34 @@
-.. attribute:: id
+* :attr:`id`
+		* :attr:`name`
+		* :attr:`internalAxesValues`
+		* :attr:`externalAxesValues`
+		* :attr:`properties`
+		* :attr:`metrics`
+		* :attr:`ascender`
+		* :attr:`capHeight`
+		* :attr:`xHeight`
+		* :attr:`descender`
+		* :attr:`italicAngle`
+		* :attr:`gridMainHorizontal`
+		* :attr:`gridSubDivisionHorizontal`
+		* :attr:`gridMainVertical`
+		* :attr:`gridSubDivisionVertical`
+		* :attr:`gridSlopeRise`
+		* :attr:`gridSlopeRun`
+		* :attr:`alignmentZones`
+		* :attr:`blueValues`
+		* :attr:`otherBlues`
+		* :attr:`guides`
+		* :attr:`stems`
+		* :attr:`numbers`
+		* :attr:`userData`
+		* :attr:`customParameters`
+		* :attr:`font`
+		* :attr:`iconName`
 
-		Used to identify :class:`Layers` in the Glyph
+	Functions
 
-		see :attr:`GSGlyph.layers`
+		* :meth:`copy()`
+		* :grid:`copy()`
 
-		:type: str
-
-		.. code-block:: python
-			# ID of first master
-			print(font.masters[0].id)
-			>> 3B85FBE0-2D2B-4203-8F3D-7112D42D745E
-
-			# use this master to access the glyph’s corresponding layer
-			print(glyph.layers[font.masters[0].id])
-			>> <GSLayer "Light" (A)>
+	**Properties**

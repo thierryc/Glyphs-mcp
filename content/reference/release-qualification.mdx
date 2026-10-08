@@ -2,12 +2,25 @@
 title: Release qualification and known limits
 ---
 
-## Exact release
+## Published stable release
 
 Glyphs MCP **2.0.1/build 56** uses seventeen tools, eleven managed skills, lean
 interface revision 1 and bridge protocol 1. The universal app, payload, ZIP and
 DMG are Developer ID-signed, Apple-notarized and stapled. Public archive hashes
 are verified before the signed stable updater feed is advanced.
+
+## 2.0.2 candidate
+
+The local 2.0.2/build 57 source adds an eighteenth tool, `compare_fonts`, shared
+background initialization and optional managed tool setup. See
+[candidate build notes](../contributor/release-build-notes.mdx#202-candidate). Source and fixture checks do not
+establish signed distribution, installed runtime or native startup acceptance.
+Follow-up qualification on macOS 26.7.1 arm64 measured 0.44–0.50-second initial
+presentation, including deliberately delayed discovery. Signed/notarized optional
+Diffenator and Beztrace packages passed bounded local acceptance, including offline
+comparisons and fresh-panel tracing. This evidence does not qualify the exact
+signed 2.0.2 desktop distribution. Diffenator downloads and the updated Beztrace
+companion remain gated on hosted assets and supported-platform acceptance.
 
 ## Accepted 2.0.1 evidence
 

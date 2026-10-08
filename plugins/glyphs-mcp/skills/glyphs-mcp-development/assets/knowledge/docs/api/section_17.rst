@@ -1,8 +1,7 @@
-.. attribute:: scriptAbbreviations
-		A dictionary with script name to tag mapping, e.g., 'arabic': 'arab' or 'devanagari': 'dev2'
+.. attribute:: floatDefaults
+		Access to default settings cast to a float.
 
-		:type: dict
+		:type: float
 
 		.. code-block:: python
-			scriptTag = Glyphs.scriptAbbreviations["devanagari"]
-			print(scriptTag) -> "dev2"
+			scaleX = Glyphs.floatDefaults["GSTransformScaleX"]

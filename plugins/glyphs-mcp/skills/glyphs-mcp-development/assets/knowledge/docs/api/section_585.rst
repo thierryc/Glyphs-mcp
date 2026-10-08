@@ -1,3 +1,10 @@
-.. function:: reloadFont()
+.. attribute:: values
 
-		refreshes the Preview Text Window
+		A list of :class:`GSInfoValue` objects.
+
+		:type: list
+
+	.. code-block:: python
+		# listing values of GSInfoValueLocalized
+		for fontInfoValue in fontInfoValueLocalized.values:
+		    print(fontInfoValue)

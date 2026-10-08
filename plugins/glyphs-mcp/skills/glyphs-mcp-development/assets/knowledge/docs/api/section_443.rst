@@ -1,6 +1,20 @@
-.. function:: addNodesAtExtremes([force=False, checkSelection=False])
+:mod:`GSSmartComponentAxis`
+===============================================================================
 
-		Add nodes at path’s extrema, e.g., top, bottom etc.
+Implementation of the Smart Component interpolation axis object.
+For details on how to access them, please see :attr:`GSGlyph.smartComponentAxes`
 
-		:param force: if points are always added, even if that would distort the shape
-		:param checkSelection: only process selected segments
+.. versionadded:: 2.3
+
+.. deprecated:: 4
+	Smart glyphs now use regular :class:`GSAxis` objects in :attr:`GSGlyph.axes` (exactly like :attr:`GSFont.axes`). Smart layers are positioned with :attr:`GSLayer.attributes` ["coordinates"], keyed by ``axis.axisId``.
+
+.. class:: GSSmartComponentAxis()
+
+	Properties
+
+		* :attr:`name`
+		* :attr:`topValue`
+		* :attr:`bottomValue`
+
+	**Properties**

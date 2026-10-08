@@ -1,10 +1,5 @@
-.. attribute:: direction
+.. attribute:: start
 
-		Writing direction.
+		A NSPoint that relatively to the shapes bounding box defines the starting point of the gradient
 
-		See `Writing Directions`_
-
-		:type: integer
-
-		.. code-block:: python
-			font.currentTab.direction = GSRTL
+		:type: NSPoint

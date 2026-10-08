@@ -1467,7 +1467,13 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
         XCTAssertEqual(resolved.cursorPluginIdentity, try InstallerPayloadManifestResolver.treeIdentity(cursor))
         XCTAssertEqual(resolved.cursorPluginVersion, appVersion)
         let lean = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: payload.appendingPathComponent("Lean/manifest.json"))) as? [String: Any])
-        XCTAssertEqual((lean["tools"] as? [String])?.count, 13)
+        XCTAssertEqual(lean["tools"] as? [String], [
+            "get_status", "list_documents", "create_document", "open_document",
+            "import_document", "activate_document", "close_document", "read_entities",
+            "start_job", "compare_fonts", "get_job", "apply_job", "accept_job",
+            "discard_job", "save_document", "start_edit_workflow", "get_edit_workflow",
+            "respond_edit_workflow",
+        ])
         XCTAssertEqual(Set((lean["runtimes"] as? [String: Any] ?? [:]).keys), ["arm64", "x86_64"])
 
 	}

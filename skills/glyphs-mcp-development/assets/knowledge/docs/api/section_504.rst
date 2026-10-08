@@ -1,5 +1,4 @@
-.. attribute:: rotation
+.. attribute:: otherIndex1
+		A indexPath to the third node this hint is attached to. Used for Interpolation or Diagonal hints.
 
-		Rotation angle of image.
-
-		:type: float
+		:type: :class:`NSIndexPath`

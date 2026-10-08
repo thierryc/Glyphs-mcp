@@ -1,13 +1,5 @@
-:mod:`GSInfoValueSingle`
-===============================================================================
+.. attribute:: name
 
-The GSInfoValueSingle
+		Human-readable name of glyph ("nice name").
 
-.. class:: GSInfoValueSingle()
-
-	Properties
-
-		* :attr:`key`
-		* :attr:`value`
-
-	**Properties**
+		:type: str

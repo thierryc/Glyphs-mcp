@@ -1,5 +1,12 @@
-.. attribute:: automatic
+.. attribute:: nameParticles
 
-		Define whether this class should be auto-generated when pressing the 'Update' button in the Font Info.
+		The name particles, keyed by :attr:`GSAxis.axisId` and ordered like :attr:`GSFont.axes`.
+		Each value is a list of :class:`GSNameParticle` objects. Can also be accessed by
+		axis index.
 
-		:type: bool
+		Use :meth:`addNameParticle()` and :meth:`removeNameParticle()` to add and remove
+		single particles.
+
+		:type: dict
+
+		.. versionadded:: 4

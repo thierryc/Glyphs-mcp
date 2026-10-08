@@ -1,11 +1,5 @@
-.. attribute:: manufacturers
+.. attribute:: manufacturer
 
-		This accesses all localized manufacturer values.
-		For details :attr:`GSFont.properties`
+		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
 
-		:type: dict
-
-		.. code-block:: python
-			font.manufacturers["ENG"] = "My English Corporation"
-
-		.. versionadded:: 3.0.3
+		:type: str

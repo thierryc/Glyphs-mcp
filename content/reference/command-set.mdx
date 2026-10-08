@@ -1,8 +1,8 @@
 ---
-title: The seventeen v2 tools
+title: The eighteen v2 tools
 ---
 
-This is the **Glyphs MCP 2.0.1** seventeen-tool contract. Desktop build **56**, sidecar and bridge product version `2.0.1`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. Opening is an additive capability; existing tool behavior is unchanged. The negotiated MCP transport version is separate. Inspect `get_status` for independent sidecar/bridge identities and negotiated `readCapabilities`, `writeCapabilities`, `jobCapabilities` and closed `nativeActions`; see [version and identity](version-identity.mdx).
+This is the **Glyphs MCP 2.0.2** eighteen-tool contract. Desktop build **57**, sidecar and bridge product version `2.0.2`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. This is an unpublished source candidate. Compiled comparison is an additive capability. The negotiated MCP transport version is separate. Inspect `get_status` for independent sidecar/bridge identities and negotiated `readCapabilities`, `writeCapabilities`, `jobCapabilities`, independent `comparisonCapabilities` and closed `nativeActions`; see [version and identity](version-identity.mdx).
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
@@ -15,9 +15,10 @@ This is the **Glyphs MCP 2.0.1** seventeen-tool contract. Desktop build **56**, 
 | `close_document` | `document_id`, `idempotency_key`, optional `unsaved_changes` (default refuse), `destination` | Close with explicit save/discard handling and pending-job protection; requires `document.close.v1`. |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job without applying it; the negotiated route may use detached native targets or the external worker. |
+| `compare_fonts` | `baseline_files`, `candidate_files`, optional `options` | Compare explicit compiled TTFs through the optional Diffenator runtime, returning a file-bound job without a live document. |
 | `get_job` | `job_id`, optional `include_preview` | Read current status, summary, report, sample and error details. |
 | `apply_job` | `job_id`, optional `include_preview`, `approved_overwrites` | Apply a mutation result as a reversible live change. |
-| `accept_job` | `job_id`, optional `destination`, `include_preview` | Persist an applied mutation, or publish verified export artifacts to a new directory. |
+| `accept_job` | `job_id`, optional `destination`, `include_preview` | Persist an applied mutation, or publish verified export or comparison artifacts to a new directory. |
 | `discard_job` | `job_id`, optional `include_preview` | Cancel preparation, discard a proposal or restore current affected live targets. |
 | `save_document` | `document_id`, optional `destination`, `retry_checkpoint_job_id` | Save an explicitly identified unowned document. |
 | `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options`, `auto_keep` (default true) | Retain a requested edit; successful edit cards may Keep after 30 seconds. Honor “wait for my answer” with `auto_keep=false`. |
@@ -620,7 +621,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the public count is seventeen.
+not extra MCP tools; the public count is eighteen.
 
 ### Kerning discovery
 
@@ -634,7 +635,7 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays seventeen tools.
+require a coordinated bridge/sidecar/skills update. The catalog stays eighteen tools.
 
 
 ## Native scripts
@@ -659,7 +660,7 @@ code. A clean saved baseline skips Save. Dirty fonts require authorized saving;
 new fonts use existing Save As/manual choices. Failed/uncertain saves never run.
 
 `get_edit_workflow` defaults `include_review=false` for compact progress and action
-state. Set it true for optional Script details/Show script. Scripts run on Glyphs'
+state. Set it true for optional View details/Show script. Scripts run on Glyphs'
 main thread; callbacks yield between batches. Cancellation stops remaining calls,
 not the current invocation. Successful execution does not verify intended changes.
 
@@ -670,6 +671,41 @@ Pass `auto_keep=false` for **“wait for my answer”**, or dispatch the existin
 Only cards use `automatic=true` when dispatching the timed Keep; the server rejects
 that flag for other actions or outcomes. Hidden cards, open Script details and
 reconnects require a fresh read and countdown. Text-only clients remain manual.
+Cards display **Pause countdown** while counting down and **Turn off automatic
+Keep** before it starts; both invoke `wait_for_answer`. **Wait for my answer**
+remains the conversational opt-out. Opening View details or More options pauses
+the countdown; successful background reads preserve time only for an unchanged
+workflow revision and request.
+
+### Portable workflow cards
+
+Cards lead with the font, current status, a request summary of at most 140
+characters and known target counts. The filename identifies the document;
+**View details** contains the full path, complete request, optional script
+source/output and diagnostics. Important warnings and recovery consequences
+remain visible.
+
+Each offered action retains its identifier, token and destination requirement.
+The optional `presentation` field groups it as `primary`, `secondary`, `menu`
+or `auto_keep`. Cards place less common choices under **More options**; text
+responses list main choices first and other options separately. Machine-readable
+controls retain all valid actions. Clients without presentation metadata can use
+the original action order.
+
+`uiRefreshIntervalMs` is a card-only hint: 1500 during processing, 5000 while
+choices or recovery remain, and 0 for settled outcomes without actions. The
+existing `poll` field continues to guide agent polling; an idle card refresh
+does not require continuous conversational polling. Hidden cards suspend reads
+and reconcile on return.
+
+An outdated choice hides its old controls and triggers a read of the same
+workflow. A successful read replaces the obsolete state and clears the stale
+warning without replaying an action. A failed read offers **Check status**;
+destination validation errors remain visible until resolved or superseded.
+Interactive rendering follows negotiated MCP Apps capabilities, with no
+client-name-specific branches. Text-only clients reconcile through the same
+tools; the server cannot rewrite a client's historical messages or host-owned
+controls. Compatibility in a named client still requires checks in that client.
 
 Restore saved version reloads the whole unchanged baseline, discards later unsaved
 edits and clears Undo history, returning a fresh document binding. Keep or Save ends
@@ -713,3 +749,12 @@ With `font.checkpoint-restore.v1`, `kind=checkpoint_restore` and
 that font version in Glyphs, replaces subsequent unsaved edits and clears Undo.
 It leaves the disk font untouched, returns the fresh document binding and does
 not save. A later authorized Save records the restoration in a new checkpoint.
+
+## Compiled comparisons
+
+`compare_fonts` requires `font.compare.diffenator.v1` in
+`get_status.comparisonCapabilities`. `comparisonWorker` reports the separate
+runtime's availability; Glyphs may be closed. Inputs, options, limits, snapshot
+verification, cancellation and create-only report publication are described in
+[Compare compiled fonts](../workflows/font-comparison.mdx). File-bound comparison
+jobs cannot be applied and do not use `start_job` or document save checks.

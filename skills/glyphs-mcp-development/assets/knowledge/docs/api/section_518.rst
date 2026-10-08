@@ -1,5 +1,5 @@
-.. attribute:: parent
+.. attribute:: path
 
-		The :class:`GSFont` object that this tab belongs to.
+		Path to image file.
 
-		:type: :class:`GSFont`
+		:type: str

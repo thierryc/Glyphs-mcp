@@ -8,26 +8,25 @@
 *{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--fg)}main{max-width:720px;margin:auto}h1{font-size:18px;line-height:1.3;margin:6px 0}p{margin:8px 0}.muted{color:var(--muted)}.path,pre,output{overflow-wrap:anywhere;white-space:pre-wrap}.path{font-size:12px}.status{font-weight:600}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}button,input{font:inherit;border:1px solid var(--line);border-radius:7px;padding:8px 12px;color:var(--fg);background:var(--bg)}button{cursor:pointer;min-height:40px}button.primary{border-color:var(--accent);color:var(--accent);font-weight:600}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:3px}label{display:block;margin:12px 0 4px}input[type=text]{width:100%}input[type=checkbox]{margin-right:8px}fieldset{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:12px}pre{font:12px/1.5 ui-monospace,monospace}details{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}summary{cursor:pointer}.error{color:var(--color-text-danger,light-dark(#a32525,#ffaaa2))}[hidden]{display:none!important}.badge{font-size:12px;color:var(--muted)}#fallback{border-top:1px solid var(--line);padding-top:10px;font-size:12px}
 @media(max-width:400px){body{padding:10px}.actions button{width:100%}}
 progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8px 0}
+.status:focus{outline:2px solid var(--accent);outline-offset:3px}.scope{overflow-wrap:anywhere}#more-options{border:0;padding:0;margin:8px 0}#more-options>summary{min-height:40px;padding:8px 0}#auto-keep-actions{margin:8px 0}.detail-label{font-weight:600}
 </style>
 </head>
 <body>
 <main aria-busy="false">
   <span class="badge">Glyphs MCP</span><h1 id="title">Font adjustment</h1>
-  <p id="path" class="path muted"></p><p id="scope" class="muted"></p>
-  <p id="status" class="status" role="status" aria-live="polite">Connecting to this conversation…</p>
+  <p id="status" class="status" role="status" aria-live="polite" tabindex="-1">Connecting to this conversation…</p>
+  <p id="scope" class="scope"></p><p id="targets" class="muted"></p><p id="path" class="path muted"></p>
   <p id="message"></p><p id="progress" class="muted"></p>
   <div id="warnings"></div><div id="proposal"></div><div id="approvals"></div>
-  <details id="script-review" hidden><summary>Script details</summary>
-    <p id="script-mode"></p><pre id="script-params"></pre><pre id="script-source"></pre>
-    <pre id="script-output"></pre>
-  </details>
   <p id="restore-coverage" class="muted" hidden></p>
   <div id="auto-keep" hidden>
     <p id="auto-keep-label" role="status" aria-live="polite"></p>
     <progress id="auto-keep-progress" max="30" value="0" aria-label="Time until changes are kept without saving" aria-describedby="auto-keep-coverage"></progress>
-    <p id="auto-keep-coverage" class="muted">This ends this workflow’s recovery offer. Choose “Wait for my answer” to stop the countdown.</p>
+    <p id="auto-keep-coverage" class="muted">This ends this workflow’s recovery offer without saving. Pause the countdown to inspect the result.</p>
   </div>
+  <div id="auto-keep-actions" class="actions" hidden></div>
   <div id="actions" class="actions"></div>
+  <details id="more-options" hidden><summary>More options</summary><div id="more-actions" class="actions"></div></details>
   <form id="save-form" hidden>
     <fieldset><legend>Save As</legend>
       <label for="folder">Destination folder</label><input id="folder" type="text" required placeholder="/absolute/folder" autocomplete="off">
@@ -38,8 +37,16 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     </fieldset>
   </form>
   <p id="error" class="error" role="alert"></p>
+  <button id="check-status" type="button" hidden>Check status</button>
   <p id="fallback" class="muted">You can always continue in the conversation using ordinary language.</p>
-  <details id="result-details"><summary>Details</summary><pre id="details"></pre></details>
+  <details id="result-details"><summary>View details</summary>
+    <p class="detail-label">Document</p><p id="full-path" class="path muted"></p>
+    <p class="detail-label">Request</p><p id="full-summary" class="scope"></p>
+    <div id="script-review" hidden><p class="detail-label">Script</p>
+      <p id="script-mode"></p><pre id="script-params"></pre><pre id="script-source"></pre><pre id="script-output"></pre>
+    </div>
+    <p class="detail-label">Diagnostics</p><pre id="details"></pre>
+  </details>
 </main>
 <script>
 (() => {
@@ -52,9 +59,12 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
   let verified = false, reading = false, reconcile = false, contextVersion = null;
   let autoKeepTimer = null, autoKeepKey = null, autoKeepStarted = 0, autoKeepPending = false;
   let autoKeepAttempted = null;
+  let refreshFailed = false, controlsInvalidated = false, validationError = null, focusAction = null;
+  let countdownEpoch = 0;
   const setText = (id, text) => { byId(id).textContent = text || ""; };
   const pretty = value => JSON.stringify(value, null, 2);
   const excerpt = value => { const text = pretty(value) || ""; return text.length > 500 ? text.slice(0, 500) + "…" : text; };
+  const compactSummary = value => { const chars = Array.from((value || "").replace(/\s+/g, " ").trim()); return chars.length > 140 ? chars.slice(0, 139).join("") + "…" : chars.join(""); };
   function send(method, params, timeout = 15000) {
     const id = ++sequence;
     return new Promise((resolve, reject) => {
@@ -78,6 +88,7 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     clearTimeout(autoKeepTimer); autoKeepTimer = null; autoKeepKey = null;
     byId("auto-keep").hidden = true;
   }
+  function resetCountdown() { countdownEpoch++; stopAutoKeep(); }
   function canAutoKeep() {
     return current?.state === "applied" && !current.blockerId && !optedOut.has(resultIdentity(current))
       && current?.autoKeep?.enabled === true && ["finish_script", "finish_edit"].includes(current.autoKeep.action)
@@ -88,7 +99,7 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     clearTimeout(autoKeepTimer); autoKeepTimer = null;
     const key = autoKeepIdentity(current);
     if (!canAutoKeep() || disposed || !visible || document.hidden || busy || reading || !verified
-        || !toolCallsAvailable() || formAction || byId("script-review").open || byId("result-details").open || autoKeepPending
+        || !toolCallsAvailable() || formAction || byId("result-details").open || byId("more-options").open || autoKeepPending
         || autoKeepAttempted === key) { stopAutoKeep(); return; }
     if (autoKeepKey !== key) { autoKeepKey = key; autoKeepStarted = performance.now(); }
     const elapsed = Math.max(0, performance.now() - autoKeepStarted);
@@ -97,6 +108,8 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     const label = `Keeping changes without saving in ${seconds} seconds…`;
     if (byId("auto-keep-label").textContent !== label) setText("auto-keep-label", label);
     byId("auto-keep-progress").value = Math.min(30, elapsed / 1000);
+    const pause = byId("auto-keep-actions").querySelector("button");
+    if (pause) pause.textContent = "Pause countdown";
     if (elapsed >= 30000) { autoKeepAttempted = key; autoKeepPending = true; keepAfterCountdown(key); }
     else autoKeepTimer = setTimeout(updateAutoKeep, 100);
   }
@@ -107,14 +120,15 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     try {
       const fresh = await call("get_edit_workflow", {workflow_id:current.id});
       if (autoKeepIdentity(current) !== key) return;
-      useResult(fresh, true);
+      if (!useResult(fresh, true, current.id)) throw new Error("The latest workflow state could not be confirmed.");
       reading = false;
       if (autoKeepIdentity(current) === key && canAutoKeep() && !disposed && visible
-          && !document.hidden && !byId("script-review").open && !byId("result-details").open) {
+          && !document.hidden && !byId("result-details").open && !byId("more-options").open) {
         await perform(current.actions.find(a => a.action === current.autoKeep.action), undefined, true);
       }
     } catch (error) {
       verified = false;
+      refreshFailed = true;
       setText("error", "Automatic Keep paused. " + error.message + " Choose an action in the conversation.");
     } finally { reading = false; autoKeepPending = false; setBusy(false); render(); schedule(); }
   }
@@ -125,8 +139,8 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     }
     return result;
   }
-  function useResult(raw, authoritative = false) {
-    if (disposed) return;
+  function useResult(raw, authoritative = false, workflowId = null) {
+    if (disposed) return false;
     const result = unwrap(raw);
     if (!result || result.ok === false) {
       const failure = new Error(result?.error?.message || "No workflow state was returned. Continue in the conversation.");
@@ -134,13 +148,14 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
       throw failure;
     }
     const next = result.data;
-    if (!next?.id) return;
-    if (current && current.id === next.id && next.revision < current.revision) return;
+    if (!next?.id || workflowId && next.id !== workflowId) throw new Error("The response did not match this workflow. Check status before continuing.");
+    if (current && current.id === next.id && next.revision < current.revision) return false;
     if (formAction && (current.id !== next.id || current.revision !== next.revision)) {
       formAction = null; byId("save-form").hidden = true;
     }
     if (evidenceIdentity(next) !== evidenceIdentity(current)) {
-      scriptCache = null; warningCache = null; evidenceCache = null; completionRead = false; byId("script-review").open = false;
+      scriptCache = null; warningCache = null; evidenceCache = null; completionRead = false; byId("result-details").open = false;
+      byId("more-options").open = false; validationError = null;
     }
     if (next.scriptReview) scriptCache = {fingerprint:next.requestFingerprint, value:next.scriptReview};
     if (next.warning) warningCache = {fingerprint:next.requestFingerprint, value:next.warning};
@@ -158,11 +173,14 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     }
     current = next;
     verified = authoritative;
+    if (authoritative) { refreshFailed = false; controlsInvalidated = false; }
+    if (validationError && validationError.identity !== JSON.stringify([resultIdentity(current), current.revision])) validationError = null;
     if (authoritative && current.modelContext && contextVersion !== current.modelContext) {
       contextVersion = current.modelContext;
       send("ui/update-model-context", {content:[{type:"text", text:current.text}, {type:"text", text:current.modelContext}]}).catch(() => {});
     }
     render(); schedule();
+    return true;
   }
   function theme(context) {
     if (["light", "dark"].includes(context?.theme)) document.documentElement.style.colorScheme = context.theme;
@@ -173,10 +191,15 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
   function render() {
     if (!current) return;
     const doc = current.document || {}, job = current.job || {}, scope = current.scope || {};
-    const report = job.report || {}, names = scope.glyphs || [];
+    const report = job.report || {};
     setText("title", doc.familyName || "Untitled font");
-    setText("path", doc.path || "Not saved yet");
-    setText("scope", scope.kind === "python_script" ? `${current.summary || "Native Python"} · ${report.targetCount ?? "pending"} surfaces · ${report.skippedCount || 0} skipped` : [current.summary || (scope.kind || "Font adjustment").replaceAll("_", " "), names.length ? names.join(", ") + (scope.glyphCount > names.length ? ` + ${scope.glyphCount-names.length} more` : "") : "Scope shown in request details", scope.masters ? `Masters: ${scope.masters.join(", ")}` : ""].filter(Boolean).join(" · "));
+    setText("path", doc.path ? doc.path.slice(doc.path.lastIndexOf("/") + 1) : "Not saved yet");
+    setText("full-path", doc.path || "Not saved yet");
+    const summary = current.summary || (scope.kind || "Font adjustment").replaceAll("_", " ");
+    setText("scope", compactSummary(summary)); setText("full-summary", summary);
+    const count = scope.kind === "python_script" ? report.targetCount : report.targetCount ?? report.layerCount ?? report.pairCount ?? (scope.glyphCount > 0 ? scope.glyphCount : undefined);
+    setText("targets", [Number.isFinite(count) ? `${count} ${scope.kind === "python_script" || report.targetCount != null ? "targets" : report.layerCount != null ? "layers" : report.pairCount != null ? "pairs" : "glyphs"}` : scope.kind === "python_script" ? "Resolving targets…" : "", report.skippedCount ? `${report.skippedCount} skipped` : ""].filter(Boolean).join(" · "));
+    byId("targets").hidden = !byId("targets").textContent;
     const [heading, ...guidance] = (current.message || "Checking your changes…").split("\n");
     setText("status", heading);
     setText("message", guidance.join("\n"));
@@ -222,18 +245,33 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     }
     setText("restore-coverage", current.scope?.kind !== "python_script" && current.state === "applied" ? "Undo these changes restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available." : current.savedVersion?.available ? "Restore saved version reloads the whole font, discards all later unsaved edits and clears Undo history. The saved file is checked again before restoring." : "");
     byId("restore-coverage").hidden = !current.savedVersion?.available && !(current.scope?.kind !== "python_script" && current.state === "applied");
-    const actions = byId("actions");
-    const focusedAction = document.activeElement?.dataset?.action;
-    actions.replaceChildren();
+    const actions = byId("actions"), menu = byId("more-actions"), autoControls = byId("auto-keep-actions");
+    const focusedAction = document.activeElement?.dataset?.action || focusAction;
+    focusAction = focusedAction;
+    actions.replaceChildren(); menu.replaceChildren(); autoControls.replaceChildren();
+    let restoredFocus = false;
     current.actions.forEach((action, index) => {
       const button = document.createElement("button"); button.type = "button"; button.textContent = action.label;
       button.dataset.action = action.action; button.disabled = busy || reading || !verified || !toolCallsAvailable() || action.action === "apply" && current.reviewInConversation === true;
-      if (index === 0) button.className = "primary";
-      button.addEventListener("click", () => choose(action)); actions.append(button);
-      if (action.action === focusedAction) button.focus({preventScroll:true});
+      const placement = action.presentation || (index === 0 ? "primary" : "secondary");
+      if (placement === "primary") button.className = "primary";
+      if (placement === "auto_keep") button.textContent = "Turn off automatic Keep";
+      button.addEventListener("click", () => choose(action));
+      (placement === "menu" ? menu : placement === "auto_keep" ? autoControls : actions).append(button);
+      if (action.action === focusedAction && verified && !reading && !button.disabled && toolCallsAvailable()
+          && (placement !== "menu" || byId("more-options").open)) { button.focus({preventScroll:true}); restoredFocus = true; }
     });
-    actions.hidden = !current.actions.length;
-    byId("fallback").hidden = !current.actions.length;
+    // Routine reads disable controls without collapsing the layout. A rejected
+    // choice or failed read removes them until fresh state is confirmed.
+    const unavailable = toolCallsAvailable() && (controlsInvalidated || refreshFailed || !verified && !reading);
+    actions.hidden = !actions.children.length || unavailable;
+    byId("more-options").hidden = !menu.children.length || unavailable;
+    autoControls.hidden = !autoControls.children.length || unavailable;
+    byId("check-status").hidden = !refreshFailed || busy || reading || !toolCallsAvailable();
+    byId("check-status").disabled = busy || reading || !toolCallsAvailable();
+    if (focusedAction && !restoredFocus && !reading && !busy) byId("status").focus({preventScroll:true});
+    if (!reading && !busy) focusAction = null;
+    byId("fallback").hidden = toolCallsAvailable() || !current.actions.length;
     setText("fallback", current.actions.length ? (toolCallsAvailable() ? "You can also reply in the conversation: " : "Interactive controls are unavailable here. Reply in the conversation: ") + current.actions.map(a => a.label).join("; ") + "." : "");
     setText("details", pretty({scope:current.scope, blockingWorkflowId:current.blockingWorkflowId, job:current.job, receipt:current.receipt, error:current.error}));
     updateAutoKeep();
@@ -241,42 +279,51 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
   }
   function setBusy(value) {
     busy = value; document.querySelector("main").setAttribute("aria-busy", String(value));
-    document.querySelectorAll("button").forEach(b => b.disabled = value || reading || !verified || !toolCallsAvailable());
+    document.querySelectorAll("button").forEach(b => b.disabled = value || reading || !toolCallsAvailable() || (b.id !== "check-status" && !verified) || b.dataset?.action === "apply" && current?.reviewInConversation === true);
   }
   async function call(name, args) {
     if (!toolCallsAvailable()) throw new Error("Use the same choice in the conversation; this host has no MCP Apps tool bridge.");
     // Host approval dialogs routinely outlive the former 15-second deadline.
     return send("tools/call", {name, arguments:args}, 120000);
   }
-  async function refresh(includeReview = false) {
+  async function refresh(includeReview = false, background = false) {
     if (!current || busy || reading || disposed || !toolCallsAvailable()) return;
     const identity = evidenceIdentity(current), workflowId = current.id;
+    const countdown = background && autoKeepKey ? {key:autoKeepKey, started:autoKeepStarted, pausedAt:performance.now(), epoch:countdownEpoch} : null;
+    if (document.activeElement === byId("check-status")) focusAction = "check_status";
     reading = true; verified = false; reconcile = false; setBusy(false); render();
     try {
       const result = await call("get_edit_workflow", {workflow_id:workflowId, ...(includeReview ? {include_review:true} : {})});
       if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
-      useResult(result, true); setText("error", "");
+      if (!useResult(result, true, workflowId)) throw new Error("The latest workflow state could not be confirmed.");
+      setText("error", validationError?.message || "");
+      if (countdown && countdown.epoch === countdownEpoch && countdown.key === autoKeepIdentity(current)) {
+        autoKeepKey = countdown.key;
+        autoKeepStarted = countdown.started + performance.now() - countdown.pausedAt;
+      }
     }
-    catch (error) { if (identity === evidenceIdentity(current)) setText("error", error.message); clearTimeout(timer); }
+    catch (error) { if (identity === evidenceIdentity(current)) { verified = false; refreshFailed = true; setText("error", error.message); } clearTimeout(timer); }
     finally { reading = false; setBusy(false); render(); if (reconcile) refresh(); else schedule(); }
   }
   function schedule() {
     clearTimeout(timer);
-    if (!disposed && visible && !document.hidden && !busy && !reading && toolCallsAvailable()
-        && byId("script-review").open && !completionRead
+    if (!disposed && visible && !document.hidden && !busy && !reading && !refreshFailed && toolCallsAvailable()
+        && current?.scope?.kind === "python_script" && byId("result-details").open && !completionRead
         && ["applied", "failed", "cancelled", "executed", "saved", "discarded"].includes(current?.state)) {
       timer = setTimeout(() => { completionRead = true; refresh(true); }, 0);
       return;
     }
-    if (!disposed && visible && !document.hidden && current?.poll && toolCallsAvailable() && !busy && !reading && !formAction) timer = setTimeout(refresh, 1500);
+    const interval = current?.uiRefreshIntervalMs ?? (current?.poll ? 1500 : current?.actions?.length ? 5000 : 0);
+    if (!disposed && visible && !document.hidden && interval > 0 && !refreshFailed && toolCallsAvailable() && !busy && !reading && !formAction) timer = setTimeout(() => refresh(false, true), interval);
   }
   async function perform(action, destination, automatic = false) {
     if (disposed || busy || reading || !verified || !current.actions.some(item => item.token === action?.token)) return;
+    if (action.action === "apply" && current.reviewInConversation === true) return;
     const overwrites = current.job?.report?.requiredOverwrites || [];
     if (action.action === "apply" && overwrites.length && byId("approvals").querySelectorAll("input:checked").length !== overwrites.length) {
       setText("error", "Approve every displayed existing-value change before applying, or discuss a reduced request in the conversation."); return;
     }
-    setBusy(true); clearTimeout(timer); setText("error", "");
+    setBusy(true); clearTimeout(timer); validationError = null; setText("error", "");
     const identity = evidenceIdentity(current), resultKey = resultIdentity(current);
     const args = {workflow_id:current.id, expected_revision:current.revision, action_token:action.token};
     if (automatic) args.automatic = true;
@@ -286,28 +333,34 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
       const raw = await call("respond_edit_workflow", args);
       if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
       formAction = null; byId("save-form").hidden = true;
-      useResult(raw, true); setText("error", "");
+      if (!useResult(raw, true, args.workflow_id)) throw new Error("The latest workflow state could not be confirmed.");
+      setText("error", "");
     } catch (error) {
       if (automatic) optedOut.add(resultKey);
       if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
       setText("error", error.message + " Continue in the conversation if needed.");
       // A read is safe after a lost response; never repeat the mutation automatically.
       verified = false;
+      controlsInvalidated = true;
+      formAction = null; byId("save-form").hidden = true;
+      render();
       try {
         const result = await call("get_edit_workflow", {workflow_id:args.workflow_id});
         if (identity !== evidenceIdentity(current)) { reconcile = true; return; }
-        useResult(result, true);
+        if (!useResult(result, true, args.workflow_id)) throw new Error("The latest workflow state could not be confirmed.");
         // Keep actionable server validation errors (for example a Save As
         // collision). A successful read supersedes a transport timeout.
-        if (!error.code) setText("error", "");
-      } catch (_) {}
+        if (!error.code || error.code === "stale_workflow_action") setText("error", "");
+        else validationError = {identity:JSON.stringify([resultIdentity(current), current.revision]), message:byId("error").textContent};
+      } catch (readError) { verified = false; refreshFailed = true; setText("error", readError.message); }
     } finally { setBusy(false); render(); if (reconcile) refresh(); else schedule(); }
   }
   function choose(action) {
     if (disposed || busy || reading || !verified || !toolCallsAvailable()) return;
     if (action.action === "wait_for_answer") optedOut.add(resultIdentity(current));
-    stopAutoKeep();
+    resetCountdown();
     if (action.requiresDestination) {
+      focusAction = action.action;
       formAction = action; clearTimeout(timer);
       const path = current.document.path || "", slash = path.lastIndexOf("/");
       byId("folder").value = slash >= 0 ? path.slice(0, slash) || "/" : "";
@@ -321,15 +374,16 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     const folder = byId("folder").value.trim(), name = byId("filename").value.trim();
     setText("destination", folder.replace(/\/$/, "") + "/" + name);
   }
-  byId("script-review").addEventListener("toggle", () => {
-    stopAutoKeep();
-    if (byId("script-review").open && !scriptCache) refresh(true);
+  byId("result-details").addEventListener("toggle", () => {
+    resetCountdown();
+    if (byId("result-details").open && current?.scope?.kind === "python_script" && !scriptCache) refresh(true);
     else { render(); schedule(); }
   });
-  byId("result-details").addEventListener("toggle", () => { stopAutoKeep(); render(); });
+  byId("more-options").addEventListener("toggle", () => { resetCountdown(); render(); schedule(); });
+  byId("check-status").addEventListener("click", () => refresh(byId("result-details").open && current?.scope?.kind === "python_script"));
   byId("folder").addEventListener("input", updateDestination);
   byId("filename").addEventListener("input", updateDestination);
-  byId("cancel-form").addEventListener("click", () => { formAction = null; byId("save-form").hidden = true; resize(); schedule(); });
+  byId("cancel-form").addEventListener("click", () => { formAction = null; byId("save-form").hidden = true; render(); schedule(); });
   byId("save-form").addEventListener("submit", event => {
     event.preventDefault();
     const folder = byId("folder").value.trim(), name = byId("filename").value.trim();
@@ -346,7 +400,7 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
     if (message.id && pending.has(message.id)) {
       const request = pending.get(message.id); pending.delete(message.id); clearTimeout(request.deadline);
       if (event.origin && event.origin !== "null") origin = event.origin;
-      if (message.error) request.reject(new Error(message.error.message)); else request.resolve(message.result);
+      if (message.error) { const error = new Error(message.error.message); error.code = message.error.data?.code; request.reject(error); } else request.resolve(message.result);
     } else if (message.method === "ui/notifications/tool-result") {
       try {
         const next = unwrap(message.params)?.data;
@@ -363,9 +417,9 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
       pending.clear(); window.parent.postMessage({jsonrpc:"2.0", id:message.id, result:{}}, origin);
     }
   });
-  document.addEventListener("visibilitychange", () => { stopAutoKeep(); if (!document.hidden) refresh(); else clearTimeout(timer); });
+  document.addEventListener("visibilitychange", () => { resetCountdown(); if (!document.hidden) refresh(); else clearTimeout(timer); });
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(resize).observe(document.querySelector("main"));
-  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { const wasVisible = visible; visible = entries.some(e => e.isIntersecting); if (visible && !wasVisible) refresh(); else { updateAutoKeep(); schedule(); } }).observe(document.querySelector("main"));
+  if (typeof IntersectionObserver !== "undefined") new IntersectionObserver(entries => { const wasVisible = visible; visible = entries.some(e => e.isIntersecting); if (visible !== wasVisible) resetCountdown(); if (visible && !wasVisible) refresh(); else { updateAutoKeep(); schedule(); } }).observe(document.querySelector("main"));
   send("ui/initialize", {protocolVersion:"2026-01-26", appInfo:{name:"Glyphs edit workflow", version:"1.0.0"}, appCapabilities:{}}, 5000)
     .then(result => { host = result.hostCapabilities || {}; connected = true; theme(result.hostContext); notify("ui/notifications/initialized"); render(); refresh(); })
     .catch(() => { setText("status", "Continue in the conversation"); setText("fallback", "Interactive MCP Apps are unavailable here. Reply with Save and continue, Save As, Check and continue, or another offered choice in the conversation."); render(); });

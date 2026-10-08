@@ -1,3 +1,4 @@
-.. attribute:: note
+.. attribute:: glyphInfo
+		:class:`GSGlyphInfo` object for this glyph with detailed information.
 
-		:type: str
+		:type: :class:`GSGlyphInfo`

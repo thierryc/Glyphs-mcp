@@ -1,5 +1,5 @@
-.. attribute:: title
+.. attribute:: id
 
-		The title as shown in the UI. It is readonly as it is computed by the name, type and filter.
+		The id to link the values in the masters
 
 		:type: str

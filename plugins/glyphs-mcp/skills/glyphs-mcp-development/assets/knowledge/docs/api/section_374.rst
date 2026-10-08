@@ -1,9 +1,6 @@
-.. function:: removeOverlap([checkSelection=False])
+.. attribute:: bottomMetricsKey
+		The bottomMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Joins all contours.
+		:type: str
 
-		:param checkSelection: If the selection will be considered. Default: False
-
-	.. function:: roundCoordinates()
-
-		Round the positions of all coordinates to the grid (size of which is set in the Font Info).
+		.. versionadded:: 3.4

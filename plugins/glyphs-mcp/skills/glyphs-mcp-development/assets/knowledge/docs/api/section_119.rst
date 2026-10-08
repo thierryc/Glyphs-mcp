@@ -1,5 +1,5 @@
-.. attribute:: appVersion
+.. attribute:: tools
 
-		Returns the version that the file was last saved
+		Returns a list of available tool names, including third-party plug-ins.
 
-		.. versionadded:: 2.5
+		:type: list, str

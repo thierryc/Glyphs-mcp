@@ -1,5 +1,7 @@
-.. attribute:: selectedFontMaster
+.. attribute:: selectedLayers
 
-		Returns the active master (selected in the toolbar).
+		Returns a list of all selected layers in the active tab.
 
-		:type: :class:`GSFontMaster`
+		If a glyph is being edited, it will be the only glyph returned in this list. Otherwise the list will contain all glyphs selected with the Text tool.
+
+		:type: list

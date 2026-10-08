@@ -1,5 +1,5 @@
-.. attribute:: bounds
+.. attribute:: slant
 
-		Bounding box of all glyphs in the Edit view in view coordinate values.
+		The slant of the image.
 
-		:type: NSRect
+		:type: tuple, NSPoint

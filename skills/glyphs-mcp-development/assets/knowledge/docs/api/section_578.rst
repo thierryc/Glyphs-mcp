@@ -1,5 +1,4 @@
-.. attribute:: metric
+.. attribute:: sortName
+		Alternative name of glyph used for sorting in UI.
 
-		Corresponding GSMetric object. see :attr:`GSFont.metrics`.
-
-		:type: GSMetric
+		:type: str

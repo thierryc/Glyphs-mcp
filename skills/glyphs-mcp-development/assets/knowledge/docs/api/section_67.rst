@@ -1,5 +1,19 @@
-.. attribute:: copyright
+.. attribute:: featurePrefixes
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
+		Collection of :class:`GSFeaturePrefix` objects, containing stuff that needs to be outside of the OpenType features.
 
-		:type: str
+		:type: list
+
+		.. code-block:: python
+			# add a prefix
+			font.featurePrefixes.append(GSFeaturePrefix('LanguageSystems', 'languagesystem DFLT dflt;'))
+
+			# access all prefixes
+			for prefix in font.featurePrefixes:
+			    print(prefix.code)
+
+			# access one prefix
+			print(font.featurePrefixes['LanguageSystems'].code)
+
+			# delete
+			del font.featurePrefixes['LanguageSystems']

@@ -1,5 +1,8 @@
-.. attribute:: accents
+.. attribute:: selectedTextRange
+		range of of selection in the text
 
-		This glyph may be combined with these accents, returned as a list of glyph names.
+		.. seealso:: `GSEditViewController.layers`
 
-		:type: list
+		:type: NSRange
+
+		.. versionadded:: 4

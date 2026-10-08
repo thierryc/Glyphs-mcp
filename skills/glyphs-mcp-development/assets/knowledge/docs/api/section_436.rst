@@ -1,14 +1,13 @@
-.. attribute:: bounds
+.. attribute:: userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
-		Bounding box of the path, read-only
-
-		:type: NSRect
+		:type: dict
 
 		.. code-block:: python
-			path = layer.paths[0] # first path
+			# set value
+			component.userData['rememberToMakeCoffee'] = True
 
-			# origin
-			print(path.bounds.origin.x, path.bounds.origin.y)
+			# delete value
+			del component.userData['rememberToMakeCoffee']
 
-			# size
-			print(path.bounds.size.width, path.bounds.size.height)
+		.. versionadded:: 2.5

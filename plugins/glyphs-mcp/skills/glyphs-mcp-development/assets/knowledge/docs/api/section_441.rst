@@ -1,11 +1,14 @@
-.. attribute:: tempData
-		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use path.userData
+:mod:`GSGlyphReference`
+===============================================================================
 
-		:type: dict
+a small helper class to store a reference to a glyph in userData that will keep track of changes to the glyph name.
 
-		.. code-block:: python
-			# set value
-			path.tempData['rememberToMakeCoffee'] = True
+.. versionadded:: 3.0.4
 
-			# delete value
-			del path.tempData['rememberToMakeCoffee']
+.. class:: GSGlyphReference()
+
+	Properties
+
+		* :attr:`glyph`
+
+	**Properties**

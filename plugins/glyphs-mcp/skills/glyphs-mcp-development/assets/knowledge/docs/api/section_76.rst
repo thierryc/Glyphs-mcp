@@ -1,11 +1,7 @@
-.. attribute:: descriptions
+.. attribute:: description
 
-		This accesses all localized designer values.
-		For details :attr:`GSFont.properties`
+		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
 
-		:type: dict
-
-		.. code-block:: python
-			font.descriptions["ENG"] = "This is my description"
+		:type: str
 
 		.. versionadded:: 3.0.3

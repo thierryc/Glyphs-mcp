@@ -1,5 +1,4 @@
-.. attribute:: blueValues
+.. attribute:: gridMainVertical
 
-		PS hinting Blue Values calculated from the master’s alignment zones. Read-only.
-
-		:type: list
+		:type: float
+		.. versionadded:: 4.1

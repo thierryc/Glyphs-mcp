@@ -1,5 +1,5 @@
-.. attribute:: filter
+.. attribute:: type
 
-		A filter to limit the scope of the metric.
+		The metrics type
 
-		:type: NSPredicate
+		:type: int

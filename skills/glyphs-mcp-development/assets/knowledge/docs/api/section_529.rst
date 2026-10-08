@@ -1,4 +1,7 @@
-.. attribute:: textRange
-		Amount of selected glyphs in text, starting at cursor position (see above).
+.. function:: scaleWidthToEmUnits
 
-		:type: integer
+		Scale the image’s cropped width to a certain em unit value, retaining its aspect ratio.
+
+		.. code-block:: python
+			# fit image in layer’s width
+			layer.backgroundImage.scaleWidthToEmUnits(layer.width)

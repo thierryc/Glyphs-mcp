@@ -1,5 +1,7 @@
-.. attribute:: linkStyle
+.. attribute:: widthClass
 
-		Linked style
+		Width class, as set in Font Info, as an integer. Values from 1 to 9 are supported.
 
-		:type: str
+		For actual position in interpolation designspace, use GSInstance.axes.
+
+		:type: int

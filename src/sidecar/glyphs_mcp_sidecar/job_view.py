@@ -17,6 +17,8 @@ def public_job(job: Mapping[str, Any], *, include_preview: bool = True) -> dict[
         "error": job.get("error"),
         "outcome": job.get("outcome"),
         "receipt": job.get("receipt"),
+        "entryPoint": job.get("entryPoint"),
+        "inputKind": job.get("inputKind", "document"),
         "bridgeOperation": job.get("bridgeOperation"),
         "activity": activity(job),
         "message": (

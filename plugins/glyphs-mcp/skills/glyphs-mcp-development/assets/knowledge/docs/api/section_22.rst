@@ -1,4 +1,4 @@
-.. attribute:: editViewWidth
-		Width of glyph Edit view. Corresponds to the "Width of editor" setting from the Preferences.
+.. attribute:: unicodeRanges
+		Names of unicode ranges.
 
-		:type: int
+		:type: list

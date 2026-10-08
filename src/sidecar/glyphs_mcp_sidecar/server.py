@@ -78,7 +78,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
 
         Paths require paths.list.v1/path.geometry.v1: sole {kind:paths,glyph,layer,limit?,cursor?} with fields [items]; {kind:path,glyph,layer,index,limit?,cursor?} with fields [nodes]; or {kind:segment,glyph,layer,path,endNode} with type/startNode/endNode/controlNodes/points/length/pathHash. Path/node limits 100/256. outline.background.read.v1 allows surface:background on layer/path selectors; IDs identify the owning foreground layer. Never substitute foreground geometry or create missing backgrounds.
 
-        With features.read.v1, sole {kind:feature_blocks,blockType:prefix|class|feature,limit:100,cursor?}, fields [items], or exact {kind:feature_block,blockType,id}. With instances.read.v1, sole {kind:instances,limit:100,cursor?}, fields [items], or exact {kind:instance,id}; returned persistent IDs feed export jobs. With font.checkpoints.v1, fields [checkpoint] and one checkpoint_history/checkpoint_details/checkpoint_compare/checkpoint_scope selector read bounded Git evidence using full revisions/cursors. Invalid selector input returns invalid_request; keep the document binding and correct the input. Full selectors/fields: shipped Glyphs references and the seventeen-tool command reference."""
+        With features.read.v1, sole {kind:feature_blocks,blockType:prefix|class|feature,limit:100,cursor?}, fields [items], or exact {kind:feature_block,blockType,id}. With instances.read.v1, sole {kind:instances,limit:100,cursor?}, fields [items], or exact {kind:instance,id}; returned persistent IDs feed export jobs. With font.checkpoints.v1, fields [checkpoint] and one checkpoint_history/checkpoint_details/checkpoint_compare/checkpoint_scope selector read bounded Git evidence using full revisions/cursors. Invalid selector input returns invalid_request; keep the document binding and correct the input. Full selectors/fields: shipped Glyphs references and the eighteen-tool command reference."""
         return _result(lambda: service.read_entities(document_id, entities, fields))
 
     @mcp.tool(name="start_job")
@@ -100,6 +100,11 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
             )
         )
 
+    @mcp.tool(name="compare_fonts")
+    def compare_fonts(baseline_files: list[str], candidate_files: list[str], options: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Compare explicit local static/variable TTF files with the optional managed Diffenator runtime. Requires font.compare.diffenator.v1 in get_status.comparisonCapabilities. No live Glyphs document or Save is required. Each list contains 1-32 absolute existing TTF paths. options: styles=instances (default), masters or cross_product; filterStyles=style regex; userWordlist=absolute .txt/.csv file. Inputs are privately snapshotted and hashed. Return a job ID; use get_job for stages/HTML entry point, discard_job for cancellation and accept_job with a new destination directory to publish the report. Comparison never applies changes or saves fonts. Completion is not a judgement that differences are acceptable."""
+        return _result(lambda: service.compare_fonts(baseline_files, candidate_files, options))
+
     @mcp.tool(name="get_job")
     def get_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
         """Return progress and a typed mutation, diagnostic or artifact result with report, manifest, warnings and bounded previews. Use include_preview=false for compact polling."""
@@ -118,7 +123,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         destination: str | None = None,
         include_preview: bool = True,
     ) -> dict[str, Any]:
-        """With save authorization, verify an applied mutation and save the whole font (including later edits), ending workflow recovery. Optional destination is an absolute new Save As path and must not exist. Native Undo remains. For artifact jobs, publish verified export artifacts to a new absolute destination directory. Return source-bound receipts; reconcile uncertain outcomes instead of replaying."""
+        """With save authorization, verify an applied mutation and save the whole font (including later edits), ending workflow recovery. Optional destination is an absolute new Save As path and must not exist. Native Undo remains. For artifact jobs, publish verified export or compiled-font comparison artifacts to a new absolute destination directory. Return source-bound receipts; reconcile uncertain outcomes instead of replaying."""
         return _result(
             lambda: service.accept_job(
                 job_id,

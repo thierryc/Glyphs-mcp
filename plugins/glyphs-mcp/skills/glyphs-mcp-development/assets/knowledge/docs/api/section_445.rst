@@ -1,31 +1,7 @@
-:mod:`GSNode`
-===============================================================================
+.. attribute:: id
 
-Implementation of the node object.
+		Id of the axis. This Id will be used to map the Smart Glyph’s layers to the poles of the interpolation. See :attr:`GSLayer.smartComponentPoleMapping`
 
-For details on how to access them, please see :attr:`GSPath.nodes`
+		:type: str
 
-.. class:: GSNode([pt, type = type])
-
-	:param pt: The position of the node.
-	:param type: The type of the node, LINE, CURVE or OFFCURVE
-
-	Properties
-
-		* :attr:`position`
-		* :attr:`type`
-		* :attr:`connection`
-		* :attr:`selected`
-		* :attr:`index`
-		* :attr:`nextNode`
-		* :attr:`prevNode`
-		* :attr:`name`
-		* :attr:`orientation`
-
-	Functions
-
-		* :meth:`copy`
-		* :meth:`makeNodeFirst`
-		* :meth:`toggleConnection`
-
-	**Properties**
+		.. versionadded:: 2.5

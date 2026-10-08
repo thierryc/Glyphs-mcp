@@ -1,9 +1,6 @@
-.. attribute:: glyph
+.. attribute:: componentMasterId
+		The ID of the master to component is pointing to.
 
-	the GSGlyph to keep track of
+		:type: str
 
-	:type: GSGlyph
-
-	.. code-block:: python
-
-		glyphReference = GSGlyphReference(font.glyphs["A"])
+		.. versionadded:: 3.1

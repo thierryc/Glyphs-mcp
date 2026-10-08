@@ -1,6 +1,5 @@
-.. attribute:: category
+.. attribute:: automatic
 
-		The category of the glyph. e.g. ‘Letter’, ‘Symbol’
-		Setting only works if :attr:`GSGlyph.storeCategory` is set (see below).
+		Define whether this should be auto-generated when pressing the 'Update' button in the Font Info.
 
-		:type: str
+		:type: bool

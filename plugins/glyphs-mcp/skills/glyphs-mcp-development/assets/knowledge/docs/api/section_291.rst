@@ -1,5 +1,5 @@
-.. attribute:: tags
+.. attribute:: unicode
 
-		store strings that can be used to filter glyphs or build OT-classes with token filters
+		String with the hex Unicode value of glyph, if encoded.
 
-		:type: list
+		:type: str

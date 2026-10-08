@@ -1,9 +1,20 @@
-.. function:: pointOnLine(P0, P1, t)
+:mod:`PreviewTextWindow`
+===============================================================================
 
-	the point at t
+The Text Preview Window
 
-	:param P0: The Start point of the line (NSPoint)
-	:param P1: The End point of the line
-	:param t: The time parameter
-	:return: a point
-	:rtype: NSPoint
+.. class:: PreviewTextWindow()
+
+	Properties
+
+		* :attr:`text`
+		* :attr:`font`
+		* :attr:`instanceIndex`
+		* :attr:`fontSize`
+
+	Functions
+
+		* :meth:`open`
+		* :meth:`close`
+
+	**Properties**

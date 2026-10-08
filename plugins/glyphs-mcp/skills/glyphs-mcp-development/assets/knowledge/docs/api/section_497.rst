@@ -1,5 +1,5 @@
-.. attribute:: path
+.. attribute:: parent
 
-		Path to image file.
+		Parent layer of hint.
 
-		:type: str
+		:type: GSLayer

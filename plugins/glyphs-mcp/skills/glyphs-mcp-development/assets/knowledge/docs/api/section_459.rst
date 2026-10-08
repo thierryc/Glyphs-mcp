@@ -1,7 +1,15 @@
-.. attribute:: type
+.. attribute:: bezierPath
+		The same path as an NSBezierPath object. Useful for drawing glyphs in plugins.
 
-		The type of the node, LINE, CURVE or QCURVE
+		:type: NSBezierPath
 
-		Always compare against the constants, never against the actual value.
+		.. code-block:: python
+			# draw the path into the Edit view
+			NSColor.redColor().set()
+			layer.paths[0].bezierPath.fill()
 
-		:type: str
+	**Functions**
+
+	.. function:: reverse()
+
+		Reverses the path direction

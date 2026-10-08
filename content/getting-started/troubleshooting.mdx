@@ -2,6 +2,15 @@
 title: Troubleshooting v2
 ---
 
+## Initialization in the 2.0.2 candidate
+
+During startup, the initialization strip reports discovery, setup extraction,
+verification and Glyphs Python preflight. A running check should leave the
+interface responsive. After a failure, use Retry or View Logs. Logs record
+durations; include the stage and timing when reporting a slow launch. Diffenator
+and the managed Beztrace companion can show Awaiting release qualification
+until their independent signed distributions are available.
+
 Start with `get_status` and the status in **Edit → Glyphs MCP Server…**. The server, bridge and external worker have separate availability: a reachable server does not by itself mean Glyphs is ready to edit.
 
 | Symptom | Check or action |

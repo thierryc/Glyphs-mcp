@@ -1,4 +1,6 @@
-.. attribute:: topKerningGroup
-		The topKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
+.. attribute:: subCategory
+
+		The subCategory of the glyph. e.g. ‘Currency’, ‘Math’
+		Setting it only works if :attr:`GSGlyph.storeSubCategory` is set (see below).
 
 		:type: str

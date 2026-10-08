@@ -1,11 +1,7 @@
-.. attribute:: manufacturers
+.. attribute:: designer
 
-		This accesses all localized family name values.
-		For details :attr:`GSInstance.properties`
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
-		:type: dict
+		:type: str
 
-		.. code-block:: python
-			instance.manufacturers["ENG"] = "My English Corporation"
-
-		.. versionadded:: 3.0.3
+		.. versionadded:: 3.0.2

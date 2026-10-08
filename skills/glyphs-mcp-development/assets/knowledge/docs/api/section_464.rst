@@ -1,18 +1,6 @@
-.. attribute:: name
+.. function:: addNodesAtExtremes([force=False, checkSelection=False])
 
-		a optional name
+		Add nodes at path’s extrema, e.g., top, bottom etc.
 
-		:type: str
-
-	.. attribute:: selected
-
-		Selection state of guide in UI.
-
-		:type: bool
-
-		.. code-block:: python
-			# select guide
-			layer.guides[0].selected = True
-
-			# print(selection state)
-			print(layer.guides[0].selected)
+		:param force: if points are always added, even if that would distort the shape
+		:param checkSelection: only process selected segments

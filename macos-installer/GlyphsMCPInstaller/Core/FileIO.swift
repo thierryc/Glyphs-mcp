@@ -118,7 +118,7 @@ public enum InstallerPaths {
 	}
 }
 
-public struct InstallerPayload {
+public struct InstallerPayload: @unchecked Sendable {
 	public static let legacyManagedSkillNames = ["glyphs-mcp-connect"]
 	private static let extractionLock = NSLock()
 	private static var extractedPayloads: [String: URL] = [:]
@@ -240,7 +240,8 @@ public struct InstallerPayload {
 
 	public static func resolve(
 		bundle: Bundle = .main,
-		allowVerifiedLegacyRelease: Bool = false
+		allowVerifiedLegacyRelease: Bool = false,
+		progress: @Sendable (String) -> Void = { _ in }
 	) throws -> InstallerPayload {
 		let fm = FileManager.default
 		let directPayloadDir: URL? = {
@@ -255,6 +256,7 @@ public struct InstallerPayload {
 		if let directPayloadDir {
 			payloadDir = directPayloadDir
 		} else if let resourceRoot = bundle.resourceURL {
+			progress("Extracting setup files…")
 			let archive = resourceRoot.appendingPathComponent("Payload.gmcparchive")
 			payloadDir = fm.fileExists(atPath: archive.path)
 				? try extractPayloadArchive(archive)
@@ -265,6 +267,7 @@ public struct InstallerPayload {
 		guard let payloadDir else {
 			throw InstallerError.userFacing("Installer payload is missing. Rebuild the signed installer app.")
 		}
+		progress("Verifying setup files…")
 		return try resolve(
 			payloadDir: payloadDir,
 			allowVerifiedLegacyRelease: allowVerifiedLegacyRelease

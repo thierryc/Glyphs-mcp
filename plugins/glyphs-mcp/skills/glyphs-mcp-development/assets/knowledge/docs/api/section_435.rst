@@ -1,5 +1,9 @@
-.. attribute:: direction
+.. attribute:: openBezierPath
+		Returns the open paths of the component as bezier path, already transformed. Useful for drawing glyphs in plugins.
 
-		Path direction. -1 for counter clockwise, 1 for clockwise.
+		:type: NSBezierPath
 
-		:type: int
+		.. code-block:: python
+			# draw the path into the Edit view
+			NSColor.redColor().set()
+			layer.components[0].openBezierPath.stroke()

@@ -1,10 +1,5 @@
-.. attribute:: familyNames
+.. attribute:: familyName
 
-		This accesses all localized family name values.
-		For details :attr:`GSFont.properties`
+		Family name of the typeface.
 
-		:type: dict
-		.. code-block:: python
-			font.familyNames["ENG"] = "MyFamilyName"
-
-		.. versionadded:: 3.0.3
+		:type: str

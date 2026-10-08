@@ -1,4 +1,5 @@
-.. attribute:: topKerningKey
-		The key to be used with the kerning functions (:meth:`GSFont.kerningForPair()`, :meth:`GSFont.setKerningForPair()`, :meth:`GSFont.removeKerningForPair()`).
+.. attribute:: storeStoreGroup
 
-		.. versionadded:: 3
+		:type: bool
+
+				.. versionadded:: 4

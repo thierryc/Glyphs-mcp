@@ -1,8 +1,8 @@
-# Glyphs MCP Desktop 2.0.1
+# Glyphs MCP Desktop 2.0.2 candidate
 
-**2.0.1 · desktop build 56 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.1/Glyphs-MCP-2.0.1.dmg) and see the [2.0.1 release qualification](V2.0.1-RELEASE.md) for features, validation and platform limits.
+**Development: 2.0.2 · desktop build 57 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version remains 2.0.1. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.1/Glyphs-MCP-2.0.1.dmg) and see the [2.0.1 release qualification](V2.0.1-RELEASE.md) for features, validation and platform limits.
 
-The [seventeen-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. `save_document` persists an explicitly identified font.
+The [eighteen-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -61,9 +61,9 @@ Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The seventeen tools are `get_status`, `list_documents`, `create_document`, `open_document`, `import_document`,
+The eighteen tools are `get_status`, `list_documents`, `create_document`, `open_document`, `import_document`,
 `activate_document`, `close_document`, `read_entities`,
-`start_job`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
+`start_job`, `compare_fonts`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
 `respond_edit_workflow`. The shared MCP App supports preparation, saving and
 review where the host supports interactive Apps; every action also works in
@@ -81,7 +81,7 @@ documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
 [GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.1).
 
-Documentation sources: [v2 · 2.0.1](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.2 candidate](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
@@ -122,7 +122,15 @@ limits are unchanged. Qualification is tracked in [the V2 release notes](V2-RELE
 The opt-in project setting records exact saved baselines and authorized MCP saves
 as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be
 retried without another Save. Bounded history, recorded actions, comparison and
-whole-font historical reload share the existing seventeen tools and app project UI.
+whole-font historical reload share the existing eighteen tools and app project UI.
 See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.
+
+## 2.0.2 development
+
+The candidate adds responsive initialization status and compiled-font comparison
+through `compare_fonts`. Diffenator and Beztrace have optional managed Setup
+cards; their downloads remain gated on independently signed and qualified
+distributions. See [compiled comparisons](content/workflows/font-comparison.mdx)
+and [2.0.2 candidate evidence](V2.0.2-RELEASE.md).

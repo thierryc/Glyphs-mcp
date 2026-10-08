@@ -1,5 +1,7 @@
-.. attribute:: isItalic
+.. attribute:: weightClass
 
-		Italic flag for style linking
+		Weight class, as set in Font Info, as an integer. Values from 1 to 1000 are supported but 100–900 is recommended.
 
-		:type: bool
+		For actual position in interpolation designspace, use GSInstance.axes.
+
+		:type: int

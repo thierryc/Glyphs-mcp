@@ -1,6 +1,7 @@
-.. attribute:: manualInterpolation
+.. attribute:: variableStyleName
 
-		Disables automatic calculation of instanceInterpolations
-		This allows manual setting of instanceInterpolations.
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
-		:type: bool
+		:type: str
+
+		.. versionadded:: 3.0.3

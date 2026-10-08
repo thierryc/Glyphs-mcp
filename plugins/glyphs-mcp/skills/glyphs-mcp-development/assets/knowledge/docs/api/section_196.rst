@@ -1,5 +1,5 @@
-.. attribute:: fullName
+.. attribute:: isItalic
 
-		fullName (postscriptFullName)
+		Italic flag for style linking
 
-		:type: str
+		:type: bool

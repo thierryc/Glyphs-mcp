@@ -13,13 +13,28 @@ import tempfile
 from verify_desktop_app import ROOT, source_digest, verify
 
 
+def require_stopped(app):
+    executable = str(app.resolve() / 'Contents/MacOS/Glyphs MCP')
+    try:
+        processes = subprocess.check_output(['/bin/ps', '-axo', 'pid=,command='], text=True)
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError('Cannot verify whether the local app is running; the candidate was preserved.') from error
+    for line in processes.splitlines():
+        fields = line.strip().split(maxsplit=1)
+        if len(fields) == 2 and (fields[1] == executable or fields[1].startswith(executable + ' ')):
+            raise RuntimeError(f'Quit the local Glyphs MCP app (PID {fields[0]}) before rebuilding it. The candidate was preserved.')
+
+
 def build():
     output = ROOT / 'dist/local'
+    app = output / 'Glyphs MCP.app'
+    # Never replace files beneath a live process: it can retain older executable
+    # code while reading newer resources from the same bundle path.
+    require_stopped(app)
     output.mkdir(parents=True, exist_ok=True)
     # A failed or interrupted build must not leave a usable old receipt.
     receipt = output / 'build-receipt.json'
     receipt.unlink(missing_ok=True)
-    app = output / 'Glyphs MCP.app'
     if app.exists():
         shutil.rmtree(app)
     subprocess.run([sys.executable, str(ROOT / 'scripts/prepare_desktop_dependencies.py')], check=True)
@@ -42,6 +57,7 @@ def build():
         bundle = verify(candidate)
         if source_digest() != before:
             raise RuntimeError('Source changed during the build; no app was published. Rebuild.')
+        require_stopped(app)
         subprocess.run(['/usr/bin/ditto', str(candidate), str(app)], check=True)
         if verify(app) != bundle:
             raise RuntimeError('Copied app does not match the verified build')

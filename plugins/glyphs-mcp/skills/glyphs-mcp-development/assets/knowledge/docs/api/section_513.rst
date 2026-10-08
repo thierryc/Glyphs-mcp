@@ -1,5 +1,6 @@
-.. attribute:: start
+.. attribute:: isPostScript
+		if it is a PostScript hint
 
-		A NSPoint that relatively to the shapes bounding box defines the starting point of the gradient
+		:type: bool
 
-		:type: NSPoint
+		.. versionadded:: 3

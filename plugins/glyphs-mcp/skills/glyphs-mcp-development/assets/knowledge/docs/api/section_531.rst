@@ -1,8 +1,17 @@
-.. attribute:: layersCursor
-		Position of cursor in the layers list, starting with 0.
+:mod:`GSGradient`
+===============================================================================
 
-		.. seealso:: `GSEditViewController.layers`
+Implementation of the gradient object.
 
-		:type: integer
+.. class:: GSGradient()
 
-		.. versionadded:: 2.4
+	Properties
+
+		* :attr:`colors`
+		* :attr:`type`
+		* :attr:`start`
+		* :attr:`end`
+		* :attr:`absoluteStart`
+		* :attr:`absoluteEnd`
+
+	**Properties**

@@ -1,5 +1,5 @@
-.. attribute:: storeScript
-		Set to True in order to manipulate the :attr:`GSGlyph.script` of the glyph (see above).
-		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+.. attribute:: parent
 
-		:type: bool
+		Reference to the :class:`GSFont` object.
+
+		:type: :class:`GSFont`

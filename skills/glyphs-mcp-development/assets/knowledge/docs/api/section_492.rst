@@ -1,6 +1,12 @@
-.. attribute:: isPostScript
-		if it is a PostScript hint
+.. attribute:: type
 
-		:type: bool
+		The type of the annotation.
 
-		.. versionadded:: 3
+		Available constants are:
+		:const:`TEXT`
+		:const:`ARROW`
+		:const:`CIRCLE`
+		:const:`PLUS`
+		:const:`MINUS`
+
+		:type: int

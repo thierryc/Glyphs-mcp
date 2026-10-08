@@ -1,4 +1,7 @@
-.. attribute:: widthMetricsKey
-		The widthMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
+.. attribute:: storeDirection
+		Set to True in order to manipulate the :attr:`GSGlyph.direction` of the glyph (see above).
+		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
 
-		:type: str
+		:type: bool
+
+		.. versionadded:: 3

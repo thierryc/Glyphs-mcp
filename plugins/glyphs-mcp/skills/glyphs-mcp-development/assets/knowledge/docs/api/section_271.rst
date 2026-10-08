@@ -1,5 +1,5 @@
-.. attribute:: unicode
+.. attribute:: active
 
-		String with the hex Unicode value of glyph, if encoded.
+		:type: bool
 
-		:type: str
+		.. versionadded:: 2.5

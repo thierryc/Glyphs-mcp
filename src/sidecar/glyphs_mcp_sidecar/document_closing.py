@@ -31,7 +31,7 @@ def guard(service, document, error_type, *, ignore_job_id=None):
     for job in JobStore(service.jobs.root).records():
         if job["id"] == ignore_job_id:
             continue
-        owner = job["document"]
+        owner = job.get("document") or {}
         same = (owner.get("id") == document["id"] or
                 (owner.get("path") and document.get("path") and
                  saving._same_path(Path(owner["path"]), Path(document["path"]))))

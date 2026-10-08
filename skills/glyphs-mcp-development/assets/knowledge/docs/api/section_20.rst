@@ -1,4 +1,4 @@
-.. attribute:: languageData
-		A list of dictionaries with more detailed language informations.
+.. attribute:: languageScripts
+		A dictionary with language tag to script tag mapping, e.g., 'ENG': 'latn'
 
-		:type: list
+		:type: dict

@@ -1,18 +1,30 @@
-.. attribute:: defaultValue
-		the value that is considered the default (either the dflt or English entry)
+:mod:`GSGlyphInfo`
+===============================================================================
 
-		:type: str
+Implementation of the GSGlyphInfo object.
 
-	.. code-block:: python
-		# prints the default value for given GSInfoValueLocalized instance
-		print(fontInfoValueLocalized.defaultValue)
+This contains valuable information from the glyph database. See :class:`GSGlyphsInfo` for how to create these objects.
 
-		# The print below will always return True, because
-		# font.designer represent the same value
+.. class:: GSGlyphInfo()
 
-		fontInfoValueLocalized = None
-		for fontInfo in font.properties:
-		    if fontInfo.key == "designers":
-		        fontInfoValueLocalized = fontInfo
+	Properties
 
-		print(fontInfoValueLocalized.defaultValue == font.designer)
+		* :attr:`name`
+		* :attr:`productionName`
+		* :attr:`category`
+		* :attr:`subCategory`
+		* :attr:`components`
+		* :attr:`accents`
+		* :attr:`anchors`
+		* :attr:`unicode`
+		* :attr:`unicode2`
+		* :attr:`script`
+		* :attr:`index`
+		* :attr:`sortName`
+		* :attr:`sortNameKeep`
+		* :attr:`desc`
+		* :attr:`altNames`
+		* :attr:`direction`
+		* :attr:`desc`
+
+	**Properties**

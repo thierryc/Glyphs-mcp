@@ -1,4 +1,3 @@
-.. attribute:: actionButtonTitle
-		the actionButtonTitle of the notification
+.. function:: deliver()
 
-		:type: str
+		Shows the notification

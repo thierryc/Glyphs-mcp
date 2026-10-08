@@ -1,0 +1,67 @@
+---
+title: Compare compiled fonts
+---
+
+Glyphs MCP 2.0.2 adds `compare_fonts` for compiled static and variable TTFs.
+Install the optional Diffenator runtime from **Setup** once its signed distribution
+is qualified. Install All excludes this download. Comparisons work offline after
+installation and need no open Glyphs document.
+
+## Choose the inputs
+
+Select an explicit previous release or retained export as the baseline. Export the
+candidate with matching settings using the existing [export workflow](exports.mdx),
+then publish that export to a new directory. Export authorization and font saving
+remain separate. Git source reconstruction and standalone proofs are deferred.
+
+Call `get_status` and require `font.compare.diffenator.v1` in
+`comparisonCapabilities`. `comparisonWorker` explains runtime availability.
+A disconnected native bridge does not prevent comparing existing font binaries.
+
+```json
+{
+  "baseline_files": ["/absolute/releases/previous/Regular.ttf"],
+  "candidate_files": ["/absolute/exports/candidate/Regular.ttf"],
+  "options": {"styles": "instances"}
+}
+```
+
+Each side accepts 1–32 existing absolute TTF paths, with a 32 MiB limit per file.
+OTF, webfont containers and Glyphs sources are unsupported inputs. Options are:
+
+| Option | Behavior |
+| --- | --- |
+| `styles` | `instances` by default; `masters` or `cross_product` for one variable TTF on each side. |
+| `filterStyles` | Optional regular expression selecting style names. |
+| `userWordlist` | Optional absolute `.txt` or `.csv` file, at most 1 MiB. CSV supports script, language and OpenType feature settings. |
+
+Named styles must match on both sides; duplicate or unmatched styles are rejected
+instead of silently omitted. Cross-product comparisons use candidate axis
+min/default/max locations, require compatible baseline ranges and axis tags, and
+are limited to 256 locations. Custom words help cover names and optional features
+that default wordlists may miss. See [Diffenator documentation](https://github.com/googlefonts/diffenator2).
+
+## Run and review
+
+Retain the returned job ID. `get_job` reports input snapshotting, comparison and
+report verification. Inputs are copied privately and hashed; later edits to the
+original files do not alter the comparison. Cancellation through `discard_job`
+stops the worker and its child processes.
+
+A ready job returns an HTML `entryPoint`, a report and a verified file manifest.
+The report records input hashes, runtime revision, comparison options, matched
+locations and measured glyph/word/table differences. Export settings remain
+unknown unless retained with the original exports. Counts describe the chosen
+coverage; completion does not approve the differences.
+
+Use your client's local file tools to open the HTML report. To retain it, call
+`accept_job(job_id, destination="/absolute/new-report-directory")`. Publication
+verifies the snapshots and report bytes and creates a new directory. It refuses
+existing destinations. `apply_job` cannot apply a comparison result to a font.
+
+## Distribution status
+
+The source integration is a local 2.0.2 candidate. The optional runtime's catalog
+entry stays unavailable until signed, notarized assets and architecture acceptance
+are recorded. Setup explains this state; it does not install an ambient CLI or
+download packages during app startup. Browser screenshots are deferred.

@@ -1,6 +1,3 @@
-.. attribute:: alignment
+.. function:: swapForegroundWithBackground()
 
-
-		See :ref:`component-alignment` for available constants.
-
-		.. versionadded:: 2.5
+		Swap Foreground layer with Background layer.

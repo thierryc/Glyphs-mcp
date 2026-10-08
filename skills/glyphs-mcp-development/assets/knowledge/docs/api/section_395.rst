@@ -1,7 +1,6 @@
-.. attribute:: scale
+.. function:: addNodesAtExtremes([force=False, checkSelection=False])
 
-		Scale factor of the component.
+		Add nodes at layer’s extrema, e.g., top, bottom etc.
 
-		A tuple containing the horizontal and vertical scale.
-
-		:type: tuple, NSPoint
+		:param force: if points are always added, even if that would distort the shape
+		:param checkSelection: only process selected segments

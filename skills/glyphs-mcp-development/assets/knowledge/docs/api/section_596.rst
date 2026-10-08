@@ -1,5 +1,5 @@
-.. function:: append(item)
+.. attribute:: overshoot
 
-		:param item: a NSMenuItem
+		Value of overshoot’s width.
 
-		adds another item to the items submenu
+		:type: float

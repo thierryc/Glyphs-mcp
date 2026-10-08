@@ -1,6 +1,5 @@
-.. attribute:: category
+.. attribute:: bounds
 
-		This is mostly from the UnicodeData.txt file from unicode.org. Some corrections have been made (Accents, ...)
-		e.g: "Letter", "Number", "Punctuation", "Mark", "Separator", "Symbol", "Other"
+		Bounding box of all glyphs in the Edit view in view coordinate values.
 
-		:type: str
+		:type: NSRect

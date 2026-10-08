@@ -1,5 +1,5 @@
-.. attribute:: width
+.. attribute:: name
 
-		Layer width
+		Name of layer
 
-		:type: float
+		:type: str

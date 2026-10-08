@@ -1,5 +1,4 @@
-.. attribute:: image
+.. attribute:: originNode
+		The first node the hint is attached to.
 
-		:class:`NSImage` object of background image, read-only (as in: not settable)
-
-		:type: :class:`NSImage`
+		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)

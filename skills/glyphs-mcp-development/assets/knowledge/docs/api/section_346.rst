@@ -1,8 +1,5 @@
-.. attribute:: vertWidth
-		Layer vertical width
+.. attribute:: master
 
-		set it to None to reset it to default
+		Master that this layer is connected to. Read only.
 
-		:type: float
-
-		.. versionadded:: 2.6.2
+		:type: GSFontMaster

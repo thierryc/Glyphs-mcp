@@ -1,18 +1,14 @@
 .. attribute:: scale
 
-		Scale (zoom factor) of the Edit view. Useful for drawing activity in plugins.
+		Scale factor of image.
 
-		The scale changes with every zoom step of the Edit view. So if you want to draw objects (e.g. text, stroke thickness etc.) into the Edit view at a constant size relative to the UI (e.g. constant text size on screen), you need to calculate the object’s size relative to the scale factor. See example below.
+		A scale factor of 1.0 (100%) means that 1 font unit is equal to 1 point.
 
-		:type: float
+		Set the scale factor for x and y scale simultaneously with an integer or a float value. For separate scale factors, please use a tuple.
+
+		:type: tuple, NSPoint
 
 		.. code-block:: python
-			print(font.currentTab.scale)
-			>> 0.414628537193
-
-			# Calculate text size
-			desiredTextSizeOnScreen = 10 #pt
-			scaleCorrectedTextSize = desiredTextSizeOnScreen / font.currentTab.scale
-
-			print(scaleCorrectedTextSize)
-			>> 24.1179733255
+			# change scale
+			layer.backgroundImage.scale = 1.2 # changes x and y to 120%
+			layer.backgroundImage.scale = (1.1, 1.2)  # changes x to 110% and y to 120%

@@ -1,23 +1,4 @@
-.. attribute:: guides
+.. attribute:: mastersCompatible
+		Return True when all layers in this glyph are compatible (same components, anchors, paths etc.)
 
-		List of :class:`GSGuide` objects.
-
-		:type: list
-
-		.. code-block:: python
-			# access all guides
-			for guide in layer.guides:
-			    print(guide)
-
-			# add guide
-			newGuide = GSGuide()
-			newGuide.position = NSPoint(100, 100)
-			newGuide.angle = -10.0
-			layer.guides.append(newGuide)
-
-			# delete guide
-			del layer.guides[0]
-
-			# copy guides from another layer
-			import copy
-			layer.guides = copy.copy(anotherlayer.guides)
+		:type: bool

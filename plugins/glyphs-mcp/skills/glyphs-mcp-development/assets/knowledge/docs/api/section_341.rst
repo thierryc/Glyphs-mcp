@@ -1,4 +1,3 @@
-.. attribute:: LSB
-		Left sidebearing
+.. function:: updateGlyphInfo(changeName = True)
 
-		:type: float
+		Updates all information like name, unicode etc. for this glyph.

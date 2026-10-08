@@ -1,6 +1,12 @@
-.. function:: rotate(angle)
+:mod:`GSInfoValue`
+===============================================================================
 
-		The angle of the rotation. In degree, positive angles are CCW
-		if center is given, that is used as the origin of the rotation
+The GSInfoValue
 
-		:type: int/float
+.. class:: GSInfoValue()
+
+		* :attr:`key`
+		* :attr:`value`
+		* :attr:`languageTag`
+
+	**Properties**

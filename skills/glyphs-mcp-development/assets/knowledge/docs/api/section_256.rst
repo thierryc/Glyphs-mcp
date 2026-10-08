@@ -1,5 +1,5 @@
-.. attribute:: automatic
+.. attribute:: internal
 
-		Define whether this should be auto-generated when pressing the 'Update' button in the Font Info.
+		The internal (design space) coordinate the particle applies to.
 
-		:type: bool
+		:type: float

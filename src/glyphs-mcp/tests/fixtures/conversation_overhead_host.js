@@ -15,7 +15,7 @@ function full(s) {
   f.data.job = {bridgeOperation:{scriptResult:{output:'<b>literal output</b>'}}};
   return f;
 }
-function toggle(h, open) {h.get('script-review').open=open;h.get('script-review').listeners.toggle();}
+function toggle(h, open) {h.get('result-details').open=open;h.get('result-details').listeners.toggle();}
 const cases = {
   async duplicate() {
     const h=host();await tick();const s=script();deliver(h,s);await tick();
@@ -53,7 +53,7 @@ const cases = {
     deliver(h,second);
     h.dispatch({id:old.id,result:{structuredContent:full(first)}});await tick();
     assert.equal(reads(h).at(-1).params.arguments.workflow_id,'edit_B','late A response must not redirect reconciliation to A');
-    assert.equal(h.get('path').textContent,'/fonts/B.glyphs');
+    assert.equal(h.get('path').textContent,'B.glyphs');
     assert.equal(h.get('script-source').textContent,'');
     const latest=reads(h).at(-1);h.dispatch({id:latest.id,result:{structuredContent:second}});await tick();
     assert.equal(writes(h).length,0);
@@ -75,7 +75,7 @@ const cases = {
     second.data.requestFingerprint='request_B';second.data.document={id:'doc_B',path:'/fonts/B.glyphs'};
     deliver(h,second);
     h.dispatch({id:old.id,result:{structuredContent:full(first)}});await tick();
-    assert.equal(h.get('path').textContent,'/fonts/B.glyphs');
+    assert.equal(h.get('path').textContent,'B.glyphs');
     assert.equal(h.get('script-source').textContent,'');
     assert.equal(reads(h).at(-1).params.arguments.workflow_id,'edit_B');
     assert.equal(writes(h).length,1,'a late mutation response must not replay any action');

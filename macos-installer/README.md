@@ -15,13 +15,17 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout contains product 2.0.1, stable-channel identity, installer build 56. The released universal app, ZIP and DMG passed Developer ID signing, notarization and Gatekeeper, and its document routes passed native VM qualification. Sidecar and bridge product versions are `2.0.1`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seventeen tools and up to thirteen capability-gated job kinds. See [2.0.1 release qualification](../V2.0.1-RELEASE.md) and [version and identity](../content/reference/version-identity.mdx).
+This checkout targets the unpublished 2.0.2/build 57 candidate with eighteen MCP
+tools and eleven managed skills. Sidecar and bridge product versions are 2.0.2;
+interface revision and bridge protocol remain 1. The latest published stable
+release is 2.0.1/build 56; its signing and acceptance evidence remains historical.
+See [2.0.2 candidate evidence](../V2.0.2-RELEASE.md).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
 supports independent install, update, removal and retry. Setup also lists the
-independently distributed Beztrace development preview with setup details; it
-is excluded from Install All and from the bundled payload. One serialized queue
+optional managed Diffenator and Beztrace cards. Their downloads stay unavailable
+until signed distributions are qualified; both are excluded from Install All. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
 
@@ -101,6 +105,17 @@ same installer state and operation gates. Optional skills use their own hash
 receipts, advisory destination locks, atomic folder replacement and recovery
 journals; they do not change the managed eleven-skill bundle or MCP interface.
 
+The skill details sheet has independent Install / Update and Remove controls for
+each compatible local agent. Personal discovery includes the shared
+`.agents/skills` folder and older `.codex/skills` and `.cursor/skills` locations;
+actions use the detected location. Project discovery stays within that project.
+Existing or edited regular copies require confirmation and a verified backup
+before updating. Removal also keeps a backup. Updating a linked skill requires
+explicit confirmation to replace only the link with a managed catalog copy,
+backing up the link and preserving its source folder. Remove detaches and backs
+up only the link. Interrupted updates can restore the original link.
+Locations and operation details are available in an expandable section.
+
 `catalog-repository/` is the reproducible bootstrap for the independent
 `thierryc/glyphs-mcp-skills` repository. Its registry matches the offline snapshot
 in `Resources/SkillsCatalog`. Both reference the canonical bundled sources;
@@ -116,3 +131,9 @@ When established runtime cache links are unavailable, retain them and use a
 separate verified input folder through `GMCP_BUILD_RUNTIME_ROOT` or
 `build_installer_payload.py --runtime-root`. The input identity checks still
 apply. This selects build inputs only, not the installed/running runtime.
+
+Quit the local candidate before running `scripts/build_local_app.py`. The builder
+refuses to overwrite a running app at `dist/local/Glyphs MCP.app` and preserves
+the candidate and receipt if it cannot check running processes. For manual tests,
+use one freshly launched desktop instance so older windows cannot be mistaken
+for the current build. The Glyphs application and sidecar remain separate.

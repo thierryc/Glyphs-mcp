@@ -5,15 +5,7 @@
 
 		.. code-block:: python
 			# set value
-			anchor.userData['rememberToMakeCoffee'] = True
+			layer.userData['rememberToMakeCoffee'] = True
 
 			# delete value
-			del component.userData['rememberToMakeCoffee']
-
-		.. versionadded:: 3
-
-	**Functions**
-
-	.. function:: copy()
-
-		Returns a full copy of the anchor
+			del layer.userData['rememberToMakeCoffee']

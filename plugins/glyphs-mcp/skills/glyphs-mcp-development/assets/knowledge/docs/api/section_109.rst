@@ -1,7 +1,5 @@
-.. attribute:: selectedLayers
+.. attribute:: selection
 
-		Returns a list of all selected layers in the active tab.
-
-		If a glyph is being edited, it will be the only glyph returned in this list. Otherwise the list will contain all glyphs selected with the Text tool.
+		Returns a list of all selected glyphs in the Font View.
 
 		:type: list

@@ -1,4 +1,4 @@
-.. attribute:: bottomValue
-		Bottom end (pole) value on interpolation axis.
+.. attribute:: automaticAlignment
+		Defines whether the component is automatically aligned.
 
-		:type: int, float
+		:type: bool

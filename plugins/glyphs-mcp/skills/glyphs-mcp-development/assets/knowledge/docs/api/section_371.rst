@@ -1,11 +1,4 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+.. attribute:: rightMetricsKey
+		The rightMetricsKey of the layer. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		:type: dict
-
-		.. code-block:: python
-			# set value
-			layer.userData['rememberToMakeCoffee'] = True
-
-			# delete value
-			del layer.userData['rememberToMakeCoffee']
+		:type: str

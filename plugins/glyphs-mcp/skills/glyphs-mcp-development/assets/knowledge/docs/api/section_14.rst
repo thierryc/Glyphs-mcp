@@ -1,9 +1,8 @@
-.. attribute:: colorDefaults
-		Access to default settings cast to a color.
+.. attribute:: boolDefaults
+		Access to default settings cast to a bool.
 
-		:type: NSColor
+		:type: bool
 
 		.. code-block:: python
-			color = Glyphs.colorDefaults["GSColorCanvas"]
-			color.set()
-			NSBezierPath.fillRect_(rect)
+			if Glyphs.boolDefaults["com_MyName_foo_bar"]:
+			    print('"com_MyName_foo_bar" is set')

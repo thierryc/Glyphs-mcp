@@ -1,7 +1,7 @@
-.. attribute:: snapToObjects
+.. attribute:: keyboardIncrementHuge
 
-		disable snapping to nodes and background
+		Distance of movement by arrow plus Command key. Default:100
 
-		:type: bool
+		:type: float
 
-		.. versionadded:: 3.0.1
+		.. versionadded:: 3.0

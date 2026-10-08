@@ -1,4 +1,4 @@
-.. attribute:: versionNumber
-		Glyph.app’s version number. Use this to check for version in your code.
+.. attribute:: versionString
+		String containing Glyph.app’s version number. May contain letters also, like ‘2.3b’. To check for a specific version, use :attr:`Glyphs.versionNumber <GSApplication.versionNumber>` below.
 
-		:type: float
+		:type: str

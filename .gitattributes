@@ -6,3 +6,9 @@ macos-installer/GlyphsMCPInstaller/Resources/Notices/Sparkle-LICENSE.txt -whites
 third_party/glyphs-file-format-v4/GlyphsFileFormatv4.md -whitespace
 website/versioned_docs/version-1.11.0/** -whitespace
 src/protocol/glyphs_mcp_protocol/data/kerning-pairs/LICENSE.md -whitespace
+skills/glyphs-mcp-development/assets/knowledge/docs/sdk/** -whitespace
+plugins/glyphs-mcp/skills/glyphs-mcp-development/assets/knowledge/docs/sdk/** -whitespace
+skills/glyphs-mcp-development/assets/knowledge/docs/file-format-authority/GlyphsFileFormatv4.md -whitespace
+plugins/glyphs-mcp/skills/glyphs-mcp-development/assets/knowledge/docs/file-format-authority/GlyphsFileFormatv4.md -whitespace
+# Unified patch context lines retain their required leading space.
+integrations/beztrace/persistent-engine.patch -whitespace

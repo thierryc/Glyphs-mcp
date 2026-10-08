@@ -1,4 +1,5 @@
-.. attribute:: userInfo
-		the userInfo of the notification
+.. attribute:: message
 
-		:type: dict
+		the message of the notification
+
+		:type: str

@@ -1,4 +1,4 @@
-.. attribute:: leftMetricsKey
-		The leftMetricsKey of the layer. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
+.. attribute:: axesValues
+		a list of floats, one per axis
 
-		:type: str
+		:type: list

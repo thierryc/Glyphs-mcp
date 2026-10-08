@@ -1,39 +1,54 @@
-:mod:`GSComponent`
-===============================================================================
+**Functions**
 
-Implementation of the component object.
-For details on how to access them, please see :attr:`GSLayer.components`
+	.. function:: copy()
 
-.. class:: GSComponent(glyph [, position])
+		Returns a full copy of the layer
 
-	:param glyph: a :class:`GSGlyph` object or the glyph name
-	:param position: the position of the component as NSPoint
+	.. function:: decomposeComponents()
 
-	Properties
+		Decomposes all components of the layer at once.
 
-		* :attr:`position`
-		* :attr:`scale`
-		* :attr:`rotation`
-		* :attr:`slant`
-		* :attr:`componentName`
-		* :attr:`componentMasterId`
-		* :attr:`component`
-		* :attr:`alignment`
-		* :attr:`layer`
-		* :attr:`transform`
-		* :attr:`bounds`
-		* :attr:`automaticAlignment`
-		* :attr:`anchor`
-		* :attr:`selected`
-		* :attr:`smartComponentValues`
-		* :attr:`bezierPath`
-		* :attr:`userData`
-		* :attr:`traverseAnchors`
+	.. function:: decomposeCorners()
 
-	Functions
+		Decomposes all corners of the layer at once.
 
-		* :meth:`applyTransform`
-		* :meth:`copy`
-		* :meth:`decompose`
+		.. versionadded:: 2.4
 
-	**Properties**
+	.. function:: compareString()
+
+		Returns a string representing the outline structure of the glyph, for compatibility comparison.
+
+		:return: The comparison string
+
+		:rtype: str
+
+		.. code-block:: python
+
+			print(layer.compareString())
+			>> oocoocoocoocooc_oocoocoocloocoocoocoocoocoocoocoocooc_
+
+	.. function:: connectAllOpenPaths()
+
+		Closes all open paths when end points are further than 1 unit away from each other.
+
+
+	.. function:: copyDecomposedLayer()
+
+		Returns a copy of the layer with all components decomposed.
+
+		:return: A new layer object
+
+		:rtype: :class:`GSLayer`
+
+	.. function:: syncMetrics()
+
+		Take over LSB and RSB from linked glyph.
+
+		.. code-block:: python
+			# sync metrics of all layers of this glyph
+			for layer in glyph.layers:
+			    layer.syncMetrics()
+
+	.. function:: correctPathDirection()
+
+		Corrects the path direction.

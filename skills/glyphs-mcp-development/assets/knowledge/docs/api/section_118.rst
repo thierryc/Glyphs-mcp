@@ -1,5 +1,11 @@
-.. attribute:: tools
+.. attribute:: tool
 
-		Returns a list of available tool names, including third-party plug-ins.
+		Name of tool selected in toolbar.
 
-		:type: list, str
+		For available names including third-party plug-ins that come in the form of selectable tools, see `GSFont.tools` below.
+
+		:type: str
+
+		.. code-block:: python
+			font.tool = 'SelectTool' # Built-in tool
+			font.tool = 'GlyphsAppSpeedPunkTool' # Third party plug-in

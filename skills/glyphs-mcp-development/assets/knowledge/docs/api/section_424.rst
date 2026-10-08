@@ -1,7 +1,16 @@
-.. attribute:: id
+.. attribute:: transform
 
-		Id of the axis. This Id will be used to map the Smart Glyph’s layers to the poles of the interpolation. See :attr:`GSLayer.smartComponentPoleMapping`
+		Transformation matrix of the component.
+		If Glyphs 3, this is computed from the scale, rotation and position.
 
-		:type: str
+		:type: NSAffineTransformStruct
 
-		.. versionadded:: 2.5
+		.. code-block:: python
+			component.transform = ((
+			    0.5, # x scale factor
+			    0.0, # x skew factor
+			    0.0, # y skew factor
+			    0.5, # y scale factor
+			    0.0, # x position
+			    0.0  # y position
+			))

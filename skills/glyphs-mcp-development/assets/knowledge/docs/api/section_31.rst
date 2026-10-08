@@ -1,5 +1,7 @@
-.. function:: showGlyphInfoPanelWithSearchString(String)
+.. function:: showMacroWindow
 
-		Shows the Glyph Info window with a preset search string
+		Opens the macro window
 
-		:param String: The search term
+	.. function:: clearLog
+
+		Deletes the content of the console in the macro window

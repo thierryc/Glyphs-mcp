@@ -1,5 +1,12 @@
-.. function:: fileName(format)
+.. attribute:: tempData
 
-		returns the filename with the suffix depending on the format (OTF, TTF)
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use instance.userData
 
-		.. versionadded:: 4
+		:type: dict
+
+		.. code-block:: python
+			# set value
+			instance.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del instance.tempData['rememberToMakeCoffee']

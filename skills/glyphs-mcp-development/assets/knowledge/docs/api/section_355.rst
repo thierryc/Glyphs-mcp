@@ -1,12 +1,23 @@
-.. attribute:: bounds
+.. attribute:: annotations
 
-		Bounding box of whole glyph as NSRect. Read-only.
+		List of :class:`GSAnnotation` objects.
 
-		:type: NSRect
+		:type: list
 
 		.. code-block:: python
-			# origin
-			print(layer.bounds.origin.x, layer.bounds.origin.y)
+			# access all annotations
+			for annotation in layer.annotations:
+			    print(annotation)
 
-			# size
-			print(layer.bounds.size.width, layer.bounds.size.height)
+			# add new annotation
+			newAnnotation = GSAnnotation()
+			newAnnotation.type = TEXT
+			newAnnotation.text = 'Fuck, this curve is ugly!'
+			layer.annotations.append(newAnnotation)
+
+			# delete annotation
+			del layer.annotations[0]
+
+			# copy annotations from another layer
+			import copy
+			layer.annotations = copy.copy(anotherLayer.annotations)

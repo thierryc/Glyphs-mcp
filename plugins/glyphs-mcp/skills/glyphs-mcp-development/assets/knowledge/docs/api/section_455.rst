@@ -1,10 +1,5 @@
-.. attribute:: attributes
+.. attribute:: closed
 
-		attributes attributes like :samp:`mask` or :samp:`reversePaths`
+		Returns True if the the path is closed
 
-		.. code-block:: python
-
-			component.attributes['mask'] = True
-			component.attributes['reversePaths'] = True
-
-		:type: dict
+		:type: bool

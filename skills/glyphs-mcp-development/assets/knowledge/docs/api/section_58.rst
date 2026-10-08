@@ -1,24 +1,23 @@
-.. attribute:: properties
+.. attribute:: axes
 
-		Holds the fonts info properties. Can be instances of :class:`GSInfoValueSingle` and :class:`GSInfoValueLocalized`.
-
-		The localized values use language tags defined in the middle column of `Language System Tags table`: <https://docs.microsoft.com/en-us/typography/opentype/spec/languagetags>.
-
-		The names are listed in the constants: `Info Property Keys`_
+		Collection of :class:`GSAxis`:
 
 		.. code-block:: python
-			# To access the default value:
+			for axis in font.axes:
+			    print(axis)
 
-			font.properties["versionString"]
+			# to add a new axis
+			axis = GSAxis()
+			axis.name = "Some custom Axis"
+			axis.axisTag = "SCAX"
+			font.axes.append(axis)
 
-			font.properties["versionString"] = "version 1.0"
+			# to delete an axis
+			del font.axes[0]
 
-			# To access specific languages:
-
-			font.properties.getProperty(GSPropertyNameDesignersKey, "DEU")
-
-			font.properties.setProperty(GSPropertyNameDesignersKey, "SomeName", "DEU")
+			font.axes.remove(someAxis)
 
 		:type: list
 
-		.. versionadded:: 3
+		.. versionadded:: 2.5
+		.. versionchanged:: 3

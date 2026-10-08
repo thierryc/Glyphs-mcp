@@ -1,5 +1,5 @@
-.. attribute:: name
+.. function:: fileName(format)
 
-		The class name
+		returns the filename with the suffix depending on the format (OTF, TTF)
 
-		:type: str
+		.. versionadded:: 4

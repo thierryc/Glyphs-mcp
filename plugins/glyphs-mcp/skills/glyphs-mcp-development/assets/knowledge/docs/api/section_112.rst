@@ -1,7 +1,5 @@
-.. attribute:: currentText
+.. attribute:: masterIndex
 
-		The text of the current Edit view.
+		Returns the index of the active master (selected in the toolbar).
 
-		Unencoded and none ASCII glyphs will use a slash and the glyph name. (e.g: /a.sc). Setting unicode strings works.
-
-		:type: str
+		:type: int

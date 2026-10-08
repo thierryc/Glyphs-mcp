@@ -1,5 +1,5 @@
-.. attribute:: filter
+.. attribute:: index
 
-		A filter to limit the scope of the metric.
+		Index of glyph in database. Used for sorting in UI.
 
-		:type: NSPredicate
+		:type: str

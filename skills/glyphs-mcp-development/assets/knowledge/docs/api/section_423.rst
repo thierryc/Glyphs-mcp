@@ -1,5 +1,8 @@
-.. attribute:: name
+.. attribute:: componentLayer
+		The :class:`GSLayer` the component is pointing to. This is read-only. In order to change the referenced base glyph, set :attr:`componentName <GSComponent.componentName>` to the new glyph name.
 
-		Name of the axis. The name is for display purpose only.
+		For Smart Components, the `componentLayer` contains the interpolated result.
 
-		:type: str
+		:type: :class:`GSLayer`
+
+		.. versionadded:: 2.5

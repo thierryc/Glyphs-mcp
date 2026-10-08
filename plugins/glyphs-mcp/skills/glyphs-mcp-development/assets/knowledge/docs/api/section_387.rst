@@ -1,5 +1,4 @@
-.. function:: reinterpolate()
+.. attribute:: isBraceLayer
+		If it is a intermediate layer
 
-		Re-interpolate a layer according the other layers and its interpolation values.
-
-		Applies to both master layers as well as brace layers and is equivalent to the 'Re-Interpolate' command from the Layers palette.
+		:type: bool

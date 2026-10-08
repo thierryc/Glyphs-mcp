@@ -1,41 +1,15 @@
-.. attribute:: glyphs
+.. attribute:: numbers
 
-		Collection of :class:`GSGlyph` objects. Returns a list, but you may also call glyphs using index or glyph name or character as key.
+		The numbers. A list of :class:`GSMetric` objects. For each number, there is a metricsValue in the masters, linked by the `id`.
 
 		:type: list, dict
 
 		.. code-block:: python
-			# Access all glyphs
-			for glyph in font.glyphs:
-			    print(glyph)
-			>> <GSGlyph "A" with 4 layers>
-			>> <GSGlyph "B" with 4 layers>
-			>> <GSGlyph "C" with 4 layers>
-			...
+			print(font.numbers[0].name)
 
-			# Access one glyph
-			print(font.glyphs['A'])
-			>> <GSGlyph "A" with 4 layers>
-
-			# Access a glyph by character (new in v2.4.1)
-			print(font.glyphs['Ư'])
-			>> <GSGlyph "Uhorn" with 4 layers>
-
-			# Access a glyph by unicode (new in v2.4.1)
-			print(font.glyphs['01AF'])
-			>> <GSGlyph "Uhorn" with 4 layers>
-
-			# Access a glyph by index
-			print(font.glyphs[145])
-			>> <GSGlyph "Uhorn" with 4 layers>
-
-			# Add a glyph
-			font.glyphs.append(GSGlyph('adieresis'))
-
-			# Duplicate a glyph under a different name
-			newGlyph = font.glyphs['A'].copy()
-			newGlyph.name = 'A.alt'
-			font.glyphs.append(newGlyph)
-
-			# Delete a glyph
-			del font.glyphs['A.alt']
+			# add a number
+			number = GSMetric()
+			number.horizontal = False # or True
+			number.name = "Some Name"
+			font.numbers.append(number)
+			master.numbers[number.name] = 123

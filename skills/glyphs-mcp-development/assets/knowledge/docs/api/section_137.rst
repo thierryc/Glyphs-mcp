@@ -1,5 +1,5 @@
-.. attribute:: hidden
+.. attribute:: id
 
-		If the axis should be shown to the user
+		The id to link the values in the masters
 
-		:type: bool
+		:type: str

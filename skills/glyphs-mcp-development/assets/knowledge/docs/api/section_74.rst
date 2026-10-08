@@ -1,11 +1,7 @@
-.. attribute:: sampleTexts
+.. attribute:: sampleText
 
-		This accesses all localized designer values.
-		For details :attr:`GSFont.properties`
+		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
 
-		:type: dict
-
-		.. code-block:: python
-			font.sampleTexts["ENG"] = "This is my sample text"
+		:type: str
 
 		.. versionadded:: 3.0.3

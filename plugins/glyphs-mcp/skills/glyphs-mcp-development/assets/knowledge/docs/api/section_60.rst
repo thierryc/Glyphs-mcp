@@ -1,15 +1,13 @@
-.. attribute:: stems
+.. attribute:: metrics
 
-		The stems. A list of :class:`GSMetric` objects. For each metric, there is a metricsValue in the masters, linked by the `id`.
+		a list of all :class:`GSMetric` objects.
 
-		:type: list, dict
+		:type: list
 
 		.. code-block:: python
-			font.stems[0].horizontal = False
-
-			# add a stem
-			stem = GSMetric()
-			stem.horizontal = False # or True
-			stem.name = "Some Name"
-			font.stems.append(stem)
-			master.stems[stem.name] = 123
+			# to add a new metric
+			metric = GSMetric(GSMetricsTypexHeight)
+			font.metrics.append(metric)
+			metricValue = master.metrics[metric.id]
+			metricValue.position = 543
+			metricValue.overshoot = 17

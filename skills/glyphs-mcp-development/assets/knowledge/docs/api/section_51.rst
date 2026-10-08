@@ -1,5 +1,13 @@
-.. attribute:: font
+:mod:`GSDocument`
+===============================================================================
 
-		The active :class:`GSFont`
+The document class
 
-		:type: GSFont
+.. class:: GSDocument()
+
+	Properties
+
+		* :attr:`font`
+		* :attr:`filePath`
+
+	**Properties**

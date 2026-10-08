@@ -1,3 +1,7 @@
-.. function:: redraw()
+.. function:: removeCallback(function)
 
-		Redraws all Edit views and Preview views.
+		Remove the function you’ve previously added.
+
+		.. code-block:: python
+			# remove your function from the hook
+			Glyphs.removeCallback(drawGlyphIntoBackground)

@@ -1,0 +1,420 @@
+{
+  "python": {
+    "browser_download_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260929/cpython-3.11.16%2B20260929-aarch64-apple-darwin-install_only_stripped.tar.gz",
+    "digest": "sha256:53141f31b7cfb2bccf89c2a877827128657dbb8650db06a9a08c7886c28a45ed",
+    "name": "cpython-3.11.16+20260929-aarch64-apple-darwin-install_only_stripped.tar.gz",
+    "size": 26972918
+  },
+  "unicode": {
+    "sha256": "2066d1909b2ea93916ce092da1c0ee4808ea3ef8407c94b4f14f5b7eb263d28e",
+    "url": "https://www.unicode.org/Public/17.0.0/ucd/UCD.zip"
+  },
+  "wheels": [
+    {
+      "license": "BSD",
+      "metadataURL": "https://pypi.org/pypi/PySocks/1.7.1/json",
+      "name": "PySocks",
+      "path": "PySocks-1.7.1-py3-none-any.whl",
+      "sha256": "2725bd0a9925919b9b51739eea5f9e2bae91e83288108a9ad338b2e3a4435ee5",
+      "source": "https://files.pythonhosted.org/packages/8d/59/b4572118e098ac8e46e399a1dd0f2d85403ce8bbaad9ec79373ed6badaf9/PySocks-1.7.1-py3-none-any.whl",
+      "version": "1.7.1"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/attrs/26.1.0/json",
+      "name": "attrs",
+      "path": "attrs-26.1.0-py3-none-any.whl",
+      "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309",
+      "source": "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl",
+      "version": "26.1.0"
+    },
+    {
+      "license": "Apache Software License 2.0",
+      "metadataURL": "https://pypi.org/pypi/blackrenderer/0.8.2/json",
+      "name": "blackrenderer",
+      "path": "blackrenderer-0.8.2-py3-none-any.whl",
+      "sha256": "803abde66480a8e26b4068ff8118231a844860d364411e17b6b4475aff83c818",
+      "source": "https://files.pythonhosted.org/packages/02/46/5919d279b550d03d9799acaeec23bd4564b1c7be907ac52324c09fdc67b7/blackrenderer-0.8.2-py3-none-any.whl",
+      "version": "0.8.2"
+    },
+    {
+      "license": "MPL-2.0",
+      "metadataURL": "https://pypi.org/pypi/certifi/2026.7.22/json",
+      "name": "certifi",
+      "path": "certifi-2026.7.22-py3-none-any.whl",
+      "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+      "source": "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl",
+      "version": "2026.7.22"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/charset_normalizer/3.5.2/json",
+      "name": "charset_normalizer",
+      "path": "charset_normalizer-3.5.2-cp311-cp311-macosx_10_9_universal2.whl",
+      "sha256": "3d21b8b13c7592db2ac5e544a6d83187b995257472b0c9e8351b6d507ae37ed6",
+      "source": "https://files.pythonhosted.org/packages/22/67/6a0b94a7960d5e1b5eacd2fb529f3fccc47db4644f7f0a7cfdcfc3be578a/charset_normalizer-3.5.2-cp311-cp311-macosx_10_9_universal2.whl",
+      "version": "3.5.2"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/defcon/0.12.2/json",
+      "name": "defcon",
+      "path": "defcon-0.12.2-py3-none-any.whl",
+      "sha256": "acba4a8ab218b3ea8d4f97b46abd06f0e2a5b3c845e3a8469a5afe969dd654c1",
+      "source": "https://files.pythonhosted.org/packages/42/36/2c16fe791c8f97fb7512f84843b72947139934c30843e5ce03a8e92a1268/defcon-0.12.2-py3-none-any.whl",
+      "version": "0.12.2"
+    },
+    {
+      "buildVersionOverride": "0.0.0",
+      "license": "Apache-2.0",
+      "name": "diffenator2",
+      "path": "diffenator2-0.0.0-py3-none-any.whl",
+      "sha256": "3c7c46da16283e409de357cd40af702df6d2ceb81090160c73a7fd348953dfe4",
+      "source": "https://github.com/googlefonts/diffenator2/archive/cecdab703d462cfea25b748b19ea4813d3f4d680.tar.gz",
+      "sourceArchiveSHA256": "0b0274eeca469dfaf186bee7200e3f3494efb9db75d64135814e7a8ebde927bd",
+      "version": "0.0.0"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/filelock/4.0.12/json",
+      "name": "filelock",
+      "path": "filelock-4.0.12-py3-none-any.whl",
+      "sha256": "5f17ee83ecee8a6f3e389c75822fb70a1c2f0506b99438a6dffa1d56793588c8",
+      "source": "https://files.pythonhosted.org/packages/da/a1/b047e1c486a2c66283633b7dbb73872ca16ca1ce6a426f70d4d037fc8e1c/filelock-4.0.12-py3-none-any.whl",
+      "version": "4.0.12"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/fonttools/4.66.1/json",
+      "name": "fonttools",
+      "path": "fonttools-4.66.1-cp311-cp311-macosx_10_9_universal2.whl",
+      "sha256": "d4f76868aea9cc4ce47fdbeaa904c02ee7d85dd0ad095071ae77f0bda6e62cf5",
+      "source": "https://files.pythonhosted.org/packages/0a/2e/2c6d3daaa5152bbb2fc2b44037399366af7eb5fb2fbf7d9a236813753f77/fonttools-4.66.1-cp311-cp311-macosx_10_9_universal2.whl",
+      "version": "4.66.1"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/freetype_py/2.5.1/json",
+      "name": "freetype_py",
+      "path": "freetype_py-2.5.1-py3-none-macosx_10_9_universal2.whl",
+      "sha256": "d01ded2557694f06aa0413f3400c0c0b2b5ebcaabeef7aaf3d756be44f51e90b",
+      "source": "https://files.pythonhosted.org/packages/38/a8/258dd138ebe60c79cd8cfaa6d021599208a33f0175a5e29b01f60c9ab2c7/freetype_py-2.5.1-py3-none-macosx_10_9_universal2.whl",
+      "version": "2.5.1"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/gflanguages/0.6.0/json",
+      "name": "gflanguages",
+      "path": "gflanguages-0.6.0-py3-none-any.whl",
+      "sha256": "7b67f84ea6650cc31fd92ca35cdbe740a3d830e257c7c6fb50c6f4f29576f546",
+      "source": "https://files.pythonhosted.org/packages/7b/78/37bfee1e27a9f112768a73a14212881ee9eb9c3a13b2ea500848cb7f34f1/gflanguages-0.6.0-py3-none-any.whl",
+      "version": "0.6.0"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/glyphsets/1.0.0/json",
+      "name": "glyphsets",
+      "path": "glyphsets-1.0.0-py3-none-any.whl",
+      "sha256": "d798f87b2e0a932d1295cbdb431ba298f3abe533efee134119de7673e5e9d2df",
+      "source": "https://files.pythonhosted.org/packages/5b/2f/722ca9dd8b4745ae58a036ad4223cb8c32ccd1a0e1b6e9b4f3f3afaed6cb/glyphsets-1.0.0-py3-none-any.whl",
+      "version": "1.0.0"
+    },
+    {
+      "license": "Apache Software License 2.0",
+      "metadataURL": "https://pypi.org/pypi/glyphslib/6.16.0/json",
+      "name": "glyphslib",
+      "path": "glyphslib-6.16.0-py3-none-any.whl",
+      "sha256": "0664441b1667b6c4f9e70550329503af9704a8cc341884c2d1868856d65142fc",
+      "source": "https://files.pythonhosted.org/packages/a6/40/7d951c2c2ba5a2aa913f43621c805995eea17f7ff89caf3229b743c8c05a/glyphslib-6.16.0-py3-none-any.whl",
+      "version": "6.16.0"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/h11/0.16.0/json",
+      "name": "h11",
+      "path": "h11-0.16.0-py3-none-any.whl",
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+      "source": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+      "version": "0.16.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "metadataURL": "https://pypi.org/pypi/idna/3.20/json",
+      "name": "idna",
+      "path": "idna-3.20-py3-none-any.whl",
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c",
+      "source": "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl",
+      "version": "3.20"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/jinja2/3.1.6/json",
+      "name": "jinja2",
+      "path": "jinja2-3.1.6-py3-none-any.whl",
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67",
+      "source": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+      "version": "3.1.6"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "metadataURL": "https://pypi.org/pypi/markupsafe/3.0.4/json",
+      "name": "markupsafe",
+      "path": "markupsafe-3.0.4-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "7d3391b2188d18737cb2fa147028b1096236eaa7e156446c650a489fa2cadc91",
+      "source": "https://files.pythonhosted.org/packages/6c/14/0b05f79b4733e264a18d08fe08fa1df7347630ff32a6cb82180d9dccec55/markupsafe-3.0.4-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "3.0.4"
+    },
+    {
+      "license": "Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/ninja/1.13.2/json",
+      "name": "ninja",
+      "path": "ninja-1.13.2-py3-none-macosx_10_9_universal2.whl",
+      "sha256": "fd82e26c0706ad4ab88e5fdd26f3fab0a987a90f810160f6c322e752c6af298b",
+      "source": "https://files.pythonhosted.org/packages/b5/b8/90a9518f2264637084d6199bc20c2f3fb97fefc4c474d277720150c3bd6d/ninja-1.13.2-py3-none-macosx_10_9_universal2.whl",
+      "version": "1.13.2"
+    },
+    {
+      "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "metadataURL": "https://pypi.org/pypi/numpy/2.4.6/json",
+      "name": "numpy",
+      "path": "numpy-2.4.6-cp311-cp311-macosx_14_0_arm64.whl",
+      "sha256": "4cfe66903cc32a9921a6733d96b19bb6abf310397581bbad89c228f5abaf0ee8",
+      "source": "https://files.pythonhosted.org/packages/ad/40/40a40ee0ddf7ceb782c49af278894b686e586d65d8c1889c8b5da01a3d7d/numpy-2.4.6-cp311-cp311-macosx_14_0_arm64.whl",
+      "version": "2.4.6"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/openstep_plist/0.5.2/json",
+      "name": "openstep_plist",
+      "path": "openstep_plist-0.5.2-cp311-cp311-macosx_10_9_universal2.whl",
+      "sha256": "ededff07b64cd49754361f8c80dd2175832e118d47672953cdc2bb13c1da4b26",
+      "source": "https://files.pythonhosted.org/packages/2f/2e/df6e2305c7a5b7045b646e16e14f390e54e7edab0585e05aeed9373ab4b3/openstep_plist-0.5.2-cp311-cp311-macosx_10_9_universal2.whl",
+      "version": "0.5.2"
+    },
+    {
+      "license": "MIT OR Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/outcome/1.3.0.post0/json",
+      "name": "outcome",
+      "path": "outcome-1.3.0.post0-py2.py3-none-any.whl",
+      "sha256": "e771c5ce06d1415e356078d3bdd68523f284b4ce5419828922b6871e65eda82b",
+      "source": "https://files.pythonhosted.org/packages/55/8b/5ab7257531a5d830fc8000c476e63c935488d74609b50f9384a643ec0a62/outcome-1.3.0.post0-py2.py3-none-any.whl",
+      "version": "1.3.0.post0"
+    },
+    {
+      "license": "MIT-CMU",
+      "metadataURL": "https://pypi.org/pypi/pillow/12.3.0/json",
+      "name": "pillow",
+      "path": "pillow-12.3.0-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "37d6d0a00072fd2948eb22bce7e1475f34569d90c87c59f7a2ec59541b77f7a6",
+      "source": "https://files.pythonhosted.org/packages/b2/5b/a02d30018abd97ced9f5a6c63d28597694a00d066516b9c1c6de45859fc9/pillow-12.3.0-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "12.3.0"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/platformdirs/4.12.4/json",
+      "name": "platformdirs",
+      "path": "platformdirs-4.12.4-py3-none-any.whl",
+      "sha256": "78bfb9db2a8471ed7eebe3c3c932da413911042994e699b384fbb4493fa872d7",
+      "source": "https://files.pythonhosted.org/packages/f4/ba/223e00b885e960edd5d4b4d178c88acce019bd5b83786093681b8c393492/platformdirs-4.12.4-py3-none-any.whl",
+      "version": "4.12.4"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "metadataURL": "https://pypi.org/pypi/protobuf/3.20.3/json",
+      "name": "protobuf",
+      "path": "protobuf-3.20.3-py2.py3-none-any.whl",
+      "sha256": "a7ca6d488aa8ff7f329d4c545b2dbad8ac31464f1d8b1c87ad1346717731e4db",
+      "source": "https://files.pythonhosted.org/packages/8d/14/619e24a4c70df2901e1f4dbc50a6291eb63a759172558df326347dce1f0d/protobuf-3.20.3-py2.py3-none-any.whl",
+      "version": "3.20.3"
+    },
+    {
+      "license": "BSD-3-Clause and Public-Domain",
+      "metadataURL": "https://pypi.org/pypi/pyahocorasick/2.3.1/json",
+      "name": "pyahocorasick",
+      "path": "pyahocorasick-2.3.1-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "e8f9c21fd2bd72c0454ba6df0c7dbdfd7236c5cfd161fc983476fffbde92e18f",
+      "source": "https://files.pythonhosted.org/packages/58/00/4b475d2f26240253bc6412c509c1c103844a8eac326a1353d9bc798beb74/pyahocorasick-2.3.1-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "2.3.1"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "metadataURL": "https://pypi.org/pypi/pybind11/3.1.0/json",
+      "name": "pybind11",
+      "path": "pybind11-3.1.0-py3-none-any.whl",
+      "sha256": "b8488090f8acffbcb6b5d6a85571a6827a0a2981ffb75e5a0b27b87c4a6b7dd0",
+      "source": "https://files.pythonhosted.org/packages/33/fd/8762f7ee3e4e4be6d1d846cffb4916dd9bb02b2f800d3603718a0efe494c/pybind11-3.1.0-py3-none-any.whl",
+      "version": "3.1.0"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/python_bidi/0.6.11/json",
+      "name": "python_bidi",
+      "path": "python_bidi-0.6.11-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "a52f7ad9ef9091e81869e5d255e796755ccf542ade14dda17647cb7d7ffe1b9c",
+      "source": "https://files.pythonhosted.org/packages/ee/6e/af3e17cb48b87176c209ac4271c8a9aaad8c33f5535739b58336222e69af/python_bidi-0.6.11-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "0.6.11"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/pyyaml/6.0.3/json",
+      "name": "pyyaml",
+      "path": "pyyaml-6.0.3-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "652cb6edd41e718550aad172851962662ff2681490a8a711af6a4d288dd96824",
+      "source": "https://files.pythonhosted.org/packages/16/19/13de8e4377ed53079ee996e1ab0a9c33ec2faf808a4647b7b4c0d46dd239/pyyaml-6.0.3-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "6.0.3"
+    },
+    {
+      "license": "Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/requests/2.34.2/json",
+      "name": "requests",
+      "path": "requests-2.34.2-py3-none-any.whl",
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+      "source": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+      "version": "2.34.2"
+    },
+    {
+      "license": "Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/selenium/4.50.0/json",
+      "name": "selenium",
+      "path": "selenium-4.50.0-py3-none-any.whl",
+      "sha256": "f724a38a7fd8b0561c6767c620bd9b2c7bd8012d4cb664b2ad23064e5d67d0df",
+      "source": "https://files.pythonhosted.org/packages/f7/d3/fedaee179dcd47a7033bb5a74b7d5742da18e46d4ef3b279277c887de64a/selenium-4.50.0-py3-none-any.whl",
+      "version": "4.50.0"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/setuptools/79.0.1/json",
+      "name": "setuptools",
+      "path": "setuptools-79.0.1-py3-none-any.whl",
+      "sha256": "e147c0549f27767ba362f9da434eab9c5dc0045d5304feb602a0af001089fc51",
+      "source": "https://files.pythonhosted.org/packages/0d/6d/b4752b044bf94cb802d88a888dc7d288baaf77d7910b7dedda74b5ceea0c/setuptools-79.0.1-py3-none-any.whl",
+      "version": "79.0.1"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/skia_python/144.0.post2/json",
+      "name": "skia_python",
+      "path": "skia_python-144.0.post2-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "7408129bf595645f5d895ed6459248611c4931f41417c4f487c34728cefcdf34",
+      "source": "https://files.pythonhosted.org/packages/48/6b/25b124ac4063b9fda9a3804c8af15daf04fcb2e95754982c6cb28837351f/skia_python-144.0.post2-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "144.0.post2"
+    },
+    {
+      "license": "MIT OR Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/sniffio/1.3.1/json",
+      "name": "sniffio",
+      "path": "sniffio-1.3.1-py3-none-any.whl",
+      "sha256": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2",
+      "source": "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl",
+      "version": "1.3.1"
+    },
+    {
+      "license": "Apache 2.0",
+      "metadataURL": "https://pypi.org/pypi/sortedcontainers/2.4.0/json",
+      "name": "sortedcontainers",
+      "path": "sortedcontainers-2.4.0-py2.py3-none-any.whl",
+      "sha256": "a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0",
+      "source": "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl",
+      "version": "2.4.0"
+    },
+    {
+      "license": "MPL-2.0 AND MIT",
+      "metadataURL": "https://pypi.org/pypi/tqdm/4.70.1/json",
+      "name": "tqdm",
+      "path": "tqdm-4.70.1-py3-none-any.whl",
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73",
+      "source": "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl",
+      "version": "4.70.1"
+    },
+    {
+      "license": "MIT OR Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/trio/0.34.0/json",
+      "name": "trio",
+      "path": "trio-0.34.0-py3-none-any.whl",
+      "sha256": "6c7c9f49917694dcdcd5f67abd168df5599eca480d61f29854d17a61a75c2f05",
+      "source": "https://files.pythonhosted.org/packages/77/1f/555f1364bed52a92a864181962b77f1b15adadeacf23b86105324363e461/trio-0.34.0-py3-none-any.whl",
+      "version": "0.34.0"
+    },
+    {
+      "license": null,
+      "metadataURL": "https://pypi.org/pypi/trio_websocket/0.12.2/json",
+      "name": "trio_websocket",
+      "path": "trio_websocket-0.12.2-py3-none-any.whl",
+      "sha256": "df605665f1db533f4a386c94525870851096a223adcb97f72a07e8b4beba45b6",
+      "source": "https://files.pythonhosted.org/packages/c7/19/eb640a397bba49ba49ef9dbe2e7e5c04202ba045b6ce2ec36e9cadc51e04/trio_websocket-0.12.2-py3-none-any.whl",
+      "version": "0.12.2"
+    },
+    {
+      "license": "PSF-2.0",
+      "metadataURL": "https://pypi.org/pypi/typing_extensions/4.16.0/json",
+      "name": "typing_extensions",
+      "path": "typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "source": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "version": "4.16.0"
+    },
+    {
+      "license": "Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/ufolib2/0.19.0/json",
+      "name": "ufolib2",
+      "path": "ufolib2-0.19.0-py3-none-any.whl",
+      "sha256": "185375fcff37e6006f90414128e52c22ee11e92715fd3155c0fe63388caac84b",
+      "source": "https://files.pythonhosted.org/packages/9e/aa/a74f562428cf32704ba6601aba15c55a6b67f05d6682049b6eb2bf12cafe/ufolib2-0.19.0-py3-none-any.whl",
+      "version": "0.19.0"
+    },
+    {
+      "license": "Apache License 2.0",
+      "metadataURL": "https://pypi.org/pypi/uharfbuzz/0.56.3/json",
+      "name": "uharfbuzz",
+      "path": "uharfbuzz-0.56.3-cp310-abi3-macosx_10_9_universal2.whl",
+      "sha256": "888648b3ca86f3ee2f585e2c951741f06365ec3ae3d2eeaddb2562fd68738057",
+      "source": "https://files.pythonhosted.org/packages/8d/33/fa6d2ad31c71fe23cf1e8f505b758ebee9c2d615338faf9d1719e42f1ea7/uharfbuzz-0.56.3-cp310-abi3-macosx_10_9_universal2.whl",
+      "version": "0.56.3"
+    },
+    {
+      "license": "Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/unicodedata2/18.0.0/json",
+      "name": "unicodedata2",
+      "path": "unicodedata2-18.0.0-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "794214d1b13930967da13d1d8ca31b5acb43362343427cbe3c78800df1a3ba96",
+      "source": "https://files.pythonhosted.org/packages/36/01/c36d27b862b86c22b66cd6e5a761eb8acd13249e996fb1ff129788ddd0fb/unicodedata2-18.0.0-cp311-cp311-macosx_11_0_arm64.whl",
+      "version": "18.0.0"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/urllib3/2.8.0/json",
+      "name": "urllib3",
+      "path": "urllib3-2.8.0-py3-none-any.whl",
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+      "source": "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl",
+      "version": "2.8.0"
+    },
+    {
+      "license": "Apache-2.0",
+      "metadataURL": "https://pypi.org/pypi/websocket_client/1.9.2/json",
+      "name": "websocket_client",
+      "path": "websocket_client-1.9.2-py3-none-any.whl",
+      "sha256": "e1a673830a9c7bfa47b1cd3d5e4178f4c9651d80a4eab02c9c23a1c3ec6250ce",
+      "source": "https://files.pythonhosted.org/packages/d5/d2/cc4dc1271e464942db7ee278baae2daa99ee77cb2af744025c04da585a3e/websocket_client-1.9.2-py3-none-any.whl",
+      "version": "1.9.2"
+    },
+    {
+      "license": "MIT",
+      "metadataURL": "https://pypi.org/pypi/wsproto/1.3.2/json",
+      "name": "wsproto",
+      "path": "wsproto-1.3.2-py3-none-any.whl",
+      "sha256": "61eea322cdf56e8cc904bd3ad7573359a242ba65688716b0710a5eb12beab584",
+      "source": "https://files.pythonhosted.org/packages/a4/f5/10b68b7b1544245097b2a1b8238f66f2fc6dcaeb24ba5d917f52bd2eed4f/wsproto-1.3.2-py3-none-any.whl",
+      "version": "1.3.2"
+    },
+    {
+      "license": "# youseedee: interface to the UCD\"  This module allows you to query the Unicode Character Database. The main function to be imported is `ucd_data`:  >>> ucd_data(0x078A) {'Age': '3.0', 'Block': 'Thaana', 'Canonical_Combining_Class': '0', 'East_Asian_Width': 'N', 'General_Category': 'Lo', 'Line_Break': 'AL', 'Name': 'THAANA LETTER FAAFU', 'Script': 'Thaana'}  On first run, it will download the database files for you from unicode.org. These are stored in your operating system's user cache directory (determined by [`platformdirs`](https://pypi.org/project/platformdirs/)) in a folder called `youseedee`. These are also updated if new data is available from unicode.org  You may also use it as a command line utility:  $ python3 -m youseedee 0x078A {'Age': '3.0', 'Block': 'Thaana', 'Canonical_Combining_Class': '0', 'East_Asian_Width': 'N', 'General_Category': 'Lo', 'Line_Break': 'AL', 'Name': 'THAANA LETTER FAAFU', 'Script': 'Thaana'}  $ python3 -m youseedee \u01e8 {'Age': '1.1', 'Block': 'Latin Extended-B', 'Canonical_Combining_Class': '0', 'Case_Folding_Mapping': '01E9', 'Case_Folding_Status': 'C', 'East_Asian_Width': 'N', 'General_Category': 'Lu', 'Line_Break': 'AL', 'Name': 'LATIN CAPITAL LETTER K WITH CARON', 'Script': 'Latin'} ",
+      "metadataURL": "https://pypi.org/pypi/youseedee/0.7.0/json",
+      "name": "youseedee",
+      "path": "youseedee-0.7.0-py3-none-any.whl",
+      "sha256": "f32efda938a839edeeaf93ae7013f8d3ed99541304b37e1006037ea286f7bef7",
+      "source": "https://files.pythonhosted.org/packages/2a/ee/e4940673e084c35cb1c3a7d308ef2234df8dc86a1df0453318e976e437a7/youseedee-0.7.0-py3-none-any.whl",
+      "version": "0.7.0"
+    }
+  ]
+}

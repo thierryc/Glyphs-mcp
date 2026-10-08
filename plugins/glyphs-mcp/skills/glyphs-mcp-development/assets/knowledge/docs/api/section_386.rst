@@ -1,3 +1,4 @@
-.. function:: swapForegroundWithBackground()
+.. attribute:: isMasterLayer
+		If it is a master layer
 
-		Swap Foreground layer with Background layer.
+		:type: bool

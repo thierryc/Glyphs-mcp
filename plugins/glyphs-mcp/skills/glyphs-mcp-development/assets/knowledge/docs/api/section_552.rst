@@ -1,5 +1,8 @@
-.. attribute:: anchors
+.. attribute:: layersCursor
+		Position of cursor in the layers list, starting with 0.
 
-		Anchors defined for this glyph, as a list of anchor names.
+		.. seealso:: `GSEditViewController.layers`
 
-		:type: list
+		:type: integer
+
+		.. versionadded:: 2.4

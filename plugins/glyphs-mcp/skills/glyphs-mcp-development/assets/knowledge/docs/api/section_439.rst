@@ -1,18 +1,19 @@
-.. attribute:: attributes
+.. function:: applyTransform
 
-		path attributes like :samp:`fill`, :samp:`mask`, :samp:`strokeWidth`, :samp:`strokeHeight`, :samp:`strokeColor'`, :samp:`strokePos`
+		Apply a transformation matrix to the component.
 
 		.. code-block:: python
+			component = layer.components[0]
 
-			# in B/W layers:
-			path.attributes['fill'] = True
-			path.attributes['mask'] = True
-			path.attributes['strokeWidth'] = 100
-			path.attributes['strokeHeight'] = 80
+			component.applyTransform((
+			    0.5, # x scale factor
+			    0.0, # x skew factor
+			    0.0, # y skew factor
+			    0.5, # y scale factor
+			    0.0, # x position
+			    0.0  # y position
+			))
 
-			# in color layers:
-			path.attributes['strokeColor'] = NSColor.redColor()
-			path.attributes['fillColor'] = NSColor.blueColor()
-			path.attributes['strokePos'] = 1 # or 0, -1
+	.. function:: copy()
 
-		:type: dict
+		Returns a full copy of the component

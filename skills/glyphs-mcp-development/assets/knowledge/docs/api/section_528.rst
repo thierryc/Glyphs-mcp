@@ -1,4 +1,3 @@
-.. attribute:: textCursor
-		Position of text cursor in text, starting with 0.
+.. function:: resetCrop
 
-		:type: integer
+		Resets the cropping to the image’s original dimensions.

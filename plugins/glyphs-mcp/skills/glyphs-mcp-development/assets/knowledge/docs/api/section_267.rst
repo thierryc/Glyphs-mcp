@@ -1,70 +1,18 @@
-:mod:`GSGlyph`
+:mod:`GSClass`
 ===============================================================================
 
-Implementation of the glyph object.
+Implementation of the class object. It is used to store OpenType classes.
 
-For details on how to access these glyphs, please see :class:`GSFont.glyphs`
+For details on how to access them, please look at :class:`GSFont.classes`
 
-.. class:: GSGlyph([name, autoName=True])
+.. class:: GSClass([tag, code])
 
-	:param name: The glyph name
-	:param autoName: if the name should be converted to nice name
+	:param tag: The class name
+	:param code: A list of glyph names, separated by space or newline
 
-	Properties
-
-		* :attr:`parent`
-		* :attr:`layers`
 		* :attr:`name`
-		* :attr:`unicode`
-		* :attr:`unicodes`
-		* :attr:`string`
-		* :attr:`id`
-		* :attr:`category`
-		* :attr:`storeCategory`
-		* :attr:`subCategory`
-		* :attr:`storeSubCategory`
-		* :attr:`group`
-		* :attr:`groupIdx`
-		* :attr:`storeGroup`
-		* :attr:`case`
-		* :attr:`storeCase`
-		* :attr:`script`
-		* :attr:`storeScript`
-		* :attr:`productionName`
-		* :attr:`storeProductionName`
-		* :attr:`sortName`
-		* :attr:`sortNameKeep`
-		* :attr:`storeSortName`
-		* :attr:`glyphInfo`
-		* :attr:`leftKerningGroup`
-		* :attr:`rightKerningGroup`
-		* :attr:`leftKerningKey`
-		* :attr:`topKerningGroup`
-		* :attr:`bottomKerningKey`
-		* :attr:`rightKerningKey`
-		* :attr:`topKerningKey`
-		* :attr:`leftMetricsKey`
-		* :attr:`rightMetricsKey`
-		* :attr:`widthMetricsKey`
-		* :attr:`topMetricsKey`
-		* :attr:`bottomMetricsKey`
-		* :attr:`export`
-		* :attr:`color`
-		* :attr:`colorObject`
-		* :attr:`note`
-		* :attr:`selected`
-		* :attr:`mastersCompatible`
-		* :attr:`userData`
-		* :attr:`smartComponentAxes`
-		* :attr:`tags`
-		* :attr:`lastChange`
-
-	Functions
-
-		* :meth:`beginUndo`
-		* :meth:`copy`
-		* :meth:`duplicate`
-		* :meth:`endUndo`
-		* :meth:`updateGlyphInfo`
+		* :attr:`code`
+		* :attr:`automatic`
+		* :attr:`active`
 
 	**Properties**

@@ -1,5 +1,9 @@
-.. attribute:: colors
+.. attribute:: stem
 
-		A list of colors. Each is an list containing a NSColor and and position between 0.0 and 1.0.
+		Index of TrueType stem that this hint is attached to. The stems are defined in the custom parameter "TTFStems" per master.
 
-		:type: list
+		For no stem, value is -1.
+
+		For automatic, value is -2.
+
+		:type: int

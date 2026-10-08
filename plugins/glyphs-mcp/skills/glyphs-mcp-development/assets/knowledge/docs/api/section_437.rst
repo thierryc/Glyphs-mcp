@@ -1,12 +1,11 @@
-.. attribute:: selected
+.. attribute:: tempData
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use component.userData
 
-		Selection state of path in UI.
-
-		:type: bool
+		:type: dict
 
 		.. code-block:: python
-			# select path
-			layer.paths[0].selected = True
+			# set value
+			component.tempData['rememberToMakeCoffee'] = True
 
-			# print(selection state)
-			print(layer.paths[0].selected)
+			# delete value
+			del component.tempData['rememberToMakeCoffee']

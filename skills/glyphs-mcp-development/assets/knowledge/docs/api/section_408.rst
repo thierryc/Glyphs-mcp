@@ -1,7 +1,24 @@
-.. attribute:: anchor
+:mod:`GSAnchor`
+===============================================================================
 
-		If more than one anchor/_anchor pair would match, this property can be used to set the anchor to use for automatic alignment
+Implementation of the anchor object.
 
-		This can be set from the anchor button in the component info box in the UI
+For details on how to access them, please see :attr:`GSLayer.anchors`
 
-		:type: str
+.. class:: GSAnchor([name, position])
+
+	:param name: the name of the anchor
+	:param pt: the position of the anchor
+
+	Properties
+
+		* :attr:`position`
+		* :attr:`name`
+		* :attr:`selected`
+		* :attr:`orientation`
+
+	Functions
+
+		* :meth:`copy()`
+
+	**Properties**

@@ -1,5 +1,5 @@
-.. attribute:: horizontal
+.. attribute:: filter
 
-		This is used for stem metrics. so only use this for font.stems
+		A filter to limit the scope of the metric.
 
-		:type: bool
+		:type: NSPredicate

@@ -1,1 +1,9 @@
-draw the object with a fontTools pen
+.. attribute:: glyph
+
+	the GSGlyph to keep track of
+
+	:type: GSGlyph
+
+	.. code-block:: python
+
+		glyphReference = GSGlyphReference(font.glyphs["A"])

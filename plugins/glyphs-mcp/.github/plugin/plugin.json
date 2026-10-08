@@ -1,6 +1,6 @@
 {
   "name": "glyphs-mcp",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Inspect and safely control open Glyphs fonts through the local Glyphs MCP server.",
   "author": {
     "name": "Thierry Charbonnel",

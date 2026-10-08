@@ -1,5 +1,5 @@
-.. attribute:: id
+.. attribute:: name
 
-		The id to link the values in the masters
+		The name of the metric or stem
 
 		:type: str

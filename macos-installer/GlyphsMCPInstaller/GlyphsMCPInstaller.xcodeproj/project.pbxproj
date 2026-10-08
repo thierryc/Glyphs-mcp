@@ -79,6 +79,11 @@
 		52BFFDF1CB210FC9AE032E93 /* DesktopSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */; };
 		5C1111111111111111111112 /* SkillsCatalog in Resources */ = {isa = PBXBuildFile; fileRef = 5C1111111111111111111111; };
 		5C2222222222222222222222 /* SkillCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2222222222222222222221; };
+		849533CAC7F22E04CACA3BBE /* DesktopInitializationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73D61233AFD15A408D8FEB4 /* DesktopInitializationStatus.swift */; };
+		DCAAD432691DCA5A392DF33D /* SharedInitialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCC566CD9ED04D9BDA9C1A4 /* SharedInitialization.swift */; };
+		54226012FBAC5F05E6D38CE4 /* SharedInitializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BA100AC3DA98EDF83E4FAC /* SharedInitializationTests.swift */; };
+		36EE3FED468A52FA0F2ADACE /* OptionalToolSetupCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D264F8CACBB9BC61AA7B390 /* OptionalToolSetupCard.swift */; };
+		C9D9461CB4B4D1B226676FAA /* OptionalToolState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C913C9EB70BB21C6B52D2146 /* OptionalToolState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -199,6 +204,11 @@
 		3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopSkills.swift"; sourceTree = "<group>"; };
 		5C1111111111111111111111 /* SkillsCatalog */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SkillsCatalog; sourceTree = "<group>"; };
 		5C2222222222222222222221 /* SkillCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SkillCatalogTests.swift"; sourceTree = "<group>"; };
+		F73D61233AFD15A408D8FEB4 /* DesktopInitializationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopInitializationStatus.swift"; sourceTree = "<group>"; };
+		8DCC566CD9ED04D9BDA9C1A4 /* SharedInitialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharedInitialization.swift"; sourceTree = "<group>"; };
+		86BA100AC3DA98EDF83E4FAC /* SharedInitializationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharedInitializationTests.swift"; sourceTree = "<group>"; };
+		1D264F8CACBB9BC61AA7B390 /* OptionalToolSetupCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionalToolSetupCard.swift"; sourceTree = "<group>"; };
+		C913C9EB70BB21C6B52D2146 /* OptionalToolState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionalToolState.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +262,8 @@
 		AA0000000000000000000003 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				1D264F8CACBB9BC61AA7B390 /* OptionalToolSetupCard.swift */,
+				F73D61233AFD15A408D8FEB4 /* DesktopInitializationStatus.swift */,
 				3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */,
 				CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */,
 				B30000000000000000000001 /* DesktopGitWorkspace.swift */,
@@ -317,6 +329,7 @@
 		AA0000000000000000000008 /* GlyphsMCPInstallerTests */ = {
 			isa = PBXGroup;
 			children = (
+				86BA100AC3DA98EDF83E4FAC /* SharedInitializationTests.swift */,
 				5C2222222222222222222221 /* SkillCatalogTests.swift */,
 				A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */,
 				742CDB4C4DB7F215A6599D3C /* DesktopProjectNavigationTests.swift */,
@@ -332,6 +345,8 @@
 		AA00000000000000000000C7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				C913C9EB70BB21C6B52D2146 /* OptionalToolState.swift */,
+				8DCC566CD9ED04D9BDA9C1A4 /* SharedInitialization.swift */,
 				B0563B0D8E6E674BE984FA5E /* SupplementalSkillInstaller.swift */,
 				6B5629938134F8CE3F7BF1A5 /* SkillStore.swift */,
 				E5760C7E839E3031946D81D8 /* SkillCatalog.swift */,
@@ -571,6 +586,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				36EE3FED468A52FA0F2ADACE /* OptionalToolSetupCard.swift in Sources */,
+				849533CAC7F22E04CACA3BBE /* DesktopInitializationStatus.swift in Sources */,
 				52BFFDF1CB210FC9AE032E93 /* DesktopSkills.swift in Sources */,
 				2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */,
 				B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */,
@@ -594,6 +611,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				54226012FBAC5F05E6D38CE4 /* SharedInitializationTests.swift in Sources */,
 				5C2222222222222222222222 /* SkillCatalogTests.swift in Sources */,
 				F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */,
 				F67CF5CD0053D10B3F8F96A2 /* DesktopProjectNavigationTests.swift in Sources */,
@@ -609,6 +627,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C9D9461CB4B4D1B226676FAA /* OptionalToolState.swift in Sources */,
+				DCAAD432691DCA5A392DF33D /* SharedInitialization.swift in Sources */,
 				4FAEDF09AFAE2EF0D6AE2B12 /* SupplementalSkillInstaller.swift in Sources */,
 				B6063C687579F5CB1E4D58BF /* SkillStore.swift in Sources */,
 				1BB13DF4F509BE935FEA1D28 /* SkillCatalog.swift in Sources */,
@@ -798,7 +818,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 56;
+				CURRENT_PROJECT_VERSION = 57;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -812,7 +832,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.0.2;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";
@@ -834,7 +854,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 56;
+				CURRENT_PROJECT_VERSION = 57;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -848,7 +868,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.0.2;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";

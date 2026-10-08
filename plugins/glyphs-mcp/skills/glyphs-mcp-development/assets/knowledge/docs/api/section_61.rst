@@ -1,15 +1,15 @@
-.. attribute:: numbers
+.. attribute:: stems
 
-		The numbers. A list of :class:`GSMetric` objects. For each number, there is a metricsValue in the masters, linked by the `id`.
+		The stems. A list of :class:`GSMetric` objects. For each metric, there is a metricsValue in the masters, linked by the `id`.
 
 		:type: list, dict
 
 		.. code-block:: python
-			print(font.numbers[0].name)
+			font.stems[0].horizontal = False
 
-			# add a number
-			number = GSMetric()
-			number.horizontal = False # or True
-			number.name = "Some Name"
-			font.numbers.append(number)
-			master.numbers[number.name] = 123
+			# add a stem
+			stem = GSMetric()
+			stem.horizontal = False # or True
+			stem.name = "Some Name"
+			font.stems.append(stem)
+			master.stems[stem.name] = 123

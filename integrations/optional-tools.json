@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "tools": {
+    "diffenator": {
+      "status": "pending_qualification",
+      "reason": "The signed optional Diffenator runtime awaits hosted release assets and supported-platform qualification.",
+      "sourceRevision": "cecdab703d462cfea25b748b19ea4813d3f4d680"
+    },
+    "beztrace-glyphs": {
+      "status": "pending_qualification",
+      "reason": "Managed setup awaits the hosted build-16 companion and supported-platform qualification.",
+      "engineVersion": "0.1.1",
+      "engineConfiguration": "engine-settings-v1"
+    }
+  }
+}

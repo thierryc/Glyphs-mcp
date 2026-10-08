@@ -1,4 +1,3 @@
-.. attribute:: automaticAlignment
-		Defines whether the component is automatically aligned.
+.. function:: clear()
 
-		:type: bool
+		Remove all elements from layer.

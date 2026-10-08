@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "web:GSFontMaster.gridMainHorizontal",
+      "path": "GSFontMaster.gridMainHorizontal.txt",
+      "title": "GSFontMaster.gridMainHorizontal",
+      "symbol": "GSFontMaster.gridMainHorizontal",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.gridMainHorizontal",
+      "retrievedAt": "2026-10-08",
+      "sha256": "3f4b02a816a80715ceb8360a1dbe15b13b59fa1aa946158805e9f914cf4ed3dc"
+    },
+    {
+      "id": "web:GSFontMaster.gridSubDivisionHorizontal",
+      "path": "GSFontMaster.gridSubDivisionHorizontal.txt",
+      "title": "GSFontMaster.gridSubDivisionHorizontal",
+      "symbol": "GSFontMaster.gridSubDivisionHorizontal",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.gridSubDivisionHorizontal",
+      "retrievedAt": "2026-10-08",
+      "sha256": "872ded68ebf44d0b69dcf52c555b981cd60d6df6cbf0317538d25d6dfe970ba0"
+    },
+    {
+      "id": "web:GSFontMaster.gridMainVertical",
+      "path": "GSFontMaster.gridMainVertical.txt",
+      "title": "GSFontMaster.gridMainVertical",
+      "symbol": "GSFontMaster.gridMainVertical",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.gridMainVertical",
+      "retrievedAt": "2026-10-08",
+      "sha256": "84df9e2f7a64c56e18b34901320704ef238aec770d6f0f1b7a9abb83cdcfb908"
+    },
+    {
+      "id": "web:GSFontMaster.gridSubDivisionVertical",
+      "path": "GSFontMaster.gridSubDivisionVertical.txt",
+      "title": "GSFontMaster.gridSubDivisionVertical",
+      "symbol": "GSFontMaster.gridSubDivisionVertical",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.gridSubDivisionVertical",
+      "retrievedAt": "2026-10-08",
+      "sha256": "21a335da24208c45e1e45386f5571929d36b154b6521d9503ca8d613ada4f276"
+    },
+    {
+      "id": "web:GSFontMaster.gridSlopeRise",
+      "path": "GSFontMaster.gridSlopeRise.txt",
+      "title": "GSFontMaster.gridSlopeRise",
+      "symbol": "GSFontMaster.gridSlopeRise",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.gridSlopeRise",
+      "retrievedAt": "2026-10-08",
+      "sha256": "6a405ab0fd300f410e57577da4ad2bab2ddb8fca64861fdc67cad01d74a8804c"
+    },
+    {
+      "id": "web:GSFontMaster.gridSlopeRun",
+      "path": "GSFontMaster.gridSlopeRun.txt",
+      "title": "GSFontMaster.gridSlopeRun",
+      "symbol": "GSFontMaster.gridSlopeRun",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.gridSlopeRun",
+      "retrievedAt": "2026-10-08",
+      "sha256": "159feb617e82419390492d1f8e39dcc8890933a9d23ab3687da917137d593dfe"
+    },
+    {
+      "id": "web:GSFontMaster.grid",
+      "path": "GSFontMaster.grid.txt",
+      "title": "GSFontMaster.grid",
+      "symbol": "GSFontMaster.grid",
+      "sourceUrl": "https://docu.glyphsapp.com/#GSFontMaster.grid",
+      "retrievedAt": "2026-10-08",
+      "sha256": "6350b80f7098a3b03a30aaf53dc68c97ef46ae4fc1e8fe70d91620d831f0f661"
+    },
+    {
+      "id": "web:handbook-export",
+      "path": "handbook-export.txt",
+      "title": "Exporting font files",
+      "sourceUrl": "https://handbook.glyphsapp.com/export/",
+      "retrievedAt": "2026-10-08",
+      "sha256": "102f903ca28e6d813decfda374b480e611e5afd50cba9ca2401227f5f0cb8adf"
+    },
+    {
+      "id": "web:handbook-background",
+      "path": "handbook-background.txt",
+      "title": "Background layers",
+      "sourceUrl": "https://handbook.glyphsapp.com/background/",
+      "retrievedAt": "2026-10-08",
+      "sha256": "267a70d386077f22d0d8ade820512f9f373b0132c3a876c6402bc5b4f890a23d"
+    },
+    {
+      "id": "web:custom-parameters",
+      "path": "custom-parameters.txt",
+      "title": "Custom parameters",
+      "sourceUrl": "https://glyphsapp.com/learn/custom-parameters",
+      "retrievedAt": "2026-10-08",
+      "sha256": "bda226ef665c24902d3588cef8a4e1b4efa071d0e45c4208beb9e034deac1973"
+    }
+  ]
+}

@@ -56,7 +56,7 @@ Do not start a replacement edit, save or offer Keep before the result is ready.
   skipped/unavailable targets and warnings, and reuse original edit authorization
   where it covers the proposal. Never describe partial coverage as complete.
   Dimensions overwrites still need the exact old/new approval entries.
-  Use **Changes ready to review.**, **Apply changes**, and **Discard preview**;
+  Use **Changes ready to review.**, **Apply changes**, and **Cancel preview**;
   when warnings need review, say **Some changes need your review.**
 - Applied: say **Changes applied.** Offer **Keep changes without saving**,
   **Save font**, **Save As**, and **Undo these changes**. Keep closes the workflow
@@ -105,7 +105,7 @@ an authorized **Save and run** or manual saving; new fonts use Save As/manual
 saving and fresh validation. Failed/uncertain saves never start Python.
 
 Lead with font, intended change and scope, show the execution warning once,
-and keep exact source/params in optional **Script details**. Text-only **Show
+and keep exact source/params in optional **View details**. Text-only **Show
 script** uses `get_edit_workflow(include_review=true)`; default polling stays
 compact. Successful execution and completed callbacks do not verify the result.
 
@@ -132,11 +132,38 @@ on start or the offered **Wait for my answer** action; carry that directive into
 later requests until changed. A failed or uncertain opt-out leaves the card locally
 paused while its existing request is reconciled.
 
+Cards label that same `wait_for_answer` action **Pause countdown** during the
+countdown and **Turn off automatic Keep** beforehand. Keep the conversational
+phrase **Wait for my answer** as an alias; do not require users to repeat it.
+
 The countdown runs only on a visible, connected, freshly reconciled successful
 result card. Details, hidden cards and reconnection reset elapsed time. Failed,
 partial, uncertain and blocked outcomes never automatically Keep. Text-only clients
 remain manual; elapsed time does not imply an answer. There is no timed Run, Save,
 Undo or Restore. Cards record timed completion as such, not as a human click.
+
+## Portable card presentation
+
+Use the server's optional action `presentation` metadata for main choices,
+**More options** and automatic Keep controls. All offered actions remain in the
+machine-readable control reference; text responses list main and secondary
+options separately. One **View details** disclosure contains the full path,
+request, script evidence and diagnostics. Warnings and recovery consequences
+stay visible. Do not confuse a cancelled script with partial edits with a settled
+request that needs no action.
+
+Visible cards use `uiRefreshIntervalMs` to refresh processing every 1.5 seconds
+and pending choices/recovery every 5 seconds. This does not change the agent's
+`poll` instruction or require polling while awaiting an answer. Background reads
+preserve a countdown only when identity and revision remain unchanged. Opening
+View details or More options pauses it; return/reconnect starts a fresh countdown.
+
+On `stale_workflow_action`, read the same workflow, present its current state and
+choices, and never repeat the rejected mutation automatically. Cards remove the
+obsolete controls, clear the stale warning on successful reconciliation and offer
+**Check status** when reading fails. Text-only clients use the same lifecycle;
+the plugin cannot remove historical messages or host-owned controls. Use host
+capabilities rather than client-name-specific behavior.
 
 ## Preparation
 

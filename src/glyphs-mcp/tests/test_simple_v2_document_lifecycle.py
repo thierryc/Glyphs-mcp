@@ -437,7 +437,7 @@ def test_http_routes_and_mcp_catalog_use_same_document_operations(setup, tmp_pat
     async def exercise():
         async with Client(create_server(service)) as client:
             catalog = {tool.name: tool for tool in await client.list_tools()}
-            assert len(catalog) == 17
+            assert len(catalog) == 18
             assert set(catalog["close_document"].inputSchema["required"]) == {"document_id", "idempotency_key"}
             imported = (await client.call_tool("import_document", {"path": str(path), "idempotency_key": "mcp"})).data
             assert imported["ok"]

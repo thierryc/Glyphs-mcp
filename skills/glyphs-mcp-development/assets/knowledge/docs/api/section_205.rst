@@ -1,11 +1,7 @@
-.. attribute:: designers
+.. attribute:: compatibleFullName
 
-		This accesses all localized designer values.
-		For details :attr:`GSInstance.properties`
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
-		:type: dict
-
-		.. code-block:: python
-			instance.designers["ENG"] = "John Smith"
+		:type: str
 
 		.. versionadded:: 3.0.3

@@ -1,5 +1,8 @@
-.. attribute:: active
+.. attribute:: external
 
-		:type: bool
+		The external (user space) coordinate the particle applies to.
 
-		.. versionadded:: 2.5
+		Is ``None`` if no external coordinate is set, i.e. the particle maps
+		directly from :attr:`internal`. Set it to ``None`` to clear it again.
+
+		:type: float

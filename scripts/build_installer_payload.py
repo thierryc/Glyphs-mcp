@@ -156,8 +156,9 @@ def build_payload(output_root=DEFAULT_OUTPUT_ROOT, *, allow_outside_worktree=Fal
     runtime_root = Path(runtime_root or os.environ.get("GMCP_BUILD_RUNTIME_ROOT") or REPO_ROOT / "build/private-runtime")
     lean = build(output / "Lean", runtime_root=runtime_root)
     helper = output / "Installer"; helper.mkdir()
-    for name in ("install_simple_v2.py", "installation_transaction.py", "build_simple_v2.py"):
+    for name in ("install_simple_v2.py", "installation_transaction.py", "build_simple_v2.py", "install_optional_tools.py"):
         shutil.copy2(REPO_ROOT / "scripts" / name, helper / name)
+    shutil.copy2(REPO_ROOT / "integrations/optional-tools.json", helper / "optional-tools.json")
     provenance = output / "ThirdParty"; provenance.mkdir()
     for name in ("lean-runtime.json", "lean-runtime-arm64.lock", "lean-runtime-x86_64.lock", "lean-runtime-wheels-arm64.json", "lean-runtime-wheels-x86_64.json"):
         shutil.copy2(REPO_ROOT / "third_party" / name, provenance / name)
