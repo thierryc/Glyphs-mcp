@@ -415,13 +415,15 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             "run_local_release_tests.sh",
             "verify_release_artifacts.sh",
         ]
-        parsed = subprocess.run(
-            ["/bin/bash", "-n", *[str(REPO / "scripts" / name) for name in scripts]],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(parsed.returncode, 0, parsed.stderr)
+        for name in scripts:
+            with self.subTest(script=name):
+                parsed = subprocess.run(
+                    ["/bin/bash", "-n", str(REPO / "scripts" / name)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(parsed.returncode, 0, parsed.stderr)
 
         debug = subprocess.run(
             [str(REPO / "scripts" / "build_installer_app.sh")],

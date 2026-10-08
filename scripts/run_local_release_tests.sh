@@ -27,7 +27,7 @@ cd "$repo_root"
 "$python_bin" scripts/prepare_desktop_dependencies.py
 
 echo "Checking release scripts…"
-/bin/bash -n \
+for release_script in \
   scripts/build_installer_app.sh \
   scripts/notarize_installer_app.sh \
   scripts/make_installer_dmg.sh \
@@ -35,7 +35,9 @@ echo "Checking release scripts…"
   scripts/publish_release_assets.sh \
   scripts/run_python_tests.sh \
   scripts/run_local_release_tests.sh \
-  scripts/verify_release_artifacts.sh
+  scripts/verify_release_artifacts.sh; do
+  /bin/bash -n "$release_script"
+done
 
 echo "Checking tracked patch whitespace…"
 git diff --check HEAD
