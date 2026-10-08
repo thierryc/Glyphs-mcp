@@ -1,8 +1,6 @@
 # Glyphs MCP Desktop 2.0.1
 
-**2.0.1 · desktop build 56 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open native font files directly through MCP. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for features, validation and remaining publication checks. Earlier 2.0.1 artifacts passed local signing and notarization; the new Open route requires fresh artifacts and qualification. The public release and update feed remain at 2.0.0.
-
-The previous **2.0.0/build 55** release remains available as a [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0/Glyphs-MCP-2.0.0.dmg). Its [release qualification](V2-RELEASE.md) does not qualify this new candidate.
+**2.0.1 · desktop build 56 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.1/Glyphs-MCP-2.0.1.dmg) and see the [2.0.1 release qualification](V2.0.1-RELEASE.md) for features, validation and platform limits.
 
 The [seventeen-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. `save_document` persists an explicitly identified font.
 
@@ -81,19 +79,19 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.0).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.1).
 
 Documentation sources: [v2 · 2.0.1](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
-See [release qualification](V2-RELEASE.md) for current results and limits.
+See [release qualification](V2.0.1-RELEASE.md) for current results and limits.
 Historical beta reports remain in [the qualification archive](reports/README.md);
 the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The planned candidate disk image is `Glyphs-MCP-2.0.1.dmg`; it has not been published. The previous stable disk image remains `Glyphs-MCP-2.0.0.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.0.1.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 Author: Thierry Charbonnel. [Documentation](https://ap.cx/gmcp),

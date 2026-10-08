@@ -1,7 +1,7 @@
 # Permanent desktop application
 
-> Current stable 2.0.0/build 55 signing and bounded native acceptance are complete.
-> See [release qualification](../V2-RELEASE.md) for actual results and outstanding
+> Current stable 2.0.1/build 56 signing and bounded native acceptance are complete.
+> See [release qualification](../V2.0.1-RELEASE.md) for actual results and outstanding
 > environment/manual limits. Candidate checkpoints below are historical.
 
 
@@ -15,7 +15,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout prepares product 2.0.1, stable-channel identity, installer build 56. Earlier local artifacts passed Developer ID signing, notarization and Gatekeeper; the new document routes require fresh distribution artifacts and qualification before publication. Sidecar and bridge product versions are `2.0.1`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seventeen tools and up to thirteen capability-gated job kinds. See [2.0.1 release preparation](../V2.0.1-RELEASE.md) and [version and identity](../content/reference/version-identity.mdx).
+This checkout contains product 2.0.1, stable-channel identity, installer build 56. The released universal app, ZIP and DMG passed Developer ID signing, notarization and Gatekeeper, and its document routes passed native VM qualification. Sidecar and bridge product versions are `2.0.1`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany seventeen tools and up to thirteen capability-gated job kinds. See [2.0.1 release qualification](../V2.0.1-RELEASE.md) and [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also

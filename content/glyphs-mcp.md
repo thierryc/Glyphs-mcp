@@ -8,7 +8,7 @@ small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
-This guide describes **2.0.1**, desktop build **56**, with coordinated sidecar and bridge product version **2.0.1**. Its skills catalog and focused setup views have passed local regression and desktop UI checks; the app and ZIP are signed and notarized locally. Final distribution and native qualification remain separate release checks. The public **2.0.0/build 55** release and its [qualification and limits](reference/release-qualification.mdx) remain unchanged. See [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/) and separate v1.11.0 download.
+This guide describes **2.0.1**, desktop build **56**, with coordinated sidecar and bridge product version **2.0.1**. The universal desktop app, ZIP and DMG are signed, notarized and stapled. The skills catalog, focused setup views and native document routes passed regression and bounded VM acceptance. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/) and separate v1.11.0 download.
 
 ## Start here
 
