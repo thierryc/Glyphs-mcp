@@ -99,6 +99,14 @@ an atomic rename. Failure restores affected components, launch-agent
 configuration and installation records together. Ports, startup preferences,
 authentication and welcome preferences are preserved.
 
+If the existing service's `bridge-token` file is missing, component installation
+checks again that Glyphs and font workers are closed and that stored jobs have
+no unfinished or unresolved work. It then unloads the stale managed service and
+continues installation automatically. Job history is preserved; the token is
+created normally when the new server starts. Unfinished tasks or unreadable job
+records block this recovery, and busy-service or authentication refusals are
+never treated as a missing-token error.
+
 The log icon in Setup opens **Glyphs MCP Logs** with installer, server and
 sidecar sources plus a redacted diagnostic-report action. Resolve active jobs
 before replacing or restarting the server; stop is refused during an active

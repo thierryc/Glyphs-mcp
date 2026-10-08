@@ -60,6 +60,66 @@ def service_controller(build, home):
     return module.ServerControl(home)
 
 
+def require_closed_font_processes(application):
+    executable = Path(application).resolve() / 'Contents/MacOS'
+    for pattern in ('^'+re.escape(str(executable))+'/', 'glyphs_mcp_sidecar.native_worker'):
+        result = subprocess.run(['/usr/bin/pgrep', '-f', pattern], capture_output=True)
+        if result.returncode == 0:
+            raise ValueError('Close Glyphs and wait for active font tasks to finish before installing.')
+        if result.returncode != 1:
+            raise RuntimeError('Could not check active font processes. No service was stopped.')
+
+
+def stop_for_install(controller, application):
+    """Recover a missing local secret without bypassing a rejected idle check."""
+    try:
+        return controller._run('stop')
+    except FileNotFoundError as error:
+        settings = controller._plist()
+        configured = settings.get('EnvironmentVariables', {}).get('GLYPHS_MCP_BRIDGE_TOKEN_FILE')
+        token = Path(configured).expanduser() if configured else controller.support/'bridge-token'
+        if error.filename != str(token) or token.exists():
+            raise
+        # The caller owns .control.lock, blocking new v2 mutation dispatch.
+        # Recheck live processes and persisted work before unloading a service
+        # whose in-memory authentication secret can no longer be read.
+        require_closed_font_processes(application)
+        args = settings.get('ProgramArguments', [])
+        jobs = Path(args[args.index('--jobs')+1]).expanduser() if '--jobs' in args else controller.support/'lean-v2/jobs'
+        terminal = {'accepted', 'discarded', 'completed', 'cancelled', 'interrupted'}
+        try:
+            # Unlike glob, scandir does not silently suppress access errors.
+            with os.scandir(jobs) as entries:
+                paths = [Path(entry.path)/'state.json' for entry in entries if entry.name.startswith('job_')]
+        except FileNotFoundError:
+            if jobs.is_symlink():
+                raise RuntimeError('Stored font tasks could not be verified. No service was stopped.') from error
+            paths = []
+        for path in paths:
+            try:
+                job = json.loads(path.read_text())
+                if not isinstance(job, dict):
+                    raise ValueError('Invalid job record')
+            except (OSError, ValueError) as record_error:
+                raise RuntimeError('Stored font tasks could not be verified. No service was stopped.') from record_error
+            unresolved = (job.get('resultKind') in {'script', 'historical_restore'}
+                          and job.get('status') in {'cancelled', 'interrupted'})
+            if job.get('status') not in terminal or unresolved:
+                raise RuntimeError('The bridge token is missing and unfinished font tasks were found. '
+                                   'Resolve those tasks before retrying installation. No service was stopped.') from error
+        state = controller.status()
+        if state['loaded']:
+            result = controller._launchctl('bootout', controller.domain+'/'+LABEL)
+            if result.returncode:
+                raise RuntimeError(result.stderr.strip() or 'The stale MCP service could not stop.') from error
+        for _ in range(50):
+            if not controller.status()['loaded']:
+                print('Recovered missing bridge token: unloaded the stale MCP service; continuing installation.', file=sys.stderr)
+                return
+            time.sleep(.1)
+        raise RuntimeError('The stale MCP service did not stop. Check the server logs.') from error
+
+
 def install(build, home, python, application, companions=(), *, mcp=True, remove_components=(),
             only_components=(), start=False):
     build, home = Path(build).resolve(), Path(home).expanduser().resolve()
@@ -107,7 +167,7 @@ def install(build, home, python, application, companions=(), *, mcp=True, remove
                        and any(entry['started'] for entry in item['entries'])]
         # Recover files only after a fresh idle check of a surviving process.
         if interrupted and controller.agent.exists() and controller.status()['loaded']:
-            controller._run('stop')
+            stop_for_install(controller, application)
         # Recover the receipt before deriving upgrade choices from it.
         recovered = InstallationTransaction.recover(root, allowed)
         previous_agent = home/'Library/LaunchAgents'/(LABEL+'.plist')
@@ -224,7 +284,7 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
         write_json(transaction.journal, transaction.data)
         if agent_was_loaded:
             try:
-                controller._run('stop')
+                stop_for_install(controller, application)
             except BaseException:
                 transaction.rollback()
                 shutil.rmtree(transaction.stage)
@@ -240,7 +300,7 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
         try:
             def stop_replacement():
                 if agent.exists() and controller.status()['loaded']:
-                    controller._run('stop')
+                    stop_for_install(controller, application)
             transaction.apply(verify, before_rollback=stop_replacement)
         except BaseException:
             if transaction.data['state'] == 'restored' and agent_was_loaded and old_agent and agent.exists():
@@ -286,10 +346,7 @@ def main():
         python_version = preflight(args.build,args.glyphs_app)
     if args.preflight_only:
         print(json.dumps({'ok':True, 'pythonVersion':python_version})); return
-    executable = args.glyphs_app.resolve() / 'Contents/MacOS'
-    for pattern in ('^'+re.escape(str(executable))+'/', 'glyphs_mcp_sidecar.native_worker'):
-        if subprocess.run(['/usr/bin/pgrep','-f',pattern],stdout=subprocess.DEVNULL).returncode == 0:
-            raise ValueError('Close Glyphs and wait for active font tasks to finish before installing.')
+    require_closed_font_processes(args.glyphs_app)
     result=install(args.build,args.home,args.python,args.glyphs_app,args.companion,
                    mcp=not args.no_mcp,remove_components=args.remove,
                    only_components=args.only,start=args.start)
