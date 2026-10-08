@@ -228,7 +228,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                 installer_build=42,
             )
 
-            self.assertEqual(result["publicToolCount"], 13)
+            self.assertEqual(result["publicToolCount"], 14)
             protocol.write_text('TOOL_NAMES = ("one", "two")\n', encoding="utf-8")
             result = self.security.validate_unsigned_candidate(
                 root, expected_version="2.3.4", installer_build=42,

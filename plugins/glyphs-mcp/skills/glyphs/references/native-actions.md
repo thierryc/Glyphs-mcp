@@ -10,7 +10,7 @@ the same response's sorted `nativeActions` array. The list is negotiated with
 the exact running Glyphs build. A missing action is unavailable; do not replace
 it with a script, menu invocation, guessed selector or arbitrary Python.
 
-Native actions use the existing thirteen-tool job lifecycle. They require a saved,
+Native actions use the existing fourteen-tool job lifecycle. They require a saved,
 clean source. Call `start_job`, poll `get_job`, read the full report and its
 before/after summaries, then call `apply_job` only after review. Application is
 save-free and registers native Undo/Redo. `discard_job` restores the entire

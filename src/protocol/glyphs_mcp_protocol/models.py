@@ -19,6 +19,7 @@ TOOL_NAMES = (
     "get_status",
     "list_documents",
     "create_document",
+    "open_document",
     "read_entities",
     "start_job",
     "get_job",

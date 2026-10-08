@@ -2,13 +2,14 @@
 
 ## 2.0.1 — skills catalog and focused setup, build 56
 
+- Add `open_document` for native Glyphs sources, with retained retry keys and reuse of already-open fonts without reloading unsaved edits. The catalog now has fourteen tools; protocol and interface revision remain 1.
 - Add Companion Plugins, AI Agents and Skills below Setup; share component and connector operations across overview and focused pages.
 - Browse included, curated and reviewed community skills with a cached/offline catalog and personal public-GitHub imports.
 - Install supplemental skills into shared Codex/Cursor or Claude Code personal/project folders; keep edited content, backups and recoverable ownership receipts.
 - Export complete skill ZIPs for guided ChatGPT/Claude uploads; installing instructions does not establish access to the local Glyphs bridge.
 - Add compact text cards with short workflow goals, installation badges and a separate detail view for instructions, source and requirements.
 - Create the separate GitHub contribution catalog, schema, submission forms, starter and non-executing validation checks.
-- Preserve the thirteen-tool/eleven-bundled-skill interface and existing Setup installation paths. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for validation and remaining distribution checks.
+- Preserve eleven bundled skills, existing tool behavior and Setup installation paths. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for validation and remaining distribution checks.
 
 ## 2.0.0 — stable release, build 55
 

@@ -9,7 +9,7 @@ The current closed `font_export` job can generate one exact static or variable
 instance and verify its tables plus explicit shaping samples; that does not
 restore a general variable-font or production-audit API. Their old
 `apiMajor == 2` gate does not prove that a current lean runtime needs updating.
-State which requested evidence is unavailable through the thirteen tools; never claim that a partial read completes a full audit,
+State which requested evidence is unavailable through the fourteen tools; never claim that a partial read completes a full audit,
 and never claim that a bounded export completes one either.
 
 - “Audit this icon font”: use the metadata reference for explicitly named glyphs

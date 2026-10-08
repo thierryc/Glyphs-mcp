@@ -15,7 +15,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout prepares product 2.0.1, stable-channel identity, installer build 56. A local app and ZIP have passed Developer ID signing, notarization and Gatekeeper; final distribution qualification and publication remain pending. Sidecar and bridge product versions are `2.0.1`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany thirteen tools and up to thirteen capability-gated job kinds. See [2.0.1 release preparation](../V2.0.1-RELEASE.md) and [version and identity](../content/reference/version-identity.mdx).
+This checkout prepares product 2.0.1, stable-channel identity, installer build 56. Earlier local artifacts passed Developer ID signing, notarization and Gatekeeper; the new Open route requires fresh distribution artifacts and qualification before publication. Sidecar and bridge product versions are `2.0.1`; lean interface revision and bridge protocol are `1`. Eleven managed skills accompany fourteen tools and up to thirteen capability-gated job kinds. See [2.0.1 release preparation](../V2.0.1-RELEASE.md) and [version and identity](../content/reference/version-identity.mdx).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also

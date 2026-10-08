@@ -158,7 +158,7 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1")
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.open.v1")
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
@@ -182,6 +182,14 @@ class SidecarService:
         from . import document_creation
         try:
             return document_creation.create(self, ServiceError, family_name, idempotency_key, units_per_em)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    @mutation
+    def open_document(self, path: str, idempotency_key: str) -> dict[str, Any]:
+        from . import document_opening
+        try:
+            return document_opening.open_document(self, ServiceError, path, idempotency_key)
         except Exception as exc:
             raise self._error(exc) from exc
 

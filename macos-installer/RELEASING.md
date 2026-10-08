@@ -12,12 +12,13 @@ The next stable release is Glyphs MCP Desktop 2.0.1 / build 56,
 with coordinated sidecar/bridge product version `2.0.1`, interface revision `1`
 and bridge protocol `1`. The published stable 2.0.0/build 55 release and its
 [V2 qualification](../V2-RELEASE.md) remain separate. Preserve its signed tag and
-artifacts. The 2.0.1 app and ZIP have passed local signing and notarization;
+artifacts. Earlier 2.0.1 artifacts passed local signing and notarization; Open
+changes require rebuilding, renewed signing and native qualification;
 see [2.0.1 release preparation](../V2.0.1-RELEASE.md) for remaining distribution
 and native qualification checks.
 Historical prerelease guidance remains in the
 [archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
-The Glyphs 4-only payload has thirteen tools, eleven managed skills, two optional
+The Glyphs 4-only payload has fourteen tools, eleven managed skills, two optional
 companions, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Glyphs 3 remains available through its separate pinned v1.11.0 release
 at v1.11.0 / 13ca805; it is not packaged in v2.

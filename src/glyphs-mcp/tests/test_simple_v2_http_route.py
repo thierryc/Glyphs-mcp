@@ -32,6 +32,9 @@ class Service:
     def list_documents(self):
         return [{'id': 'doc_1', 'dirty': True}]
 
+    def open_document(self, path, idempotency_key):
+        return {'id': 'doc_open', 'path': path, 'alreadyOpen': False, 'openId': idempotency_key}
+
     def read_entities(self, document_id, entities, fields):
         if document_id != 'doc_1':
             raise ServiceError('document_not_found', 'the Glyphs document is no longer open')
@@ -109,6 +112,7 @@ def test_configured_route_preserves_handshake_catalog_all_tools_and_errors(tmp_p
                     ('tools/list', {}),
                     *[('tools/call', {'name': name, 'arguments': arguments}) for name, arguments in [
                         ('get_status', {}), ('list_documents', {}),
+                        ('open_document', {'path': '/tmp/Source.glyphs', 'idempotency_key': 'open-test'}),
                         ('read_entities', {'document_id': 'doc_1', 'entities': [{'kind': 'layer'}], 'fields': ['width']}),
                         ('start_job', {'document_id': 'doc_1', 'kind': 'width_delta', 'delta': .125}),
                         ('get_job', {'job_id': 'job_1', 'include_preview': False}),
@@ -128,7 +132,8 @@ def test_configured_route_preserves_handshake_catalog_all_tools_and_errors(tmp_p
                 for result in results[2:-1]:
                     body = result['result']['structuredContent']
                     assert body['ok'] == (result is not results[-2])
-                assert results[4]['result']['structuredContent']['data'][0]['values']['width'] == 600.125
+                assert results[4]['result']['structuredContent']['data']['id'] == 'doc_open'
+                assert results[5]['result']['structuredContent']['data'][0]['values']['width'] == 600.125
                 assert results[-2]['result']['structuredContent']['error']['code'] == 'document_not_found'
                 assert results[-1]['result']['isError'] is True
                 redirect = await client.post(alternate, json=packet('tools/list'))

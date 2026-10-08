@@ -1,10 +1,10 @@
 # Glyphs MCP Desktop 2.0.1
 
-**2.0.1 · desktop build 56 · Glyphs 4.** Browse skills and manage companion plugins and AI agent connections from focused setup pages. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for features, validation and remaining publication checks. The 2.0.1 app and ZIP have been signed and notarized locally; the public release and update feed remain at 2.0.0.
+**2.0.1 · desktop build 56 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open native font files directly through MCP. See [2.0.1 release preparation](V2.0.1-RELEASE.md) for features, validation and remaining publication checks. Earlier 2.0.1 artifacts passed local signing and notarization; the new Open route requires fresh artifacts and qualification. The public release and update feed remain at 2.0.0.
 
 The previous **2.0.0/build 55** release remains available as a [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.0/Glyphs-MCP-2.0.0.dmg). Its [release qualification](V2-RELEASE.md) does not qualify this new candidate.
 
-The [thirteen-tool contract](content/reference/command-set.mdx) includes font creation through `create_document`; `save_document` persists the resulting open font.
+The [fourteen-tool contract](content/reference/command-set.mdx) includes font creation through `create_document` and opening existing sources through `open_document`; `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -63,7 +63,7 @@ Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The thirteen tools are `get_status`, `list_documents`, `create_document`, `read_entities`,
+The fourteen tools are `get_status`, `list_documents`, `create_document`, `open_document`, `read_entities`,
 `start_job`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
 `respond_edit_workflow`. The shared MCP App supports preparation, saving and
@@ -123,7 +123,7 @@ limits are unchanged. Qualification is tracked in [the V2 release notes](V2-RELE
 The opt-in project setting records exact saved baselines and authorized MCP saves
 as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be
 retried without another Save. Bounded history, recorded actions, comparison and
-whole-font historical reload share the existing thirteen tools and app project UI.
+whole-font historical reload share the existing fourteen tools and app project UI.
 See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.

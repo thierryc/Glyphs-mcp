@@ -33,7 +33,7 @@ been qualified for writing.
 
 Require `master.dimensions.edit.v1` and `dimensions_edit` in `get_status`.
 Writing is qualified on Glyphs 4.1 build 4107; other builds retain read access.
-The saved-clean-source requirement and existing thirteen-tool job lifecycle apply.
+The saved-clean-source requirement and existing fourteen-tool job lifecycle apply.
 Never save merely to satisfy preparation; ask the user to save or obtain separate
 Save authorization if needed.
 
