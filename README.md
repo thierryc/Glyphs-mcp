@@ -1,6 +1,6 @@
-# Glyphs MCP Desktop 2.0.2 candidate
+# Glyphs MCP Desktop 2.0.2
 
-**Development: 2.0.2 · desktop build 57 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version remains 2.0.1. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.1/Glyphs-MCP-2.0.1.dmg) and see the [2.0.1 release qualification](V2.0.1-RELEASE.md) for features, validation and platform limits.
+**Released: 2.0.2 · desktop build 57 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version is 2.0.2. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2/Glyphs-MCP-2.0.2.dmg) and see the [2.0.2 release qualification](V2.0.2-RELEASE.md) for features, validation and platform limits.
 
 The [eighteen-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. `save_document` persists an explicitly identified font.
 
@@ -79,19 +79,19 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.1).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.2).
 
-Documentation sources: [v2 · 2.0.2 candidate](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.2](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
-See [release qualification](V2.0.1-RELEASE.md) for current results and limits.
+See [release qualification](V2.0.2-RELEASE.md) for current results and limits.
 Historical beta reports remain in [the qualification archive](reports/README.md);
 the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.0.1.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.0.2.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 Author: Thierry Charbonnel. [Documentation](https://ap.cx/gmcp),
@@ -127,10 +127,10 @@ See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.
 
-## 2.0.2 development
+## 2.0.2 release
 
 The candidate adds responsive initialization status and compiled-font comparison
 through `compare_fonts`. Diffenator and Beztrace have optional managed Setup
 cards; their downloads remain gated on independently signed and qualified
 distributions. See [compiled comparisons](content/workflows/font-comparison.mdx)
-and [2.0.2 candidate evidence](V2.0.2-RELEASE.md).
+and [2.0.2 qualification](V2.0.2-RELEASE.md).
