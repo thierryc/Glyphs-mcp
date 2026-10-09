@@ -128,8 +128,18 @@ class OptionalTools:
         item = self.catalog['tools'][tool]
         if item.get('status') != 'qualified': raise ValueError(item.get('reason', 'This distribution awaits release qualification'))
         import platform
-        architecture = 'arm64' if platform.machine() == 'arm64' else 'x86_64'
-        release = item['releases'][architecture]
+        architecture = platform.machine()
+        release = item.get('releases', {}).get(architecture)
+        if release is None:
+            raise ValueError('This optional distribution is not qualified for ' + architecture)
+        minimum = release.get('minimumMacOS')
+        if minimum is not None:
+            if not isinstance(minimum, str) or not re.fullmatch(r'\d+\.\d+(?:\.\d+)?', minimum):
+                raise ValueError('Invalid qualified macOS minimum')
+            actual = platform.mac_ver()[0]
+            version = lambda value: tuple(int(part) for part in (value.split('.') + ['0', '0'])[:3])
+            if not actual or version(actual) < version(minimum):
+                raise ValueError('This optional distribution requires macOS ' + minimum + ' or later')
         url = release['archiveURL']
         if not isinstance(url, str) or not url.startswith('https://github.com/'):
             raise ValueError('Optional distribution must use a pinned HTTPS release asset')
@@ -138,8 +148,12 @@ class OptionalTools:
         return release
 
     def status(self, tool):
-        result = dict(id=tool, available=self.catalog['tools'][tool].get('status') == 'qualified',
-                      reason=self.catalog['tools'][tool].get('reason'), installed=False)
+        try:
+            self.release(tool)
+            available, reason = True, None
+        except ValueError as exc:
+            available, reason = False, str(exc)
+        result = dict(id=tool, available=available, reason=reason, installed=False)
         receipt = self.read_receipt(tool)
         if receipt:
             target = Path(receipt['target'])

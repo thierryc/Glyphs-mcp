@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0",
+  "build": 16,
+  "archiveURL": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2/beztrace-glyphs-0.1.0-build16-macos-universal.zip",
+  "archiveSize": 123623,
+  "archiveSHA256": "b94bbe4f4d39d023bac90a22a6850e2ef6b49429164473982af202630186d10f",
+  "signingTeam": "N9U29A4T8J",
+  "qualifiedArchitectures": [
+    "arm64"
+  ],
+  "minimumMacOS": "26.6.2",
+  "checks": {
+    "signature": "passed",
+    "notarization": "passed",
+    "hostedInventory": "passed",
+    "hostedLifecycle": {
+      "passed": true,
+      "os": "26.7.1",
+      "architecture": "arm64",
+      "archiveSHA256": "b94bbe4f4d39d023bac90a22a6850e2ef6b49429164473982af202630186d10f",
+      "states": [
+        {
+          "action": "install",
+          "state": "restart_required",
+          "installed": true
+        },
+        {
+          "action": "update",
+          "state": "restart_required",
+          "installed": true
+        },
+        {
+          "action": "remove",
+          "state": null,
+          "installed": false
+        },
+        {
+          "action": "reinstall",
+          "state": "restart_required",
+          "installed": true
+        }
+      ],
+      "explicitUserChoicePreserved": true,
+      "isolatedHome": true
+    },
+    "cleanVM": {
+      "passed": true,
+      "os": "26.6.2",
+      "architecture": "arm64",
+      "archiveSHA256": "b94bbe4f4d39d023bac90a22a6850e2ef6b49429164473982af202630186d10f",
+      "states": [
+        {
+          "action": "install",
+          "state": "restart_required",
+          "installed": true
+        },
+        {
+          "action": "update",
+          "state": "restart_required",
+          "installed": true
+        },
+        {
+          "action": "remove",
+          "state": null,
+          "installed": false
+        },
+        {
+          "action": "reinstall",
+          "state": "restart_required",
+          "installed": true
+        }
+      ],
+      "explicitUserChoicePreserved": true,
+      "isolatedHome": true,
+      "reportedBy": "maintainer",
+      "verification": "guest output supplied verbatim by maintainer"
+    },
+    "nativeGlyphs": {
+      "os": "26.7.1",
+      "architecture": "arm64",
+      "version": "4.1.1",
+      "build": 4108,
+      "loadedAboutVerified": true,
+      "firstTraceContours": 2,
+      "freshPanelTraceContours": 2,
+      "exactUndo": true,
+      "exactRedo": true,
+      "originalPathPreserved": true,
+      "widthPreserved": true,
+      "chooseEngineInvocations": 0
+    }
+  },
+  "limits": [
+    "macOS 14 has not been qualified for this companion update.",
+    "Intel execution has not been qualified.",
+    "The published Glyphs MCP 2.0.2/build 57 app contains the earlier disabled catalog."
+  ]
+}

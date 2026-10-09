@@ -63,8 +63,8 @@ public struct ExternalGlyphsCompanion: Identifiable {
         id: "beztrace-glyphs", title: "Beztrace",
         detail: "Trace PNG and JPEG images into editable outlines in Glyphs.",
         versionLabel: "Bundled engine 0.1.1 · Plugin installed separately",
-        availability: "Signed plugin release · Build 15",
-        requirements: "Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The Glyphs MCP app includes the universal beztrace 0.1.1 stable engine.",
+        availability: "Qualified companion · Build 16 · Apple Silicon",
+        requirements: "Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.1.1 stable engine.",
         documentation: URL(string: "https://github.com/thierryc/beztrace/blob/dbd7a696afda9a215c8e8a4aa42315cd799116f9/Companions/Glyphs/README.md")!,
         engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases")!
     )

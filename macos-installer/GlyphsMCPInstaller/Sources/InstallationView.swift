@@ -171,12 +171,12 @@ private struct BeztraceSetupView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
-                Text("The app bundles engine 0.1.1. Managed optional setup awaits a separately signed companion update that remembers engine selection. Existing plugin 0.1.0 build 15 remains independently available; its qualification does not cover that update. Install All excludes Beztrace.")
+                Text("Managed setup installs signed companion 0.1.0 build 16 and uses the bundled engine 0.1.1. Qualified for Apple Silicon on macOS 26.6.2 or later. Engine selection persists when the panel reopens; explicit user choices take priority. Install All excludes Beztrace.")
                 Link("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Using Beztrace").font(.headline)
-                Text("Build 15 workflow: place a PNG or JPEG in the glyph layer, then choose Path → Beztrace…. Position the image on the canvas, choose Trace, adjust the result, then Done. See the source guide for engine verification before installing.")
+                Text("Place a PNG or JPEG in the glyph layer, then choose Path → Beztrace…. Position the image on the canvas, choose Trace, adjust the result, then Done. Managed setup selects the bundled engine automatically.")
                 Text("The plugin works independently of the MCP server. Trace adds editable paths; Done keeps them without saving the font.")
                     .foregroundStyle(.secondary)
             }

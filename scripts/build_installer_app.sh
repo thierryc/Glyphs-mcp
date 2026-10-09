@@ -11,7 +11,7 @@ configuration="${CONFIGURATION:-Release}"
 python_bin="${PYTHON_BIN:-python3}"
 derived_data_root="${DERIVED_DATA_PATH:-$repo_root/build/xcode-runs}"
 
-out_dir="$repo_root/dist/installer-app"
+out_dir="${INSTALLER_APP_OUTPUT_DIR:-$repo_root/dist/installer-app}"
 archive_path="$out_dir/$scheme.xcarchive"
 
 if [[ "$configuration" != "Release" ]]; then

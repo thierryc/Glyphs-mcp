@@ -143,3 +143,11 @@ its exact state before removing a failed draft or starting a new release.
 Never replace a distributed artifact to bypass the empty-draft gate. For a beta,
 use a new beta number and higher installer build; for stable, use a new release
 version and higher build. Requalify the resulting artifacts.
+
+### Separate app output for a follow-up build
+
+Set `INSTALLER_APP_OUTPUT_DIR` to an absolute directory when running
+`build_installer_app.sh` and `notarize_installer_app.sh` to preserve an earlier
+signed build. Use the same directory for both commands. The default remains
+`dist/installer-app`. Build 58 of 2.0.2 is prepared in
+`dist/installer-app-build58`; it does not replace the published build 57.

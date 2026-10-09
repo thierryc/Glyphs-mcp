@@ -16,7 +16,7 @@ def field(record, *names):
 
 
 def verify(release, tag, files, *, published=False):
-    if not re.fullmatch(r"v\d+\.\d+\.\d+(?:-beta\.[1-9]\d*)?", tag):
+    if not re.fullmatch(r"v\d+\.\d+\.\d+(?:-beta\.[1-9]\d*|-build[1-9]\d*)?", tag):
         raise ValueError("A stable or beta version tag is required")
     prerelease = "-beta." in tag
     if prerelease and any("latest" in path.name.lower() for path in files):

@@ -64,3 +64,12 @@ def test_bad_upload_never_becomes_discoverable(tmp_path, mutation):
     elif mutation == "tag": release["tag_name"] = "v1.11.0"
     else: release["assets"] = []
     with pytest.raises(ValueError): discovery.verify(release, "v2.0.0", files)
+
+
+def test_stable_build_revision_keeps_exact_asset_digest_checks(tmp_path):
+    release, files = fixture(tmp_path)
+    release['tag_name'] = 'v2.0.2-build58'
+    assert discovery.verify(release, 'v2.0.2-build58', files)['published'] is False
+    release['assets'][0]['digest'] = 'sha256:' + '0' * 64
+    with pytest.raises(ValueError, match='identity mismatch'):
+        discovery.verify(release, 'v2.0.2-build58', files)

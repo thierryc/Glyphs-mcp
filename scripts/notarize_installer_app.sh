@@ -4,7 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 scheme="${GLYPHS_MCP_APP_NAME:-Glyphs MCP}"
 python_bin="${PYTHON_BIN:-python3}"
-app="$repo_root/dist/installer-app/$scheme.app"
+out_dir="${INSTALLER_APP_OUTPUT_DIR:-$repo_root/dist/installer-app}"
+app="$out_dir/$scheme.app"
 
 profile="${NOTARY_PROFILE:-gmcp-notary}"
 skip="${SKIP_NOTARIZATION:-0}"
@@ -16,9 +17,9 @@ if [[ ! -d "$app" ]]; then
   exit 1
 fi
 
-zip="$repo_root/dist/installer-app/$scheme.zip"
+zip="$out_dir/$scheme.zip"
 if [[ "$skip" == "1" ]]; then
-  zip="$repo_root/dist/installer-app/$scheme-UNNOTARIZED.zip"
+  zip="$out_dir/$scheme-UNNOTARIZED.zip"
 fi
 rm -f "$zip"
 
