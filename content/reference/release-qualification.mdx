@@ -4,15 +4,21 @@ title: Release qualification and known limits
 
 ## Published stable release
 
-Glyphs MCP **2.0.2/build 57** uses eighteen tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID signed, notarized and stapled. Every public asset digest and size was verified before the unchanged signed stable updater feed was advanced.
+Glyphs MCP **2.0.2/build 58** uses eighteen tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID signed, notarized and stapled. Every public asset digest and size was verified before the unchanged signed stable updater feed was advanced.
 
-## Accepted 2.0.2 evidence
+## Build 58 follow-up
+
+The exact universal build-58 app, ZIP and DMG passed signing, notarization, stapling, Gatekeeper and payload/inventory verification. The packaged helper completed a real managed Beztrace install in an isolated home; Intel availability correctly remains disabled. The companion passed install/update/remove/reinstall in the clean macOS 26.6.2 arm64 VM, preserving explicit engine choices. Sixteen optional-control, 27 packaging and 45 publication checks passed. Full VoiceOver and dark-appearance review are deferred by the maintainer for this release.
+
+Managed Beztrace is qualified only for Apple silicon on macOS 26.6.2 or later. Its macOS 14 and Intel qualification remains absent. Diffenator downloads stay disabled. The updater signatures match the app key. The original build-57 artifacts and tag are retained.
+
+## Accepted 2.0.2/build 57 core evidence
 
 The full source gate passed **2,747 Python tests** (two optional skips), **256 desktop tests**, deterministic payloads, documentation and both private runtime startup paths. Intel runtime execution used Rosetta.
 
 Actual signed **2.0.1 → 2.0.2** desktop replacement and component migration passed on **macOS 14.6.1 and 26.6.2 arm64**, Glyphs 4.1.1/build 4108 and official Glyphs Python 3.14.6. Fresh eighteen-tool status and installation receipts matched exact signed sidecar/bridge identities. macOS 26 passed invalid feed/archive rejection, interrupted downloads, cancelled Glyphs closure, recoverable component failure, rollback/retry and quiet login startup. The white skill dialog, fixed icon Close, pill scope selector, stable panel and Escape dismissal were observed on macOS 14.
 
-Mid-transaction rollback used installed 2.0.2 components; older-to-newer migration passed separately. Optional Diffenator/Beztrace downloads remain disabled pending independent hosted/platform qualification. See [the detailed release record](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.0.2-RELEASE.md). Earlier evidence below retains its original build scope.
+Mid-transaction rollback used installed 2.0.2 components; older-to-newer migration passed separately. At build 57, both optional downloads were disabled; the build-58 qualification above enables Beztrace only within its recorded scope. See [the detailed release record](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.0.2-RELEASE.md). Earlier evidence below retains its original build scope.
 
 ## Accepted 2.0.1 evidence
 

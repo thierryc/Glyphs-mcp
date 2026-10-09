@@ -2,14 +2,14 @@
 
 > Published stable 2.0.1/build 56 has its own signed/native evidence in
 > [2.0.1 qualification](../V2.0.1-RELEASE.md). The current local 2.0.2/build 57
-> candidate has separate [preparation and qualification](../V2.0.2-RELEASE.md).
+> historical candidate has separate [preparation and qualification](../V2.0.2-RELEASE.md).
 > Earlier candidate checkpoints below are historical.
 
 
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
-The published stable release is Glyphs MCP Desktop 2.0.2 / build 57,
+The published stable release is Glyphs MCP Desktop 2.0.2 / build 58,
 with coordinated sidecar/bridge product version `2.0.2`, interface revision `1`
 and bridge protocol `1`. Preserve published 2.0.0/build 55 and 2.0.1/build 56
 tags and artifacts. The exact desktop artifacts are signed, notarized and VM-tested; separately prepared
@@ -151,3 +151,8 @@ Set `INSTALLER_APP_OUTPUT_DIR` to an absolute directory when running
 signed build. Use the same directory for both commands. The default remains
 `dist/installer-app`. Build 58 of 2.0.2 is prepared in
 `dist/installer-app-build58`; it does not replace the published build 57.
+
+Build 58 is published under signed tag `v2.0.2-build58`. `release.json` binds
+`artifactBuild` to the Xcode build, giving follow-up stable artifacts distinct
+names while preserving the numeric app/product version and prior release tags.
+The stable feed points to the build-58 ZIP only after public digest verification.
