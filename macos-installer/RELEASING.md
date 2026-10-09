@@ -55,6 +55,21 @@ The installer’s displayed project version and build come from its bundle.
 PYTHON_BIN=/absolute/path/to/python scripts/run_local_release_tests.sh
 ```
 
+The local gate prepares shared dependencies and checks two independent payload
+builds before running the full Python, desktop and documentation suites in
+parallel. Desktop `test` already builds the Debug app; verification uses that
+exact app without a second build. Xcode defaults to four compiler jobs to limit
+contention when VMs are running; set `GMCP_XCODE_JOBS` to change it, or pass
+`--serial` to run the same suites sequentially.
+
+Each invocation uses fresh payload/DerivedData directories and keeps lane logs,
+exit codes, timings, candidate metadata and the successful input fingerprint in
+`build/release-test-run.*`. A checkout lock prevents overlapping gates. Source
+edits during a run invalidate acceptance. Each invocation runs the full suites;
+signing and native/VM acceptance apply to the exact final distribution bytes.
+The desktop distribution wrapper delegates dependency preparation to its builder
+so shared dependencies are verified once per build.
+
 The local gate checks the complete Python and installer suites, skills, docs,
 tool contracts, deterministic unsigned payload builds, offline startup for
 both private runtimes, source metadata and whitespace. Preserve the reviewed

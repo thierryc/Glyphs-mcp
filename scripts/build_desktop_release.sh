@@ -2,7 +2,6 @@
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 python_bin="${PYTHON_BIN:-python3}"
-"$python_bin" "$repo_root/scripts/prepare_desktop_dependencies.py"
 bash "$repo_root/scripts/build_installer_app.sh"
 bash "$repo_root/scripts/notarize_installer_app.sh"
 bash "$repo_root/scripts/make_installer_dmg.sh"
