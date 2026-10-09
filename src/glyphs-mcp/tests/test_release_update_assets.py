@@ -136,3 +136,17 @@ def test_release_scripts_use_shared_inventory_and_verify_updates():
     preparation=publisher[publisher.index('if [[ "$skip_build"'):publisher.index('verify_args=')]
     assert 'prepare_desktop_update.py' in preparation
     assert 'release_channel' not in preparation
+
+
+def test_build_revision_rejects_a_stale_app_without_changing_product_version(monkeypatch):
+    release = identity('2.0.2', artifact_build=58)
+    release['installerBuild'] = 58
+    monkeypatch.setattr(updates, 'load', lambda root: release)
+    info = {'CFBundleShortVersionString': '2.0.2', 'CFBundleVersion': '58'}
+    assert updates.app_release(info)['tag'] == 'v2.0.2-build58'
+    assert updates.app_release(info)['version'] == '2.0.2'
+    info['CFBundleVersion'] = '57'
+    with pytest.raises(ValueError, match='does not match'):
+        updates.app_release(info)
+    with pytest.raises(ValueError, match='positive stable'):
+        identity('2.0.2', 'beta', 1, artifact_build=58)

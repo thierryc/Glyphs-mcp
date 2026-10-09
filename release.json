@@ -1,4 +1,5 @@
 {
   "channel": "stable",
-  "betaNumber": 0
+  "betaNumber": 0,
+  "artifactBuild": 58
 }

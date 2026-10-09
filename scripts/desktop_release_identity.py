@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 
-def identity(version, channel="stable", beta_number=0):
+def identity(version, channel="stable", beta_number=0, *, artifact_build=None):
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise ValueError("Invalid numeric release version")
     if channel not in {"stable", "beta"} or type(beta_number) is not int:
@@ -13,6 +13,10 @@ def identity(version, channel="stable", beta_number=0):
     if (channel == "beta" and beta_number < 1) or (channel == "stable" and beta_number != 0):
         raise ValueError("Beta releases require a positive beta number; stable releases require zero")
     release_version = version + (f"-beta.{beta_number}" if channel == "beta" else "")
+    if artifact_build is not None:
+        if channel != 'stable' or type(artifact_build) is not int or artifact_build < 1:
+            raise ValueError('Build revisions require a positive stable app build')
+        release_version += f'-build{artifact_build}'
     branch = "lit/v2-beta" if channel == "beta" else "main"
     return {"version": version, "channel": channel, "betaNumber": beta_number,
             "releaseVersion": release_version, "tag": "v" + release_version, "branch": branch,
@@ -30,7 +34,10 @@ def load(root):
         raise ValueError("Release versions/build numbers must agree in Xcode")
     path = root / "release.json"
     config = json.loads(path.read_text()) if path.exists() else {}
-    value = identity(next(iter(versions)), config.get("channel", "stable"), config.get("betaNumber", 0))
+    artifact_build = config.get('artifactBuild')
+    if artifact_build is not None and artifact_build != int(next(iter(builds))):
+        raise ValueError('Artifact build must match the Xcode app build')
+    value = identity(next(iter(versions)), config.get("channel", "stable"), config.get("betaNumber", 0), artifact_build=artifact_build)
     value["installerBuild"] = int(next(iter(builds)))
     return value
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Create and verify a local Sparkle update candidate; never publish it."""
 import argparse
-from desktop_release_identity import identity
+from desktop_release_identity import identity, load
 import hashlib
 import json
 from pathlib import Path
@@ -17,6 +17,17 @@ from release_payload import verify_code
 
 SPARKLE = 'http://www.andymatuschak.org/xml-namespaces/sparkle'
 ET.register_namespace('sparkle', SPARKLE)
+
+
+def app_release(info):
+    source = load(Path(__file__).resolve().parents[1])
+    version = info['CFBundleShortVersionString']
+    channel = info.get('GMCPReleaseChannel', 'stable')
+    if source['version'] == version and '-build' in source['releaseVersion'] and channel == 'stable':
+        if str(source['installerBuild']) != str(info['CFBundleVersion']):
+            raise ValueError('Artifact revision does not match the app build')
+        return source
+    return identity(version, channel, info.get('GMCPBetaNumber', 0))
 
 
 def feed(version, build, url, signature, size, *, channel="stable", beta_number=0):
@@ -42,7 +53,7 @@ def candidate(app, output):
     info = plistlib.loads((app/'Contents/Info.plist').read_bytes())
     if info['CFBundleIdentifier'] != 'cx.ap.glyphsMcp': raise ValueError('Not a Glyphs MCP desktop application')
     version, build = info['CFBundleShortVersionString'], info['CFBundleVersion']
-    release = identity(version, info.get('GMCPReleaseChannel', 'stable'), info.get('GMCPBetaNumber', 0))
+    release = app_release(info)
     if info.get('SUFeedURL') != release['feedURL']:
         raise ValueError('App must use its release channel update feed')
     verify_code(app)
@@ -72,8 +83,7 @@ def candidate(app, output):
 def verify_metadata(app, output):
     """Fail closed on missing assets or mismatched feed/candidate identity."""
     info = plistlib.loads((app/'Contents/Info.plist').read_bytes())
-    release = identity(info['CFBundleShortVersionString'], info.get('GMCPReleaseChannel', 'stable'),
-                       info.get('GMCPBetaNumber', 0))
+    release = app_release(info)
     if info.get('CFBundleIdentifier') != 'cx.ap.glyphsMcp' or info.get('SUFeedURL') != release['feedURL']:
         raise ValueError('Update app identity/feed mismatch')
     archive = output/('Glyphs-MCP-'+release['releaseVersion']+'.zip')

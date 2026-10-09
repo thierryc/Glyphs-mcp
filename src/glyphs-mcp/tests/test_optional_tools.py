@@ -44,6 +44,31 @@ def test_pending_assets_are_never_downloaded_or_installed(tmp_path):
     assert not tools.root.exists()
 
 
+@pytest.mark.parametrize('architecture,os_version,available,reason', [
+    ('arm64', '26.6.2', True, None),
+    ('x86_64', '26.6.2', False, 'not qualified for x86_64'),
+    ('arm64', '14.6.1', False, 'requires macOS 26.0'),
+    ('arm64', '', False, 'requires macOS 26.0'),
+])
+def test_qualification_is_scoped_to_architecture_and_os(tmp_path, monkeypatch, architecture, os_version, available, reason):
+    import platform
+    monkeypatch.setattr(platform, 'machine', lambda: architecture)
+    monkeypatch.setattr(platform, 'mac_ver', lambda: (os_version, (), ''))
+    release = dict(minimumMacOS='26.0', archiveURL='https://github.com/example/releases/download/v1/plugin.zip',
+                   archiveSHA256='a' * 64)
+    tools = installer.OptionalTools(tmp_path / 'home', catalog(tmp_path, {
+        'diffenator': dict(status='pending_qualification'),
+        'beztrace-glyphs': dict(status='qualified', releases={'arm64': release}),
+    }))
+    state = tools.status('beztrace-glyphs')
+    assert state['available'] is available
+    if reason:
+        assert reason in state['reason']
+        with pytest.raises(ValueError, match=reason):
+            tools.install('beztrace-glyphs')
+        assert not tools.root.exists()
+
+
 @pytest.mark.parametrize('name', ['../outside', '/absolute', 'a/../../outside', 'a\\outside', 'a//b'])
 def test_rejects_unsafe_archive_paths(tmp_path, name):
     archive = tmp_path / 'bad.zip'
