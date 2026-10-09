@@ -9,10 +9,10 @@
 Build, test, sign, notarize and upload on the maintainer’s Mac. No GitHub
 Actions or GitHub-hosted signing credentials are used for releases.
 
-The next stable candidate is Glyphs MCP Desktop 2.0.2 / build 57,
+The published stable release is Glyphs MCP Desktop 2.0.2 / build 57,
 with coordinated sidecar/bridge product version `2.0.2`, interface revision `1`
 and bridge protocol `1`. Preserve published 2.0.0/build 55 and 2.0.1/build 56
-tags and artifacts. The current desktop build is unsigned; separately prepared
+tags and artifacts. The exact desktop artifacts are signed, notarized and VM-tested; separately prepared
 Diffenator and Beztrace packages have bounded signed/native local evidence.
 See [2.0.2 release preparation](../V2.0.2-RELEASE.md) for the remaining hosted-asset,
 platform and exact signed desktop qualification gates.
@@ -123,7 +123,7 @@ Sparkle 2.9.6 is checksum-pinned in `third_party/sparkle.json`. Its separate Ed2
 
 Run `scripts/build_desktop_release.sh` for the signed/notarized app, DMG and local update candidate. The product is `dist/installer-app/Glyphs MCP.app`. `dist/desktop-update/` contains the signed versioned ZIP, signed appcast, SHA256SUMS and an unpublished candidate record. The Xcode scheme remains GlyphsMCPInstaller. Sparkle nested apps, XPC services and frameworks are signed inside out with their entitlements preserved.
 
-The 2.0.2/build 57 candidate selects `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`; planned archives use tag `v2.0.2`. The public stable feed currently serves 2.0.1. Advance it only after final qualification and verified public archives. The preserved Beta feed uses `lit/v2-beta/appcast.xml`. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is enabled by default and can be disabled in Settings and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
+The 2.0.2/build 57 candidate selects `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`; planned archives use tag `v2.0.2`. The public stable feed serves 2.0.2 after verified archive publication. Advance it only after final qualification and verified public archives. The preserved Beta feed uses `lit/v2-beta/appcast.xml`. Resolve these values from `desktop_release_identity.py`; do not hand-copy the stable feed into a beta build. Automatic checking is enabled by default and can be disabled in Settings and installation is user initiated. Both the feed and archive must verify before extraction. Follow [Sparkle distribution guidance](https://sparkle-project.org/documentation/).
 
 Both beta and stable publishers now prepare the versioned Sparkle ZIP and signed appcast. Uploads and SHA256SUMS use the shared `release_asset_inventory.py` inventory. Stable retains its versioned/latest DMGs and compatibility app ZIP. `prepare_desktop_update.py --verify --app "dist/installer-app/Glyphs MCP.app" --output dist/desktop-update` checks channel/build/enclosure identity, candidate hashes, both signatures and the archive’s app contents before upload. Exact signed upgrade acceptance remains a separate gate.
 

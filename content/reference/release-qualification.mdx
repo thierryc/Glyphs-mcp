@@ -4,23 +4,15 @@ title: Release qualification and known limits
 
 ## Published stable release
 
-Glyphs MCP **2.0.1/build 56** uses seventeen tools, eleven managed skills, lean
-interface revision 1 and bridge protocol 1. The universal app, payload, ZIP and
-DMG are Developer ID-signed, Apple-notarized and stapled. Public archive hashes
-are verified before the signed stable updater feed is advanced.
+Glyphs MCP **2.0.2/build 57** uses eighteen tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID signed, notarized and stapled. Every public asset digest and size was verified before the unchanged signed stable updater feed was advanced.
 
-## 2.0.2 candidate
+## Accepted 2.0.2 evidence
 
-The local 2.0.2/build 57 source adds an eighteenth tool, `compare_fonts`, shared
-background initialization and optional managed tool setup. See
-[candidate build notes](../contributor/release-build-notes.mdx#202-candidate). Source and fixture checks do not
-establish signed distribution, installed runtime or native startup acceptance.
-Follow-up qualification on macOS 26.7.1 arm64 measured 0.44–0.50-second initial
-presentation, including deliberately delayed discovery. Signed/notarized optional
-Diffenator and Beztrace packages passed bounded local acceptance, including offline
-comparisons and fresh-panel tracing. This evidence does not qualify the exact
-signed 2.0.2 desktop distribution. Diffenator downloads and the updated Beztrace
-companion remain gated on hosted assets and supported-platform acceptance.
+The full source gate passed **2,747 Python tests** (two optional skips), **256 desktop tests**, deterministic payloads, documentation and both private runtime startup paths. Intel runtime execution used Rosetta.
+
+Actual signed **2.0.1 → 2.0.2** desktop replacement and component migration passed on **macOS 14.6.1 and 26.6.2 arm64**, Glyphs 4.1.1/build 4108 and official Glyphs Python 3.14.6. Fresh eighteen-tool status and installation receipts matched exact signed sidecar/bridge identities. macOS 26 passed invalid feed/archive rejection, interrupted downloads, cancelled Glyphs closure, recoverable component failure, rollback/retry and quiet login startup. The white skill dialog, fixed icon Close, pill scope selector, stable panel and Escape dismissal were observed on macOS 14.
+
+Mid-transaction rollback used installed 2.0.2 components; older-to-newer migration passed separately. Optional Diffenator/Beztrace downloads remain disabled pending independent hosted/platform qualification. See [the detailed release record](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.0.2-RELEASE.md). Earlier evidence below retains its original build scope.
 
 ## Accepted 2.0.1 evidence
 
@@ -60,8 +52,7 @@ configuration checks alone do not establish every client's live behavior.
 
 ## Limits
 
-- Packaging declares **macOS 14.0+**. Exact 14.0 and current-macOS native acceptance
-  remain unverified; 14.6.1 execution does not prove those environments.
+- Packaging declares **macOS 14.0+**. Exact 14.0 remains unverified; 14.6.1 and 26.6.2 execution does not prove that minimum environment.
 - Physical Intel execution is deferred. Universal binaries and Rosetta startup
   do not establish an Intel hardware result.
 - Codex and Claude Code live smoke remains unperformed; Cursor VM testing was
