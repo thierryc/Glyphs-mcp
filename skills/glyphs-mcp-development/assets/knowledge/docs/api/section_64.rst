@@ -1,19 +1,4 @@
-.. attribute:: classes
+.. function:: characterForGlyph(glyph)
+		The (internal) character that is used in the edit view. It the glyph has a unicode, that is used, otherwise a temporary code is assigned. That can change over time, so don’t rely on it. This is mostly useful for constructing a string for see :attr:`tab.text <GSEditViewController.text>`
 
-		Collection of :class:`GSClass` objects, representing OpenType glyph classes.
-
-		:type: list
-
-		.. code-block:: python
-			# add a class
-			font.classes.append(GSClass('uppercaseLetters', 'A B C D E'))
-
-			# access all classes
-			for class in font.classes:
-			    print(class.name)
-
-			# access one class
-			print(font.classes['uppercaseLetters'].code)
-
-			# delete a class
-			del font.classes['uppercaseLetters']
+		.. versionadded:: 3.1

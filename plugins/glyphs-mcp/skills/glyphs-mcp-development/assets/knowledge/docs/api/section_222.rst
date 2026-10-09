@@ -1,7 +1,5 @@
-.. attribute:: styleName
+.. attribute:: preferredSubfamilyName
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+		preferredSubfamilyName
 
 		:type: str
-
-		.. versionadded:: 3.0.3

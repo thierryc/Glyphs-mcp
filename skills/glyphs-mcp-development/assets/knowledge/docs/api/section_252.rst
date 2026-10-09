@@ -1,12 +1,5 @@
-.. attribute:: tempData
+.. function:: removeNameParticle(nameParticle, axisId)
 
-		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use class.userData
+		Removes a :class:`GSNameParticle` from the axis with `axisId`.
 
-		:type: dict
-
-		.. code-block:: python
-			# set value
-			class.tempData['rememberToMakeCoffee'] = True
-
-			# delete value
-			del class.tempData['rememberToMakeCoffee']
+		.. versionadded:: 4

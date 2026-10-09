@@ -1,6 +1,17 @@
-.. function:: skew(x, [center])
+.. attribute:: key
 
-		if a single number, skew in x-direction otherwise skew by x, y
-		if center is given, that is used as the origin of the skew
+		the key
 
-		:type: int/float or tuple
+		:type: str
+
+	.. code-block:: python
+		# GSInfoValue is stored in e.g. values attribute of font.properties
+		for fontProperty in font.properties:
+
+		    # not all of font.properties contains this attribute
+		    # so we are going to look for those, that have it
+		    if hasattr(fontProperty, "values"):
+		        for fontInfoValue in fontProperty.values:
+		            # this line prints out the key attribute of
+		            # found GSInfoValue instance
+		            print(fontInfoValue.key)

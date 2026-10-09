@@ -1,5 +1,5 @@
-.. attribute:: name
+.. attribute:: script
 
-		The name of the metric value. Eg. Descender, Small Cap, Cap Height etc.
+		Script of glyph, e.g: "latin", "cyrillic", "greek".
 
 		:type: str

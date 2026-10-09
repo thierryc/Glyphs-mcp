@@ -7,5 +7,4 @@ Parameters:
 - font: The font object to export
 //- error: PyObjc-Requirement. It is required here in order to return the error object upon export failure. Ignore its existence here.
 
-return (True, None) if the export was successful
-return (False, NSError) if the export failed
+returns nothing, needs to report the error itself.

@@ -68,13 +68,13 @@ class JobStore:
                         break
             return copy.deepcopy(selected)
 
-    def create(self, document: Mapping[str, Any], request: Mapping[str, Any]) -> dict[str, Any]:
+    def create(self, document: Mapping[str, Any] | None, request: Mapping[str, Any]) -> dict[str, Any]:
         job_id = "job_" + uuid4().hex
         now = time.time()
         value = {
             "id": job_id,
             "status": "preparing",
-            "document": copy.deepcopy(dict(document)),
+            "document": copy.deepcopy(dict(document)) if document is not None else None,
             "request": copy.deepcopy(dict(request)),
             "sourceHash": None,
             "summary": None,
@@ -164,10 +164,10 @@ class JobStore:
         previous = self._index.pop(identity, None)
         if previous is not None:
             self._statuses[previous['status']].discard(identity)
-            self._documents[previous['document']['id']].discard(identity)
+            self._documents[(previous.get('document') or {}).get('id')].discard(identity)
         self._index[identity] = value
         self._statuses[value['status']].add(identity)
-        self._documents[value['document']['id']].add(identity)
+        self._documents[(value.get('document') or {}).get('id')].add(identity)
         self._unresolved.discard(identity)
         if unresolved(value):
             self._unresolved.add(identity)

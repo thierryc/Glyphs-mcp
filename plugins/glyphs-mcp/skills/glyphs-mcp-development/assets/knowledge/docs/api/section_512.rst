@@ -1,6 +1,6 @@
-.. attribute:: type
+.. attribute:: isTrueType
+		if it is a TrueType instruction
 
-		The gradient type.
-		Linear = 0, Circular = 1
+		:type: bool
 
-		:type: int
+		.. versionadded:: 3

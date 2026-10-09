@@ -14,7 +14,12 @@ final class InstallerViewModel: ObservableObject {
     @Published private(set) var log = ""
     @Published private(set) var busy = false
     @Published var supplementalSkillsBusy = false
-    var operationsBusy: Bool { busy || supplementalSkillsBusy }
+    @Published private(set) var optionalStates: [String: OptionalToolState] = [:]
+    @Published private(set) var optionalErrors: [String: String] = [:]
+    @Published private(set) var optionalOperation: String?
+    @Published private(set) var optionalDiscoveryError: String?
+    private var optionalTask: Task<Void, Never>?
+    var operationsBusy: Bool { busy || supplementalSkillsBusy || optionalOperation != nil }
     @Published private(set) var running = false
     @Published private(set) var receiptURL: URL?
     @Published var updateStatus: PluginUpdateStatus = .idle
@@ -31,7 +36,42 @@ final class InstallerViewModel: ObservableObject {
     private let eventLogger = InstallerEventLogger()
     private let logCollector = InstallerLogCollector()
     private let root = InstallerPaths.home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2")
+    @Published private(set) var initializationStage: String?
+    @Published private(set) var initializationError: String?
+    @Published private(set) var initializationStartedAt = Date()
+    @Published private(set) var initializationDetails: [String] = []
     private var payload: InstallerPayload?
+    private let payloadResolver = InstallerPayloadDiscovery.shared
+    private var refreshTask: Task<Void, Never>?
+    private var setupVisible = false
+    private var phaseStartedAt: Date?
+
+    func recordPresentation(_ name: String, since start: Date) {
+        timed(name, since: start)
+    }
+
+    func setSetupVisible(_ visible: Bool) {
+        setupVisible = visible
+        if visible {
+            if !pythonReady { checkGlyphsPython() }
+            refreshOptionalTools()
+        }
+    }
+
+    private func stage(_ text: String) {
+        if let previous = initializationStage, let start = phaseStartedAt {
+            timed(previous, since: start)
+        }
+        phaseStartedAt = Date()
+        initializationStage = text
+        initializationDetails.append(text)
+    }
+
+    private func timed(_ name: String, since start: Date) {
+        let detail = String(format: "%@ completed in %.2f seconds", name, Date().timeIntervalSince(start))
+        initializationDetails.append(detail)
+        record(detail)
+    }
     private var task: Task<Void, Never>?
     private var pythonCheckTask: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
@@ -45,7 +85,7 @@ final class InstallerViewModel: ObservableObject {
             && Set(InstallerClientKind.allCases).isSubset(of: installedConnectors)
     }
     var bulkActionTitle: String { allInstalled ? "Update All" : "Install All" }
-    var canChangeComponents: Bool { !operationsBusy && !checkingPython && application != nil && !running }
+    var canChangeComponents: Bool { !operationsBusy && refreshTask == nil && !checkingPython && application != nil && !running }
     var canRunBulkAction: Bool { canChangeComponents && pythonReady }
     var installedConnectors: Set<InstallerClientKind> {
         Set(InstallerClientKind.allCases.filter { connectorStates[$0] == .installed })
@@ -57,24 +97,21 @@ final class InstallerViewModel: ObservableObject {
     }
 
     init() {
-        refresh(resetFailures: true)
         let center = NSWorkspace.shared.notificationCenter
         for event in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             observers.append(center.addObserver(forName: event, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in self?.refreshRunning() }
             })
         }
-        Task { [weak self] in
-            guard let self else { return }
-            self.payload = try? InstallerPayload.resolve()
-            self.refreshConnectorDetection()
-        }
+
     }
 
     deinit {
         for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
         task?.cancel()
         pythonCheckTask?.cancel()
+        refreshTask?.cancel()
+        optionalTask?.cancel()
     }
 
     func checkForUpdates() {
@@ -87,8 +124,35 @@ final class InstallerViewModel: ObservableObject {
     }
 
     func refresh(resetFailures: Bool = false) {
-        applications = GlyphsApplicationDetector.detect().filter { $0.majorVersion == .v4 }
-        let installation = DesktopInstallation()
+        guard refreshTask == nil, !operationsBusy else { return }
+        initializationStartedAt = Date()
+        initializationError = nil
+        initializationDetails = []
+        stage("Checking installed components…")
+        refreshTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                self.refreshTask = nil
+                if !self.checkingPython { self.initializationStage = nil }
+                if self.setupVisible && !Task.isCancelled { self.checkGlyphsPython() }
+        }
+        let start = Date()
+        // Local qualification can simulate a blocked filesystem check without
+        // delaying first presentation. This preference is absent from Release.
+        #if DEBUG
+        let qualificationDelay = min(30, max(0, UserDefaults(suiteName: "cx.ap.glyphsMcp.qualification")?
+            .double(forKey: "startupDiscoveryDelaySeconds") ?? 0))
+        #else
+        let qualificationDelay: TimeInterval = 0
+        #endif
+        let discovered = await Task.detached(priority: .utility) {
+            if qualificationDelay > 0 { Thread.sleep(forTimeInterval: qualificationDelay) }
+            return (GlyphsApplicationDetector.detect().filter { $0.majorVersion == .v4 }, DesktopInstallation())
+        }.value
+        guard !Task.isCancelled else { return }
+        self.applications = discovered.0
+        let installation = discovered.1
+        self.timed("Installed component discovery", since: start)
         installed = installation.components
         let receipt = root.appendingPathComponent("installation.json")
         let receiptIsLink = (try? receipt.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
@@ -110,7 +174,8 @@ final class InstallerViewModel: ObservableObject {
         }
         refreshConnectorDetection(resetFailures: resetFailures)
         refreshRunning()
-        checkGlyphsPython()
+
+        }
     }
 
     func refreshRunning() {
@@ -164,7 +229,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     func checkGlyphsPython() {
-        guard !operationsBusy, !checkingPython else { return }
+        guard !operationsBusy, refreshTask == nil, !checkingPython else { return }
         pythonReady = false
         pythonVersion = nil
         pythonSetupError = nil
@@ -172,9 +237,13 @@ final class InstallerViewModel: ObservableObject {
         checkingPython = true
         pythonCheckTask = Task { [weak self] in
             guard let self else { return }
-            defer { self.checkingPython = false }
+            let start = Date()
+            self.initializationStartedAt = start
+            self.initializationError = nil
+            defer { self.checkingPython = false; self.initializationStage = nil }
+            self.stage("Preparing setup files…")
             do {
-                let payload = try self.resolvePayload()
+                let payload = try await self.resolvePayload()
                 let lean = payload.payloadDir.appendingPathComponent("Lean")
                 #if arch(arm64)
                 let architecture = "arm64"
@@ -183,6 +252,8 @@ final class InstallerViewModel: ObservableObject {
                 #endif
                 let python = lean.appendingPathComponent("runtimes/\(architecture)/bin/python3")
                 let helper = payload.payloadDir.appendingPathComponent("Installer/install_simple_v2.py")
+                let preflightStart = Date()
+                self.stage("Checking Glyphs Python…")
                 let result = try await self.runner.runCapturing(executable: python,
                     args: ["-I", "-B", helper.path, "--build", lean.path,
                            "--glyphs-app", application.appURL.path, "--preflight-only"], timeout: 60)
@@ -193,8 +264,11 @@ final class InstallerViewModel: ObservableObject {
                 }
                 self.pythonVersion = response?["pythonVersion"] as? String
                 self.pythonReady = true
+                Task { [weak self] in self?.refreshOptionalTools() }
+                self.timed("Glyphs Python preflight", since: preflightStart)
             } catch {
                 self.pythonSetupError = error.localizedDescription
+                self.initializationError = error.localizedDescription
                 self.record("Glyphs Python readiness check failed: \(error.localizedDescription)")
             }
         }
@@ -387,9 +461,81 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
+    private struct OptionalResponse: Decodable {
+        let ok: Bool
+        let data: [OptionalToolState]?
+    }
+
+    func refreshOptionalTools() {
+        guard optionalTask == nil, !operationsBusy else { return }
+        optionalTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.optionalTask = nil }
+            do {
+                let result = try await self.optionalCommand(action: "status")
+                let response = try JSONDecoder().decode(OptionalResponse.self, from: result.stdoutData)
+                guard response.ok, let states = response.data else { throw InstallerError.userFacing("Could not inspect optional tools.") }
+                self.optionalStates = Dictionary(uniqueKeysWithValues: states.map { ($0.id, $0) })
+                self.optionalDiscoveryError = nil
+            } catch {
+                self.optionalDiscoveryError = error.localizedDescription
+                self.record("Optional tool discovery: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func canChangeOptionalTool(_ id: String) -> Bool {
+        !operationsBusy && !checkingPython && optionalTask == nil &&
+        optionalStates[id]?.protectedInstallation != true &&
+        (id != "beztrace-glyphs" || (application != nil && !running && pythonReady))
+    }
+
+    func changeOptionalTool(_ id: String, action: String) {
+        guard canChangeOptionalTool(id) else { return }
+        if action != "remove" && optionalStates[id]?.available != true { return }
+        optionalOperation = id
+        optionalErrors[id] = nil
+        optionalTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // The existing control handshake refuses active/unresolved jobs.
+                try await self.stopServiceBeforeQuit?()
+                _ = try await self.optionalCommand(action: action, tool: id)
+                self.record("Optional tool \(id): \(action) completed; native loading remains unverified.")
+            } catch { self.optionalErrors[id] = error.localizedDescription; self.record("Optional tool \(id): \(error.localizedDescription)") }
+            self.optionalOperation = nil
+            self.optionalTask = nil
+            self.refreshOptionalTools()
+        }
+    }
+
+    private func optionalCommand(action: String, tool: String? = nil) async throws -> ProcessRunner.Result {
+        let payload = try await resolvePayload()
+        #if arch(arm64)
+        let architecture = "arm64"
+        #else
+        let architecture = "x86_64"
+        #endif
+        let python = payload.payloadDir.appendingPathComponent("Lean/runtimes/\(architecture)/bin/python3")
+        let helper = payload.payloadDir.appendingPathComponent("Installer/install_optional_tools.py")
+        let catalog = payload.payloadDir.appendingPathComponent("Installer/optional-tools.json")
+        var arguments = ["-I", "-B", helper.path, "--catalog", catalog.path, "--action", action]
+        if let tool { arguments += ["--tool", tool] }
+        if tool == "beztrace-glyphs", let resources = Bundle.main.resourceURL {
+            arguments += ["--engine", resources.appendingPathComponent("Beztrace/beztrace-0.1.1").path]
+        }
+        let result = try await runner.runCapturing(executable: python, args: arguments, timeout: 600, maximumStandardOutputBytes: 1024 * 1024)
+        guard result.exitCode == 0 else {
+            let response = (try? JSONSerialization.jsonObject(with: result.stdoutData)) as? [String: Any]
+            let message = (response?["error"] as? [String: Any])?["message"] as? String
+            throw InstallerError.userFacing(message ?? result.stderr)
+        }
+        return result
+    }
+
     private func executeComponentTransaction(selected: Set<String>, only: String? = nil) async throws {
         guard let application else { throw InstallerError.userFacing("Glyphs 4 is required.") }
-        let payload = try resolvePayload()
+        let payload = try await resolvePayload()
         let lean = payload.payloadDir.appendingPathComponent("Lean")
         #if arch(arm64)
         let architecture = "arm64"
@@ -408,7 +554,7 @@ final class InstallerViewModel: ObservableObject {
 
     private func executeComponentRemoval(_ id: String) async throws {
         guard let application else { throw InstallerError.userFacing("Glyphs 4 is required.") }
-        let payload = try resolvePayload()
+        let payload = try await resolvePayload()
         let lean = payload.payloadDir.appendingPathComponent("Lean")
         #if arch(arm64)
         let architecture = "arm64"
@@ -423,7 +569,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     private func executeConnector(_ client: InstallerClientKind, operation: SetupOperation) async throws {
-        let payload = try resolvePayload()
+        let payload = try await resolvePayload()
         let endpoint = DesktopInstallation().endpoint
         let logger: (String) -> Void = { [weak self] text in self?.appendLog(text) }
         let skills = AgentSkillBundleInstaller(log: logger)
@@ -463,10 +609,16 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
-    private func resolvePayload() throws -> InstallerPayload {
-        if let payload { return payload }
-        let resolved = try InstallerPayload.resolve()
+    private func resolvePayload() async throws -> InstallerPayload {
+        let start = Date()
+        let model = self
+        let resolved = try await payloadResolver.resolve {
+            try InstallerPayload.resolve(progress: { message in
+                Task { @MainActor in if model.checkingPython { model.stage(message) } }
+            })
+        }
         payload = resolved
+        timed("Setup payload resolution", since: start)
         return resolved
     }
 

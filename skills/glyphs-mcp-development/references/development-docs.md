@@ -1,5 +1,11 @@
 # Offline Glyphs 4 documentation
 
+File-format questions should use the separately pinned `glyphs-file-format-v4-schema`
+and `glyphs-file-format-v4-specification` entries. The SDK branch contains a
+different anchor-attribute version description; its bundled copies do not replace
+the maintained file-format authority. Official web snapshots carry their own
+retrieval dates and hashes and do not inherit the SDK revision.
+
 The installed skill includes `assets/knowledge/index.json`, its manifest and
 all available pinned SDK sources/references and vendored handbook pages.
 Guide illustrations and sample binary assets are retained unchanged with their
@@ -12,7 +18,7 @@ Run from this skill directory, or resolve the absolute helper path:
 ```text
 python3 scripts/docs.py search "ReporterPlugin foreground" --limit 5
 python3 scripts/docs.py search "GSLayer.selection"
-python3 scripts/docs.py get api-section-340 --offset 0 --max-chars 4000
+python3 scripts/docs.py get api-section-360 --offset 0 --max-chars 4000
 ```
 
 Use the actual search result ID; the number above illustrates syntax. Search

@@ -1,4 +1,13 @@
-.. attribute:: otherNode1
-		A third node this hint is attached to. Used for Interpolation or Diagonal hints.
+.. attribute:: bounds
 
-		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)
+		Bounding box of the segment as NSRect. Read-only.
+
+		:type: NSRect
+
+		.. code-block:: python
+			bounds = segment.bounds
+			# origin
+			print(bounds.origin.x, bounds.origin.y)
+
+			# size
+			print(bounds.size.width, bounds.size.height)

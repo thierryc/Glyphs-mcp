@@ -1,7 +1,7 @@
-.. function:: niceGlyphName(name, [font=None])
+.. function:: glyphInfoForUnicode(Unicode, [font=None])
 
-		Converts glyph name to nice, human-readable glyph name (e.g. afii10017 or uni0410 to A-cy)
+		Generates :class:`GSGlyphInfo` object for a given hex unicode.
 
-		:param name: glyph name
+		:param Unicode: Hex unicode
 		:param font: if you add a font, and the font has a local glyph info, it will be used instead of the global info data.
-		:return: str
+		:return: :class:`GSGlyphInfo`

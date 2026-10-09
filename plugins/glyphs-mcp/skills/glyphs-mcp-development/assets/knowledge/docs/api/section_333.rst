@@ -1,9 +1,12 @@
-.. attribute:: components
+.. attribute:: selected
 
-		Collection of :class:`GSComponent` objects. This is only a helper proxy to iterate all components (without paths). To add/remove items, use :attr:`GSLayer.shapes`.
+		Return True if the Glyph is selected in the Font View.
+		This is different to the property font.selectedLayers which returns the selection from the active tab.
 
-		:type: list
+		:type: bool
 
 		.. code-block:: python
-			for component in layer.components:
-			    print(component)
+			# access all selected glyphs in the Font View
+			for glyph in font.glyphs:
+			    if glyph.selected:
+			        print(glyph)

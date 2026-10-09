@@ -1,6 +1,6 @@
-.. attribute:: keyboardIncrementHuge
+.. attribute:: keyboardIncrementBig
 
-		Distance of movement by arrow plus Command key. Default:100
+		Distance of movement by arrow plus Shift key. Default:10
 
 		:type: float
 

@@ -1,7 +1,6 @@
-.. attribute:: widthClass
+:mod:`GSInstance`
+===============================================================================
 
-		Width class, as set in Font Info, as an integer. Values from 1 to 9 are supported.
+Implementation of the instance object. This corresponds with the "Exports" pane in Font Info.
 
-		For actual position in interpolation designspace, use GSInstance.axes.
-
-		:type: int
+.. class:: GSInstance()

@@ -1,4 +1,5 @@
-.. attribute:: filePath
-		The last save location
+.. attribute:: font
 
-		:type: str
+		The active :class:`GSFont`
+
+		:type: GSFont

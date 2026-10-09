@@ -1,5 +1,5 @@
-.. attribute:: designerURL
+.. attribute:: fullName
+
+		fullName (postscriptFullName)
 
 		:type: str
-
-		.. versionadded:: 3.0.2

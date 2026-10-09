@@ -1,6 +1,5 @@
-:mod:`GSInstance`
-===============================================================================
+.. attribute:: otherBlues
 
-Implementation of the instance object. This corresponds with the "Exports" pane in Font Info.
+		PS hinting Other Blues calculated from the master’s alignment zones. Read-only.
 
-.. class:: GSInstance()
+		:type: list

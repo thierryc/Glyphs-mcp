@@ -1,12 +1,5 @@
-.. attribute:: text
+.. attribute:: image
 
-		The text of the tab, either as text, or slash-escaped glyph names, or mixed. OpenType features will be applied after the text has been changed.
+		:class:`NSImage` object of background image, read-only (as in: not settable)
 
-		:type: str
-
-		.. code-block:: python
-			string = ""
-			for layer in font.selectedLayers:
-			    string += "/" + layer.parent.name
-			tab = font.tabs[-1]
-			tab.text = string
+		:type: :class:`NSImage`

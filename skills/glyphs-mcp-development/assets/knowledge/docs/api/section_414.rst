@@ -1,9 +1,5 @@
-.. attribute:: openBezierPath
-		Returns the open paths of the component as bezier path, already transformed. Useful for drawing glyphs in plugins.
+.. attribute:: position
 
-		:type: NSBezierPath
+		The position of the component.
 
-		.. code-block:: python
-			# draw the path into the Edit view
-			NSColor.redColor().set()
-			layer.components[0].openBezierPath.stroke()
+		:type: NSPoint

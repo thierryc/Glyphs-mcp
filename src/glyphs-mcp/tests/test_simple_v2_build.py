@@ -56,8 +56,13 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
         "get_status",
         "list_documents",
         "create_document",
+        "open_document",
+        "import_document",
+        "activate_document",
+        "close_document",
         "read_entities",
         "start_job",
+        "compare_fonts",
         "get_job",
         "apply_job",
         "accept_job",
@@ -101,6 +106,12 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
         assert (base/'glyphs_mcp_protocol/kerning_edits.py').is_file()
     for name in ('saved_script.py', 'script_service.py'):
         assert (first/'sidecar/glyphs_mcp_sidecar'/name).is_file()
+    # The v2.0.2 payload must ship the reviewed card and its shared text/action
+    # state, including the HTML asset that isn't discovered by Python imports.
+    for name in ('edit_workflow_v1.html', 'edit_workflow_state.py', 'edit_workflow_ui.py'):
+        source = (REPO/'src/sidecar/glyphs_mcp_sidecar'/name).read_bytes()
+        for output in (first, second):
+            assert (output/'sidecar/glyphs_mcp_sidecar'/name).read_bytes() == source
     for name in ('scripts.py', 'script_targets.py', 'script_runtime.py'):
         assert (first/'sidecar/glyphs_mcp_protocol'/name).is_file()
         assert (bridge_resources/'glyphs_mcp_protocol'/name).is_file()

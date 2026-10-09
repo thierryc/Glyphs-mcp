@@ -1,5 +1,6 @@
-.. attribute:: type
+Properties
 
-		the type of the instance. Can be either INSTANCETYPESINGLE or INSTANCETYPEVARIABLE.
+		* :meth:`position`
+		* :meth:`size`
 
-		:type: int
+	**Properties**

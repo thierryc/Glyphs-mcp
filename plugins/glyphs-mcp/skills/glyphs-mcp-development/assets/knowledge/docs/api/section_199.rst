@@ -1,7 +1,5 @@
-.. attribute:: copyright
+.. attribute:: preferredFamily
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+		preferredFamily
 
 		:type: str
-
-		.. versionadded:: 3.0.2

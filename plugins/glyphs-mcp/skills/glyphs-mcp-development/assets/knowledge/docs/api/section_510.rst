@@ -1,17 +1,5 @@
-:mod:`GSGradient`
-===============================================================================
+.. attribute:: name
 
-Implementation of the gradient object.
+		Name of the hint. This is the referenced glyph for corner and cap components.
 
-.. class:: GSGradient()
-
-	Properties
-
-		* :attr:`colors`
-		* :attr:`type`
-		* :attr:`start`
-		* :attr:`end`
-		* :attr:`absoluteStart`
-		* :attr:`absoluteEnd`
-
-	**Properties**
+		:type: str

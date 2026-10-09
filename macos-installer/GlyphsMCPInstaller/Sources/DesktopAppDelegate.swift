@@ -6,6 +6,8 @@ import GlyphsMCPInstallerCore
 
 @MainActor
 final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverDelegate {
+    private let initializationStartedAt = Date()
+    private var firstPresentationRecorded = false
     let desktop = DesktopModel()
     let installer = InstallerViewModel()
     lazy var updates = DesktopUpdates(installationBusy: { [weak self] in self?.installer.operationsBusy == true })
@@ -47,6 +49,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             initialWelcome = true
             showWelcome()
         } else if DesktopLaunchPolicy.showsDashboard(loginLaunch: login) { showDashboard() }
+        // Discovery begins after presentation, never in the delegate's initializer.
+        Task { @MainActor [weak self] in self?.installer.refresh(resetFailures: true) }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -84,8 +88,15 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         }
         NSApp.setActivationPolicy(.regular)
         dashboard?.deminiaturize(nil); dashboard?.makeKeyAndOrderFront(nil)
+        recordFirstPresentation("Dashboard presentation")
         NSApp.activate(ignoringOtherApps: true)
         desktop.setDashboardVisible(true)
+    }
+
+    private func recordFirstPresentation(_ name: String) {
+        guard !firstPresentationRecorded else { return }
+        firstPresentationRecorded = true
+        installer.recordPresentation(name, since: initializationStartedAt)
     }
 
     func showSettings() {
@@ -121,9 +132,11 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         }
         // A new root resets slide navigation on manual replay.
         welcome?.contentViewController = NSHostingController(rootView: DesktopWelcomeView(
-            startSetup: { [weak self] in self?.finishWelcome() }))
+            startSetup: { [weak self] in self?.finishWelcome() })
+            .safeAreaInset(edge: .top) { DesktopInitializationStatus().environmentObject(installer) })
         NSApp.setActivationPolicy(.regular)
         welcome?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+        recordFirstPresentation("Welcome presentation")
         // Desktop presentation is manual and never changes the bridge's
         // first-successful-display preference.
     }

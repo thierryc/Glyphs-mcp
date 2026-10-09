@@ -1,6 +1,5 @@
-.. attribute:: bottomToolbarHeight
-		Height of the little toolbar at the very bottom of the window. Read-only.
+.. attribute:: parent
 
-		:type: float
+		The :class:`GSFont` object that this tab belongs to.
 
-		.. versionadded:: 2.4
+		:type: :class:`GSFont`

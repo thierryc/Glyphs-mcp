@@ -1,8 +1,10 @@
-.. attribute:: selectedTextRange
-		range of of selection in the text
+.. function:: scaleHeightToEmUnits
 
-		.. seealso:: `GSEditViewController.layers`
+		Scale the image’s cropped height to a certain em unit value, retaining its aspect ratio.
 
-		:type: NSRange
+		.. code-block:: python
+			# position image’s origin at descender line
+			layer.backgroundImage.position = NSPoint(0, font.masters[0].descender)
 
-		.. versionadded:: 4
+			# scale image to UPM value
+			layer.backgroundImage.scaleHeightToEmUnits(font.upm)

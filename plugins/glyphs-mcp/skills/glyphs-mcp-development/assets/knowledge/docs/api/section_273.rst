@@ -1,6 +1,18 @@
-.. attribute:: string
+:mod:`GSFeaturePrefix`
+===============================================================================
 
-		String representation of glyph, if encoded.
-		This is similar to the string representation that you get when copying glyphs into the clipboard.
+Implementation of the featurePrefix object. It is used to store things that need to be outside of a feature like standalone lookups.
 
-		:type: str
+For details on how to access them, please look at :class:`GSFont.featurePrefixes`
+
+.. class:: GSFeaturePrefix([tag, code])
+
+	:param tag: The Prefix name
+	:param code: The feature code in Adobe FDK syntax
+
+		* :attr:`name`
+		* :attr:`code`
+		* :attr:`automatic`
+		* :attr:`active`
+
+	**Properties**

@@ -1,10 +1,6 @@
-.. function:: GetOpenFile(message=None, allowsMultipleSelection=False, filetypes=None, path=None)
+.. function:: scale(x, [y])
 
-	Opens a file chooser dialog.
+		if a single number, scale uniformly, otherwise scale by x, y
+		if center is given, that is used as the origin of the scale
 
-	:param message: A message string.
-	:param allowsMultipleSelection: Boolean, True if user can select more than one file
-	:param filetypes: list of strings indicating the filetypes, e.g., ["gif", "pdf"]
-	:param path: The initial directory path
-	:return: The selected file or a list of file names or None
-	:rtype: str or list
+		:type: int/float or tuple

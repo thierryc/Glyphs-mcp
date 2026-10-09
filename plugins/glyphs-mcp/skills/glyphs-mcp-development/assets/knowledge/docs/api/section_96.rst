@@ -1,12 +1,12 @@
-.. attribute:: tempData
+.. attribute:: userData
 
-		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use layer.userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
 		:type: dict
 
 		.. code-block:: python
 			# set value
-			layer.tempData['rememberToMakeCoffee'] = True
+			font.userData['rememberToMakeCoffee'] = True
 
 			# delete value
-			del layer.tempData['rememberToMakeCoffee']
+			del font.userData['rememberToMakeCoffee']

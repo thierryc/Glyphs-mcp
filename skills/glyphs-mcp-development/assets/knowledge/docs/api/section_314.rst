@@ -1,4 +1,4 @@
-.. attribute:: mastersCompatible
-		Return True when all layers in this glyph are compatible (same components, anchors, paths etc.)
-
-		:type: bool
+.. attribute:: sortNameKeep
+		Alternative name of glyph used for sorting in UI, when using 'Keep Alternates Next to Base Glyph' from Font Info.
+		see :attr:`GSGlyph.storeSortName`
+		:type: str

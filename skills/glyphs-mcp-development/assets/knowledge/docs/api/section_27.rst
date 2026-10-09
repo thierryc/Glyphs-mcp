@@ -1,13 +1,6 @@
-.. attribute:: menu
+.. attribute:: buildNumber
+		Glyph.app’s build number.
 
-		Add menu items to Glyphs’ main menus.
+		Especially if you’re using preview builds, this number may be more important to you than the version number. The build number increases with every released build and is the most significant evidence of new Glyphs versions, while the version number is set arbitrarily and stays the same until the next stable release.
 
-		Following constants for accessing the menus are defined:
-		:const:`APP_MENU`, :const:`FILE_MENU`, :const:`EDIT_MENU`, :const:`GLYPH_MENU`, :const:`PATH_MENU`, :const:`FILTER_MENU`, :const:`VIEW_MENU`, :const:`SCRIPT_MENU`, :const:`WINDOW_MENU`, :const:`HELP_MENU`
-
-		.. code-block:: python
-			def doStuff(sender):
-			    # do stuff
-
-			newMenuItem = NSMenuItem('My menu title', doStuff)
-			Glyphs.menu[EDIT_MENU].append(newMenuItem)
+		:type: float

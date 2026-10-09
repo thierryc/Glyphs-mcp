@@ -7,6 +7,10 @@ metadata:
 
 # glyphs
 
+For compiled TTF comparisons, load [font comparison](references/font-comparison.md).
+This file-based workflow needs the sidecar and optional Diffenator runtime,
+without a live Glyphs document or saved-font baseline.
+
 For creating, revising or debugging a Glyphs 4 script/plugin, use
 [$glyphs-mcp-development](../glyphs-mcp-development/SKILL.md). Offline coding
 needs no connection, document discovery or Save. Generic Python with no Glyphs
@@ -121,7 +125,7 @@ closes the rollback window. Use `save_document` only for a specifically
 identified document with no active or applied MCP job. Inspect fresh source and
 dirty state for preparation, and never save merely to satisfy `start_job`.
 Never save, publish an export, close or overwrite a font unless the user's task
-authorizes it. The seventeen tools expose trusted Python through the separate advertised
+authorizes it. The eighteen tools expose trusted Python through the separate advertised
 `python_script` job; follow [its execution contract](references/python-scripts.md).
 There is no plugin reload tool; do not invent an MCP command. An advertised `native_action` is a closed typed job,
 not a general script or remote-object interface.

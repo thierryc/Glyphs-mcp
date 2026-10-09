@@ -1,13 +1,6 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+.. function:: decompose([doAnchors=True, doHints=True])
 
-		:type: dict
+		Decomposes the component.
 
-		.. code-block:: python
-			# set value
-			path.userData['rememberToMakeCoffee'] = True
-
-			# delete value
-			del path.userData['rememberToMakeCoffee']
-
-		.. versionadded:: 4
+		:param doAnchors: get anchors from components
+		:param doHints: get hints from components

@@ -1,6 +1,6 @@
-.. attribute:: topMetricsKey
-		The topMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
+.. attribute:: script
+
+		The script of the glyph, e.g., 'latin', 'arabic'.
+		Setting only works if :attr:`GSGlyph.storeScript` is set (see below).
 
 		:type: str
-
-		.. versionadded:: 3.4

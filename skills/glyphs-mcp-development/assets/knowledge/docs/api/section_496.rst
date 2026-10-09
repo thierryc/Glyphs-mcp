@@ -1,31 +1,29 @@
-:mod:`GSBackgroundImage`
+:mod:`GSHint`
 ===============================================================================
 
-Implementation of background image.
+Implementation of the hint object.
 
-For details on how to access it, please see :class:`GSLayer.backgroundImage`
+For details on how to access them, please see :class:`GSLayer.hints`
 
-.. class:: GSBackgroundImage([path])
+.. class:: GSHint()
 
-	:param path: Initialize with an image file (optional)
-
-	Properties
-
-		* :attr:`path`
-		* :attr:`image`
-		* :attr:`crop`
-		* :attr:`locked`
-		* :attr:`position`
-		* :attr:`scale`
-		* :attr:`rotation`
-		* :attr:`slant`
-		* :attr:`transform`
-		* :attr:`alpha`
-
-	Functions
-
-		* :meth:`resetCrop`
-		* :meth:`scaleWidthToEmUnits`
-		* :meth:`scaleHeightToEmUnits`
+		* :attr:`parent`
+		* :attr:`originNode`
+		* :attr:`targetNode`
+		* :attr:`otherNode1`
+		* :attr:`otherNode2`
+		* :attr:`originIndex`
+		* :attr:`targetIndex`
+		* :attr:`otherIndex1`
+		* :attr:`otherIndex2`
+		* :attr:`type`
+		* :attr:`horizontal`
+		* :attr:`selected`
+		* :attr:`isTrueType`
+		* :attr:`isPostScript`
+		* :attr:`isCorner`
+		* :attr:`name`
+		* :attr:`stem`
+		* :attr:`alignment`
 
 	**Properties**

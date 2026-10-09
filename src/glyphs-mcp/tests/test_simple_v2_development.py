@@ -137,8 +137,8 @@ def test_qualified_api_lookup(symbol):
 
 @pytest.mark.parametrize("query,expected", [
     ("Which Glyphs plugin type draws an optional Edit View overlay?", "sdk:Python Templates/Reporter/README.md"),
-    ("Which native collection contains selected nodes and other selected objects?", "api-section-340"),
-    ("How do path and node indices behave when paths and components are interleaved?", "api-section-339"),
+    ("Which native collection contains selected nodes and other selected objects?", "api-section-360"),
+    ("How do path and node indices behave when paths and components are interleaved?", "api-section-359"),
     ("How can a Reporter draw a label and react to selection or layer changes?", "sdk:Python Templates/Reporter/README.md"),
 ])
 def test_task_questions_find_relevant_evidence_in_default_bound(query, expected):
@@ -256,7 +256,7 @@ def test_missing_or_inconsistent_provenance_is_update_required(tmp_path, case):
     raw = json.dumps(index).encode(); (corpus / "index.json").write_bytes(raw)
     manifest["indexSha256"] = hashlib.sha256(raw).hexdigest()
     (corpus / "manifest.json").write_text(json.dumps(manifest))
-    for call in (lambda: DOC.search("GSLayer.selection", corpus=corpus), lambda: DOC.get("api-section-340", corpus=corpus)):
+    for call in (lambda: DOC.search("GSLayer.selection", corpus=corpus), lambda: DOC.get("api-section-360", corpus=corpus)):
         with pytest.raises(DOC.DocsError) as error:
             call()
         assert error.value.code == "update_required"
@@ -273,7 +273,7 @@ def test_retrieval_bounds_unicode_and_complete_flags():
     assert large["returnedChars"] == 12000
     tail = DOC.get(doc_id, offset=first["totalChars"] - 3)
     assert tail["returnedChars"] == 3 and not tail["complete"] and not tail["truncated"] and tail["nextOffset"] is None
-    small = DOC.get("api-section-340")
+    small = DOC.get("api-section-360")
     assert small["complete"] and len(small["content"]) == small["totalChars"]
 
 
@@ -282,7 +282,7 @@ def test_corrupt_corpus_is_update_required(tmp_path, case):
     shutil.copytree(DOC.CORPUS, tmp_path / "corpus")
     corpus = tmp_path / "corpus"
     rows, _ = DOC.load(corpus)
-    row = next(r for r in rows if r["id"] == "api-section-340")
+    row = next(r for r in rows if r["id"] == "api-section-360")
     if case in ("index", "manifest"):
         (corpus / (case + ".json")).write_text("[]")
     elif case == "page":
@@ -294,12 +294,12 @@ def test_corrupt_corpus_is_update_required(tmp_path, case):
         path.unlink(); outside = tmp_path / "outside"; outside.write_text("unrelated")
         path.symlink_to(outside)
     with pytest.raises(DOC.DocsError) as exc:
-        DOC.get("api-section-340", corpus=corpus)
+        DOC.get("api-section-360", corpus=corpus)
     assert exc.value.code == "update_required"
 
 
 def test_invalid_requests_are_not_font_discovery_errors():
-    for call in (lambda: DOC.search(""), lambda: DOC.get("api-section-340", -1), lambda: DOC.get("api-section-340", 999999)):
+    for call in (lambda: DOC.search(""), lambda: DOC.get("api-section-360", -1), lambda: DOC.get("api-section-360", 999999)):
         with pytest.raises(DOC.DocsError) as exc:
             call()
         assert exc.value.code == "invalid_request"
@@ -311,7 +311,7 @@ def test_invalid_requests_are_not_font_discovery_errors():
 def test_installed_copy_is_offline_and_repository_independent(tmp_path):
     dest = tmp_path / "installed"
     shutil.copytree(SKILL, dest)
-    for args in (["search", "GSLayer.selection", "--limit", "1"], ["get", "api-section-340"]):
+    for args in (["search", "GSLayer.selection", "--limit", "1"], ["get", "api-section-360"]):
         result = subprocess.run([sys.executable, "-I", str(dest / "scripts/docs.py"), *args], cwd=tmp_path,
                                 capture_output=True, text=True, check=True)
         assert json.loads(result.stdout)["ok"]

@@ -1,5 +1,8 @@
-.. attribute:: position
+.. attribute:: connection
 
-		The position of the annotation.
+		The type of the connection, SHARP or SMOOTH
 
-		:type: NSPoint
+		:type: str
+
+		.. deprecated:: 2.3
+			Use :attr:`smooth <GSNode.smooth>` instead.

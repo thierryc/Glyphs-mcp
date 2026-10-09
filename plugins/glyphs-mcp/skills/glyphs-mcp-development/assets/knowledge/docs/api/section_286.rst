@@ -1,7 +1,12 @@
-.. attribute:: storeDirection
-		Set to True in order to manipulate the :attr:`GSGlyph.direction` of the glyph (see above).
-		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+.. attribute:: tempData
 
-		:type: bool
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use feature.userData
 
-		.. versionadded:: 3
+		:type: dict
+
+		.. code-block:: python
+			# set value
+			feature.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del feature.tempData['rememberToMakeCoffee']

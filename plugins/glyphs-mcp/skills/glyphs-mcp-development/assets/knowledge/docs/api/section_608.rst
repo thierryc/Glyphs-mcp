@@ -1,8 +1,19 @@
-.. function:: intersectPaths(paths, otherPaths)
+:mod:`NSAffineTransform`
+===============================================================================
 
-	removes the overlaps from the list of paths
+The NSAffineTransform object.
 
-	:param paths: a list of paths
-	:param otherPaths: the other paths
-	:return: The resulting list of paths
-	:rtype: list
+.. class:: NSAffineTransform()
+
+	Properties
+
+		* :attr:`matrix`
+
+	Functions
+
+		* :meth:`shift`
+		* :meth:`scale`
+		* :meth:`rotate`
+		* :meth:`skew`
+
+	**Functions**

@@ -437,7 +437,7 @@ def save_document(service, error_type, document_id, *, destination=None, on_prep
     if retry_checkpoint_job_id:
         from .checkpoints import retry
         job = service._job(retry_checkpoint_job_id)
-        if job['document']['id'] != document_id or destination is not None:
+        if (job.get('document') or {}).get('id') != document_id or destination is not None:
             raise error_type('invalid_request', 'Checkpoint retry must match the original document and cannot Save As.')
         return retry(service, retry_checkpoint_job_id)
     from .saved_script import invalidate

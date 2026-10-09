@@ -1,30 +1,8 @@
-:mod:`GSGlyphInfo`
-===============================================================================
+.. attribute:: composedLayers
+		Similar to the above, but this list contains the :class:`GSLayer` objects after the OpenType features have been applied (see :class:`GSEditViewController.features`). Read-only.
 
-Implementation of the GSGlyphInfo object.
+		Deprecated. .layers behave like this now.
 
-This contains valuable information from the glyph database. See :class:`GSGlyphsInfo` for how to create these objects.
+		:type: list
 
-.. class:: GSGlyphInfo()
-
-	Properties
-
-		* :attr:`name`
-		* :attr:`productionName`
-		* :attr:`category`
-		* :attr:`subCategory`
-		* :attr:`components`
-		* :attr:`accents`
-		* :attr:`anchors`
-		* :attr:`unicode`
-		* :attr:`unicode2`
-		* :attr:`script`
-		* :attr:`index`
-		* :attr:`sortName`
-		* :attr:`sortNameKeep`
-		* :attr:`desc`
-		* :attr:`altNames`
-		* :attr:`direction`
-		* :attr:`desc`
-
-	**Properties**
+		.. versionadded:: 2.4

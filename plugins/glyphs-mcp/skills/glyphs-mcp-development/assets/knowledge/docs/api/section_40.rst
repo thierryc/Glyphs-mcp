@@ -1,5 +1,3 @@
-.. attribute:: title
+.. function:: redraw()
 
-		the title of the notification
-
-		:type: str
+		Redraws all Edit views and Preview views.

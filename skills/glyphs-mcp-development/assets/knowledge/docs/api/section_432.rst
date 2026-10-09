@@ -1,11 +1,10 @@
-.. attribute:: nodes
+.. attribute:: attributes
 
-		A list of :class:`GSNode` objects
-
-		:type: list
+		attributes attributes like :samp:`mask` or :samp:`reversePaths`
 
 		.. code-block:: python
-			# access all nodes
-			for path in layer.paths:
-			    for node in path.nodes:
-			        print(node)
+
+			component.attributes['mask'] = True
+			component.attributes['reversePaths'] = True
+
+		:type: dict

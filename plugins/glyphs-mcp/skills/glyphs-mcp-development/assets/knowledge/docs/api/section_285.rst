@@ -1,12 +1,5 @@
-.. attribute:: direction
+.. attribute:: labels
 
-		Writing direction.
+		List of Feature names for stylistic set features
 
-		See `Writing Directions`_
-
-		:type: integer
-
-		.. code-block:: python
-			glyph.direction = GSRTL
-
-		.. versionadded:: 3
+		:type: list

@@ -1,5 +1,5 @@
-.. attribute:: gridLength
+.. attribute:: gridSubDivision
 
-		Ready calculated size of grid for rounding purposes. Result of division of grid with gridSubDivisions.
+		Corresponds to the “Grid sub divisions” setting from the Info dialog.
 
-		:type: float (readonly)
+		:type: int

@@ -1,5 +1,3 @@
-.. attribute:: currentTab
+.. attribute:: fontView
 
-		Active Edit view tab.
-
-		:type: :class:`GSEditViewController`
+		:type: :class:`GSFontViewController`

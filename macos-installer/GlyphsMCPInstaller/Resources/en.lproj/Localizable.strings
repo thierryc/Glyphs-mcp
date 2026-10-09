@@ -655,3 +655,24 @@
 "Add / Update Skill" = "Add / Update Skill";
 "Source and requirements" = "Source and requirements";
 "Instructions and files" = "Instructions and files";
+
+/* Skill installation dialog */
+"Codex & Cursor" = "Codex & Cursor";
+"Installed · locally modified" = "Installed · locally modified";
+"Installed · existing copy" = "Installed · existing copy";
+"Installed · linked folder" = "Installed · linked folder";
+"Install for your agents" = "Install for your agents";
+"Install location" = "Install location";
+"This Project" = "This Project";
+"Available only in the selected project." = "Available only in the selected project.";
+"Available across your projects on this Mac." = "Available across your projects on this Mac.";
+"Locations and activity" = "Locations and activity";
+"Choose a project folder" = "Choose a project folder";
+"Update this skill?" = "Update this skill?";
+"Your existing copy will be backed up before it is replaced with the catalog version." = "Your existing copy will be backed up before it is replaced with the catalog version.";
+"Remove this skill?" = "Remove this skill?";
+"A backup will be kept. If this is a linked folder, only the link is removed; the original folder stays untouched." = "A backup will be kept. If this is a linked folder, only the link is removed; the original folder stays untouched.";
+"This skill uses a linked local folder. Update installs a managed copy here; Remove detaches the link. Both keep your original folder." = "This skill uses a linked local folder. Update installs a managed copy here; Remove detaches the link. Both keep your original folder.";
+"Updating skill…" = "Updating skill…";
+"This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept." = "This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept.";
+"Find and repair interpolation kinks while preserving your master outlines." = "Find and repair interpolation kinks while preserving your master outlines.";

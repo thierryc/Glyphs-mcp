@@ -1,5 +1,5 @@
-.. attribute:: masters
+.. attribute:: parent
 
-		Collection of :class:`GSFontMaster` objects.
+		Returns the internal NSDocument document. Read-only.
 
-		:type: list
+		:type: NSDocument

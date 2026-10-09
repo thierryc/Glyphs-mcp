@@ -1,17 +1,22 @@
-.. attribute:: lastExportedFilePath
+.. attribute:: customParameters
 
-		Returns a ready interpolated :class:`GSFont` object representing this instance. Other than the source object, this interpolated font will contain only one master and one instance.
+		The custom parameters. List of :class:`GSCustomParameter` objects. You can access them by name or by index.
 
-		Note: When accessing several properties of such an instance consecutively, it is advisable to create the instance once into a variable and then use that. Otherwise, the instance object will be completely interpolated upon each access. See sample below.
-
-		:type: str
+		:type: list, dict
 
 		.. code-block:: python
-			# create instance once
-			interpolated = Glyphs.font.instances[0].interpolatedFont
+			# access all parameters
+			for parameter in font.instances[0].customParameters:
+			    print(parameter)
 
-			# then access it several times
-			print(interpolated.masters)
-			>> (<GSFontMaster "Light" width 100.0 weight 75.0>)
-			print(interpolated.instances)
-			>> (<GSInstance "Web" width 100.0 weight 75.0>)
+			# set a parameter
+			font.instances[0].customParameters['hheaLineGap'] = 10
+
+			# add multiple parameters:
+			parameter = GSCustomParameter("Name Table Entry", "1 1;"font name")
+			font.customParameters.append(parameter)
+			parameter = GSCustomParameter("Name Table Entry", "2 1;"style name")
+			font.customParameters.append(parameter)
+
+			# delete a parameter
+			del font.instances[0].customParameters['hheaLineGap']

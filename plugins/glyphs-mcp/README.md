@@ -2,19 +2,20 @@
 
 This optional repository plugin connects Codex/ChatGPT, Claude Code, Cursor,
 and GitHub Copilot CLI to the Glyphs MCP server at
-`http://127.0.0.1:9680/mcp/`. Version 2.0.1 bundles the general Glyphs launcher
-and 10 managed skills, including the general launcher, reviewed workspace scripting,
+`http://127.0.0.1:9680/mcp/`. Version 2.0.2 bundles the general Glyphs launcher
+and ten additional managed skills, including reviewed workspace scripting,
 and reusable development, for every host.
 
 Host-native manifests live under `.codex-plugin/`, `.claude-plugin/`,
 `.cursor-plugin/`, and `.github/plugin/`. They all reference this package's
 single `skills/` directory and `.mcp.json`. Skills inherit the package version;
-the project version is 2.0.1, with bridge and sidecar components at 0.1.0.
+the coordinated bridge and sidecar product version is 2.0.2. Internal Python
+package versions remain 0.1.0; they are separate from release identity.
 Glyphs 3 uses the separate pinned 1.11.0 bundle and skills.
 
 Glyphs remains the editor. The native bridge panel displays its status and a
 heart button for Welcome & Support. The AI client receives reports and structured
-results from seventeen tools. `accept_job` verifies targets and persists the whole
+results from eighteen tools. `accept_job` verifies targets and persists the whole
 document; Undo and Redo are grouped per glyph, and discard restores an
 unaccepted job with conflict checks.
 
@@ -31,9 +32,9 @@ See the repository documentation for the
 [plugin UI](../../content/getting-started/codex-chatgpt-plugin-ui.mdx) and
 [cross-client skill setup](../../content/getting-started/use-agent-skills.mdx).
 
-The lean Glyphs 4 package exposes seventeen tools: get_status, list_documents, create_document, open_document,
+The lean Glyphs 4 package exposes eighteen tools: get_status, list_documents, create_document, open_document,
 import_document, activate_document, close_document,
-read_entities, start_job, get_job, apply_job, accept_job, discard_job,
+read_entities, start_job, compare_fonts, get_job, apply_job, accept_job, discard_job,
 save_document, start_edit_workflow, get_edit_workflow and respond_edit_workflow. There is no arbitrary Python execution tool. Install the pinned
 Glyphs 3 skills separately when using the 1.11.0 server.
 
@@ -48,3 +49,10 @@ and server descriptions map natural-language choices to retained actions.
 Save and continue saves existing work once and resumes the request. Complete
 results apply automatically; previews, warnings and required overwrites wait
 for review. The resulting edit is not saved without separate authorization.
+
+`compare_fonts` compares explicit compiled TTF files without a live Glyphs
+document. It requires the optional managed Diffenator runtime and
+`font.compare.diffenator.v1` in `comparisonCapabilities`. Use `get_job` to review
+its local report and separately authorize `accept_job` publication to a new
+directory. The 2.0.2 source is an unpublished candidate; optional downloads await
+hosted assets and supported-platform qualification.

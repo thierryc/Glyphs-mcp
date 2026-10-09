@@ -1,10 +1,5 @@
-.. function:: pointOnQuadratic(P0, P1, P2, t):
+.. attribute:: font
 
-	the point at t
+		The font
 
-	:param P0: The start point of the curve (NSPoint)
-	:param P1: The first off curve point
-	:param P2: The end point of the curve
-	:param t: The time parameter
-	:return: a point
-	:rtype: NSPoint
+		:type: GSFont

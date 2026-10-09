@@ -1,5 +1,5 @@
-.. attribute:: position
+.. attribute:: unicode
 
-		The y position of the metric.
+		Unicode value
 
-		:type: float
+		:type: str

@@ -1,6 +1,13 @@
-.. function:: scale(x, [y])
+.. attribute:: value
 
-		if a single number, scale uniformly, otherwise scale by x, y
-		if center is given, that is used as the origin of the scale
+		The value
 
-		:type: int/float or tuple
+		:type: str
+
+	.. code-block:: python
+		# GSInfoValueSingle is stored in e.g. font.properties
+		# one of the differences between GSInfoValueSingle and GSInfoValueLocalized
+		# is that the first doesn't have "values" attribute
+		for fontProperty in font.properties:
+		    if not hasattr(fontProperty, "values"):
+		        print(fontProperty.value)

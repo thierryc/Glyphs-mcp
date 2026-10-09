@@ -1,6 +1,5 @@
-.. attribute:: showMeasurement
-		If the guide is showing measurements
+.. attribute:: position
 
-		:type: bool
+		The position of the node.
 
-		.. versionadded:: 3.1
+		:type: NSPoint

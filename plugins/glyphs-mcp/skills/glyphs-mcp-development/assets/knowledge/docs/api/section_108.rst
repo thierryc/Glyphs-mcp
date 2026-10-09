@@ -1,5 +1,7 @@
-.. attribute:: selection
+.. attribute:: previewRemoveOverlap
 
-		Returns a list of all selected glyphs in the Font View.
+		disable preview remove overlap
 
-		:type: list
+		:type: bool
+
+		.. versionadded:: 3.0.1

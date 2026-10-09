@@ -1,4 +1,8 @@
-.. attribute:: unicode2
-		a second unicode value it present
+.. attribute:: selectedLayerRange
+		range of of selection in the layers list
 
-		:type: str
+		.. seealso:: `GSEditViewController.layers`
+
+		:type: NSRange
+
+		.. versionadded:: 4

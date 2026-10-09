@@ -1,5 +1,9 @@
-.. attribute:: position
+.. function:: removeOverlap([checkSelection=False])
 
-		The position of the component.
+		Joins all contours.
 
-		:type: NSPoint
+		:param checkSelection: If the selection will be considered. Default: False
+
+	.. function:: roundCoordinates()
+
+		Round the positions of all coordinates to the grid (size of which is set in the Font Info).

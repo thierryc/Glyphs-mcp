@@ -1,7 +1,7 @@
-.. attribute:: floatDefaults
-		Access to default settings cast to a float.
+.. attribute:: intDefaults
+		Access to default settings cast to a int.
 
-		:type: float
+		:type: int
 
 		.. code-block:: python
-			scaleX = Glyphs.floatDefaults["GSTransformScaleX"]
+			number = Glyphs.intDefaults["GSHandleSize"]

@@ -1,5 +1,5 @@
-.. attribute:: masterIndex
+.. attribute:: selectedFontMaster
 
-		Returns the index of the active master (selected in the toolbar).
+		Returns the active master (selected in the toolbar).
 
-		:type: int
+		:type: :class:`GSFontMaster`

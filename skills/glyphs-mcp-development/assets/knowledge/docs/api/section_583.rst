@@ -1,4 +1,14 @@
-.. attribute:: fontSize
-		The font size
+:mod:`GSInfoValueLocalized`
+===============================================================================
 
-		:type: int
+The GSInfoValueLocalized
+
+.. class:: GSInfoValueLocalized()
+
+	Properties
+
+		* :attr:`key`
+		* :attr:`values`
+		* :attr:`defaultValue`
+
+	**Properties**

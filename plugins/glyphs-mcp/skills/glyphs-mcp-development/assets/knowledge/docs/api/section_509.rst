@@ -1,10 +1,12 @@
-.. function:: scaleHeightToEmUnits
+.. attribute:: selected
 
-		Scale the image’s cropped height to a certain em unit value, retaining its aspect ratio.
+		Selection state of hint in UI.
+
+		:type: bool
 
 		.. code-block:: python
-			# position image’s origin at descender line
-			layer.backgroundImage.position = NSPoint(0, font.masters[0].descender)
+			# select hint
+			layer.hints[0].selected = True
 
-			# scale image to UPM value
-			layer.backgroundImage.scaleHeightToEmUnits(font.upm)
+			# print(selection state)
+			print(layer.hints[0].selected)

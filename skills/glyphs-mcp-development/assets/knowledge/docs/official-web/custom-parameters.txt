@@ -1,0 +1,156 @@
+Custom parameters
+You have seen custom parameters in Font Info. But… what do they do, actually?
+With custom parameters, you can set your Font Info more precisely, you can trigger filters at export time, and do other cool stuff, batch-processing a font at export. That way, you can work non-destructively.
+Adding and managing custom parameters
+You add custom parameters in
+File > Font Info,
+in either of the
+Font, Masters
+and
+Exports
+tabs. To add a parameter, click on the plus button next to the
+Custom Parameters
+section of the respective tab, and a dialog containing inline documentation will fly out. The dialog lists names of possible parameters. You can search and scroll through them, and when you click on a name, its description will be displayed on the right:
+Confirm your selection of a parameter with a double click or the Return key. A new line will appear, with the
+name
+of the parameter and its
+value:
+The left-most checkbox enables the parameter. Turning the checkbox off will make Glyphs act as if it had not been added in the first place. That means that either the setting in question will fallback to its default, or not be written into the font file at all. To the right of the name is the value. You will usually be able to select and edit it directly in the line. Some parameters will bring up a dialog after you click on the value, such as the
+Rename Glyphs
+and
+TTF Autohint Options
+parameters:
+Select a parameter by clicking on its name. Shift- and Cmd-click to select many parameters at once. You can also copy and paste them between Glyphs files. You can drag to rearrange the parameters. Usually, the order does not matter, but it does for
+Filter
+parameters (see below).
+Parameters in
+Font Info > Font
+count for the whole font, but are overridden by parameters with the same name in the
+Exports
+tab.
+Almost all parameters in
+Font Info > Masters
+are number values, because they get interpolated in a Multiple Master setup. If you use parameters here, make sure they are compatible between the masters. Otherwise, Glyphs will not be able to interpolate. Many
+vertical metric values
+can be controlled here. Like font parameters, a master parameter will be overridden by an instance parameter with the same name.
+Parameters in the
+Exports
+tab directly apply only to the respective font instance that is being exported. Instance parameters override master and font parameters.
+Purpose
+Custom parameters serve various purposes. Most of them give you the option to set (or help calculate) a value in the final OpenType font, and are applied at export. E.g.,
+glyphOrder
+influences the ordering of glyphs in the exported font file.
+Some parameters only influence the appearance of the font in an Edit tab. For instance,
+EditView Line Height
+in
+Font Info > Font
+lets you set the line distance for multiline editing in an Edit tab.
+All the custom parameters are documented inside the dialog that adds them. Read carefully through the possible options to make the most of it.
+Same but different: properties
+Similar to parameters, you will find a section called
+General
+at the top of
+Font Info > Font
+and
+Exports.
+For the most part, they list naming properties, most of which directly influence the OpenType
+name
+table in font exports.
+Yes there is also a
+General
+section in
+Font Info > Masters,
+but that one is only for setting the master icon and master name inside the Glyphs UI. They are just there for your viewing and sorting and categorizing pleasure, and have no influence whatsoever on the exported fonts.
+The best thing about properties is that you can localize them. Add a localizable property via the plus button in the General section. Then, for each language, add an entry by clicking on the plus button next to the first entry:
+If you want to get rid of the first entry, hold down the Opt key and the plus will turn into a minus button.
+One of my personal favorites is the optional sample text that can be stored inside an OpenType font. To add one to your font, go into
+File > Font Info > Font
+(Cmd-I), add a property by clicking on the plus button in the
+General
+section. Pick
+Sample texts
+from the dialog that pops up and confirm your entry by pressing the Return or Enter key. As value, you can type in some funny sentence. After you export the font, open it in Font Book, and you are presented with the familiar installation dialog, showing the sample text you just entered:
+Take a minute and scrub through the possible general properties. All documentation is presented within the dialog.
+Filters
+You know how to use the filters from the
+Filters
+menu. Sometimes, it is a better idea to not apply them at once, but to put them into a custom parameter and have them executed automatically when the font is exported. The easiest way to get them as a parameter is to open them from the
+Filters
+menu, and, instead of applying them to your current glyph selection, open  the gear menu in the lower left corner:
+Tip
+Actually, it is not only
+Filter
+menu items, but any dialog that has a gear menu. Most notably, that includes
+Glyph > Transform Metrics
+as well as
+Path > Transformations,
+and even
+Path > Interpolate with Background
+if you find a use for it.
+Then, click
+Cancel
+to get rid of the dialog. (Exactly, do
+not
+apply the filter.) Open
+File > Font Info > Exports
+(Cmd-I), pick one or more instances, and paste. The filter will show up as a custom parameter:
+Yes, you guessed it. You do not always need to copy the custom parameter from the dialog. Rather, you can edit the value directly in the parameter. There are even some functions that can be triggered with a custom parameter but do not even have a dialog with a gear menu. The inline documentation lists
+AddExtremes
+and
+RemoveOverlap
+.
+Pro Tip
+Many third-party filters you can find and install through
+Window > Plugin Manager
+offer some extra features through special filter values. It is a good idea to take a peek into the readme of the plug-in. You heard it here first.
+All built-in and third-party filters accept an additional
+include:
+or
+exclude:
+parameter at the end of the line, followed by a comma-separated list of glyph names, e.g.:
+Transformations; LSB:-20; RSB:+20; include:A,B,C
+Copy
+This example will decrease the left sidebearing by 20, and increase the right sidebearing by the same amount, effectively shifting the glyph to the left. But it will do so only for A, B and C.
+Filter vs. PreFilter
+Further above, I told you that filters are applied at export. That was not the whole truth, I must admit. To really be precise
+Filters
+are applied after decomposition (either in a CFF or overlapping components in a TTF) and overlap removal (if selected in the export dialog). If you want a filter to apply
+before
+decomposition and overlap removal, add a
+PreFilter
+instead. The values are the same as for the
+Filter.
+Needless to say, both
+Filter
+and
+PreFilter
+parameters only makes sense in a static font export. They are not available in a variable font because they jeopardize outline compatibility.
+Copying and pasting parameters
+You can copy and paste parameters between masters, instances, or fonts simply with Cmd-C and Cmd-V. You can paste in multiple masters or multiple instances at once. To do that, just Shift- or Cmd-click on the masters or instances listed in the sidebar on the left, and paste.
+You can even paste a parameter into a text editor. You’ll get something like this:
+{
+	customParameters = (
+		{
+			name = InterpolationWeightY;
+			value = 80;
+		},
+		{
+			name = Filter;
+			value = "OffsetCurve;35;35;1;0.5;cap:2;";
+		},
+		{
+			name = "Scale to UPM";
+			value = 800;
+		}
+	);
+}
+Copy
+You can see where this is going. If you are handy with your editor and find it tedious to tab through all the parameters in the window, you can quickly batch edit your custom parameters in your editor, or have them calculated by a script etc. In the end, you just copy and paste them back.
+Written by Rainer Erich Scheichelbauer
+Published:
+13 July 2012
+Last update:
+12 August 2022
+Updates
+2022-08-12:
+updated title, related articles, minor formatting.

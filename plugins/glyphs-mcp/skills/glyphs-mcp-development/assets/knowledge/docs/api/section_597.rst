@@ -1,6 +1,5 @@
-.. function:: insert(idx, item)
+.. attribute:: name
 
-		:param idx: the index
-		:param item: a NSMenuItem
+		The name of the metric value. Eg. Descender, Small Cap, Cap Height etc.
 
-		inserts the item into the items submenu at the specified index
+		:type: str

@@ -29,11 +29,11 @@ def test_kerning_dataset_package_rejects_changed_license_or_pair_payload(tmp_pat
 
 
 @pytest.mark.parametrize('replacement', ['renamed_tool', 'tool_1'])
-def test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_seventeen_declarations(tmp_path, replacement):
+def test_catalog_check_rejects_renamed_or_duplicate_tools_even_with_eighteen_declarations(tmp_path, replacement):
     server = tmp_path/'src/sidecar/glyphs_mcp_sidecar'
     protocol = tmp_path/'src/protocol/glyphs_mcp_protocol'
     server.mkdir(parents=True); protocol.mkdir(parents=True)
-    names = [f'tool_{index}' for index in range(17)]
+    names = [f'tool_{index}' for index in range(18)]
     (protocol/'models.py').write_text('TOOL_NAMES = '+repr(tuple(names)))
     def declaration(name):
         return '@mcp.tool(name='+repr(name)+')\ndef f(): pass\n'

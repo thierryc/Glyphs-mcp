@@ -13,17 +13,17 @@ function host({initialize=true, tools=true, reject=false, deferWrites=false, def
     setAttribute(k,v){this[k]=v;}
     getBoundingClientRect(){return {height:350};}
     querySelectorAll(selector){return this.children.flatMap(e => [e,...(e.querySelectorAll?.('*')||[])]).filter(e => selector==='*'||selector==='button'&&e.tag==='button'||selector==='input:checked'&&e.tag==='input'&&e.checked);}
-    querySelector(){return this.submit ||= new Element('button');}
+    querySelector(selector){return this.children.find(e=>e.tag==='button') || (this.submit ||= new Element('button'));}
     focus(){document.activeElement=this;}
   }
   const elements=new Map(), calls=[], timers=new Map(), listeners={};let sequence=0, now=0;
-  const get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
+  const get=id=>{if(!elements.has(id)){const element=new Element();element.id=id;elements.set(id,element);}return elements.get(id);};
   document={documentElement:new Element(),hidden:false,getElementById:get,createElement:t=>new Element(t),createTextNode:t=>({textContent:t}),querySelector:()=>get('main'),querySelectorAll:s=>[...elements.values()].flatMap(e=>e.querySelectorAll(s)),addEventListener:(k,f)=>listeners[k]=f};
   const parent={postMessage(message){calls.push(message);if(message.method==='ui/initialize'&&initialize)queueMicrotask(()=>dispatch({id:message.id,result:{hostCapabilities:tools?{serverTools:{}}:{},hostContext:{theme:'dark'}}}));if(message.method==='tools/call') { const read=message.params.name==='get_edit_workflow'; if (read ? deferReads : deferWrites) return; queueMicrotask(()=>dispatch(reject?{id:message.id,error:{message:'Host tool permission unavailable'}}:{id:message.id,result:{structuredContent:read?serverState:(serverState=state(4,'applied',[]))}})); }}};
   const dispatch=data=>listeners.message({source:parent,origin:'https://host.test',data:{jsonrpc:'2.0',...data}});
   vm.runInNewContext(code,{window:{parent,addEventListener:(k,f)=>listeners[k]=f},document,Map,Promise,console,performance:{now:()=>now},setTimeout:(callback,delay)=>{timers.set(++sequence,{callback,delay,at:now+delay});return sequence;},clearTimeout:id=>timers.delete(id)});
   const advance=ms=>{now+=ms;for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.callback();}};
-  return {get,document,calls,timers,dispatch,listeners,advance,setState:s=>serverState=s,click:name=>get('actions').children.find(b=>b.dataset.action===name).listeners.click()};
+  return {get,document,calls,timers,dispatch,listeners,advance,setState:s=>serverState=s,click:name=>[get('actions'),get('more-actions'),get('auto-keep-actions')].flatMap(e=>e.children).find(b=>b.dataset.action===name).listeners.click()};
 }
 const action=(name,label,destination=false)=>({action:name,label,token:'token-'+name,requiresDestination:destination});
 const state=(revision=1,value='waiting_save',actions=[action('save_continue','Save and continue'),action('save_as_continue','Save As…',true)])=>({ok:true,data:{id:'edit_example',revision,state:value,document:{id:'doc_A',familyName:'Two fonts with this name',path:'/fonts/version A.glyphs'},scope:{kind:'width_delta',glyphs:['A'],masters:['M1']},actions,message:value==='applied'?'Changes applied. Save your font to keep them.\nSaving includes the whole font.':'Preparing changes…',text:'Conversation alternative',modelContext:JSON.stringify({workflow_id:'edit_example',expected_revision:revision,state:value,actions:actions.map(a=>({action:a.action,label:a.label,action_token:a.token,requiresDestination:a.requiresDestination}))}),poll:value==='preparing'}});
@@ -34,7 +34,7 @@ if (require.main === module) (async()=>{
  const h=host();await tick();deliver(h,state());await tick();
  assert(h.calls.some(m=>m.method==='ui/notifications/initialized'));
  assert.equal(h.document.documentElement.style.colorScheme,'dark');
- assert.equal(h.get('path').textContent,'/fonts/version A.glyphs');
+ assert.equal(h.get('path').textContent,'version A.glyphs');
  h.click('save_as_continue');assert.equal(h.get('save-form').hidden,false);assert.equal(h.get('destination').textContent,'/fonts/version A-copy.glyphs');
  h.get('folder').value='/new';h.get('filename').value='Family.glyphs';h.get('save-form').listeners.submit({preventDefault(){}});await tick();
  const write=h.calls.find(m=>m.method==='tools/call'&&m.params.name==='respond_edit_workflow');assert.equal(write.params.name,'respond_edit_workflow');assert.equal(write.params.arguments.destination,'/new/Family.glyphs');assert.equal(write.params.arguments.expected_revision,1);assert.equal(h.get('status').textContent,'Changes applied. Save your font to keep them.');
@@ -42,6 +42,7 @@ if (require.main === module) (async()=>{
  assert(h.calls.some(m=>m.method==='ui/update-model-context'));
  const disabled=host({tools:false});await tick();deliver(disabled,state());assert(disabled.get('actions').children.every(b=>b.disabled));assert(disabled.get('fallback').textContent.includes('Save and continue'));
  const warnings=host();await tick();const incomplete=state(1,'needs_review',[action('apply','Apply changes')]);incomplete.data.reviewInConversation=true;deliver(warnings,incomplete);await tick();assert(warnings.get('actions').children[0].disabled);assert(warnings.get('warnings').children[0].textContent.includes('complete report'));
+ warnings.click('apply');assert(!warnings.calls.some(m=>m.params?.name==='respond_edit_workflow'));
  const failed=host({initialize:false});for(const timer of [...failed.timers.values()])timer.callback();await tick();deliver(failed,state());assert(failed.get('actions').children.every(b=>b.disabled));assert(failed.get('fallback').textContent.includes('conversation'));
  const errors=host({reject:true});await tick();deliver(errors,state());await tick();errors.click('save_continue');assert(errors.get('error').textContent.includes('permission'));assert.equal(errors.calls.filter(m=>m.method==='tools/call'&&m.params.name==='respond_edit_workflow').length,0,'failed reconciliation must disable actions');
  const active=host();await tick();deliver(active,state(1,'preparing',[action('cancel','Cancel preparation')]));await tick();assert([...active.timers.values()].some(t=>t.delay===1500));active.document.hidden=true;active.document.getElementById('status');active.dispatch({method:'ui/resource-teardown',id:999});assert(![...active.timers.values()].some(t=>t.delay===1500));assert(active.calls.some(m=>m.id===999&&m.result));assert(!active.calls.some(m=>m.method==='tools/call'&&m.params.name==='respond_edit_workflow'),'closing must not cancel');
@@ -100,7 +101,7 @@ if (require.main === module) (async()=>{
  fast.click('save_run_script');await tick();
  assert.equal(fast.calls.filter(m=>m.params?.name==='respond_edit_workflow').length,1);
  deliver(fast,state(25,'applied',[action('restore_saved_script','Restore saved version')]));await tick();
- assert(fast.get('fallback').textContent.includes('Restore saved version'));
+ assert(fast.get('fallback').hidden);
  const textOnlyFast=host({tools:false});await tick();deliver(textOnlyFast,fastState);
  assert(textOnlyFast.get('fallback').textContent.includes('Save and run'));
  assert(textOnlyFast.get('actions').children.every(b=>b.disabled));
@@ -112,13 +113,13 @@ if (require.main === module) (async()=>{
  assert.equal(lazy.get('script-source').textContent,'');
  assert(!lazy.calls.some(m=>m.params?.arguments?.include_review));
  const expanded=JSON.parse(JSON.stringify(compact));expanded.data.scriptReview={source:'<script>literal</script>',params:{},targets:[],entrypoint:'script'};
- lazy.setState(expanded);lazy.get('script-review').open=true;lazy.get('script-review').listeners.toggle();await tick();
+ lazy.setState(expanded);lazy.get('result-details').open=true;lazy.get('result-details').listeners.toggle();await tick();
  assert(lazy.calls.some(m=>m.params?.arguments?.include_review===true));
  assert.equal(lazy.get('script-source').textContent,'<script>literal</script>');
  deliver(lazy,compact);await tick();assert.equal(lazy.get('script-source').textContent,'<script>literal</script>');
  const changed=JSON.parse(JSON.stringify(compact));changed.data.revision=31;changed.data.requestFingerprint='lazy-two';
  deliver(lazy,changed);await tick();assert.equal(lazy.get('script-source').textContent,'');
- assert.equal(lazy.get('script-review').open,false);
+ assert.equal(lazy.get('result-details').open,false);
  const whole=state(32,'applying',[]);whole.data.scope={kind:'python_script'};whole.data.entrypoint='script';
  whole.data.job={bridgeOperation:{totalChanges:100,completedChanges:0}};
  deliver(lazy,whole);await tick();assert(lazy.get('progress').hidden);
@@ -144,7 +145,7 @@ if (require.main === module) (async()=>{
  const newJob=JSON.parse(JSON.stringify(small));newJob.data.revision=43;newJob.data.jobId='job_2';
  deliver(evidence,newJob);await tick();assert.equal(evidence.get('script-source').textContent,'');assert.equal(evidence.get('script-output').textContent,'');
  // A completed compact result triggers one full read when details are open.
- const completion=host();await tick();deliver(completion,full);await tick();completion.get('script-review').open=true;
+ const completion=host();await tick();deliver(completion,full);await tick();completion.get('result-details').open=true;
  const complete=JSON.parse(JSON.stringify(small));complete.data.revision=44;complete.data.state='applied';
  deliver(completion,complete);await tick();
  const finalFull=JSON.parse(JSON.stringify(complete));finalFull.data.scriptReview=full.data.scriptReview;
@@ -201,7 +202,7 @@ if (require.main === module) (async()=>{
  hidden.document.hidden=true;hidden.listeners.visibilitychange();hidden.advance(60000);await tick();
  assert(!hidden.calls.some(m=>m.params?.name==='respond_edit_workflow'));
  hidden.document.hidden=false;hidden.listeners.visibilitychange();await tick();assert.equal(hidden.get('auto-keep-progress').value,0);
- hidden.advance(10000);await tick();hidden.get('script-review').open=true;hidden.get('script-review').listeners.toggle();await tick();
+ hidden.advance(10000);await tick();hidden.get('result-details').open=true;hidden.get('result-details').listeners.toggle();await tick();
  hidden.advance(60000);await tick();assert(!hidden.calls.some(m=>m.params?.name==='respond_edit_workflow'));
  const staleAuto=host();await tick();deliver(staleAuto,autoState());await tick();
  const newer=autoState();newer.data.revision++;newer.data.requestFingerprint='changed';staleAuto.setState(newer);
@@ -243,7 +244,7 @@ if (require.main === module) (async()=>{
      assert.equal(wording.get('message').textContent,guidance.join('\n'));
      assert.equal(wording.get('message').hidden,!guidance.length);
      assert.equal(wording.get('progress').hidden,true,'completed progress must be hidden');
-     assert.equal(wording.get('fallback').hidden,!data.actions.length);
+     assert(wording.get('fallback').hidden);
      if (!data.actions.length) assert.equal(wording.get('fallback').textContent,'');
      if (data.state==='saved') {
        assert.equal(heading,'Font saved.');

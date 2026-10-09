@@ -1,5 +1,12 @@
-.. function:: addAsMaster()
+.. attribute:: userData
 
-		Add this instance as a new master to the font. Identical to "Instance as Master" menu item in the Font Info’s Instances section.
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
-		.. versionadded:: 2.6.2
+		:type: dict
+
+		.. code-block:: python
+			# set value
+			instance.userData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del instance.userData['rememberToMakeCoffee']

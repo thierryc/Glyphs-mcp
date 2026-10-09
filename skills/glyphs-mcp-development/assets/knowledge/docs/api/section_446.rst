@@ -1,5 +1,4 @@
-.. attribute:: position
+.. attribute:: topValue
+		Top end (pole) value on interpolation axis.
 
-		The position of the node.
-
-		:type: NSPoint
+		:type: int, float

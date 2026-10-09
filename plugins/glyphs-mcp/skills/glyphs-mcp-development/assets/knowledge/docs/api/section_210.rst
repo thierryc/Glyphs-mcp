@@ -1,7 +1,11 @@
-.. attribute:: manufacturer
+.. attribute:: descriptions
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+		This accesses all localized description values.
+		For details :attr:`GSInstance.properties`
 
-		:type: str
+		:type: dict
 
-		.. versionadded:: 3.0.2
+		.. code-block:: python
+			instance.descriptions["ENG"] = "This is my description"
+
+		.. versionadded:: 3.0.3

@@ -1,5 +1,5 @@
-.. attribute:: iconName
+.. attribute:: name
 
-		The name of the icon
+		The human-readable identification of the master, e.g., "Bold Condensed".
 
 		:type: str

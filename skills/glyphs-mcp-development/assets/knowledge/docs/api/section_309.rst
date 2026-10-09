@@ -1,5 +1,5 @@
-.. attribute:: export
+.. attribute:: productionName
+		The productionName of the glyph.
+		Setting only works if :attr:`GSGlyph.storeProductionName` is set (see below).
 
-		Defines whether glyph will export upon font generation
-
-		:type: bool
+		:type: str

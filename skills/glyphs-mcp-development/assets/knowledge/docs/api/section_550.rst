@@ -1,5 +1,4 @@
-.. attribute:: components
+.. attribute:: textRange
+		Amount of selected glyphs in text, starting at cursor position (see above).
 
-		This glyph may be composed of the glyphs returned as a list of :class:`GSGlyphInfo` objects.
-
-		:type: list
+		:type: integer

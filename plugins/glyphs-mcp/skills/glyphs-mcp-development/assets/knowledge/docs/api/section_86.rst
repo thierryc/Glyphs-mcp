@@ -1,3 +1,3 @@
-.. attribute:: versionMinor
+.. attribute:: versionMajor
 
 		:type: int

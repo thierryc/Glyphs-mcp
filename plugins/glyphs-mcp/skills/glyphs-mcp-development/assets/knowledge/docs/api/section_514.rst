@@ -1,5 +1,6 @@
-.. attribute:: end
+.. attribute:: isCorner
+		if it is a Corner (or Cap, Brush...) component
 
-		A NSPoint that relatively to the shapes bounding box defines the ending point of the gradient
+		:type: bool
 
-		:type: NSPoint
+		.. versionadded:: 3

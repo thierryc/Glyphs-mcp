@@ -14,7 +14,7 @@ const sidebars: SidebarsConfig = {
     ]},
     {type: 'category', label: 'Workflows', items: [
       'tutorial/conversation-edits', 'workflows/fonts-and-saving', 'workflows/scripts',
-      'workflows/exports', 'workflows/checkpoints', 'workflows/projects',
+      'workflows/exports', 'workflows/font-comparison', 'workflows/checkpoints', 'workflows/projects',
       'spacing-tools', 'kerning-workflow', 'italic-first-pass',
       'workflows/start-node-correspondence', 'workflows/visual-review', 'workflows/beztrace'
     ]},

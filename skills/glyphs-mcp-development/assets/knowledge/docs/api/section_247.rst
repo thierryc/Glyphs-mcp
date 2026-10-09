@@ -1,18 +1,5 @@
-:mod:`GSClass`
-===============================================================================
+.. function:: addAsMaster()
 
-Implementation of the class object. It is used to store OpenType classes.
+		Add this instance as a new master to the font. Identical to "Instance as Master" menu item in the Font Info’s Instances section.
 
-For details on how to access them, please look at :class:`GSFont.classes`
-
-.. class:: GSClass([tag, code])
-
-	:param tag: The class name
-	:param code: A list of glyph names, separated by space or newline
-
-		* :attr:`name`
-		* :attr:`code`
-		* :attr:`automatic`
-		* :attr:`active`
-
-	**Properties**
+		.. versionadded:: 2.6.2

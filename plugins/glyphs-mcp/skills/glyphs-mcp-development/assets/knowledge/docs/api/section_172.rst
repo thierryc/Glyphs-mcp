@@ -1,3 +1,5 @@
-.. attribute:: position
+.. attribute:: alignmentZones
 
-		:type: float
+		Collection of :class:`GSAlignmentZone` objects. Read-only.
+
+		:type: list

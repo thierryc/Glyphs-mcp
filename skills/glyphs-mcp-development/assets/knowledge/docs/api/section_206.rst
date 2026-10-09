@@ -1,5 +1,11 @@
-.. attribute:: familyName
+.. attribute:: compatibleFullNames
 
-		familyName
+		This accesses all localized compatibleFullNames values.
+		For details :attr:`GSInstance.properties`
 
-		:type: str
+		:type: dict
+
+		.. code-block:: python
+			instance.compatibleFullNames["ENG"] = "MyFont Condensed Bold"
+
+		.. versionadded:: 3.0.3

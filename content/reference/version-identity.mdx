@@ -4,7 +4,7 @@ title: Version and identity
 
 Use the catalog of the **specific MCP connection** to select instructions. A
 product label, a skill name or the Glyphs display name cannot identify an MCP
-interface by itself. The current lean catalog has seventeen tools; the v1 catalog
+interface by itself. The current lean catalog has eighteen tools; the v1 catalog
 and its pinned Glyphs 3 skills remain separate.
 
 ## Current source target
@@ -15,22 +15,24 @@ and the Xcode project. The managed skill inventory comes from
 
 | Item | Value |
 | --- | --- |
-| Product version | `2.0.1` |
-| Release version | `2.0.1` |
+| Product version | `2.0.2` |
+| Release version | `2.0.2` |
 | Channel | `stable` |
 | Beta number | `0` |
-| Installer build | `56` |
+| Installer build | `57` |
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
 | Managed skills | `11` |
-| MCP tools | `17` |
+| MCP tools | `18` |
 | Job kinds | `up to 13`, capability-derived |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
+This source remains an unpublished candidate.
+
 `sidecarVersion` and `bridgeVersion` are coordinated product versions. The lean
-interface revision identifies the seventeen-tool contract; the bridge protocol
+interface revision identifies the eighteen-tool contract; the bridge protocol
 identifies the sidecar/native message contract. The dated MCP transport version
 is negotiated separately during initialization. These values need not match.
 The sixth job, `outline_edit`, is additive and appears only when the bridge
@@ -79,15 +81,15 @@ read fresh data; rediscover after stale-ID rejection or a known host/bridge rest
 
 ## Source, installation and release evidence
 
-The **2.0.1/build 56** candidate uses planned source tag
-`v2.0.1`, archive names `Glyphs-MCP-2.0.1.dmg` and `Glyphs-MCP-2.0.1.zip`, and
+The unpublished **2.0.2/build 57** candidate uses planned source tag
+`v2.0.2`, archive names `Glyphs-MCP-2.0.2.dmg` and `Glyphs-MCP-2.0.2.zip`, and
 stable feed `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`.
-The previous 2.0.0 app, payload and DMG are signed and notarized. Signed installation,
-private beta-to-stable desktop delivery and component recovery passed on
-macOS 14.6.1 Apple silicon; exact 14.0/current-macOS native checks remain
-unverified. These results do not qualify the 2.0.1 candidate. Public download/feed checks occur during promotion. See
-[qualification](release-qualification.mdx). Beta 12/build 54 and its native evidence are retained separately; no
-Beta tag or distributed asset is relabelled by the source identity change.
+Published 2.0.1/build 56 has separate signing, notarization and bounded native
+acceptance. Its evidence does not qualify the 2.0.2 desktop candidate. Optional
+Diffenator and Beztrace packages have bounded signed local Apple Silicon evidence;
+hosted assets and supported-platform qualification remain pending. See
+[qualification](release-qualification.mdx). Preserve published tags, artifacts and
+signed feeds until final candidate verification and separately authorized promotion.
 
 A source version states what a checkout is preparing. An installation receipt
 states which files were installed. A live status response identifies the loaded
@@ -112,7 +114,7 @@ Its planned tag is `v2.0.0-beta.12`; planned distribution filenames are
 `Glyphs-MCP-2.0.0-beta.12.dmg` and `Glyphs-MCP-2.0.0-beta.12.zip`.
 See [BETA12-VALIDATION.md](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA12-VALIDATION.md).
 Both main and the Beta branch now serve the unchanged signed stable feed,
-allowing existing beta installations to update to build 55.
+allowing existing beta installations to receive the published stable update.
 
 Beta 11/build 53 is published under signed tag `v2.0.0-beta.11`, with
 `Glyphs-MCP-2.0.0-beta.11.dmg` and `Glyphs-MCP-2.0.0-beta.11.zip`.
@@ -132,3 +134,8 @@ releases; changing the label does not make an older build newer.
 See [migration](../getting-started/migrate-from-v1.mdx),
 [skill installation and conflicts](../getting-started/use-agent-skills.mdx), and
 [packaging and release discovery](../contributor/release-build-notes.mdx).
+
+Compiled comparison availability is independent: inspect `comparisonWorker` and
+`comparisonCapabilities`, requiring `font.compare.diffenator.v1`. The comparison
+job is file-bound and starts through `compare_fonts`; the document-bound
+`jobKinds` catalog retains its own capability gates.

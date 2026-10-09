@@ -1,8 +1,5 @@
-.. attribute:: layersRange
-		number of selected layers
+.. attribute:: colors
 
-		.. seealso:: `GSEditViewController.layers`
+		A list of colors. Each is an list containing a NSColor and and position between 0.0 and 1.0.
 
-		:type: integer
-
-		.. versionadded:: 4
+		:type: list

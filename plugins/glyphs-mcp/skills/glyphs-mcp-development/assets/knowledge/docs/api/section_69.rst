@@ -1,7 +1,10 @@
-.. attribute:: license
+.. attribute:: copyrights
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
+		This accesses all localized copyright values.
+		For details :attr:`GSFont.properties`
 
-		:type: str
+		:type: dict
+		.. code-block:: python
+			font.copyrights["ENG"] = "All rights reserved"
 
 		.. versionadded:: 3.0.3

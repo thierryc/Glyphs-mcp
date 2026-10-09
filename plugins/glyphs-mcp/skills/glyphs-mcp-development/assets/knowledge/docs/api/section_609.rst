@@ -1,9 +1,5 @@
-.. function:: GetSaveFile(message=None, ProposedFileName=None, filetypes=None)
+.. function:: shift(x, y)
 
-	Opens a file chooser dialog.
+		shift by x, y
 
-	:param message:
-	:param filetypes:
-	:param ProposedFileName:
-	:return: The selected file or None
-	:rtype: str
+		:type: tuple or NSPoint

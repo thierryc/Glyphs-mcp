@@ -1,7 +1,6 @@
-Properties
+.. attribute:: manualInterpolation
 
-		* :attr:`active`
-		* :attr:`name`
-		* :attr:`value`
+		Disables automatic calculation of instanceInterpolations
+		This allows manual setting of instanceInterpolations.
 
-	**Properties**
+		:type: bool

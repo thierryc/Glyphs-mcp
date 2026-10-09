@@ -1,7 +1,5 @@
-.. function:: scaleWidthToEmUnits
+.. attribute:: horizontal
 
-		Scale the image’s cropped width to a certain em unit value, retaining its aspect ratio.
+		True if hint is horizontal, False if vertical.
 
-		.. code-block:: python
-			# fit image in layer’s width
-			layer.backgroundImage.scaleWidthToEmUnits(layer.width)
+		:type: bool

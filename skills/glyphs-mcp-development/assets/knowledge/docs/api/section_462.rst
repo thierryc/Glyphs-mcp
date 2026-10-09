@@ -1,5 +1,11 @@
-.. attribute:: lockAngle
+.. attribute:: tempData
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use path.userData
 
-		locks the angle
+		:type: dict
 
-		:type: bool
+		.. code-block:: python
+			# set value
+			path.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del path.tempData['rememberToMakeCoffee']

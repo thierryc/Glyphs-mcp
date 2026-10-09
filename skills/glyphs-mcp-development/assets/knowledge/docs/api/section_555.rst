@@ -1,5 +1,10 @@
-.. attribute:: script
+.. attribute:: direction
 
-		Script of glyph, e.g: "latin", "cyrillic", "greek".
+		Writing direction.
 
-		:type: str
+		See `Writing Directions`_
+
+		:type: integer
+
+		.. code-block:: python
+			font.currentTab.direction = GSRTL

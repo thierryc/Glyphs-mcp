@@ -1,6 +1,12 @@
-.. function:: addNodesAtExtremes([force=False, checkSelection=False])
+.. attribute:: bounds
 
-		Add nodes at layer’s extrema, e.g., top, bottom etc.
+		Bounding box of whole glyph as NSRect. Read-only.
 
-		:param force: if points are always added, even if that would distort the shape
-		:param checkSelection: only process selected segments
+		:type: NSRect
+
+		.. code-block:: python
+			# origin
+			print(layer.bounds.origin.x, layer.bounds.origin.y)
+
+			# size
+			print(layer.bounds.size.width, layer.bounds.size.height)

@@ -1,4 +1,6 @@
-.. attribute:: altNames
-		Alternative names for glyphs that are not used, but should be recognized (e.g., for conversion to nice names).
+.. attribute:: bottomToolbarHeight
+		Height of the little toolbar at the very bottom of the window. Read-only.
 
-		:type: str
+		:type: float
+
+		.. versionadded:: 2.4

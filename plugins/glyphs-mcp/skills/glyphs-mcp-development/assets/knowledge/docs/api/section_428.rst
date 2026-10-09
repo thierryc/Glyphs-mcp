@@ -1,5 +1,7 @@
 .. attribute:: locked
 
-		Locked
+		.. versionadded:: 2.5
+
+		If the component is locked
 
 		:type: bool

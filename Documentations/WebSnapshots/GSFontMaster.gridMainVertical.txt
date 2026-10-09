@@ -1,0 +1,6 @@
+gridMainVertical
+¶
+Type
+:
+float
+Added in version 4.1.

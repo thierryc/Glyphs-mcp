@@ -1,6 +1,5 @@
-.. attribute:: isCorner
-		if it is a Corner (or Cap, Brush...) component
+.. attribute:: text
 
-		:type: bool
+		The content of the annotation. Only useful if type == TEXT
 
-		.. versionadded:: 3
+		:type: str

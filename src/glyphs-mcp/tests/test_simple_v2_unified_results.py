@@ -126,5 +126,5 @@ def test_routing_fixtures_use_same_actions_without_saving(tmp_path):
         actions={a['action'] for a in result['actions']}
         assert row['finishAction'] in actions and row['recoveryAction'] in actions
         assert result['autoKeep']['enabled']==row['auto_keep']
-        assert 'Keep changes without saving' in result['text']
+        assert 'Keep without saving' in result['text']
         assert 'Save font' in result['text']

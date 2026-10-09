@@ -54,10 +54,12 @@ class ServiceError(RuntimeError):
 
 
 class SidecarService:
-    def __init__(self, bridge: Any, *, jobs: JobStore | None = None, worker: Any | None = None) -> None:
+    def __init__(self, bridge: Any, *, jobs: JobStore | None = None, worker: Any | None = None, comparison_worker: Any | None = None) -> None:
         self.bridge = bridge
         self.jobs = jobs or JobStore()
         self.worker = worker or GlyphsCliWorker()
+        from .font_comparison import ComparisonWorker
+        self.comparison_worker = comparison_worker or ComparisonWorker()
         self._cancellations: dict[str, Event] = {}
         self._lock, self._script_dispatch_lock = RLock(), RLock()
         self._checkpoint_lock = RLock()
@@ -75,7 +77,7 @@ class SidecarService:
                 if job.get('resultKind') == 'checkpoint':
                     continue  # Reconcile the existing save on demand, never replay it.
                 if job.get("resultKind") == "artifact":
-                    artifact_publication.reconcile(self, job)
+                    self._artifact_publisher(job).reconcile(self, job)
                     continue
                 receipt_path = self.jobs.path(job["id"]) / "receipt.json"
                 if receipt_path.is_file():
@@ -118,6 +120,11 @@ class SidecarService:
                     return
             time.sleep(.02)
 
+    @mutation
+    def compare_fonts(self, baseline_files, candidate_files, options=None):
+        from .font_comparison import start
+        return start(self, ServiceError, baseline_files, candidate_files, options)
+
     def get_status(self) -> dict[str, Any]:
         try:
             bridge = {"reachable": True, **dict(self.bridge.status())}
@@ -125,6 +132,7 @@ class SidecarService:
             bridge = {"reachable": False, "error": self._error(exc).as_dict()}
         status = getattr(self.worker, "status", None)
         worker = status() if callable(status) else {"available": True, "kind": "injected"}
+        comparison = self.comparison_worker.status()
         advertised_writes = bridge.get("writeCapabilities") or []
         job_capabilities = sorted(set(
             recognized_job_capabilities(bridge.get("jobCapabilities"))
@@ -162,6 +170,8 @@ class SidecarService:
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
+            "comparisonWorker": comparison,
+            "comparisonCapabilities": comparison.get("jobCapabilities", []),
             "tools": list(TOOL_NAMES),
             "bridge": bridge,
             "worker": worker,
@@ -359,8 +369,10 @@ class SidecarService:
         if job.get('resultKind') == 'checkpoint':
             from .checkpoints import reconcile_save
             return reconcile_save(self, job)
-        if job["status"] == "accepting" and job.get("resultKind") == "artifact":
-            job = artifact_publication.reconcile(self, job)
+        if job.get("resultKind") == "artifact" and (
+            job["status"] == "accepting" or job["status"] == "accept_uncertain" and job.get("inputKind") == "compiled_fonts"
+        ):
+            job = self._artifact_publisher(job).reconcile(self, job)
             return self._public(job, include_preview=include_preview)
         if saved_script.unresolved(job) or job["status"] in {"applying", "applied", "accepting", "discarding"}:
             try:
@@ -531,7 +543,7 @@ class SidecarService:
     ) -> dict[str, Any]:
         job = self._job(job_id)
         if job.get("resultKind") == "artifact":
-            return artifact_publication.accept(
+            return self._artifact_publisher(job).accept(
                 self, ServiceError, job,
                 destination=destination, include_preview=include_preview,
             )
@@ -539,6 +551,13 @@ class SidecarService:
             self, ServiceError, job_id,
             destination=destination, include_preview=include_preview,
         )
+
+    @staticmethod
+    def _artifact_publisher(job):
+        if job.get("inputKind") == "compiled_fonts":
+            from . import comparison_publication
+            return comparison_publication
+        return artifact_publication
 
     def _complete_acceptance(self, job, operation, *, include_preview=True):
         return saving.complete_acceptance(

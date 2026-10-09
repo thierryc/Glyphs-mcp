@@ -319,7 +319,7 @@ def test_mcp_app_and_proxy_preserve_text_resources_metadata_and_actions(env):
         for host in (server, proxy):
             async with Client(host) as client:
                 catalog = {t.name:t for t in await client.list_tools()}
-                assert len(catalog) == 17
+                assert len(catalog) == 18
                 assert catalog["start_edit_workflow"].meta["ui"]["resourceUri"] == RESOURCE_URI
                 resources = await client.read_resource(RESOURCE_URI)
                 assert resources[0].mimeType == RESOURCE_MIME

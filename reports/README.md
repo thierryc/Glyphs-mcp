@@ -1,6 +1,8 @@
 # Lean v2 qualification records
 
-For the current stable release, see [V2 release qualification](../V2-RELEASE.md).
+For the published stable release, see [2.0.1 qualification](../V2.0.1-RELEASE.md).
+The unpublished [2.0.2/build 57 preparation](../V2.0.2-RELEASE.md) records its
+separate checks and remaining distribution gates.
 The reports below are historical snapshots. Beta guides and validation notes
 removed from the current tree remain available in the
 [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).

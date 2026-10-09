@@ -1,8 +1,4 @@
-.. function:: subtractPoints(P1, P2)
+.. attribute:: fontSize
+		The font size
 
-	Subtracts the points.
-
-	:param P0: a NSPoint
-	:param P1: another NSPoint
-	:return: The subtracted point
-	:rtype: NSPoint
+		:type: int

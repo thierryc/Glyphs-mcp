@@ -2,13 +2,17 @@
 title: Reports and documentation
 ---
 
-V2 exposes seventeen tools and the versioned conversation resource
+V2 exposes eighteen tools and the versioned conversation resource
 `ui://glyphs-mcp/edit-workflow-v1.html` (`text/html;profile=mcp-app`). The three
 workflow tools provide useful text and structured state alongside the shared
 interactive App. The existing v1 documentation-search tools and embedded
 feedback runtime are not imported. See [conversation edits](../tutorial/conversation-edits.mdx).
 
 ## Job reports
+
+Compiled [font comparisons](../workflows/font-comparison.mdx) add a local HTML
+entry point and evidence bound to snapshotted inputs. `accept_job` publishes
+the verified report tree to a new directory; `apply_job` cannot apply it.
 
 Use `get_job` for progress, a compact change sample and a report path when the workflow produces a full report. Open that local artifact through your client's file tools if supported. Reports record measurements, exclusions and the scope of the result's claims.
 

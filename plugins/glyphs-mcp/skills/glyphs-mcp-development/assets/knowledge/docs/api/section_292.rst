@@ -1,4 +1,5 @@
-.. attribute:: glyphInfo
-		:class:`GSGlyphInfo` object for this glyph with detailed information.
+.. attribute:: unicodes
 
-		:type: :class:`GSGlyphInfo`
+		List of Strings‚ with the hex Unicode values of glyph, if encoded.
+
+		:type: list

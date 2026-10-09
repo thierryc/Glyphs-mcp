@@ -79,6 +79,7 @@ struct ContentView: View {
             case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
             }
         }
+        .safeAreaInset(edge: .top) { DesktopInitializationStatus().environmentObject(installer) }
         .onAppear { handleSetupRequest() }
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
         .navigationTitle(DesktopIdentity.applicationTitle)
@@ -265,8 +266,8 @@ struct DesktopSetup: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { desktop.setVisible("setup", true) }
-        .onDisappear { desktop.setVisible("setup", false) }
+        .onAppear { desktop.setVisible("setup", true); installer.setSetupVisible(true) }
+        .onDisappear { desktop.setVisible("setup", false); installer.setSetupVisible(false) }
     }
 }
 

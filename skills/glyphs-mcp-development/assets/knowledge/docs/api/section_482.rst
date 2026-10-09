@@ -1,4 +1,24 @@
-.. attribute:: targetIndex
-		The indexPath to the second node this hint is attached to. In the case of a ghost hint, this value will be empty.
+:mod:`GSGuide`
+===============================================================================
 
-		:type: :class:`NSIndexPath`
+Implementation of the guide object.
+
+For details on how to access them, please see :attr:`GSLayer.guides`
+
+
+.. class:: GSGuide()
+
+	Properties
+
+		* :attr:`position`
+		* :attr:`angle`
+		* :attr:`name`
+		* :attr:`filter`
+		* :attr:`showMeasurement`
+		* :attr:`selected`
+		* :attr:`locked`
+		* :attr:`userData`
+
+	Functions
+
+		* :meth:`copy`

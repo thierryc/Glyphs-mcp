@@ -1,5 +1,5 @@
-.. attribute:: active
+.. function:: addNameParticle(nameParticle, axisId)
 
-		:type: bool
+		Adds a :class:`GSNameParticle` for the axis with `axisId`.
 
-		.. versionadded:: 2.5
+		.. versionadded:: 4

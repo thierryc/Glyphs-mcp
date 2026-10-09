@@ -1,7 +1,16 @@
-.. attribute:: font
+.. attribute:: id
 
-		Reference to the :class:`GSFont` object that contains the master. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.
+		Used to identify :class:`Layers` in the Glyph
 
-		:type: GSFont
+		see :attr:`GSGlyph.layers`
 
-		.. versionadded:: 2.5.2
+		:type: str
+
+		.. code-block:: python
+			# ID of first master
+			print(font.masters[0].id)
+			>> 3B85FBE0-2D2B-4203-8F3D-7112D42D745E
+
+			# use this master to access the glyph’s corresponding layer
+			print(glyph.layers[font.masters[0].id])
+			>> <GSLayer "Light" (A)>

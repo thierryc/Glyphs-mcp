@@ -1,7 +1,5 @@
-.. attribute:: keyboardIncrementBig
+.. attribute:: keyboardIncrement
 
-		Distance of movement by arrow plus Shift key. Default:10
+		Distance of movement by arrow keys. Default:1
 
 		:type: float
-
-		.. versionadded:: 3.0

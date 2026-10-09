@@ -1,7 +1,5 @@
-.. attribute:: compatibleFullName
+.. attribute:: isBold
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+		Bold flag for style linking
 
-		:type: str
-
-		.. versionadded:: 3.0.3
+		:type: bool

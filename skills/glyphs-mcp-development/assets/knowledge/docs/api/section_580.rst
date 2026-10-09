@@ -1,5 +1,5 @@
-.. attribute:: font
+.. attribute:: desc
 
-		The font
+		Unicode description of glyph.
 
-		:type: GSFont
+		:type: str

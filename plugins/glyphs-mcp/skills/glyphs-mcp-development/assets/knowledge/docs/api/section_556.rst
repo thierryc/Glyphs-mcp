@@ -1,5 +1,9 @@
-.. attribute:: index
+.. attribute:: features
 
-		Index of glyph in database. Used for sorting in UI.
+		List of OpenType features applied to text in Edit view.
 
-		:type: str
+		:type: list
+
+	.. code-block:: python
+
+		font.currentTab.features = ['locl', 'ss01']

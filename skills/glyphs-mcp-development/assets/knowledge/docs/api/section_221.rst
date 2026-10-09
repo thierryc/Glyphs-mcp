@@ -1,4 +1,4 @@
-.. attribute:: styleMapStyleNames
+.. attribute:: preferredFamilyNames
 
 		This accesses all localized designer values.
 		For details :attr:`GSInstance.properties`
@@ -6,6 +6,6 @@
 		:type: dict
 
 		.. code-block:: python
-			instance.styleMapStyleNames["ENG"] = "Bold"
+			instance.preferredFamilyNames["ENG"] = "MyFamilyName"
 
 		.. versionadded:: 3.0.3

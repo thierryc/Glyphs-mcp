@@ -1,7 +1,17 @@
-**Properties**
+.. attribute:: value
 
-	.. attribute:: matrix
+		The value
 
-		a transform matrix (m11, m12, m21, m22, x, y)
+		:type: str
 
-		:type: tuple
+	.. code-block:: python
+		# GSInfoValue is stored in e.g. values attribute of font.properties
+		for fontProperty in font.properties:
+
+		    # not all of font.properties contains this attribute
+		    # so we are going to look for those, that have it
+		    if hasattr(fontProperty, "values"):
+		        for fontInfoValue in fontProperty.values:
+		            # this line prints out the value attribute of
+		            # found GSInfoValue instance
+		            print(fontInfoValue.value)

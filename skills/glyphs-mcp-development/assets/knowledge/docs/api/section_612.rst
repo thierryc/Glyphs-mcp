@@ -1,7 +1,6 @@
-.. function:: Message(message, title="Alert", OKButton=None)
+.. function:: skew(x, [center])
 
-	Shows an alert panel.
+		if a single number, skew in x-direction otherwise skew by x, y
+		if center is given, that is used as the origin of the skew
 
-	:param message: the string
-	:param title: a title of the dialog
-	:param OKButton: the label of the confirmation button
+		:type: int/float or tuple

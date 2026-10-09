@@ -1,9 +1,6 @@
-.. function:: GetFolder(message=None, allowsMultipleSelection=False, path=None)
+.. function:: rotate(angle)
 
-	Opens a folder chooser dialog.
+		The angle of the rotation. In degree, positive angles are CCW
+		if center is given, that is used as the origin of the rotation
 
-	:param message:
-	:param allowsMultipleSelection:
-	:param path:
-	:return: The selected folder or None
-	:rtype: str
+		:type: int/float

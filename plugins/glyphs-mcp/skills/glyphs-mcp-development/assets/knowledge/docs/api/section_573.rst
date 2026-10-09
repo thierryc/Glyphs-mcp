@@ -1,14 +1,5 @@
-:mod:`GSMetricStore`
-===============================================================================
+.. attribute:: anchors
 
-The GSMetricStore objects represent vertical metrics values and theirs overshoots.
+		Anchors defined for this glyph, as a list of anchor names.
 
-.. class:: GSMetricStore()
-
-		* :attr:`position`
-		* :attr:`overshoot`
-		* :attr:`name`
-		* :attr:`filter`
-		* :attr:`metric`
-
-	**Properties**
+		:type: list

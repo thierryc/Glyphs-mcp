@@ -1,14 +1,7 @@
-:mod:`GSGlyphReference`
-===============================================================================
+.. attribute:: name
 
-a small helper class to store a reference to a glyph in userData that will keep track of changes to the glyph name.
+		The glyph name the component is pointing to.
 
-.. versionadded:: 3.0.4
+		:type: str
 
-.. class:: GSGlyphReference()
-
-	Properties
-
-		* :attr:`glyph`
-
-	**Properties**
+		.. versionadded:: 2.5

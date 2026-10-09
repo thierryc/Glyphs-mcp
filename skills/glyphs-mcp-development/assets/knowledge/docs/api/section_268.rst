@@ -1,5 +1,5 @@
-.. attribute:: parent
+.. attribute:: name
 
-		Reference to the :class:`GSFont` object.
+		The class name
 
-		:type: :class:`GSFont`
+		:type: str

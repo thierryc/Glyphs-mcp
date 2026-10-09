@@ -1,6 +1,6 @@
 # Glyphs MCP Sidecar
 
-The [current seventeen-tool contract](../../content/reference/command-set.mdx) owns
+The [current eighteen-tool contract](../../content/reference/command-set.mdx) owns
 the public interface and result semantics. Follow [V2 release notes](../../V2-RELEASE.md)
 for current delivery scope; the algorithm notes below describe retained behavior.
 
@@ -21,7 +21,7 @@ Complete authorized edits apply automatically; previews and report warnings
 wait for review. A prerequisite Save and continue saves existing work once;
 the resulting edit remains unsaved until separately authorized.
 
-Seventeen tools share the existing job/save services. Low-level typed jobs change
+Eighteen tools share the existing job/save services. Low-level typed jobs change
 nothing until `apply_job`; application never saves. Conversation results offer
 Keep without saving, authorized Save, and selective typed Undo or whole-font
 script restoration. `accept_job` verifies and saves the whole font. Keep ends

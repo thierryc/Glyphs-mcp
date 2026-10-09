@@ -1,3 +1,4 @@
-.. function:: deliver()
+.. attribute:: userInfo
+		the userInfo of the notification
 
-		Shows the notification
+		:type: dict

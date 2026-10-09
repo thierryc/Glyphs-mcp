@@ -1,5 +1,5 @@
-.. attribute:: labels
+.. attribute:: active
 
-		List of Feature names for stylistic set features
+		If the the parameter should be used or not
 
-		:type: list
+		:type: bool

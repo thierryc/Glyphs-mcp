@@ -36,10 +36,10 @@ def activity(job):
     operation = job.get("bridgeOperation") or {}
     state = job["status"]
     phase = job.get("phase", state) if state == "preparing" else state
-    document = job["document"]
+    document = job.get("document") or {}
     return {
         "jobId": job["id"],
-        "document": document.get("familyName") or Path(document.get("path") or "Untitled").name,
+        "document": "Compiled font comparison" if job.get("inputKind") == "compiled_fonts" else document.get("familyName") or Path(document.get("path") or "Untitled").name,
         "kind": job["request"]["kind"], "phase": phase,
         "startedAt": job.get("phaseStartedAt", job["createdAt"]),
         "finishedAt": job.get("finishedAt"),

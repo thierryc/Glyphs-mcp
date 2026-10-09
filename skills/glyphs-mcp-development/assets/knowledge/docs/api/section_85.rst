@@ -1,3 +1,3 @@
-.. attribute:: versionMajor
+.. attribute:: manufacturerURL
 
-		:type: int
+		:type: str

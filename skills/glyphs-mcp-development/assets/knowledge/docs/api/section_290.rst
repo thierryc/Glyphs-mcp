@@ -1,5 +1,5 @@
-.. attribute:: storeProductionName
-		Set to True in order to manipulate the :attr:`GSGlyph.productionName` of the glyph (see above).
-		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+.. attribute:: name
 
-		:type: bool
+		The name of the glyph. It will be converted to a "nice name" (afii10017 to A-cy) (you can disable this behavior in font info or the app preference)
+
+		:type: str

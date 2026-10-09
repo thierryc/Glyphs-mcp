@@ -1,0 +1,48 @@
+--- a/Companions/Glyphs/Beztrace.glyphsPlugin/Contents/Resources/beztrace_companion/engine.py
++++ b/Companions/Glyphs/Beztrace.glyphsPlugin/Contents/Resources/beztrace_companion/engine.py
+@@ -10,6 +10,8 @@
+ import time
+ from pathlib import Path
+ from .contract import CompanionError, ENGINE_VERSIONS, MAX_INPUT, MAX_OUTPUT, parse_result, number
++
++from .engine_settings import selected_engine
+ 
+ DEFAULT_ENGINE = '/Library/Application Support/beztrace/bin/beztrace'
+ DEVELOPMENT_ENGINE = '.build/beztrace-0.1.1-dev.4/bin/beztrace'
+@@ -33,6 +35,9 @@
+     from silently falling back to the known small-contour behavior in 0.1.0 each
+     time a new panel is opened.
+     """
++    configured = selected_engine(None)
++    if configured is not None:
++        return configured
+     path = Path(module_path).resolve()
+     for parent in path.parents:
+         if (parent/'Package.swift').is_file() and (parent/'Companions/Glyphs').is_dir():
+--- a/Companions/Glyphs/Beztrace.glyphsPlugin/Contents/Resources/beztrace_companion/ui.py
++++ b/Companions/Glyphs/Beztrace.glyphsPlugin/Contents/Resources/beztrace_companion/ui.py
+@@ -561,7 +561,11 @@
+         if self.session.busy: return
+         panel=NSOpenPanel.openPanel(); panel.setCanChooseDirectories_(False); panel.setAllowsMultipleSelection_(False)
+         if panel.runModal()==NSModalResponseOK:
+-            self.engine=str(panel.URL().path()); self.status('Engine selected. Ready to trace.')
++            from .engine_settings import save_user_engine
++            engine = str(panel.URL().path())
++            save_user_engine(engine)
++            self.engine = engine
++            self.status('Engine selected. Ready to trace.')
+             self.settingsChanged_(None)
+ 
+     def showDetails_(self,sender):
+@@ -569,7 +573,10 @@
+         alert.setInformativeText_(self.details or 'No errors.'); alert.runModal()
+ 
+     def showAbout_(self,sender):
+-        alert=NSAlert.alloc().init(); alert.setMessageText_('Beztrace 0.1.0 · build 15')
++        import plistlib
++        metadata = plistlib.loads((Path(__file__).parents[2] / 'Info.plist').read_bytes())
++        title = 'Beztrace %s · build %s' % (metadata['CFBundleShortVersionString'], metadata['CFBundleVersion'])
++        alert=NSAlert.alloc().init(); alert.setMessageText_(title)
+         alert.setInformativeText_('Supports beztrace 0.1.0, 0.1.1 and 0.1.1-dev.1 through 0.1.1-dev.4.\nEngine: '+self.engine+'\n\nSigning and native qualification status are recorded in the release manifest.')
+         alert.runModal()
+ 

@@ -1,7 +1,5 @@
-.. function:: glyphInfoForName(name, [font=None])
+.. function:: showGlyphInfoPanelWithSearchString(String)
 
-		Generates :class:`GSGlyphInfo` object for a given glyph name.
+		Shows the Glyph Info window with a preset search string
 
-		:param name: Glyph name
-		:param font: if you add a font, and the font has a local glyph info, it will be used instead of the global info data.
-		:return: :class:`GSGlyphInfo`
+		:param String: The search term

@@ -1,4 +1,6 @@
-.. attribute:: rightKerningGroup
-		The rightKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
+.. attribute:: storeCategory
 
-		:type: str
+		Set to True in order to manipulate the :attr:`GSGlyph.category` of the glyph (see above).
+		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+
+		:type: bool

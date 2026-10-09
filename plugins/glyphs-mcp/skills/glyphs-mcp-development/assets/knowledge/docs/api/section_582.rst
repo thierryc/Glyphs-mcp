@@ -1,4 +1,12 @@
-.. attribute:: instanceIndex
-		The index of the selected instance
+.. attribute:: direction
 
-		:type: int
+		Writing direction.
+
+		See `Writing Directions`_
+
+		:type: integer
+
+		.. code-block:: python
+			glyph.direction = GSRTL
+
+		.. versionadded:: 3

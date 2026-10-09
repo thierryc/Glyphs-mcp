@@ -1,29 +1,14 @@
-:mod:`GSPathSegment`
-===============================================================================
+.. attribute:: bounds
 
-Implementation of the segment object.
+		Bounding box of the path, read-only
 
-For details on how to access them, please see :attr:`GSPath.segments`
+		:type: NSRect
 
-.. class:: GSPathSegment()
+		.. code-block:: python
+			path = layer.paths[0] # first path
 
-	Properties
+			# origin
+			print(path.bounds.origin.x, path.bounds.origin.y)
 
-		* :attr:`type`
-		* :attr:`bounds`
-		* :attr:`length`
-
-	Functions
-
-		* :meth:`copy`
-		* :meth:`curvatureAtTime_`
-		* :meth:`extremePoints`
-		* :meth:`extremeTimes`
-		* :meth:`inflectionPoints`
-		* :meth:`lastPoint`
-		* :meth:`middlePoint`
-		* :meth:`normalAtTime_`
-		* :meth:`normalizeHandles`
-		* :meth:`pointAtTime_`
-		* :meth:`reverse`
-		* :meth:`tangentAtTime_`
+			# size
+			print(path.bounds.size.width, path.bounds.size.height)

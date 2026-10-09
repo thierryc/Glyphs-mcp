@@ -1,10 +1,9 @@
-.. function:: cutBetweenPoints(Point1, Point2)
+.. attribute:: bezierPath
+		The layer as an NSBezierPath object. Useful for drawing glyphs in plug-ins.
 
-		Cuts all paths that intersect the line from Point1 to Point2
-
-		:param Point1: one point
-		:param Point2: the other point
+		:type: NSBezierPath
 
 		.. code-block:: python
-			# cut glyph in half horizontally at y=100
-			layer.cutBetweenPoints(NSPoint(0, 100), NSPoint(layer.width, 100))
+			# draw the path into the Edit view
+			NSColor.redColor().set()
+			layer.bezierPath.fill()

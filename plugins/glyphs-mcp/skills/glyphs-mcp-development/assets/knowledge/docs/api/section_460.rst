@@ -1,47 +1,18 @@
-.. function:: copy()
+.. attribute:: attributes
 
-		Returns a full copy of the segment
+		path attributes like :samp:`fill`, :samp:`mask`, :samp:`strokeWidth`, :samp:`strokeHeight`, :samp:`strokeColor'`, :samp:`strokePos`
 
-	.. function:: reverse()
+		.. code-block:: python
 
-		reverses the segments
+			# in B/W layers:
+			path.attributes['fill'] = True
+			path.attributes['mask'] = True
+			path.attributes['strokeWidth'] = 100
+			path.attributes['strokeHeight'] = 80
 
-	.. function:: middlePoint()
+			# in color layers:
+			path.attributes['strokeColor'] = NSColor.redColor()
+			path.attributes['fillColor'] = NSColor.blueColor()
+			path.attributes['strokePos'] = 1 # or 0, -1
 
-		the point at t=0.5
-
-	.. function:: lastPoint()
-
-		the ending point of the segment
-
-	.. function:: inflectionPoints()
-
-		a list of "t" values of inflection points on the segment
-
-	.. function:: curvatureAtTime_(t)
-
-		the curvature at "t"
-
-	.. function:: pointAtTime_(t)
-
-		the point a "t"
-
-	.. function:: normalAtTime_(t)
-
-		the normal vector at "t"
-
-	.. function:: tangentAtTime_(t)
-
-		the tangent at "t"
-
-	.. function:: extremePoints()
-
-		a list of extreme points
-
-	.. function:: extremeTimes()
-
-		a list of "t" value for the extreme points
-
-	.. function:: normalizeHandles()
-
-		balances the length of the handle while trying to keep the shape as good as possible
+		:type: dict

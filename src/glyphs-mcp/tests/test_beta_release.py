@@ -16,14 +16,14 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
-def test_current_checkout_is_stable_candidate_build_56():
+def test_current_checkout_is_stable_candidate_build_57():
     release = load(REPO)
-    assert release['version'] == '2.0.1'
-    assert release['tag'] == 'v2.0.1'
-    assert release['label'] == '2.0.1'
+    assert release['version'] == '2.0.2'
+    assert release['tag'] == 'v2.0.2'
+    assert release['label'] == '2.0.2'
     assert release['channel'] == 'stable'
     assert release['betaNumber'] == 0
-    assert release['installerBuild'] == 56
+    assert release['installerBuild'] == 57
     assert '/main/' in release['feedURL']
     assert '/main/' in release['registryURL']
 

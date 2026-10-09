@@ -1,4 +1,7 @@
-.. attribute:: bottomKerningKey
-		The key to be used with the kerning functions (:meth:`GSFont.kerningForPair()`, :meth:`GSFont.setKerningForPair()`, :meth:`GSFont.removeKerningForPair()`).
+.. attribute:: case
+
+		e.g: GSUppercase, GSLowercase, GSSmallcaps
+
+		:type: int
 
 		.. versionadded:: 3

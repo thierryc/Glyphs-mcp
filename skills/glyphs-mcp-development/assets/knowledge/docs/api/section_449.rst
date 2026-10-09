@@ -1,8 +1,5 @@
-.. attribute:: connection
+.. attribute:: locked
 
-		The type of the connection, SHARP or SMOOTH
+		Locked
 
-		:type: str
-
-		.. deprecated:: 2.3
-			Use :attr:`smooth <GSNode.smooth>` instead.
+		:type: bool

@@ -1,23 +1,19 @@
-.. attribute:: axes
+.. attribute:: instances
 
-		Collection of :class:`GSAxis`:
+		Collection of :class:`GSInstance` objects.
 
 		.. code-block:: python
-			for axis in font.axes:
-			    print(axis)
+			for instance in font.instances:
+			    print(instance)
 
-			# to add a new axis
-			axis = GSAxis()
-			axis.name = "Some custom Axis"
-			axis.axisTag = "SCAX"
-			font.axes.append(axis)
+			# to add a new instance
+			instance = GSInstance()
+			instance.name = "Some Instance"
+			font.instances.append(instance)
 
-			# to delete an axis
-			del font.axes[0]
+			# to delete an instances
+			del font.instances[0]
 
-			font.axes.remove(someAxis)
+			font.instances.remove(someInstance)
 
 		:type: list
-
-		.. versionadded:: 2.5
-		.. versionchanged:: 3

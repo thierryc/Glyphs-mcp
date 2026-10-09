@@ -1,10 +1,3 @@
-.. attribute:: values
+.. function:: redraw()
 
-		A list of :class:`GSInfoValue` objects.
-
-		:type: list
-
-	.. code-block:: python
-		# listing values of GSInfoValueLocalized
-		for fontInfoValue in fontInfoValueLocalized.values:
-		    print(fontInfoValue)
+		forces a update of the edit view

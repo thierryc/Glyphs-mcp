@@ -1,4 +1,4 @@
-.. attribute:: lastChange
-		Change date when glyph was last changed as datetime.
+.. attribute:: rightKerningGroup
+		The rightKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
 
-		Check Python’s :mod:`time` module for how to use the timestamp.
+		:type: str

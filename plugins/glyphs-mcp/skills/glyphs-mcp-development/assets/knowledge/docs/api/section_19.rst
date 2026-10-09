@@ -1,4 +1,4 @@
-.. attribute:: languageScripts
-		A dictionary with language tag to script tag mapping, e.g., 'ENG': 'latn'
+.. attribute:: scriptSuffixes
+		A dictionary with glyphs name suffixes for scripts and their respective script names, e.g., 'cy': 'cyrillic'
 
 		:type: dict

@@ -1,8 +1,13 @@
-.. attribute:: vertOrigin
-		Layer vertical origin
+.. attribute:: associatedMasterId
+		The ID of the :class:`fontMaster <GSFontMaster>` this layer belongs to, in case this isn't a master layer. Every layer that isn't a master layer needs to be attached to one master layer.
 
-		set it to None to reset it to default
+		.. code-block:: python
+			# add a new layer
+			newLayer = GSLayer()
+			newLayer.name = '{125, 100}' # (example for glyph-level intermediate master)
 
-		:type: float
+			# you may set the master ID that this layer will be associated with, otherwise the first master will be used
+			newLayer.associatedMasterId = font.masters[-1].id # attach to last master
+			font.glyphs['a'].layers.append(newLayer)
 
-		.. versionadded:: 2.6.2
+		:type: str

@@ -1,5 +1,5 @@
-.. attribute:: name
+.. attribute:: names
 
-		The FeaturePrefix name
+		The localised names of the particle.
 
-		:type: str
+		:type: list of :class:`GSInfoValue`

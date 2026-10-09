@@ -247,6 +247,39 @@ def current_save_status(value):
             'Current save status could not be confirmed.')
 
 
+def presented_actions(value):
+    """Presentation only: never widen the lifecycle's offered actions."""
+    offered = offered_actions(value)
+    names = {name for name, _ in offered}
+    state = value['state']
+    primary = next((name for name, _ in offered if name != 'wait_for_answer'), None)
+    secondary = 'cancel' if 'cancel' in names else None
+    if state in {'ready', 'needs_review'}:
+        secondary = 'discard'
+    elif state == 'applied':
+        secondary = 'discard' if 'discard' in names else 'save_result'
+    elif state in {'failed', 'cancelled'} and 'finish_script' in names:
+        secondary = 'restore_saved_script'
+    labels = {'finish_edit': 'Keep without saving', 'finish_script': 'Keep without saving'}
+    if state in {'ready', 'needs_review'}:
+        labels['discard'] = 'Cancel preview'
+    result = []
+    for name, label in offered:
+        placement = ('auto_keep' if name == 'wait_for_answer' else
+                     'primary' if name == primary else
+                     'secondary' if name == secondary else 'menu')
+        result.append(dict(action=name, label=labels.get(name, label), token=action_token(value, name),
+                           requiresDestination=name in {'save_as_continue', 'save_result_as'},
+                           presentation=placement))
+    order = {'primary': 0, 'secondary': 1, 'menu': 2, 'auto_keep': 3}
+    return sorted(result, key=lambda item: order[item['presentation']])
+
+
+def compact_summary(summary):
+    text = ' '.join(summary.split())
+    return text if len(text) <= 140 else text[:139] + '…'
+
+
 def public_workflow(value, *, include_review=False, include_warning=False):
     result = {key: deepcopy(value.get(key)) for key in (
         "id", "revision", "document", "mode", "state", "jobId", "blockerId", "blockingWorkflowId", "job", "error", "receipt", "reviewInConversation", "savedVersion")}
@@ -296,9 +329,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         op['message'] = None
         if include_warning:
             result['warning'] = scripts.WARNING
-    result["actions"] = [dict(action=name, label=label, token=action_token(value, name),
-                              requiresDestination=name in {"save_as_continue", "save_result_as"})
-                         for name, label in offered_actions(value)]
+    result['actions'] = presented_actions(value)
     result["message"] = MESSAGES.get(value["state"], "Checking your changes…")
     if guidance := GUIDANCE.get(value["state"]):
         result["message"] += "\n" + guidance
@@ -340,10 +371,18 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result['message'] += '\nUse that workflow’s available Keep, Save or Restore saved version actions. Restore replaces all subsequent unsaved edits in the whole font.'
     if (value.get('job') or {}).get('checkpointEnabled') and value['state'] == 'applied':
         result['message'] += '\nSave font also creates a local Git checkpoint. Keep does not create a result checkpoint.'
-    labels = "; ".join(item["label"] for item in result["actions"])
-    result["text"] = f'{value["document"].get("familyName") or "Untitled font"} — {value["document"].get("path") or "Not saved yet"}\n{result["message"]}'
+    labels = '; '.join(item['label'] for item in result['actions']
+                       if item['presentation'] in {'primary', 'secondary'})
+    menu_labels = '; '.join(item['label'] for item in result['actions'] if item['presentation'] == 'menu')
+    path = value['document'].get('path')
+    filename = Path(path).name if path else 'Not saved yet'
+    result['text'] = f'{value["document"].get("familyName") or "Untitled font"} — {filename}\n{result["message"]}'
     if result.get('summary'):
-        result['text'] += '\nIntended change: ' + result['summary']
+        result['text'] += '\nIntended change: ' + compact_summary(result['summary'])
+    if include_review:
+        result['text'] += '\nDocument: ' + (path or 'Not saved yet')
+        if result.get('summary'):
+            result['text'] += '\nComplete request: ' + result['summary']
     result["text"] += "\nOperation: " + request["kind"].replace("_", " ")
     if request['kind'] == 'kerning_edit':
         result['text'] += '\nScope: {} exact pair edits; master and direction are explicit for each pair.'.format(len(options['edits']))
@@ -358,7 +397,10 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result["text"] += "; masters: " + ", ".join(options["masters"])
     if request['kind'] == 'python_script':
         report = (result.get('job') or {}).get('report') or {}
-        result['text'] += '\nScope: {} resolved surfaces; {} skipped.'.format(report.get('targetCount', 'pending'), report.get('skippedCount', 0))
+        count = report.get('targetCount')
+        result['text'] += '\nScope: ' + (f'{count} resolved targets.' if count is not None else 'Resolving targets.')
+        if report.get('skippedCount'):
+            result['text'] += f' {report["skippedCount"]} skipped.'
         evidence = ((result.get('job') or {}).get('bridgeOperation') or {}).get('scriptResult') or {}
         if result['entrypoint'] == 'per_target' and evidence.get('executed'):
             result['text'] += '\nCompleted callbacks: {} / {}.'.format(evidence.get('executedTargets', 0), evidence.get('totalTargets', 0))
@@ -382,14 +424,23 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result['text'] += '\nUndo these changes: restores only this edit and stops on conflicting later edits. Keep ends this offer; native Undo/Redo remains available.'
     if labels:
         result["text"] += "\nAvailable choices: " + labels + ". You can reply in ordinary language."
+    if menu_labels:
+        result['text'] += '\nMore options: ' + menu_labels + '.'
     if result.get('autoKeep', {}).get('action'):
         result['text'] += '\nIn an active card, Keep changes without saving is selected after 30 seconds. This ends this workflow’s recovery offer. Choose or say “Wait for my answer” to disable it. Text-only clients keep this choice manual.'
     elif value.get('autoKeepEnabled') is False and value['state'] == 'applied':
         result['text'] += '\nAutomatic Keep is off; waiting for your answer.'
+    elif any(item['presentation'] == 'auto_keep' for item in result['actions']):
+        result['text'] += '\nTurn off automatic Keep: say “Wait for my answer”. Text-only clients keep choices manual.'
     if value.get("error"):
         result["text"] += "\nDetails: " + str(value["error"].get("message", ""))
     result["poll"] = (value["state"] in ACTIVE and (value["state"] != "uncertain" or bool(value.get("jobId")))
                       or value["state"] == "ready" and value.get("mode") == "apply")
+    # Card updates must not instruct a conversational agent to poll a pending
+    # user decision. Recovery actions on failed/cancelled scripts still refresh.
+    processing = (value['state'] in {'preparing', 'applying', 'saving', 'discarding', 'resolving', 'blocked_active'}
+                  or value['state'] == 'ready' and value.get('mode') == 'apply')
+    result['uiRefreshIntervalMs'] = 1500 if processing else 5000 if result['actions'] else 0
     # Some hosts omit structuredContent from the model's conversation. Keep the
     # same bounded control reference in tool text and App context updates.
     result["modelContext"] = json.dumps({
@@ -399,6 +450,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         "blockingWorkflowId": result.get('blockingWorkflowId'),
         "autoKeep": result.get('autoKeep'),
         "actions": [dict(action=item["action"], label=item["label"], action_token=item["token"],
-                         requiresDestination=item["requiresDestination"]) for item in result["actions"]],
+                         requiresDestination=item["requiresDestination"], presentation=item['presentation'])
+                    for item in result["actions"]],
     }, ensure_ascii=False, separators=(",", ":"))
     return result

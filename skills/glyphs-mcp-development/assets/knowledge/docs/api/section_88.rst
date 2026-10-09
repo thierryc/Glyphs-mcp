@@ -1,5 +1,14 @@
-.. attribute:: familyName
+.. attribute:: date
 
-		Family name of the typeface.
+		:type: datetime.datetime
 
-		:type: str
+		.. code-block:: python
+			print(font.date)
+			>> 2015-06-08 09:39:05
+
+			# set date to now
+			font.date = datetime.datetime.now()
+			# using NSDate
+			font.date = NSDate.date()
+			# or in seconds since Epoch
+			font.date = time.time()

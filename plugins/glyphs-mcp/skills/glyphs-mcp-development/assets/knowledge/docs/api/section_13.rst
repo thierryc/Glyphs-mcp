@@ -1,8 +1,9 @@
-.. attribute:: boolDefaults
-		Access to default settings cast to a bool.
-
-		:type: bool
+.. function:: registerDefaults(dictionary)
+		give it a doct with key value pairs to set default values in the user defaults
 
 		.. code-block:: python
-			if Glyphs.boolDefaults["com_MyName_foo_bar"]:
-			    print('"com_MyName_foo_bar" is set')
+			values = {
+				"com_MyName_foo": 12,
+				"com_MyName_bar": "foo",
+			}
+			Glyphs.registerDefaults(values)

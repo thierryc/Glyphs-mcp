@@ -1,5 +1,7 @@
-.. attribute:: automatic
+Properties
 
-		Define whether this feature should be auto-generated when pressing the 'Update' button in the Font Info.
+		* :attr:`active`
+		* :attr:`name`
+		* :attr:`value`
 
-		:type: bool
+	**Properties**

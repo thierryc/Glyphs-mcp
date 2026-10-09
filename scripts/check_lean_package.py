@@ -41,7 +41,7 @@ def check_tool_catalog(root):
     model = ast.parse((root/'src/protocol/glyphs_mcp_protocol/models.py').read_text())
     expected = next(ast.literal_eval(node.value) for node in model.body
                     if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'TOOL_NAMES' for t in node.targets))
-    assert len(tools) == len(expected) == 17 and set(tools) == set(expected), f'Public tool contract mismatch: {tools}'
+    assert len(tools) == len(expected) == 18 and set(tools) == set(expected), f'Public tool contract mismatch: {tools}'
     return set(tools)
 
 

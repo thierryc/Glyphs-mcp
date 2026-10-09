@@ -1,6 +1,9 @@
-.. attribute:: topMetricsKey
-		The topMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
+.. attribute:: components
 
-		:type: str
+		Collection of :class:`GSComponent` objects. This is only a helper proxy to iterate all components (without paths). To add/remove items, use :attr:`GSLayer.shapes`.
 
-		.. versionadded:: 3.4
+		:type: list
+
+		.. code-block:: python
+			for component in layer.components:
+			    print(component)

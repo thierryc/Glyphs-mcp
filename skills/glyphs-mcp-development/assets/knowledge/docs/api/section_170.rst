@@ -1,13 +1,15 @@
-:mod:`GSAlignmentZone`
-===============================================================================
+.. attribute:: stems
 
-Implementation of the alignmentZone object.
+		The stems. This is a list of numbers.
 
-There is no distinction between Blue Zones and Other Zones. All negative zones (except the one with position 0) will be exported as Other Zones.
+		:type: list
 
-The zone for the baseline should have position 0 (zero) and a negative width.
+		.. code-block:: python
 
-.. class:: GSAlignmentZone([pos, size])
+			font.masters[0].stems = [10, 11, 20]
 
-	:param pos: The position of the zone
-	:param size: The size of the zone
+			print(master.stems[0])
+
+			master.stems[0] = 12
+
+			master.stems["stemName"] = 12

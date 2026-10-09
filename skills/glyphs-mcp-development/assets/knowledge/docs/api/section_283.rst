@@ -1,7 +1,5 @@
-.. attribute:: case
+.. attribute:: notes
 
-		e.g: GSUppercase, GSLowercase, GSSmallcaps
+		Some extra text. Is shown in the bottom of the feature window. Contains the stylistic set name parameter
 
-		:type: int
-
-		.. versionadded:: 3
+		:type: str

@@ -1,7 +1,11 @@
-.. attribute:: sampleText
+.. attribute:: compatibleFullNames
 
-		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
+		This accesses all localized designer values.
+		For details :attr:`GSFont.properties`
 
-		:type: str
+		:type: dict
+
+		.. code-block:: python
+			font.compatibleFullNames["ENG"] = "MyFont Condensed Bold"
 
 		.. versionadded:: 3.0.3

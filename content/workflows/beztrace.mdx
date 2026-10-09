@@ -2,6 +2,22 @@
 title: Beztrace companion setup
 ---
 
+## Managed setup in the 2.0.2 candidate
+
+Setup offers optional Install, Update, Remove and Retry controls. Install All
+excludes Beztrace. The managed distribution awaits a separately qualified
+companion update supporting persistent engine configuration; build 15 does not
+implement that handoff. Until then the card explains the pending release state
+and preserves independent installations and development links.
+
+Once qualified, Setup provisions the bundled engine in a versioned user
+Application Support directory and supplies a managed default. Explicit user
+engine choices take priority and persist between panels. App relocation does
+not affect that engine path. Installation and restart requirements are distinct
+from verified loaded behavior. Removal preserves the shared engine and user
+settings. The independent build 15 instructions below retain their original scope.
+
+
 Beztrace traces images into editable outlines through a separate Glyphs plugin.
 It works independently of the MCP server. **Install All does not install that
 plugin**. Verify the installed plugin build and its matching instructions before

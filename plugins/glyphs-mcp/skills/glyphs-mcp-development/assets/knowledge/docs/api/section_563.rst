@@ -1,11 +1,8 @@
-.. attribute:: key
+.. function:: saveToPDF(path[, rect])
 
-		the key
+		Save the view to a PDF file.
 
-		:type: str
+		:param path: Path to the file
+		:param rect: Optional. NSRect defining the view port. If omitted, :attr:`GSEditViewController.viewPort` will be used.
 
-	.. code-block:: python
-		# searching for GSInfoValueLocalized with given "designers" key
-		for fontInfo in font.properties:
-		    if fontInfo.key == "designers":
-		        print(fontInfo)
+		.. versionadded:: 2.4

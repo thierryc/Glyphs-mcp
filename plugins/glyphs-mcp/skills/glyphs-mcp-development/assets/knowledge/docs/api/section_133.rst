@@ -1,5 +1,16 @@
-.. attribute:: font
+:mod:`GSAxis`
+===============================================================================
 
-		Reference to the :class:`GSFont` object that contains the axis. Normally that is set by the app.
+Implementation of the axis object.
 
-		:type: GSFont
+.. class:: GSAxis()
+
+	Properties
+
+		* :attr:`name`
+		* :attr:`axisTag`
+		* :attr:`id`
+		* :attr:`hidden`
+		* :attr:`font`
+
+	**Properties**

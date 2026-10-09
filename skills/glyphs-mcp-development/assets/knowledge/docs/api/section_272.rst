@@ -1,5 +1,12 @@
-.. attribute:: unicodes
+.. attribute:: tempData
 
-		List of Strings‚ with the hex Unicode values of glyph, if encoded.
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use class.userData
 
-		:type: list
+		:type: dict
+
+		.. code-block:: python
+			# set value
+			class.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del class.tempData['rememberToMakeCoffee']

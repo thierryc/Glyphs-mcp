@@ -1,7 +1,9 @@
-.. attribute:: intDefaults
-		Access to default settings cast to a int.
+.. attribute:: colorDefaults
+		Access to default settings cast to a color.
 
-		:type: int
+		:type: NSColor
 
 		.. code-block:: python
-			number = Glyphs.intDefaults["GSHandleSize"]
+			color = Glyphs.colorDefaults["GSColorCanvas"]
+			color.set()
+			NSBezierPath.fillRect_(rect)

@@ -1,4 +1,6 @@
-.. attribute:: leftKerningGroup
-		The leftKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
+.. attribute:: category
+
+		The category of the glyph. e.g. ‘Letter’, ‘Symbol’
+		Setting only works if :attr:`GSGlyph.storeCategory` is set (see below).
 
 		:type: str

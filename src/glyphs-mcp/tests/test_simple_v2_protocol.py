@@ -44,7 +44,7 @@ def patch() -> dict:
     }
 
 
-def test_public_surface_has_fourteen_base_and_three_workflow_tools() -> None:
+def test_public_surface_has_fifteen_base_and_three_workflow_tools() -> None:
     assert TOOL_NAMES == (
         "get_status",
         "list_documents",
@@ -55,6 +55,7 @@ def test_public_surface_has_fourteen_base_and_three_workflow_tools() -> None:
         "close_document",
         "read_entities",
         "start_job",
+        "compare_fonts",
         "get_job",
         "apply_job",
         "accept_job",

@@ -1,4 +1,8 @@
-.. attribute:: isMasterLayer
-		If it is a master layer
+.. attribute:: vertWidth
+		Layer vertical width
 
-		:type: bool
+		set it to None to reset it to default
+
+		:type: float
+
+		.. versionadded:: 2.6.2

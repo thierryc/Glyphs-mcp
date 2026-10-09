@@ -1,12 +1,11 @@
-.. attribute:: userData
+.. attribute:: styleNames
 
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+		This accesses all localized styleName values.
+		For details :attr:`GSInstance.properties`
 
 		:type: dict
 
 		.. code-block:: python
-			# set value
-			instance.userData['rememberToMakeCoffee'] = True
+			instance.styleNames["ENG"] = "Regular"
 
-			# delete value
-			del instance.userData['rememberToMakeCoffee']
+		.. versionadded:: 3.0.3

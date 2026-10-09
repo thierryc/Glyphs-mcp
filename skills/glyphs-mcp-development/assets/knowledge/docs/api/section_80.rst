@@ -1,11 +1,7 @@
-.. attribute:: trademarks
+.. attribute:: trademark
 
-		This accesses all localized trademark values.
-		For details :attr:`GSFont.properties`
+		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
 
-		:type: dict
-
-		.. code-block:: python
-			font.trademarks["ENG"] = "ThisFont is a trademark by MyFoundry.com"
+		:type: str
 
 		.. versionadded:: 3.0.3

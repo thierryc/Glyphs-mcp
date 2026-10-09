@@ -1,5 +1,5 @@
-.. attribute:: preferredSubfamilyName
+.. attribute:: familyName
 
-		preferredSubfamilyName
+		familyName
 
 		:type: str

@@ -1,6 +1,5 @@
-.. attribute:: masterIndex
-		The index of the active master (selected in the toolbar).
+.. attribute:: locked
 
-		:type: int
+		Defines whether image is locked for access in UI.
 
-		.. versionadded:: 2.6.1
+		:type: bool

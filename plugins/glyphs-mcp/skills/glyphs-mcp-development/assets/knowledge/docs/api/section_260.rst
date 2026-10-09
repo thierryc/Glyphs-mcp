@@ -1,5 +1,5 @@
-.. attribute:: name
+.. attribute:: tempData
 
-		The feature name
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file.
 
-		:type: str
+		:type: dict

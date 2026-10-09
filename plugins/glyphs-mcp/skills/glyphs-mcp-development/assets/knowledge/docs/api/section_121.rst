@@ -1,5 +1,8 @@
-**Functions**
+.. attribute:: formatVersion
 
-	.. function:: copy()
+		The file-format the font should be written. possible values are '2' and '3'.
+		You can use :ref:`file-format-versions`
 
-		Returns a full copy of the font
+		:type: int
+
+		.. versionadded:: 3

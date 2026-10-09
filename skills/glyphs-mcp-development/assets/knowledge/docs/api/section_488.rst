@@ -1,12 +1,6 @@
-.. attribute:: selected
-
-		Selection state of hint in UI.
+.. attribute:: showMeasurement
+		If the guide is showing measurements
 
 		:type: bool
 
-		.. code-block:: python
-			# select hint
-			layer.hints[0].selected = True
-
-			# print(selection state)
-			print(layer.hints[0].selected)
+		.. versionadded:: 3.1

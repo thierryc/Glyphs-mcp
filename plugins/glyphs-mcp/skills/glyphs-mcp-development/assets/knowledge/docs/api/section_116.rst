@@ -1,5 +1,5 @@
-.. attribute:: filepath
+.. attribute:: currentTab
 
-		On-disk location of GSFont object.
+		Active Edit view tab.
 
-		:type: str
+		:type: :class:`GSEditViewController`

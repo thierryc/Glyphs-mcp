@@ -1,6 +1,5 @@
-.. attribute:: isTrueType
-		if it is a TrueType instruction
+.. attribute:: position
 
-		:type: bool
+		The position of the annotation.
 
-		.. versionadded:: 3
+		:type: NSPoint

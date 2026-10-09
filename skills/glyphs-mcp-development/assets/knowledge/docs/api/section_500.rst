@@ -1,5 +1,4 @@
-.. attribute:: locked
+.. attribute:: otherNode1
+		A third node this hint is attached to. Used for Interpolation or Diagonal hints.
 
-		Defines whether image is locked for access in UI.
-
-		:type: bool
+		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)

@@ -1,5 +1,10 @@
-.. attribute:: parent
+.. attribute:: attributes
 
-		Parent layer of hint.
+		attributes attributes like :samp:`mask` or :samp:`reversePaths`
 
-		:type: GSLayer
+		.. code-block:: python
+
+			component.attributes['mask'] = True
+			component.attributes['reversePaths'] = True
+
+		:type: dict

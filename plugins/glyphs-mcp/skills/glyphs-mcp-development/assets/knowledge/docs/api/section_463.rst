@@ -1,5 +1,1 @@
-.. attribute:: angle
-
-		Angle
-
-		:type: float
+draw the object with a fontTools pen

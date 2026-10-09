@@ -1,4 +1,5 @@
-.. attribute:: otherIndex1
-		A indexPath to the third node this hint is attached to. Used for Interpolation or Diagonal hints.
+.. attribute:: lockAngle
 
-		:type: :class:`NSIndexPath`
+		locks the angle
+
+		:type: bool

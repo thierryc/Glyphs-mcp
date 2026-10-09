@@ -1,3 +1,4 @@
-.. function:: clearSelection()
+.. attribute:: isAligned
+		Indicates if the components are auto aligned.
 
-		Unselect all selected items in this layer.
+		:type: bool

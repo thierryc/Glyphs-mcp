@@ -1,5 +1,4 @@
-.. function:: duplicate([name])
+.. attribute:: topKerningKey
+		The key to be used with the kerning functions (:meth:`GSFont.kerningForPair()`, :meth:`GSFont.setKerningForPair()`, :meth:`GSFont.removeKerningForPair()`).
 
-		Duplicate the glyph under a new name and return it.
-
-		If no name is given, .00n will be appended to it.
+		.. versionadded:: 3

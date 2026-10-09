@@ -1,12 +1,7 @@
-.. attribute:: tempData
+.. attribute:: trademark
 
-		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use instance.userData
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
-		:type: dict
+		:type: str
 
-		.. code-block:: python
-			# set value
-			instance.tempData['rememberToMakeCoffee'] = True
-
-			# delete value
-			del instance.tempData['rememberToMakeCoffee']
+		.. versionadded:: 3.0.3

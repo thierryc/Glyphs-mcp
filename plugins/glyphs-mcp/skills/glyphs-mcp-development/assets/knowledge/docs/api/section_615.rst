@@ -1,5 +1,5 @@
-.. function:: LogToConsole(message)
+.. function:: append(item)
 
-	Write a message to the Mac’s Console.app for debugging.
+		:param item: a NSMenuItem
 
-	:param str message:
+		adds the item to the menu

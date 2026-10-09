@@ -1,0 +1,196 @@
+{
+  "architecture": "arm64",
+  "python": {
+    "path": "python-arm64.tar.gz",
+    "sha256": "53141f31b7cfb2bccf89c2a877827128657dbb8650db06a9a08c7886c28a45ed"
+  },
+  "pythonVersion": "3.11.16",
+  "sourceRevision": "cecdab703d462cfea25b748b19ea4813d3f4d680",
+  "unicode": {
+    "path": "UCD-17.0.0.zip",
+    "sha256": "2066d1909b2ea93916ce092da1c0ee4808ea3ef8407c94b4f14f5b7eb263d28e"
+  },
+  "unicodeVersion": "17.0.0",
+  "wheels": [
+    {
+      "path": "wheels-arm64/PySocks-1.7.1-py3-none-any.whl",
+      "sha256": "2725bd0a9925919b9b51739eea5f9e2bae91e83288108a9ad338b2e3a4435ee5"
+    },
+    {
+      "path": "wheels-arm64/attrs-26.1.0-py3-none-any.whl",
+      "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"
+    },
+    {
+      "path": "wheels-arm64/blackrenderer-0.8.2-py3-none-any.whl",
+      "sha256": "803abde66480a8e26b4068ff8118231a844860d364411e17b6b4475aff83c818"
+    },
+    {
+      "path": "wheels-arm64/certifi-2026.7.22-py3-none-any.whl",
+      "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+    },
+    {
+      "path": "wheels-arm64/charset_normalizer-3.5.2-cp311-cp311-macosx_10_9_universal2.whl",
+      "sha256": "3d21b8b13c7592db2ac5e544a6d83187b995257472b0c9e8351b6d507ae37ed6"
+    },
+    {
+      "path": "wheels-arm64/defcon-0.12.2-py3-none-any.whl",
+      "sha256": "acba4a8ab218b3ea8d4f97b46abd06f0e2a5b3c845e3a8469a5afe969dd654c1"
+    },
+    {
+      "path": "wheels-arm64/diffenator2-0.0.0-py3-none-any.whl",
+      "sha256": "3c7c46da16283e409de357cd40af702df6d2ceb81090160c73a7fd348953dfe4"
+    },
+    {
+      "path": "wheels-arm64/filelock-4.0.12-py3-none-any.whl",
+      "sha256": "5f17ee83ecee8a6f3e389c75822fb70a1c2f0506b99438a6dffa1d56793588c8"
+    },
+    {
+      "path": "wheels-arm64/fonttools-4.66.1-cp311-cp311-macosx_10_9_universal2.whl",
+      "sha256": "d4f76868aea9cc4ce47fdbeaa904c02ee7d85dd0ad095071ae77f0bda6e62cf5"
+    },
+    {
+      "path": "wheels-arm64/freetype_py-2.5.1-py3-none-macosx_10_9_universal2.whl",
+      "sha256": "d01ded2557694f06aa0413f3400c0c0b2b5ebcaabeef7aaf3d756be44f51e90b"
+    },
+    {
+      "path": "wheels-arm64/gflanguages-0.6.0-py3-none-any.whl",
+      "sha256": "7b67f84ea6650cc31fd92ca35cdbe740a3d830e257c7c6fb50c6f4f29576f546"
+    },
+    {
+      "path": "wheels-arm64/glyphsets-1.0.0-py3-none-any.whl",
+      "sha256": "d798f87b2e0a932d1295cbdb431ba298f3abe533efee134119de7673e5e9d2df"
+    },
+    {
+      "path": "wheels-arm64/glyphslib-6.16.0-py3-none-any.whl",
+      "sha256": "0664441b1667b6c4f9e70550329503af9704a8cc341884c2d1868856d65142fc"
+    },
+    {
+      "path": "wheels-arm64/h11-0.16.0-py3-none-any.whl",
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"
+    },
+    {
+      "path": "wheels-arm64/idna-3.20-py3-none-any.whl",
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c"
+    },
+    {
+      "path": "wheels-arm64/jinja2-3.1.6-py3-none-any.whl",
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    {
+      "path": "wheels-arm64/markupsafe-3.0.4-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "7d3391b2188d18737cb2fa147028b1096236eaa7e156446c650a489fa2cadc91"
+    },
+    {
+      "path": "wheels-arm64/ninja-1.13.2-py3-none-macosx_10_9_universal2.whl",
+      "sha256": "fd82e26c0706ad4ab88e5fdd26f3fab0a987a90f810160f6c322e752c6af298b"
+    },
+    {
+      "path": "wheels-arm64/numpy-2.4.6-cp311-cp311-macosx_14_0_arm64.whl",
+      "sha256": "4cfe66903cc32a9921a6733d96b19bb6abf310397581bbad89c228f5abaf0ee8"
+    },
+    {
+      "path": "wheels-arm64/openstep_plist-0.5.2-cp311-cp311-macosx_10_9_universal2.whl",
+      "sha256": "ededff07b64cd49754361f8c80dd2175832e118d47672953cdc2bb13c1da4b26"
+    },
+    {
+      "path": "wheels-arm64/outcome-1.3.0.post0-py2.py3-none-any.whl",
+      "sha256": "e771c5ce06d1415e356078d3bdd68523f284b4ce5419828922b6871e65eda82b"
+    },
+    {
+      "path": "wheels-arm64/pillow-12.3.0-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "37d6d0a00072fd2948eb22bce7e1475f34569d90c87c59f7a2ec59541b77f7a6"
+    },
+    {
+      "path": "wheels-arm64/platformdirs-4.12.4-py3-none-any.whl",
+      "sha256": "78bfb9db2a8471ed7eebe3c3c932da413911042994e699b384fbb4493fa872d7"
+    },
+    {
+      "path": "wheels-arm64/protobuf-3.20.3-py2.py3-none-any.whl",
+      "sha256": "a7ca6d488aa8ff7f329d4c545b2dbad8ac31464f1d8b1c87ad1346717731e4db"
+    },
+    {
+      "path": "wheels-arm64/pyahocorasick-2.3.1-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "e8f9c21fd2bd72c0454ba6df0c7dbdfd7236c5cfd161fc983476fffbde92e18f"
+    },
+    {
+      "path": "wheels-arm64/pybind11-3.1.0-py3-none-any.whl",
+      "sha256": "b8488090f8acffbcb6b5d6a85571a6827a0a2981ffb75e5a0b27b87c4a6b7dd0"
+    },
+    {
+      "path": "wheels-arm64/python_bidi-0.6.11-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "a52f7ad9ef9091e81869e5d255e796755ccf542ade14dda17647cb7d7ffe1b9c"
+    },
+    {
+      "path": "wheels-arm64/pyyaml-6.0.3-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "652cb6edd41e718550aad172851962662ff2681490a8a711af6a4d288dd96824"
+    },
+    {
+      "path": "wheels-arm64/requests-2.34.2-py3-none-any.whl",
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    {
+      "path": "wheels-arm64/selenium-4.50.0-py3-none-any.whl",
+      "sha256": "f724a38a7fd8b0561c6767c620bd9b2c7bd8012d4cb664b2ad23064e5d67d0df"
+    },
+    {
+      "path": "wheels-arm64/skia_python-144.0.post2-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "7408129bf595645f5d895ed6459248611c4931f41417c4f487c34728cefcdf34"
+    },
+    {
+      "path": "wheels-arm64/sniffio-1.3.1-py3-none-any.whl",
+      "sha256": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"
+    },
+    {
+      "path": "wheels-arm64/sortedcontainers-2.4.0-py2.py3-none-any.whl",
+      "sha256": "a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"
+    },
+    {
+      "path": "wheels-arm64/tqdm-4.70.1-py3-none-any.whl",
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+    },
+    {
+      "path": "wheels-arm64/trio-0.34.0-py3-none-any.whl",
+      "sha256": "6c7c9f49917694dcdcd5f67abd168df5599eca480d61f29854d17a61a75c2f05"
+    },
+    {
+      "path": "wheels-arm64/trio_websocket-0.12.2-py3-none-any.whl",
+      "sha256": "df605665f1db533f4a386c94525870851096a223adcb97f72a07e8b4beba45b6"
+    },
+    {
+      "path": "wheels-arm64/typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    {
+      "path": "wheels-arm64/ufolib2-0.19.0-py3-none-any.whl",
+      "sha256": "185375fcff37e6006f90414128e52c22ee11e92715fd3155c0fe63388caac84b"
+    },
+    {
+      "path": "wheels-arm64/uharfbuzz-0.56.3-cp310-abi3-macosx_10_9_universal2.whl",
+      "sha256": "888648b3ca86f3ee2f585e2c951741f06365ec3ae3d2eeaddb2562fd68738057"
+    },
+    {
+      "path": "wheels-arm64/unicodedata2-18.0.0-cp311-cp311-macosx_11_0_arm64.whl",
+      "sha256": "794214d1b13930967da13d1d8ca31b5acb43362343427cbe3c78800df1a3ba96"
+    },
+    {
+      "path": "wheels-arm64/urllib3-2.8.0-py3-none-any.whl",
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"
+    },
+    {
+      "path": "wheels-arm64/websocket_client-1.9.2-py3-none-any.whl",
+      "sha256": "e1a673830a9c7bfa47b1cd3d5e4178f4c9651d80a4eab02c9c23a1c3ec6250ce"
+    },
+    {
+      "path": "wheels-arm64/wsproto-1.3.2-py3-none-any.whl",
+      "sha256": "61eea322cdf56e8cc904bd3ad7573359a242ba65688716b0710a5eb12beab584"
+    },
+    {
+      "path": "wheels-arm64/youseedee-0.7.0-py3-none-any.whl",
+      "sha256": "f32efda938a839edeeaf93ae7013f8d3ed99541304b37e1006037ea286f7bef7"
+    },
+    {
+      "path": "wheels-arm64/setuptools-79.0.1-py3-none-any.whl",
+      "sha256": "e147c0549f27767ba362f9da434eab9c5dc0045d5304feb602a0af001089fc51"
+    }
+  ]
+}

@@ -1,24 +1,13 @@
-:mod:`GSGuide`
-===============================================================================
+.. attribute:: userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
-Implementation of the guide object.
+		:type: dict
 
-For details on how to access them, please see :attr:`GSLayer.guides`
+		.. code-block:: python
+			# set value
+			path.userData['rememberToMakeCoffee'] = True
 
+			# delete value
+			del path.userData['rememberToMakeCoffee']
 
-.. class:: GSGuide()
-
-	Properties
-
-		* :attr:`position`
-		* :attr:`angle`
-		* :attr:`name`
-		* :attr:`filter`
-		* :attr:`showMeasurement`
-		* :attr:`selected`
-		* :attr:`locked`
-		* :attr:`userData`
-
-	Functions
-
-		* :meth:`copy`
+		.. versionadded:: 4

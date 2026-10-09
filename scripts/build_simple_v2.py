@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import importlib.util
 import json
@@ -59,6 +60,18 @@ def _fingerprint_helper():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _tool_catalog():
+    # Read the wire contract without importing runtime dependencies in the builder.
+    tree = ast.parse((PROTOCOL / "models.py").read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "TOOL_NAMES"
+            for target in node.targets
+        ):
+            return list(ast.literal_eval(node.value))
+    raise ValueError("Protocol tool catalog is missing")
 
 
 def _geometry_contract():
@@ -234,21 +247,7 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
         "version": project_version,
         "release": metadata,
         "protocol": 1,
-        "tools": [
-            "get_status",
-            "list_documents",
-            "create_document",
-            "read_entities",
-            "start_job",
-            "get_job",
-            "apply_job",
-            "accept_job",
-            "discard_job",
-            "save_document",
-            "start_edit_workflow",
-            "get_edit_workflow",
-            "respond_edit_workflow",
-        ],
+        "tools": _tool_catalog(),
         "bridge": {"bundle": BUNDLE.name, "identity": _identity(bundle),
                    "codeHash": fingerprints.payload_hash(bundle), "release": metadata},
         "glyphDiffReader": glyph_diff_reader,

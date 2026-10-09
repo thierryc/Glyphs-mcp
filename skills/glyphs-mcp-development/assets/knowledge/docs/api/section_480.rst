@@ -1,4 +1,7 @@
-.. attribute:: otherNode2
-		A fourth node this hint is attached to. Used for Diagonal hints.
+.. attribute:: type
 
-		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)
+		The type of the node, LINE, CURVE or QCURVE
+
+		Always compare against the constants, never against the actual value.
+
+		:type: str

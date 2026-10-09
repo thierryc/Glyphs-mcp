@@ -1,5 +1,3 @@
-.. attribute:: component
+.. function:: intersections()
 
-		The :class:`GSGlyph` the component is pointing to. This is read-only. In order to change the referenced base glyph, set :attr:`componentName <GSComponent.componentName>` to the new glyph name.
-
-		:type: :class:`GSGlyph`
+		returns a list of all intersections between overlapping paths in the layer.

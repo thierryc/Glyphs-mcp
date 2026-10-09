@@ -1,14 +1,12 @@
-.. function:: close([ignoreChanges=True])
+.. function:: save([path=None, formatVersion=3, makeCopy=False])
 
-		Closes the font.
+		Saves the font.
 
-		:param ignoreChanges: Optional. Ignore changes to the font upon closing
-		:type ignoreChanges: bool
+		If no path is given, it saves to the existing location.
 
-	.. function:: disableUpdateInterface()
-
-		Disables interface updates and thus speeds up glyph processing. Call this before you do big changes to the font, or to its glyphs. Make sure that you call :meth:`font.enableUpdateInterface() <GSFont.enableUpdateInterface()>` when you are done.
-
-	.. function:: enableUpdateInterface()
-
-		This re-enables the interface update. Only makes sense to call if you have disabled it earlier.
+		:param path: (Optional) file path including filename and suffix. When the font is loaded directly (`GSFont(path)`), the path argument is required.
+		:type path: str
+		:param formatVersion: The format of the file. Requires `makeCopy=True`
+		:type formatVersion: int
+		:param makeCopy: saves a new file without changing the documents file paths. So it always need a `path` argument
+		:type makeCopy: bool

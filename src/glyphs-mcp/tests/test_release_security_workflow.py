@@ -228,7 +228,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                 installer_build=42,
             )
 
-            self.assertEqual(result["publicToolCount"], 17)
+            self.assertEqual(result["publicToolCount"], 18)
             protocol.write_text('TOOL_NAMES = ("one", "two")\n', encoding="utf-8")
             result = self.security.validate_unsigned_candidate(
                 root, expected_version="2.3.4", installer_build=42,
@@ -415,13 +415,15 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             "run_local_release_tests.sh",
             "verify_release_artifacts.sh",
         ]
-        parsed = subprocess.run(
-            ["/bin/bash", "-n", *[str(REPO / "scripts" / name) for name in scripts]],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(parsed.returncode, 0, parsed.stderr)
+        for name in scripts:
+            with self.subTest(script=name):
+                parsed = subprocess.run(
+                    ["/bin/bash", "-n", str(REPO / "scripts" / name)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(parsed.returncode, 0, parsed.stderr)
 
         debug = subprocess.run(
             [str(REPO / "scripts" / "build_installer_app.sh")],

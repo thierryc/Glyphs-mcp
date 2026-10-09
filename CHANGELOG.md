@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.0.2 — local development candidate, build 57
+
+- Simplify shared edit cards with concise requests, one View details disclosure,
+  main choices and More options. Reconcile outdated choices across visible cards,
+  hide unavailable controls, and retain matching text-only choices and recovery.
+  Preserve the 30-second automatic Keep default with a separate Pause countdown
+  control; background state checks do not restart an unchanged countdown.
+- Clarify supplemental skill actions and detect existing agent-specific and linked
+  copies. Update/remove preserve backups and external linked folders.
+- Keep packaged tool metadata aligned with the eighteen-tool wire contract.
+- Present initialization status while discovery, payload extraction and verification
+  run in the background. Setup and Skills share verified payload resolution.
+- Add `compare_fonts` as the eighteenth MCP tool, with immutable compiled TTF
+  inputs, cancellable Diffenator processing and verified HTML report publication.
+- Add optional managed Diffenator/Beztrace Setup cards and transactional installation
+  support. Downloads await separately signed and qualified distributions.
+- Prepare persistent Beztrace engine configuration as a separate companion overlay.
+- Refresh the pinned SDK and offline corpus, including separately attributed
+  official web snapshots. Existing native qualification retains its original scope.
+
+This candidate has not been published or qualified as a signed release.
+
+
 ## 2.0.1 — skills catalog and focused setup, build 56
 
 - Add `open_document` for native Glyphs sources, with retained retry keys and reuse of already-open fonts without reloading unsaved edits. The catalog now has seventeen tools; protocol and interface revision remain 1.

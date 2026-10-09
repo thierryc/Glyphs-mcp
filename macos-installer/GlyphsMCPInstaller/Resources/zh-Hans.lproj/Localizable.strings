@@ -666,3 +666,24 @@
 "Add / Update Skill" = "添加/更新技能";
 "Source and requirements" = "来源与要求";
 "Instructions and files" = "说明与文件";
+
+/* Skill installation dialog */
+"Codex & Cursor" = "Codex 和 Cursor";
+"Installed · locally modified" = "已安装 · 已在本地修改";
+"Installed · existing copy" = "已安装 · 现有副本";
+"Installed · linked folder" = "已安装 · 链接文件夹";
+"Install for your agents" = "为代理安装";
+"Install location" = "安装位置";
+"This Project" = "此项目";
+"Available only in the selected project." = "仅在所选项目中可用。";
+"Available across your projects on this Mac." = "可用于此 Mac 上的所有项目。";
+"Locations and activity" = "位置与操作记录";
+"Choose a project folder" = "选择项目文件夹";
+"Update this skill?" = "更新此技能？";
+"Your existing copy will be backed up before it is replaced with the catalog version." = "现有副本将在替换为目录版本前备份。";
+"Remove this skill?" = "移除此技能？";
+"A backup will be kept. If this is a linked folder, only the link is removed; the original folder stays untouched." = "将保留备份。如果是链接文件夹，只移除链接；原始文件夹保持不变。";
+"This skill uses a linked local folder. Update installs a managed copy here; Remove detaches the link. Both keep your original folder." = "此技能使用链接的本地文件夹。更新会在此安装受管理副本；移除会解除链接。两种操作均保留原始文件夹。";
+"Updating skill…" = "正在更新技能…";
+"This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept." = "这会将链接替换为受管理的目录版本副本。原始文件夹保持不变，且链接将被备份。";
+"Find and repair interpolation kinks while preserving your master outlines." = "查找并修复插值折点，同时保留主版轮廓。";

@@ -1,19 +1,19 @@
-.. attribute:: featurePrefixes
+.. attribute:: features
 
-		Collection of :class:`GSFeaturePrefix` objects, containing stuff that needs to be outside of the OpenType features.
+		Collection of :class:`GSFeature` objects, representing OpenType features.
 
 		:type: list
 
 		.. code-block:: python
-			# add a prefix
-			font.featurePrefixes.append(GSFeaturePrefix('LanguageSystems', 'languagesystem DFLT dflt;'))
+			# add a feature
+			font.features.append(GSFeature('liga', 'sub f i by fi;'))
 
-			# access all prefixes
-			for prefix in font.featurePrefixes:
-			    print(prefix.code)
+			# access all features
+			for feature in font.features:
+			    print(feature.code)
 
-			# access one prefix
-			print(font.featurePrefixes['LanguageSystems'].code)
+			# access one feature
+			print(font.features['liga'].code)
 
-			# delete
-			del font.featurePrefixes['LanguageSystems']
+			# delete a feature
+			del font.features['liga']

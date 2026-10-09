@@ -1,7 +1,5 @@
-.. attribute:: alignment
+.. attribute:: width
 
-		For corner components: left = 0, center = 2, right = 1, fixed = 4
+		The width of the annotation.
 
-		:type: int
-
-		.. versionadded:: 3.2
+		:type: float

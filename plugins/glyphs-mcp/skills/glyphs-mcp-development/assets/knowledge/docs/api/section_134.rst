@@ -1,5 +1,5 @@
-.. attribute:: name
+.. attribute:: font
 
-		The name of the axis
+		Reference to the :class:`GSFont` object that contains the axis. Normally that is set by the app.
 
-		:type: str
+		:type: GSFont

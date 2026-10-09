@@ -1,12 +1,12 @@
-.. attribute:: type
+.. attribute:: selected
 
-		The type of the annotation.
+		Selection state of node in UI.
 
-		Available constants are:
-		:const:`TEXT`
-		:const:`ARROW`
-		:const:`CIRCLE`
-		:const:`PLUS`
-		:const:`MINUS`
+		:type: bool
 
-		:type: int
+		.. code-block:: python
+			# select node
+			layer.paths[0].nodes[0].selected = True
+
+			# print(selection state)
+			print(layer.paths[0].nodes[0].selected)

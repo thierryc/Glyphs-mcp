@@ -1,5 +1,4 @@
-.. attribute:: slant
+.. attribute:: otherIndex2
+		A indexPath to the fourth node this hint is attached to. Used for Diagonal hints.
 
-		The slant of the image.
-
-		:type: tuple, NSPoint
+		:type: :class:`NSIndexPath`
