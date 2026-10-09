@@ -1,8 +1,8 @@
 # Permanent desktop application
 
-> Current stable 2.0.1/build 56 signing and bounded native acceptance are complete.
-> See [release qualification](../V2.0.1-RELEASE.md) for actual results and outstanding
-> environment/manual limits. Candidate checkpoints below are historical.
+> Current stable 2.0.2/build 58 is signed, notarized and published.
+> See [release qualification](../V2.0.2-RELEASE.md) for the build-58 checks and retained
+> earlier core acceptance. Candidate checkpoints below are historical.
 
 
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
@@ -15,17 +15,17 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout targets the unpublished 2.0.2/build 57 candidate with eighteen MCP
+This checkout targets the published 2.0.2/build 58 release with eighteen MCP
 tools and eleven managed skills. Sidecar and bridge product versions are 2.0.2;
 interface revision and bridge protocol remain 1. The latest published stable
-release is 2.0.1/build 56; its signing and acceptance evidence remains historical.
+release is 2.0.2/build 58; earlier signing and acceptance evidence retains its original build scope.
 See [2.0.2 candidate evidence](../V2.0.2-RELEASE.md).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
 supports independent install, update, removal and retry. Setup also lists the
-optional managed Diffenator and Beztrace cards. Their downloads stay unavailable
-until signed distributions are qualified; both are excluded from Install All. One serialized queue
+optional managed Diffenator and Beztrace cards. Managed Beztrace setup is qualified on Apple Silicon with macOS 26.6.2 or later;
+Diffenator downloads remain unavailable. Both are excluded from Install All. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
 

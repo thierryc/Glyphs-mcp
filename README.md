@@ -1,6 +1,6 @@
 # Glyphs MCP Desktop 2.0.2
 
-**Released: 2.0.2 · desktop build 57 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version is 2.0.2. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2/Glyphs-MCP-2.0.2.dmg) and see the [2.0.2 release qualification](V2.0.2-RELEASE.md) for features, validation and platform limits.
+**Released: 2.0.2 · desktop build 58 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version is 2.0.2. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2-build58/Glyphs-MCP-2.0.2-build58.dmg) and see the [2.0.2 release qualification](V2.0.2-RELEASE.md) for features, validation and platform limits.
 
 The [eighteen-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. `save_document` persists an explicitly identified font.
 
@@ -79,7 +79,7 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.2).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.2-build58).
 
 Documentation sources: [v2 · 2.0.2](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
