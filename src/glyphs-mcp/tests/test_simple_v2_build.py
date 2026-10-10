@@ -56,9 +56,11 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
         "get_status",
         "list_documents",
         "create_document",
+            "duplicate_document",
         "open_document",
         "import_document",
         "activate_document",
+        "open_edit_tab",
         "close_document",
         "read_entities",
         "start_job",
@@ -85,12 +87,22 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     assert (first / "Glyphs Curve Inspector.glyphsReporter").is_dir()
     assert (first / "Glyphs Reference Inspector.glyphsReporter").is_dir()
     assert [item["id"] for item in manifest_a["companions"]] == ["curve-inspector", "reference-inspector"]
+    for companion in manifest_a['companions']:
+        info = plistlib.loads((first / companion['bundle'] / 'Contents/Info.plist').read_bytes())
+        source = REPO / 'src/companions' / companion['id'] / 'bundle' / companion['bundle'] / 'Contents/Info.plist'
+        assert companion['version'] == info['CFBundleShortVersionString'] == plistlib.loads(source.read_bytes())['CFBundleShortVersionString']
     expected_reader = {
         "schemaVersion": 3,
         "protocolAPIVersion": 1,
         "workerModule": "glyphs_mcp_sidecar.glyph_diff_worker",
     }
     assert manifest_a["glyphDiffReader"] == expected_reader
+    package = manifest_a['agentPackage']
+    assert json.loads((first / 'sidecar/glyphs-mcp-agent.json').read_text()) == package
+    assert json.loads((REPO / 'plugins/glyphs-mcp/glyphs-mcp-agent.json').read_text()) == package
+    assert package['version'] == manifest_a['version'] and package['releaseVersion'] == manifest_a['releaseVersion']
+    from agent_package_identity import record
+    assert record(REPO) == package and package['skillsDigest'].startswith('sha256:')
     assert manifest_a["sidecar"]["glyphDiffReader"] == expected_reader
     assert not any("Metadata Inspector" in path.name for path in first.rglob("*"))
     assert (first / "sidecar" / "curve_core" / "geometry.py").is_file()

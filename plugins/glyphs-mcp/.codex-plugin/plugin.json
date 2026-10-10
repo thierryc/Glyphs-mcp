@@ -1,6 +1,6 @@
 {
   "name": "glyphs-mcp",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Edit Glyphs fonts through a shared MCP App or conversation, with explicit saving and guarded recovery.",
   "author": {
     "name": "Thierry Charbonnel",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Glyphs MCP",
     "shortDescription": "Review and control open Glyphs fonts from ChatGPT and Codex.",
-    "longDescription": "Connect to the Glyphs 4 server for bounded reads and supported font edits. One standard MCP App offers saving, preparation and review where the host supports it; every action also works in conversation. Save and continue saves existing work once. The resulting edit remains unsaved until separately authorized. Native Undo/Redo and guarded job discard remain available.",
+    "longDescription": "Connect to Glyphs 4 for bounded reads, supported edits and native scripts. Authorized Apply requests execute after internal validation; previews wait for Run. Scripts work on unsaved fonts and preserve a pre-run recovery copy. Saving is a separate action. The same workflow works through the MCP App and conversation.",
     "developerName": "Thierry Charbonnel",
     "category": "Creativity",
     "capabilities": [

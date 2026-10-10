@@ -1,4 +1,5 @@
-"""Bounded native-Python requests with a saved document baseline."""
+"""Bounded native-Python requests with a current-state recovery snapshot."""
+import ast
 import hashlib
 import json
 from collections.abc import Mapping
@@ -6,13 +7,15 @@ from collections.abc import Mapping
 from .models import ProtocolError, canonical_json
 
 NATIVE = 'script.native.v1'
-PREPARATION_VERSION = 2  # Private bridge negotiation; the public script capability is unchanged.
+PREPARATION_VERSION = 3  # Save-free preparation and current-state recovery.
+SNAPSHOT = 'script.recovery.snapshot.v1'
 MAX_REQUEST_BYTES = 4 * 1024 * 1024
 MAX_SOURCE_BYTES = 128 * 1024
 MAX_PARAMS_BYTES = 64 * 1024
 MAX_OUTPUT_CHARS = 16000
-WARNING = ('This script can access Glyphs and your computer. Restore saved version reloads '
-           'the whole font and discards later unsaved edits. External effects are not restored.')
+WARNING = ('This script can access Glyphs and your computer. Restore before run replaces '
+           'the whole font with its pre-run state, including unsaved edits, and discards later edits. '
+           'Recovery lasts only in this Glyphs session. External effects are not restored.')
 
 
 def retired(options):
@@ -98,7 +101,7 @@ def validate_options(value):
     if not isinstance(value, Mapping):
         fail('python_script options must be an object')
     if retired(value):
-        fail('executionMode and recovery are retired; prepare a new native script request with a saved baseline')
+        fail('executionMode and recovery are retired; prepare a new native script request')
     if set(value) - {'source', 'params', 'entrypoint', 'targets', 'summary'}:
         fail('invalid python_script options')
     try:
@@ -114,9 +117,19 @@ def validate_options(value):
         fail('script source exceeds 128 KiB')
     try:
         # Compile only: decorators, defaults and module statements do not execute.
-        compile(source, '<glyphs-mcp-script>', 'exec')
+        tree = ast.parse(source, '<glyphs-mcp-script>', 'exec')
+        compile(tree, '<glyphs-mcp-script>', 'exec')
     except (SyntaxError, ValueError) as error:
         fail('script syntax error: ' + str(error))
+    if entrypoint == 'per_target':
+        functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'run']
+        if not functions:
+            fail('per_target scripts must define run(layer, params, context); use entrypoint="script" for whole scripts')
+        node = functions[-1]
+        args = node.args
+        positional = len(args.posonlyargs) + len(args.args)
+        if positional - len(args.defaults) > 3 or (positional < 3 and args.vararg is None) or any(d is None for d in args.kw_defaults):
+            fail('run must accept three positional arguments: layer, params, context')
     selected = value.get('targets', [])
     if isinstance(selected, Mapping):
         if set(selected) - {'master', 'glyphs', 'surface'} or 'master' not in selected:

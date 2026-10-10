@@ -20,8 +20,8 @@ class NoWorker:
 @pytest.fixture
 def env(tmp_path):
     source=tmp_path/'Test.glyphs';source.write_text('600')
-    bridge=Bridge(source);bridge.runs=[];bridge.restores=[];bridge.reviews=[];bridge.ops={}
-    bridge.status=lambda:dict(jobCapabilities=[scripts.NATIVE],scriptPreparationVersion=scripts.PREPARATION_VERSION,writeCapabilities=[])
+    bridge=Bridge(source);bridge.runs=[];bridge.restores=[];bridge.reviews=[];bridge.ops={};bridge.snapshots={}
+    bridge.status=lambda:dict(jobCapabilities=[scripts.NATIVE, scripts.SNAPSHOT],scriptPreparationVersion=scripts.PREPARATION_VERSION,writeCapabilities=[])
     def review(request):
         bridge.reviews.append(deepcopy(request));options=request['options']
         bridge.review_report=dict(claim='saved version',targetCount=1,skippedCount=0,targets=[],review=options,
@@ -30,17 +30,19 @@ def env(tmp_path):
     bridge.review_script=review
     bridge.reviewed_script=lambda identity:deepcopy(bridge.review_report)
     def run(request):
-        assert not bridge.adapter.dirty and source.read_text()=='600'
+        before=(bridge.adapter.value, bridge.adapter.dirty)
+        bridge.snapshots[request['jobId']]=before
         bridge.runs.append(request);bridge.adapter.value=620;bridge.adapter.dirty=True
         bridge.ops[request['jobId']]=dict(jobId=request['jobId'],documentId='doc_1',status='applied',error=None,
-            scriptResult=dict(executed=True,executionSucceeded=True,changesVerified=False))
+            scriptResult=dict(executed=True,executionSucceeded=True,changesVerified=False,
+                recovery=dict(kind='memory_snapshot',snapshotId='snapshot_'+request['jobId'],available=True)))
         return bridge.ops[request['jobId']]
     bridge.run_script=run
     bridge.operation=lambda identity:deepcopy(bridge.ops[identity])
     def restore(request):
-        bridge.restores.append(request);bridge.adapter.value=float(source.read_text());bridge.adapter.dirty=False
+        bridge.restores.append(request);bridge.adapter.value,bridge.adapter.dirty=bridge.snapshots[request['jobId']]
         op=bridge.ops[request['jobId']];op['status']='discarded'
-        op['scriptResult'].update(savedVersionRestored=True,documentAfter=bridge.documents()[0])
+        op['scriptResult'].update(beforeRunRestored=True,documentAfter=bridge.documents()[0])
         return deepcopy(op)
     bridge.restore_saved_script=restore
     def finish(identity):
@@ -56,41 +58,126 @@ def start(service, key='fast', **kwargs):
         targets=[dict(glyph='A',layer='M1')],source='def run(layer, params, context):\n    layer.width += 20'), **kwargs)
 
 
-def test_dirty_review_does_not_save_or_execute_and_save_run_is_once(env):
-    service,bridge,source=env;bridge.adapter.dirty=True
+def authorized(service, key='authorized'):
+    return service.edit_workflows.start('doc_1', kind='python_script', idempotency_key=key,
+        mode='apply', auto_keep=False, options=dict(targets=[dict(glyph='A', layer='M1')],
+            source='def run(layer, params, context):\n    layer.width += 20'))
+
+
+def test_authorized_apply_runs_once_without_save_and_retains_recovery(env):
+    service, bridge, source = env
+    bridge.adapter.dirty = True; bridge.adapter.value = 610
+    value = wait(service, authorized(service), 'applied')
+    assert len(bridge.runs) == 1 and not bridge.adapter.save_calls
+    assert value['savedVersion']['available'] and source.read_text() == '600'
+    assert authorized(service)['id'] == value['id']
+    for _ in range(3): service.edit_workflows.get(value['id'])
+    assert len(bridge.runs) == 1
+    value = choose(service, value, 'restore_saved_script')
+    assert value['state'] == 'discarded' and bridge.adapter.value == 610 and bridge.adapter.dirty
+
+
+def test_apply_poll_does_not_execute_or_disable_the_authorized_runner(env, monkeypatch):
+    import time
+    service, bridge, _ = env
+    monkeypatch.setattr(service.edit_workflows, '_start_runner', lambda: None)
+    value = authorized(service)
+    deadline = time.monotonic() + 5
+    while service.jobs.get(value['jobId'])['status'] != 'ready':
+        assert time.monotonic() < deadline; time.sleep(.01)
+    value = service.edit_workflows.get(value['id'])
+    assert value['state'] == 'preparing' and not bridge.runs
+    service.edit_workflows._advance(service.edit_workflows.store.records[value['id']])
+    service.edit_workflows._advance(service.edit_workflows.store.records[value['id']], allow_apply=False)
+    value = wait(service, value, 'applied')
+    assert len(bridge.runs) == 1 and not bridge.adapter.save_calls
+
+
+def test_authorized_apply_rejects_stale_state_without_running(env, monkeypatch):
+    import time
+    service, bridge, _ = env
+    monkeypatch.setattr(service.edit_workflows, '_start_runner', lambda: None)
+    value = authorized(service)
+    deadline = time.monotonic() + 5
+    while service.jobs.get(value['jobId'])['status'] != 'ready':
+        assert time.monotonic() < deadline; time.sleep(.01)
+    bridge.adapter.dirty = True
+    record = service.edit_workflows.store.records[value['id']]
+    service.edit_workflows._guard(record, lambda: service.edit_workflows._advance(record))
+    assert record['state'] == 'outdated' and not record['scriptRunAuthorized']
+    assert not bridge.runs and not bridge.adapter.save_calls
+
+
+def test_authorized_apply_lost_response_never_replays(env):
+    service, bridge, _ = env
+    actual = bridge.run_script
+    def lose(request):
+        actual(request)
+        raise BridgeClientError('bridge_timeout', 'lost response', {'execution': 'uncertain'})
+    bridge.run_script = lose
+    # A lost response is reconciled from the retained native operation; it may
+    # settle before a client observes the transient uncertain state.
+    value = wait(service, authorized(service), 'applied')
+    for _ in range(3): value = service.edit_workflows.get(value['id'])
+    assert len(bridge.runs) == 1 and not bridge.adapter.save_calls
+    assert not service.edit_workflows.store.records[value['id']]['scriptRunAuthorized']
+
+
+def test_sidecar_restart_does_not_execute_retained_apply_authorization(env, monkeypatch):
+    import time
+    service, bridge, _ = env
+    monkeypatch.setattr(service.edit_workflows, '_start_runner', lambda: None)
+    value = authorized(service)
+    deadline = time.monotonic() + 5
+    while service.jobs.get(value['jobId'])['status'] != 'ready':
+        assert time.monotonic() < deadline; time.sleep(.01)
+    service.close()
+    restarted = SidecarService(bridge, jobs=JobStore(service.jobs.root), worker=NoWorker())
+    try:
+        record = restarted.edit_workflows.store.records[value['id']]
+        assert record['state'] == 'interrupted' and not record['scriptRunAuthorized']
+        restarted.edit_workflows._advance(record, allow_apply=False)
+        assert record['state'] == 'waiting_run' and not bridge.runs
+    finally: restarted.close()
+
+
+def test_legacy_apply_record_never_gains_automatic_run_permission(env, monkeypatch):
+    service, bridge, _ = env
+    monkeypatch.setattr(service.edit_workflows, '_start_runner', lambda: None)
+    value = wait(service, start(service), 'waiting_run')
+    record = service.edit_workflows.store.records[value['id']]
+    record['mode'] = 'apply'; record.pop('scriptRunAuthorized', None)
+    service.edit_workflows._advance(record)
+    assert record['state'] == 'waiting_run' and not bridge.runs
+
+
+def test_dirty_review_and_run_preserve_preexisting_unsaved_changes(env):
+    service,bridge,source=env;bridge.adapter.dirty=True;bridge.adapter.value=610
     value=wait(service,start(service),'waiting_run')
     assert not bridge.runs and not bridge.adapter.save_calls
-    assert 'Save and run' in value['text'] and 'scriptReview' not in value
-    previous=value;value=choose(service,value,'save_run_script');choose(service,previous,'save_run_script')
+    assert 'Save and run' not in value['text']
+    previous=value;value=choose(service,value,'run_script');choose(service,previous,'run_script')
     value=wait(service,value,'applied')
-    assert len(bridge.runs)==len(bridge.adapter.save_calls)==1
-    assert bridge.adapter.dirty and source.read_text()=='600'
-    assert not (service.jobs.path(value['jobId'])/'source.glyphs').exists()
-    assert value['savedVersion']['available'] and 'all current unsaved edits' in value['text']
+    assert len(bridge.runs)==1 and not bridge.adapter.save_calls and source.read_text()=='600'
+    assert value['savedVersion']['available'] and value['savedVersion']['kind']=='memory_snapshot'
     previous=value;value=choose(service,value,'restore_saved_script');choose(service,previous,'restore_saved_script')
-    assert value['state']=='discarded' and len(bridge.restores)==1 and bridge.adapter.value==600
+    assert value['state']=='discarded' and len(bridge.restores)==1 and bridge.adapter.value==610 and bridge.adapter.dirty
 
-
-def test_pre_review_save_baseline_change_invalidates_restore(env):
+def test_external_file_change_does_not_destroy_memory_snapshot(env):
     service,bridge,source=env
     value=wait(service,start(service),'waiting_run')
     value=wait(service,choose(service,value,'run_script'),'applied')
-    old=value;source.write_text('changed by script or user')
+    source.write_text('external change')
     value=service.edit_workflows.get(value['id'])
-    assert not value['savedVersion']['available']
-    assert all(a['action']!='restore_saved_script' for a in value['actions'])
-    with pytest.raises(ServiceError,match='outdated'):choose(service,old,'restore_saved_script')
-    assert not bridge.restores
+    assert value['savedVersion']['available']
+    assert any(a['label']=='Restore before run' for a in value['actions'])
+    assert not bridge.adapter.save_calls
 
-
-def test_save_failure_never_runs_script(env):
+def test_run_never_calls_save_even_if_save_would_fail(env):
     service,bridge,source=env;bridge.adapter.dirty=True;value=wait(service,start(service),'waiting_run')
-    def fail(request):raise BridgeClientError('native_save_failed','could not save')
-    bridge.save=fail
-    value=choose(service,value,'save_run_script')
-    assert not bridge.runs and source.read_text()=='600'
-    assert value['error']['code']=='native_save_failed'
-
+    bridge.save=lambda _: (_ for _ in ()).throw(AssertionError('unexpected Save'))
+    value=wait(service,choose(service,value,'run_script'),'applied')
+    assert len(bridge.runs)==1 and source.read_text()=='600'
 
 def test_changed_document_is_rejected_before_save(env):
     service,bridge,source=env;value=wait(service,start(service),'waiting_run')
@@ -147,34 +234,17 @@ def test_restore_timeout_reconciles_without_replaying(env):
     assert len(bridge.restores)==1 and len(bridge.runs)==1
 
 
-def test_uncertain_prerequisite_save_never_becomes_auto_run(env):
+def test_obsolete_save_and_run_action_is_not_offered(env):
     service,bridge,_=env;bridge.adapter.dirty=True;value=wait(service,start(service),'waiting_run')
-    actual=bridge.save
-    def lost(request):
-        actual(request)
-        raise BridgeClientError('bridge_timeout','save response lost',{'execution':'uncertain'})
-    bridge.save=lost;actual_read=bridge.save_operation
-    def missing(identity):raise BridgeClientError('bridge_timeout','save status unavailable')
-    bridge.save_operation=missing
-    value=choose(service,value,'save_run_script')
-    assert value['state']=='uncertain' and not bridge.runs
-    value=service.edit_workflows.get(value['id'])
-    assert value['state']=='uncertain' and all(a['action']!='save_run_script' for a in value['actions'])
-    bridge.save_operation=actual_read
-    value=choose(service,value,'check_outcome')
-    assert value['state']=='outdated' and not bridge.runs and len(bridge.adapter.save_calls)==1
+    assert not any(a['action'] in {'save_run_script','manual_save'} for a in value['actions'])
+    assert not bridge.adapter.save_calls and not bridge.runs
 
-
-def test_native_save_rechecks_reviewed_generation_before_writing(env):
-    service,bridge,_=env;bridge.adapter.dirty=True;value=wait(service,start(service),'waiting_run')
-    actual=bridge.save
-    def intervening(request):
-        bridge.adapter.document_state=lambda _:dict(bridge.documents()[0],generation=2)
-        return actual(request)
-    bridge.save=intervening
-    value=choose(service,value,'save_run_script')
+def test_changed_generation_blocks_run_without_save(env):
+    service,bridge,_=env;value=wait(service,start(service),'waiting_run')
+    original=bridge.documents
+    bridge.documents=lambda:[dict(original()[0],generation=2)]
+    value=choose(service,value,'run_script')
     assert value['state']=='outdated' and not bridge.runs and not bridge.adapter.save_calls
-
 
 def test_native_restore_rejects_changed_file_before_loading(env):
     service,bridge,source=env
@@ -190,17 +260,14 @@ def test_native_restore_rejects_changed_file_before_loading(env):
     assert 'restoreRequest' not in op
 
 
-def test_manual_save_revalidates_without_wrapper_save(env):
-    service,bridge,source=env;bridge.adapter.dirty=True
+def test_dirty_font_can_keep_and_run_a_second_script_without_saving(env):
+    service,bridge,_=env;bridge.adapter.dirty=True
     value=wait(service,start(service),'waiting_run')
-    value=choose(service,value,'manual_save')
-    assert value['state']=='waiting_manual' and not bridge.runs and not bridge.adapter.save_calls
-    bridge.adapter.dirty=False  # The fixture's on-disk contents already match.
-    value=wait(service,choose(service,value,'check_continue'),'waiting_run')
-    assert len(bridge.reviews)==2 and not bridge.runs
+    value=wait(service,choose(service,value,'run_script'),'applied')
+    choose(service,value,'finish_script')
+    value=wait(service,start(service,key='second'),'waiting_run')
     wait(service,choose(service,value,'run_script'),'applied')
-    assert not bridge.adapter.save_calls and len(bridge.runs)==1
-
+    assert len(bridge.runs)==2 and not bridge.adapter.save_calls
 
 def test_partial_failure_can_keep_without_restoring_or_rerunning(env):
     service,bridge,_=env
@@ -226,20 +293,14 @@ def test_closed_document_has_no_restore_action(env):
     assert not bridge.restores
 
 
-def test_new_document_save_as_never_overwrites_and_does_not_auto_run(env,tmp_path):
-    service,bridge,source=env
-    bridge.adapter.path=None;bridge.adapter.dirty=True
-    value=start(service)
-    assert value['state']=='waiting_save' and not bridge.reviews and not bridge.runs
-    value=choose(service,value,'save_as_continue',destination=str(source))
-    assert value['error']['code']=='destination_exists' and not bridge.runs and not bridge.adapter.save_calls
-    target=tmp_path/'New.glyphs'
-    value=choose(service,value,'save_as_continue',destination=str(target))
-    value=wait(service,value,'waiting_run')
-    assert value['document']['path']==str(target) and len(bridge.adapter.save_calls)==1 and not bridge.runs
+def test_pathless_dirty_font_runs_without_save_as(env,tmp_path):
+    service,bridge,source=env;bridge.adapter.path=None;bridge.adapter.dirty=True
+    value=wait(service,start(service),'waiting_run')
+    assert value['document']['path'] is None and not bridge.adapter.save_calls
     value=wait(service,choose(service,value,'run_script'),'applied')
-    assert len(bridge.adapter.save_calls)==1 and len(bridge.runs)==1
-
+    assert any(a['action']=='save_result_as' for a in value['actions'])
+    value=choose(service,value,'restore_saved_script')
+    assert value['document']['path'] is None and bridge.adapter.dirty and not bridge.adapter.save_calls
 
 @pytest.mark.parametrize('resolution', ['finish_script','restore_saved_script','save_result'])
 def test_script_blocker_resolves_without_typed_undo(env, resolution):
@@ -327,6 +388,8 @@ def test_presentation_hash_memo_expiry_invalidation_and_restart(env,monkeypatch)
     from glyphs_mcp_sidecar import saved_script
     service,bridge,_=env
     a=wait(service,start(service),'waiting_run');a=wait(service,choose(service,a,'run_script'),'applied')
+    bridge.ops[a['jobId']]['scriptResult'].pop('recovery')  # Historical disk-recovery records remain readable.
+    service.jobs.update(a['jobId'],sourceHash=saved_script.source_hash(service.jobs.get(a['jobId'])['document']['path']))
     calls=[];actual=saved_script.source_hash;clock=[10.0]
     monkeypatch.setattr(saved_script,'source_hash',lambda p:(calls.append(str(p)),actual(p))[1])
     monkeypatch.setattr(saved_script.time,'monotonic',lambda:clock[0])
@@ -471,3 +534,11 @@ def test_result_wording_uses_fresh_document_not_execution_snapshot(env):
     bridge.adapter.closed=True
     value=service.edit_workflows.get(value['id'])
     assert 'could not be confirmed' in value['message']
+
+
+def test_imported_font_can_run_and_offers_separate_save_as(env):
+    service,bridge,_=env;bridge.adapter.path='/disposable.ttf';bridge.adapter.dirty=True
+    value=wait(service,start(service),'waiting_run')
+    value=wait(service,choose(service,value,'run_script'),'applied')
+    actions={a['action'] for a in value['actions']}
+    assert 'save_result_as' in actions and 'save_result' not in actions and not bridge.adapter.save_calls

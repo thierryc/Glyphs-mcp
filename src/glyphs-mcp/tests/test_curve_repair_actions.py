@@ -3,7 +3,7 @@ import copy
 from types import SimpleNamespace
 import pytest
 from test_curve_repair import Font, Node, Layer, PathDouble
-from curve_repair.actions import resolve_scope, Scope, selected_joins, apply_steps, prepare_path, commit_paths, trial_fonts, validate_limit
+from curve_repair.actions import resolve_scope, Scope, Result, selected_joins, apply_steps, prepare_path, commit_paths, trial_fonts, validate_limit
 from curve_repair.native import path_state, position
 from curve_repair.geometry import diagnose_join
 from curve_repair.joins import source_join
@@ -27,6 +27,19 @@ def run(scope,**kw):
         except StopIteration as done:return done.value
 
 def scope(f,l,selection=None): return Scope(f,(l.parent,),l,False,tuple(l.selection if selection is None else selection))
+
+
+@pytest.mark.parametrize('result,message', [
+    (Result(already_smooth=3), 'No change · already smooth'),
+    (Result(threshold_rejected=2, max_change_units=1), 'No change · over 1-unit limit'),
+    (Result(unsupported=1, reasons=['o / path 0: Locked outline']), 'No change · selection is locked'),
+    (Result(unsupported=1, reasons=['o: Select an on-curve, curve handle or path']), 'No change · select a node, handle or path'),
+    (Result(), 'No change · no eligible joins'),
+])
+def test_no_change_message_explains_reason_and_retains_detailed_counts(result,message):
+    assert result.message() == message
+    assert 'Repaired:' in result.details() and 'Limit blocked:' in result.details()
+    assert all(reason in result.details() for reason in result.reasons)
 
 def test_font_tab_selected_or_whole_font_ignores_edit_layer():
     f,g,l=fixture();f.currentTab=None

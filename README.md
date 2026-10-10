@@ -2,7 +2,7 @@
 
 **Released: 2.0.2 · desktop build 58 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version is 2.0.2. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2-build58/Glyphs-MCP-2.0.2-build58.dmg) and see the [2.0.2 release qualification](V2.0.2-RELEASE.md) for features, validation and platform limits.
 
-The [eighteen-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. `save_document` persists an explicitly identified font.
+The [twenty-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The development catalog additionally includes save-free Edit-tab opening and unsaved `duplicate_document` copies; installed stable versions require a coordinated runtime update. `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -61,8 +61,8 @@ Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The eighteen tools are `get_status`, `list_documents`, `create_document`, `open_document`, `import_document`,
-`activate_document`, `close_document`, `read_entities`,
+The twenty tools are `get_status`, `list_documents`, `create_document`, `duplicate_document`, `open_document`, `import_document`,
+`activate_document`, `open_edit_tab`, `close_document`, `read_entities`,
 `start_job`, `compare_fonts`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
 `respond_edit_workflow`. The shared MCP App supports preparation, saving and
@@ -106,15 +106,16 @@ The RV02 follow-up covers the installed OpenType, precision and native API
 guidance. Native Python uses the advertised `python_script` job and
 `script.native.v1` without adding tools. Preparation never executes code. An
 ordinary task authorizes Run without a separate source review; previews wait.
-Clean saved fonts need no extra Save, while dirty fonts require authorized saving.
-Restore saved version reloads the whole baseline and replaces later unsaved edits.
+Dirty, clean and pathless fonts run without Save under `script.recovery.snapshot.v1`
+and preparation version 3. Restore before run restores a detached full-font copy,
+including earlier unsaved edits; recovery is limited to the current Glyphs session.
 Successful edit cards offer a 30-second countdown to Keep changes without
 saving, ending the workflow recovery offer. Typed Keep preserves native Undo/Redo. Say **“wait for my answer”** to disable it.
 See [script execution and recovery](skills/glyphs/references/python-scripts.md).
 
 Native scripts have no 4,096-surface ceiling while retaining
 the complete 4 MiB request budget. Large selectors use incremental read-only
-preparation, one saved baseline and one result workflow. Typed edit and read
+preparation, one pre-run recovery copy and one result workflow. Typed edit and read
 limits are unchanged. Qualification is tracked in [the V2 release notes](V2-RELEASE.md).
 
 ### Local font checkpoints
@@ -122,7 +123,7 @@ limits are unchanged. Qualification is tracked in [the V2 release notes](V2-RELE
 The opt-in project setting records exact saved baselines and authorized MCP saves
 as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be
 retried without another Save. Bounded history, recorded actions, comparison and
-whole-font historical reload share the existing eighteen tools and app project UI.
+whole-font historical reload share the existing twenty tools and app project UI.
 See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.

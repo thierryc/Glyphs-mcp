@@ -43,8 +43,12 @@ def begin(core, request, error):
     state = core.adapter.document_state(request['documentId'])
     if state.get('path') != request['sourcePath'] or state.get('generation') != request['generation']:
         raise error('stale_document', 'the document changed after script review')
-    if state.get('dirty') is not False:
-        raise error('document_not_clean', 'save the font before native execution')
+    if old is None:
+        raise error('job_not_ready', 'prepare this script before execution')
+    if state.get('dirty') not in (True, False):
+        raise error('document_dirty_state_unavailable', 'native document state is unavailable')
+    if state.get('dirty') != old['reviewDirty']:
+        raise error('stale_document', 'document changed after script review')
     # Validate every reviewed target. A changed manifest is never re-resolved silently.
     rows = request['manifest']
     if not isinstance(rows, list):
@@ -64,7 +68,7 @@ def begin(core, request, error):
     operation = dict(jobId=identity, documentId=request['documentId'], patch=patch, status='applying',
                      direction='forward', index=0, applied=[], resolved=[], cancelRequested=False,
                      error=None, rollbackReverse=True, nativeStateBytes=0, startedAt=time.time(), finishedAt=None,
-                     scriptRequest=copy.deepcopy(request), scriptStage='resolve', scriptIndex=0,
+                     reviewDirty=state.get('dirty'), scriptRequest=copy.deepcopy(request), scriptStage='resolve', scriptIndex=0,
                      longestPreparationChunk=(old or {}).get('longestPreparationChunk'),
                      scriptCandidates=script_targets.iterate(core.adapter._font(request['documentId']), options['targets']),
                      scriptTargets=[], scriptResult=dict(executed=False, output='', entrypoint=options['entrypoint'],
@@ -139,12 +143,11 @@ def advance(core, op):
                 op.setdefault('scriptManagers', {})[id(manager)] = manager
             op['scriptIndex'] += 1
         elif stage == 'initialize':
-            from glyphs_mcp_protocol.source_identity import source_hash
-            if source_hash(request['sourcePath']) != request['sourceHash']:
-                raise ValueError('saved baseline changed before execution')
             state = core.adapter.document_state(op['documentId'])
-            if state.get('dirty') is not False or state.get('generation') != request['generation'] or state.get('path') != request['sourcePath']:
+            if state.get('dirty') != op['reviewDirty'] or state.get('generation') != request['generation'] or state.get('path') != request['sourcePath']:
                 raise ValueError('document changed before script execution')
+            from .script_snapshot import capture
+            capture(core, op)
             # Mark before execution: a script that saves can legitimately leave
             # the document clean. Never dirty it again merely to claim changes.
             core.adapter._font(op['documentId']).parent.updateChangeCount_(0)
@@ -182,6 +185,9 @@ def advance(core, op):
             core._finish(op, 'cancelled' if op['cancelRequested'] else 'failed' if op['error'] else 'applied')
             op.pop('scriptTargets', None)
     except BaseException as error:
+        if not op['scriptResult']['executed']:
+            from .script_snapshot import release
+            release(op)
         runtime = op.get('scriptRuntime')
         op['scriptResult']['output'] = runtime.output if runtime else ''
         details = dict(traceback=traceback.format_exc()[-scripts.MAX_OUTPUT_CHARS:],
@@ -200,7 +206,7 @@ def check_pre_execution(core, op):
     request = op['scriptRequest']
     try:
         state = core.adapter.document_state(op['documentId'])
-        if (state.get('dirty') is not False or state.get('generation') != request['generation']
+        if (state.get('dirty') != op['reviewDirty'] or state.get('generation') != request['generation']
                 or state.get('path') != request['sourcePath']):
             raise ValueError('document changed before script execution')
     except Exception as exc:

@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-scripting
-description: Write and run focused Glyphs Python scripts, using direct native execution and saved-version recovery.
+description: Write and run focused Glyphs Python scripts, using direct native execution and current-state recovery.
 metadata:
   surface: glyphs-mcp-v2
 ---
@@ -41,8 +41,8 @@ For feature work, use [OpenType guidance](../glyphs-mcp-opentype-features/SKILL.
 Execution follows the user's authorised task. Use disposable copies for
 experiments and the [native iteration reference](../glyphs-mcp-development/references/native-iteration.md)
 for logs, proofs and cleanup. Static validation is not runtime success. Never
-promise recovery of arbitrary Python's external effects. Saved-file recovery
-reloads the whole persisted font; external effects remain outside recovery.
+promise recovery of arbitrary Python's external effects. Pre-run memory recovery
+restores the whole font, including pre-existing unsaved edits; external effects remain outside recovery.
 
 For needed MCP context, reuse the verified [$glyphs](../glyphs/SKILL.md) connection
 and intended document ID already in context. Resolve missing bindings through the
@@ -66,22 +66,24 @@ contract](../glyphs/references/python-scripts.md). Choose the smallest useful fo
 count threshold. Scripts have no fixed surface-count ceiling; the complete
 request must fit the existing 4 MiB budget. Keep one bulk job and report all
 eligible targets or a clear preparation failure, never a truncated edit.
-Clean saved fonts require no extra Save. Dirty fonts require
-an authorized **Save and run**, and new fonts use Save As/manual saving.
+Dirty, clean and pathless fonts run without Save. Require `script.recovery.snapshot.v1`
+and preparation version 3; the bridge captures a detached full-font copy before execution.
 
 Intent controls the workflow. Perform a requested task by generating, validating
 and testing code as appropriate, running it, then verifying the result. Do not
 require code review or a separate Run question for result-focused tasks. Writing
 a script includes code review but does not authorize live execution. Reviewing
 means review only. Write-and-run includes review and authorized execution.
-Explicit previews wait. Source remains available through optional Script details.
+Use `mode="apply"` under task authorization when `script.apply-authorized.v1`
+is advertised: preparation and Run are dispatched internally. Explicit previews
+use `mode="preview"` and wait. Source remains available through optional Script details.
 Successful cards default to Keep without saving after 30 seconds, ending recovery.
 Honor **“wait for my answer”** with `auto_keep=false` on new workflows or the
 existing **Wait for my answer** action; retain that directive for later requests.
 See the shared contract for countdown, visibility and text-only behavior.
 
-**Restore saved version** reloads the whole unchanged baseline, clears Undo
-history and replaces later unsaved edits. It never saves or replays code. Keep
+**Restore before run** restores the pre-run copy including existing unsaved edits,
+clears Undo history and replaces later edits. Recovery lasts only in this Glyphs session. It never saves or replays code. Keep
 or Save ends the restoration offer. Failure/cancellation leaves possible partial
 edits for inspection; never auto-reload. Keep generated scripts free of save/close
 calls and reconcile uncertain outcomes without replay. Use

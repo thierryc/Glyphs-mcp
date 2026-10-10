@@ -46,9 +46,9 @@ reuse installation and execution authorisation already present in the task.
 
 Advertised script jobs use the [script recovery contract](../../glyphs/references/python-scripts.md).
 On disposable fixtures, verify each recovery contract: native
-Undo/Redo and conflict-checked discard for typed jobs; verified saved baselines,
-whole-font reload, overwritten-baseline rejection and fresh document bindings
-for native scripts. Clean baselines skip Save; dirty ones save only when authorized.
+Undo/Redo and conflict-checked discard for typed jobs; detached pre-run recovery copies,
+whole-font restoration including earlier unsaved edits, session-loss handling and fresh document bindings
+for native scripts. Dirty and pathless fonts run without Save.
 Direct native failure/cancellation does not auto-reload. Restoration clears Undo
 history and discards later unsaved edits. No script recovery covers external effects.
 Do not infer this recovery for independently executed plugin code.

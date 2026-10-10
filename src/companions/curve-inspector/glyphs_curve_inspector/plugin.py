@@ -24,7 +24,7 @@ from glyphs_curve_inspector import controller as repair_ui
 MANIFEST = {
     "protocol": 1,
     "id": "curve-inspector",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "capabilities": ["curve.measure", "curve.overlay", "curve.repair.preview", "curve.repair.apply"],
 }
 

@@ -115,7 +115,8 @@ class EditWorkflows:
             if len(peers) >= 2 or any(not p.get("jobId") or p["state"] in {"uncertain", "interrupted"} for p in peers):
                 raise self.error("workflow_busy", "Resolve the existing request for this font first.",
                                  details={"workflowId": peers[-1]["id"]})
-            value = self.store.create(document, arguments, request, mode, idempotency_key, auto_keep=auto_keep)
+            value = self.store.create(document, arguments, request, mode, idempotency_key, auto_keep=auto_keep,
+                                      script_run_authorized=kind == 'python_script' and mode == 'apply')
             blockers = self.service.jobs.select(JOB_BUSY, document_id=document_id, include_unresolved=True)
             if blockers:
                 self._set(value, blockerId=blockers[0]["id"], state="blocked_active")
@@ -186,7 +187,7 @@ class EditWorkflows:
     def _begin(self, value):
         document = self._document(value, allow_path_change=True)
         self.service.validate_job_request(**value["arguments"])
-        if not document.get("path") or (document.get("dirty") is not False and value["request"]["kind"] not in {"python_script", "checkpoint_restore"}):
+        if value["request"]["kind"] != "python_script" and (not document.get("path") or (document.get("dirty") is not False and value["request"]["kind"] != "checkpoint_restore")):
             self._set(value, state="waiting_save")
             return
         self._set(value, state="preparing", error=None, reviewInConversation=False)
@@ -204,7 +205,7 @@ class EditWorkflows:
                 historical = (job.get('bridgeOperation') or {}).get('documentAfter')
                 if job.get('resultKind') == 'historical_restore' and historical:
                     self._set(value, document=historical)
-                if restored.get('savedVersionRestored') and restored.get('documentAfter'):
+                if (restored.get('savedVersionRestored') or restored.get('beforeRunRestored')) and restored.get('documentAfter'):
                     # Only this operation's authoritative reload can replace a binding.
                     self._set(value, document=restored['documentAfter'])
                 self._set(value, blockerId=None, blockingWorkflowId=None, job=None, error=None)
@@ -225,7 +226,7 @@ class EditWorkflows:
             self._set(value, document=after)
         state = job["status"]
         restored = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
-        if state == 'discarded' and restored.get('savedVersionRestored') and restored.get('documentAfter'):
+        if state == 'discarded' and (restored.get('savedVersionRestored') or restored.get('beforeRunRestored')) and restored.get('documentAfter'):
             self._set(value, document=restored['documentAfter'], savedVersion=None)
         if state == 'completed' and job.get('resultKind') in {'script', 'mutation', 'historical_restore'}:
             self._set(value, state='executed')
@@ -234,6 +235,19 @@ class EditWorkflows:
             if value['state'] == 'uncertain' and value['request']['kind'] == 'python_script' and value.get('saveRequest'):
                 return
             if job.get('resultKind') == 'script':
+                if value['mode'] == 'apply' and value.get('scriptRunAuthorized'):
+                    if not allow_apply:
+                        return  # Keep preparation active; a read does not Run.
+                    # Only new Apply requests carry authorization. Consume it
+                    # durably before dispatch; old records and reconnect reads
+                    # never gain execution permission or replay a native attempt.
+                    self.store.update(value, pendingAction='run_script', scriptRunAuthorized=False,
+                                      state='applying', responseOrigin='authorized_request')
+                    try:
+                        self._respond(value, 'run_script', None, None)
+                    finally:
+                        self.store.update(value, pendingAction=None)
+                    return
                 self._set(value, state='waiting_run')
                 return
             if report_needs_review(self.service, job):
@@ -281,8 +295,8 @@ class EditWorkflows:
             with self.service._script_dispatch_lock:
                 saved_script.restore(self.service, value, self.error)
             return
-        if action in {'run_script', 'save_run_script'}:
-            self._set(value, state='applying')
+        if action == 'run_script':
+            self._set(value, state='applying', scriptRunAuthorized=False)
             job = self.service.run_script(value['jobId'], value['id'])
             self._set(value, job=job)
             return

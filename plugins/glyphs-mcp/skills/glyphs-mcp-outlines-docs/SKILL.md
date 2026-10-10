@@ -89,7 +89,6 @@ curve-edit tools.
 For bulk vertical mirroring, resolve the exact master and selected surface, then
 use the [vertical-flip example](../glyphs-mcp-scripting/examples/vertical_flip.py)
 with an explicit pivot. Default to combined path-bounds center per background.
-Direct native scripts use the saved baseline at every target count. Verify
-foregrounds, other masters, anchors and components remain unchanged. Restore saved
-version reloads the whole font and discards later unsaved edits; typed operations
+Direct native scripts capture a detached pre-run copy at every target count, without Save. Verify
+foregrounds, other masters, anchors and components remain unchanged. Restore before run restores the whole pre-run font including existing unsaved edits and discards later unsaved edits; typed operations
 retain their selective recovery.

@@ -40,6 +40,9 @@ def restore(core, request, error):
         raise error('document_busy', 'resolve outstanding MCP changes before restoring a whole document')
     core._check_owner(op['documentId'], ignore_job_id=op['jobId'])
     state = core.adapter.document_state(op['documentId'])
+    if op['scriptResult'].get('recovery', {}).get('kind') == 'memory_snapshot':
+        from .script_snapshot import restore as restore_snapshot
+        return restore_snapshot(core, op, request, error)
     path = op['scriptRequest']['sourcePath']
     if state.get('path') != path or state['generation'] != request['generation']:
         raise error('stale_document', 'document changed after restoration review')

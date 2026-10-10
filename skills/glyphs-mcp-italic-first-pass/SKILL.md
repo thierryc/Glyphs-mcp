@@ -27,7 +27,7 @@ uncertain write or save as a new job; reconcile the existing job identity first.
 For a large custom transformation or a reviewed sequence of slant and correction
 steps, offer **direct native scripting** under the [shared route and recovery
 guide](../glyphs/references/python-scripts.md#choose-the-route). Run the sequence
-locally over explicit surfaces with a verified saved baseline and whole-font saved reload.
+locally over explicit surfaces with a detached pre-run recovery copy and whole-font pre-run snapshot restoration.
 Specify angle, pivot, width policy, anchor/component handling and master scope;
 do not claim the typed slant algorithm or its checks were reproduced. Keep
 `slant` for the existing first-pass workflow, and use a disposable copy for

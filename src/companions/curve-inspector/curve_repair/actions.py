@@ -385,6 +385,7 @@ class Result:
     unsupported: int = 0
     glyphs: int = 0
     max_outline_change_units: float = 0.
+    max_change_units: float = 0.
     reasons: list = field(default_factory=list)
     notes: list = field(default_factory=list)
 
@@ -395,6 +396,17 @@ class Result:
     def skipped(self): return self.reasons
 
     def message(self):
+        if not self.changed:
+            if self.threshold_rejected and self.threshold_rejected >= self.unsupported:
+                return "No change · over {:g}-unit limit".format(self.max_change_units)
+            if self.unsupported:
+                reason = self.reasons[0].rsplit(": ", 1)[-1] if self.reasons else "unsupported selection"
+                if "Locked" in reason: reason = "selection is locked"
+                elif "Select an on-curve" in reason: reason = "select a node, handle or path"
+                return "No change · " + reason
+            if self.already_smooth:
+                return "No change · already smooth"
+            return "No change · no eligible joins"
         parts = []
         for count, text in ((self.repaired,"repaired"),(self.converted,"converted"),(self.already_smooth,"smooth"),
                             (self.threshold_rejected,"limit blocked"),(self.unsupported,"unsupported")):
@@ -402,7 +414,9 @@ class Result:
         return " · ".join(parts) or "Nothing to change"
 
     def details(self):
-        return self.message()+"\nCertified max outline change: {:.6g} units\n".format(self.max_outline_change_units)+"\n".join(self.reasons+self.notes)+"\nUndo is available per glyph. Font not saved; interpolation is not verified."
+        counts = "Repaired: {} · Converted: {} · Smooth: {} · Limit blocked: {} · Unsupported: {}".format(
+            self.repaired, self.converted, self.already_smooth, self.threshold_rejected, self.unsupported)
+        return self.message()+"\n"+counts+"\nCertified max outline change: {:.6g} units\n".format(self.max_outline_change_units)+"\n".join(self.reasons+self.notes)+"\nUndo is available per glyph. Font not saved; interpolation is not verified."
 
 
 def apply_path(glyph, owner, layer, path, joins, app, method, max_change_units=None, *, tunni_balance=True):
@@ -416,7 +430,7 @@ def apply_steps(scope, app, method="star", all_masters=False, max_change_units=N
     if method not in ("star","default-node"): raise RepairError("unsupported_method")
     limit = validate_limit(default_limit(scope.font) if max_change_units is None else max_change_units)
     master = value(scope.font,"selectedFontMaster")
-    result = Result()
+    result = Result(max_change_units=limit)
     trials = None
     for glyph in scope.glyphs:
         if identity(glyph.parent) != identity(scope.font): raise RepairError("stale","Glyph left the font")

@@ -8,6 +8,11 @@ python_bin="${PYTHON_BIN:-python3}"
 profile="${NOTARY_PROFILE:-gmcp-notary}"
 identity="${CODESIGN_IDENTITY:-Developer ID Application: Thierry Charbonnel (N9U29A4T8J)}"
 skip="${SKIP_NOTARIZATION:-0}"
+layout_python="${GMCP_DMG_LAYOUT_PYTHON:-}"
+if [[ -n "${GMCP_DMG_LAYOUT_TEMPLATE:-}" ]]; then
+  echo "error: copying Finder layout from another volume is unsupported; use GMCP_DMG_LAYOUT_PYTHON" >&2
+  exit 1
+fi
 
 app="$repo_root/dist/installer-app/$scheme.app"
 background="$repo_root/macos-installer/DMG/background.tiff"
@@ -122,6 +127,9 @@ echo "Populating image at: $mnt"
 /usr/bin/ditto "$stage" "$mnt"
 
 echo "Applying Finder window layout…"
+if [[ -n "$layout_python" ]]; then
+  "$layout_python" "$repo_root/scripts/write_dmg_layout.py" "$mnt" --app "$scheme.app"
+else
 /usr/bin/osascript - "$mnt" "$scheme" <<'APPLESCRIPT'
 on run argv
   set folderPath to item 1 of argv
@@ -168,6 +176,7 @@ on run argv
   end tell
 end run
 APPLESCRIPT
+fi
 
 # Give Finder a moment to flush .DS_Store before detaching the writable image.
 /bin/sleep 1

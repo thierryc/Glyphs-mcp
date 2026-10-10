@@ -32,8 +32,8 @@ uncertain write or save as a new job; reconcile the existing job identity first.
 For an explicit numeric rule across many layers, such as fixed widths or a
 reviewed bearing/key adjustment, offer **direct native scripting** under the
 [shared route and recovery guide](../glyphs/references/python-scripts.md#choose-the-route).
-One callback can apply the rule locally with Save and run and whole-font saved
-reload. Preserve key ownership, tabular widths, marks and component alignment;
+One callback can apply the rule locally with Run without Save and whole-font pre-run snapshot
+restoration. Preserve key ownership, tabular widths, marks and component alignment;
 verify bearings and proofs. Keep `spacing` for reference-based suggestions: a
 bulk assignment does not reproduce its algorithm. Genuinely unsupported edits
 can also use an advertised script job or an authorized native workflow.

@@ -104,3 +104,5 @@ coverage. The previous verified 0.4.0 and 0.5.0 bundles are retained locally.
 Standalone distribution follows [RELEASING.md](RELEASING.md). Version 0.5.1 is a
 packaging/signing patch over the natively qualified 0.5.0 code. Its release assets
 and local tag are independent of the desktop app and Sparkle update feed.
+
+The 0.5.2 candidate keeps the fixed panel and repair behavior. When no outline changes, the status explains whether joins are already smooth, the change limit blocked repair, the selection is locked/unsupported, or no eligible joins were found. Full counts and reasons remain in the tooltip.

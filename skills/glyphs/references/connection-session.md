@@ -8,8 +8,8 @@ connections or infer an interface from the host app name or skill location.
   `get_job`, `apply_job`, `accept_job`, `discard_job`, `save_document`, plus
   `start_edit_workflow`, `get_edit_workflow`, `respond_edit_workflow`: call that connection’s `get_status`. Use this lean
   workflow when `interface` is `glyphs-mcp-sidecar` and `interfaceVersion` is `1`.
-  Current builds also expose `create_document`, `open_document`, `import_document`,
-  `activate_document` and `close_document`; require their matching
+  Current builds also expose `create_document`, `duplicate_document`, `open_document`, `import_document`,
+  `activate_document`, `open_edit_tab` and `close_document`; require their matching
   `document.*.v1` write capabilities. Earlier lean catalogs remain usable for
   their existing operations and need updating to use the added document routes.
   A private sidecar missing current interface/identity fields needs updating;
@@ -63,7 +63,14 @@ do not treat its obsolete version gate as evidence of a stale runtime.
 Do not infer compatibility from a name or `surface` label. For failed setup,
 use [connection troubleshooting](connection-troubleshooting.md).
 
-Python capability discovery does not change the eighteen-tool catalog. Require
+Python capability discovery does not change the twenty-tool catalog. Require
 `script.native.v1` for direct native scripts. No worker or layer snapshots are
 needed. Retired scripting capabilities require a coordinated runtime update;
 see [script jobs](python-scripts.md).
+
+For coordinated updates, `get_status.agentPackage` identifies the expected agent
+plugin version, release and packaged `skillsDigest`. Compare it with the installed
+plugin's `glyphs-mcp-agent.json`; it is not proof that this conversation loaded
+those files. Refresh the existing local plugin through the supported client
+installer, then reload the client and verify its catalog. Keep one intended
+connection. Never repair a stale package by manually editing its cache.

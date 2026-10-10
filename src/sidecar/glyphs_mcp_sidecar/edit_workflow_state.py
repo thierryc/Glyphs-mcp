@@ -28,20 +28,20 @@ class WorkflowStore:
                     self._remember(value)
                     if value["state"] not in TERMINAL and value["state"] != "interrupted":
                         value["resumeState"] = value["state"]
-                        self.update(value, state="interrupted", error={
+                        self.update(value, state="interrupted", scriptRunAuthorized=False, error={
                             "code": "workflow_interrupted",
                             "message": "The service restarted. No save or edit was replayed. Check the existing outcome before starting new work.",
                         })
                 except (OSError, ValueError, KeyError, TypeError):
                     continue
 
-    def create(self, document, arguments, request, mode, key, *, auto_keep=False):
+    def create(self, document, arguments, request, mode, key, *, auto_keep=False, script_run_authorized=False):
         value = dict(version=1, id="edit_" + uuid4().hex, nonce=uuid4().hex,
                      document=deepcopy(document), arguments=deepcopy(arguments), request=request,
                      mode=mode, idempotencyKey=key, state="starting", revision=0,
                      jobId=None, blockerId=None, job=None, error=None, receipt=None,
                      usedActions={}, createdAt=time.time(), autoKeepRequested=auto_keep,
-                     autoKeepEnabled=auto_keep)
+                     autoKeepEnabled=auto_keep, scriptRunAuthorized=script_run_authorized)
         self.records[value["id"]] = value
         self.update(value)
         return value
@@ -196,15 +196,17 @@ def _offered_actions(value):
     if value['request']['kind'] == 'python_script':
         job = value.get('job') or {}
         executed = ((job.get('bridgeOperation') or {}).get('scriptResult') or {}).get('executed')
-        restore = [('restore_saved_script', 'Restore saved version')] if (value.get('savedVersion') or {}).get('available') else []
+        restore = [('restore_saved_script', 'Restore before run' if (value.get('savedVersion') or {}).get('kind') == 'memory_snapshot' else 'Restore saved version')] if (value.get('savedVersion') or {}).get('available') else []
+        if state == 'outdated':
+            return [('reprepare', 'Prepare again'), ('cancel', 'Cancel')]
         if state == 'waiting_run':
             if scripts.retired(value['request'].get('options', {})):
                 return [('cancel', 'Cancel')]
-            if value['document'].get('dirty') is not False:
-                return [('save_run_script', 'Save and run'), ('manual_save', "I'll save in Glyphs"), ('cancel', 'Cancel')]
             return [('run_script', 'Run script'), ('cancel', 'Cancel')]
         if state == 'applied':
-            return [('finish_script', 'Keep changes without saving'), ('save_result', 'Save font')] + restore
+            path = value['document'].get('path') or ''
+            save = ('save_result', 'Save font') if path.lower().endswith(('.glyphs', '.glyphspackage')) else ('save_result_as', 'Save As…')
+            return [('finish_script', 'Keep changes without saving'), save] + restore
         if state in {'failed', 'cancelled'} and executed:
             return [('finish_script', 'Keep changes without saving')] + restore
         if state == 'executed':
@@ -339,11 +341,12 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         evidence = ((result.get('job') or {}).get('bridgeOperation') or {}).get('scriptResult') or {}
         messages = {
             'preparing': 'Validating script and resolving targets…',
-            'waiting_run': 'Script ready.' if value['document'].get('dirty') is False else 'Save the current font before running.',
+            'outdated': 'The font or script changed after preparation. Prepare again from the current state; no Save is required.',
+            'waiting_run': 'Script ready. Run preserves a recovery copy of the current font; no Save is required.',
             'applying': 'Running script…',
             'applied': 'Script finished. Verify the intended result in Glyphs.',
             'executed': 'Changes kept without saving. This workflow’s restoration offer has ended.',
-            'discarded': 'Saved version restored. Subsequent unsaved edits were replaced; external effects remain.',
+            'discarded': ('Pre-run font restored. Earlier unsaved edits were retained; later edits were replaced. External effects remain.' if evidence.get('beforeRunRestored') else 'Saved version restored. Subsequent unsaved edits were replaced; external effects remain.'),
             'uncertain': 'Result not confirmed. Check the existing result; do not replay the script.',
             'interrupted': 'Result not confirmed. Check the existing result; do not replay the script.',
         }
@@ -409,7 +412,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         if result.get('warning'):
             result['text'] += '\n' + result['warning']
         if value.get('savedVersion') and value['savedVersion'].get('available'):
-            result['text'] += '\nRestore saved version: reloads the whole font, replacing all current unsaved edits and clearing Undo history. The saved file is checked again before restoring.'
+            result['text'] += '\n' + (value.get('savedVersion') or {}).get('message', 'Whole-font recovery clears Undo history.')
         if include_review:
             result['text'] += '\nScript details: ' + json.dumps(options, ensure_ascii=False)
             if evidence.get('output'):

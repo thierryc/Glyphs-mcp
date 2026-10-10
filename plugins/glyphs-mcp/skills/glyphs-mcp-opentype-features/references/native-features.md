@@ -40,8 +40,8 @@ For feature-source changes, use native `entrypoint="script"` when
 `params`; `targets:[]` is appropriate for these font-level collections. One
 invocation can update related prefixes, classes and features in their required
 order. Validate all expected source before starting writes.
-Clean saved fonts use the baseline without another Save. Authorized **Save and run** saves a dirty font once. **Restore saved version** reloads
-that unchanged saved file, including feature source and all other in-font data;
+Dirty and pathless fonts run without Save under `script.recovery.snapshot.v1`.
+**Restore before run** restores the detached pre-run copy, including unsaved feature source and other in-font data;
 it discards later unsaved edits and clears Undo history. Verify source via fresh reads, then use the existing compile/export
 workflows when those checks are requested; script completion is not compiler or
 shaping evidence. A result save for those later jobs remains explicit.

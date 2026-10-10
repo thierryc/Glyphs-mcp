@@ -12,6 +12,7 @@ Usage:
 Options:
   --tag vX.Y.Z          Exact signed release tag. Must match all source and app versions.
   --skip-build          Reuse existing artifacts, but still run every verification gate.
+  --focused-tests TAG   Use the focused stable gate against this qualified release tag; artifact security checks remain mandatory.
   --dry-run             Build and verify locally without uploading anything.
   --publish             Publish the verified draft (beta stays a prerelease, never Latest).
   --confirm-publish TAG Non-interactive confirmation; value must exactly equal --tag.
@@ -30,6 +31,7 @@ dry_run="0"
 confirm_publish=""
 allow_unsigned_tag="0"
 publish="0"
+focused_base=""
 python_bin="${PYTHON_BIN:-python3}"
 
 while [[ $# -gt 0 ]]; do
@@ -41,6 +43,10 @@ while [[ $# -gt 0 ]]; do
     --skip-build)
       skip_build="1"
       shift
+      ;;
+    --focused-tests)
+      focused_base="${2:-}"
+      shift 2
       ;;
     --dry-run)
       dry_run="1"
@@ -133,7 +139,11 @@ if [[ -z "$remote_tag_commit" || "$remote_tag_commit" != "$head_commit" ]]; then
   exit 1
 fi
 
-GLYPHS_MCP_FULL_NETWORK=1 ./scripts/run_local_release_tests.sh
+if [[ -n "$focused_base" ]]; then
+  ./scripts/run_local_release_tests.sh --focused --base-ref "$focused_base"
+else
+  GLYPHS_MCP_FULL_NETWORK=1 ./scripts/run_local_release_tests.sh
+fi
 
 if [[ "$skip_build" != "1" ]]; then
   ./scripts/build_installer_app.sh

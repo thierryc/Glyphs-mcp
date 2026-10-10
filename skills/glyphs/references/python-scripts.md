@@ -2,8 +2,8 @@
 
 Use `kind="python_script"` through `start_edit_workflow` when `script.native.v1`
 is advertised. Scripts run directly in Glyphs against the exact intended font,
-with an unchanged saved version available for whole-font restoration. This is
-trusted Python, not a security sandbox. The eighteen-tool surface is unchanged.
+with a detached full-font copy of the current state available for restoration. Dirty and pathless fonts are supported; Run never saves. Require `script.recovery.snapshot.v1` and preparation version 3. This is
+trusted Python, not a security sandbox. The twenty-tool surface is unchanged.
 `executionMode` and `recovery` are retired fields and are rejected, never converted
 from an old scoped request into live execution. Missing capabilities remain
 installation gaps; scripts must not bypass rejected writes or stale targets.
@@ -18,11 +18,15 @@ installation gaps; scripts must not bypass rejected writes or stale targets.
 | Write and run | Produce and review, then execute under the existing authorization. |
 | Preview or explain before acting | Present the proposal and wait for execution authorization. |
 
-The agent dispatches the current revision-bound Run action. A human click and
-opening View details are optional. Tokens establish freshness and retry
-protection, not proof of human approval. Starting a workflow, preparation and
-polling never execute Python. Workflow `mode="apply"|"preview"` remains separate
-from script entrypoint; even in apply mode the agent dispatches the Run action.
+With `script.apply-authorized.v1` in `workflowCapabilities`, use `mode="apply"`
+for an already-authorized task. The workflow validates targets, captures recovery
+and dispatches Run internally, without another agent round trip or human Run
+question. Use `mode="preview"` for write-only/review requests and explicit previews;
+these stop at the revision-bound Run action until execution is authorized.
+Preparation and polling never execute code themselves. Reads cannot replay a Run,
+and interrupted requests lose automatic dispatch permission. Older installations
+without this workflow capability still require the current Run action under the
+same task authorization. Tokens protect freshness and retries, not human approval.
 Saving requires actual existing or explicit authorization and includes the whole
 font. A prerequisite save does not authorize saving the resulting edit.
 
@@ -85,22 +89,31 @@ paths/nodes locally. Whole scripts receive `font`, resolved native `targets`,
 in parameters and validate them before writes. Scope is enforced by the script,
 not by an outside-scope font comparison.
 
-## Saved baseline and execution
+## Current-state recovery and execution
 
-Preparation checks syntax and resolves targets without running module code or
-saving. A clean saved font uses its verified baseline with zero Save calls.
-For a dirty saved font, use **Save and run** only under existing or explicit save
-authorization: save once, verify, then execute. Otherwise offer that choice,
-manual saving or Cancel. New fonts use Save As/manual saving followed by fresh
-validation. Never overwrite a Save As destination implicitly. Changed requests,
-targets or document baselines invalidate dispatch; refresh, asking again only if
-scope or save authorization is no longer sufficient.
+Preparation checks syntax, detectable callback entry-point errors and exact targets
+without running module code or saving. Dirty, clean and pathless fonts all offer
+**Run script**. No prerequisite Save, Save As or disk-source baseline is required.
+The bridge captures an independent full-font copy immediately before execution;
+if capture fails, it does not execute or mark the document dirty.
+
+The copy includes pre-existing unsaved edits and is held privately in bridge
+memory. It is not written to a font file and is not crash/restart recovery.
+Keep, verified Save or successful restoration releases it. Exact source,
+parameters, document generation, dirty state and targets are revalidated before
+Run. New edits invalidate preparation; prepare again without saving.
+
+Use `duplicate_document(document_id, idempotency_key, family_name=None)` to
+create an unsaved demo copy of the current in-memory source, including unsaved
+edits. It never saves or modifies the source; edit and open proof tabs in the
+returned document. Duplicate requires `document.duplicate.v1`.
 
 Present the font, intended change and scope. Show this warning once; it is
 information, not an extra approval step:
 
-> This script can access Glyphs and your computer. Restore saved version reloads
-> the whole font and discards later unsaved edits. External effects are not restored.
+> This script can access Glyphs and your computer. Restore before run replaces
+> the whole font with its pre-run state, including unsaved edits, and discards
+> later edits. Recovery lasts only in this Glyphs session. External effects are not restored.
 
 Exact source and parameters are optional **View details**. Text-only **Show
 script** calls `get_edit_workflow(include_review=true)`; default polling is compact
@@ -137,7 +150,7 @@ changes. Runtime errors/cancellation can leave partial edits for inspection;
 never automatically reload.
 
 Offer **Keep changes without saving**, **Save font** after success, and available
-**Restore saved version**. After a partial failure, offer Keep and restoration.
+**Restore before run**. After a partial failure, offer Keep and restoration.
 Keeping or saving ends this workflow's restoration offer.
 
 New script workflows default to `auto_keep=true` (a top-level
@@ -162,20 +175,19 @@ elapsed time is not a conversational answer or permission for Run, Save or
 Restore. The card's `automatic=true` dispatch flag permits only successful Keep
 and records `responseOrigin="card_timeout"`; it does not authenticate a human.
 
-**Restore saved version** reloads the unchanged baseline through Glyphs, replaces
-all later unsaved edits throughout the font, clears Undo history and returns a
-fresh document binding. It covers persisted outlines, kerning, features and
-metadata. It is a whole-font reload, not a reverse script; there is no wrapper
-Redo. Show coverage beside the action. A clear request to restore authorizes it;
-clarify only an ambiguous scope. Restoration never saves or reruns Python.
-If the baseline was overwritten or the document closed, do not offer restoration
-as if it remained available. App/file version history may help if it exists, but
-the wrapper creates no backup and promises no crash recovery or external-effect
-recovery. External image bytes and filesystem/network effects are excluded.
-The restoration offer uses recently checked display information for up to five
-seconds; Run and Restore independently validate the baseline before changing the
-font. The displayed offer is not a guarantee that an externally changed file can
-still be restored.
+**Restore before run** replaces the whole font from the detached copy, including
+pre-existing unsaved edits. It clears Undo history and returns a fresh document
+binding. It discards edits made after Run, never saves and never repeats Python.
+The pre-run path and dirty state are retained; if the original on-disk source
+changed externally, restoration stays dirty rather than falsely claiming it
+matches the disk file. A changed document path blocks restoration for review.
+External files, other documents and Python side effects are excluded.
+
+A partial failure retains its copy for explicit restoration or Keep. Keeping
+ends wrapper recovery; script execution disables native Undo registration, so
+do not promise script Undo/Redo. After a bridge restart, the memory copy is lost:
+reconcile the uncertain outcome without replay. Historical saved-file workflows
+retain their older **Restore saved version** semantics only for their own records.
 
 For uncertain outcomes, retain the workflow/job ID and use **Check result**.
 Never replay automatically after timeouts/reconnects. If a native operation is

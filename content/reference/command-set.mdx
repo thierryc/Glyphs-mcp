@@ -1,17 +1,19 @@
 ---
-title: The eighteen v2 tools
+title: The twenty v2 tools
 ---
 
-This is the **Glyphs MCP 2.0.2** eighteen-tool contract. Desktop build **57**, sidecar and bridge product version `2.0.2`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. This is the published stable release. Compiled comparison is an additive capability. The negotiated MCP transport version is separate. Inspect `get_status` for independent sidecar/bridge identities and negotiated `readCapabilities`, `writeCapabilities`, `jobCapabilities`, independent `comparisonCapabilities` and closed `nativeActions`; see [version and identity](version-identity.mdx).
+This is the development **twenty-tool** contract, adding save-free `open_edit_tab`. Published Glyphs MCP 2.0.2 exposes eighteen tools until a coordinated runtime update. Desktop build **57**, sidecar and bridge product version `2.0.2`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. Those version numbers identify the existing stable release; the tab action is not yet published. Compiled comparison is an additive capability. The negotiated MCP transport version is separate. Inspect `get_status` for independent sidecar/bridge identities and negotiated `readCapabilities`, `writeCapabilities`, `jobCapabilities`, independent `comparisonCapabilities` and closed `nativeActions`; see [version and identity](version-identity.mdx).
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
 | `get_status` | None | Read sidecar, worker and bridge availability plus negotiated read/write/job capabilities. |
 | `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
+| `duplicate_document` | `document_id`, `idempotency_key`, optional `family_name` | Copy the current font, including unsaved edits, into an independent unsaved document. Requires `document.duplicate.v1`; never saves either font. |
 | `create_document` | `family_name`, `idempotency_key`, optional `units_per_em` (1000) | Create and open an unsaved font with one Regular master and instance. Requires `document.create.v1`. |
 | `open_document` | `path`, `idempotency_key` | Open an existing absolute local `.glyphs` file or `.glyphspackage` folder. Reuse an already-open source without reloading or saving; requires `document.open.v1`. |
 | `import_document` | `path`, `idempotency_key` | Import a local UFO, OTF or TTF without saving its source; requires `document.import.v1`. |
 | `activate_document` | `document_id` | Show the exact live font window and bring Glyphs to the front; requires `document.activate.v1`. |
+| `open_edit_tab` | `document_id`, `idempotency_key`, optional `text`, `glyphs`, `master_id` | Open and activate a blank, text or exact-glyph Edit tab without saving, including unsaved fonts; requires `document.edit-tab.open.v1`. |
 | `close_document` | `document_id`, `idempotency_key`, optional `unsaved_changes` (default refuse), `destination` | Close with explicit save/discard handling and pending-job protection; requires `document.close.v1`. |
 | `read_entities` | `document_id`, `entities`, `fields` | Read at most 100 explicit targets per call. |
 | `start_job` | `document_id`, `kind`, optional `delta`, `glyphs`, `options` | Prepare a supported job without applying it; the negotiated route may use detached native targets or the external worker. |
@@ -130,7 +132,7 @@ it never repeats the native call. Up to 1024 outcomes are retained per session.
 
 `get_status.workflowCapabilities` advertises `edit.workflow.v1`. The three
 workflow tools wrap existing services; saved, clean source prerequisites remain
-intact for typed edits and scripts. They support every advertised mutation kind,
+intact for typed edits. Native scripts use a current-state memory recovery copy without Save. They support every advertised mutation kind,
 including `dimensions_edit`, and exclude compilation and export.
 
 Use `apply` for requested edits and `preview` for preview-only requests. The
@@ -192,6 +194,55 @@ fresh approval for any changed overwrite. Application never saves; document-leve
 Undo/Redo and whole-job discard preserve exact metadata and originally absent
 containers. Save separately only when authorized. Writes are qualified for
 Glyphs 4.1 build 4107; other builds retain reads without advertising edits.
+
+## Save-free Edit tabs
+
+`open_edit_tab(document_id, idempotency_key, text=None, glyphs=None, master_id=None)`
+opens and activates a new tab in the exact live document, including unsaved fonts.
+It requires `document.edit-tab.open.v1`, no script, baseline or edit workflow.
+Supply proof text (0–4096 Unicode characters, native `/glyphName` syntax) or
+1–100 exact glyph names in order, including repeats; omit both for a blank tab.
+An optional exact master ID selects the displayed master; otherwise retain the
+font's current master. Missing glyph/master layers reject before any tab opens.
+
+The result includes `documentId`, session-local `tabId`, `tabOpenId`,
+`bridgeSessionId`, `masterId`, `created` and `activationRequested`, plus fresh
+native document state. Existing tabs remain open. No font save or geometry edit
+occurs; native UI state can affect the dirty flag and is never reset by the tool.
+
+Use a fresh key for each intended tab. Identical retries return the original
+receipt, without creating or reactivating another tab. Changed arguments return
+`edit_tab_conflict`; a closed tab returns `edit_tab_closed`. Bridge restarts,
+unreadable journals and attempted native failures return `edit_tab_outcome_unknown`
+and require outcome reconciliation. Pending jobs owning the document block the
+action. Tab listing, editing, closing and special layers remain outside the tool.
+
+Native tab opening is qualified on Glyphs 4.1.1 build 4108 with disposable
+imported and pathless fonts: blank/text/glyph-list tabs, retries, visible proof,
+unchanged outlines/metrics and no font save. Multiple-master selection and
+callback failures are source-tested; this editor qualification used one master.
+The headless runtime does not advertise the action.
+
+## Unsaved demo copies and current-state script recovery
+
+`duplicate_document(document_id, idempotency_key, family_name=None)` creates an
+independent pathless copy of the exact live font, including unsaved contents.
+Optional family renaming affects only the copy. Require `document.duplicate.v1`.
+Neither font is saved. Identical retries reuse the original copy; conflicts,
+closed results, bridge restarts and partial native failures are reconciled without
+creating another font. Pending source jobs must be resolved first.
+
+Save-free scripting requires `script.recovery.snapshot.v1` and preparation
+version 3. Native qualification on Glyphs 4.1.1 build 4108 covers pathless Run,
+pre-existing unsaved edits, independent copies, intentional failure and whole-font
+recovery of outlines, widths, feature source, user data and master metadata.
+Saved-path restoration and duplication preserve the source bytes and observed
+pre-run dirty state. Clean pathless restoration is native-tested; clean saved
+restoration is source-tested. Recovery is session-local and excludes external
+assets and other documents. See the repository's
+qualification record at `src/bridge/script-snapshot-qualification.json`
+for the exact tested and installed development identities; this candidate has not
+been published.
 
 ## Explicit reads
 
@@ -621,7 +672,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the public count is eighteen.
+not extra MCP tools; the public count is twenty.
 
 ### Kerning discovery
 
@@ -635,7 +686,7 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays eighteen tools.
+require a coordinated bridge/sidecar/skills update. The catalog stays twenty tools.
 
 
 ## Native scripts
@@ -656,8 +707,9 @@ protocol; never replace a rejected manifest with a whole-font loop to evade it.
 A requested font task authorizes in-scope Run without a separate code review or
 human click. Write-only/review-only requests do not execute; writing includes code
 review, while explicit previews wait. Preparation and polling never run module
-code. A clean saved baseline skips Save. Dirty fonts require authorized saving;
-new fonts use existing Save As/manual choices. Failed/uncertain saves never run.
+code. Require `script.recovery.snapshot.v1` and preparation version 3. Dirty, clean
+and pathless fonts run without Save. A detached current-state copy is captured
+immediately before execution; capture failure prevents execution.
 
 `get_edit_workflow` defaults `include_review=false` for compact progress and action
 state. Set it true for optional View details/Show script. Scripts run on Glyphs'
@@ -707,8 +759,9 @@ client-name-specific branches. Text-only clients reconcile through the same
 tools; the server cannot rewrite a client's historical messages or host-owned
 controls. Compatibility in a named client still requires checks in that client.
 
-Restore saved version reloads the whole unchanged baseline, discards later unsaved
-edits and clears Undo history, returning a fresh document binding. Keep or Save ends
+Restore before run restores the whole pre-run copy, including pre-existing unsaved
+edits, discards later edits and clears Undo history, returning a fresh document binding.
+Recovery is held in bridge memory and does not survive Glyphs restarts. Keep or Save ends
 that offer. Failures can leave partial edits; reload is never automatic. External
 effects are not restored. Reconcile uncertain outcomes without replaying code.
 
@@ -718,7 +771,7 @@ The existing `respond_edit_workflow` tool offers `finish_edit` for successful ty
 results and retains `finish_script` for scripts. Both Keep without saving and end
 the workflow recovery offer. Typed Keep preserves native Undo/Redo; selective
 **Undo these changes** remains available until Keep or Save. Script recovery uses
-whole-font **Restore saved version**. Typed blockers offer manual Keep, including
+whole-font **Restore before run**. Typed blockers offer manual Keep, including
 jobs without an originating workflow; `blockingWorkflowId` identifies one when present.
 
 New successful typed cards share the 30-second Keep countdown with scripts.

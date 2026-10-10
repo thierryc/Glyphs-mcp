@@ -1,3 +1,4 @@
+from copy import deepcopy
 """Larger script manifests stay complete, bounded, read-only and cancellable."""
 import json
 from types import SimpleNamespace
@@ -40,7 +41,7 @@ def opts(font, selector='all'):
     targets = ([dict(glyph=n, layer='M', surface='background') for n in names]
                if selector == 'explicit' else
                dict(master='M', glyphs=names if selector == 'names' else 'all', surface='background'))
-    return dict(source='raise AssertionError("preparation executed Python")', targets=targets)
+    return dict(source='raise AssertionError("preparation executed Python")\ndef run(layer, params, context): pass', targets=targets)
 
 
 def request(options):
@@ -128,7 +129,7 @@ def test_oversized_complete_request_never_saves_or_runs(env):
     report = service.jobs.read_json(value['jobId'], 'report.json')
     report['manifest'] = [dict(glyph='字'*250+str(i), layer='M', surface='foreground') for i in range(6000)]
     service.jobs.write_json(value['jobId'], 'report.json', report)
-    value = choose(service, value, 'save_run_script')
+    value = choose(service, value, 'run_script')
     assert value['error']['code'] == 'request_too_large'
     assert not bridge.adapter.save_calls and not bridge.runs
 
@@ -168,11 +169,15 @@ def executable_fixture(tmp_path, monkeypatch, count=4097):
     adapter._rounding_states = {}
     adapter.glyphs = None
     adapter.script_target = lambda doc, target: (script_targets.owner(font, target).background, None)
-    monkeypatch.setattr(saved_script, 'available', lambda: True)
+    from glyphs_mcp_bridge import script_snapshot
+    monkeypatch.setattr(script_snapshot, 'available', lambda: True)
+    font.copy = lambda: deepcopy(font)
     options = scripts.validate_options(dict(opts(font), source='def run(layer, params, context):\n    layer.visits += 1'))
     from glyphs_mcp_protocol.source_identity import source_hash
     r = dict(request(options), sourcePath=str(path), sourceHash=source_hash(path),
              manifest=[t for t, _ in script_targets.resolve(font, options['targets'])[0]])
+    saved_script.review(core, {k:v for k,v in r.items() if k != 'manifest'}, BridgeError)
+    while queue: queue.pop(0)()
     return core, queue, state, font, r
 
 
@@ -212,8 +217,8 @@ def test_execution_revalidation_and_cancellation_never_replay(tmp_path, monkeypa
 def test_ordinary_bulk_named_polling_is_bounded(env):
     service, bridge, _ = env
     names = ['glyph'+str(i) for i in range(20000)]
-    value = service.edit_workflows.start('doc_1', kind='python_script', idempotency_key='large-named',
-        options=dict(source='pass', targets=dict(master='M', glyphs=names, surface='background')))
+    value = service.edit_workflows.start('doc_1', kind='python_script', idempotency_key='large-named', mode='preview',
+        options=dict(source='def run(layer, params, context): pass', targets=dict(master='M', glyphs=names, surface='background')))
     value = wait(service, value, 'waiting_run')
     assert len(value['scope']['targets']['glyphs']) <= 100
     assert value['scope']['targetSelectorGlyphCount'] == 20000
@@ -232,7 +237,7 @@ def test_stale_private_runtime_requires_update_without_fallback(env):
 
 def test_manifest_budget_matches_wire_bytes_with_duplicated_explicit_targets():
     rows = [dict(glyph='字\\"'+str(i), layer='master-é', surface='background') for i in range(100)]
-    options = scripts.validate_options(dict(source='pass', entrypoint='script', targets=rows, params={'x':'é'}))
+    options = scripts.validate_options(dict(source='def run(layer, params, context): pass', entrypoint='script', targets=rows, params={'x':'é'}))
     r = request(options)
     budget = scripts.ManifestBudget(r)
     for index, row in enumerate(rows, 1):

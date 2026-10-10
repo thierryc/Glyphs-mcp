@@ -240,6 +240,8 @@ def complete_accept(core, job_id, error_type, *, verified, receipt=None, error=N
         if verified:
             if not isinstance(receipt, Mapping):
                 raise error_type("invalid_request", "verified acceptance requires a receipt")
+            from .script_snapshot import release
+            release(job)
             job.update(status="accepted", receipt=copy.deepcopy(dict(receipt)), error=None,
                        resolved=[], nativeStateBytes=0, finishedAt=time.time())
         else:

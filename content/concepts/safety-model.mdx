@@ -28,7 +28,7 @@ never replay saves or mutations automatically.
 | Keep changes without saving | Leaves the edit unsaved and ends the workflow recovery offer. Native history remains for typed edits. |
 | Save font / Save As… | Persists the whole font, including unrelated edits; ends the workflow recovery offer. |
 | Undo these changes | Restores only the typed edit's still-current affected targets; later conflicts are refused. |
-| Restore saved version (script) | Reloads the whole unchanged baseline, removes later unsaved edits and clears Undo history. |
+| Restore before run (script) | Restores the whole pre-run state including existing unsaved edits, removes later edits and clears Undo history. |
 | Restore a checkpoint | Loads the historical whole-font version without saving or resetting Git history; removes later unsaved edits and clears Undo history. |
 
 Successful new typed-edit and script cards can Keep after a visible 30-second
@@ -73,23 +73,23 @@ explicit previews wait, and write-only/review-only requests never execute.
 Script details are optional; `get_edit_workflow(include_review=true)` retrieves
 exact source and parameters. Compact polling never repeats or replays execution.
 
-Clean saved fonts use the unchanged baseline without another Save. Dirty fonts
-require an authorized verified save; new fonts use Save As/manual saving. Saving
-before Run does not authorize saving its result. Native scripts can access Glyphs
-and the computer; external effects cannot be restored by reloading the font.
+Dirty, clean and pathless fonts run without Save. The bridge captures a detached
+full-font memory copy before execution under `script.recovery.snapshot.v1` and
+preparation version 3. This protects pre-existing unsaved edits without writing
+the original file. Scripts can access Glyphs and the computer; external effects
+are outside recovery.
 
 Callbacks yield between bounded batches; whole scripts run once. Cancellation
 stops remaining callbacks, not a running invocation. Failures can leave partial
 edits; restoration is never automatic. Successful execution does not establish
 that the intended result was verified.
 
-**Restore saved version** reloads the unchanged baseline, replaces all later
-unsaved edits throughout the font, clears Undo history and returns a fresh binding.
-It never saves or reruns Python. Keep or Save ends the restoration offer. An
-overwritten baseline or closed document cannot provide this restoration. There is
-no automatic backup or crash-recovery guarantee from this reload. Optional
-[local Git checkpoints](../workflows/checkpoints.mdx) have their own enablement
-and receipts. The typed snapshot/Undo rules below do not apply to scripts.
+**Restore before run** replaces the whole font with its pre-run memory copy,
+including existing unsaved edits, discards later edits, clears Undo and returns a
+fresh binding. It never saves or repeats Python. Keep or verified Save ends this
+offer. Glyphs restarts lose the copy; uncertain outcomes must be reconciled without
+replay. Scripts disable native Undo registration; typed Undo rules do not apply.
+Optional Git checkpoints have separate enablement and receipts.
 
 ## Native Undo, Redo and discard
 

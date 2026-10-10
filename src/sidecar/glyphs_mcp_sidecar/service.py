@@ -22,7 +22,7 @@ from .checkpoint_git import CheckpointError
 from . import checkpoints, checkpoint_restore
 from .bridge_client import BridgeClientError
 from .jobs import JobStore
-from .identity import IDENTITY, VERSION
+from .identity import IDENTITY, VERSION, AGENT_PACKAGE
 from .lifecycle import ServiceLifecycle, activity, mutation, document_dispatch
 from . import saving, saved_script
 from . import artifact_publication
@@ -166,17 +166,18 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1")
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.duplicate.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1", "document.edit-tab.open.v1")
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
             "comparisonWorker": comparison,
             "comparisonCapabilities": comparison.get("jobCapabilities", []),
             "tools": list(TOOL_NAMES),
+            "agentPackage": AGENT_PACKAGE,
             "bridge": bridge,
             "worker": worker,
             "controlProtocol": 1,
-            "workflowCapabilities": ["edit.workflow.v1", "font.checkpoints.v1"],
+            "workflowCapabilities": ["edit.workflow.v1", "script.apply-authorized.v1", "font.checkpoints.v1"],
             "activity": self.lifecycle.snapshot(),
             "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves.",
         }
@@ -192,6 +193,16 @@ class SidecarService:
         from . import document_creation
         try:
             return document_creation.create(self, ServiceError, family_name, idempotency_key, units_per_em)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    @mutation
+    @document_dispatch
+    @mutation_guard
+    def duplicate_document(self, document_id: str, idempotency_key: str, family_name: str | None = None):
+        from . import document_duplication
+        try:
+            return document_duplication.duplicate(self, ServiceError, document_id, idempotency_key, family_name)
         except Exception as exc:
             raise self._error(exc) from exc
 
@@ -219,6 +230,17 @@ class SidecarService:
             if "document.activate.v1" not in (self.bridge.status().get("writeCapabilities") or []):
                 raise ServiceError("unsupported_capability", "Activate requires document.activate.v1")
             return self.bridge.activate_document(identity)
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    @mutation
+    @document_dispatch
+    @mutation_guard
+    def open_edit_tab(self, document_id: str, idempotency_key: str, text: str | None = None,
+                      glyphs: list[str] | None = None, master_id: str | None = None) -> dict[str, Any]:
+        from . import edit_tabs
+        try:
+            return edit_tabs.open_edit_tab(self, ServiceError, document_id, idempotency_key, text, glyphs, master_id)
         except Exception as exc:
             raise self._error(exc) from exc
 
@@ -261,7 +283,7 @@ class SidecarService:
         if kind == 'python_script' and not _workflow:
             raise ServiceError('workflow_required', 'native scripts require start_edit_workflow and its revision-bound Run action')
         document = self._document(document_id)
-        if not document.get("path"):
+        if not document.get("path") and kind != "python_script":
             raise ServiceError("document_path_required", "Save or Save As before starting a large job")
         if document.get("dirty") is not False and not (_workflow and kind == 'python_script'):
             raise ServiceError("document_not_clean", "Save the font before starting a large job")
