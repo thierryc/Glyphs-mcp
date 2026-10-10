@@ -18,6 +18,9 @@ Expanded raindrop-to-regular conversion, expanded corner/cap/brush and stroke
 coverage remain unsupported. The separate agent skill is bundled and retains
 its explicit preview-only and native script recovery rules.
 
-Local signed/notarized preparation is in progress. Final installation and sealed
-asset evidence are recorded in `qualification/release-0.5.1.json` when complete.
+Local preparation is complete. Curve Inspector 0.5.1 is installed and registered
+after a safe restart on Glyphs 4.1.1 build 4108. The compact panel smoke check
+passed without applying changes to a working font; all four open documents
+were restored clean. Final installation and sealed asset evidence are recorded
+in `qualification/release-0.5.1.json`.
 GitHub publication and public download verification remain unperformed.

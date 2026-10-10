@@ -7,7 +7,8 @@
   "engineVersion": "0.5.0",
   "installedFilesMatched": 26,
   "installedSignature": "Developer ID; strict verification passed",
-  "loadedVersion": "0.5.0 pending safe relaunch",
+  "loadedVersion": "0.5.1",
+  "localReload": "passed; registered version and compact panel verified; four clean documents restored",
   "nativeEvidence": [
     "release-0.5.1.json"
   ],
@@ -19,9 +20,7 @@
   "pluginVersion": "0.5.1",
   "previewMode": false,
   "publiclyPublished": false,
-  "remainingWork": [
-    "safe Glyphs relaunch and loaded-version smoke check"
-  ],
+  "remainingWork": [],
   "schemaVersion": 1,
   "sharedExtension": "deferred; companion protocol 1 retained; no new MCP tools",
   "skillRegistration": "bundled standalone asset; no global/managed registration",

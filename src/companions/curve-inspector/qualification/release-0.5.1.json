@@ -30,7 +30,7 @@
     "sourceDigest": "8c637fe1c5f878cc9d1874d2f4d17632ecc087ab9ff078921daa363b84ea2d5f",
     "upstreamRevision": "ccc71ee39ef72c0c34267410d2b9ebee454ec98c"
   },
-  "localReload": "awaiting safe relaunch; open fonts have unsaved work",
+  "localReload": "completed; Glyphs 4.1.1 build 4108 registers Curve Inspector 0.5.1 after restart",
   "notarization": {
     "gatekeeper": "Notarized Developer ID",
     "issues": null,
@@ -51,11 +51,16 @@
     "finalZipExtractedFilesMatched": 26,
     "finalZipTrustChecksPassed": true,
     "focusedTests": 35,
+    "fontMutationDuringPatchSmoke": false,
     "installed": true,
     "installedFilesMatched": 26,
-    "loadedVersionVerified": false,
+    "loadedVersion": "0.5.1",
+    "loadedVersionVerified": true,
     "nativeBehaviorEvidence": "native-4108-ui-0.5.0.json",
     "nativeEngineUnchanged": true,
+    "panelSmokeCheck": "passed; Star selected, Max change visible, All masters off, Apply available, no preview or disclosures",
+    "restoredDocuments": 4,
+    "restoredDocumentsClean": true,
     "unchangedEngineRegressionTestsPreviouslyPassed": 132
   },
   "rawHistoricalQA": "retained locally; not included in release assets or source commit",

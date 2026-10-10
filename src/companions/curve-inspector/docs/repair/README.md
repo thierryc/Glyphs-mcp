@@ -4,7 +4,7 @@ Research and implementation plan for adding **Inspect & Repair** to the existing
 **Curve Inspector** plugin, with a shared geometry engine and an accompanying
 agent skill.
 
-**Status: 0.5.1 signed, notarized and installed locally; safe native relaunch pending.**
+**Status: 0.5.1 signed, notarized, installed and loaded locally; compact panel smoke check passed.**
 The 0.3.0 proposal-controller records are historical and do not qualify the new
 human workflow. See the [companion README](../../README.md) and
 [qualification status](../../qualification/candidate-status.json).
