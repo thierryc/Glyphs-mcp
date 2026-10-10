@@ -200,6 +200,16 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
     _copy_tree(SIDECAR, sidecar / "glyphs_mcp_sidecar")
     _copy_tree(PROTOCOL, sidecar / "glyphs_mcp_protocol")
     _copy_tree(CURVE / "curve_core", sidecar / "curve_core")
+    _copy_tree(CURVE / "curve_repair", sidecar / "curve_repair")
+    repair_files = {str(path.relative_to(CURVE / "curve_repair")): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in sorted((CURVE / "curve_repair").rglob("*"))
+                    if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"}
+    repair_record = {"schemaVersion": 1, "engineVersion": "0.5.0",
+                     "upstreamRevision": "ccc71ee39ef72c0c34267410d2b9ebee454ec98c",
+                     "files": repair_files,
+                     "sourceDigest": hashlib.sha256(json.dumps(repair_files, sort_keys=True).encode()).hexdigest(),
+                     "nativeQualification": "pending"}
+    (sidecar / "curve-repair-engine.json").write_text(json.dumps(repair_record, sort_keys=True, indent=2) + "\n")
     for script, module in (("run", "server"), ("control", "control"), ("proxy", "proxy")):
         (sidecar / (script + ".py")).write_text(
             "import os, sys\nsys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))\n"
@@ -223,12 +233,16 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
         _copy_tree(package, companion_resources / package.name)
         shutil.copy2(COMPANION_SDK, companion_resources / COMPANION_SDK.name)
         _copy_tree(root / core_name, companion_resources / core_name)
+        if identifier == "curve-inspector":
+            _copy_tree(root / "curve_repair", companion_resources / "curve_repair")
+            (companion_resources / "curve-repair-engine.json").write_text(json.dumps(repair_record, sort_keys=True, indent=2) + "\n")
         if identifier == "reference-inspector":
             _copy_tree(PROTOCOL, companion_resources / "glyphs_mcp_protocol")
         shutil.copy2(package / "plugin.py", companion_resources / "plugin.py")
         _set_version(target, project_version)
         companion_values.append(
-            {"id": identifier, "bundle": source.name, "identity": _identity(target)}
+            {"id": identifier, "bundle": source.name, "identity": _identity(target),
+             **({"repairEngine": repair_record} if identifier == "curve-inspector" else {})}
         )
     _set_version(bundle, project_version)
     for release_file in (
