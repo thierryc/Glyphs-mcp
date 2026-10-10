@@ -1,8 +1,8 @@
-# Glyphs MCP Desktop 2.0.2
+# Glyphs MCP Desktop 2.0.3
 
-**Released: 2.0.2 · desktop build 58 · Glyphs 4.** Browse skills, manage companion plugins and AI agent connections, and open, import, activate or close fonts directly through MCP. The latest published stable version is 2.0.2. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2-build58/Glyphs-MCP-2.0.2-build58.dmg) and see the [2.0.2 release qualification](V2.0.2-RELEASE.md) for features, validation and platform limits.
+**Released: 2.0.3 · desktop build 59 · Glyphs 4.** Run already-authorized script edits without a forced Save, open Edit tabs and create unsaved document copies directly. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.3/Glyphs-MCP-2.0.3.dmg) and see the [2.0.3 release qualification](V2.0.3-RELEASE.md) for validation and recovery limits.
 
-The [twenty-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The development catalog additionally includes save-free Edit-tab opening and unsaved `duplicate_document` copies; installed stable versions require a coordinated runtime update. `save_document` persists an explicitly identified font.
+The [twenty-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. Version 2.0.3 includes save-free Edit-tab opening and unsaved `duplicate_document` copies; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -53,8 +53,10 @@ retaining selective recovery. Read-only language proofing offers bounded pairs
 to inspect from a pinned MIT dataset; it does not suggest values or launch
 collision analysis. See the [kerning guidance](skills/glyphs-mcp-kerning/SKILL.md).
 Results offer **Keep changes without saving**, **Save font**, and recovery.
-Typed **Undo these changes** covers the recorded edit; script **Restore saved
-version** reloads the whole font, replacing later unsaved edits and clearing Undo.
+Typed **Undo these changes** covers the recorded edit; script **Restore before
+run** restores the complete pre-run memory copy, replacing later unsaved edits
+and clearing Undo. It preserves edits made before Run; recovery lasts for the
+current Glyphs session.
 Keep ends wrapper recovery without saving and preserves native Undo/Redo.
 `accept_job` verifies affected targets and saves the whole document when authorized.
 Spacing proposals and
@@ -67,7 +69,7 @@ The twenty tools are `get_status`, `list_documents`, `create_document`, `duplica
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
 `respond_edit_workflow`. The shared MCP App supports preparation, saving and
 review where the host supports interactive Apps; every action also works in
-text. **Save and continue** saves existing work once and resumes the request.
+text. Scripts can run on clean, dirty or pathless fonts without saving.
 The resulting edit remains unsaved until separately authorized. Cards reuse
 matching Script details, and typed results show their intended change. Exact
 source stays optional; fresh server checks still guard actions. See
@@ -79,19 +81,19 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.2-build58).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.3).
 
-Documentation sources: [v2 · 2.0.2](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.0.3](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
-See [release qualification](V2.0.2-RELEASE.md) for current results and limits.
+See [release qualification](V2.0.3-RELEASE.md) for current results and limits.
 Historical beta reports remain in [the qualification archive](reports/README.md);
 the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.0.2.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.0.3.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 Author: Thierry Charbonnel. [Documentation](https://ap.cx/gmcp),
@@ -128,9 +130,16 @@ See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.
 
-## 2.0.2 release
+## 2.0.3 release
 
-The candidate adds responsive initialization status and compiled-font comparison
+Already-authorized scripts run directly after preparation, with current-state
+recovery and no forced Save. Preview requests still wait. Curve Inspector 0.5.2
+explains no-change results, and the versioned agent package exposes its skills
+digest. See [2.0.3 qualification](V2.0.3-RELEASE.md).
+
+## Earlier 2.0.2 release
+
+The 2.0.2 release introduced responsive initialization status and compiled-font comparison
 through `compare_fonts`. Diffenator and Beztrace have optional managed Setup
 cards; their downloads remain gated on independently signed and qualified
 distributions. See [compiled comparisons](content/workflows/font-comparison.mdx)

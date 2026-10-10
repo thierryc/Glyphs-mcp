@@ -4,9 +4,15 @@ title: Release qualification and known limits
 
 ## Published stable release
 
-Glyphs MCP **2.0.2/build 58** uses eighteen tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID signed, notarized and stapled. Every public asset digest and size was verified before the unchanged signed stable updater feed was advanced.
+Glyphs MCP **2.0.3/build 59** uses twenty tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID signed, notarized and stapled. Every public asset digest and size was verified before the unchanged signed stable updater feed was advanced.
 
-## Build 58 follow-up
+## Focused 2.0.3 evidence
+
+149 focused Python tests, synchronized skills and package consistency passed. Disposable native checks covered direct authorized Run, preview without execution, recovery preserving earlier unsaved edits, save-free Edit tabs and Curve Inspector no-change feedback. Final stable loaded identities match the installed components; Codex has a reachable twenty-tool connection and matching agent package. This task made no font Save calls.
+
+The exact universal app and DMG passed Developer ID, notarization, stapling, Gatekeeper and nested payload checks; the update ZIP/feed signatures and public asset sizes/digests were verified. The DMG layout was visually checked. Swift implementation and distributed dependencies are unchanged from build 58; the full Swift suite, VM matrix and exact older-to-2.0.3 updater acceptance were not repeated. Earlier platform evidence retains its own build scope. See [the release record](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.0.3-RELEASE.md).
+
+## Earlier build 58 follow-up
 
 The exact universal build-58 app, ZIP and DMG passed signing, notarization, stapling, Gatekeeper and payload/inventory verification. The packaged helper completed a real managed Beztrace install in an isolated home; Intel availability correctly remains disabled. The companion passed install/update/remove/reinstall in the clean macOS 26.6.2 arm64 VM, preserving explicit engine choices. Sixteen optional-control, 27 packaging and 45 publication checks passed. Full VoiceOver and dark-appearance review are deferred by the maintainer for this release.
 
@@ -61,7 +67,7 @@ configuration checks alone do not establish every client's live behavior.
 - Packaging declares **macOS 14.0+**. Exact 14.0 remains unverified; 14.6.1 and 26.6.2 execution does not prove that minimum environment.
 - Physical Intel execution is deferred. Universal binaries and Rosetta startup
   do not establish an Intel hardware result.
-- Codex and Claude Code live smoke remains unperformed; Cursor VM testing was
+- Current Codex status/tool access was verified locally; a separate ChatGPT session and the broader Claude Code/client matrix remain unverified. Cursor VM testing was
   waived based on the maintainer's reported host success.
 - Full VoiceOver, visual Reduce Motion timing, linguistic review and a new-user
   documentation walkthrough remain unverified. Technical localization checks

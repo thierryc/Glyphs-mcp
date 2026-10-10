@@ -3,19 +3,9 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.0.2** connects AI applications to Glyphs 4 through eighteen tools. A
-small bridge handles live font access; a separate server prepares supported
-jobs outside the editor and verifies explicit acceptance saves. Native Undo,
-Redo and Revert remain part of the editing workflow.
+Glyphs MCP **2.0.3/build 59** connects AI applications to Glyphs 4 through twenty tools. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
 
-The development catalog adds save-free `open_edit_tab` as a twentyth tool; it
-requires a coordinated bridge/sidecar update and is not in the published release.
-
-This guide describes the local **2.0.2/build 57 candidate**, with eighteen tools.
-The latest published stable release remains 2.0.1; its signing and native
-acceptance evidence does not qualify this candidate. See [qualification and
-limits](reference/release-qualification.mdx) and [version and
-identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/).
+Open Edit tabs and create independent unsaved document copies directly. Update the bridge and sidecar together through Setup. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/).
 Compiled [font comparisons](workflows/font-comparison.mdx) use the optional
 Diffenator runtime and can run without an open Glyphs document.
 
@@ -29,7 +19,7 @@ Diffenator runtime and can run without an open Glyphs document.
 | Component | What it does |
 | --- | --- |
 | Glyphs MCP | Runs the local server, prepares jobs and applies reversible changes through the bridge. |
-| Curve Inspector | Displays a curvature comb on the active layer. |
+| Curve Inspector | Displays a curvature comb and repairs eligible joins with native stars or regular nodes. |
 | Reference Inspector | Compares the active layer with Last Saved, a font file or a Git reference. |
 
 Both inspectors are optional and can be installed without the MCP server. The installer includes their required dependencies.
