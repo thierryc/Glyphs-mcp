@@ -1,0 +1,10 @@
+Curve Inspector repair engine
+
+Harmonization and Tunni computations adapted from SuperTool by Simon Cozens,
+revision ccc71ee39ef72c0c34267410d2b9ebee454ec98c.
+Copyright 2019 Google LLC. Apache License, Version 2.0.
+
+Modified for Python, explicit G1 alignment, finite/degeneracy guards,
+separate optional balancing and bounded whole-proposal verification.
+No SCGlyphsLib submodule code or proprietary RMX implementation is included.
+Upstream has no NOTICE file at this revision (HTTP 404 verified).

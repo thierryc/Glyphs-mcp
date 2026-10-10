@@ -1,45 +1,37 @@
 """Revision-bound dispatch for authorized native script jobs."""
-from pathlib import Path
 from glyphs_mcp_protocol import scripts
-from .source import source_hash
 from .bridge_client import BridgeClientError
 from .saved_script import unresolved
 
 
 def validate_capabilities(service, options, error):
     native = service.bridge.status()
-    if (scripts.NATIVE not in native.get('jobCapabilities', [])
+    if (scripts.SNAPSHOT not in native.get('jobCapabilities', []) or scripts.NATIVE not in native.get('jobCapabilities', [])
             or native.get('scriptPreparationVersion') != scripts.PREPARATION_VERSION):
-        raise error('unsupported_job', 'native scripts require a coordinated runtime update (script.native.v1, preparation version 2)')
+        raise error('unsupported_job', 'native scripts require a coordinated runtime update (script.native.v1, script.recovery.snapshot.v1, preparation version 3)')
 
 
 def run(service, job_id, workflow_id, error):
     workflow = service.edit_workflows.store.records.get(workflow_id)
-    if not workflow or workflow.get('jobId') != job_id or workflow.get('pendingAction') not in {'run_script', 'save_run_script'}:
-        raise error('confirmation_required', 'use the current conversation Run action under task authorization')
+    if not workflow or workflow.get('jobId') != job_id or workflow.get('pendingAction') != 'run_script':
+        raise error('workflow_action_required', 'Run must be dispatched by its authorized Apply workflow or current preview Run action')
     job = service._job(job_id)
     if job.get('resultKind') != 'script' or job['status'] != 'ready':
         raise error('job_not_ready', 'script review is not ready')
     for other in service.jobs.select({'preparing', 'cancelling', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding'}, include_unresolved=True):
         if other['id'] != job_id:
             raise error('document_busy', 'resolve outstanding MCP mutations before native execution')
-    from .saved_script import save_before_run
-    job = save_before_run(service, job, workflow, error)
+    validate_capabilities(service, job['request']['options'], error)
     doc = service._document(job['document']['id'])
-    if doc.get('dirty') is not False:
-        raise error('document_not_clean', 'save or discard current edits before running')
-    if doc.get('path') != job['document'].get('path') or doc.get('generation') != job['document'].get('generation'):
+    if any(doc.get(key) != job['document'].get(key) for key in ('path', 'generation', 'dirty')):
         raise error('stale_document', 'the document changed after script review')
-    if source_hash(Path(doc['path'])) != job['sourceHash']:
-        raise error('stale_source', 'the saved source changed after script review')
     report = service.jobs.read_json(job_id, 'report.json')
-    options = scripts.validate_options(job['request']['options'])
+    options = job['request']['options']
     if scripts.digest(options) != report['requestHash'] or options != report['review']:
         raise error('stale_script', 'the reviewed source or parameters changed')
+    scripts.validate_options(options)
     from .saved_script import execution_request
     request = execution_request(job, report, error)
-    from .checkpoints import establish_baseline
-    establish_baseline(service, job, report.get('manifest') or request.get('targets') or [])
     service.jobs.update(job_id, status='applying')
     try:
         operation = service.bridge.run_script(request)

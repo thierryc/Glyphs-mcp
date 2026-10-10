@@ -17,10 +17,18 @@ is not required. Ask for an explicit preview when you want to review before
 execution. **Wait for my answer** separately disables automatic Keep after
 execution. Optional **View details** shows source/parameters, output and the full request.
 
+With `script.apply-authorized.v1`, an authorized Apply request runs after internal
+preparation without another Run action. Explicit previews still stop before
+execution. A reconnect never replays an interrupted request.
+
 Preparation checks syntax and resolves targets without running module code.
-A clean saved font needs no extra Save. A dirty font offers **Save and run** or
-manual saving; a new font needs Save As before Run. Prerequisite saving includes
-existing work and does not authorize saving the script's result.
+Dirty, clean and pathless fonts run without Save. The coordinated development
+runtime requires `script.recovery.snapshot.v1` and preparation version 3; it
+captures a private in-memory full-font copy before execution. The original file
+is untouched. Snapshot failure stops execution before any Python runs.
+
+For a demo, use `duplicate_document` to copy the current font, including unsaved
+edits, into a new pathless font. Run scripts and open proof tabs in that copy.
 
 The script runs once on Glyphs' main thread. Per-target callbacks yield between
 batches; cancellation stops remaining callbacks, not a running invocation.
@@ -30,18 +38,18 @@ not prove the intended design result: inspect the font and verify relevant value
 ## Decide what to keep
 
 After execution, use the offered **Keep changes without saving**, **Save font**
-or **Restore saved version** actions. Successful new cards can Keep after 30
+or **Restore before run** actions. Successful new cards can Keep after 30
 seconds; **Pause countdown** disables that countdown. Before it starts, use
 **Turn off automatic Keep**, or say **Wait for my answer** in the conversation.
-**Restore saved version** is under **More options** after success and remains
+**Restore before run** is under **More options** after success and remains
 a main choice when partial edits need recovery. Failed or partial
 execution remains a manual decision and can leave edits behind.
 
-**Restore saved version** reloads the unchanged saved baseline for the **whole
-font**. It replaces all later unsaved edits, including manual edits outside the
+**Restore before run** restores the pre-run memory copy for the **whole font**,
+including edits that were already unsaved before Run. It replaces all later unsaved edits, including manual edits outside the
 script's targets, clears Undo history and returns a fresh document binding. It
-does not save or rerun the script. Keep or Save ends this offer; a changed baseline
-or closed font can make restoration unavailable.
+does not save or rerun the script. Keep or Save ends this offer; a changed path, closed font or Glyphs restart
+makes restoration unavailable. It provides no crash recovery.
 
 Scripts can also affect files, network services or other computer state. Reloading
 the font does not reverse those effects. Typed **Undo these changes** and its

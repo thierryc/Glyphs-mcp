@@ -70,6 +70,13 @@ if [[ "$MODE" == "check" ]]; then
       exit 1
     fi
   done
+  python3 - "$ROOT" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1]); sys.path.insert(0, str(root / 'scripts'))
+from agent_package_identity import record
+assert json.loads((root / 'plugins/glyphs-mcp/glyphs-mcp-agent.json').read_text()) == record(root), 'Agent package identity is stale; synchronize skills again'
+PY
   echo "Verified ${#SKILLS[@]} synchronized Glyphs MCP skills in the shared agent plugin package."
   exit 0
 fi
@@ -90,4 +97,5 @@ find "$STAGED_SKILLS" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 
 rm -rf "$DESTINATION"
 mv "$STAGED_SKILLS" "$DESTINATION"
+python3 "$ROOT/scripts/agent_package_identity.py"
 echo "Synchronized ${#SKILLS[@]} Glyphs MCP skills into the shared agent plugin package."

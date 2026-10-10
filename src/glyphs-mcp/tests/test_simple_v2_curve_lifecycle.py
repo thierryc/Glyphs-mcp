@@ -51,6 +51,7 @@ def reporter():
                  "build_curvature_comb": lambda curves, **_: {"strokes": list(curves)},
                  "MANIFEST": {"id": "curve-inspector"}, "withdraw": lambda _: None}
     namespace.update(visible_layer=visible_layer, invalidate_view=invalidate_view, wake_reporter=wake_reporter,
+        repair_ui=SimpleNamespace(install_menu=lambda _: None, open_controller=lambda _: None),
         NSGraphicsContext=context, menus=SimpleNamespace(install_menu=lambda _: None), publish=lambda _: None,
         UPDATEINTERFACE="update", DOCUMENTWASSAVED="saved", DOCUMENTOPENED="opened",
         DOCUMENTACTIVATED="activated", TABDIDOPEN="tab", UPDATEEDITVIEWFRAME="frame")
@@ -188,3 +189,22 @@ def test_no_notice_for_deactivated_or_other_layer(reporter):
     r.plugin.willDeactivate()
     r.plugin.foregroundInViewCoords()
     assert r.graphics.depth == 0
+
+
+def test_repair_command_opens_with_reporter_disabled_without_analysis(reporter):
+    r = reporter
+    opened = []
+    r.env["repair_ui"].open_controller = lambda owner: opened.append(owner)
+    r.plugin.openRepair_(None)
+    assert opened == [r.plugin]
+    assert not r.captures and not r.workers and not r.redraws
+
+
+def test_connection_only_change_invalidates_cached_source_key(reporter):
+    r = reporter; r.enable()
+    curves = r.plugin._cache["strokes"]
+    r.env["extract_visible_cubics"] = lambda _: (curves, dict(limitReason=None, omittedComponentCount=0, connectionState=((0, 3, 102),)))
+    r.plugin.update_(None)
+    assert r.workers
+    r.drain(r.workers); r.drain(r.main)
+    assert len(r.redraws) == 2

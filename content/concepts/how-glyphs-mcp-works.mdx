@@ -2,7 +2,7 @@
 title: How v2 works
 ---
 
-V2 separates typed preparation from live editing and also supports direct native scripting. The AI client uses eighteen MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
+V2 separates typed preparation from live editing and also supports direct native scripting. The AI client uses twenty MCP tools; the native bridge supplies bounded reads, applies explicit changes and performs verified document saves on Glyphs' main thread.
 
 | Part | Responsibility |
 | --- | --- |
@@ -29,8 +29,8 @@ and discard.
 With `script.native.v1`, `python_script` uses the conversation lifecycle directly
 inside Glyphs. Syntax/target preparation never executes Python; the agent uses
 the current Run action under original task authorization, with no mandatory code
-review. Clean saved fonts skip Save; dirty fonts require authorized saving.
-Callbacks yield between batches. Whole scripts run once. Restore saved version
+review. Dirty and pathless fonts run without Save using a detached current-state recovery copy.
+Callbacks yield between batches. Whole scripts run once. Restore before run
 reloads the whole baseline, replacing later unsaved edits and clearing Undo history.
 There is no external worker or layer snapshot for scripts. Typed jobs retain the
 algorithms and recovery described above.
@@ -56,7 +56,7 @@ after Keep or Save; guarded workflow recovery ends when the result is settled. R
 Inspector compares against a selected source; it is not a log of tool calls or
 an acceptance interface.
 
-Use the [eighteen-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
+Use the [twenty-tool reference](../reference/command-set.mdx) for supported inputs, and [Safety and recovery](safety-model.mdx) for state and failure handling.
 
 ## Faster preparation, shared results
 
@@ -68,5 +68,5 @@ algorithms and external export processing are unchanged.
 
 Typed results now offer Keep without saving, Save and selective Undo. Keep ends
 the workflow recovery offer and retains native Undo/Redo. Script restoration still
-reloads the whole saved font. New successful cards for both offer a 30-second Keep
+restores the whole pre-run font, including pre-existing unsaved edits. New successful cards for both offer a 30-second Keep
 countdown, disabled by “wait for my answer”; text-only responses remain manual.

@@ -100,9 +100,9 @@ Run action under the original task authorization without requiring code review,
 a human click or another Run question. Explicit previews wait. Write-only and
 review-only requests do not authorize live execution; script writing includes review.
 
-Require `script.native.v1`. Clean saved fonts skip Save. Dirty fonts require
-an authorized **Save and run** or manual saving; new fonts use Save As/manual
-saving and fresh validation. Failed/uncertain saves never start Python.
+Require `script.native.v1`, `script.recovery.snapshot.v1` and preparation version 3.
+Dirty, clean and pathless fonts offer Run without Save. A detached whole-font
+copy protects pre-existing unsaved edits; recovery is session-local.
 
 Lead with font, intended change and scope, show the execution warning once,
 and keep exact source/params in optional **View details**. Text-only **Show
@@ -110,8 +110,8 @@ script** uses `get_edit_workflow(include_review=true)`; default polling stays
 compact. Successful execution and completed callbacks do not verify the result.
 
 After success, offer **Keep changes without saving**, **Save font**, and available
-**Restore saved version**. Partial failure/cancellation offers Keep and restoration.
-Restore reloads the whole unchanged baseline, replacing all later unsaved edits
+**Restore before run**. Partial failure/cancellation offers Keep and restoration.
+Restore restores the whole pre-run copy, including existing unsaved edits, replacing later edits
 and clearing Undo history. It never saves or reruns code; use the fresh document
 binding. Keeping or saving ends the restoration offer. A clear restoration request
 authorizes the action; clarify only ambiguous scope. Unknown results use **Check

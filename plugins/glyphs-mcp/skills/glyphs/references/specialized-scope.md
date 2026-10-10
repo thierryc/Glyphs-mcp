@@ -9,7 +9,7 @@ The current closed `font_export` job can generate one exact static or variable
 instance and verify its tables plus explicit shaping samples; that does not
 restore a general variable-font or production-audit API. Their old
 `apiMajor == 2` gate does not prove that a current lean runtime needs updating.
-State which requested evidence is unavailable through the eighteen tools; never claim that a partial read completes a full audit,
+State which requested evidence is unavailable through the twenty tools; never claim that a partial read completes a full audit,
 and never claim that a bounded export completes one either.
 
 - “Audit this icon font”: use the metadata reference for explicitly named glyphs
@@ -38,7 +38,7 @@ verify the selected file rather than assuming hot refresh.
 An advertised [Python script job](python-scripts.md#choose-the-route) can execute
 reviewed specialized code. For coordinated metadata/font-setting edits, direct
 native scripting can avoid repeated tool writes and restore persisted in-font
-data through whole-font saved reload. Declared-target recovery covers only its
+data through whole-font pre-run snapshot restoration. Declared-target recovery covers only its
 layers; neither mode offers full-font Undo or recovery of external effects.
 Prefer save-free reads/offline analysis for audits. Executing an audit script
 does not establish complete audit coverage or implement a retired typed family.

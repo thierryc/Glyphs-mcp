@@ -18,13 +18,14 @@ from curve_core import (
     overlay_line_widths,
 )
 from glyphs_mcp_companions import publish, withdraw, visible_layer, invalidate_view, wake_reporter
+from glyphs_curve_inspector import controller as repair_ui
 
 
 MANIFEST = {
     "protocol": 1,
     "id": "curve-inspector",
-    "version": "0.1.0",
-    "capabilities": ["curve.measure", "curve.overlay"],
+    "version": "0.5.2",
+    "capabilities": ["curve.measure", "curve.overlay", "curve.repair.preview", "curve.repair.apply"],
 }
 
 
@@ -42,8 +43,10 @@ def _position(node):
 
 
 def extract_visible_cubics(layer, *, maximum=128, node_limit=8192, path_limit=512):
-    """Copy only this layer's direct cubics, plus honest bounded coverage evidence."""
+    """Bounded direct native drawing cubics, with explicit source-only fallback."""
     result = []
+    connection_state = []
+    native_incomplete = 0
     reason = None
     visited = 0
     paths = _value(layer, "paths", ()) or ()
@@ -55,18 +58,46 @@ def extract_visible_cubics(layer, *, maximum=128, node_limit=8192, path_limit=51
             break
         nodes = _value(path, "nodes", ()) or ()
         count = len(nodes)
+        if visited + count > node_limit:
+            reason = "node_limit"
+            break
+        expanded = None
+        try:
+            if repair_ui.has_line_join(path, repair_ui.native_app):
+                chain = repair_ui.effective_chain(path, repair_ui.native_app)
+                groups = dict(chain.groups)
+                expanded = {edge.end: groups[edge.end] for edge in chain.edges if edge.kind == "curve"}
+                drawing_nodes = nodes
+            else: drawing_nodes = repair_ui.effective(path, repair_ui.native_app).nodes
+        except (ValueError, TypeError, AttributeError):
+            drawing_nodes = nodes
+            native_incomplete += 1
         closed = bool(_value(path, "closed", True))
         for index, node in enumerate(nodes):
             if visited >= node_limit:
                 reason = "node_limit"
                 break
             visited += 1
+            attributes = _value(node, "attributes", {})
+            try:
+                flags = repair_ui.freeze(attributes)
+            except (TypeError, ValueError):
+                flags = ("unsupported-attribute", type(attributes).__name__)
+            connection_state.append((path_index, index, _value(node, "connection"),
+                                     flags))
+            if expanded is not None:
+                for curve in expanded.get(index, ()):
+                    if len(result) == maximum:
+                        reason = "cubic_limit"; break
+                    result.append(curve)
+                if reason: break
+                continue
             if _value(node, "type", None) != CURVE or count < 4:
                 continue
             if not closed and index < 3:
                 continue
             indices = tuple((index - offset) % count for offset in (3, 2, 1, 0))
-            start, first_control, second_control, end = (nodes[item] for item in indices)
+            start, first_control, second_control, end = (drawing_nodes[item] for item in indices)
             if any(_value(item, "type", None) != OFFCURVE
                    for item in (first_control, second_control)):
                 continue
@@ -88,6 +119,9 @@ def extract_visible_cubics(layer, *, maximum=128, node_limit=8192, path_limit=51
         "nodeLimit": node_limit,
         "pathLimit": path_limit,
         "omittedComponentCount": component_count,
+        "connectionState": tuple(connection_state),
+        "nativeIncompletePathCount": native_incomplete,
+        "representation": "source-only-fallback" if native_incomplete else "native-drawing",
     }
     return result, coverage
 
@@ -101,6 +135,8 @@ def coverage_notice(coverage, model):
     elif reason:
         parts.append("partial: inspection limit reached")
     components = coverage["omittedComponentCount"]
+    if coverage.get("nativeIncompletePathCount"):
+        parts.append("native geometry unavailable for %d paths; stored curves shown" % coverage["nativeIncompletePathCount"])
     if components is None:
         parts.append("component coverage unavailable")
     elif components:
@@ -119,6 +155,9 @@ class GlyphsCurveInspector(ReporterPlugin):
     @objc.python_method
     def settings(self):
         self.menuName = "Curve Inspector"
+        self._repair_window = None
+        self._repair_menu = None
+        self.generalContextMenus = [{"name": "Inspect & Repair…", "action": self.openRepair_}]
         self._cache = {
             "samplesPerCurve": 51,
             "strokeCount": 0,
@@ -137,11 +176,15 @@ class GlyphsCurveInspector(ReporterPlugin):
 
     @objc.python_method
     def start(self):
+        self._repair_menu = repair_ui.install_menu(self)
         Glyphs.addCallback(self.update_, UPDATEINTERFACE)
         for event in (DOCUMENTOPENED, DOCUMENTACTIVATED, TABDIDOPEN, UPDATEEDITVIEWFRAME):
             Glyphs.addCallback(self.attached_, event)
         publish(MANIFEST)
         self.attached_(None)
+
+    def openRepair_(self, _sender):
+        repair_ui.open_controller(self)
 
     @objc.typedSelector(b"v@:")
     def willActivate(self):
@@ -236,37 +279,42 @@ class GlyphsCurveInspector(ReporterPlugin):
                 return
             cache = self._cache
             scale = max(float(self.getScale() or 1.0), 1e-6)
-            teeth_width, envelope_width = overlay_line_widths(scale)
-            for sign, rgba in (("positive", POSITIVE_RGBA), ("negative", NEGATIVE_RGBA)):
-                teeth = NSBezierPath.bezierPath()
-                teeth.setLineWidth_(teeth_width)
-                tooth_count = 0
-                for item in cache.get("strokes", []):
-                    if item["sign"] != sign:
-                        continue
-                    teeth.moveToPoint_(NSPoint(*item["start"]))
-                    teeth.lineToPoint_(NSPoint(*item["end"]))
-                    tooth_count += 1
-                if tooth_count:
-                    NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
-                    teeth.stroke()
-
-                envelopes = NSBezierPath.bezierPath()
-                envelopes.setLineWidth_(envelope_width)
-                envelope_count = 0
-                for item in cache.get("envelopes", []):
-                    points = item["points"] if item["sign"] == sign else []
-                    if len(points) < 2:
-                        continue
-                    envelopes.moveToPoint_(NSPoint(*points[0]))
-                    for point in points[1:]:
-                        envelopes.lineToPoint_(NSPoint(*point))
-                    envelope_count += 1
-                if envelope_count:
-                    NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
-                    envelopes.stroke()
+            self.draw_cached_comb(cache, scale)
         finally:
             NSGraphicsContext.restoreGraphicsState()
+
+    @objc.python_method
+    def draw_cached_comb(self, cache, scale):
+        """Shared immutable comb renderer for the overlay and detached preview."""
+        teeth_width, envelope_width = overlay_line_widths(scale)
+        for sign, rgba in (("positive", POSITIVE_RGBA), ("negative", NEGATIVE_RGBA)):
+            teeth = NSBezierPath.bezierPath()
+            teeth.setLineWidth_(teeth_width)
+            tooth_count = 0
+            for item in cache.get("strokes", []):
+                if item["sign"] != sign:
+                    continue
+                teeth.moveToPoint_(NSPoint(*item["start"]))
+                teeth.lineToPoint_(NSPoint(*item["end"]))
+                tooth_count += 1
+            if tooth_count:
+                NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
+                teeth.stroke()
+
+            envelopes = NSBezierPath.bezierPath()
+            envelopes.setLineWidth_(envelope_width)
+            envelope_count = 0
+            for item in cache.get("envelopes", []):
+                points = item["points"] if item["sign"] == sign else []
+                if len(points) < 2:
+                    continue
+                envelopes.moveToPoint_(NSPoint(*points[0]))
+                for point in points[1:]:
+                    envelopes.lineToPoint_(NSPoint(*point))
+                envelope_count += 1
+            if envelope_count:
+                NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
+                envelopes.stroke()
 
     @objc.python_method
     def foregroundInViewCoords(self):
@@ -303,6 +351,10 @@ class GlyphsCurveInspector(ReporterPlugin):
     @objc.python_method
     def __del__(self):
         try:
+            if self._repair_window is not None:
+                self._repair_window.panel.close()
+            if self._repair_menu is not None and self._repair_menu.menu() is not None:
+                self._repair_menu.menu().removeItem_(self._repair_menu)
             Glyphs.removeCallback(self.update_)
             Glyphs.removeCallback(self.attached_)
         except Exception:

@@ -39,6 +39,47 @@ repository or release assets.
 
 ## Versioning and verification
 
+### Small stable updates
+
+For a bounded Python/plugin change such as 2.0.3, use the existing release
+pipeline directly. A beta is optional. Keep Swift implementation and installer
+architecture unchanged unless the defect requires changing them.
+
+1. Set the stable version and next app build with `scripts/bump_version.py`,
+   then synchronize the managed skills. Preserve prior release artifacts.
+2. Run tests for the changed behavior, package/identity checks, and one native
+   disposable-font smoke test when native behavior changed. Reuse recorded
+   evidence until relevant code changes invalidate it. Run Swift tests, the VM
+   matrix or the full local gate when their affected implementation or a
+   concrete unresolved risk warrants them; do not repeat them solely for a
+   patch version or channel change.
+3. Build once through the existing Release/signing/notarization scripts and
+   prepare the signed update ZIP. Verify the final signatures, tickets, package
+   identities and checksums. These artifact checks remain mandatory.
+4. Install locally, verify the loaded revision, and stop before publication
+   unless publishing is explicitly authorized.
+
+The focused gate is explicit and checks the baseline before testing:
+`scripts/run_local_release_tests.sh --focused --base-ref v2.0.2-build58`.
+It refuses changed Swift/native sources, dependency inputs and Xcode configuration
+changes beyond version/build metadata. The full gate remains the default.
+Keep the focused test list matched to each patch's changed behavior; a passing
+list is not evidence for a component it does not exercise.
+When publication is separately approved, `publish_release_assets.sh
+--tag v2.0.3 --focused-tests v2.0.2-build58` selects that same gate; signature/notarization and
+artifact checks are unchanged. For a DMG build without Finder automation, use a
+build-only Python environment with `scripts/dmg-layout-requirements.txt`
+(`pip install --require-hashes -r scripts/dmg-layout-requirements.txt`) and set
+`GMCP_DMG_LAYOUT_PYTHON` to that environment's Python executable. The writer
+creates fresh icon/window records and a background alias for the actual mounted
+volume. Copying `.DS_Store` from another DMG is rejected because its alias may
+reference the wrong volume. Inspect the final mounted image before publication.
+
+Keep a short release record containing changed behavior, focused checks,
+retained native evidence, artifact identities and untested limitations. A
+metadata-only transition from a tested beta candidate to stable needs identity
+and packaging checks, not another full behavioral qualification.
+
 Read `scripts/desktop_release_identity.py` and `release.json` first. The helper
 is the source of the release label, beta number, build, tag and channel URLs.
 Use `scripts/bump_version.py --dry-run --beta N --installer-build BUILD X.Y.Z`
@@ -55,7 +96,7 @@ The installer’s displayed project version and build come from its bundle.
 PYTHON_BIN=/absolute/path/to/python scripts/run_local_release_tests.sh
 ```
 
-The local gate prepares shared dependencies and checks two independent payload
+The default full local gate prepares shared dependencies and checks two independent payload
 builds before running the full Python, desktop and documentation suites in
 parallel. Desktop `test` already builds the Debug app; verification uses that
 exact app without a second build. Xcode defaults to four compiler jobs to limit
@@ -65,7 +106,7 @@ contention when VMs are running; set `GMCP_XCODE_JOBS` to change it, or pass
 Each invocation uses fresh payload/DerivedData directories and keeps lane logs,
 exit codes, timings, candidate metadata and the successful input fingerprint in
 `build/release-test-run.*`. A checkout lock prevents overlapping gates. Source
-edits during a run invalidate acceptance. Each invocation runs the full suites;
+edits during a run invalidate acceptance. Each full-profile invocation runs the full suites;
 signing and native/VM acceptance apply to the exact final distribution bytes.
 The desktop distribution wrapper delegates dependency preparation to its builder
 so shared dependencies are verified once per build.

@@ -198,7 +198,13 @@ def test_reporter_foreground_is_drawing_only() -> None:
     assert "build_curvature_comb" not in body
     assert "Glyphs" not in body
     assert "envelopes" in body
-    assert "overlay_line_widths" in body
+    assert "self.draw_cached_comb(cache, scale)" in body
+    renderer = next(node for node in ast.walk(tree)
+                    if isinstance(node, ast.FunctionDef) and node.name == "draw_cached_comb")
+    rendering = ast.unparse(renderer)
+    assert "overlay_line_widths" in rendering and "envelopes" in rendering
+    assert all(forbidden not in rendering for forbidden in (
+        "Glyphs", "extract_visible_cubics", "build_curvature_comb", "setPosition_", "setConnection_"))
 
 
 def test_reporter_coalesces_unchanged_ui_updates() -> None:

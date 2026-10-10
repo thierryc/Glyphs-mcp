@@ -1,4 +1,4 @@
-"""Save-first native scripts reuse chat actions and the existing save service."""
+"""Native script preparation and current-state or historical recovery."""
 from pathlib import Path
 import time
 from glyphs_mcp_protocol import ProtocolError, scripts
@@ -24,7 +24,7 @@ def invalidate(service, document_id=None):
 
 def prepare(service, job, cancel):
     doc = job['document']
-    fingerprint = source_hash(Path(doc['path']))
+    fingerprint = None  # Live state, not a saved file, is the execution baseline.
     service.jobs.update(job['id'], phase='preparing_native')
     try:
         if cancel.is_set(): raise WorkerError('job cancelled')
@@ -42,8 +42,6 @@ def prepare(service, job, cancel):
         try: service.bridge.discard(job['id'])
         except Exception: pass  # Preparation is read-only; it cannot have executed Python.
         raise
-    if source_hash(Path(doc['path'])) != fingerprint:
-        raise WorkerError('saved source changed while preparing the script review')
     path = service.jobs.write_json(job['id'], 'report.json', report)
     from .job_preparation import _mutation_report
     with service._lock:
@@ -63,31 +61,6 @@ def execution_request(job, report, error):
     return request
 
 
-def save_before_run(service, job, workflow, error):
-    options = scripts.validate_options(job['request']['options'])
-    report = service.jobs.read_json(job['id'], 'report.json')
-    if scripts.digest(options) != report['requestHash'] or options != report['review']:
-        raise error('stale_script', 'the reviewed script or parameters changed')
-    execution_request(job, report, error)  # Known oversize must not trigger even an authorized Save.
-    doc = service._document(job['document']['id'])
-    if any(doc.get(k) != job['document'].get(k) for k in ('path', 'generation', 'dirty')):
-        raise error('stale_document', 'the document changed after review; review again before saving and running')
-    if source_hash(Path(doc['path'])) != job['sourceHash']:
-        raise error('stale_source', 'the saved source changed after review')
-    if doc.get('dirty') is False:
-        return job  # Existing saved baseline: zero Save calls.
-    if workflow.get('pendingAction') != 'save_run_script':
-        raise error('save_authorization_required', 'authorize saving the current font before running')
-    def prepared(request):
-        request['reviewedGeneration'] = doc['generation']
-        service.edit_workflows._set(workflow, saveRequest=request)
-    receipt = service.save_document(doc['id'], _on_prepared=prepared)
-    current = service._document(doc['id'])
-    if current.get('dirty') is not False or current.get('path') != receipt['path']:
-        raise error('stale_document', 'document changed after saving')
-    service.edit_workflows._set(workflow, document=current, receipt=receipt)
-    return service.jobs.update(job['id'], document=current, sourceHash=receipt['sourceHashAfter'], savedBaseline=receipt)
-
 
 def refresh(service, workflow):
     """A restoration action describes the entire currently observed document."""
@@ -102,6 +75,20 @@ def refresh(service, workflow):
     if not executed or workflow['state'] not in {'applied', 'failed', 'cancelled'}:
         return
     internal = service._job(job['id'])
+    recovery = ((internal.get('bridgeOperation') or {}).get('scriptResult') or {}).get('recovery') or {}
+    if recovery.get('kind') == 'memory_snapshot':
+        result = dict(recovery, sourceHash=recovery['snapshotId'], available=False)
+        try:
+            document = service._document(internal['document']['id'])
+            result.update(generation=document['generation'], available=bool(recovery.get('available')) and
+                document.get('path') == internal['document'].get('path') and
+                (internal.get('error') or {}).get('code') != 'restoration_unverified')
+            service.edit_workflows._set(workflow, document=document)
+        except Exception:
+            pass
+        result['message'] = 'Restore before run replaces the whole font with its pre-run state, including pre-existing unsaved edits. Later edits and Undo history are discarded. Recovery is lost when Glyphs restarts; external effects are excluded.'
+        service.edit_workflows._set(workflow, savedVersion=result)
+        return
     result = dict(available=False, path=internal['document']['path'], sourceHash=internal['sourceHash'])
     try:
         document = service._document(internal['document']['id'])

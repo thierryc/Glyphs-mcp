@@ -28,7 +28,7 @@ For a reviewed cross-master correction or coordinated font/master changes,
 offer **direct native scripting** under the [shared route and recovery
 guide](../glyphs/references/python-scripts.md#choose-the-route). Use explicit
 layer targets for independent callbacks, or a whole script with exact master IDs
-for dependent edits. Native scripting recovers through a whole-font saved reload;
+for dependent edits. Native scripting recovers through a whole-font pre-run snapshot restoration;
 it does not establish node correspondence or interpolation quality. Keep
 `start_nodes` and `reinterpolate` for their supported operations and diagnostics.
 Review path order, node types and component relationships before and after any

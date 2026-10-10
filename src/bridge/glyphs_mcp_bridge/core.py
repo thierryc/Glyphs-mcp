@@ -67,6 +67,8 @@ class BridgeCore:
         self._openings: dict[str, dict[str, Any]] = {}
         self._imports: dict[str, dict[str, Any]] = {}
         self._closes: dict[str, dict[str, Any]] = {}
+        self._duplications: dict[str, dict[str, Any]] = {}
+        self._tab_openings: dict[str, dict[str, Any]] = {}
         self.bridge_session_id = uuid4().hex
         self._lock = RLock()
         self.paused = False
@@ -105,6 +107,12 @@ class BridgeCore:
             write_capabilities.append("document.close.v1")
         if document_lifecycle.available("show"):
             write_capabilities.append("document.activate.v1")
+        from . import document_duplication
+        if document_duplication.available():
+            write_capabilities.append("document.duplicate.v1")
+        from . import edit_tabs
+        if edit_tabs.available():
+            write_capabilities.append("document.edit-tab.open.v1")
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
         if dimensions.available():
@@ -113,9 +121,10 @@ class BridgeCore:
         if actions:
             write_capabilities.append("native.action.v1")
         job_capabilities = (["feature.compile.live.v1"] if feature_compile.available() else [])
-        from . import saved_script
+        from . import saved_script, script_snapshot
+        if script_snapshot.available():
+            job_capabilities.extend([scripts.NATIVE, scripts.SNAPSHOT])
         if saved_script.available():
-            job_capabilities.append(scripts.NATIVE)
             write_capabilities.append("font.checkpoint-restore.v1")
         if callable(getattr(self.adapter, "_font", None)):
             from glyphs_mcp_protocol.preparation.simple import CAPABILITY
@@ -157,6 +166,14 @@ class BridgeCore:
         from . import document_lifecycle
         return document_lifecycle.activate(self, document_id, BridgeError)
 
+    def duplicate_document(self, request):
+        from . import document_duplication
+        return document_duplication.duplicate(self, request, BridgeError)
+
+    def open_edit_tab(self, request) -> dict[str, Any]:
+        from . import edit_tabs
+        return edit_tabs.open_edit_tab(self, request, BridgeError)
+
     def read_entities(self, document_id: str, entities: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         if not isinstance(entities, list) or not 1 <= len(entities) <= 100:
             raise BridgeError("invalid_request", "read_entities requires 1-100 explicit entities")
@@ -194,7 +211,8 @@ class BridgeCore:
     def begin_script(self, value):
         from . import script_execution
         from . import saved_script
-        supported = saved_script.available()
+        from . import script_snapshot
+        supported = script_snapshot.available()
         if self.paused or not supported:
             raise BridgeError('unsupported_job', 'native scripting is unavailable')
         return script_execution.begin(self, value, BridgeError)
@@ -203,6 +221,8 @@ class BridgeCore:
         operation = self._operations.get(job_id)
         if not operation or not operation.get('scriptRequest') or operation['status'] not in {'applied', 'failed', 'cancelled', 'completed'}:
             raise BridgeError('job_not_ready', 'script has no completed result to release')
+        from .script_snapshot import release
+        release(operation)
         operation.update(status='completed', resolved=[], nativeStateBytes=0, restorationClosed=True)
         return self._public(operation)
 

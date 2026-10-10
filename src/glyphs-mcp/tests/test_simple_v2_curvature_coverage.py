@@ -7,7 +7,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / 'src/companions/curve-inspector/glyphs_curve_inspector/plugin.py'
-NAMESPACE = dict(CURVE='curve', OFFCURVE='offcurve')
+NAMESPACE = dict(CURVE='curve', OFFCURVE='offcurve', repair_ui=NS(
+    effective=lambda path, app: NS(nodes=path.nodes), native_app=None,
+    has_line_join=lambda path, app: False,
+    freeze=lambda attributes: tuple(sorted(attributes.items()))))
 TREE = ast.parse(SOURCE.read_text())
 FUNCTIONS = [n for n in TREE.body if isinstance(n, ast.FunctionDef)]
 exec(compile(ast.Module(body=FUNCTIONS, type_ignores=[]), str(SOURCE), 'exec'), NAMESPACE)
@@ -59,6 +62,39 @@ def test_cubic_lookahead_does_not_visit_next_path():
         yield from [path() for _ in range(129)]
         raise AssertionError('Lookahead must stop at the 129th valid cubic')
     assert extract(NS(paths=paths(), components=[]))[1]['limitReason'] == 'cubic_limit'
+
+
+def test_native_effective_points_are_copied_without_changing_stored_nodes(monkeypatch):
+    original = path(); effective = path()
+    effective.nodes[-1].position.x -= .5
+    monkeypatch.setattr(NAMESPACE['repair_ui'], 'effective', lambda path, app: effective)
+    curves, coverage = extract(NS(paths=[original], components=[]))
+    assert curves[0][-1][0] == 90.25
+    assert original.nodes[-1].position.x == 90.75
+    assert coverage['representation'] == 'native-drawing'
+
+
+def test_source_fallback_is_disclosed_when_native_correspondence_is_unavailable(monkeypatch):
+    def unavailable(path, app): raise ValueError('unqualified')
+    monkeypatch.setattr(NAMESPACE['repair_ui'], 'effective', unavailable)
+    curves, coverage = extract(layer(1))
+    assert curves and coverage['nativeIncompletePathCount'] == 1
+    assert 'stored curves shown' in notice(coverage, {})
+
+
+def test_generated_raindrop_curves_are_included_in_bounded_overlay(monkeypatch):
+    from test_curve_repair_line_curve import fixture, APP
+    from curve_repair.native import effective_chain
+    from curve_repair.joins import has_line_join
+    adapter, font, owner = fixture()
+    owner.paths[0].nodes[1].connection = 102
+    monkeypatch.setattr(NAMESPACE['repair_ui'], 'native_app', APP)
+    monkeypatch.setattr(NAMESPACE['repair_ui'], 'has_line_join', has_line_join)
+    monkeypatch.setattr(NAMESPACE['repair_ui'], 'effective_chain', effective_chain, raising=False)
+    curves, coverage = extract(owner)
+    assert len(curves) == 2 and coverage['representation'] == 'native-drawing'
+    curves, coverage = extract(owner, maximum=1)
+    assert len(curves) == 1 and coverage['limitReason'] == 'cubic_limit'
 
 
 def test_non_cubic_geometry_has_explicit_scan_limits():

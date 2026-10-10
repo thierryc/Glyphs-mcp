@@ -8,6 +8,9 @@ small bridge handles live font access; a separate server prepares supported
 jobs outside the editor and verifies explicit acceptance saves. Native Undo,
 Redo and Revert remain part of the editing workflow.
 
+The development catalog adds save-free `open_edit_tab` as a twentyth tool; it
+requires a coordinated bridge/sidecar update and is not in the published release.
+
 This guide describes the local **2.0.2/build 57 candidate**, with eighteen tools.
 The latest published stable release remains 2.0.1; its signing and native
 acceptance evidence does not qualify this candidate. See [qualification and

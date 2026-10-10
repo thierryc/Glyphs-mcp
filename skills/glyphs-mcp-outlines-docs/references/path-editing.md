@@ -96,8 +96,8 @@ the same saved clean baseline.
 For bulk scaling, centering, mirroring or a custom sequence, offer [direct native
 scripting](../../glyphs/references/python-scripts.md#choose-the-route) as a separate
 route under original task authorization. It can loop over native paths without reading every node into
-chat or constructing per-node requests. Use its authorized Run (or Save and run for a dirty font) and whole-font
-Restore saved version actions; these do not inherit the typed topology checks
+chat or constructing per-node requests. Use its authorized Run without a prerequisite Save and whole-font
+Restore before run actions; these do not inherit the typed topology checks
 or per-glyph Undo above. Preserve fractions and verify untargeted content.
 Vertical mirroring differs from path-direction reversal; specify its pivot and
 selected surface. Script recovery uses the unchanged saved version of the whole

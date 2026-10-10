@@ -103,7 +103,7 @@ class BridgeHTTPServer:
                     opening = payload.get("opening") if isinstance(payload.get("opening"), dict) else {}
                     if opening.get("openId"):
                         details["openId"] = opening["openId"]
-                    for field, identity in (("importing", "importId"), ("closing", "closeId")):
+                    for field, identity in (("importing", "importId"), ("closing", "closeId"), ("tabOpening", "tabOpenId")):
                         action = payload.get(field) if isinstance(payload.get(field), dict) else {}
                         if action.get(identity):
                             details[identity] = action[identity]
@@ -128,6 +128,10 @@ class BridgeHTTPServer:
                     return owner.core.close_document(payload.get("closing"))
                 if self.path == "/v1/documents/activate":
                     return owner.core.activate_document(payload.get("documentId"))
+                if self.path == "/v1/documents/duplicate":
+                    return owner.core.duplicate_document(payload.get("duplication"))
+                if self.path == "/v1/documents/edit-tab/open":
+                    return owner.core.open_edit_tab(payload.get("tabOpening"))
                 if self.path == "/v1/entities":
                     return owner.core.read_entities(
                         str(payload.get("documentId") or ""),

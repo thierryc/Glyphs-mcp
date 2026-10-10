@@ -1,0 +1,34 @@
+{
+  "bundleIdentifier": "com.ap.cx.glyphs-curve-inspector",
+  "companionId": "curve-inspector",
+  "date": "2026-10-10",
+  "description": "Inspect & Repair",
+  "engineDigest": "8c637fe1c5f878cc9d1874d2f4d17632ecc087ab9ff078921daa363b84ea2d5f",
+  "engineVersion": "0.5.0",
+  "installedFilesMatched": 26,
+  "installedSignature": "Developer ID; strict verification passed",
+  "loadedVersion": "0.5.1",
+  "localReload": "passed; registered version and compact panel verified; four clean documents restored",
+  "nativeEvidence": [
+    "release-0.5.1.json"
+  ],
+  "notarization": "Accepted; ticket stapled and validated; Gatekeeper accepted",
+  "panelContentPoints": [
+    280,
+    146
+  ],
+  "pluginVersion": "0.5.1",
+  "previewMode": false,
+  "publiclyPublished": false,
+  "remainingWork": [],
+  "schemaVersion": 1,
+  "sharedExtension": "deferred; companion protocol 1 retained; no new MCP tools",
+  "skillRegistration": "bundled standalone asset; no global/managed registration",
+  "staticValidation": {
+    "focusedTests": 35,
+    "sdkBundleBeforeSigning": "passed",
+    "sourceAndSkillEngineConsistency": "passed",
+    "unchangedEnginePriorTests": 132
+  },
+  "workingFontEdits": false
+}

@@ -67,20 +67,20 @@ intended document ID. Only missing or invalid bindings need
 [document targeting](../glyphs/references/document-targeting.md). Reads are fresh;
 dirty fonts need no Save. Native relaunch invalidates old document IDs.
 
-The eighteen-tool MCP can execute scripts through an advertised `python_script`
+The twenty-tool MCP can execute scripts through an advertised `python_script`
 job; use the [shared execution contract](../glyphs/references/python-scripts.md).
 For a one-off bulk or font-level edit, direct native scripting avoids a
 plugin installation and layer patch preparation. Require `script.native.v1`;
-its Restore saved version reloads the whole pre-run saved font. This does not
+its Restore before run restores a detached copy of the whole pre-run font, including unsaved edits. This does not
 recover external script effects or replace the plugin iteration workflow.
 There is no plugin reload tool. Native development through files/UI does not add
 an MCP capability. A required
 missing private capability needs the bridge, sidecar and skills updated together.
-Do not use an earlier-private fallback or claim recovery beyond the saved baseline. Installation,
+Do not use an earlier-private fallback or claim recovery beyond the pre-run copy or across a Glyphs restart. Installation,
 execution, restart, font edits and Save follow the user's authorised scope.
 
 For script requests, follow the shared intent rules: writing includes code review,
 review-only stays non-executing, and writing alone does not authorize live edits.
 A result-focused font task needs validation/testing and result verification, without
-a mandatory source review or another Run question. Clean saved fonts skip Save;
-dirty fonts require already-established or explicit save authorization.
+a mandatory source review or another Run question. Scripts run on dirty, clean
+and pathless fonts without Save; saving remains a separately authorized action.

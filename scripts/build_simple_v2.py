@@ -200,6 +200,16 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
     _copy_tree(SIDECAR, sidecar / "glyphs_mcp_sidecar")
     _copy_tree(PROTOCOL, sidecar / "glyphs_mcp_protocol")
     _copy_tree(CURVE / "curve_core", sidecar / "curve_core")
+    _copy_tree(CURVE / "curve_repair", sidecar / "curve_repair")
+    repair_files = {str(path.relative_to(CURVE / "curve_repair")): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in sorted((CURVE / "curve_repair").rglob("*"))
+                    if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"}
+    repair_record = {"schemaVersion": 1, "engineVersion": "0.5.0",
+                     "upstreamRevision": "ccc71ee39ef72c0c34267410d2b9ebee454ec98c",
+                     "files": repair_files,
+                     "sourceDigest": hashlib.sha256(json.dumps(repair_files, sort_keys=True).encode()).hexdigest(),
+                     "nativeQualification": "pending"}
+    (sidecar / "curve-repair-engine.json").write_text(json.dumps(repair_record, sort_keys=True, indent=2) + "\n")
     for script, module in (("run", "server"), ("control", "control"), ("proxy", "proxy")):
         (sidecar / (script + ".py")).write_text(
             "import os, sys\nsys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))\n"
@@ -210,6 +220,11 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
     project_version = release["version"]
     if layout["projectVersion"] != project_version:
         raise ValueError("Plugin and product versions disagree")
+    initializer = ast.parse((BRIDGE / 'glyphs_mcp_bridge/__init__.py').read_text())
+    bridge_labels = [ast.literal_eval(node.value) for node in initializer.body
+                     if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'PROJECT_VERSION' for t in node.targets)]
+    if bridge_labels != [project_version]:
+        raise ValueError('Bridge palette label and product versions disagree')
     for identifier, title, package_name, core_name in (
         ("curve-inspector", "Glyphs Curve Inspector", "glyphs_curve_inspector", "curve_core"),
         ("reference-inspector", "Glyphs Reference Inspector", "glyphs_reference_inspector", "reference_core"),
@@ -223,12 +238,18 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
         _copy_tree(package, companion_resources / package.name)
         shutil.copy2(COMPANION_SDK, companion_resources / COMPANION_SDK.name)
         _copy_tree(root / core_name, companion_resources / core_name)
+        if identifier == "curve-inspector":
+            _copy_tree(root / "curve_repair", companion_resources / "curve_repair")
+            (companion_resources / "curve-repair-engine.json").write_text(json.dumps(repair_record, sort_keys=True, indent=2) + "\n")
         if identifier == "reference-inspector":
             _copy_tree(PROTOCOL, companion_resources / "glyphs_mcp_protocol")
         shutil.copy2(package / "plugin.py", companion_resources / "plugin.py")
-        _set_version(target, project_version)
+        # Companions have independent release identities. Do not overwrite
+        # their bundle versions with the MCP product version.
+        companion_version = plistlib.loads((target / 'Contents/Info.plist').read_bytes())['CFBundleShortVersionString']
         companion_values.append(
-            {"id": identifier, "bundle": source.name, "identity": _identity(target)}
+            {"id": identifier, "bundle": source.name, "version": companion_version, "identity": _identity(target),
+             **({"repairEngine": repair_record} if identifier == "curve-inspector" else {})}
         )
     _set_version(bundle, project_version)
     for release_file in (
@@ -238,6 +259,11 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
         release_file.write_text(
             json.dumps(metadata, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     glyph_diff_reader = _geometry_contract()
+    from agent_package_identity import record as agent_package_record
+    agent_package = agent_package_record(REPO)
+    if json.loads((REPO / 'plugins/glyphs-mcp/glyphs-mcp-agent.json').read_text()) != agent_package:
+        raise ValueError('Agent package identity is stale; synchronize skills before building')
+    (sidecar / 'glyphs-mcp-agent.json').write_text(json.dumps(agent_package, sort_keys=True, indent=2) + '\n')
     manifest = {
         "schemaVersion": 2,
         "projectVersion": project_version,
@@ -247,6 +273,7 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
         "version": project_version,
         "release": metadata,
         "protocol": 1,
+        "agentPackage": agent_package,
         "tools": _tool_catalog(),
         "bridge": {"bundle": BUNDLE.name, "identity": _identity(bundle),
                    "codeHash": fingerprints.payload_hash(bundle), "release": metadata},

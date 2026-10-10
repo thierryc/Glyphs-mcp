@@ -23,10 +23,15 @@ if [[ ! -x "$python_bin" ]]; then
 fi
 export PYTHON_BIN="$python_bin"
 
+if [[ "${1:-}" == "--focused" ]]; then
+  shift
+  exec "$python_bin" "$repo_root/scripts/run_focused_release_tests.py" "$@"
+fi
+
 parallel=1
 case "${1:-}" in
   --serial) parallel=0 ;;
-  --help) echo "Usage: $0 [--serial]"; exit 0 ;;
+  --help) echo "Usage: $0 [--serial] | --focused --base-ref vX.Y.Z[-buildN]"; exit 0 ;;
   "") ;;
   *) echo "error: unknown option: $1" >&2; exit 2 ;;
 esac

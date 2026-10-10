@@ -78,7 +78,7 @@ to report a revision or resume an interrupted test. These are project guidance;
 the qualified menu observations above apply to Glyphs 4.1 (4107).
 
 Supported MCP jobs have separate recovery contracts: typed jobs use existing
-Undo/discard; native scripting uses explicit whole-font saved reload.
+Undo/discard; native scripting uses explicit whole-font pre-run snapshot restoration.
 Follow the [script contract](../../glyphs/references/python-scripts.md). That is not recovery
 for arbitrary plugin code. Identify public task calls and independent proofs
 separately in the report.

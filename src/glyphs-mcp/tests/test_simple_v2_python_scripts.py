@@ -64,7 +64,7 @@ def test_whole_script_main_guard_runs_once():
 
 
 def start_script(service, **extra):
-    return service.edit_workflows.start(service.list_documents()[0]['id'],kind='python_script',idempotency_key='script-test',
+    return service.edit_workflows.start(service.list_documents()[0]['id'],kind='python_script',idempotency_key='script-test',mode='preview',
                                         options=options(**extra))
 
 
@@ -83,20 +83,20 @@ def test_native_requires_workflow_but_not_source_review(script_env):
     service.edit_workflows.respond(*args)
     assert len(bridge.runs)==1
     value=wait(service,value,'applied')
-    assert any(a['label']=='Restore saved version' for a in value['actions'])
+    assert any(a['label']=='Restore before run' for a in value['actions'])
 
 
 def test_dirty_fonts_reuse_save_choices(script_env):
     service,bridge,_=script_env; bridge.adapter.dirty=True
     value=start_script(service)
     value=wait(service,value,'waiting_run')
-    assert not bridge.runs and any(a['action']=='save_run_script' for a in value['actions'])
+    assert not bridge.runs and any(a['action']=='run_script' for a in value['actions'])
 
 
 def test_changed_document_or_report_cannot_run(script_env):
     service,bridge,source=script_env
     value=wait(service,start_script(service),'waiting_run')
-    source.write_text('changed')
+    bridge.adapter.dirty=True
     action=next(a for a in value['actions'] if a['action']=='run_script')
     result=service.edit_workflows.respond(value['id'],value['revision'],action['token'])
     assert result['state']=='outdated' and not bridge.runs
@@ -105,7 +105,7 @@ def test_changed_document_or_report_cannot_run(script_env):
 def test_bulk_selector_and_review_are_immutable(script_env):
     service,bridge,_=script_env
     opts=options();opts['targets']=dict(master='M1',glyphs='all',surface='background')
-    value=service.edit_workflows.start(service.list_documents()[0]['id'],kind='python_script',idempotency_key='bulk',options=opts)
+    value=service.edit_workflows.start(service.list_documents()[0]['id'],kind='python_script',idempotency_key='bulk',mode='preview',options=opts)
     value=wait(service,value,'waiting_run')
     assert value['scope']['targets']==opts['targets']
     value=service.edit_workflows.get(value['id'],include_review=True)
@@ -259,7 +259,7 @@ def test_no_eligible_callbacks_never_initialize_module():
     adapter=SimpleNamespace(_font=lambda _:font,document_state=lambda _:dict(generation=1,path='/font.glyphs'))
     from glyphs_mcp_bridge.core import BridgeCore
     queue=[];core=BridgeCore(adapter,queue.append)
-    opts=scripts.validate_options(dict(source='raise AssertionError("module ran")',targets=[dict(glyph='A',layer='M1',surface='background')]))
+    opts=scripts.validate_options(dict(source='raise AssertionError("module ran")\ndef run(layer, params, context): pass',targets=[dict(glyph='A',layer='M1',surface='background')]))
     review(core,dict(jobId='empty',sourceHash='sha256:'+'a'*64,documentId='doc',generation=1,sourcePath='/font.glyphs',options=opts),BridgeError)
     while queue:queue.pop(0)()
     result=core.operation('empty')

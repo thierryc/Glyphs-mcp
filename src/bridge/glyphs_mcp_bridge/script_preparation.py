@@ -28,7 +28,7 @@ def report_iterator(core, request, error):
     if options['entrypoint'] == 'per_target' and not manifest:
         raise error('invalid_request', 'no eligible script targets; missing or empty backgrounds were skipped',
                     details={'skippedCount': skipped['count'], 'sample': skipped['sample']})
-    report = dict(kind='python_script', claim='Restore saved version reloads the whole font.',
+    report = dict(kind='python_script', claim='Restore before run restores the whole pre-run font, including unsaved edits, within this Glyphs session.',
         targetCount=len(manifest), skippedCount=skipped['count'], targets=skipped['sample'],
         manifest=manifest, review=options, requestHash=scripts.digest(options), requestBytes=budget.size)
     scripts.check_request(dict(request, manifest=manifest))

@@ -5,7 +5,7 @@ with these same request fields when `edit.workflow.v1` is advertised. The
 low-level job examples below describe operation scope and existing guards.
 
 For a large numeric rule, absolute widths or one-master-only edits, also consider
-[direct native scripting](python-scripts.md#choose-the-route). Explain its whole-font saved reload; execution uses the original task authorization and saving requires authorization; one local callback avoids repeated
+[direct native scripting](python-scripts.md#choose-the-route). Explain its whole-font pre-run snapshot restoration; execution uses the original task authorization and saving requires authorization; one local callback avoids repeated
 width requests. Its exact surface manifest differs from this job's **all stored
 layers** scope. Never silently narrow the user's scope or treat a direct script
 as the `width_delta` job's selective recovery. Ordinary additive edits keep the
