@@ -4,11 +4,11 @@ Glyphs 4 uses the external sidecar, bounded native bridge, and independent
 Curve Inspector and Reference Inspector. Glyphs 3 stays pinned to 1.11.0.
 The current interface has twenty tools; use the
 [tool contract](content/reference/command-set.mdx) and
-[2.0.2 preparation](V2.0.2-RELEASE.md), not historical roadmaps, for scope.
+[2.0.3 qualification](V2.0.3-RELEASE.md), not historical roadmaps, for scope.
 Native scripts use `python_script` with `script.native.v1` in the conversation
 workflow. Preparation never executes code or saves. Typed results retain
-selective recovery; scripts restore the whole saved font and discard later
-unsaved edits. Both offer Keep without saving and separately authorized Save.
+selective recovery; scripts restore the complete pre-run memory copy, preserving
+earlier unsaved edits while discarding changes made after Run. Both offer Keep without saving and separately authorized Save.
 Keep ends wrapper recovery and preserves native Undo/Redo. The retired
 experimental runtime and script execution modes are not shipped.
 

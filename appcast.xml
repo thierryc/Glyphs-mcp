@@ -5,15 +5,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <title>Glyphs MCP Desktop</title>
     <link>https://github.com/thierryc/Glyphs-mcp</link>
     <item>
-      <title>Glyphs MCP 2.0.2</title>
-      <sparkle:version>58</sparkle:version>
-      <sparkle:shortVersionString>2.0.2</sparkle:shortVersionString>
+      <title>Glyphs MCP 2.0.3</title>
+      <sparkle:version>59</sparkle:version>
+      <sparkle:shortVersionString>2.0.3</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <description>Build 58 enables managed Beztrace setup on Apple Silicon with macOS 26.6.2 or later. Existing separately installed plugins are preserved. Component migration remains a separate installation step.</description>
-      <enclosure url="https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.2-build58/Glyphs-MCP-2.0.2-build58.zip" sparkle:edSignature="QIbHK350UQtyjuoDySSucPBiK2xhW3oH4a3YmEqk+AI0ez+zKUqZOGL+jf2OJ4Qv9WtLgKBt3rxgw95rQymjDg==" length="156220522" type="application/octet-stream"></enclosure>
+      <description>The desktop application manages components, sidecar activity and local font projects. Component migration is a separate installation step.</description>
+      <enclosure url="https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.3/Glyphs-MCP-2.0.3.zip" sparkle:edSignature="bFRZDqDUFHlt7mxsMfORXHT1dsr/YOuKGS9yU6Bir0izWjk+Cak1y939IVdTEq/zjYImK/yg8ubtrQuCDjcgBg==" length="156303321" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: ZJV4E8cIG8CLyyHY50t8qwUlWnlZXyI7qoJOl6VizjhOxAFcwKIZoyS8rU4+jULr8GlBQWVZLnHxi5pFq5QVAQ==
-length: 1278
+edSignature: 1p8cL66Akx0IcOKs3b/ZYehOCwxIl+2xLLtpIRT/rOTQvJxMGYIre4xMEnGhn9aspMDPckCxJdWG3DNCBjsbCQ==
+length: 1205
 -->
