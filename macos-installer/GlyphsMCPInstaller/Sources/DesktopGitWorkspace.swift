@@ -69,8 +69,7 @@ struct DesktopGitWorkspace: View {
             viewportStore = GlyphViewportSessionStore()
             viewportRequest = .init(id: viewportRequest.id + 1, target: .fit)
         }
-        .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(nsColor: .separatorColor).opacity(0.55)))
+        .modifier(DesktopCardSurface())
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: model.selectedChange?.path) { _, _ in
             selectedDifferenceIndex = nil
@@ -139,7 +138,7 @@ struct DesktopGitWorkspace: View {
                 .scrollContentBackground(.hidden)
                 .environment(\.defaultMinListRowHeight, 28)
                 if !model.checkpointPageError.isEmpty {
-                    Text(model.checkpointPageError).font(.caption).foregroundStyle(.red).padding(8)
+                    Text(model.checkpointPageError).font(.caption).foregroundStyle(.orange).padding(8)
                 }
                 if model.checkpointNextOffset != nil {
                     Button(LocalizedStringKey(model.checkpointPageError.isEmpty ? "Load more files…" : "Retry loading files")) { model.moreCheckpointChanges() }

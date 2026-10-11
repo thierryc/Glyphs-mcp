@@ -20,7 +20,6 @@ struct DesktopProjectActions: View {
 
 struct DesktopProjectCatalog: View {
     @ObservedObject var model: DesktopProjectsModel
-    private let columns = [GridItem(.adaptive(minimum: 230, maximum: 360), spacing: 16)]
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -37,7 +36,7 @@ struct DesktopProjectCatalog: View {
                             .lineSpacing(3).frame(maxWidth: 470)
                         HStack(spacing: 12) {
                             Button(action: model.chooseProject) { Label("Open Project…", systemImage: "folder") }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(DesktopSecondaryButtonStyle())
                             Button { model.create() } label: { Label("New Project…", systemImage: "plus") }
                                 .buttonStyle(.borderedProminent)
                         }.controlSize(.large).padding(.top, 4)
@@ -52,9 +51,9 @@ struct DesktopProjectCatalog: View {
                                 .help("Add a local template folder")
                         }
                         if !model.message.isEmpty {
-                            Label(model.message, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.red)
+                            Label(model.message, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.orange)
                         }
-                        LazyVGrid(columns: columns, alignment: .center, spacing: 16) {
+                        SetupCardGrid {
                             ForEach(model.templateCatalog) { entry in
                                 DesktopTemplateCard(model: model, entry: entry)
                             }
@@ -82,8 +81,6 @@ private struct DesktopTemplateCard: View {
                         .accessibilityLabel("Favorite template").help("Favorite")
                 }
                 Text(LocalizedStringKey(entry.source)).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.04), in: Capsule())
                 Menu {
                     Button { model.toggleFavorite(entry.choice) } label: {
                         Label(LocalizedStringKey(isFavorite ? "Remove from Favorites" : "Add to Favorites"),
@@ -113,10 +110,11 @@ private struct DesktopTemplateCard: View {
             Text(entry.description).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let author = entry.template?.author { Text(author).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
             Spacer(minLength: 4)
-            Button("Use Template") { model.create(entry.choice) }.accessibilityLabel("Use \(entry.name) template")
-        }.padding(20).frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.08)))
+            DesktopActionButton(title: "Use Template", symbol: "plus", emphasis: .primary) { model.create(entry.choice) }
+                .accessibilityLabel("Use \(entry.name) template")
+        }.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(minHeight: 220)
+            .modifier(DesktopCardSurface())
             .help(entry.localURL?.path ?? entry.name)
     }
 }

@@ -100,6 +100,19 @@ a diagnostic threshold, never an automatic rejection.
 
 ## Skills catalog development
 
+The desktop views share their visual components in `Sources/ModernStyle.swift`.
+`DesktopCatalogCard` provides the title, description, status, actions and footer
+layout, with optional artwork for components and agents. Skills omit the artwork;
+project templates and grouped panels reuse `DesktopCardSurface`.
+`DesktopStatus` uses plain green installed indicators, neutral uninstalled states
+and progress spinners. `DesktopActionButton` uses system capsule buttons: blue
+for installation and neutral for update/uninstall. `DesktopActionRow` stacks
+actions when a narrow card or a translation needs more room. Every hosted window
+applies `desktopDesign()` so settings, sheets and other actions use the same
+control shape. Supporting URLs use `DesktopTextLink` to remain plain blue links.
+Keep navigation rows, menus and diff-tool controls in their
+appropriate native styles.
+
 Setup remains the overview. Companion Plugins, AI Agents and Skills reuse the
 same installer state and operation gates. Optional skills use their own hash
 receipts, advisory destination locks, atomic folder replacement and recovery

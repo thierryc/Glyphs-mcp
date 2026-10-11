@@ -49,7 +49,7 @@ struct DesktopProjectWizard: View {
                 }
                 Button("Save as Local Template…", action: duplicateTemplate)
             }
-            if !error.isEmpty { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+            if !error.isEmpty { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.orange) }
             if busy { Text(LocalizedStringKey(step == 0 ? "Preparing template…" : "Creating project…")).font(.callout).foregroundStyle(.secondary) }
             HStack {
                 Button("Cancel") { operation?.cancel(); dismiss() }.keyboardShortcut(.cancelAction)

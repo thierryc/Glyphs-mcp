@@ -5,7 +5,7 @@ import GlyphsMCPInstallerCore
 struct GlyphsMCPInstallerApp: App {
     @NSApplicationDelegateAdaptor(DesktopAppDelegate.self) private var delegate
     var body: some Scene {
-        Settings { DesktopSettings(updates: delegate.updates).environmentObject(delegate.desktop) }
+        Settings { DesktopSettings(updates: delegate.updates).environmentObject(delegate.desktop).desktopDesign() }
             .commands {
                 CommandGroup(replacing: .appInfo) {
                     Button("About Glyphs MCP") { delegate.showWelcome() }

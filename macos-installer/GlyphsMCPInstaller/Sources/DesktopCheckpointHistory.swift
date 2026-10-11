@@ -92,7 +92,7 @@ struct DesktopCheckpointHistory: View {
             }
             if history.busy { ProgressView("Loading checkpoints…").controlSize(.small) }
             if !history.error.isEmpty {
-                Text(history.error).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                Text(history.error).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
                 HStack {
                     Button("Retry") {
                         if history.documentsLoaded { history.load(more: history.cursor != nil) }
@@ -106,7 +106,7 @@ struct DesktopCheckpointHistory: View {
                 Button("Load older checkpoints…") { history.load(more: true) }.disabled(history.busy)
             }
             if !openError.isEmpty {
-                Text(openError).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                Text(openError).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
             }
         }
         .padding(16).frame(width: 520)
@@ -253,7 +253,7 @@ struct DesktopCheckpointDetails: View {
             Text(context.checkpoint.helpText).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
             Text("Recorded actions may not explain all font changes; manual changes are possible.").font(.caption)
             if busy { ProgressView("Loading actions…") }
-            if !error.isEmpty { Text(error).foregroundStyle(.red); Button("Retry") { attempt += 1 } }
+            if !error.isEmpty { Text(error).foregroundStyle(.orange); Button("Retry") { attempt += 1 } }
             ScrollView { Text(details).font(.caption.monospaced()).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
         }.padding(24).frame(width: 640, height: 480)
             .task(id: attempt) {
@@ -306,7 +306,7 @@ struct DesktopCheckpointRestore: View {
             }
             if busy { ProgressView("Checking restore…").controlSize(.small) }
             if !error.isEmpty {
-                Text(error).foregroundStyle(.red).textSelection(.enabled)
+                Text(error).foregroundStyle(.orange).textSelection(.enabled)
                 Button("Check result / Retry") {
                     if let pending { perform(pending) }
                     else { poll() }

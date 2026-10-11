@@ -10,53 +10,63 @@ struct OptionalToolSetupCard: View {
     @State private var removing = false
     @State private var lastAction = "install"
 
+    private var progressTitle: String {
+        switch lastAction {
+        case "remove": return "Uninstalling…"
+        case "update": return "Updating…"
+        default: return "Installing…"
+        }
+    }
+
     var body: some View {
         let state = installer.optionalStates[id]
         let active = installer.optionalOperation == id
-        SetupCard {
+        DesktopCatalogCard {
             Image(systemName: symbol).font(.system(size: 36)).foregroundStyle(Color.accentColor)
         } title: {
             Text(title).font(.headline)
         } detail: {
             Text(detail)
         } status: {
-            if active { Label("Working…", systemImage: "hourglass") }
-            else { Text(state?.label ?? "Checking optional setup…").font(.caption).foregroundStyle(.secondary) }
+            DesktopStatus(title: active ? progressTitle : state?.label ?? "Checking optional setup…",
+                tone: active ? (lastAction == "remove" ? .neutral : .progress) : state?.installed == true ? .installed : .neutral,
+                symbol: state?.installed == true ? "checkmark.circle.fill" : "circle", spinning: active || state == nil)
             if let error = installer.optionalErrors[id] {
-                Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                Text(error).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
             }
             if let error = installer.optionalDiscoveryError {
-                Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                Text(error).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
             }
         } actions: {
-            HStack {
+            DesktopActionRow {
                 if installer.optionalDiscoveryError != nil {
-                    Button("Retry") { installer.refreshOptionalTools() }
+                    DesktopActionButton(title: "Retry", symbol: "arrow.clockwise", emphasis: .primary) { installer.refreshOptionalTools() }
                         .disabled(installer.operationsBusy)
                 } else if installer.optionalErrors[id] != nil {
-                    Button("Retry") { installer.changeOptionalTool(id, action: lastAction) }
+                    DesktopActionButton(title: "Retry", symbol: "arrow.clockwise", emphasis: .primary) { installer.changeOptionalTool(id, action: lastAction) }
                         .disabled(!installer.canChangeOptionalTool(id))
                 } else {
-                    Button(state?.installed == true ? "Update" : "Install") {
+                    DesktopActionButton(title: state?.installed == true ? "Update" : "Install",
+                        symbol: state?.installed == true ? "arrow.clockwise" : "arrow.down.to.line",
+                        emphasis: state?.installed == true ? .secondary : .primary) {
                         lastAction = state?.installed == true ? "update" : "install"
                         installer.changeOptionalTool(id, action: lastAction)
                     }.disabled(state?.available != true || !installer.canChangeOptionalTool(id))
                 }
                 if state?.installed == true {
-                    Button("Remove", role: .destructive) { removing = true }
+                    DesktopActionButton(title: "Uninstall") { removing = true }
                         .disabled(!installer.canChangeOptionalTool(id))
                 }
-                Spacer()
             }
         } footer: {
             if state?.available != true {
                 Text(state?.reason ?? "This optional distribution awaits release qualification.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Button("Setup details…", action: details).font(.caption)
+            Button("Details", action: details).buttonStyle(.link).font(.caption)
         }
-        .confirmationDialog("Remove \(title)?", isPresented: $removing, titleVisibility: .visible) {
-            Button("Remove", role: .destructive) {
+        .confirmationDialog("Uninstall \(title)?", isPresented: $removing, titleVisibility: .visible) {
+            Button("Uninstall", role: .destructive) {
                 lastAction = "remove"
                 installer.changeOptionalTool(id, action: "remove")
             }

@@ -210,9 +210,9 @@ struct DesktopSetup: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Label(LocalizedStringKey(installer.checkingPython ? "Checking Glyphs Python…" :
                                     installer.pythonReady ? "Glyphs Python is ready" : "Set up Python in Glyphs"),
-                                  systemImage: installer.pythonReady ? "checkmark.circle" : "exclamationmark.triangle")
+                                  systemImage: installer.pythonReady ? "checkmark.circle.fill" : "exclamationmark.triangle")
                                 .font(.headline)
-                                .foregroundStyle(installer.pythonReady ? Color.primary : Color.orange)
+                                .foregroundStyle(installer.pythonReady ? Color.green : Color.orange)
                             if let version = installer.pythonVersion {
                                 Text("Python \(version)").font(.callout).foregroundStyle(.secondary)
                             }
@@ -460,11 +460,11 @@ struct DesktopWelcomeView: View {
     private var communityLinks: some View {
         VStack(spacing: 14) {
             HStack(spacing: 22) {
-                Link("Documentation", destination: DesktopIdentity.documentation)
-                Link("Contribute on GitHub", destination: DesktopIdentity.issues.deletingLastPathComponent())
-                Link("Support the project", destination: DesktopIdentity.support)
+                DesktopTextLink("Documentation", destination: DesktopIdentity.documentation)
+                DesktopTextLink("Contribute on GitHub", destination: DesktopIdentity.issues.deletingLastPathComponent())
+                DesktopTextLink("Support the project", destination: DesktopIdentity.support)
             }.font(.caption)
-            Link("Contact Thierry Charbonnel", destination: DesktopIdentity.linkedIn).font(.caption)
+            DesktopTextLink("Contact Thierry Charbonnel", destination: DesktopIdentity.linkedIn).font(.caption)
         }.padding(.top, 4)
     }
 }

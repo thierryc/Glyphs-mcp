@@ -687,3 +687,19 @@
 "Updating skill…" = "Mise à jour de la compétence…";
 "This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept." = "Le lien sera remplacé par une copie gérée de la version du catalogue. Votre dossier original sera préservé et une sauvegarde du lien sera conservée.";
 "Find and repair interpolation kinks while preserving your master outlines." = "Détectez et corrigez les cassures d’interpolation en préservant les contours de vos masters.";
+
+/* Shared desktop cards and actions */
+"Manage" = "Gérer";
+"Managed with AI Agents" = "Géré avec les agents IA";
+"Checking installation…" = "Vérification de l’installation…";
+"Uninstalling…" = "Désinstallation…";
+"Uninstalling skill…" = "Désinstallation de la compétence…";
+"Uninstall item?" = "Désinstaller cet élément ?";
+"Uninstall this skill?" = "Désinstaller cette compétence ?";
+"Uninstall %@?" = "Désinstaller %@ ?";
+"Uninstall %@ connection?" = "Désinstaller la connexion %@ ?";
+"Manage included skills with your AI agent setup." = "Gérez les compétences incluses dans la configuration de votre agent IA.";
+"Choose the agent and location for this skill." = "Choisissez l’agent et l’emplacement pour cette compétence.";
+"This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "Cette compétence utilise un dossier local lié. Mettre à jour installe une copie gérée ici ; Désinstaller détache le lien. Les deux conservent votre dossier d’origine.";
+"Choose an agent to uninstall this skill from" = "Choisissez l’agent pour lequel désinstaller cette compétence";
+"Uninstall from %@. A backup will be kept. Linked source folders stay untouched." = "Désinstaller pour %@. Une sauvegarde sera conservée. Les dossiers sources liés restent intacts.";

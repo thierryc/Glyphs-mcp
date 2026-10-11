@@ -687,3 +687,19 @@
 "Updating skill…" = "正在更新技能…";
 "This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept." = "这会将链接替换为受管理的目录版本副本。原始文件夹保持不变，且链接将被备份。";
 "Find and repair interpolation kinks while preserving your master outlines." = "查找并修复插值折点，同时保留主版轮廓。";
+
+/* Shared desktop cards and actions */
+"Manage" = "管理";
+"Managed with AI Agents" = "通过 AI 代理管理";
+"Checking installation…" = "正在检查安装…";
+"Uninstalling…" = "正在卸载…";
+"Uninstalling skill…" = "正在卸载技能…";
+"Uninstall item?" = "卸载此项目？";
+"Uninstall this skill?" = "卸载此技能？";
+"Uninstall %@?" = "卸载 %@？";
+"Uninstall %@ connection?" = "卸载 %@ 连接？";
+"Manage included skills with your AI agent setup." = "在 AI 代理设置中管理内置技能。";
+"Choose the agent and location for this skill." = "为此技能选择代理和位置。";
+"This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "此技能使用链接的本地文件夹。更新将在此处安装托管副本；卸载会断开链接。两者均保留原始文件夹。";
+"Choose an agent to uninstall this skill from" = "选择要卸载此技能的代理";
+"Uninstall from %@. A backup will be kept. Linked source folders stay untouched." = "从 %@ 卸载。将保留备份，链接的源文件夹保持不变。";

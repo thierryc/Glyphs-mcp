@@ -53,7 +53,7 @@ struct DesktopProjectSettings: View {
                 .disabled(!configurationLoaded)
             Text("Enabling this authorizes local checkpoints, including the starting saved baseline. Saving still needs authorization. This does not initialize Git or push.")
                 .font(.caption).foregroundStyle(.secondary)
-            if !error.isEmpty { Text(error).font(.callout).foregroundStyle(.red) }
+            if !error.isEmpty { Text(error).font(.callout).foregroundStyle(.orange) }
             HStack {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()

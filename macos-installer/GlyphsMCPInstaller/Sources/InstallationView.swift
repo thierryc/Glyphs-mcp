@@ -20,7 +20,7 @@ struct InstallationView: View {
             }
         }
         .confirmationDialog(
-            pendingRemoval?.title ?? "Remove item?",
+            pendingRemoval?.title ?? "Uninstall item?",
             isPresented: Binding(
                 get: { pendingRemoval != nil },
                 set: { if !$0 { pendingRemoval = nil } }
@@ -28,7 +28,7 @@ struct InstallationView: View {
             titleVisibility: .visible,
             presenting: pendingRemoval
         ) { target in
-            Button("Remove", role: .destructive) {
+            Button("Uninstall", role: .destructive) {
                 pendingRemoval = nil
                 switch target.kind {
                 case .component(let id): model.removeComponent(id)
@@ -54,9 +54,7 @@ struct InstallationView: View {
                     .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
-            Button(LocalizedStringKey(model.bulkActionTitle), action: model.installAll)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+            DesktopActionButton(title: model.bulkActionTitle, symbol: "arrow.down.to.line", emphasis: .primary, action: model.installAll)
                 .disabled(!model.canRunBulkAction)
                 .keyboardShortcut(.defaultAction)
         }
@@ -65,7 +63,7 @@ struct InstallationView: View {
     @ViewBuilder private var setupNotice: some View {
         Label(model.message, systemImage: model.notice.isFailure ? "exclamationmark.triangle" : "info.circle")
             .font(.callout)
-            .foregroundStyle(model.notice.isFailure ? Color.red : Color.secondary)
+            .foregroundStyle(model.notice.isFailure ? Color.orange : Color.secondary)
             .textSelection(.enabled)
     }
 
@@ -128,7 +126,7 @@ private struct BeztraceSetupCard: View {
     private let companion = ExternalGlyphsCompanion.beztrace
 
     var body: some View {
-        SetupCard {
+        DesktopCatalogCard {
             Image(systemName: "pencil.and.outline")
                 .font(.system(size: 36)).foregroundStyle(Color.accentColor)
         } title: {
@@ -145,7 +143,7 @@ private struct BeztraceSetupCard: View {
                 Spacer()
             }
         } footer: {
-            Link("Documentation", destination: companion.documentation).font(.caption)
+            DesktopTextLink("Documentation", destination: companion.documentation).font(.caption)
                 .accessibilityLabel("Beztrace documentation")
         }
     }
@@ -167,12 +165,12 @@ private struct BeztraceSetupView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Requirements").font(.headline)
                 Text(LocalizedStringKey(companion.requirements))
-                Link("Engine release history", destination: companion.engineRelease)
+                DesktopTextLink("Engine release history", destination: companion.engineRelease)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
                 Text("Managed setup installs signed companion 0.1.0 build 16 and uses the bundled engine 0.1.1. Qualified for Apple Silicon on macOS 26.6.2 or later. Engine selection persists when the panel reopens; explicit user choices take priority. Install All excludes Beztrace.")
-                Link("Read plugin setup and verification", destination: companion.documentation)
+                DesktopTextLink("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Using Beztrace").font(.headline)
@@ -237,7 +235,7 @@ private struct ComponentSetupCard: View {
     let retry: () -> Void
 
     var body: some View {
-        SetupCard {
+        DesktopCatalogCard {
             componentPreview
         } title: {
             Text(component.title).font(.headline)
@@ -248,7 +246,7 @@ private struct ComponentSetupCard: View {
         } actions: {
             SetupCardActions(state: state, disabled: disabled, canInstall: pythonReady, install: install, update: update, remove: remove, retry: retry)
         } footer: {
-            Link("Documentation", destination: component.documentation).font(.caption)
+            DesktopTextLink("Documentation", destination: component.documentation).font(.caption)
                 .accessibilityLabel("\(component.title) documentation")
         }
     }
@@ -278,7 +276,7 @@ private struct ConnectorSetupCard: View {
     let retry: () -> Void
 
     var body: some View {
-        SetupCard(compact: true) {
+        DesktopCatalogCard(previewHeight: 54, detailMinimumHeight: 48) {
             Image(logoAsset)
                 .resizable()
                 .scaledToFit()
@@ -301,41 +299,8 @@ private struct ConnectorSetupCard: View {
         } actions: {
             SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
         } footer: {
-            if !detected { Link("Download app", destination: client.downloadURL).font(.caption) }
+            if !detected { DesktopTextLink("Download app", destination: client.downloadURL).font(.caption) }
         }
-    }
-}
-
-struct SetupCard<Preview: View, Title: View, Detail: View, Status: View, Actions: View, Footer: View>: View {
-    var compact = false
-    @ViewBuilder var preview: () -> Preview
-    @ViewBuilder var title: () -> Title
-    @ViewBuilder var detail: () -> Detail
-    @ViewBuilder var status: () -> Status
-    @ViewBuilder var actions: () -> Actions
-    @ViewBuilder var footer: () -> Footer
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            preview()
-                .frame(maxWidth: .infinity)
-                .frame(height: compact ? 54 : 92)
-                .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .accessibilityHidden(true)
-            title()
-            detail().font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, minHeight: compact ? 48 : 64, alignment: .topLeading)
-            Spacer(minLength: 0)
-            status()
-            actions()
-            footer()
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08)))
     }
 }
 
@@ -344,17 +309,17 @@ private struct SetupStatus: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 7) {
-                if state.isActive || isQueued { ProgressView().controlSize(.small) }
-                Image(systemName: symbol).foregroundStyle(color)
-                Text(LocalizedStringKey(state.statusLabel)).font(.caption.weight(.medium)).foregroundStyle(color)
-            }
+            DesktopStatus(title: title, tone: tone, symbol: symbol, spinning: state.isActive || isQueued)
             if let failure = state.failureMessage {
-                Text(failure).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                Text(failure).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
             }
         }
     }
 
+    private var title: String {
+        if case .active(.remove) = state { return "Uninstalling…" }
+        return state.statusLabel
+    }
     private var isQueued: Bool { if case .queued = state { return true }; return false }
     private var symbol: String {
         switch state {
@@ -365,12 +330,12 @@ private struct SetupStatus: View {
         case .failed: return "exclamationmark.triangle.fill"
         }
     }
-    private var color: Color {
+    private var tone: DesktopStatus.Tone {
         switch state {
-        case .installed: return .green
-        case .developmentLinked: return .accentColor
-        case .failed: return .red
-        default: return .secondary
+        case .installed, .developmentLinked: return .installed
+        case .active(.remove), .queued, .notInstalled: return .neutral
+        case .active: return .progress
+        case .failed: return .attention
         }
     }
 }
@@ -385,22 +350,25 @@ private struct SetupCardActions: View {
     let retry: () -> Void
 
     var body: some View {
-        HStack {
+        DesktopActionRow {
             switch state {
             case .notInstalled:
-                Button("Install", action: install).buttonStyle(.borderedProminent).disabled(disabled || !canInstall)
+                DesktopActionButton(title: "Install", symbol: "arrow.down.to.line", emphasis: .primary, action: install)
+                    .disabled(disabled || !canInstall)
             case .installed:
-                Button("Update", action: update).disabled(disabled || !canInstall)
-                Button("Remove", role: .destructive, action: remove).disabled(disabled)
+                DesktopActionButton(title: "Update", symbol: "arrow.clockwise", action: update).disabled(disabled || !canInstall)
+                DesktopActionButton(title: "Uninstall", action: remove).disabled(disabled)
             case .developmentLinked:
-                Button("Install bundled version", action: update).disabled(disabled || !canInstall)
-                Button("Remove", role: .destructive, action: remove).disabled(disabled)
+                DesktopActionButton(title: "Install bundled version", symbol: "arrow.down.to.line", emphasis: .primary, action: update)
+                    .disabled(disabled || !canInstall)
+                DesktopActionButton(title: "Uninstall", action: remove).disabled(disabled)
             case .failed(let operation, _):
-                Button("Retry", action: retry).buttonStyle(.borderedProminent).disabled(disabled || (operation != .remove && !canInstall))
-            case .queued, .active:
-                Text(LocalizedStringKey(state.statusLabel)).font(.caption).foregroundStyle(.secondary)
+                DesktopActionButton(title: "Retry", symbol: "arrow.clockwise", emphasis: .primary, action: retry)
+                    .disabled(disabled || (operation != .remove && !canInstall))
+            case .queued(let operation), .active(let operation):
+                DesktopActionButton(title: operation == .remove ? "Uninstalling…" : operation.progressLabel, action: {})
+                    .disabled(true)
             }
-            Spacer()
         }
     }
 }
@@ -413,13 +381,13 @@ private struct RemovalTarget: Identifiable {
     let kind: Kind
 
     static func component(_ component: DesktopComponent) -> RemovalTarget {
-        .init(title: "Remove \(component.title)?",
+        .init(title: String(format: NSLocalizedString("Uninstall %@?", comment: "Component removal confirmation"), component.title),
               message: "The component will be removed while other components and saved preferences are preserved.",
               kind: .component(component.id))
     }
 
     static func connector(_ client: InstallerClientKind) -> RemovalTarget {
-        .init(title: "Remove \(client.displayName) connection?",
+        .init(title: String(format: NSLocalizedString("Uninstall %@ connection?", comment: "Connection removal confirmation"), client.displayName),
               message: "Only installer-owned Glyphs MCP settings and managed files will be removed. Modified or unowned content is preserved as a conflict.",
               kind: .connector(client))
     }

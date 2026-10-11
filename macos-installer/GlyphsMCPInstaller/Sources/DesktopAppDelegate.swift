@@ -33,7 +33,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         popover.contentViewController = NSHostingController(rootView: DesktopPopover(
             open: { [weak self] in self?.showDashboard() },
             settings: { [weak self] in self?.showSettings() },
-            support: { [weak self] in self?.showWelcome() }).environmentObject(desktop))
+            support: { [weak self] in self?.showWelcome() }).environmentObject(desktop).desktopDesign())
         updateMenuBar()
         activityObservation = Publishers.CombineLatest3(desktop.$status, desktop.$stale, desktop.$serviceRunning)
             .map { status, stale, running in status?.showsActivityDot(stale: stale, running: running) == true }
@@ -81,7 +81,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth,
                                            height: DesktopDashboardLayout.minimumHeight)
             window.isReleasedWhenClosed = false; window.delegate = self
-            window.contentViewController = NSHostingController(rootView: ContentView().environmentObject(installer).environmentObject(desktop))
+            window.contentViewController = NSHostingController(rootView: ContentView().environmentObject(installer).environmentObject(desktop).desktopDesign())
             // Use one window-wide separator instead of automatic per-column styles.
             window.titlebarSeparatorStyle = .line
             window.center(); dashboard = window
@@ -109,7 +109,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             window.isReleasedWhenClosed = false
             window.contentViewController = NSHostingController(rootView:
                 DesktopSettings(updates: updates).environmentObject(desktop)
-                    .frame(height: 580))
+                    .desktopDesign().frame(height: 580))
             window.center()
             settingsWindow = window
         }
@@ -133,7 +133,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         // A new root resets slide navigation on manual replay.
         welcome?.contentViewController = NSHostingController(rootView: DesktopWelcomeView(
             startSetup: { [weak self] in self?.finishWelcome() })
-            .safeAreaInset(edge: .top) { DesktopInitializationStatus().environmentObject(installer) })
+            .safeAreaInset(edge: .top) { DesktopInitializationStatus().environmentObject(installer) }
+            .desktopDesign())
         NSApp.setActivationPolicy(.regular)
         welcome?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         recordFirstPresentation("Welcome presentation")
@@ -159,7 +160,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             window.contentMinSize = NSSize(width: 760, height: 480)
             window.isReleasedWhenClosed = false
             window.contentViewController = NSHostingController(rootView:
-                TroubleshootingLogView().environmentObject(installer).environmentObject(desktop))
+                TroubleshootingLogView().environmentObject(installer).environmentObject(desktop).desktopDesign())
             window.center()
             troubleshootingLogs = window
         }

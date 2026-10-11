@@ -676,3 +676,19 @@
 "Updating skill…" = "Updating skill…";
 "This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept." = "This replaces the link with a managed copy of the catalog version. Your original folder stays untouched, and a backup of the link will be kept.";
 "Find and repair interpolation kinks while preserving your master outlines." = "Find and repair interpolation kinks while preserving your master outlines.";
+
+/* Shared desktop cards and actions */
+"Manage" = "Manage";
+"Managed with AI Agents" = "Managed with AI Agents";
+"Checking installation…" = "Checking installation…";
+"Uninstalling…" = "Uninstalling…";
+"Uninstalling skill…" = "Uninstalling skill…";
+"Uninstall item?" = "Uninstall item?";
+"Uninstall this skill?" = "Uninstall this skill?";
+"Uninstall %@?" = "Uninstall %@?";
+"Uninstall %@ connection?" = "Uninstall %@ connection?";
+"Manage included skills with your AI agent setup." = "Manage included skills with your AI agent setup.";
+"Choose the agent and location for this skill." = "Choose the agent and location for this skill.";
+"This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder.";
+"Choose an agent to uninstall this skill from" = "Choose an agent to uninstall this skill from";
+"Uninstall from %@. A backup will be kept. Linked source folders stay untouched." = "Uninstall from %@. A backup will be kept. Linked source folders stay untouched.";
