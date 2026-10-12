@@ -4,7 +4,15 @@ title: Release qualification and known limits
 
 ## Published stable release
 
-Glyphs MCP **2.0.3/build 59** uses twenty tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID signed, notarized and stapled. Every public asset digest and size was verified before the unchanged signed stable updater feed was advanced.
+Glyphs MCP **2.0.4/build 61** uses twenty tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID-signed, notarized and stapled. All public asset digests and sizes matched the verified distribution before feed promotion.
+
+## 2.0.4 acceptance
+
+The full publication gate passed **2,952 Python tests** (two optional skips), **263 desktop tests**, deterministic payload comparison, documentation and offline startup of both private runtimes. The Intel runtime ran under Rosetta; physical Intel execution and exact macOS 14.0 execution were not newly qualified.
+
+The exact signed build passed installation in the macOS 26.6.2 arm64 VM with Glyphs 4.1.1/build 4108 and official Glyphs Python 3.14.6. Detection passed with no saved Python framework preference. Six static TTF/OTF outputs across plain, WOFF and WOFF2 containers passed table and shaping checks in the private runtime while Glyphs Python had no FontTools or HarfBuzz. Loaded bridge/sidecar identities matched the receipt; live publish/discard, source integrity and fixture closure passed.
+
+Setup now offers an installation override after a failed Python check, records correlated diagnostics and shows a copy selector only for multiple Glyphs 4 installations. Versioned ZIP and DMG downloads were verified over their public URLs before the signed update feed was promoted. Earlier updater/migration and optional-tool evidence retains its original build scope. See [the release record](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.0.4-RELEASE.md).
 
 ## Focused 2.0.3 evidence
 

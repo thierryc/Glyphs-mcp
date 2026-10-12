@@ -8,10 +8,10 @@ import styles from './index.module.css';
 // Keep the public download separate from the local documentation identity.
 // Advance only after stable artifact qualification and public hash verification.
 const publishedDownload = {
-  label: '2.0.3',
-  build: 59,
-  url: 'https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.3/Glyphs-MCP-2.0.3.dmg',
-  release: 'https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.3',
+  label: '2.0.4',
+  build: 61,
+  url: 'https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.4/Glyphs-MCP-2.0.4.dmg',
+  release: 'https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.4',
 };
 
 export default function Home(): React.JSX.Element {
@@ -89,7 +89,7 @@ export default function Home(): React.JSX.Element {
           <div className={`container ${styles.quickstart}`}>
             <h2 id="limits-title">Before you try it</h2>
             <p>Begin with a disposable font and a small change. Supported operations depend on the connected bridge. Review results in Glyphs; accepting an edit and saving your font are separate actions.</p>
-            <p>Earlier core release checks cover Apple silicon on macOS 14.6.1 and 26.6.2; 2.0.3 has focused source and local native verification. Managed Beztrace setup is qualified on Apple silicon with macOS 26.6.2 or later. Exact macOS 14.0 and physical Intel execution remain unverified.</p>
+            <p>Earlier core release checks cover Apple silicon on macOS 14.6.1 and 26.6.2; 2.0.4 passed full source checks and signed VM installation and export verification. Managed Beztrace setup is qualified on Apple silicon with macOS 26.6.2 or later. Exact macOS 14.0 and physical Intel execution remain unverified.</p>
             <p><Link to="/docs/v2/reference/release-qualification">Read qualification and known limits</Link> or use <Link to="/docs/v2/getting-started/troubleshooting">troubleshooting</Link>.</p>
             <h2>Made with the community</h2>
             <p>Glyphs MCP is an open source project by Thierry Charbonnel. <Link href="https://github.com/thierryc/Glyphs-mcp/issues">Report an issue</Link>, explore the <Link href="https://github.com/thierryc/Glyphs-mcp">repository</Link>, or <Link href="https://github.com/sponsors/thierryc">support the project</Link>.</p>

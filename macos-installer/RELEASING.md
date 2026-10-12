@@ -2,7 +2,7 @@
 
 Build, test, sign, notarize and upload on the maintainer’s Mac. GitHub Actions deploys documentation, not release artifacts.
 
-The published stable release is Glyphs MCP Desktop **2.0.3/build 59**, under signed tag `v2.0.3`, with twenty tools, eleven managed skills, coordinated bridge/sidecar version `2.0.3`, interface revision `1` and bridge protocol `1`. Curve Inspector is independently versioned at 0.5.2. See [2.0.3 qualification](../V2.0.3-RELEASE.md). Focused checks reuse unchanged Swift/runtime evidence from `v2.0.2-build58`; no full Swift/VM rerun is implied. Keep prior tags and artifacts intact.
+The published stable release is Glyphs MCP Desktop **2.0.4/build 61**, under signed tag `v2.0.4`, with twenty tools, eleven managed skills, coordinated bridge/sidecar version `2.0.4`, interface revision `1` and bridge protocol `1`. Curve Inspector remains 0.5.2. The full gate passed 2,952 Python and 263 desktop tests; exact signed VM installation and export checks passed. See [2.0.4 qualification](../V2.0.4-RELEASE.md). Keep prior tags and artifacts intact.
 
 Historical prerelease guidance remains in the
 [archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
