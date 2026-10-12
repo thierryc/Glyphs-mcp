@@ -1,0 +1,112 @@
+{
+  "date": "2026-10-09",
+  "designReview": {
+    "decision": "Use a native floating utility palette with scope, explicit method choices, short target/result status, Preview and Apply. Reveal curves and settings on demand.",
+    "defaultAreaReductionPercent": 69.15,
+    "defaultContentSizePoints": [
+      320,
+      236
+    ],
+    "detailsContentSizePoints": [
+      320,
+      480
+    ],
+    "drawerPolicy": "mutually exclusive; preserve the window top edge and current proposal",
+    "previousContentSizePoints": [
+      480,
+      510
+    ],
+    "problem": "The always-visible preview and diagnostics obscured the canvas and made the controller behave like a large dialog.",
+    "settingsContentSizePoints": [
+      320,
+      356
+    ]
+  },
+  "engineDigest": "5ef4e83adcbadc0b2ff381a5acc711fa9c58a6518dae54cf8466b36339ecef2f",
+  "engineVersion": "0.2.1",
+  "host": {
+    "build": "4108",
+    "identifier": "com.GeorgSeifert.Glyphs4",
+    "version": "4.1.1"
+  },
+  "installedFiles": {
+    "Contents/Info.plist": "0b2f08ded56123a6c943d242300fffb9c9affeb76a5defb6a735bfd55b665adc",
+    "Contents/MacOS/plugin": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "Contents/Resources/GlyphsSDK-LICENSE.txt": "bb28c48e3e078166e91cfc2b6db7ffebb8a0973b9e23b3df060561292d8d69ec",
+    "Contents/Resources/GlyphsSDK-SOURCE.json": "2f925690be849f3212532fb59ed19617ec14553ab1cc027bba632200437fe49f",
+    "Contents/Resources/curve-repair-engine.json": "cf1b87d5d5b6eb70386322ab7c97b6490a427009f5c972762fabc2a5ec5566f3",
+    "Contents/Resources/curve_core/__init__.py": "0c253eb40f4f38641e01ee9db35a18832e4e24da0da3dd2779d09c0df2bb7f5f",
+    "Contents/Resources/curve_core/geometry.py": "ee1e6f80af738a7a4f5162da7b896a3f7e7201aedd4dd9fcade44acb4922ec88",
+    "Contents/Resources/curve_repair/NOTICE": "6c684688bdc0ef5631f03b0efd9750ca0456f67f543892483892c99a4083b73c",
+    "Contents/Resources/curve_repair/__init__.py": "2cb6c173e0a1b44fd8b1c545564f76f527f4f6b0a211c0e23a17cabb5c71f9be",
+    "Contents/Resources/curve_repair/coverage.py": "3d794a588223fbb752d3ca8a7b7542c9f5208821cdad6bc1fad28ee81b1e5be2",
+    "Contents/Resources/curve_repair/geometry.py": "e4cabff8b6b38120af9c2a28976375d3ce1fdd05dfe5ec30f532c24eadc33a60",
+    "Contents/Resources/curve_repair/licenses/SuperTool/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "Contents/Resources/curve_repair/native.py": "fcf1e4121ab32015a2f5dd5b6fb3ba44dad1af9a0ce553e8a1cc89f4cac4f777",
+    "Contents/Resources/curve_repair/outline.py": "65cb9f4122c12080d5f93c069bb1b6fd4c428815fc39c05e13486ba01c77dc80",
+    "Contents/Resources/curve_repair/provenance.py": "264d95097a0cf097ac176e778a05d641d6854c9693ed593153031b62d4c4da5e",
+    "Contents/Resources/curve_repair/supertool.py": "20237a7bf378a8db389dd777fbd54e9b2fbcf316507580310ca866f4b6fe9cd8",
+    "Contents/Resources/glyphs_curve_inspector/__init__.py": "43470dfb19b4badbe6c2edad83efea0fbffc657af6ac66ad2310afdbc86207c2",
+    "Contents/Resources/glyphs_curve_inspector/controller.py": "4ebdfefe56c83790ccb58785438d39ec396a354baa0f5bdabac93213bc1d747b",
+    "Contents/Resources/glyphs_curve_inspector/plugin.py": "6728ea58ba7091b6632fa6a38d37a682715ea0399f93ee27ebc0bf81edfe12bc",
+    "Contents/Resources/glyphs_mcp_companions.py": "7bed7c161f19a0ea913cba2aeab18aa53896ff889ffef5638a737c1ef275d358",
+    "Contents/Resources/plugin.py": "6728ea58ba7091b6632fa6a38d37a682715ea0399f93ee27ebc0bf81edfe12bc"
+  },
+  "installedPath": "<maintainer-home>/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter",
+  "limits": [
+    "This revision changes the controller only; repair engine 0.2.1 is unchanged.",
+    "This UI record qualifies a preview on the two-master ordinary fixture; actual repair application and wider native adapter records remain separate evidence.",
+    "An attempted automated window drag did not move the palette; saved-position restoration was independently read from the native frame preference."
+  ],
+  "nativeUI": {
+    "applyDisabledAfterDocumentSwitch": true,
+    "applyEnabledAcrossDrawerChanges": true,
+    "compactTargetAndResultShown": true,
+    "defaultStarSelected": true,
+    "detailsAndSettingsHiddenInitially": true,
+    "detailsDrawingAndDiagnosticsVisuallyChecked": true,
+    "dragAutomationMovedWindow": false,
+    "fixtureClosedWithoutSavingOrDiscarding": true,
+    "floatingWindowObserved": true,
+    "frameRestoredAcrossRelaunchAndReopen": true,
+    "paletteLeftOpenInCompactMode": true,
+    "savedFrameAfterRelaunchAndReopen": [
+      1384,
+      744,
+      320,
+      260
+    ],
+    "savedFrameBeforeRelaunch": [
+      1384,
+      744,
+      320,
+      260
+    ],
+    "settingsReplacesDetails": true,
+    "sourceFixtureDirtyAfterPreview": false,
+    "staleProposalClearedOnReopenAfterDocumentSwitch": true,
+    "starPreview": {
+      "joinCount": 2,
+      "maxDeviationEm": 0.0005000000010000004,
+      "nativeLocations": 9,
+      "sourceLayers": [
+        "MASTER0",
+        "MASTER1"
+      ]
+    },
+    "workingContextRestored": {
+      "dirty": false,
+      "glyph": "A",
+      "master": "Regular",
+      "view": "edit"
+    }
+  },
+  "pluginVersion": "0.2.2",
+  "resolvedNativeFinding": "A preview could remain visibly enabled after an externally activated document switch. show() now checks the exact target before presenting Apply; activation/tab/frame callbacks also schedule freshness checks.",
+  "schemaVersion": 1,
+  "tests": {
+    "relevantSuite": 89,
+    "sdkBundleValidation": "passed; static validator does not claim runtime testing"
+  },
+  "workingFontEdits": false
+}

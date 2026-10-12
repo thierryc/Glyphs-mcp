@@ -3,7 +3,9 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.0.3/build 59** connects AI applications to Glyphs 4 through twenty tools. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
+Glyphs MCP **2.0.4/build 61** connects AI applications to Glyphs 4 through twenty tools. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
+
+Version 2.0.4 detects the default Glyphs Python without requiring a saved framework preference. Setup shows the detected Python and offers an application selector when multiple Glyphs 4 copies are found. Export verification uses the private runtime, so FontTools does not need to be installed in Glyphs Python.
 
 Open Edit tabs and create independent unsaved document copies directly. Update the bridge and sidecar together through Setup. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/).
 Compiled [font comparisons](workflows/font-comparison.mdx) use the optional

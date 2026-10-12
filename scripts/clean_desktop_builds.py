@@ -28,6 +28,23 @@ OUTPUTS = (
 )
 
 
+# Named test runs: discard reproducible compiler caches and intermediates only.
+# Logs, TestResults, products, source repositories and runtime inputs remain.
+TEST_DERIVED_DATA = (
+    'build/m27-tests', 'build/checkpoint-tests', 'build/m5-final-tests',
+    'build/beztrace-desktop-qualification', 'build/checkpoint-layout-tests',
+    'build/logging-tests-20261012/DerivedData',
+    'build/copy-selector-tests-20261012/DerivedData',
+    'build/python-preflight-desktop-tests/DerivedData',
+    'build/local-app-runs/run-764xcjnf',
+)
+OUTPUTS += tuple(
+    f'{run}/{cache}' for run in TEST_DERIVED_DATA
+    for cache in ('ModuleCache.noindex', 'Index.noindex', 'SDKStatCaches.noindex',
+                  'CompilationCache.noindex', 'Build/Intermediates.noindex')
+)
+
+
 def inspect(root, relative):
     if relative not in OUTPUTS:
         raise ValueError(f'Not a recognized generated output: {relative}')

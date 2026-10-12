@@ -429,3 +429,19 @@ def test_rejects_missing_or_changed_offline_skills_catalog(bundle):
     snapshot.unlink()
     with pytest.raises(ValueError, match='offline skills catalog'):
         verifier.verify(app, root)
+
+
+def test_test_cache_cleanup_preserves_results_products_and_runtime_inputs(tmp_path, monkeypatch):
+    monkeypatch.setattr(cleaner.subprocess, 'check_output', lambda command: b'')
+    run = tmp_path / 'build/logging-tests-20261012/DerivedData'
+    paths = ['Build/Intermediates.noindex/object', 'ModuleCache.noindex/module',
+             'Logs/test.log', 'TestResults/report.json', 'Build/Products/app',
+             'runtime-inputs/python']
+    for name in paths:
+        path = run / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(name)
+    cleaner.clean(tmp_path, apply=True)
+    assert not (run / paths[0]).exists()
+    assert not (run / paths[1]).exists()
+    assert all((run / name).is_file() for name in paths[2:])

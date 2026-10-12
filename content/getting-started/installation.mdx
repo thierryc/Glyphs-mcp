@@ -13,17 +13,12 @@ before the MCP components, then launch it with your license or **Continue Trial*
 Glyphs has a separate scripting runtime from the companion's private server runtime:
 
 1. Open **Window → Plugin Manager → Modules** in Glyphs and install **Python**.
-2. Restart Glyphs, then open **Glyphs → Settings → Addons**.
-3. Under **Python version**, explicitly select the installed version labelled
-   **(Glyphs)**, even if it already appears selected. Sonoma tests used 3.14.6;
-   the official module manager controls available versions and updates.
-4. Save current work and quit Glyphs normally before installing MCP components.
+2. Restart Glyphs. The official module works as the default; no saved framework preference is required. If you use another Python, choose it under **Glyphs → Settings → Addons → Python version**.
+3. Save current work and quit Glyphs normally before installing MCP components.
 
-The local v2 companion offers **Open Python in Plugin Manager** and
-**Check again**. Missing or invalid selected Python blocks component installation
-with recovery guidance. The module is installed and managed by Glyphs' official
-Plugin Manager; the companion does not install an alternative Python framework.
-In Beta 11, follow the same prerequisite steps manually and use Retry if setup fails.
+Setup shows the detected application and Python. If several Glyphs 4 copies are detected, choose the copy you use; the selector is hidden when only one is found. Detection reads that application's identity and preference domain before resolving its Python.
+
+Use **Open Python in Plugin Manager** and **Check again** when scripting is unavailable. A readiness failure also offers **Install anyway** with a warning. It bypasses the readiness check for component installation, but an absent or broken Python still prevents scripting until fixed in Glyphs. The companion does not install an alternative Python framework. FontTools and HarfBuzz used for export verification are supplied by the separate private server runtime.
 
 ## Install from Setup
 
@@ -31,7 +26,7 @@ In Beta 11, follow the same prerequisite steps manually and use Retry if setup f
    documents.
 2. Open the disk image, drag **Glyphs MCP.app** to **Applications**, and launch
    the installed copy.
-3. Choose **Install All** on Setup. The three Glyphs components are installed
+3. On Setup, choose your Glyphs 4 copy if a selector appears and check its detected Python. Choose **Install All**. The three Glyphs components are installed
    in one transaction, then Codex, Claude Code, Claude Desktop and Cursor are
    configured sequentially.
 4. Watch each card move through **Queued**, **Installing** and **Installed**.
@@ -67,7 +62,7 @@ do not need to configure shell Python paths or install sidecar packages.
 
 The server's private runtime does not replace the official Python module inside
 Glyphs. See the prerequisite steps above. Physical Intel testing is deferred;
-the scoped native VM evidence covers macOS 14.6.1 on arm64, not exact macOS 14.0.
+earlier core evidence covers macOS 14.6.1 on arm64, and signed 2.0.4 installation/export/live checks cover macOS 26.6.2 on arm64. Exact macOS 14.0 has not been qualified.
 
 System Git is required only for **Local Git** and **Public GitHub** references.
 **Last Saved** and **Font File** do not need it.

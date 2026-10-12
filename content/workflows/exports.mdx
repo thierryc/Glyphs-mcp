@@ -25,7 +25,7 @@ Variable export and TTF impose their own generation-flag constraints; use the
 [export contract](../reference/command-set.mdx#verified-font-export) for details.
 
 Generation runs against the saved snapshot in an external Glyphs worker. Outputs
-remain in private staging. Verification parses each file and checks required
+remain in private staging. In 2.0.4, FontTools table/container checks and HarfBuzz shaping run in the private server runtime; they do not require those packages in the default Glyphs Python. Glyphs still supplies native compilation. Verification parses each file and checks required
 tables, outline type, variable state and container. Requested shaping cases need
 the shaping capability; absent cases are not evidence of feature behavior.
 

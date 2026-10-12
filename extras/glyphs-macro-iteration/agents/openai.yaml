@@ -1,0 +1,4 @@
+interface:
+  display_name: "Glyphs Macro Iteration"
+  short_description: "Iterate visibly on workspace scripts inside Glyphs 4"
+  default_prompt: "Use $glyphs-macro-iteration with the existing scripting guidance to display my workspace script in Glyphs, verify each revision, and capture its embedded console output within my authorized scope."

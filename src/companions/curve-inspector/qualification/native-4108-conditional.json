@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "evidence": "independent adapter: ordinary and conditional families, native boundary selection, actual application and exact fixture reset; installed UI pending",
+  "host": {
+    "version": "4.1.1",
+    "build": "4108.0"
+  },
+  "workflow": "edit_cf45905455174b84a914c6abfcb70a50",
+  "result": {
+    "axes": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "constants": {
+      "sharp": 0,
+      "smooth": 100,
+      "star": 102
+    },
+    "engineVersion": "0.2.0",
+    "hostBuild": "4108.0",
+    "hostVersion": "4.1.1",
+    "masters": [
+      "MASTER0",
+      "MASTER1"
+    ],
+    "native-star": {
+      "application": {
+        "configuredInstances": 1,
+        "editCount": 4,
+        "evaluatedLocations": 19,
+        "maxMeasuredDeviationEm": 0.0005000000010000089,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "coverage": {
+        "axisIds": [
+          "a01"
+        ],
+        "boundaries": [
+          [
+            0,
+            0.5
+          ],
+          [
+            0,
+            0.5
+          ]
+        ],
+        "complete": true,
+        "configuredEvaluated": 1,
+        "configuredInstances": [
+          0
+        ],
+        "evaluated": 19,
+        "evidence": "sampled-native; continuous bounds apply only to each corresponding cubic pair",
+        "families": [
+          "alternate:9d36f8c73f1c",
+          "ordinary"
+        ],
+        "familyLayers": {
+          "alternate:9d36f8c73f1c": [
+            "6C23A65B-D11E-4CE3-B4D3-97D28FF02F67",
+            "8BD81765-76BB-40F4-9180-642BC037198E"
+          ],
+          "ordinary": [
+            "MASTER0",
+            "MASTER1"
+          ]
+        },
+        "familySelection": "native GSInstance.interpolatedFont; no custom substitution or linear interpolation",
+        "limit": 4096,
+        "locations": [
+          [
+            0
+          ],
+          [
+            0.0625
+          ],
+          [
+            0.125
+          ],
+          [
+            0.1875
+          ],
+          [
+            0.25
+          ],
+          [
+            0.3125
+          ],
+          [
+            0.375
+          ],
+          [
+            0.4375
+          ],
+          [
+            0.499999
+          ],
+          [
+            0.5
+          ],
+          [
+            0.500001
+          ],
+          [
+            0.5625
+          ],
+          [
+            0.625
+          ],
+          [
+            0.6875
+          ],
+          [
+            0.75
+          ],
+          [
+            0.8125
+          ],
+          [
+            0.875
+          ],
+          [
+            0.9375
+          ],
+          [
+            1
+          ]
+        ],
+        "region": [
+          [
+            0,
+            1
+          ]
+        ],
+        "requested": 19
+      },
+      "editCount": 4,
+      "fixtureResetVerified": true,
+      "maxEffectiveJoinMovementEm": 0.0005000000000000089,
+      "maxMeasuredDeviationEm": 0.0005000000010000089,
+      "status": "ok",
+      "storedCoordinatesPreserved": true
+    },
+    "nodes": [
+      {
+        "connection": 0,
+        "position": [
+          -200,
+          100
+        ],
+        "type": "line"
+      },
+      {
+        "connection": 0,
+        "position": [
+          -100,
+          40
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          -40,
+          0
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 100,
+        "position": [
+          0,
+          0
+        ],
+        "type": "curve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          39,
+          0
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          100,
+          40
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          200,
+          100
+        ],
+        "type": "curve"
+      }
+    ],
+    "primitiveType": "GSPath",
+    "sourceGeometryUnchanged": true,
+    "supertool-handles": {
+      "application": {
+        "configuredInstances": 1,
+        "editCount": 4,
+        "evaluatedLocations": 19,
+        "maxMeasuredDeviationEm": 0.0005000000010000004,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "coverage": {
+        "axisIds": [
+          "a01"
+        ],
+        "boundaries": [
+          [
+            0,
+            0.5
+          ],
+          [
+            0,
+            0.5
+          ]
+        ],
+        "complete": true,
+        "configuredEvaluated": 1,
+        "configuredInstances": [
+          0
+        ],
+        "evaluated": 19,
+        "evidence": "sampled-native; continuous bounds apply only to each corresponding cubic pair",
+        "families": [
+          "alternate:9d36f8c73f1c",
+          "ordinary"
+        ],
+        "familyLayers": {
+          "alternate:9d36f8c73f1c": [
+            "6C23A65B-D11E-4CE3-B4D3-97D28FF02F67",
+            "8BD81765-76BB-40F4-9180-642BC037198E"
+          ],
+          "ordinary": [
+            "MASTER0",
+            "MASTER1"
+          ]
+        },
+        "familySelection": "native GSInstance.interpolatedFont; no custom substitution or linear interpolation",
+        "limit": 4096,
+        "locations": [
+          [
+            0
+          ],
+          [
+            0.0625
+          ],
+          [
+            0.125
+          ],
+          [
+            0.1875
+          ],
+          [
+            0.25
+          ],
+          [
+            0.3125
+          ],
+          [
+            0.375
+          ],
+          [
+            0.4375
+          ],
+          [
+            0.499999
+          ],
+          [
+            0.5
+          ],
+          [
+            0.500001
+          ],
+          [
+            0.5625
+          ],
+          [
+            0.625
+          ],
+          [
+            0.6875
+          ],
+          [
+            0.75
+          ],
+          [
+            0.8125
+          ],
+          [
+            0.875
+          ],
+          [
+            0.9375
+          ],
+          [
+            1
+          ]
+        ],
+        "region": [
+          [
+            0,
+            1
+          ]
+        ],
+        "requested": 19
+      },
+      "editCount": 4,
+      "fixtureResetVerified": true,
+      "maxEffectiveJoinMovementEm": 0,
+      "maxMeasuredDeviationEm": 0.0005000000010000004,
+      "status": "ok",
+      "storedCoordinatesPreserved": false
+    }
+  }
+}

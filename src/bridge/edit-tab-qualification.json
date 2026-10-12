@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "capability": "document.edit-tab.open.v1",
+  "tool": "open_edit_tab",
+  "host": {
+    "identifier": "com.GeorgSeifert.Glyphs4",
+    "version": "4.1.1",
+    "build": "4108"
+  },
+  "bridgeCodeHash": "sha256:58c79d8288281835863e8366e11f9f6dc27dc4ffb750169334ecca014f989591",
+  "sidecarCodeHash": "sha256:6f3ad18100594a9405672fc74d526183318716739152c61505a3eb3fb9798447",
+  "mode": "development-links",
+  "publicTools": 19,
+  "focusedSourceTestsPassed": 259,
+  "nativeChecks": {
+    "blankTab": true,
+    "unicodeAndSlashProofText": true,
+    "orderedRepeatedGlyphs": true,
+    "explicitMaster": true,
+    "retryNoDuplicate": true,
+    "missingTargetRefusal": true,
+    "invalidContentsRefusal": true,
+    "keyConflictRefusal": true,
+    "outlineAndMetricsUnchanged": true,
+    "pathlessFont": true,
+    "pathlessNativeContextEdit": true,
+    "dirtyFlagUnchanged": true,
+    "noFontSave": true,
+    "visibleProofAndExistingTabsObserved": true,
+    "fixturesClosedWithoutSave": true
+  },
+  "scope": "Glyphs 4.1.1 build 4108; imported disposable TTF and pathless newly created font; no working-font edits or saves",
+  "qualificationLimits": [
+    "Multiple-master targeting and native callback failure paths are covered by source tests, not this single-master editor fixture.",
+    "Headless runtime rejects the capability; no window lifecycle claim for glyphs-cli.",
+    "No new public release or installer notarization is claimed."
+  ]
+}

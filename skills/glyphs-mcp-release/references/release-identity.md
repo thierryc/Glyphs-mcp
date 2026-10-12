@@ -5,7 +5,7 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current unpublished target is product **2.0.4**, release **2.0.4**, stable
+The published baseline is product **2.0.4**, release **2.0.4**, stable
 channel, beta number **0**, installer build **61**: **eleven managed skills**, twenty MCP tools and up to 13
 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
@@ -21,12 +21,13 @@ These are initialization-time file fingerprints, not in-memory code hashes.
 Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
-Use the helper's release tag and channel URLs. This candidate selects
+Use the helper's release tag and channel URLs. The published baseline uses
 `v2.0.4`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
-and planned `Glyphs-MCP-2.0.4.dmg` / `Glyphs-MCP-2.0.4.zip`. Its signing and
-native acceptance must be verified separately before publication.
-The published stable 2.0.1 release and its `V2.0.1-RELEASE.md` evidence remain intact;
-that evidence does not qualify this candidate. Source identity alone does not
+and `Glyphs-MCP-2.0.4.dmg` / `Glyphs-MCP-2.0.4.zip`. Exact signing and native
+acceptance are recorded in `V2.0.4-RELEASE.md` and the build-61 publication report.
+The signed `v2.0.4` tag and distribution remain immutable; later source documentation
+can have a different skill digest. Rebuild and qualify the next candidate separately.
+Historical evidence retains its original scope. Source identity alone does not
 authorize publication. The separate `lit/v2-beta/appcast.xml` serves the
 published stable update to existing beta installations. New beta releases use
 versioned beta filenames, are GitHub prereleases with `make_latest=false`, and

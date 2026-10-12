@@ -50,9 +50,10 @@ export default function Home(): React.JSX.Element {
             <h2 id="requirements-title">Start with Glyphs 4</h2>
             <p>
               Install Glyphs 4, launch it with your license or Continue Trial, and
-              install Python through Glyphs' official Plugin Manager. Select the
-              installed <strong>(Glyphs)</strong> Python under Settings → Addons,
-              then save your work and quit Glyphs before installing the MCP components.
+              install Python through Glyphs' official Plugin Manager, then relaunch Glyphs.
+              Setup detects the default module and shows its Python version. If several
+              Glyphs 4 copies are found, choose the one you use. Save your work and quit
+              Glyphs before installing the MCP components.
             </p>
             <dl className={styles.requirements}>
               <div><dt>Mac</dt><dd>macOS 14 or later</dd></div>
@@ -72,7 +73,7 @@ export default function Home(): React.JSX.Element {
             <article className={`${styles.versionCard} ${styles.currentCard}`}>
               <p className={styles.eyebrow}>Primary guide · Glyphs 4</p>
               <h2>v2 <small>{gmcpVersion}</small></h2>
-              <p>Twenty tools, save-free script execution with recovery, direct Edit tabs and unsaved font copies. Curve Inspector explains when a repair changes nothing.</p>
+              <p>Twenty tools, save-free scripts with recovery, direct Edit tabs and unsaved font copies. Setup detects the default Glyphs Python; font export verification uses the private runtime.</p>
               <Link className="button button--primary button--lg" to="/docs/v2/">Read the v2 guide</Link>
               <p className={styles.secondaryLink}><Link to="/docs/v2/getting-started/migrate-from-v1">Moving from v1 to v2</Link></p>
             </article>

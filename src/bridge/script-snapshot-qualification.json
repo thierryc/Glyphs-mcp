@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "qualification": "save-free-current-state-scripts",
+  "mode": "development-links",
+  "host": {
+    "identifier": "com.GeorgSeifert.Glyphs4",
+    "version": "4.1.1",
+    "build": "4108"
+  },
+  "publicTools": 20,
+  "scriptPreparationVersion": 3,
+  "bridgeHash": "sha256:9b97ab3293e8697874f0b47de454ba917e4ecc19ecb66cd9faaea2ee2e04c472",
+  "sidecarHash": "sha256:320d68f3bf920ae8870de88cc59c0bc0e06935850b5d027ca2ee389e8b7eb516",
+  "sourceTests": {
+    "uniqueFocusedCases": 312,
+    "passed": true,
+    "scope": "Script contracts, real bridge/core fakes, workflows, recovery, duplication, documents, transport, protocol, builder, identities, catalog, skills and docs; not the full application suite."
+  },
+  "native": {
+    "passed": true,
+    "checks": [
+      {
+        "check": "twenty-tool public transport",
+        "passed": true
+      },
+      {
+        "check": "running exact candidate",
+        "passed": true
+      },
+      {
+        "check": "snapshot negotiation",
+        "passed": true
+      },
+      {
+        "check": "snapshot-init-20261010-r2 offers save-free Run",
+        "passed": true
+      },
+      {
+        "check": "pathless initialization succeeded",
+        "passed": true
+      },
+      {
+        "check": "unsaved duplication preserves contents",
+        "passed": true
+      },
+      {
+        "check": "duplication retry retains original",
+        "passed": true
+      },
+      {
+        "check": "snapshot-prior-copy-edit-20261010-r2 offers save-free Run",
+        "passed": true
+      },
+      {
+        "check": "pre-existing copy edit created",
+        "passed": true
+      },
+      {
+        "check": "snapshot-failure-20261010-r2 offers save-free Run",
+        "passed": true
+      },
+      {
+        "check": "failure retains recovery",
+        "passed": true
+      },
+      {
+        "check": "partial change measured",
+        "passed": true
+      },
+      {
+        "check": "source copy remains independent",
+        "passed": true
+      },
+      {
+        "check": "native restore completed",
+        "passed": true
+      },
+      {
+        "check": "earlier unsaved outlines and metrics restored",
+        "passed": true
+      },
+      {
+        "check": "snapshot-verify-20261010-r2 offers save-free Run",
+        "passed": true
+      },
+      {
+        "check": "native metadata and feature verification",
+        "passed": true
+      },
+      {
+        "check": "unsaved proof tab opens",
+        "passed": true
+      },
+      {
+        "check": "working documents untouched",
+        "passed": true
+      },
+      {
+        "check": "working source files unchanged",
+        "passed": true
+      }
+    ],
+    "savedPathRestored": true,
+    "savedDirtyStateRestored": true,
+    "savedSourceBytesUnchanged": true,
+    "savedSourceDuplicatedWithoutSave": true,
+    "cleanPathlessFailureRestored": true,
+    "editTabVisiblyVerified": true,
+    "originalDocumentsPreserved": true,
+    "workingFontsSaved": false,
+    "disposableFontsClosed": true,
+    "feedbackOnlySidecarUpdateAfterTrials": true
+  },
+  "limits": [
+    "Recovery copies are in bridge memory and do not survive Glyphs restarts. Keep or verified Save releases them.",
+    "Restoration is whole-font replacement and clears Undo history; later edits and external effects are excluded.",
+    "Native saved fixture was dirty after Glyphs normalized it on opening; clean saved-state restoration was source-tested. Clean pathless restoration was native-tested.",
+    "Native fixtures cover basic paths, metrics, features, user data and master metadata; this is not exhaustive qualification of every plugin-specific object or external asset.",
+    "Typed compilation/export and other saved-file jobs retain their existing prerequisites. No public release or online publication was made."
+  ],
+  "nativeTestedSidecarHash": "sha256:e75d7edf959d6643d8252c5b7c8e0c7b1a68cb6fa99b0d190c9f72e3ae039906"
+}

@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "host": {
+    "version": "4.1.1",
+    "build": 4108
+  },
+  "pluginVersion": "0.4.0",
+  "engine": {
+    "schemaVersion": 1,
+    "engineVersion": "0.4.0",
+    "upstreamRevision": "ccc71ee39ef72c0c34267410d2b9ebee454ec98c",
+    "files": {
+      "curve_repair/NOTICE": "6c684688bdc0ef5631f03b0efd9750ca0456f67f543892483892c99a4083b73c",
+      "curve_repair/__init__.py": "d0a94a694d8ce6f2b14dbb14350539d21e4d3e457bc1b0d03d78e8cf037bb749",
+      "curve_repair/actions.py": "f8cce09429b0bea8103ee768855adfdb285cc709b696bb2a4504b1717f3ef15f",
+      "curve_repair/coverage.py": "3d794a588223fbb752d3ca8a7b7542c9f5208821cdad6bc1fad28ee81b1e5be2",
+      "curve_repair/geometry.py": "d1963da4e073933a58ab4bebac965cd05dd51585462911d037799f8b840a0dc1",
+      "curve_repair/joins.py": "ecbc2efb3994b850b7327a95075a47313527580e6f04551e8a1b07ef6b077f1e",
+      "curve_repair/licenses/SuperTool/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "curve_repair/native.py": "a7344d8e482e5a8d0c1f31a9a0ff3e2c7d6f54c0280b9e9d805e96f5a142e990",
+      "curve_repair/outline.py": "65cb9f4122c12080d5f93c069bb1b6fd4c428815fc39c05e13486ba01c77dc80",
+      "curve_repair/provenance.py": "264d95097a0cf097ac176e778a05d641d6854c9693ed593153031b62d4c4da5e",
+      "curve_repair/supertool.py": "20237a7bf378a8db389dd777fbd54e9b2fbcf316507580310ca866f4b6fe9cd8",
+      "curve_core/__init__.py": "0c253eb40f4f38641e01ee9db35a18832e4e24da0da3dd2779d09c0df2bb7f5f",
+      "curve_core/geometry.py": "ee1e6f80af738a7a4f5162da7b896a3f7e7201aedd4dd9fcade44acb4922ec88"
+    },
+    "sourceDigest": "591dfe18568de0c7a3dd9eae88003278315756d15f1508a688a8b95da2691cf2"
+  },
+  "controllerHash": "f70983a9dd4d18c3833e145b596b85e190f6fd79c39c27a1c1346d40eda0ceb9",
+  "bundleIdentifier": "com.ap.cx.glyphs-curve-inspector",
+  "companionId": "curve-inspector",
+  "installedFilesMatched": 23,
+  "loadedBridgeSession": "a14bba53867244d3a1895a76aaa4c9fa",
+  "nativeDetached": {
+    "fixture": {
+      "engine": {
+        "schemaVersion": 1,
+        "engineVersion": "0.4.0",
+        "upstreamRevision": "ccc71ee39ef72c0c34267410d2b9ebee454ec98c",
+        "files": {
+          "curve_repair/NOTICE": "6c684688bdc0ef5631f03b0efd9750ca0456f67f543892483892c99a4083b73c",
+          "curve_repair/__init__.py": "d0a94a694d8ce6f2b14dbb14350539d21e4d3e457bc1b0d03d78e8cf037bb749",
+          "curve_repair/actions.py": "f8cce09429b0bea8103ee768855adfdb285cc709b696bb2a4504b1717f3ef15f",
+          "curve_repair/coverage.py": "3d794a588223fbb752d3ca8a7b7542c9f5208821cdad6bc1fad28ee81b1e5be2",
+          "curve_repair/geometry.py": "d1963da4e073933a58ab4bebac965cd05dd51585462911d037799f8b840a0dc1",
+          "curve_repair/joins.py": "ecbc2efb3994b850b7327a95075a47313527580e6f04551e8a1b07ef6b077f1e",
+          "curve_repair/licenses/SuperTool/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "curve_repair/native.py": "a7344d8e482e5a8d0c1f31a9a0ff3e2c7d6f54c0280b9e9d805e96f5a142e990",
+          "curve_repair/outline.py": "65cb9f4122c12080d5f93c069bb1b6fd4c428815fc39c05e13486ba01c77dc80",
+          "curve_repair/provenance.py": "264d95097a0cf097ac176e778a05d641d6854c9693ed593153031b62d4c4da5e",
+          "curve_repair/supertool.py": "20237a7bf378a8db389dd777fbd54e9b2fbcf316507580310ca866f4b6fe9cd8",
+          "curve_core/__init__.py": "0c253eb40f4f38641e01ee9db35a18832e4e24da0da3dd2779d09c0df2bb7f5f",
+          "curve_core/geometry.py": "ee1e6f80af738a7a4f5162da7b896a3f7e7201aedd4dd9fcade44acb4922ec88"
+        },
+        "sourceDigest": "591dfe18568de0c7a3dd9eae88003278315756d15f1508a688a8b95da2691cf2"
+      },
+      "detachedNative": [
+        {
+          "layer": "MASTER0",
+          "bakedPosition": [
+            -0.5,
+            0
+          ],
+          "regularSmooth": true,
+          "g2": true
+        },
+        {
+          "layer": "MASTER1",
+          "bakedPosition": [
+            -0.5,
+            0
+          ],
+          "regularSmooth": true,
+          "g2": true
+        }
+      ],
+      "fontTabScope": "Whole font · 1",
+      "liveGeometryUnchanged": true
+    },
+    "realGlyph": {
+      "glyph": "o",
+      "layer": "563612A6-431E-41F8-94C8-8E6AF4BD25DB",
+      "requested": 8,
+      "convertedToRegular": 8,
+      "handleAdjustmentsSkipped": [
+        [
+          3,
+          "Star resolved; handle adjustment skipped: Adjacent repairs need conflicting handle positions"
+        ],
+        [
+          9,
+          "Star resolved; handle adjustment skipped: No well-conditioned positive G2 handle solution."
+        ],
+        [
+          12,
+          "Star resolved; handle adjustment skipped: No well-conditioned positive G2 handle solution."
+        ],
+        [
+          18,
+          "Star resolved; handle adjustment skipped: Adjacent repairs need conflicting handle positions"
+        ],
+        [
+          21,
+          "Star resolved; handle adjustment skipped: Adjacent repairs need conflicting handle positions"
+        ]
+      ],
+      "fileUnchanged": true
+    },
+    "workflow": "edit_163cf2e595264e3489bf708c0195ee14"
+  },
+  "nativeUI": {
+    "route": "Edit > Inspect & Repair; actual UI button clicks",
+    "dimensions": {
+      "star": [
+        280,
+        146
+      ],
+      "handles": [
+        280,
+        174
+      ]
+    },
+    "previewControls": 0,
+    "scopeMenus": 0,
+    "starDefault": true,
+    "tunniCheckedByDefault": true,
+    "wholeFontNoSelection": true,
+    "allMastersStarEdits": 2,
+    "allMastersRegularConversionEdits": 2,
+    "regularEffectiveJoin": [
+      -0.5,
+      0
+    ],
+    "resultPersistsAfterRefresh": true,
+    "perGlyphNativeUndo": true,
+    "undoGeometryReads": [
+      {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "path",
+              "glyph": "test",
+              "layer": "MASTER0",
+              "index": 0,
+              "limit": 256
+            },
+            "values": {
+              "index": 0,
+              "closed": false,
+              "locked": false,
+              "pathHash": "sha256:c5c94a04eacc9e03b591fb02e2bbe86ce80b05e8dd56d0fafe4bfee03e57c880",
+              "nodes": [
+                {
+                  "index": 0,
+                  "x": -200,
+                  "y": 100,
+                  "type": "line",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 1,
+                  "x": -100,
+                  "y": 40,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 2,
+                  "x": -40,
+                  "y": 0,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 3,
+                  "x": 0,
+                  "y": 0,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 4,
+                  "x": 39,
+                  "y": 0,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 5,
+                  "x": 100,
+                  "y": 40,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 6,
+                  "x": 200,
+                  "y": 100,
+                  "type": "curve",
+                  "smooth": false,
+                  "name": null
+                }
+              ],
+              "total": 7,
+              "returned": 7,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      },
+      {
+        "ok": true,
+        "data": [
+          {
+            "entity": {
+              "kind": "path",
+              "glyph": "test",
+              "layer": "MASTER1",
+              "index": 0,
+              "limit": 256
+            },
+            "values": {
+              "index": 0,
+              "closed": false,
+              "locked": false,
+              "pathHash": "sha256:c5c94a04eacc9e03b591fb02e2bbe86ce80b05e8dd56d0fafe4bfee03e57c880",
+              "nodes": [
+                {
+                  "index": 0,
+                  "x": -200,
+                  "y": 100,
+                  "type": "line",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 1,
+                  "x": -100,
+                  "y": 40,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 2,
+                  "x": -40,
+                  "y": 0,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 3,
+                  "x": 0,
+                  "y": 0,
+                  "type": "curve",
+                  "smooth": true,
+                  "name": null
+                },
+                {
+                  "index": 4,
+                  "x": 39,
+                  "y": 0,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 5,
+                  "x": 100,
+                  "y": 40,
+                  "type": "offcurve",
+                  "smooth": false,
+                  "name": null
+                },
+                {
+                  "index": 6,
+                  "x": 200,
+                  "y": 100,
+                  "type": "curve",
+                  "smooth": false,
+                  "name": null
+                }
+              ],
+              "total": 7,
+              "returned": 7,
+              "complete": true,
+              "nextCursor": null
+            }
+          }
+        ]
+      }
+    ],
+    "selectedCurveHandleStar": {
+      "nodeIndex": 4,
+      "connectionChangedOnJoin": 3,
+      "activeMasterOnly": true,
+      "verifiedOnEarlierSameVersionCandidate": true,
+      "nativeStarVisible": true
+    },
+    "workingFontOutlineMutation": false
+  },
+  "initialJobFailure": {
+    "workflow": "edit_8c82e333f5ca4136a4c2be72c150fe60",
+    "reason": "MCP invocation disables native Undo; direct apply_steps refused before writes.",
+    "freshReads": "Both masters retained original source geometry.",
+    "workflowResolution": "Later state reported changes kept; no model-issued retry after rejection was executed."
+  },
+  "limits": [
+    "Line/curve raindrop conversion into regular nodes not qualified",
+    "Native star conversion and regular baking do not assert interpolation or export coverage",
+    "Handle balancing/adjustments can be skipped; curve/curve stars still resolve",
+    "All masters excludes special and backup layers"
+  ]
+}

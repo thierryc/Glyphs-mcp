@@ -1,7 +1,7 @@
 # Permanent desktop application
 
-> Current stable 2.0.3/build 59 is signed, notarized and published.
-> See [release qualification](../V2.0.3-RELEASE.md) for the focused checks and retained
+> Current stable 2.0.4/build 61 is signed, notarized and published.
+> See [release qualification](../V2.0.4-RELEASE.md) for the focused checks and retained
 > earlier core acceptance. Candidate checkpoints below are historical.
 
 
@@ -15,11 +15,11 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout targets the published 2.0.3/build 59 release with twenty MCP
-tools and eleven managed skills. Sidecar and bridge product versions are 2.0.3;
+This checkout targets the published 2.0.4/build 61 release with twenty MCP
+tools and eleven managed skills. Sidecar and bridge product versions are 2.0.4;
 interface revision and bridge protocol remain 1. The latest published stable
-release is 2.0.3/build 59; earlier signing and acceptance evidence retains its original build scope.
-See [2.0.3 release evidence](../V2.0.3-RELEASE.md).
+release is 2.0.4/build 61; earlier signing and acceptance evidence retains its original build scope.
+See [2.0.4 release evidence](../V2.0.4-RELEASE.md).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also

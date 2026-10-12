@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-09",
+  "engineDigest": "c309944281925edc7b270a626d621f492a7ed9a8855218a59d42a2f558e4c060",
+  "host": {
+    "build": "4108",
+    "identifier": "com.GeorgSeifert.Glyphs4",
+    "version": "4.1.1"
+  },
+  "installedFiles": {
+    "Contents/Info.plist": "e26ae2327f80fa4163df69dc0b870ddc334cc932a0ec822ff62b216adab8ccfb",
+    "Contents/MacOS/plugin": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "Contents/Resources/GlyphsSDK-LICENSE.txt": "bb28c48e3e078166e91cfc2b6db7ffebb8a0973b9e23b3df060561292d8d69ec",
+    "Contents/Resources/GlyphsSDK-SOURCE.json": "2f925690be849f3212532fb59ed19617ec14553ab1cc027bba632200437fe49f",
+    "Contents/Resources/curve-repair-engine.json": "934f06547231f0b78e5d9f4a984967bab1ccff7a6c8fc50f66b2c4d4891778b0",
+    "Contents/Resources/curve_core/__init__.py": "0c253eb40f4f38641e01ee9db35a18832e4e24da0da3dd2779d09c0df2bb7f5f",
+    "Contents/Resources/curve_core/geometry.py": "ee1e6f80af738a7a4f5162da7b896a3f7e7201aedd4dd9fcade44acb4922ec88",
+    "Contents/Resources/curve_repair/NOTICE": "6c684688bdc0ef5631f03b0efd9750ca0456f67f543892483892c99a4083b73c",
+    "Contents/Resources/curve_repair/__init__.py": "5599253c519ad1146ac9731101e404864e6d237068753b4bd2814f68220edf22",
+    "Contents/Resources/curve_repair/coverage.py": "3d794a588223fbb752d3ca8a7b7542c9f5208821cdad6bc1fad28ee81b1e5be2",
+    "Contents/Resources/curve_repair/geometry.py": "e4cabff8b6b38120af9c2a28976375d3ce1fdd05dfe5ec30f532c24eadc33a60",
+    "Contents/Resources/curve_repair/licenses/SuperTool/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "Contents/Resources/curve_repair/native.py": "cbb27147f3077b99462c8faf72e117be8b12466c79d478f3b9aee21fa2aa102e",
+    "Contents/Resources/curve_repair/outline.py": "65cb9f4122c12080d5f93c069bb1b6fd4c428815fc39c05e13486ba01c77dc80",
+    "Contents/Resources/curve_repair/provenance.py": "264d95097a0cf097ac176e778a05d641d6854c9693ed593153031b62d4c4da5e",
+    "Contents/Resources/curve_repair/supertool.py": "20237a7bf378a8db389dd777fbd54e9b2fbcf316507580310ca866f4b6fe9cd8",
+    "Contents/Resources/glyphs_curve_inspector/__init__.py": "43470dfb19b4badbe6c2edad83efea0fbffc657af6ac66ad2310afdbc86207c2",
+    "Contents/Resources/glyphs_curve_inspector/controller.py": "1150d15447841659e61ed6a2155754696c995761d8ae64a95da513c8db7b4889",
+    "Contents/Resources/glyphs_curve_inspector/plugin.py": "69a43d540626ee8e425d0b82fddba97baad6694a80347898359edac9e7beb477",
+    "Contents/Resources/glyphs_mcp_companions.py": "7bed7c161f19a0ea913cba2aeab18aa53896ff889ffef5638a737c1ef275d358",
+    "Contents/Resources/plugin.py": "69a43d540626ee8e425d0b82fddba97baad6694a80347898359edac9e7beb477"
+  },
+  "installedPath": "<maintainer-home>/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter",
+  "loadedCompanion": {
+    "capabilities": [
+      "curve.measure",
+      "curve.overlay",
+      "curve.repair.apply",
+      "curve.repair.preview"
+    ],
+    "id": "curve-inspector",
+    "version": "0.2.0"
+  },
+  "nativeUI": {
+    "afterG2": [
+      true,
+      true
+    ],
+    "application": {
+      "configuredInstances": 1,
+      "editCount": 2,
+      "evaluatedLocations": 9,
+      "maxMeasuredDeviationEm": 0.0005000000010000004,
+      "status": "verified"
+    },
+    "beforeAfterAndCombDrawn": true,
+    "beforeG2": [
+      false,
+      false
+    ],
+    "fixture": "CurveInspectorRepairFixture-UI.glyphs",
+    "fixtureClosedWithoutSaving": true,
+    "menu": "Edit \u2192 Inspect & Repair\u2026",
+    "method": "native-star",
+    "panelOpened": true,
+    "previewEdits": 2,
+    "previewSourceDirty": false,
+    "scope": "All smooth joins \u00b7 contributing layers",
+    "sourceLayers": [
+      "MASTER0",
+      "MASTER1"
+    ],
+    "storedCoordinatesPreserved": true,
+    "undo": {
+      "afterUndoMenu": "Redo Change Connection",
+      "afterUndoUndoDisabled": true,
+      "exactRestorationIndependentlyMeasured": false,
+      "menu": "Undo Change Connection",
+      "performed": true
+    }
+  },
+  "pluginVersion": "0.2.0",
+  "qualificationLimits": [
+    "Native installed UI application qualified on the two-master ordinary fixture only. Broader adapter records are independent evidence.",
+    "Redo execution, background-content repair and native context-menu interaction require further UI qualification.",
+    "Sampling is finite evidence, not a global designspace proof."
+  ],
+  "resolvedNativeFailures": [
+    {
+      "error": "objc.BadPrototypeError: queue:check: expected 2 arguments",
+      "resolution": "Rename native callback queue_check_ to queueCheck_; selector-arity regression test added."
+    },
+    {
+      "error": "Detached native copying loses existing background ownership IDs",
+      "resolution": "Restore only missing ownership metadata on detached backgrounds, then require full exact model equality; geometry loss still refused."
+    }
+  ],
+  "schemaVersion": 1,
+  "workingFontEdits": false
+}

@@ -1,0 +1,143 @@
+{
+  "behavior": {
+    "adjacentJoins": {
+      "certifiedBoundDisplayedUnits": 58.6055,
+      "joins": [
+        3,
+        6
+      ],
+      "limitUnits": 100,
+      "masters": 2,
+      "method": "default-node",
+      "repaired": 4,
+      "repeatAlreadySmooth": 4,
+      "tunniRefusedAndNativeFallbackUsed": true
+    },
+    "defaultNodeAllMasters": {
+      "converted": 2,
+      "limitUnits": 1,
+      "repeatAlreadySmooth": 2,
+      "storedJoin": [
+        -0.5,
+        0
+      ],
+      "tunniRefusedWithinBudgetAndNativeFallbackValidated": true
+    },
+    "lineCurve": {
+      "alignedControls": [
+        [
+          4,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "defaultBoundUnits": 4.000000001,
+      "defaultLimitOneRefused": true,
+      "defaultLimitTenRepaired": 2,
+      "expandedRaindropMaterializationRefused": true,
+      "nativeStarRepaired": 2,
+      "starBoundUnits": 0.2123688944987369,
+      "starLimitUnits": 1,
+      "storedJoin": [
+        0,
+        0
+      ],
+      "storedNodeCount": 5
+    },
+    "masterRejection": {
+      "blockedIn": "MASTER1",
+      "correspondingMASTER0AlsoUnchanged": true,
+      "limitUnits": 2.048
+    },
+    "selectedOffcurveOnly": {
+      "allMasters": false,
+      "node": 4,
+      "path": 0,
+      "repairedAdjoiningJoin": 1
+    },
+    "starAllMasters": {
+      "boundUnits": 0.500000001,
+      "limitUnits": 1,
+      "nativeStarVisibleOnCanvas": true,
+      "repaired": 2,
+      "storedCoordinatesPreserved": true
+    },
+    "tooSmallLimit": {
+      "blocked": 1,
+      "limitUnits": 0.1,
+      "sourceUnchanged": true
+    },
+    "undo": {
+      "conversionSingleUndoRestoresBothMasters": true,
+      "exactConnectionsAlsoVerifiedInsideNativeCommit": true,
+      "originalTypedPathHashAfterTwoUndos": "sha256:c5c94a04eacc9e03b591fb02e2bbe86ce80b05e8dd56d0fafe4bfee03e57c880",
+      "starSingleUndoRestoresBothMasters": true
+    }
+  },
+  "bundleIdentifier": "com.ap.cx.glyphs-curve-inspector",
+  "cleanup": "Four owned disposable fixtures closed; all saved baselines retained. LeftyNote reopened clean after authorized Save.",
+  "companionId": "curve-inspector",
+  "controllerHash": "e228b02558079e9daaffd714b512b1cf4b77a21cfdf09c18305277354d39198c",
+  "date": "2026-10-10",
+  "detachedEvidence": "native-4108-detached-0.5.0.json",
+  "engine": {
+    "engineVersion": "0.5.0",
+    "files": {
+      "curve_core/__init__.py": "0c253eb40f4f38641e01ee9db35a18832e4e24da0da3dd2779d09c0df2bb7f5f",
+      "curve_core/geometry.py": "ee1e6f80af738a7a4f5162da7b896a3f7e7201aedd4dd9fcade44acb4922ec88",
+      "curve_repair/NOTICE": "6c684688bdc0ef5631f03b0efd9750ca0456f67f543892483892c99a4083b73c",
+      "curve_repair/__init__.py": "a9f530dbce95e9620ead2008abe417585677274c29138f6889b56f29af95edb4",
+      "curve_repair/actions.py": "5ba860a11433efcb86622c26cd88217fe4320104316c07eba2453e66f93e1d9c",
+      "curve_repair/coverage.py": "3d794a588223fbb752d3ca8a7b7542c9f5208821cdad6bc1fad28ee81b1e5be2",
+      "curve_repair/geometry.py": "c81248afdab15205a721bb015f6048c96e43b8c18d1994da7eae32678e6fe1c4",
+      "curve_repair/joins.py": "ecbc2efb3994b850b7327a95075a47313527580e6f04551e8a1b07ef6b077f1e",
+      "curve_repair/licenses/SuperTool/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "curve_repair/native.py": "a7344d8e482e5a8d0c1f31a9a0ff3e2c7d6f54c0280b9e9d805e96f5a142e990",
+      "curve_repair/outline.py": "65cb9f4122c12080d5f93c069bb1b6fd4c428815fc39c05e13486ba01c77dc80",
+      "curve_repair/provenance.py": "264d95097a0cf097ac176e778a05d641d6854c9693ed593153031b62d4c4da5e",
+      "curve_repair/supertool.py": "20237a7bf378a8db389dd777fbd54e9b2fbcf316507580310ca866f4b6fe9cd8"
+    },
+    "schemaVersion": 1,
+    "sourceDigest": "8c637fe1c5f878cc9d1874d2f4d17632ecc087ab9ff078921daa363b84ea2d5f",
+    "upstreamRevision": "ccc71ee39ef72c0c34267410d2b9ebee454ec98c"
+  },
+  "host": {
+    "build": 4108,
+    "version": "4.1.1"
+  },
+  "installedFilesMatched": 23,
+  "limits": [
+    "No general interpolation or export verification",
+    "Curve-to-line direction qualified by detached native trials, not this UI fixture",
+    "Locks, stale guards and failure compensation verified with API doubles",
+    "Expanded raindrop materialization, expanded hint and stroke coverage remain unsupported"
+  ],
+  "loadedBridgeSession": "658e01ceb3694da8981abf2cf1dd36b5",
+  "pluginVersion": "0.5.0",
+  "schemaVersion": 1,
+  "staticTests": 132,
+  "ui": {
+    "allMastersInitial": false,
+    "documentSwitchResets2048UPM": 2.048,
+    "fixedBothModes": true,
+    "invalidZeroDisablesApply": true,
+    "maxChangeInitial1000UPM": 1,
+    "nativeSegmentedControl": true,
+    "noPreviewDisclosureOrTunniControl": true,
+    "overlayDisabledDuringApplication": true,
+    "panelContentPoints": [
+      280,
+      146
+    ],
+    "resultPersistsAfterCallbacks": true,
+    "scopeFontEmpty": "Whole font \u00b7 1 \u00b7 Current master",
+    "scopeSelectedHandle": "test \u00b7 selected outlines \u00b7 This layer",
+    "starInitial": true
+  },
+  "workingFontAuthorizedSavedHash": "0a321d85e2cf2cb74e8a491bac8f87957fdac8e3d18d57c92dc1e5514dc9a910",
+  "workingFontFileUnchangedSinceAuthorizedSave": true,
+  "workingFontOutlineEditsByAgent": false
+}

@@ -1,8 +1,19 @@
 # Lean v2 qualification records
 
-For the published stable release, see [2.0.1 qualification](../V2.0.1-RELEASE.md).
-The unpublished [2.0.2/build 57 preparation](../V2.0.2-RELEASE.md) records its
-separate checks and remaining distribution gates.
+For the published stable release, see [2.0.4 qualification](../V2.0.4-RELEASE.md)
+and [build 61 publication](2.0.4-build61-published.md). Its final source gate passed
+2,952 Python tests (two optional skips) and 263 desktop tests; exact signed VM
+installation, six static exports and live bridge/sidecar checks passed.
+
+The installation investigation is recorded in [Python detection](python-detection-20261011.md),
+[the fresh-install Python matrix](python-matrix-vm-20261011.md),
+[export verification](fonttools-export-fix-20261012.md),
+[application-copy selection](glyphs-copy-selector-20261012.md) and
+[installation diagnostics](installation-logging-20261012.md).
+[Private build 60](2.0.4-build60-distribution.md) is a distinct earlier candidate;
+its hashes and limits do not describe the published build 61.
+
+[Repository consolidation](repository-cleanup-20261012.md) records the next-development baseline.
 The reports below are historical snapshots. Beta guides and validation notes
 removed from the current tree remain available in the
 [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).

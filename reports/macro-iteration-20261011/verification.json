@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-11",
+  "application": "com.GeorgSeifert.Glyphs4",
+  "installedVersion": "4.2",
+  "installedBuild": "4201",
+  "source": "workspace_marker.py",
+  "sourceText": "print(\"GLYPHS_WORKSPACE_MARKER_20261011_7c4e92\")\n",
+  "directFileOpen": {
+    "passed": false,
+    "observedAlert": "The document \u201cworkspace_marker.py\u201d could not be opened. Glyphs cannot open files in the \u201cPython script\u201d format."
+  },
+  "workspaceLoading": {
+    "passed": true,
+    "route": "New uniquely named symlink in Glyphs 4/Macros pointing to workspace source; select its sidebar row",
+    "link": "<maintainer-home>/Library/Application Support/Glyphs 4/Macros/Workspace Marker 20261011 7c4e92.py",
+    "observedResolvedPath": "<checkout>/reports/macro-iteration-20261011/workspace_marker.py",
+    "displayedSourceMatched": true,
+    "explicitReloadNeeded": false
+  },
+  "execution": {
+    "route": "Scripting Window Run toolbar button",
+    "runs": 1,
+    "embeddedConsoleText": "GLYPHS_WORKSPACE_MARKER_20261011_7c4e92\n",
+    "captureMethod": "Computer Use accessibility text entry area",
+    "passed": true,
+    "floatingConsoleOpenedAfterRun": "empty; did not mirror embedded console history"
+  },
+  "scope": {
+    "fontAccessInScript": false,
+    "serverChanges": false,
+    "skillCreated": false,
+    "existingMacroSourceEdited": false,
+    "consoleCleared": false,
+    "incidentalUiChange": "A misplaced coordinate click enabled Activate Breakpoints; restored it to off before running marker."
+  },
+  "limits": [
+    "Editor save-through-symlink and long-output capture were not tested.",
+    "An existing traceback was readable through accessibility; this check did not generate a new traceback.",
+    "Workspace marker and named Macros symlink retained for reproduction; revised marker remains displayed with embedded output.",
+    "Qualification applies to the observed Glyphs 4.2 (4201) session, not a guarantee for other builds."
+  ],
+  "iterationCycle": {
+    "passed": true,
+    "previousMarker": "GLYPHS_WORKSPACE_MARKER_20261011_7c4e92",
+    "revisedMarker": "GLYPHS_WORKSPACE_MARKER_20261011_7c4e92_REV2",
+    "currentSourceText": "print(\"GLYPHS_WORKSPACE_MARKER_20261011_7c4e92_REV2\")\n",
+    "editorSelectedBeforeWorkspaceEdit": true,
+    "displayedSourceAutomaticallyRefreshed": true,
+    "reselectionRequired": false,
+    "reloadScriptsRequired": false,
+    "sourceConfirmedBeforeExecution": true,
+    "authorizedRerunsThisCheck": 1,
+    "newConsoleOutput": "GLYPHS_WORKSPACE_MARKER_20261011_7c4e92_REV2\n",
+    "captureMethod": "Computer Use accessibility embedded console text entry area",
+    "existingConsoleHistoryPreserved": true,
+    "baselineNote": "Console already contained two original markers and an unrelated P12 Autosave Diagnostic FileNotFoundError before this check. No unrelated script was executed by this check.",
+    "fontAccessInScript": false,
+    "serverChanges": false,
+    "skillCreated": false
+  }
+}

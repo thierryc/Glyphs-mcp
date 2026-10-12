@@ -1,0 +1,782 @@
+{
+  "cases": [
+    {
+      "apply": {
+        "configuredInstances": 1,
+        "editCount": 2,
+        "evaluatedLocations": 9,
+        "maxMeasuredDeviationEm": 0.00021236889449873688,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "closed": false,
+      "grid": 1,
+      "length": 200,
+      "repeat": "noop",
+      "reverse": false,
+      "scale": 0.1,
+      "summary": {
+        "coverage": {
+          "axisIds": [
+            "a01"
+          ],
+          "boundaries": [],
+          "complete": true,
+          "configuredEvaluated": 1,
+          "configuredInstances": [
+            0
+          ],
+          "evaluated": 9,
+          "evidence": "sampled-native; continuous bounds apply at each checked outline, including generated segments",
+          "families": [
+            "ordinary"
+          ],
+          "familyLayers": {
+            "ordinary": [
+              "MASTER0",
+              "MASTER1"
+            ]
+          },
+          "familySelection": "native GSInstance.interpolatedFont; no custom substitution or linear interpolation",
+          "limit": 4096,
+          "locations": [
+            [
+              0.0
+            ],
+            [
+              0.125
+            ],
+            [
+              0.25
+            ],
+            [
+              0.375
+            ],
+            [
+              0.5
+            ],
+            [
+              0.625
+            ],
+            [
+              0.75
+            ],
+            [
+              0.875
+            ],
+            [
+              1.0
+            ]
+          ],
+          "region": [
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "requested": 9
+        },
+        "deviationMetric": "continuous native-chain chord correspondence",
+        "diagnostics": [
+          {
+            "after": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "afterConnection": 102,
+            "afterEffectivePosition": [
+              -3.6695560784693764,
+              0.0
+            ],
+            "before": {
+              "angle": 0.0,
+              "curvatureError": 166.66666666666666,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 166.66666666666666,
+              "curvatureTolerance": 0.0016676666666666667,
+              "g1": true,
+              "g2": false
+            },
+            "beforeEffectivePosition": [
+              0.0,
+              0.0
+            ],
+            "continuityBasis": "unrounded native construction; drawing grid quantization reported separately",
+            "drawingContinuity": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "effectiveJoinMovementEm": 0.0036695560784693764,
+            "generatedJoins": [
+              {
+                "construction": {
+                  "angle": 8.071713295495638e-17,
+                  "curvatureError": 20.419640866451445,
+                  "curvatureLeft": 83.96342174467381,
+                  "curvatureRight": 63.543780878222364,
+                  "curvatureTolerance": 0.0008406342174467382,
+                  "g1": true,
+                  "g2": false
+                },
+                "drawing": {
+                  "angle": 0.0,
+                  "curvatureError": 84.32740427115678,
+                  "curvatureLeft": 42.16370213557838,
+                  "curvatureRight": 126.49110640673517,
+                  "curvatureTolerance": 0.0012659110640673517,
+                  "g1": true,
+                  "g2": false
+                },
+                "ordinal": 0,
+                "sourceEndNode": 4
+              }
+            ],
+            "joinKind": "line-curve",
+            "layer": "MASTER0",
+            "node": 1,
+            "path": 0,
+            "storedPosition": [
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "after": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "afterConnection": 102,
+            "afterEffectivePosition": [
+              -3.6695560784693764,
+              0.0
+            ],
+            "before": {
+              "angle": 0.0,
+              "curvatureError": 166.66666666666666,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 166.66666666666666,
+              "curvatureTolerance": 0.0016676666666666667,
+              "g1": true,
+              "g2": false
+            },
+            "beforeEffectivePosition": [
+              0.0,
+              0.0
+            ],
+            "continuityBasis": "unrounded native construction; drawing grid quantization reported separately",
+            "drawingContinuity": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "effectiveJoinMovementEm": 0.0036695560784693764,
+            "generatedJoins": [
+              {
+                "construction": {
+                  "angle": 8.071713295495638e-17,
+                  "curvatureError": 20.419640866451445,
+                  "curvatureLeft": 83.96342174467381,
+                  "curvatureRight": 63.543780878222364,
+                  "curvatureTolerance": 0.0008406342174467382,
+                  "g1": true,
+                  "g2": false
+                },
+                "drawing": {
+                  "angle": 0.0,
+                  "curvatureError": 84.32740427115678,
+                  "curvatureLeft": 42.16370213557838,
+                  "curvatureRight": 126.49110640673517,
+                  "curvatureTolerance": 0.0012659110640673517,
+                  "g1": true,
+                  "g2": false
+                },
+                "ordinal": 0,
+                "sourceEndNode": 4
+              }
+            ],
+            "joinKind": "line-curve",
+            "layer": "MASTER1",
+            "node": 1,
+            "path": 0,
+            "storedPosition": [
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "editCount": 2,
+        "engineVersion": "0.3.0",
+        "glyph": "test",
+        "integratedDifferenceEm2": null,
+        "layers": [
+          "MASTER0",
+          "MASTER1"
+        ],
+        "maxDeviationEm": 0.001,
+        "maxEffectiveJoinMovementEm": 0.0036695560784693764,
+        "maxMeasuredDeviationEm": 0.00021236889449873688,
+        "method": "native-star",
+        "owningLayer": "MASTER0",
+        "selectionCoverage": {
+          "blockedJoins": 0,
+          "complete": true,
+          "eligibleJoins": 1,
+          "requestedJoins": 1,
+          "segmentSelectionRequired": false
+        },
+        "sourceFingerprint": "3289993c5c8695f9b1fbe17f2b784cfcf9f0f88daba8e5a506e7b63522469842",
+        "status": "ok",
+        "storedCoordinatesPreserved": true,
+        "surface": "foreground"
+      }
+    },
+    {
+      "apply": {
+        "configuredInstances": 1,
+        "editCount": 2,
+        "evaluatedLocations": 9,
+        "maxMeasuredDeviationEm": 0.00021236889449873566,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "closed": false,
+      "grid": 1,
+      "length": 200,
+      "repeat": "noop",
+      "reverse": true,
+      "scale": 0.1,
+      "summary": {
+        "coverage": {
+          "axisIds": [
+            "a01"
+          ],
+          "boundaries": [],
+          "complete": true,
+          "configuredEvaluated": 1,
+          "configuredInstances": [
+            0
+          ],
+          "evaluated": 9,
+          "evidence": "sampled-native; continuous bounds apply at each checked outline, including generated segments",
+          "families": [
+            "ordinary"
+          ],
+          "familyLayers": {
+            "ordinary": [
+              "MASTER0",
+              "MASTER1"
+            ]
+          },
+          "familySelection": "native GSInstance.interpolatedFont; no custom substitution or linear interpolation",
+          "limit": 4096,
+          "locations": [
+            [
+              0.0
+            ],
+            [
+              0.125
+            ],
+            [
+              0.25
+            ],
+            [
+              0.375
+            ],
+            [
+              0.5
+            ],
+            [
+              0.625
+            ],
+            [
+              0.75
+            ],
+            [
+              0.875
+            ],
+            [
+              1.0
+            ]
+          ],
+          "region": [
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "requested": 9
+        },
+        "deviationMetric": "continuous native-chain chord correspondence",
+        "diagnostics": [
+          {
+            "after": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": -0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "afterConnection": 102,
+            "afterEffectivePosition": [
+              -3.6695560784693764,
+              0.0
+            ],
+            "before": {
+              "angle": 0.0,
+              "curvatureError": 166.66666666666666,
+              "curvatureLeft": -166.66666666666666,
+              "curvatureRight": -0.0,
+              "curvatureTolerance": 0.0016676666666666667,
+              "g1": true,
+              "g2": false
+            },
+            "beforeEffectivePosition": [
+              0.0,
+              0.0
+            ],
+            "continuityBasis": "unrounded native construction; drawing grid quantization reported separately",
+            "drawingContinuity": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "effectiveJoinMovementEm": 0.0036695560784693764,
+            "generatedJoins": [
+              {
+                "construction": {
+                  "angle": 8.071713295495638e-17,
+                  "curvatureError": 20.419640866451445,
+                  "curvatureLeft": -63.543780878222364,
+                  "curvatureRight": -83.96342174467381,
+                  "curvatureTolerance": 0.0008406342174467382,
+                  "g1": true,
+                  "g2": false
+                },
+                "drawing": {
+                  "angle": 0.0,
+                  "curvatureError": 84.32740427115678,
+                  "curvatureLeft": -126.49110640673517,
+                  "curvatureRight": -42.16370213557838,
+                  "curvatureTolerance": 0.0012659110640673517,
+                  "g1": true,
+                  "g2": false
+                },
+                "ordinal": 0,
+                "sourceEndNode": 3
+              }
+            ],
+            "joinKind": "curve-line",
+            "layer": "MASTER0",
+            "node": 3,
+            "path": 0,
+            "storedPosition": [
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "after": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": -0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "afterConnection": 102,
+            "afterEffectivePosition": [
+              -3.6695560784693764,
+              0.0
+            ],
+            "before": {
+              "angle": 0.0,
+              "curvatureError": 166.66666666666666,
+              "curvatureLeft": -166.66666666666666,
+              "curvatureRight": -0.0,
+              "curvatureTolerance": 0.0016676666666666667,
+              "g1": true,
+              "g2": false
+            },
+            "beforeEffectivePosition": [
+              0.0,
+              0.0
+            ],
+            "continuityBasis": "unrounded native construction; drawing grid quantization reported separately",
+            "drawingContinuity": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "effectiveJoinMovementEm": 0.0036695560784693764,
+            "generatedJoins": [
+              {
+                "construction": {
+                  "angle": 8.071713295495638e-17,
+                  "curvatureError": 20.419640866451445,
+                  "curvatureLeft": -63.543780878222364,
+                  "curvatureRight": -83.96342174467381,
+                  "curvatureTolerance": 0.0008406342174467382,
+                  "g1": true,
+                  "g2": false
+                },
+                "drawing": {
+                  "angle": 0.0,
+                  "curvatureError": 84.32740427115678,
+                  "curvatureLeft": -126.49110640673517,
+                  "curvatureRight": -42.16370213557838,
+                  "curvatureTolerance": 0.0012659110640673517,
+                  "g1": true,
+                  "g2": false
+                },
+                "ordinal": 0,
+                "sourceEndNode": 3
+              }
+            ],
+            "joinKind": "curve-line",
+            "layer": "MASTER1",
+            "node": 3,
+            "path": 0,
+            "storedPosition": [
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "editCount": 2,
+        "engineVersion": "0.3.0",
+        "glyph": "test",
+        "integratedDifferenceEm2": null,
+        "layers": [
+          "MASTER0",
+          "MASTER1"
+        ],
+        "maxDeviationEm": 0.001,
+        "maxEffectiveJoinMovementEm": 0.0036695560784693764,
+        "maxMeasuredDeviationEm": 0.00021236889449873566,
+        "method": "native-star",
+        "owningLayer": "MASTER0",
+        "selectionCoverage": {
+          "blockedJoins": 0,
+          "complete": true,
+          "eligibleJoins": 1,
+          "requestedJoins": 1,
+          "segmentSelectionRequired": false
+        },
+        "sourceFingerprint": "10dc7bf7e166660263a9eb46552ba96e6545a15b2f348c6554818a53094106cb",
+        "status": "ok",
+        "storedCoordinatesPreserved": true,
+        "surface": "foreground"
+      }
+    },
+    {
+      "apply": {
+        "configuredInstances": 1,
+        "editCount": 2,
+        "evaluatedLocations": 9,
+        "maxMeasuredDeviationEm": 0.00021294448277227104,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "closed": true,
+      "grid": 1,
+      "length": 200,
+      "repeat": "noop",
+      "reverse": false,
+      "scale": 0.1,
+      "summary": {
+        "coverage": {
+          "axisIds": [
+            "a01"
+          ],
+          "boundaries": [],
+          "complete": true,
+          "configuredEvaluated": 1,
+          "configuredInstances": [
+            0
+          ],
+          "evaluated": 9,
+          "evidence": "sampled-native; continuous bounds apply at each checked outline, including generated segments",
+          "families": [
+            "ordinary"
+          ],
+          "familyLayers": {
+            "ordinary": [
+              "MASTER0",
+              "MASTER1"
+            ]
+          },
+          "familySelection": "native GSInstance.interpolatedFont; no custom substitution or linear interpolation",
+          "limit": 4096,
+          "locations": [
+            [
+              0.0
+            ],
+            [
+              0.125
+            ],
+            [
+              0.25
+            ],
+            [
+              0.375
+            ],
+            [
+              0.5
+            ],
+            [
+              0.625
+            ],
+            [
+              0.75
+            ],
+            [
+              0.875
+            ],
+            [
+              1.0
+            ]
+          ],
+          "region": [
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "requested": 9
+        },
+        "deviationMetric": "continuous native-chain chord correspondence",
+        "diagnostics": [
+          {
+            "after": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "afterConnection": 102,
+            "afterEffectivePosition": [
+              -3.6695560784693764,
+              0.0
+            ],
+            "before": {
+              "angle": 0.0,
+              "curvatureError": 166.66666666666666,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 166.66666666666666,
+              "curvatureTolerance": 0.0016676666666666667,
+              "g1": true,
+              "g2": false
+            },
+            "beforeEffectivePosition": [
+              0.0,
+              0.0
+            ],
+            "continuityBasis": "unrounded native construction; drawing grid quantization reported separately",
+            "drawingContinuity": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "effectiveJoinMovementEm": 0.0036695560784693764,
+            "generatedJoins": [
+              {
+                "construction": {
+                  "angle": 8.071713295495638e-17,
+                  "curvatureError": 20.419640866451445,
+                  "curvatureLeft": 83.96342174467381,
+                  "curvatureRight": 63.543780878222364,
+                  "curvatureTolerance": 0.0008406342174467382,
+                  "g1": true,
+                  "g2": false
+                },
+                "drawing": {
+                  "angle": 0.0,
+                  "curvatureError": 84.32740427115678,
+                  "curvatureLeft": 42.16370213557838,
+                  "curvatureRight": 126.49110640673517,
+                  "curvatureTolerance": 0.0012659110640673517,
+                  "g1": true,
+                  "g2": false
+                },
+                "ordinal": 0,
+                "sourceEndNode": 4
+              }
+            ],
+            "joinKind": "line-curve",
+            "layer": "MASTER0",
+            "node": 1,
+            "path": 0,
+            "storedPosition": [
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "after": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "afterConnection": 102,
+            "afterEffectivePosition": [
+              -3.6695560784693764,
+              0.0
+            ],
+            "before": {
+              "angle": 0.0,
+              "curvatureError": 166.66666666666666,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 166.66666666666666,
+              "curvatureTolerance": 0.0016676666666666667,
+              "g1": true,
+              "g2": false
+            },
+            "beforeEffectivePosition": [
+              0.0,
+              0.0
+            ],
+            "continuityBasis": "unrounded native construction; drawing grid quantization reported separately",
+            "drawingContinuity": {
+              "angle": 0.0,
+              "curvatureError": 0.0,
+              "curvatureLeft": 0.0,
+              "curvatureRight": 0.0,
+              "curvatureTolerance": 1e-06,
+              "g1": true,
+              "g2": true
+            },
+            "effectiveJoinMovementEm": 0.0036695560784693764,
+            "generatedJoins": [
+              {
+                "construction": {
+                  "angle": 8.071713295495638e-17,
+                  "curvatureError": 20.419640866451445,
+                  "curvatureLeft": 83.96342174467381,
+                  "curvatureRight": 63.543780878222364,
+                  "curvatureTolerance": 0.0008406342174467382,
+                  "g1": true,
+                  "g2": false
+                },
+                "drawing": {
+                  "angle": 0.0,
+                  "curvatureError": 84.32740427115678,
+                  "curvatureLeft": 42.16370213557838,
+                  "curvatureRight": 126.49110640673517,
+                  "curvatureTolerance": 0.0012659110640673517,
+                  "g1": true,
+                  "g2": false
+                },
+                "ordinal": 0,
+                "sourceEndNode": 4
+              }
+            ],
+            "joinKind": "line-curve",
+            "layer": "MASTER1",
+            "node": 1,
+            "path": 0,
+            "storedPosition": [
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "editCount": 2,
+        "engineVersion": "0.3.0",
+        "glyph": "test",
+        "integratedDifferenceEm2": null,
+        "layers": [
+          "MASTER0",
+          "MASTER1"
+        ],
+        "maxDeviationEm": 0.001,
+        "maxEffectiveJoinMovementEm": 0.0036695560784693764,
+        "maxMeasuredDeviationEm": 0.00021294448277227104,
+        "method": "native-star",
+        "owningLayer": "MASTER0",
+        "selectionCoverage": {
+          "blockedJoins": 0,
+          "complete": true,
+          "eligibleJoins": 1,
+          "requestedJoins": 1,
+          "segmentSelectionRequired": false
+        },
+        "sourceFingerprint": "3966a1451ee27f441345d50a062f377853c9fd2d6af5d89a6d088007b60950c8",
+        "status": "ok",
+        "storedCoordinatesPreserved": true,
+        "surface": "foreground"
+      }
+    },
+    {
+      "closed": true,
+      "code": "incompatible_correspondence",
+      "error": "Native closing geometry cannot be mapped.",
+      "grid": 1,
+      "length": 200,
+      "reverse": true,
+      "scale": 0.1,
+      "traceback": "Traceback (most recent call last):\n  File \"<glyphs-mcp-script>\", line 27, in <module>\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 486, in propose\n    try: next(task)\n         ~~~~^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 529, in propose_steps\n    self._trial(trial, joins, method, tunni_balance, font.upm, float(value(font, \"gridLength\", 0)))\n    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 587, in _trial\n    with precision(trial, True): primitive = effective_chain(path, self.app)\n                                             ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 217, in effective_chain\n    return drawing_chain(path, bezier, app, grid_step=step)\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/joins.py\", line 120, in drawing_chain\n    raise RepairError(\"incompatible_correspondence\", \"Native closing geometry cannot be mapped.\")\ncurve_repair_trial_030_final.geometry.RepairError: Native closing geometry cannot be mapped.\n"
+    },
+    {
+      "closed": false,
+      "code": "short_line",
+      "error": "The straight segment is too short for this native transition.",
+      "grid": 0,
+      "length": 2,
+      "reverse": false,
+      "scale": 0.1,
+      "traceback": "Traceback (most recent call last):\n  File \"<glyphs-mcp-script>\", line 27, in <module>\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 486, in propose\n    try: next(task)\n         ~~~~^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 531, in propose_steps\n    measure, old_curves, new_curves = self._verify_layer(original, trial, joins, font.upm, tolerance_em)\n                                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 388, in _verify_layer\n    measured, old_curves, new_curves = self._verify_mixed_path(before, after, p, joins, upm, tolerance)\n                                       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 436, in _verify_mixed_path\n    original, trial = effective_chain(old_path, self.app), effective_chain(new_path, self.app)\n                                                           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/native.py\", line 217, in effective_chain\n    return drawing_chain(path, bezier, app, grid_step=step)\n  File \"<checkout>/src/companions/curve-inspector/curve_repair/joins.py\", line 148, in drawing_chain\n    raise RepairError(\"short_line\", \"The straight segment is too short for this native transition.\")\ncurve_repair_trial_030_final.geometry.RepairError: The straight segment is too short for this native transition.\n"
+    }
+  ],
+  "date": "2026-10-09",
+  "engineVersion": "0.3.0",
+  "evidence": "Independent detached adapter development trial, not installed UI",
+  "host": {
+    "build": "4108.0",
+    "version": "4.1.1"
+  },
+  "schemaVersion": 1,
+  "sourceRevisionEvidence": "This trial predates the final implicit-close and maximum-bound fixes; rerun on the final recorded engine digest is pending.",
+  "workflow": "edit_6501444f64f54324959c6739f29b390b",
+  "workingFontEdits": false
+}

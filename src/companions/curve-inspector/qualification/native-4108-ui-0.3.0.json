@@ -1,0 +1,123 @@
+{
+  "bridgeSessionId": "4f1f97d7218d48538a23b48ba0b8f3d0",
+  "cleanup": {
+    "allDisposableDocumentsClosed": true,
+    "discardAuthorization": "User explicitly approved discarding disposable fixture state and closing them.",
+    "fixtureSavedFilesRetained": true,
+    "invocationImportPathsRemoved": 4,
+    "livePluginModulesPreserved": true,
+    "privateQualificationModulesRemoved": 29
+  },
+  "date": "2026-10-09",
+  "diagnosticFailures": [
+    {
+      "error": "Diagnostic used filePath instead of the documented filepath; no outline writes.",
+      "workflow": "edit_a7a08abdbbb84d11a9ebcbde4a2e656b"
+    },
+    {
+      "error": "Diagnostic used incorrect frozen-state tuple index; corrected and independently checked against the state schema.",
+      "workflow": "edit_5f9dc94727e340f0812b690e51275c68"
+    }
+  ],
+  "engineDigest": "42bef44235f8c6ca925890a82fafbd1404abaae3bd07d5354095ccb54a43dcdc",
+  "engineVersion": "0.3.0",
+  "evidence": "Installed native UI on a disposable two-master, one-axis line/curve fixture; wider adapter evidence is separate.",
+  "host": {
+    "build": "4108",
+    "identifier": "com.GeorgSeifert.Glyphs4",
+    "version": "4.1.1"
+  },
+  "installedFiles": {
+    "Contents/Info.plist": "c33f76a1290aa5940e6092ca4db47e002f8d9436ee9213c04c4d9480ec82208e",
+    "Contents/MacOS/plugin": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "Contents/Resources/GlyphsSDK-LICENSE.txt": "bb28c48e3e078166e91cfc2b6db7ffebb8a0973b9e23b3df060561292d8d69ec",
+    "Contents/Resources/GlyphsSDK-SOURCE.json": "2f925690be849f3212532fb59ed19617ec14553ab1cc027bba632200437fe49f",
+    "Contents/Resources/curve-repair-engine.json": "7f8f810c3d88be0f0aed42024b4b642017bf69ec0d5ef9572595777e4538e37c",
+    "Contents/Resources/curve_core/__init__.py": "0c253eb40f4f38641e01ee9db35a18832e4e24da0da3dd2779d09c0df2bb7f5f",
+    "Contents/Resources/curve_core/geometry.py": "ee1e6f80af738a7a4f5162da7b896a3f7e7201aedd4dd9fcade44acb4922ec88",
+    "Contents/Resources/curve_repair/NOTICE": "6c684688bdc0ef5631f03b0efd9750ca0456f67f543892483892c99a4083b73c",
+    "Contents/Resources/curve_repair/__init__.py": "1370511ccb828e47ab729b790c2435ea87d4cccd840ac75b5edc2630c8d8d6c7",
+    "Contents/Resources/curve_repair/coverage.py": "3d794a588223fbb752d3ca8a7b7542c9f5208821cdad6bc1fad28ee81b1e5be2",
+    "Contents/Resources/curve_repair/geometry.py": "d1963da4e073933a58ab4bebac965cd05dd51585462911d037799f8b840a0dc1",
+    "Contents/Resources/curve_repair/joins.py": "ecbc2efb3994b850b7327a95075a47313527580e6f04551e8a1b07ef6b077f1e",
+    "Contents/Resources/curve_repair/licenses/SuperTool/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "Contents/Resources/curve_repair/native.py": "a7344d8e482e5a8d0c1f31a9a0ff3e2c7d6f54c0280b9e9d805e96f5a142e990",
+    "Contents/Resources/curve_repair/outline.py": "65cb9f4122c12080d5f93c069bb1b6fd4c428815fc39c05e13486ba01c77dc80",
+    "Contents/Resources/curve_repair/provenance.py": "264d95097a0cf097ac176e778a05d641d6854c9693ed593153031b62d4c4da5e",
+    "Contents/Resources/curve_repair/supertool.py": "20237a7bf378a8db389dd777fbd54e9b2fbcf316507580310ca866f4b6fe9cd8",
+    "Contents/Resources/glyphs_curve_inspector/__init__.py": "43470dfb19b4badbe6c2edad83efea0fbffc657af6ac66ad2310afdbc86207c2",
+    "Contents/Resources/glyphs_curve_inspector/controller.py": "f656b4f6ea1b9f07e07c204d7b3ffad4d4e74dc5fa5bf2b4cf20646b983ea852",
+    "Contents/Resources/glyphs_curve_inspector/plugin.py": "b2fc5be21b9a54c29388a3611d872b4dcd6ab430555c74c2d8899cec0139fc96",
+    "Contents/Resources/glyphs_mcp_companions.py": "7bed7c161f19a0ea913cba2aeab18aa53896ff889ffef5638a737c1ef275d358",
+    "Contents/Resources/plugin.py": "b2fc5be21b9a54c29388a3611d872b4dcd6ab430555c74c2d8899cec0139fc96"
+  },
+  "installedPath": "<maintainer-home>/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter",
+  "limits": [
+    "Installed UI evidence is line/curve on ordinary two-master sources; other directions and families have independent adapter records.",
+    "Finite designspace sampling is not a continuous designspace guarantee.",
+    "Generated native internal joins are G1 and not necessarily G2.",
+    "Export equivalence remains unqualified."
+  ],
+  "pluginVersion": "0.3.0",
+  "schemaVersion": 1,
+  "ui": {
+    "adjoiningSegmentsAutomatic": true,
+    "apply": "Applied and verified: 2 node edits",
+    "configuredInstances": 1,
+    "defaultContentSizePoints": [
+      320,
+      236
+    ],
+    "detailsShowGeneratedSegments": true,
+    "handleMethodRefusal": "Path 0, node 1: line/curve repair requires Native super-smooth. Move handles supports curve/curve joins.",
+    "handleRefusalApplyDisabled": true,
+    "maximumDeviationEm": 0.00021236889449873688,
+    "methodContext": "Line \u2194 Curve \u00b7 Raindrop",
+    "nativeLocations": 9,
+    "nativeSuperSmoothDefault": true,
+    "previewResult": "2 raindrops, 0 stars",
+    "reporterOverlayEnabledDuringTest": false,
+    "scope": "Selected nodes \u00b7 source layers",
+    "selectedNodeCount": 1,
+    "selectedNodesOnly": [
+      [
+        0,
+        1
+      ]
+    ],
+    "storedCoordinatesPreserved": true,
+    "undoEntry": "Undo Change Connection"
+  },
+  "undoVerification": {
+    "allSourceMasterNodesRestored": true,
+    "backgroundComparisonWorkflow": "edit_4bdde0566c3c47ca88d48a247a506ea4",
+    "backgroundDifference": {
+      "attributes": [],
+      "owner": "MASTER0",
+      "paths": 0
+    },
+    "connections": [
+      {
+        "connection": 100,
+        "layer": "MASTER0",
+        "node": 1
+      },
+      {
+        "connection": 100,
+        "layer": "MASTER1",
+        "node": 1
+      }
+    ],
+    "explanation": "Edit View created an empty background before Preview; the adapter guards it. All other guarded state equals the initial model after native Undo.",
+    "fullGuardEqualsInitialAfterExcludingNativeEmptyBackground": true,
+    "preEditViewFingerprint": "3289993c5c8695f9b1fbe17f2b784cfcf9f0f88daba8e5a506e7b63522469842",
+    "restoredFingerprint": "2571eecffbc556629fe3852e7f94c70f0c68ff2c2bc9eb1e656f8e758c46906b",
+    "workflow": "edit_d491fcbeacf842eaadd3fa0c6dc88e1c"
+  },
+  "workingFonts": {
+    "authorizedSave": "User explicitly approved saving LeftyNote Path Variety before relaunch. No test repairs were applied to working fonts.",
+    "bothOriginalDocumentsReopened": true,
+    "outlineEdits": false,
+    "savedFileHash": "f15e76e075127b680112b246707aab81bf1fefacdd5993f000888d60b302e3cd"
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "evidence": "independent native adapter through V2 script on owned disposable font; installed Reporter/UI not yet qualified",
+  "host": {
+    "version": "4.1.1",
+    "build": "4108.0"
+  },
+  "workflow": "edit_8e1305f486a048b79af157acf73cd988",
+  "result": {
+    "axes": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "constants": {
+      "sharp": 0,
+      "smooth": 100,
+      "star": 102
+    },
+    "engineVersion": "0.2.0",
+    "hostBuild": "4108.0",
+    "hostVersion": "4.1.1",
+    "masters": [
+      "MASTER0",
+      "MASTER1"
+    ],
+    "native-star": {
+      "application": {
+        "configuredInstances": 1,
+        "editCount": 2,
+        "evaluatedLocations": 9,
+        "maxMeasuredDeviationEm": 0.0005000000010000004,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "coverage": {
+        "axisIds": [
+          "a01"
+        ],
+        "complete": true,
+        "configuredEvaluated": 1,
+        "configuredInstances": [
+          0
+        ],
+        "evaluated": 9,
+        "evidence": "sampled-native; continuous bounds apply only to each corresponding cubic pair",
+        "families": [
+          "ordinary"
+        ],
+        "limit": 4096,
+        "locations": [
+          [
+            0
+          ],
+          [
+            0.125
+          ],
+          [
+            0.25
+          ],
+          [
+            0.375
+          ],
+          [
+            0.5
+          ],
+          [
+            0.625
+          ],
+          [
+            0.75
+          ],
+          [
+            0.875
+          ],
+          [
+            1
+          ]
+        ],
+        "region": [
+          [
+            0,
+            1
+          ]
+        ],
+        "requested": 9
+      },
+      "editCount": 2,
+      "fixtureResetVerified": true,
+      "maxEffectiveJoinMovementEm": 0.0005,
+      "maxMeasuredDeviationEm": 0.0005000000010000004,
+      "status": "ok",
+      "storedCoordinatesPreserved": true
+    },
+    "nodes": [
+      {
+        "connection": 0,
+        "position": [
+          -200,
+          100
+        ],
+        "type": "line"
+      },
+      {
+        "connection": 0,
+        "position": [
+          -100,
+          40
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          -40,
+          0
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 100,
+        "position": [
+          0,
+          0
+        ],
+        "type": "curve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          39,
+          0
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          100,
+          40
+        ],
+        "type": "offcurve"
+      },
+      {
+        "connection": 0,
+        "position": [
+          200,
+          100
+        ],
+        "type": "curve"
+      }
+    ],
+    "primitiveType": "GSPath",
+    "sourceGeometryUnchanged": true,
+    "supertool-handles": {
+      "application": {
+        "configuredInstances": 1,
+        "editCount": 2,
+        "evaluatedLocations": 9,
+        "maxMeasuredDeviationEm": 0.0005000000010000004,
+        "recovery": "native glyph Undo group; no font Save performed",
+        "status": "verified"
+      },
+      "coverage": {
+        "axisIds": [
+          "a01"
+        ],
+        "complete": true,
+        "configuredEvaluated": 1,
+        "configuredInstances": [
+          0
+        ],
+        "evaluated": 9,
+        "evidence": "sampled-native; continuous bounds apply only to each corresponding cubic pair",
+        "families": [
+          "ordinary"
+        ],
+        "limit": 4096,
+        "locations": [
+          [
+            0
+          ],
+          [
+            0.125
+          ],
+          [
+            0.25
+          ],
+          [
+            0.375
+          ],
+          [
+            0.5
+          ],
+          [
+            0.625
+          ],
+          [
+            0.75
+          ],
+          [
+            0.875
+          ],
+          [
+            1
+          ]
+        ],
+        "region": [
+          [
+            0,
+            1
+          ]
+        ],
+        "requested": 9
+      },
+      "editCount": 2,
+      "fixtureResetVerified": true,
+      "maxEffectiveJoinMovementEm": 0,
+      "maxMeasuredDeviationEm": 0.0005000000010000004,
+      "status": "ok",
+      "storedCoordinatesPreserved": false
+    }
+  }
+}
