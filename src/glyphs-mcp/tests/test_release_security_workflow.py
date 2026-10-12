@@ -228,7 +228,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                 installer_build=42,
             )
 
-            self.assertEqual(result["publicToolCount"], 18)
+            self.assertEqual(result["publicToolCount"], 20)
             protocol.write_text('TOOL_NAMES = ("one", "two")\n', encoding="utf-8")
             result = self.security.validate_unsigned_candidate(
                 root, expected_version="2.3.4", installer_build=42,
@@ -582,7 +582,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         from desktop_release_identity import identity
         names = {path.name for path in assets(REPO, identity("2.0.0"), include_manifest=True)}
         self.assertEqual(names, {"Glyphs-MCP-2.0.0.dmg", "Glyphs-MCP-latest.dmg",
-                                "Glyphs-MCP-2.0.0.zip", "Glyphs MCP.zip", "appcast.xml", "SHA256SUMS"})
+                                "Glyphs-MCP-2.0.0.zip", "Glyphs.MCP.zip", "appcast.xml", "SHA256SUMS"})
         self.assertRegex(make_dmg, r"Glyphs-MCP-\$(?:version|release_version)\.dmg")
         self.assertIn("Glyphs-MCP-latest.dmg", make_dmg)
         for script in (publish, verify):

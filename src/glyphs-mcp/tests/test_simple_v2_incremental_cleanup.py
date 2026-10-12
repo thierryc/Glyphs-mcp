@@ -154,13 +154,13 @@ def test_cleanup_respects_elapsed_budget_as_well_as_batch_bound(monkeypatch):
 @pytest.mark.parametrize('outcome', ['success','failure','cancel'])
 def test_script_cleanup_retains_owner_and_never_replays(tmp_path, monkeypatch, outcome):
     from test_simple_v2_script_capacity import executable_fixture
-    core, queue, state, font, request = executable_fixture(tmp_path, monkeypatch, count=80)
+    source = ('def run(layer, params, context):\n    layer.visits += 1\n    if context["index"] == 5: raise ValueError("partial")'
+              if outcome == "failure" else None)
+    core, queue, state, font, request = executable_fixture(tmp_path, monkeypatch, count=80, source=source)
     flags = {id(g.owner.background): (g.owner.background, False) for g in font.glyphs.values()}
     core.adapter._rounding_states = {request['documentId']: flags}
     released = []
     core.adapter._set_rounding = lambda layer, value: released.append(id(layer)) or True
-    if outcome == 'failure':
-        request['options']['source'] = 'def run(layer, params, context):\n    layer.visits += 1\n    if context["index"] == 5: raise ValueError("partial")'
     core.begin_script(request)
     if outcome == 'cancel':
         while not core.operation(request['jobId'])['scriptResult']['executedTargets']: queue.pop(0)()

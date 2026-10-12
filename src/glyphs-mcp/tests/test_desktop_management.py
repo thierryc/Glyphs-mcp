@@ -17,7 +17,7 @@ def test_authenticated_private_routes_and_unchanged_public_tools(tmp_path):
     value, _, _ = service(tmp_path)
     async def check():
         mcp = create_server(value, control_token="x" * 32)
-        assert len(await mcp.get_tools()) == 19
+        assert len(await mcp.get_tools()) == 20
         app = mcp.http_app(stateless_http=True)
         async with app.lifespan(app):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://local") as client:
@@ -116,6 +116,7 @@ def test_worker_activity_covers_process_lifetime_and_failed_start(tmp_path, monk
         observed = worker.status()["executions"]
         assert observed[0]["jobId"] == root.name and observed[0]["phase"] == "starting"
         raise OSError("could not launch")
+    monkeypatch.setattr(module, "python_arguments", lambda _: [])
     monkeypatch.setattr(module.subprocess, "Popen", popen)
     with pytest.raises(OSError):
         worker.prepare(root, {}, {}, tmp_path / "font", "hash", Event())

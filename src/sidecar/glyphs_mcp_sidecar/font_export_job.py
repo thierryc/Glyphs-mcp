@@ -156,7 +156,8 @@ def _native_constants() -> tuple[dict[str, Any], dict[str, Any]]:
         return {"otf": "CFF", "ttf": "TT"}, {"plain": "plain", "woff": "woff", "woff2": "woff2"}
 
 
-def prepare(font: Any, request: Mapping[str, Any], job_root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def generate(font: Any, request: Mapping[str, Any], job_root: Path) -> dict[str, Any]:
+    """Generate only in Glyphs Python, without private verification dependencies."""
     options = request["options"]
     instance = _instance(font, options["instanceId"])
     instance_type = _instance_type(instance)
@@ -190,6 +191,35 @@ def prepare(font: Any, request: Mapping[str, Any], job_root: Path) -> tuple[dict
     if result not in (None, True):
         raise WorkerError(f"Glyphs export failed: {result}")
 
+    return {
+        "claim": "Generated font export; verification pending",
+        "success": False,
+        "instanceId": options["instanceId"],
+        "instanceName": str(_value(instance, "name", "") or ""),
+        "instanceType": instance_type,
+        "format": options["format"],
+        "containers": list(options["containers"]),
+        "generation": generation,
+        "verification": {"tables": False, "files": [],
+                         "shapingCases": list(options["verification"]["shapingCases"])},
+        "warnings": [],
+    }
+
+
+def verify_generated(request: Mapping[str, Any], job_root: Path,
+                     generated: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Verify generated artifacts in the private sidecar interpreter."""
+    options = request["options"]
+    if (generated.get("instanceId") != options["instanceId"]
+            or generated.get("instanceType") not in {"static", "variable"}
+            or generated.get("format") != options["format"]
+            or generated.get("containers") != options["containers"]
+            or generated.get("success") is not False):
+        raise WorkerError("native export returned invalid generation evidence")
+    variable = generated["instanceType"] == "variable"
+    staging = job_root / "artifacts"
+    if staging.is_symlink() or not staging.is_dir():
+        raise WorkerError("artifact staging directory is unavailable or unsafe")
     files = []
     for candidate in sorted(staging.rglob("*")):
         if candidate.is_symlink():
@@ -211,8 +241,11 @@ def prepare(font: Any, request: Mapping[str, Any], job_root: Path) -> tuple[dict
         if total > MAX_ARTIFACT_JOB_BYTES:
             raise WorkerError("exported files exceed 1 GiB")
         # TTFont reports the actual sfnt flavor; do not trust file extensions.
-        from fontTools.ttLib import TTFont
-        parsed = TTFont(str(candidate), lazy=True)
+        try:
+            from fontTools.ttLib import TTFont
+            parsed = TTFont(str(candidate), lazy=True)
+        except Exception as exc:
+            raise WorkerError(f"fontTools could not parse {candidate.name}: {exc}") from exc
         try:
             container = parsed.flavor or "plain"
         finally:
@@ -238,17 +271,16 @@ def prepare(font: Any, request: Mapping[str, Any], job_root: Path) -> tuple[dict
     if sorted(observed_containers) != sorted(options["containers"]):
         raise WorkerError("Glyphs export did not produce exactly the requested containers")
     manifest = validate_artifact_manifest({"files": manifest_files, "totalBytes": total})
-    report = {
-        "claim": "Staged and structurally verified font export",
-        "success": True,
-        "instanceId": options["instanceId"],
-        "instanceName": str(_value(instance, "name", "") or ""),
-        "instanceType": instance_type,
-        "format": options["format"],
-        "containers": list(options["containers"]),
-        "generation": generation,
-        "verification": {"tables": True, "files": evidence,
-                         "shapingCases": list(options["verification"]["shapingCases"])},
-        "warnings": [],
-    }
+    report = dict(generated)
+    report.update(
+        claim="Staged and structurally verified font export",
+        success=True,
+        verification={"tables": True, "files": evidence,
+                      "shapingCases": list(options["verification"]["shapingCases"])},
+    )
     return manifest, report
+
+
+def prepare(font: Any, request: Mapping[str, Any], job_root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Combined helper for callers that already own both native and verifier APIs."""
+    return verify_generated(request, job_root, generate(font, request, job_root))

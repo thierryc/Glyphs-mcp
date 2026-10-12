@@ -2178,6 +2178,12 @@ exit 0
 			shortVersion: "1.2.3"
 		)
 
+        let duplicate = try makeFakeGlyphsApplication(under: root, name: "Glyphs 3 Copy",
+            bundleIdentifier: "com.GeorgSeifert.Glyphs3", shortVersion: "3.4")
+        let inventory = GlyphsApplicationDetector.allApplications(candidates: [glyphs3Beta, glyphs4, unrelated, glyphs3Stable, duplicate])
+        XCTAssertEqual(inventory.count, 4)
+        XCTAssertTrue(inventory.contains { $0.appURL == duplicate.standardizedFileURL })
+        XCTAssertEqual(GlyphsApplicationDetector.preferredApplications(from: inventory).count, 2)
 		let detected = GlyphsApplicationDetector.detect(candidates: [glyphs3Beta, glyphs4, unrelated, glyphs3Stable])
 		XCTAssertEqual(detected.map(\.majorVersion), [.v3, .v4])
 		XCTAssertEqual(detected.first(where: { $0.majorVersion == .v3 })?.bundleIdentifier, "com.GeorgSeifert.Glyphs3")

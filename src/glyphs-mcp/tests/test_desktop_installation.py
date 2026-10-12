@@ -155,7 +155,11 @@ def test_missing_custom_token_and_custom_jobs_are_respected(missing_token_servic
 
 @pytest.mark.parametrize('returncode', [0, 1, 2])
 def test_install_process_check_fails_closed(monkeypatch, returncode):
-    monkeypatch.setattr(installer.subprocess, 'run', lambda *_, **__: SimpleNamespace(returncode=returncode))
+    def run(command, **_):
+        if command[0] == '/bin/ps':
+            return SimpleNamespace(returncode=0, stdout='')
+        return SimpleNamespace(returncode=returncode)
+    monkeypatch.setattr(installer.subprocess, 'run', run)
     if returncode == 1:
         installer.require_closed_font_processes(Path('/Applications/Glyphs 4.app'))
     else:

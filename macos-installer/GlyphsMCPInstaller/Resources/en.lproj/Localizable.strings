@@ -692,3 +692,19 @@
 "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder.";
 "Choose an agent to uninstall this skill from" = "Choose an agent to uninstall this skill from";
 "Uninstall from %@. A backup will be kept. Linked source folders stay untouched." = "Uninstall from %@. A backup will be kept. Linked source folders stay untouched.";
+
+/* Python preflight and explicit installation override */
+"Glyphs Python" = "Glyphs Python";
+"Python check needs attention" = "Python check needs attention";
+"Python check skipped" = "Python check skipped";
+"Installation is enabled for this session. Python features may need setup afterward." = "Installation is enabled for this session. Python features may need setup afterward.";
+"The check could not confirm Python. If the Glyphs Python module is installed and working, you can allow installation anyway." = "The check could not confirm Python. If the Glyphs Python module is installed and working, you can allow installation anyway.";
+"Allow installation anyway" = "Allow installation anyway";
+
+// Glyphs 4 copy selection and interpreter evidence
+"Glyphs 4 application" = "Glyphs 4 application";
+"Python checks and setup use the selected copy." = "Python checks and setup use the selected copy.";
+"Components are shared by Glyphs 4 copies on this Mac." = "Components are shared by Glyphs 4 copies on this Mac.";
+"Glyphs Python module" = "Glyphs Python module";
+"Selected Python" = "Selected Python";
+"Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted.";

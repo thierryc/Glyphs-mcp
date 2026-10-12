@@ -11,7 +11,7 @@ def assets(root, release, product='Glyphs MCP', *, include_manifest=False):
              root/f'dist/desktop-update/Glyphs-MCP-{version}.zip',
              root/'dist/desktop-update/appcast.xml']
     if release['channel'] == 'stable':
-        paths.extend([root/'dist/Glyphs-MCP-latest.dmg', root/f'dist/installer-app/{product}.zip'])
+        paths.extend([root/'dist/Glyphs-MCP-latest.dmg', root/f"dist/installer-app/{product.replace(' ', '.')}.zip"])
     if include_manifest:
         paths.append(root/'dist/SHA256SUMS')
     return paths

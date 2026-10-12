@@ -276,6 +276,9 @@ def test_interrupted_upgrade_recovers_receipt_before_choosing_components(tmp_pat
 def test_native_python_preflight_keeps_application_imports_read_only(tmp_path, monkeypatch):
     import install_simple_v2 as installer
     output = tmp_path / 'payload'
+    helper = output / 'sidecar/glyphs_mcp_protocol/python_runtime.py'
+    helper.parent.mkdir(parents=True)
+    shutil.copy2(REPO / 'src/protocol/glyphs_mcp_protocol/python_runtime.py', helper)
     cli = output / 'runtime/bin/glyphs'
     cli.parent.mkdir(parents=True)
     (output / 'manifest.json').write_text(json.dumps({'runtimes': {
@@ -308,6 +311,9 @@ def test_native_python_preflight_reports_glyphs_version_and_rejects_missing_conf
     import install_simple_v2 as installer
     output = tmp_path / 'payload'
     output.mkdir()
+    helper = output / 'sidecar/glyphs_mcp_protocol/python_runtime.py'
+    helper.parent.mkdir(parents=True)
+    shutil.copy2(REPO / 'src/protocol/glyphs_mcp_protocol/python_runtime.py', helper)
     (output / 'manifest.json').write_text(json.dumps({'runtimes': {
         installer.platform.machine(): {'path': 'runtime', 'glyphsCLI': 'bin/glyphs'}
     }}))
@@ -325,3 +331,90 @@ def test_native_python_preflight_reports_glyphs_version_and_rejects_missing_conf
         installer.preflight(output, app)
     assert 'No Python framework path configured' in str(failure.value)
     assert not (tmp_path / 'home').exists()
+
+
+def test_explicit_python_check_override_installs_components_with_unverified_scripting(tmp_path, monkeypatch, capsys):
+    import install_simple_v2 as installer
+    output, home, app = fixture_install(tmp_path)
+    monkeypatch.setattr(sys, 'argv', ['install_simple_v2.py', '--build', str(output), '--home', str(home),
+        '--glyphs-app', str(app), '--python', sys.executable, '--skip-python-check'])
+    monkeypatch.setattr(installer, 'preflight', lambda *a: pytest.fail('Python check was explicitly skipped'))
+    checks = []
+    monkeypatch.setattr(installer, 'require_closed_font_processes', lambda application: checks.append(application))
+    installer.main()
+    captured = capsys.readouterr()
+    assert 'readiness remains unverified' in captured.err
+    result = json.loads(captured.out)
+    assert result['components'] == ['mcp']
+    assert checks == [app]
+    assert (home / 'Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin').is_dir()
+
+
+@pytest.mark.parametrize('arguments', [[], ['--preflight-only', '--skip-python-check']])
+def test_check_still_fails_without_override_and_preflight_only_cannot_be_skipped(tmp_path, monkeypatch, arguments):
+    import install_simple_v2 as installer
+    output, home, app = fixture_install(tmp_path)
+    monkeypatch.setattr(sys, 'argv', ['install_simple_v2.py', '--build', str(output), '--home', str(home),
+        '--glyphs-app', str(app), *arguments])
+    def failed(*args): raise ValueError('Glyphs scripting is not ready')
+    monkeypatch.setattr(installer, 'preflight', failed)
+    monkeypatch.setattr(installer, 'require_closed_font_processes', lambda *a: pytest.fail('Must check Python first'))
+    with pytest.raises(ValueError, match='scripting is not ready'):
+        installer.main()
+    assert not (home / 'Library/Application Support/Glyphs MCP/lean-v2/installation.json').exists()
+
+
+@pytest.mark.parametrize('failure', ['running-glyphs', 'invalid-payload'])
+def test_python_override_preserves_process_and_payload_guards(tmp_path, monkeypatch, failure):
+    import install_simple_v2 as installer
+    output, home, app = fixture_install(tmp_path)
+    monkeypatch.setattr(sys, 'argv', ['install_simple_v2.py', '--build', str(output), '--home', str(home),
+        '--glyphs-app', str(app), '--python', sys.executable, '--skip-python-check'])
+    monkeypatch.setattr(installer, 'preflight', lambda *a: pytest.fail('Python check was explicitly skipped'))
+    def check(application):
+        if failure == 'running-glyphs': raise ValueError('Close Glyphs before installing')
+    monkeypatch.setattr(installer, 'require_closed_font_processes', check)
+    if failure == 'invalid-payload':
+        (output / 'sidecar/run.py').write_text('corrupted payload')
+    with pytest.raises(ValueError, match='Close Glyphs|Build identity mismatch'):
+        installer.main()
+    assert not (home / 'Library/Application Support/Glyphs MCP/lean-v2/installation.json').exists()
+
+
+@pytest.mark.parametrize('identifier,version', [('com.GeorgSeifert.Glyphs4Beta','4.2'),('com.GeorgSeifert.GlyphsBeta','4.1')])
+def test_selected_glyphs4_beta_receives_components_and_exact_worker_app(tmp_path, identifier, version):
+    output, home, app = fixture_install(tmp_path)
+    (app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':identifier,'CFBundleShortVersionString':version}))
+    result=install(output,home,Path(sys.executable),app)
+    assert result['application']==str(app.resolve())
+    agent=plistlib.loads(Path(result['launchAgent']).read_bytes())
+    arguments=agent['ProgramArguments']
+    assert arguments[arguments.index('--glyphs-app')+1]==str(app.resolve())
+    assert (home/'Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin').is_dir()
+
+
+@pytest.mark.parametrize('identifier,version', [('com.GeorgSeifert.Glyphs4Beta','4.2'),('com.GeorgSeifert.GlyphsBeta','4.1'),('com.GeorgSeifert.Glyphs3','3.5'),('com.GeorgSeifert.GlyphsBeta','3.5')])
+def test_other_running_copy_blocks_shared_glyphs4_install_but_not_glyphs3(tmp_path,monkeypatch,identifier,version):
+    import install_simple_v2 as installer
+    app=tmp_path/'Glyphs Other.app'
+    (app/'Contents').mkdir(parents=True)
+    (app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':identifier,'CFBundleShortVersionString':version}))
+    def run(command,**kwargs):
+        if command[0]=='/usr/bin/pgrep':return SimpleNamespace(returncode=1,stdout='',stderr='')
+        assert command==['/bin/ps','-axo','comm=']
+        return SimpleNamespace(returncode=0,stdout=str(app/'Contents/MacOS/Glyphs')+'\n',stderr='')
+    monkeypatch.setattr(installer.subprocess,'run',run)
+    if version.startswith('4'):
+        with pytest.raises(ValueError,match='all copies of Glyphs 4'):
+            installer.require_closed_font_processes(tmp_path/'Selected.app')
+    else:
+        installer.require_closed_font_processes(tmp_path/'Selected.app')
+
+
+@pytest.mark.parametrize('identifier', ['com.GeorgSeifert.Glyphs3','com.GeorgSeifert.GlyphsBeta'])
+def test_glyphs3_cannot_receive_selected_glyphs4_payload(tmp_path, identifier):
+    output,home,app=fixture_install(tmp_path)
+    (app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':identifier,'CFBundleShortVersionString':'3.5'}))
+    with pytest.raises(ValueError,match='Select a Glyphs 4'):
+        install(output,home,Path(sys.executable),app)
+    assert not home.exists()

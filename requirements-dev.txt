@@ -6,3 +6,6 @@ glyphsLib==6.10.1
 fontmake==3.10.1
 Pillow==12.0.0
 pytest==8.4.2
+
+# Real AppKit reporter pixel checks use Quartz in the build/test environment.
+pyobjc-framework-Quartz==11.1 ; sys_platform == "darwin"

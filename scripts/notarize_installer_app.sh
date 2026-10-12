@@ -113,3 +113,7 @@ ditto -c -k --keepParent "$app" "$zip"
 
 echo "Notarized + stapled: $app"
 echo "Repacked stapled app: $zip"
+# GitHub normalizes spaces in release asset names. Preserve the signed bytes
+# under their canonical public filename before checksumming and uploading.
+public_zip="$out_dir/${scheme// /.}.zip"
+if [[ "$public_zip" != "$zip" ]]; then /bin/cp -p "$zip" "$public_zip"; fi

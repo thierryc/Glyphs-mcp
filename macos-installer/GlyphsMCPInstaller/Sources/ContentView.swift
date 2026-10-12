@@ -79,7 +79,6 @@ struct ContentView: View {
             case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
             }
         }
-        .safeAreaInset(edge: .top) { DesktopInitializationStatus().environmentObject(installer) }
         .onAppear { handleSetupRequest() }
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
         .navigationTitle(DesktopIdentity.applicationTitle)
@@ -179,6 +178,7 @@ struct DesktopSetup: View {
                     .accessibilityLabel("Open Troubleshooting Logs")
                     .help("Open Troubleshooting Logs")
                 }
+                DesktopInitializationStatus()
                 GroupBox {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
@@ -206,37 +206,11 @@ struct DesktopSetup: View {
                     }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 if installer.application != nil {
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Label(LocalizedStringKey(installer.checkingPython ? "Checking Glyphs Python…" :
-                                    installer.pythonReady ? "Glyphs Python is ready" : "Set up Python in Glyphs"),
-                                  systemImage: installer.pythonReady ? "checkmark.circle.fill" : "exclamationmark.triangle")
-                                .font(.headline)
-                                .foregroundStyle(installer.pythonReady ? Color.green : Color.orange)
-                            if let version = installer.pythonVersion {
-                                Text("Python \(version)").font(.callout).foregroundStyle(.secondary)
-                            }
-                            if !installer.pythonReady {
-                                Text("Install Python from Window → Plugin Manager → Modules in Glyphs. Relaunch Glyphs, select the Python marked ‘(Glyphs)’ in Settings → Addons, then relaunch again.")
-                                    .font(.callout)
-                                if let error = installer.pythonSetupError {
-                                    DisclosureGroup("Check details") {
-                                        Text(error).font(.caption).textSelection(.enabled)
-                                    }
-                                }
-                            }
-                            Text("Manage Python installation and updates through Glyphs’ Plugin Manager.")
-                                .font(.caption).foregroundStyle(.secondary)
-                            HStack {
-                                Button("Open Python in Plugin Manager", action: installer.openPythonInPluginManager)
-                                Button("Check again", action: installer.checkGlyphsPython)
-                            }.disabled(installer.operationsBusy || installer.checkingPython)
-                        }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    DesktopPythonSetup()
                 }
                 if installer.running {
                     HStack(spacing: 12) {
-                        Label("Quit Glyphs before changing components. You can save unsaved fonts when prompted.", systemImage: "exclamationmark.triangle")
+                        Label("Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted.", systemImage: "exclamationmark.triangle")
                             .font(.callout).foregroundStyle(.orange)
                         Spacer()
                         Button("Quit Glyphs", action: installer.quitGlyphs)

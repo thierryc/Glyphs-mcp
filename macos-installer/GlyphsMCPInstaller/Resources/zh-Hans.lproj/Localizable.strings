@@ -703,3 +703,19 @@
 "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "此技能使用链接的本地文件夹。更新将在此处安装托管副本；卸载会断开链接。两者均保留原始文件夹。";
 "Choose an agent to uninstall this skill from" = "选择要卸载此技能的代理";
 "Uninstall from %@. A backup will be kept. Linked source folders stay untouched." = "从 %@ 卸载。将保留备份，链接的源文件夹保持不变。";
+
+/* Python preflight and explicit installation override */
+"Glyphs Python" = "Glyphs Python";
+"Python check needs attention" = "Python 检查需要处理";
+"Python check skipped" = "已跳过 Python 检查";
+"Installation is enabled for this session. Python features may need setup afterward." = "本次会话已允许安装。之后可能仍需配置 Python 功能。";
+"The check could not confirm Python. If the Glyphs Python module is installed and working, you can allow installation anyway." = "检查未能确认 Python。如果 Glyphs Python 模块已安装且可用，您仍可允许安装。";
+"Allow installation anyway" = "仍然允许安装";
+
+// Glyphs 4 copy selection and interpreter evidence
+"Glyphs 4 application" = "Glyphs 4 应用";
+"Python checks and setup use the selected copy." = "Python 检查和安装使用所选副本。";
+"Components are shared by Glyphs 4 copies on this Mac." = "这台 Mac 上的 Glyphs 4 副本共用组件。";
+"Glyphs Python module" = "Glyphs Python 模块";
+"Selected Python" = "所选 Python";
+"Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "更改组件前，请退出所有 Glyphs 4 副本。出现提示时，您可以保存尚未保存的字体。";

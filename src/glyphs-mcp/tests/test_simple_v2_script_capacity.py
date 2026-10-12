@@ -155,7 +155,7 @@ def test_retained_non_script_limits():
     assert scripts.MAX_OUTPUT_CHARS == 16000
 
 
-def executable_fixture(tmp_path, monkeypatch, count=4097):
+def executable_fixture(tmp_path, monkeypatch, count=4097, *, source=None):
     font = font_fixture(count, stored_only=True)
     core, queue, state = core_fixture(font)
     path = tmp_path/'baseline.glyphs'; path.write_text('saved fixture')
@@ -172,7 +172,7 @@ def executable_fixture(tmp_path, monkeypatch, count=4097):
     from glyphs_mcp_bridge import script_snapshot
     monkeypatch.setattr(script_snapshot, 'available', lambda: True)
     font.copy = lambda: deepcopy(font)
-    options = scripts.validate_options(dict(opts(font), source='def run(layer, params, context):\n    layer.visits += 1'))
+    options = scripts.validate_options(dict(opts(font), source=source or 'def run(layer, params, context):\n    layer.visits += 1'))
     from glyphs_mcp_protocol.source_identity import source_hash
     r = dict(request(options), sourcePath=str(path), sourceHash=source_hash(path),
              manifest=[t for t, _ in script_targets.resolve(font, options['targets'])[0]])

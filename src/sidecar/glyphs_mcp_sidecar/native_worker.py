@@ -68,9 +68,9 @@ def build_patch(payload: dict[str, Any]) -> dict[str, Any]:
 def build_result(payload: dict[str, Any]) -> dict[str, Any]:
     request = payload.get("request") or {}
     if request.get("kind") == "font_export":
-        from .font_export_job import prepare as export_prepare
+        from .font_export_job import generate as export_generate
 
-        manifest, report = export_prepare(
+        report = export_generate(
             _load_font(Path(payload["source"])), request, Path(payload["output"]).parent
         )
         Path(payload["output"]).with_name("report.json").write_text(
@@ -79,14 +79,13 @@ def build_result(payload: dict[str, Any]) -> dict[str, Any]:
         )
         return validate_worker_result({
             "version": PATCH_VERSION,
-            "resultKind": "artifact",
+            "resultKind": "diagnostic",
             "jobId": payload["jobId"],
             "documentId": payload["document"]["id"],
             "sourcePath": payload["document"]["path"],
             "sourceHash": payload["sourceHash"],
             "generation": payload["document"]["generation"],
-            "summary": "Exported and verified {}".format(report["instanceName"] or report["instanceId"]),
-            "manifest": manifest,
+            "summary": "Generated {}; verification pending".format(report["instanceName"] or report["instanceId"]),
             "report": report,
         })
     if request.get("kind") != "feature_compile":

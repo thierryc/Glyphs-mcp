@@ -16,6 +16,7 @@ from typing import Any, Mapping
 
 import glyphs_mcp_protocol
 from glyphs_mcp_protocol import validate_worker_result
+from glyphs_mcp_protocol.python_runtime import python_arguments
 
 
 from glyphs_mcp_protocol.preparation import PreparationError as WorkerError
@@ -131,6 +132,7 @@ class GlyphsCliWorker:
             self.app,
             "--plugins",
             "",
+            *python_arguments(self.app),
             "-m",
             "glyphs_mcp_sidecar.native_worker",
             "--",
@@ -168,6 +170,31 @@ class GlyphsCliWorker:
         except (FileNotFoundError, json.JSONDecodeError) as exc:
             raise WorkerError("glyphs-cli returned no valid result") from exc
         result = validate_worker_result(value)
+        if request.get("kind") == "font_export":
+            # Glyphs' default Python supplies native generation APIs. FontTools,
+            # Brotli and HarfBuzz belong to this private interpreter instead.
+            if result["resultKind"] != "diagnostic" or any(
+                result.get(key) != payload[key]
+                for key in ("jobId", "sourceHash")
+            ) or any(result.get(key) != expected for key, expected in (
+                ("documentId", document["id"]), ("sourcePath", document["path"]),
+                ("generation", document["generation"]),
+            )):
+                raise WorkerError("native export returned mismatched generation evidence")
+            if cancel.is_set():
+                raise WorkerError("job cancelled")
+            from .font_export_job import verify_generated
+            manifest, report = verify_generated(request, job_root, result["report"])
+            if cancel.is_set():
+                raise WorkerError("job cancelled")
+            result = validate_worker_result({
+                **result, "resultKind": "artifact", "manifest": manifest,
+                "report": report,
+                "summary": "Exported and verified {}".format(report["instanceName"] or report["instanceId"]),
+            })
+            # Persist only the verified final evidence used by the job lifecycle.
+            (job_root / "report.json").write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+            output_path.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
         return result["patch"] if result["resultKind"] == "mutation" else result
 
     def _communicate(self, process, cancel, *, timeout=None):

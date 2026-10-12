@@ -703,3 +703,19 @@
 "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "Cette compétence utilise un dossier local lié. Mettre à jour installe une copie gérée ici ; Désinstaller détache le lien. Les deux conservent votre dossier d’origine.";
 "Choose an agent to uninstall this skill from" = "Choisissez l’agent pour lequel désinstaller cette compétence";
 "Uninstall from %@. A backup will be kept. Linked source folders stay untouched." = "Désinstaller pour %@. Une sauvegarde sera conservée. Les dossiers sources liés restent intacts.";
+
+/* Python preflight and explicit installation override */
+"Glyphs Python" = "Python de Glyphs";
+"Python check needs attention" = "La vérification de Python nécessite votre attention";
+"Python check skipped" = "Vérification de Python ignorée";
+"Installation is enabled for this session. Python features may need setup afterward." = "L’installation est autorisée pour cette session. Les fonctionnalités Python peuvent nécessiter une configuration ensuite.";
+"The check could not confirm Python. If the Glyphs Python module is installed and working, you can allow installation anyway." = "La vérification n’a pas pu confirmer Python. Si le module Python de Glyphs est installé et fonctionne, vous pouvez tout de même autoriser l’installation.";
+"Allow installation anyway" = "Autoriser tout de même l’installation";
+
+// Glyphs 4 copy selection and interpreter evidence
+"Glyphs 4 application" = "Application Glyphs 4";
+"Python checks and setup use the selected copy." = "La vérification de Python et la configuration utilisent la copie sélectionnée.";
+"Components are shared by Glyphs 4 copies on this Mac." = "Les copies de Glyphs 4 partagent les composants sur ce Mac.";
+"Glyphs Python module" = "Module Python de Glyphs";
+"Selected Python" = "Python sélectionné";
+"Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "Quittez toutes les copies de Glyphs 4 avant de modifier les composants. Vous pourrez enregistrer les polices lorsque cela vous sera proposé.";

@@ -5,8 +5,8 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current unpublished target is product **2.0.2**, release **2.0.2**, stable
-channel, beta number **0**, installer build **57**: **eleven managed skills**, eighteen MCP tools and up to 13
+The current unpublished target is product **2.0.4**, release **2.0.4**, stable
+channel, beta number **0**, installer build **61**: **eleven managed skills**, twenty MCP tools and up to 13
 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
 **1**, bridge protocol **1**. The dated MCP transport version is negotiated
@@ -22,8 +22,8 @@ Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
 Use the helper's release tag and channel URLs. This candidate selects
-`v2.0.2`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
-and planned `Glyphs-MCP-2.0.2.dmg` / `Glyphs-MCP-2.0.2.zip`. Its signing and
+`v2.0.4`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
+and planned `Glyphs-MCP-2.0.4.dmg` / `Glyphs-MCP-2.0.4.zip`. Its signing and
 native acceptance must be verified separately before publication.
 The published stable 2.0.1 release and its `V2.0.1-RELEASE.md` evidence remain intact;
 that evidence does not qualify this candidate. Source identity alone does not

@@ -78,6 +78,12 @@ public enum GlyphsApplicationDetector {
 		home: URL = InstallerPaths.home,
 		workspace: NSWorkspace = .shared
 	) -> [GlyphsApplicationInfo] {
+        return preferredApplications(from: detectAll(home: home, workspace: workspace))
+    }
+
+    /// Preserve every observed copy for diagnostics while retaining selection policy.
+    public static func detectAll(home: URL = InstallerPaths.home,
+                                 workspace: NSWorkspace = .shared) -> [GlyphsApplicationInfo] {
 		var candidateURLs: Set<URL> = []
 		for bundleIdentifier in GlyphsRunningProcessDetector.supportedBundleIdentifiers {
 			if let appURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier) {
@@ -102,11 +108,18 @@ public enum GlyphsApplicationDetector {
 			}
 		}
 
-		return detect(candidates: Array(candidateURLs))
+		return allApplications(candidates: Array(candidateURLs))
 	}
 
 	public static func detect(candidates: [URL]) -> [GlyphsApplicationInfo] {
-		let applications = candidates.compactMap(applicationInfo(at:))
+        return preferredApplications(from: allApplications(candidates: candidates))
+    }
+
+    public static func allApplications(candidates: [URL]) -> [GlyphsApplicationInfo] {
+        candidates.compactMap(applicationInfo(at:)).sorted { sortKey($0) < sortKey($1) }
+    }
+
+    public static func preferredApplications(from applications: [GlyphsApplicationInfo]) -> [GlyphsApplicationInfo] {
 		var bestByVersion: [GlyphsMajorVersion: GlyphsApplicationInfo] = [:]
 		for application in applications {
 			guard let current = bestByVersion[application.majorVersion] else {
@@ -355,4 +368,25 @@ public struct GlyphsInstallTargetPlan: Sendable {
 		self.pluginInstallStrategy = pluginInstallStrategy
 		self.enableVerifiedInAppUpdates = enableVerifiedInAppUpdates
 	}
+}
+
+public enum GlyphsCopySelectionPolicy {
+    public static func copies(from applications: [GlyphsApplicationInfo]) -> [GlyphsApplicationInfo] {
+        var paths = Set<String>()
+        return applications.filter { application in
+            let supported = application.majorVersion == .v4 &&
+                (["com.GeorgSeifert.Glyphs4", "com.GeorgSeifert.Glyphs4Beta"].contains(application.bundleIdentifier) ||
+                 (application.bundleIdentifier == "com.GeorgSeifert.GlyphsBeta" && application.shortVersion?.hasPrefix("4") == true))
+            return supported && paths.insert(application.appURL.resolvingSymlinksInPath().path).inserted
+        }
+    }
+    public static func selected(from applications: [GlyphsApplicationInfo], preferredPath: String?) -> GlyphsApplicationInfo? {
+        let copies = copies(from: applications)
+        if let preferredPath, preferredPath.hasPrefix("/"),
+           let saved = copies.first(where: {
+               $0.appURL.resolvingSymlinksInPath().path == URL(fileURLWithPath: preferredPath).resolvingSymlinksInPath().path
+           }) { return saved }
+        return GlyphsApplicationDetector.preferredApplications(from: copies).first { $0.majorVersion == .v4 }
+    }
+    public static func showsSelector(for applications: [GlyphsApplicationInfo]) -> Bool { copies(from: applications).count > 1 }
 }

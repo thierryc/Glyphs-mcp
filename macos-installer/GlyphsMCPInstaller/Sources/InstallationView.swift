@@ -76,7 +76,7 @@ struct InstallationView: View {
                         component: component,
                         state: model.state(for: component),
                         disabled: !model.canChangeComponents,
-                        pythonReady: model.pythonReady,
+                        pythonReady: model.canInstallComponents,
                         install: { model.installComponent(component.id) },
                         update: { model.updateComponent(component.id) },
                         remove: { pendingRemoval = .component(component) },

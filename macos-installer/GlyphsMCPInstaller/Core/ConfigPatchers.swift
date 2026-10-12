@@ -782,7 +782,8 @@ public final class InstallerEventLogger: @unchecked Sendable {
                 try FileManager.default.moveItem(at: fileURL, to: rotated)
             }
             let formatter = ISO8601DateFormatter()
-            let line = "[\(formatter.string(from: now))] \(message)\n"
+            let safeMessage = InstallerLogCollector().redactedDiagnosticReport(message)
+            let line = "[\(formatter.string(from: now))] \(safeMessage)\n"
             if !FileManager.default.fileExists(atPath: fileURL.path) {
                 try FileIO.writeUTF8Atomically(line, to: fileURL)
             } else {
@@ -820,12 +821,26 @@ public struct InstallerLogCollector: Sendable {
         }.joined(separator: "\n\n")
     }
 
+    public func diagnosticEvent(_ event: String, sessionID: String, operationID: String? = nil,
+                                details: [String: Any] = [:]) -> String {
+        var value: [String: Any] = ["schemaVersion": 1, "event": event, "sessionId": sessionID, "details": details]
+        if let operationID { value["checkId"] = operationID }
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .withoutEscapingSlashes]),
+              let text = String(data: data, encoding: .utf8) else {
+            return "Setup diagnostic encoding failed for " + event
+        }
+        return "GLYPHS_MCP_SETUP:" + redactedDiagnosticReport(text)
+    }
+
     public func redactedDiagnosticReport(_ text: String) -> String {
-        var result = text
+        var result = text.replacingOccurrences(of: InstallerPaths.home.path, with: "~")
+        if let homes = try? NSRegularExpression(pattern: "/Users/[^/\\s\"']+") {
+            result = homes.stringByReplacingMatches(in: result, range: NSRange(result.startIndex..<result.endIndex, in: result), withTemplate: "~")
+        }
         let patterns = [
             "(?i)(authorization\\s*[:=]\\s*)(bearer\\s+)?[^\\s\\\"']+",
-            "(?i)((?:api[_-]?key|token|secret|password|credential)\\s*[:=]\\s*)[^\\s,;\\\"']+",
-            "(?i)(\\\"(?:api[_-]?key|token|secret|password|credential)\\\"\\s*:\\s*\\\")[^\\\"]+",
+            "(?i)((?:api[_-]?key|token|secret|password|credential|license)\\s*[:=]\\s*)[^\\s,;\\\"']+",
+            "(?i)(\\\"(?:api[_-]?key|token|secret|password|credential|license)\\\"\\s*:\\s*\\\")[^\\\"]+",
         ]
         for pattern in patterns {
             guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }

@@ -43,7 +43,7 @@ private final class ProcessOutputLimit {
 }
 
 public final class ProcessRunner {
-	public struct Result {
+	public struct Result: Sendable {
 		public let exitCode: Int32
 		public let stdoutData: Data
 		public let stderrData: Data
@@ -94,7 +94,8 @@ public final class ProcessRunner {
 		args: [String],
 		environment: [String: String]? = nil,
 		timeout: TimeInterval,
-		maximumStandardOutputBytes: Int? = nil
+		maximumStandardOutputBytes: Int? = nil,
+        onFailureOutput: (@Sendable (Result) -> Void)? = nil
 	) async throws -> Result {
 		if Task.isCancelled { throw CancellationError() }
 		let deadline = ProcessTimeout("Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent).")
@@ -187,8 +188,9 @@ public final class ProcessRunner {
 			// Preserve the timeout that initiated it instead of reporting exit 15.
 			try deadline.check()
 		} catch {
-			_ = await outTask.value
-			_ = await errTask.value
+            let stdout = await outTask.value
+            let stderr = await errTask.value
+            onFailureOutput?(Result(exitCode: -1, stdoutData: stdout, stderrData: stderr))
 			if Task.isCancelled { throw CancellationError() }
 			try outputLimit.check()
 			throw error

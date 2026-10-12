@@ -51,7 +51,7 @@ def test_upload_inventory_and_checksums_include_exact_update_assets(tmp_path,cha
     assert tmp_path/f"dist/desktop-update/Glyphs-MCP-{release['releaseVersion']}.zip" in checked
     assert tmp_path/'dist/desktop-update/appcast.xml' in checked
     assert (tmp_path/'dist/Glyphs-MCP-latest.dmg' in checked)==(channel=='stable')
-    assert (tmp_path/'dist/installer-app/Glyphs MCP.zip' in checked)==(channel=='stable')
+    assert (tmp_path/'dist/installer-app/Glyphs.MCP.zip' in checked)==(channel=='stable')
     assert len(set(p.name for p in uploaded))==len(uploaded)
 
 

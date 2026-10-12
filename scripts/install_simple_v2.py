@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Install selected lean components with durable, whole-installation rollback."""
 import argparse
+from datetime import datetime, timezone
+import uuid
 from contextlib import ExitStack
 import fcntl
 import importlib.util
@@ -60,6 +62,21 @@ def service_controller(build, home):
     return module.ServerControl(home)
 
 
+def python_runtime_helper(build):
+    helper = Path(build)/'sidecar/glyphs_mcp_protocol/python_runtime.py'
+    specification = importlib.util.spec_from_file_location('glyphs_install_python', helper)
+    module = importlib.util.module_from_spec(specification)
+    exec(compile(helper.read_bytes(), str(helper), 'exec'), module.__dict__)
+    return module
+
+
+def is_running_glyphs4(metadata):
+    identifier = metadata.get('CFBundleIdentifier')
+    return identifier in {'com.GeorgSeifert.Glyphs4', 'com.GeorgSeifert.Glyphs4Beta'} or (
+        identifier == 'com.GeorgSeifert.GlyphsBeta' and str(metadata.get('CFBundleShortVersionString', '')).startswith('4')
+    )
+
+
 def require_closed_font_processes(application):
     executable = Path(application).resolve() / 'Contents/MacOS'
     for pattern in ('^'+re.escape(str(executable))+'/', 'glyphs_mcp_sidecar.native_worker'):
@@ -68,6 +85,23 @@ def require_closed_font_processes(application):
             raise ValueError('Close Glyphs and wait for active font tasks to finish before installing.')
         if result.returncode != 1:
             raise RuntimeError('Could not check active font processes. No service was stopped.')
+
+    # All Glyphs 4 copies share this account's managed plug-in directory.
+    result = subprocess.run(['/bin/ps', '-axo', 'comm='], capture_output=True, text=True, timeout=5)
+    if result.returncode:
+        raise RuntimeError('Could not check other Glyphs copies. No service was stopped.')
+    for line in result.stdout.splitlines():
+        match = re.fullmatch(r'(.+\.app)/Contents/MacOS/[^/]+', line.strip())
+        if not match:
+            continue
+        try:
+            info = plistlib.loads((Path(match[1])/'Contents/Info.plist').read_bytes())
+        except (OSError, ValueError, plistlib.InvalidFileException):
+            if Path(line.strip()).name.lower().startswith('glyphs'):
+                raise RuntimeError('Could not verify a running Glyphs copy. No service was stopped.')
+            continue
+        if is_running_glyphs4(info):
+            raise ValueError('Close all copies of Glyphs 4 before changing shared components.')
 
 
 def stop_for_install(controller, application):
@@ -125,7 +159,7 @@ def install(build, home, python, application, companions=(), *, mcp=True, remove
     build, home = Path(build).resolve(), Path(home).expanduser().resolve()
     application = Path(application).resolve()
     app_info = plistlib.loads((application/'Contents/Info.plist').read_bytes())
-    if app_info.get('CFBundleIdentifier') != 'com.GeorgSeifert.Glyphs4':
+    if not python_runtime_helper(build).is_glyphs4_application(app_info):
         raise ValueError('Select a Glyphs 4 application for the lean components')
     manifest = json.loads((build/'manifest.json').read_text())
     available = {item['id']: item for item in manifest['companions']}
@@ -309,22 +343,88 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
     return result
 
 
-def preflight(build, application):
+class SetupDiagnostics:
+    """Bounded, correlated setup evidence; never inspect unrelated preferences or env."""
+    def __init__(self, identity=None):
+        self.identity = identity or str(uuid.uuid4())
+        self.started = time.monotonic()
+
+    def emit(self, event, **values):
+        def clean(value):
+            if isinstance(value, dict): return {key: clean(item) for key, item in value.items()}
+            if isinstance(value, (tuple, list)): return [clean(item) for item in value]
+            if not isinstance(value, str): return value
+            value = value.replace(str(Path.home()), "~")
+            value = re.sub(r"/Users/[^/\s\"']+", "~", value)
+            for pattern in (
+                r"(?i)(authorization\s*[:=]\s*)(?:bearer\s+)?[^\s\"']+",
+                r"(?i)((?:api[_-]?key|token|secret|password|credential|license)\s*[:=]\s*)[^\s,;\"']+",
+                r'(?i)("(?:api[_-]?key|token|secret|password|credential|license)"\s*:\s*")[^"]+',
+            ):
+                value = re.sub(pattern, r"\1[REDACTED]", value)
+            return value[:8192]
+        payload = {"schemaVersion": 1, "checkId": self.identity, "event": event,
+                   "timestamp": datetime.now(timezone.utc).isoformat(),
+                   "elapsedSeconds": round(time.monotonic()-self.started, 3), **values}
+        print("GLYPHS_MCP_SETUP:" + json.dumps(clean(payload), ensure_ascii=False, sort_keys=True), file=sys.stderr, flush=True)
+
+
+def preflight(build, application, diagnostics=None):
+    diagnostics = diagnostics or SetupDiagnostics()
+    diagnostics.emit("python.check-started", architecture=platform.machine(), macOS=platform.mac_ver()[0],
+                     privatePythonVersion=sys.version.split()[0], privatePython=sys.executable,
+                     application=str(application), payload=str(build))
+    try:
+        return _preflight(build, application, diagnostics)
+    except Exception as error:
+        message = str(error)
+        reason = ("native-timeout" if isinstance(error, subprocess.TimeoutExpired) else
+                  "framework-setting-missing" if "No Python framework path configured" in message else
+                  "dependency-missing" if "No module named" in message else
+                  "framework-load-failed" if "dlopen" in message or "loadFailed" in message else
+                  "preference-read-failed" if "Could not read" in message else "check-failed")
+        diagnostics.emit("python.check-failed", reason=reason, errorType=type(error).__name__, message=message)
+        raise
+
+
+def _preflight(build, application, diagnostics):
     manifest = json.loads((build/'manifest.json').read_text())
     runtime = manifest.get('runtimes', {}).get(platform.machine())
     if runtime is None: raise ValueError('The installer runtime is missing for this Mac')
     cli = build/runtime['path']/runtime['glyphsCLI']
+    # Load the shipped, dependency-free resolver directly in isolated mode.
+    python_runtime = python_runtime_helper(build)
+    diagnostics.emit("python.launcher", path=str(cli), exists=cli.is_file(),
+                     expectedPythonVersion=runtime.get("pythonVersion"), glyphsCLIVersion=runtime.get("glyphsCLIVersion"))
+    python_args = python_runtime.python_arguments(application, diagnostic=lambda value:
+        diagnostics.emit(value["event"], **{key: item for key, item in value.items() if key != "event"}))
     # The native worker uses the exact selected Glyphs application's scripting
     # environment. Private sidecar Python is intentionally a separate process.
     # The parent's -B flag does not reach this embedded Python interpreter.
     # Keep imports from creating __pycache__ inside the signed Glyphs app bundle.
     environment = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1')
-    result = subprocess.run([str(cli),'run','--quiet','--app',str(application),'--plugins','',
-        '-c','from GlyphsApp import GSFont; import sys; print("GLYPHS_MCP_NATIVE_READY:" + sys.version.split()[0])'],capture_output=True,text=True,timeout=45,env=environment)
+    diagnostics.emit("python.native-started", timeoutSeconds=45, plugins="disabled",
+                     explicitFramework=python_args[1] if python_args else None,
+                     bytecodeDisabled=True, userSiteDisabled=True)
+    probe = ('from GlyphsApp import GSFont; import sys,json,platform; '
+             'print("GLYPHS_MCP_NATIVE_CONTEXT:"+json.dumps({"version":sys.version.split()[0],'
+             '"prefix":sys.prefix,"executable":sys.executable,"architecture":platform.machine()})); '
+             'print("GLYPHS_MCP_NATIVE_READY:" + sys.version.split()[0])')
+    try:
+        result = subprocess.run([str(cli),'run','--quiet','--app',str(application),'--plugins','',*python_args,
+            '-c',probe],capture_output=True,text=True,timeout=45,env=environment)
+    except subprocess.TimeoutExpired as error:
+        diagnostics.emit("python.native-timeout", timeoutSeconds=45,
+                         stdout=str(error.stdout or ""), stderr=str(error.stderr or ""))
+        raise
+    diagnostics.emit("python.native-result", exitCode=result.returncode,
+                     stdout=result.stdout, stderr=result.stderr,
+                     stdoutCharacters=len(result.stdout), stderrCharacters=len(result.stderr))
     if result.returncode or 'GLYPHS_MCP_NATIVE_READY' not in result.stdout:
         raise ValueError('Glyphs scripting is not ready. Install Python from Window → Plugin Manager → Modules in Glyphs, relaunch Glyphs, select the Python marked “(Glyphs)” in Settings → Addons, then relaunch and check again. '+result.stderr[-600:])
     version = next(line.split(':', 1)[1].strip() for line in result.stdout.splitlines()
                    if line.startswith('GLYPHS_MCP_NATIVE_READY:'))
+    diagnostics.emit("python.check-passed", nativePythonVersion=version)
     return version
 
 
@@ -341,16 +441,34 @@ def main():
                         help='Replace only these selected components; preserve other installed bundles.')
     parser.add_argument('--start',action='store_true')
     parser.add_argument('--preflight-only',action='store_true')
+    parser.add_argument('--skip-python-check',action='store_true',
+                        help='Install without verifying Glyphs scripting Python; retain all installation checks.')
+    parser.add_argument('--diagnostic-id', help='Correlate setup evidence with a desktop operation.')
     args=parser.parse_args()
-    if args.preflight_only or not (args.no_mcp and not args.companion and args.remove):
-        python_version = preflight(args.build,args.glyphs_app)
+    diagnostics=SetupDiagnostics(args.diagnostic_id)
+    diagnostics.emit('setup.requested', preflightOnly=args.preflight_only,
+                     skipPythonCheckRequested=args.skip_python_check,
+                     components=sorted((['mcp'] if not args.no_mcp else []) + args.companion),
+                     remove=args.remove, only=args.only)
+    if args.preflight_only or not args.skip_python_check and not (args.no_mcp and not args.companion and args.remove):
+        python_version = preflight(args.build,args.glyphs_app,diagnostics)
     if args.preflight_only:
         print(json.dumps({'ok':True, 'pythonVersion':python_version})); return
-    require_closed_font_processes(args.glyphs_app)
-    result=install(args.build,args.home,args.python,args.glyphs_app,args.companion,
-                   mcp=not args.no_mcp,remove_components=args.remove,
-                   only_components=args.only,start=args.start)
-    print(json.dumps(result,sort_keys=True))
+    diagnostics.emit("installation.started", application=str(args.glyphs_app), payload=str(args.build))
+    try:
+        require_closed_font_processes(args.glyphs_app)
+        if args.skip_python_check:
+            diagnostics.emit('python.check-skipped', application=str(args.glyphs_app), reason='explicit-user-override')
+            print('Glyphs Python check skipped at the user’s request. Scripting readiness remains unverified.',file=sys.stderr)
+        result=install(args.build,args.home,args.python,args.glyphs_app,args.companion,
+                       mcp=not args.no_mcp,remove_components=args.remove,
+                       only_components=args.only,start=args.start)
+        diagnostics.emit("installation.completed", components=result.get("components"), version=result.get("version"))
+        print(json.dumps(result,sort_keys=True))
+    except Exception as error:
+        diagnostics.emit("installation.failed", errorType=type(error).__name__, message=str(error))
+        raise
+
 
 
 if __name__ == '__main__':

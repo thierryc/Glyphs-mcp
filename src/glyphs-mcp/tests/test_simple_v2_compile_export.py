@@ -742,3 +742,97 @@ def test_variable_export_rejects_overlap_removal_before_native_generation(tmp_pa
         font_export_job.prepare(
             NS(instances=[instance]), {"kind": "font_export", "options": options}, tmp_path
         )
+
+
+@pytest.mark.parametrize("case", ["plain", "woff2", "corrupt", "wrong_container", "wrong_document", "cancelled"])
+def test_export_worker_verifies_outside_glyphs_python(tmp_path, monkeypatch, case):
+    """Native generation must work without verifier imports; bad output never succeeds."""
+    import builtins
+    import shutil
+    from threading import Event
+    from unittest.mock import Mock
+    from glyphs_mcp_sidecar import native_worker, worker as worker_module
+    from fontTools.ttLib import TTFont
+
+    source_font = tmp_path / "Input.ttf"
+    _build_minimal_ttf(source_font)
+    if case == "woff2":
+        parsed = TTFont(source_font)
+        parsed.flavor = "woff2"
+        parsed.save(source_font)
+        parsed.close()
+    job_root = tmp_path / "export-job"
+    job_root.mkdir()
+    container = "woff2" if case in {"woff2", "wrong_container"} else "plain"
+    options = validate_export_options({
+        "instanceId": "instance-1", "format": "ttf", "containers": [container],
+        "verification": {"shapingCases": [{"text": "A", "feature": "liga", "expect": "same"}]},
+    })
+
+    class Instance:
+        id, name, type, exports = "instance-1", "Regular", 0, True
+
+        def generate(self, **kwargs):
+            output = Path(kwargs["fontPath"]) / "Regular.ttf"
+            if case == "corrupt":
+                output.write_bytes(b"not a font")
+            else:
+                shutil.copyfile(source_font, output)
+
+    monkeypatch.setattr(native_worker, "_load_font", lambda path: NS(instances=[Instance()]))
+    monkeypatch.setattr(worker_module, "python_arguments", lambda app: [])
+    imports = builtins.__import__
+
+    def no_private_packages(name, *args, **kwargs):
+        if name.split(".")[0] in {"fontTools", "brotli", "uharfbuzz"}:
+            raise ImportError("not installed in default Glyphs Python")
+        return imports(name, *args, **kwargs)
+
+    def launch(command, **kwargs):
+        payload = json.loads(Path(command[-1]).read_text())
+        with monkeypatch.context() as native_environment:
+            native_environment.setattr(builtins, "__import__", no_private_packages)
+            generated = native_worker.build_result(payload)
+        assert generated["resultKind"] == "diagnostic"
+        assert not generated["report"]["success"]
+        assert not generated["report"]["verification"]["tables"]
+        if case == "wrong_document":
+            generated["documentId"] = "another-document"
+        Path(payload["output"]).write_text(json.dumps(generated))
+        return Mock(returncode=0, pid=123)
+
+    monkeypatch.setattr(worker_module.subprocess, "Popen", launch)
+    worker = worker_module.GlyphsCliWorker(executable="/bin/true", app="/Applications/Glyphs 4.app")
+    monkeypatch.setattr(worker, "executable", lambda: "/test/glyphs")
+    monkeypatch.setattr(worker, "_communicate", lambda *args, **kwargs: ("", ""))
+    doc = {"id": "doc", "path": "/tmp/Saved.glyphs", "generation": 1}
+    request = {"kind": "font_export", "options": options}
+    cancel = Event()
+    if case == "cancelled":
+        verify = font_export_job.verify_generated
+
+        def cancel_after_verification(*args):
+            result = verify(*args)
+            cancel.set()
+            return result
+
+        monkeypatch.setattr(font_export_job, "verify_generated", cancel_after_verification)
+    if case in {"corrupt", "wrong_container", "wrong_document", "cancelled"}:
+        with pytest.raises(WorkerError, match={
+            "corrupt": "could not parse",
+            "wrong_container": "exactly the requested containers",
+            "wrong_document": "mismatched generation evidence",
+            "cancelled": "job cancelled",
+        }[case]) as error:
+            worker.prepare(job_root, doc, request, Path(doc["path"]), HASH, cancel)
+        assert str(error.value)
+        assert json.loads((job_root / "report.json").read_text())["success"] is False
+    else:
+        result = worker.prepare(job_root, doc, request, Path(doc["path"]), HASH, cancel)
+        assert result["resultKind"] == "artifact" and result["report"]["success"]
+        assert result["manifest"]["files"][0]["container"] == container
+        evidence = result["report"]["verification"]["files"][0]
+        assert evidence["tables"]["glyphCount"] == 2
+        assert evidence["shapingCases"][0]["passed"]
+        assert json.loads((job_root / "worker-result.json").read_text()) == result
+        assert json.loads((job_root / "report.json").read_text()) == result["report"]

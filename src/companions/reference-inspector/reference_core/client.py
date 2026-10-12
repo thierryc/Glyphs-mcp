@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 from collections import OrderedDict
 from pathlib import Path
+from glyphs_mcp_protocol.python_runtime import python_arguments
 
 
 class ReferenceReader:
@@ -39,7 +40,8 @@ class ReferenceReader:
         request_file = self.root / "request.json"
         request_file.write_text(json.dumps(payload))
         command = [executable, "run", "--quiet", "--app", self.application,
-                   "--plugins", "", "-m", "reference_core.native_worker", "--", str(request_file)]
+                   "--plugins", "", *python_arguments(self.application),
+                   "-m", "reference_core.native_worker", "--", str(request_file)]
         process = subprocess.run(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE, env=environment, timeout=90)
         if process.returncode:

@@ -46,12 +46,18 @@ def test_parent_worker_preserves_exact_error_over_process_noise(tmp_path,monkeyp
     import glyphs_mcp_sidecar.worker as module
     worker=GlyphsCliWorker(executable='/bin/true',app='/Applications/Glyphs 4.app')
     monkeypatch.setattr(worker,'executable',lambda:'/test/glyphs')
+    monkeypatch.setattr(module,'python_arguments',lambda app:['--python','/test/GlyphsPython/Python'])
     process=Mock(returncode=1,pid=123)
-    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**k:process)
+    commands=[]
+    def launch(command,**kwargs):
+        commands.append(command)
+        return process
+    monkeypatch.setattr(module.subprocess,'Popen',launch)
     message='Kerning glyphs missing: ["A.missing"]'
     monkeypatch.setattr(worker,'_communicate',lambda *a:('native startup noise',WORKER_ERROR_PREFIX+json.dumps(message)+'\nwrapper noise'))
     with pytest.raises(WorkerError,match='A.missing') as e:worker.prepare(tmp_path,{}, {},tmp_path/'font.glyphs','hash',Event())
     assert str(e.value)==message
+    assert commands[0][commands[0].index('--python')+1]=='/test/GlyphsPython/Python'
 
 def test_optional_projection_preserves_metadata_errors_and_stored_preview(tmp_path):
     value,bridge,_=service(tmp_path)

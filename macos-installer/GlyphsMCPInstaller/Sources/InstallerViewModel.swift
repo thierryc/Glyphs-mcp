@@ -23,16 +23,25 @@ final class InstallerViewModel: ObservableObject {
     @Published private(set) var running = false
     @Published private(set) var receiptURL: URL?
     @Published var updateStatus: PluginUpdateStatus = .idle
-    @Published private(set) var pythonReady = false
-    @Published private(set) var checkingPython = false
-    @Published private(set) var pythonVersion: String?
-    @Published private(set) var pythonSetupError: String?
+    @Published private var pythonSession = GlyphsPythonCheckSession()
+    @Published private(set) var selectedGlyphsPath: String?
+    var pythonCheck: GlyphsPythonCheckState { pythonSession.state }
+    var pythonDetection: GlyphsPythonDetection? { pythonSession.detection }
+    var hasMultipleGlyphsCopies: Bool { GlyphsCopySelectionPolicy.showsSelector(for: applications) }
+    var canSelectGlyphsCopy: Bool { !operationsBusy && refreshTask == nil }
+    private static let selectedGlyphsPreference = "selectedGlyphs4ApplicationPath"
+    var pythonReady: Bool { pythonCheck.verified }
+    var checkingPython: Bool { pythonCheck.isChecking }
+    var pythonVersion: String? { pythonCheck.version }
+    var pythonSetupError: String? { pythonCheck.error }
+    var canInstallComponents: Bool { pythonCheck.allowsInstallation }
 
     var stopServiceBeforeQuit: (() async throws -> Void)?
     var showTroubleshootingLogs: (() -> Void)?
 
     private let runner = ProcessRunner()
     private let fm = FileManager.default
+    private let diagnosticSessionID = UUID().uuidString
     private let eventLogger = InstallerEventLogger()
     private let logCollector = InstallerLogCollector()
     private let root = InstallerPaths.home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2")
@@ -53,7 +62,7 @@ final class InstallerViewModel: ObservableObject {
     func setSetupVisible(_ visible: Bool) {
         setupVisible = visible
         if visible {
-            if !pythonReady { checkGlyphsPython() }
+            if !pythonReady && !pythonCheck.isSkipped { checkGlyphsPython() }
             refreshOptionalTools()
         }
     }
@@ -79,14 +88,14 @@ final class InstallerViewModel: ObservableObject {
     var message: String { notice.text }
     var projectVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown" }
     var versionLabel: String { DesktopIdentity.versionLabel }
-    var application: GlyphsApplicationInfo? { applications.first { $0.majorVersion == .v4 } }
+    var application: GlyphsApplicationInfo? { GlyphsCopySelectionPolicy.selected(from: applications, preferredPath: selectedGlyphsPath) }
     var allInstalled: Bool {
         DesktopComponent.ids.isSubset(of: installed)
             && Set(InstallerClientKind.allCases).isSubset(of: installedConnectors)
     }
     var bulkActionTitle: String { allInstalled ? "Update All" : "Install All" }
     var canChangeComponents: Bool { !operationsBusy && refreshTask == nil && !checkingPython && application != nil && !running }
-    var canRunBulkAction: Bool { canChangeComponents && pythonReady }
+    var canRunBulkAction: Bool { canChangeComponents && canInstallComponents }
     var installedConnectors: Set<InstallerClientKind> {
         Set(InstallerClientKind.allCases.filter { connectorStates[$0] == .installed })
     }
@@ -97,13 +106,33 @@ final class InstallerViewModel: ObservableObject {
     }
 
     init() {
+        selectedGlyphsPath = UserDefaults.standard.string(forKey: Self.selectedGlyphsPreference)
         let center = NSWorkspace.shared.notificationCenter
         for event in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             observers.append(center.addObserver(forName: event, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in self?.refreshRunning() }
             })
         }
+        diagnostic("session.started", details: [
+            "appVersion": projectVersion,
+            "appBuild": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown",
+            "appPath": Bundle.main.bundleURL.path,
+            "macOS": ProcessInfo.processInfo.operatingSystemVersionString,
+            "architecture": Self.processArchitecture,
+        ])
+    }
 
+    private static var processArchitecture: String {
+        #if arch(arm64)
+        return "arm64"
+        #else
+        return "x86_64"
+        #endif
+    }
+
+    private func diagnostic(_ event: String, operationID: String? = nil, details: [String: Any] = [:]) {
+        record(logCollector.diagnosticEvent(event, sessionID: diagnosticSessionID,
+                                          operationID: operationID, details: details))
     }
 
     deinit {
@@ -134,7 +163,7 @@ final class InstallerViewModel: ObservableObject {
             defer {
                 self.refreshTask = nil
                 if !self.checkingPython { self.initializationStage = nil }
-                if self.setupVisible && !Task.isCancelled { self.checkGlyphsPython() }
+                if self.setupVisible && !self.pythonCheck.isSkipped && !Task.isCancelled { self.checkGlyphsPython() }
         }
         let start = Date()
         // Local qualification can simulate a blocked filesystem check without
@@ -147,10 +176,21 @@ final class InstallerViewModel: ObservableObject {
         #endif
         let discovered = await Task.detached(priority: .utility) {
             if qualificationDelay > 0 { Thread.sleep(forTimeInterval: qualificationDelay) }
-            return (GlyphsApplicationDetector.detect().filter { $0.majorVersion == .v4 }, DesktopInstallation())
+            let all = GlyphsApplicationDetector.detectAll()
+            return (GlyphsCopySelectionPolicy.copies(from: all), DesktopInstallation(), all)
         }.value
         guard !Task.isCancelled else { return }
         self.applications = discovered.0
+        self.selectedGlyphsPath = self.application?.appURL.path
+        if let path = self.selectedGlyphsPath { UserDefaults.standard.set(path, forKey: Self.selectedGlyphsPreference) }
+        self.bindPythonToSelectedCopy()
+        self.diagnostic("glyphs.discovery", details: [
+            "copies": discovered.2.map { ["path": $0.appURL.path, "bundleIdentifier": $0.bundleIdentifier,
+                                           "version": $0.shortVersion ?? "unknown", "beta": $0.isBeta] as [String: Any] },
+            "selectedPath": self.application?.appURL.path ?? "none",
+            "selectionPolicy": "Retain user selection; otherwise prefer stable bundle, then /Applications, then path order",
+            "scanScope": "/Applications, ~/Applications and Launch Services bundle lookup",
+        ])
         let installation = discovered.1
         self.timed("Installed component discovery", since: start)
         installed = installation.components
@@ -178,24 +218,54 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
+    func selectGlyphsApplication(_ path: String) {
+        guard canSelectGlyphsCopy, let chosen = applications.first(where: { $0.appURL.path == path }),
+              chosen.appURL != application?.appURL else { return }
+        selectedGlyphsPath = chosen.appURL.path
+        UserDefaults.standard.set(chosen.appURL.path, forKey: Self.selectedGlyphsPreference)
+        bindPythonToSelectedCopy()
+        diagnostic("glyphs.selection-changed", details: ["selectedPath": path, "bundleIdentifier": chosen.bundleIdentifier])
+        refreshRunning()
+        if setupVisible { checkGlyphsPython() }
+    }
+
+    private func bindPythonToSelectedCopy() {
+        guard pythonSession.bind(application) else { return }
+        pythonCheckTask?.cancel()
+        pythonCheckTask = nil
+        initializationError = nil
+        initializationDetails = []
+        phaseStartedAt = nil
+        if refreshTask == nil { initializationStage = nil }
+    }
+
+    private var runningGlyphs4Applications: [NSRunningApplication] {
+        NSWorkspace.shared.runningApplications.filter { app in
+            guard let url = app.bundleURL else { return false }
+            return !GlyphsCopySelectionPolicy.copies(from: GlyphsApplicationDetector.allApplications(candidates: [url])).isEmpty
+        }
+    }
+
+    private var runningGlyphsDiagnostics: [[String: Any]] {
+        NSWorkspace.shared.runningApplications
+            .filter { GlyphsRunningProcessDetector.supportedBundleIdentifiers.contains($0.bundleIdentifier ?? "") }
+            .map { ["path": $0.bundleURL?.path ?? "unknown", "bundleIdentifier": $0.bundleIdentifier ?? "unknown",
+                    "processId": $0.processIdentifier] }
+    }
+
     func refreshRunning() {
-        running = application.map { target in
-            NSWorkspace.shared.runningApplications.contains {
-                $0.bundleURL?.standardizedFileURL == target.appURL.standardizedFileURL
-            }
-        } ?? false
+        running = !runningGlyphs4Applications.isEmpty
         notice.glyphsRunningChanged(running)
     }
 
     func quitGlyphs() {
-        guard !operationsBusy, let application else { return }
+        guard !operationsBusy, application != nil else { return }
         busy = true
         Task {
             defer { busy = false }
             do {
                 try await stopServiceBeforeQuit?()
-                for app in NSWorkspace.shared.runningApplications
-                    where app.bundleURL?.standardizedFileURL == application.appURL.standardizedFileURL {
+                for app in self.runningGlyphs4Applications {
                     app.terminate()
                 }
                 notice = .waitingForGlyphs
@@ -230,20 +300,25 @@ final class InstallerViewModel: ObservableObject {
 
     func checkGlyphsPython() {
         guard !operationsBusy, refreshTask == nil, !checkingPython else { return }
-        pythonReady = false
-        pythonVersion = nil
-        pythonSetupError = nil
         guard let application else { return }
-        checkingPython = true
+        let checkToken = pythonSession.begin()
+        let checkID = checkToken.uuidString
+        diagnostic("python-check.requested", operationID: checkID, details: [
+            "glyphsPath": application.appURL.path, "bundleIdentifier": application.bundleIdentifier,
+            "version": application.shortVersion ?? "unknown", "runningCopies": runningGlyphsDiagnostics,
+        ])
         pythonCheckTask = Task { [weak self] in
             guard let self else { return }
             let start = Date()
             self.initializationStartedAt = start
             self.initializationError = nil
-            defer { self.checkingPython = false; self.initializationStage = nil }
+            defer { if self.pythonSession.accepts(checkToken) { self.initializationStage = nil } }
             self.stage("Preparing setup files…")
+            var payloadReady = false
             do {
-                let payload = try await self.resolvePayload()
+                let payload = try await self.resolvePayload(operationID: checkID)
+                guard !Task.isCancelled, self.pythonSession.accepts(checkToken) else { return }
+                payloadReady = true
                 let lean = payload.payloadDir.appendingPathComponent("Lean")
                 #if arch(arm64)
                 let architecture = "arm64"
@@ -254,24 +329,57 @@ final class InstallerViewModel: ObservableObject {
                 let helper = payload.payloadDir.appendingPathComponent("Installer/install_simple_v2.py")
                 let preflightStart = Date()
                 self.stage("Checking Glyphs Python…")
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--qualify-python-check-failure") {
+                    throw InstallerError.userFacing("Qualification: simulated Glyphs Python check failure.")
+                }
+                #endif
+                self.diagnostic("python-check.helper-started", operationID: checkID,
+                                details: ["privatePython": python.path, "helper": helper.path, "timeoutSeconds": 60])
                 let result = try await self.runner.runCapturing(executable: python,
                     args: ["-I", "-B", helper.path, "--build", lean.path,
-                           "--glyphs-app", application.appURL.path, "--preflight-only"], timeout: 60)
+                           "--glyphs-app", application.appURL.path, "--preflight-only",
+                           "--diagnostic-id", checkID], timeout: 60,
+                    onFailureOutput: { [weak self] output in
+                        Task { @MainActor in
+                            for line in output.stderr.prefix(32768).split(separator: "\n") { self?.record(String(line)) }
+                            self?.diagnostic("python-check.helper-interrupted", operationID: checkID,
+                                             details: ["stdout": String(output.stdout.prefix(8192)), "partialOutputRetained": true])
+                        }
+                    })
+                guard !Task.isCancelled, self.pythonSession.accepts(checkToken) else { return }
+                let detection = GlyphsPythonDetection.parse(result.stderr, checkID: checkID)
+                for line in result.stderr.split(separator: "\n") { self.record(String(line)) }
+                self.diagnostic("python-check.helper-finished", operationID: checkID,
+                                details: ["exitCode": result.exitCode, "elapsedSeconds": Date().timeIntervalSince(preflightStart),
+                                          "stdout": String(result.stdout.prefix(8192))])
                 let response = (try? JSONSerialization.jsonObject(with: result.stdoutData)) as? [String: Any]
                 guard result.exitCode == 0, response?["ok"] as? Bool == true else {
                     let detail = (response?["error"] as? [String: Any])?["message"] as? String
-                    throw InstallerError.userFacing(detail ?? result.stderr)
+                    let message = detail ?? result.stderr
+                    self.pythonSession.finish(checkToken, state: .failed(message, canSkip: payloadReady), detection: detection)
+                    throw InstallerError.userFacing(message)
                 }
-                self.pythonVersion = response?["pythonVersion"] as? String
-                self.pythonReady = true
+                self.pythonSession.finish(checkToken, state: .ready(response?["pythonVersion"] as? String), detection: detection)
                 Task { [weak self] in self?.refreshOptionalTools() }
                 self.timed("Glyphs Python preflight", since: preflightStart)
             } catch {
-                self.pythonSetupError = error.localizedDescription
+                guard !Task.isCancelled, self.pythonSession.accepts(checkToken) else { return }
+                self.pythonSession.finish(checkToken, state: .failed(error.localizedDescription, canSkip: payloadReady),
+                                        detection: self.pythonDetection)
                 self.initializationError = error.localizedDescription
+                self.diagnostic("python-check.failed", operationID: checkID,
+                                details: ["payloadReady": payloadReady, "error": error.localizedDescription,
+                                          "elapsedSeconds": Date().timeIntervalSince(start)])
                 self.record("Glyphs Python readiness check failed: \(error.localizedDescription)")
             }
         }
+    }
+
+    func allowInstallationWithoutPythonCheck() {
+        guard !operationsBusy, !checkingPython, let application, pythonCheck.canSkip else { return }
+        pythonSession.allowUnverifiedInstallation()
+        record("User allowed installation without a verified Glyphs Python check for \(application.appURL.path).")
     }
 
     func installAll() {
@@ -403,7 +511,7 @@ final class InstallerViewModel: ObservableObject {
     private func performComponent(_ id: String, operation: SetupOperation) {
         refreshRunning()
         guard DesktopComponent.ids.contains(id), canChangeComponents else { return }
-        guard operation == .remove || pythonReady else {
+        guard operation == .remove || canInstallComponents else {
             notice = .failure("Complete Glyphs Python setup and choose Check again before installing components.")
             return
         }
@@ -487,7 +595,7 @@ final class InstallerViewModel: ObservableObject {
     func canChangeOptionalTool(_ id: String) -> Bool {
         !operationsBusy && !checkingPython && optionalTask == nil &&
         optionalStates[id]?.protectedInstallation != true &&
-        (id != "beztrace-glyphs" || (application != nil && !running && pythonReady))
+        (id != "beztrace-glyphs" || (application != nil && !running && canInstallComponents))
     }
 
     func changeOptionalTool(_ id: String, action: String) {
@@ -545,10 +653,22 @@ final class InstallerViewModel: ObservableObject {
         let python = lean.appendingPathComponent("runtimes/\(architecture)/bin/python3")
         let helper = payload.payloadDir.appendingPathComponent("Installer/install_simple_v2.py")
         var args = ["-B", helper.path, "--build", lean.path, "--glyphs-app", application.appURL.path, "--start"]
+        if pythonCheck.isSkipped { args.append("--skip-python-check") }
         if !selected.contains("mcp") { args.append("--no-mcp") }
         for id in selected.sorted() where id != "mcp" { args += ["--companion", id] }
         if let only { args += ["--only", only] }
-        try await execute(python, args)
+        let operationID = UUID().uuidString
+        args += ["--diagnostic-id", operationID]
+        diagnostic("installation.requested", operationID: operationID,
+                   details: ["components": selected.sorted(), "only": only ?? "all-selected",
+                             "pythonCheckSkipped": pythonCheck.isSkipped, "glyphsPath": application.appURL.path])
+        do {
+            try await execute(python, args)
+            diagnostic("installation.completed", operationID: operationID)
+        } catch {
+            diagnostic("installation.failed", operationID: operationID, details: ["error": error.localizedDescription])
+            throw error
+        }
         receiptURL = root.appendingPathComponent("installation.json")
     }
 
@@ -609,16 +729,20 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
-    private func resolvePayload() async throws -> InstallerPayload {
+    private func resolvePayload(operationID: String? = nil) async throws -> InstallerPayload {
         let start = Date()
         let model = self
         let resolved = try await payloadResolver.resolve {
             try InstallerPayload.resolve(progress: { message in
-                Task { @MainActor in if model.checkingPython { model.stage(message) } }
+                Task { @MainActor in
+                    if model.checkingPython && (operationID == nil || model.pythonSession.activeCheckID?.uuidString == operationID) { model.stage(message) }
+                }
             })
         }
         payload = resolved
-        timed("Setup payload resolution", since: start)
+        diagnostic("payload.resolved", operationID: operationID ?? UUID().uuidString,
+                   details: ["elapsedSeconds": Date().timeIntervalSince(start), "path": resolved.payloadDir.path,
+                             "scope": "caller wait; discovery is shared and cached"])
         return resolved
     }
 
@@ -642,8 +766,8 @@ final class InstallerViewModel: ObservableObject {
             "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1"
         ]) { _, new in new }
         let result = try await runner.runCapturing(executable: executable, args: args, environment: environment, timeout: 300)
-        appendLog(result.stdout)
-        appendLog(result.stderr)
+        record(String(result.stdout.prefix(16384)))
+        record(String(result.stderr.prefix(32768)))
         guard result.exitCode == 0 else {
             let data = result.stdout.data(using: .utf8) ?? Data()
             let response = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]

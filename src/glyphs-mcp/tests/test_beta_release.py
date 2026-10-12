@@ -16,8 +16,12 @@ from release_discovery import verify
 from release_security import validate_release_metadata, validate_release_state, ReleaseSecurityError
 
 
-def test_current_checkout_is_stable_candidate_build_57():
-    release = load(REPO)
+def test_historical_stable_candidate_build_57(tmp_path):
+    project = tmp_path / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
+    project.parent.mkdir(parents=True)
+    project.write_text("MARKETING_VERSION = 2.0.2;\nCURRENT_PROJECT_VERSION = 57;\n")
+    (tmp_path / "release.json").write_text('{"channel":"stable","betaNumber":0}')
+    release = load(tmp_path)
     assert release['version'] == '2.0.2'
     assert release['tag'] == 'v2.0.2'
     assert release['label'] == '2.0.2'

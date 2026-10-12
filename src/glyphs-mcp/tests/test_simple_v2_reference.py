@@ -166,6 +166,7 @@ def test_reference_reader_resolves_installed_cli_without_shell_configuration(tmp
     receipt.parent.mkdir(parents=True);receipt.write_text(json.dumps({'glyphsCLI':str(cli)}))
     monkeypatch.setattr(module.Path,'home',lambda: tmp_path)
     monkeypatch.setattr(module.shutil,'which',lambda name: None)
+    monkeypatch.setattr(module,'python_arguments',lambda app:['--python','/test/GlyphsPython/Python'])
     commands=[]
     def run(command,**kwargs):
         commands.append(command)
@@ -178,3 +179,4 @@ def test_reference_reader_resolves_installed_cli_without_shell_configuration(tmp
     reader.read({'source':'/tmp/disposable.glyphs','reference':{'kind':'last_saved'},'epoch':0})
     assert commands[0][0] == str(cli)
     assert commands[0][4] == '/Applications/Selected Glyphs.app'
+    assert commands[0][commands[0].index('--python')+1] == '/test/GlyphsPython/Python'
