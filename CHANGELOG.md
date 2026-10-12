@@ -1,5 +1,27 @@
 # Changelog
 
+## Source follow-up — 12 October 2026
+
+- Reconcile development source with published 2.0.4, retain qualification evidence and separate optional macro iteration from the eleven managed skills.
+- Refresh README, installation/troubleshooting, website and agent-package release guidance; add upgrade directions, external page copy and next-development priorities.
+- Remove explicitly recognized compiler caches while preserving results, release artifacts and development runtime inputs. The signed v2.0.4 tag and assets are unchanged.
+
+## 2.0.4 — stable release, build 61, 12 October 2026
+
+- Detect the official default Glyphs Python when no framework preference is saved; preserve explicit selections.
+- Show the selected Glyphs application and detected Python. Offer an application selector only when multiple Glyphs 4 copies are detected.
+- Add an explained Install anyway option after a failed readiness check; unavailable scripting still requires repair in Glyphs.
+- Move readiness information into Setup and add correlated application, preference, interpreter and installation diagnostics.
+- Use private-runtime FontTools/HarfBuzz for export verification, retaining native compilation with the default Glyphs Python.
+- Publish the signed/notarized/stapled universal app, disk image and signed update feed. Full checks passed 2,952 Python tests (two optional skips) and 263 desktop tests; exact signed VM installation, six static export combinations and live checks passed. See [qualification](V2.0.4-RELEASE.md).
+
+## 2.0.3 — stable release, build 59
+
+- Run already-authorized scripts after preparation without a forced Save; retain explicit preview review and pre-run memory recovery.
+- Add save-free `open_edit_tab` and independent unsaved `duplicate_document` copies, bringing the contract to twenty tools.
+- Explain Curve Inspector no-change outcomes and expose the agent package skills digest.
+- Retain the coordinated bridge/sidecar update and separately recorded signed/native evidence. See [qualification](V2.0.3-RELEASE.md).
+
 ## 2.0.2 — local development candidate, build 57
 
 - Simplify shared edit cards with concise requests, one View details disclosure,
@@ -20,7 +42,7 @@
 - Refresh the pinned SDK and offline corpus, including separately attributed
   official web snapshots. Existing native qualification retains its original scope.
 
-This candidate has not been published or qualified as a signed release.
+This entry records the local preparation stage. The subsequent signed stable 2.0.2 release and its separate acceptance are recorded in [2.0.2 qualification](V2.0.2-RELEASE.md); the preparation details above retain their original scope.
 
 
 ## 2.0.1 — skills catalog and focused setup, build 56
