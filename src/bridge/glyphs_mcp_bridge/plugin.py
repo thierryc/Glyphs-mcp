@@ -9,7 +9,7 @@ from GlyphsApp.plugins import PalettePlugin  # type: ignore[import-not-found]
 from Foundation import NSHashTable  # type: ignore[import-not-found]
 
 from glyphs_mcp_bridge import PROJECT_VERSION
-from glyphs_mcp_bridge.lifecycle import BRIDGE_VERSION, bridge_lifecycle
+from glyphs_mcp_bridge.lifecycle import bridge_lifecycle
 
 
 PALETTE_HEIGHT = 30
@@ -27,7 +27,7 @@ def _label(frame, *, size=12.0):
 class GlyphsMCPBridgePlugin(PalettePlugin):
     @objc.python_method
     def settings(self) -> None:
-        self.name = "Glyphs MCP Bridge {} ({})".format(PROJECT_VERSION, BRIDGE_VERSION)
+        self.name = "Glyphs MCP Bridge {}".format(PROJECT_VERSION)
         self.min = PALETTE_HEIGHT
         self.max = PALETTE_HEIGHT
         if bridge_lifecycle.palettes is None:

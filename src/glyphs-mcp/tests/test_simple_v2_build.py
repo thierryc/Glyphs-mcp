@@ -184,7 +184,7 @@ def test_bridge_is_a_fixed_minimal_palette_without_activity_ui() -> None:
     assert "self.max = PALETTE_HEIGHT" in source
     assert '"Stopped" if bridge_lifecycle.stopped' in source
     assert '"Ready" if ready' in source
-    assert '"Glyphs MCP Bridge {} ({})".format(PROJECT_VERSION, BRIDGE_VERSION)' in source
+    assert '"Glyphs MCP Bridge {}".format(PROJECT_VERSION)' in source
     assert "_details" not in source
     assert "PALETTE_HEIGHT = 30" in source
 
