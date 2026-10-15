@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs-mcp-kerning
+# Glyphs Kerning
 
 Use [exact typed kerning edits](../glyphs/references/kerning-edits.md) for setting
 or removing supplied glyph/group pair values. Use [language proofing](../glyphs/references/kerning-proofing.md)

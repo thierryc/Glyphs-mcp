@@ -3,7 +3,7 @@
 Use `kind="python_script"` through `start_edit_workflow` when `script.native.v1`
 is advertised. Scripts run directly in Glyphs against the exact intended font,
 with a detached full-font copy of the current state available for restoration. Dirty and pathless fonts are supported; Run never saves. Require `script.recovery.snapshot.v1` and preparation version 3. This is
-trusted Python, not a security sandbox. The twenty-tool surface is unchanged.
+trusted Python, not a security sandbox. The data/action surface is unchanged.
 `executionMode` and `recovery` are retired fields and are rejected, never converted
 from an old scoped request into live execution. Missing capabilities remain
 installation gaps; scripts must not bypass rejected writes or stale targets.
@@ -154,10 +154,17 @@ Offer **Keep changes without saving**, **Save font** after success, and availabl
 Keeping or saving ends this workflow's restoration offer.
 
 New script workflows default to `auto_keep=true` (a top-level
-`start_edit_workflow` argument, not a script option). After success, an active
-MCP card shows a 30-second progress bar, then selects **Keep changes without
+`start_edit_workflow` argument, not a script option). After success, an optional,
+visible, connected and freshly reconciled MCP card shows a 30-second progress
+bar when Automatic Keep is enabled, then selects **Keep changes without
 saving**. This ends the restoration offer without saving or verifying the result.
 Say this alongside the result so the default is visible.
+
+Use the host's native question tool for unresolved decisions and missing
+information, grouping related independent questions. Disable Automatic Keep
+before waiting on any native answer. Silence, Skip and dismissal apply no choice
+and preserve the recovery offer. Use ordinary conversation when native questions
+are unavailable; this alone does not justify a card.
 
 An explicit directive such as **“wait for my answer”**, “no automatic feedback”
 or “let me inspect it first” disables the countdown. Use `auto_keep=false` when
@@ -170,9 +177,9 @@ The timer runs only in a visible, connected card. Hiding/closing the card or
 opening View details or More options stops it; returning starts a fresh 30 seconds after a
 state read. The card rechecks identity/revision and the setting before its one
 dispatch. Successful background reads preserve time only for an unchanged request and revision. Stale or uncertain actions are never replayed. Older workflows and
-failed/cancelled/unknown outcomes remain manual. Text-only clients remain manual;
-elapsed time is not a conversational answer or permission for Run, Save or
-Restore. The card's `automatic=true` dispatch flag permits only successful Keep
+failed/cancelled/partial/blocked/unknown outcomes remain manual. Text-only clients
+remain manual; elapsed time is not a conversational answer or permission for
+Run, Apply, Save, Undo or Restore. The card's `automatic=true` dispatch flag permits only successful Keep
 and records `responseOrigin="card_timeout"`; it does not authenticate a human.
 
 **Restore before run** replaces the whole font from the detached copy, including

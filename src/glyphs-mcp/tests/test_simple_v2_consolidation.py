@@ -29,7 +29,7 @@ def catalog():
 def test_current_catalog_examples_remain_valid_and_discoverable(catalog):
     from glyphs_mcp_protocol import TOOL_NAMES
     from glyphs_mcp_sidecar.service import SidecarService
-    assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 20
+    assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 21
     cases = json.loads((Path(__file__).parent/'fixtures/current_tool_routing.json').read_text())
     for case in cases:
         tool = catalog[case['tool']]
@@ -92,7 +92,7 @@ def test_shared_artifact_hash_propagates_io_errors_and_is_used_by_both_routes(tm
 
 def test_current_guidance_identifies_history_and_shared_contract():
     for name in ('ROADMAP.md', 'LEAN-V2-BENEFITS.md', 'V2-SIMPLE-RESET.md', 'V2-CONVERSATION-WORKFLOW-PLAN.md'):
-        intro = (ROOT/name).read_text().splitlines()[:12]
+        intro = (ROOT/'docs/history'/name).read_text().splitlines()[:12]
         assert 'historical' in '\n'.join(intro).lower(), name
         assert 'V2-RELEASE.md' in '\n'.join(intro), name
     for name in ('README.md', 'CODEX.md', 'src/bridge/README.md', 'src/sidecar/README.md', 'skills/ROADMAP.md'):

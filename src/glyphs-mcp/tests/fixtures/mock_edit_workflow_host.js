@@ -7,18 +7,21 @@ function host({initialize=true, tools=true, reject=false, deferWrites=false, def
   let document;
   class Element {
     constructor(tag='div') {this.tag=tag;this.children=[];this.dataset={};this.listeners={};this.style={setProperty(k,v){this[k]=v;}};this.hidden=false;this.textContent='';this.value='';}
+    get textContent(){return this._textContent + this.children.map(e=>e.textContent||'').join('');}
+    set textContent(value){this._textContent=String(value);this.children=[];}
     append(...items){this.children.push(...items);}
-    replaceChildren(...items){this.children=items;}
+    replaceChildren(...items){this._textContent='';this.children=items;}
     addEventListener(k,f){this.listeners[k]=f;}
     setAttribute(k,v){this[k]=v;}
-    getBoundingClientRect(){return {height:350};}
+    getAttribute(k){return this[k]??null;}
+    getBoundingClientRect(){return {left:24,top:300,bottom:342,width:100,height:42};}
     querySelectorAll(selector){return this.children.flatMap(e => [e,...(e.querySelectorAll?.('*')||[])]).filter(e => selector==='*'||selector==='button'&&e.tag==='button'||selector==='input:checked'&&e.tag==='input'&&e.checked);}
     querySelector(selector){return this.children.find(e=>e.tag==='button') || (this.submit ||= new Element('button'));}
     focus(){document.activeElement=this;}
   }
   const elements=new Map(), calls=[], timers=new Map(), listeners={};let sequence=0, now=0;
   const get=id=>{if(!elements.has(id)){const element=new Element();element.id=id;elements.set(id,element);}return elements.get(id);};
-  document={documentElement:new Element(),hidden:false,getElementById:get,createElement:t=>new Element(t),createTextNode:t=>({textContent:t}),querySelector:()=>get('main'),querySelectorAll:s=>[...elements.values()].flatMap(e=>e.querySelectorAll(s)),addEventListener:(k,f)=>listeners[k]=f};
+  document={documentElement:new Element(),hidden:false,getElementById:get,createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),createTextNode:t=>({textContent:t}),querySelector:()=>get('main'),querySelectorAll:s=>[...elements.values()].flatMap(e=>e.querySelectorAll(s)),addEventListener:(k,f)=>listeners[k]=f};
   const parent={postMessage(message){calls.push(message);if(message.method==='ui/initialize'&&initialize)queueMicrotask(()=>dispatch({id:message.id,result:{hostCapabilities:tools?{serverTools:{}}:{},hostContext:{theme:'dark'}}}));if(message.method==='tools/call') { const read=message.params.name==='get_edit_workflow'; if (read ? deferReads : deferWrites) return; queueMicrotask(()=>dispatch(reject?{id:message.id,error:{message:'Host tool permission unavailable'}}:{id:message.id,result:{structuredContent:read?serverState:(serverState=state(4,'applied',[]))}})); }}};
   const dispatch=data=>listeners.message({source:parent,origin:'https://host.test',data:{jsonrpc:'2.0',...data}});
   vm.runInNewContext(code,{window:{parent,addEventListener:(k,f)=>listeners[k]=f},document,Map,Promise,console,performance:{now:()=>now},setTimeout:(callback,delay)=>{timers.set(++sequence,{callback,delay,at:now+delay});return sequence;},clearTimeout:id=>timers.delete(id)});
@@ -241,7 +244,11 @@ if (require.main === module) (async()=>{
      deliver(wording,payload);await tick();
      const data=payload.data, [heading,...guidance]=data.message.split('\n');
      assert.equal(wording.get('status').textContent,heading);
-     assert.equal(wording.get('message').textContent,guidance.join('\n'));
+     assert.equal(wording.get('full-guidance').textContent,guidance.join('\n'));
+     if(data.state==='applied') {
+       assert(!wording.get('message').textContent.includes('selective Undo offer'));
+       assert(wording.get('message').textContent.includes('Saving includes the whole font.'));
+     } else assert.equal(wording.get('message').textContent,guidance.join('\n'));
      assert.equal(wording.get('message').hidden,!guidance.length);
      assert.equal(wording.get('progress').hidden,true,'completed progress must be hidden');
      assert(wording.get('fallback').hidden);

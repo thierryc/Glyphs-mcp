@@ -16,6 +16,12 @@ if [[ ${1:-} == "--check" ]]; then
   MODE="check"
 fi
 
+if [[ "$MODE" == "check" ]]; then
+  python3 -B "$ROOT/scripts/sync_skill_catalog_metadata.py" --check
+else
+  python3 -B "$ROOT/scripts/sync_skill_catalog_metadata.py"
+fi
+
 if [[ ! -f "$ROOT/README.md" || ! -d "$SOURCE" || ! -f "$MANIFEST" ]]; then
   echo "Refusing to synchronize outside the Glyphs MCP repository." >&2
   exit 1

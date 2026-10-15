@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0 — build 63
+
+- Preview every project template before creation with a folder tree, selectable text and image contents, and project-name substitutions matching the files copied into the project.
+- Adopt the new Glyphs MCP app icon for client integration assets.
+- Unify bundled and optional skill display titles under “Glyphs …”; preserve stable invocation identifiers and development links.
+- Synchronize readable catalog metadata, improve respacing discovery, and correct stale prompts and native snapshot-recovery guidance.
+- Refresh installed skill packages with backups; retire recognized obsolete global instructions and prepare self-contained optional skill sources.
+- Organize historical planning documents and report navigation, preserving qualification evidence and published artifacts.
+- Prefer grouped native questions for decisions and missing information, and conversation feedback for routine progress, success and errors. Keep one optional card for useful evidence, inspection, substantial reports or recovery controls.
+- Separate workflow data/action tools from the read-only `show_edit_workflow` renderer, bringing the catalog to twenty data/action tools plus one optional display tool. Ordinary workflow operations no longer open cards automatically.
+- Reuse action buttons for short working/completion feedback, preserve their size, and finish with a slower fade. Keep icon spacing and compact countdown presentation consistent; disable Automatic Keep before native questions.
+- Use Keep, Save and Restore result buttons with Save emphasized, visible recovery consequences and persistent completion receipts. Keep action descriptions accessible without hover tooltips; typed recovery remains Undo these changes.
+- Align current documentation and packaged skills with the [conversation UI guide](docs/conversation-ui-directives.md), including explicit countdown eligibility and Keep without saving.
+- Coordinate desktop, bridge, sidecar and agent packages at 2.1.0. Release checks and retained local acceptance are recorded separately in [the release record](V2.1.0-RELEASE.md).
+
 ## Source follow-up — 12 October 2026
 
 - Reconcile development source with published 2.0.4, retain qualification evidence and separate optional macro iteration from the eleven managed skills.
@@ -596,7 +611,7 @@ run. It does not edit, save, snapshot, or semantically diff the font.
   precondition failures while retaining failures that entered a change batch
   and rolled back.
 
-See [ROADMAP.md](ROADMAP.md) for the value/complexity-ranked work that follows;
+See [ROADMAP.md](docs/history/ROADMAP.md) for the value/complexity-ranked work that follows;
 entries after the 1.9 milestone are directional rather than release commitments.
 
 ### Developer testing

@@ -315,16 +315,6 @@ public struct AgentSkillBundleInstaller {
         var ownership = previous
         var result = SkillInstallationResult()
 
-		if overwriteExisting {
-			for legacyName in InstallerPayload.legacyManagedSkillNames {
-				let legacyDest = destRoot.appendingPathComponent(legacyName, isDirectory: true)
-				if itemExists(at: legacyDest) {
-                    _ = try backupSkill(legacyDest)
-					try fm.removeItem(at: legacyDest)
-				}
-			}
-		}
-
 		for skillDir in managedSkills {
 			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
             let name = skillDir.lastPathComponent
@@ -356,12 +346,12 @@ public struct AgentSkillBundleInstaller {
         // Legacy markers alone cannot establish that a skill was not user-modified.
         var retiredBackups: [(destination: URL, backup: URL)] = []
         do {
-            for dest in retiredPrivateSkillDestinations(from: payload, under: destRoot) {
+            for dest in retiredSkillDestinations(from: payload, under: destRoot) {
                 let name = dest.lastPathComponent
                 let identity = try? InstallerPayloadManifestResolver.treeIdentity(dest)
                 guard overwriteExisting || identity != nil && previous[name] == identity else {
                     result.entries.append(.init(name: name, path: dest.path, outcome: .preservedConflict,
-                        compatibilityIssue: "Retired private typed-v2 instructions; this family is absent from the lean payload. Replacement archives this folder outside skill discovery; it does not add feature support."))
+                        compatibilityIssue: "Obsolete Glyphs instructions absent from this payload. Replacement archives this folder outside skill discovery; it does not add feature support."))
                     continue
                 }
                 let backup = try backupSkill(dest)
@@ -425,7 +415,7 @@ public struct AgentSkillBundleInstaller {
 			let dest = destRoot.appendingPathComponent(skillName, isDirectory: true)
 			return itemExists(at: dest) ? dest : nil
 		}
-		return (current + legacy + retiredPrivateSkillDestinations(from: payload, under: destRoot)).sorted { $0.lastPathComponent < $1.lastPathComponent }
+		return Array(Set(current + legacy + retiredSkillDestinations(from: payload, under: destRoot))).sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}
 
     @discardableResult
@@ -461,9 +451,9 @@ public struct AgentSkillBundleInstaller {
         return result
     }
 
-    // Known removed private families only; names or owner markers alone do not
-    // select a folder. In particular, separate v1 instructions are preserved.
-    private func retiredPrivateSkillDestinations(from payload: InstallerPayload, under root: URL) -> [URL] {
+    // Known obsolete global v1 entries and removed private families only;
+    // names alone do not select a folder. Separate v1 release bundles survive.
+    private func retiredSkillDestinations(from payload: InstallerPayload, under root: URL) -> [URL] {
         let managed = payload.managedSkillDirectories()
         guard let entry = managed.first(where: { $0.lastPathComponent == "glyphs" }),
               let lean = try? String(contentsOf: entry.appendingPathComponent("SKILL.md"), encoding: .utf8),
@@ -472,7 +462,14 @@ public struct AgentSkillBundleInstaller {
                      "glyphs-mcp-variable-font", "glyphs-mcp-production-audit",
                      "glyphs-mcp-unicode-semantics", "glyphs-mcp-export-validation"]
         let managedNames = Set(managed.map(\.lastPathComponent))
-        return names.filter { !managedNames.contains($0) }.compactMap { name in
+        let legacy = InstallerPayload.legacyManagedSkillNames.filter { !managedNames.contains($0) }.compactMap { name -> URL? in
+            let dest = root.appendingPathComponent(name, isDirectory: true)
+            guard let text = try? String(contentsOf: dest.appendingPathComponent("SKILL.md"), encoding: .utf8),
+                  text.hasPrefix("---\nname: " + name + "\n"), text.contains("list_open_fonts"),
+                  !text.contains("`get_status`") else { return nil }
+            return dest
+        }
+        return legacy + names.filter { !managedNames.contains($0) }.compactMap { name in
             let dest = root.appendingPathComponent(name, isDirectory: true)
             guard let text = try? String(contentsOf: dest.appendingPathComponent("SKILL.md"), encoding: .utf8),
                   text.hasPrefix("---\n"),
@@ -497,7 +494,7 @@ public struct AgentSkillBundleInstaller {
             current.contains("`" + $0 + "`") || current.contains("`" + $0 + "(")
         }
         guard !retired.isEmpty else { return nil }
-        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean thirteen-tool interface."
+        return "This skill references retired typed-interface tools (\(retired.joined(separator: ", "))); the selected payload uses the lean capability-gated interface."
     }
 
 	private func itemExists(at url: URL) -> Bool {

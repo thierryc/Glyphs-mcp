@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs-mcp-outlines-docs
+# Glyphs Outlines
 
 When the target depends on the current selection, read compact `context` and
 native `selection`, then bounded selected-node details as needed. Record whether

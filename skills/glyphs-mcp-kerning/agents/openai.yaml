@@ -1,4 +1,4 @@
 interface:
-  display_name: "glyphs-mcp-kerning"
-  short_description: "Inspect stored kerning and review collision repairs"
-  default_prompt: "Use $glyphs and $glyphs-mcp-kerning to inspect stored kerning. Prepare a collision repair only when requested."
+  display_name: "Glyphs Kerning"
+  short_description: "Set exact kerning pairs and review collision repairs"
+  default_prompt: "Use $glyphs-mcp-kerning to inspect the requested pairs and make only the kerning changes I specify."

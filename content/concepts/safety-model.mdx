@@ -15,8 +15,12 @@ publication to a new directory.
 
 ## Conversation controls
 
-`edit.workflow.v1` adds request retention and one shared MCP App with text
-fallback. Save and continue authorizes one prerequisite whole-document save;
+`edit.workflow.v1` retains requests and supports one optional MCP App card.
+Decisions and missing information prefer native questions, grouping related
+independent questions when supported, with ordinary chat as the fallback.
+Routine progress, success and errors use conversation feedback. Cards are for
+useful visual review, substantial reports, live controls or recovery information;
+they do not appear for every operation. Save and continue authorizes one prerequisite whole-document save;
 it does not authorize saving the resulting edit. Ordinary complete typed requests
 apply automatically; preview and report-review gates remain explicit. Action
 revisions/tokens deduplicate repeated clicks and text replies. A closed card
@@ -31,10 +35,14 @@ never replay saves or mutations automatically.
 | Restore before run (script) | Restores the whole pre-run state including existing unsaved edits, removes later edits and clears Undo history. |
 | Restore a checkpoint | Loads the historical whole-font version without saving or resetting Git history; removes later unsaved edits and clears Undo history. |
 
-Successful new typed-edit and script cards can Keep after a visible 30-second
-countdown. **Wait for my answer** disables it. Hidden cards and open Details
-pause it; failed/uncertain outcomes and text-only clients remain manual. This
-timer does not authorize Run, Save or Restore. See the
+With Automatic Keep enabled, a visible, connected and freshly reconciled
+successful typed-edit or script card can Keep after 30 seconds. **Wait for my
+answer** disables it, and that preference persists until changed. Before waiting
+on a native question, disable Automatic Keep; silence, Skip and dismissal apply
+no choice and end no recovery offer. Hidden cards, open Details/More options and
+reconnection pause/reset elapsed time. Failed, partial, blocked and uncertain
+outcomes and text-only clients remain manual. This timer does not authorize
+Run, Apply, Save, Undo or Restore. See the
 [conversation walkthrough](../tutorial/conversation-edits.mdx).
 
 ## Baseline and ownership

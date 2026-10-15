@@ -72,6 +72,7 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
         "save_document",
         "start_edit_workflow",
         "get_edit_workflow",
+        "show_edit_workflow",
         "respond_edit_workflow",
     ]
     names = {path.name for path in first.rglob("*.py")}

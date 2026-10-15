@@ -90,4 +90,57 @@ final class DesktopTemplateCatalogTests: XCTestCase {
         }
         XCTAssertNil(try template(revision: "main").githubTemplateURL)
     }
+
+    func testPreviewTreeIncludesImplicitAndEmptyFoldersWithNaturalOrdering() {
+        let files = [ProjectFile(path: "sources/Font 10.glyphs", data: Data()),
+                     ProjectFile(path: "sources/Font 2.glyphs", data: Data()),
+                     ProjectFile(path: "sources", data: nil),
+                     ProjectFile(path: "proofs", data: nil),
+                     ProjectFile(path: "documentation/help/README.md", data: Data()),
+                     ProjectFile(path: ".gitignore", data: Data())]
+        let nodes = ProjectPreviewNode.hierarchy(files)
+        XCTAssertEqual(nodes.map(\.name), ["documentation", "proofs", "sources", ".gitignore"])
+        XCTAssertEqual(nodes[1].children, [])
+        XCTAssertEqual(nodes[2].children?.map(\.name), ["Font 2.glyphs", "Font 10.glyphs"])
+        XCTAssertEqual(nodes[0].children?.first?.children?.first?.path, "documentation/help/README.md")
+        XCTAssertNil(nodes.last?.children)
+        XCTAssertEqual(ProjectPreviewNode.hierarchy(Array(files.reversed())), nodes)
+    }
+
+    func testPreviewRenderingMatchesCreatedProjectWithoutChangingTemplateSnapshot() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let data = Data("# {{PROJECT_NAME}}\n{{SERVER_NAME}} at {{ENDPOINT_URL}}\n".utf8)
+        let endpoint = URL(string: "http://127.0.0.1:9790/mcp/")!
+        let expected = ProjectFiles.renderedData(data, projectName: "My Font", endpoint: endpoint)
+        let project = try ProjectFiles.create([ProjectFile(path: "README.md", data: data)], in: root,
+                                              name: "  My Font  ", endpoint: endpoint)
+        XCTAssertEqual(try Data(contentsOf: project.appendingPathComponent("README.md")), expected)
+        XCTAssertTrue(String(decoding: expected, as: UTF8.self).contains("My Font"))
+        XCTAssertTrue(String(decoding: data, as: UTF8.self).contains("{{PROJECT_NAME}}"))
+    }
+
+    func testTextPreviewIsBoundedAndDoesNotSplitUTF8Scalars() throws {
+        let data = Data("A😀B".utf8)
+        XCTAssertEqual(ProjectTextPreview.read(data, maximumBytes: 4)?.text, "A")
+        XCTAssertEqual(ProjectTextPreview.read(data, maximumBytes: 5)?.text, "A😀")
+        XCTAssertEqual(ProjectTextPreview.read(data)?.truncated, false)
+        let large = Data(repeating: 65, count: 300_000)
+        let preview = try XCTUnwrap(ProjectTextPreview.read(large, maximumBytes: 1_000_000))
+        XCTAssertEqual(preview.text.utf8.count, 256 * 1024)
+        XCTAssertTrue(preview.truncated)
+    }
+
+    func testBinaryAndLargeFilesAreNeverRenderedAsProjectTemplates() {
+        let endpoint = URL(string: "http://127.0.0.1:9680/mcp/")!
+        let binary = Data([0, 255, 1])
+        XCTAssertNil(ProjectTextPreview.read(binary))
+        XCTAssertNil(ProjectTextPreview.read(Data([255, 254])))
+        XCTAssertEqual(ProjectFiles.renderedData(binary, projectName: "Font", endpoint: endpoint), binary)
+        let data = Data(("{{PROJECT_NAME}}" + String(repeating: "x", count: 1_000_000)).utf8)
+        XCTAssertEqual(ProjectFiles.renderedData(data, projectName: "Font", endpoint: endpoint), data)
+        XCTAssertEqual(ProjectTextPreview.read(Data())?.text, "")
+        XCTAssertEqual(ProjectTextPreview.read(Data())?.truncated, false)
+    }
 }

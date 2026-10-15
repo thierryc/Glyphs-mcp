@@ -98,7 +98,8 @@ public actor SkillStore {
                 return CatalogSkill(id: "import:" + pathID(repositoryURL.path + "/" + skillSource.directory), name: metadata.name,
                     description: metadata.description, author: owner, license: "Not verified; review the source license",
                     classification: .imported, source: skillSource, compatibleClients: SkillClient.allCases,
-                    requirements: ["Client compatibility and dependencies are unverified. Review the complete skill before installing."])
+                    requirements: ["Client compatibility and dependencies are unverified. Review the complete skill before installing."],
+                    displayName: try SkillMetadata.displayName(in: package))
             }
         }
     }

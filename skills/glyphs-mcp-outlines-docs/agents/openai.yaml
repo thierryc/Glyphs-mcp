@@ -1,7 +1,7 @@
 interface:
-  display_name: "glyphs-mcp-outlines-docs"
-  short_description: "Inspect native layer evidence and supported outlines"
-  default_prompt: "Use $glyphs-mcp-outlines-docs for this outline task. Reuse verified connection and document context; load only the relevant focused reference."
+  display_name: "Glyphs Outlines"
+  short_description: "Inspect curves and prepare focused outline edits"
+  default_prompt: "Use $glyphs-mcp-outlines-docs to inspect the requested outlines and prepare only the edits I authorize."
 
 policy:
   allow_implicit_invocation: true

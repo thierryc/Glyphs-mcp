@@ -5,6 +5,7 @@ import GlyphsMCPInstallerCore
 struct DesktopProjectCreation: Identifiable {
     let id = UUID()
     let template: DesktopTemplateChoice
+    var previewFirst = false
 }
 
 struct DesktopProjectEditing: Identifiable {
@@ -105,6 +106,7 @@ final class DesktopProjectsModel: ObservableObject {
     }
     func refreshTemplates() { Task { await loadTemplates(refresh: true) } }
     func create(_ template: DesktopTemplateChoice = .starter) { creation = DesktopProjectCreation(template: template) }
+    func preview(_ template: DesktopTemplateChoice) { creation = DesktopProjectCreation(template: template, previewFirst: true) }
     func templateName(_ choice: DesktopTemplateChoice) -> String {
         switch choice {
         case .starter: return "Font Project Starter"

@@ -31,15 +31,18 @@ in Glyphs and reply **Check and continue**. Saving includes the whole font.
 
 Review the proposal's changes and any warnings. Preparation changes nothing
 in the open font. This width operation targets H's layers; an omitted glyph
-list means the full font. The shared card and ordinary text show the same
-workflow. See [conversation edits](conversation-edits.mdx) for client support.
+list means the full font. Decisions use native questions when available, or
+ordinary chat. Related missing information can be grouped into one question
+request. A card is optional when its evidence or controls help; it uses the same
+retained workflow. See [conversation edits](conversation-edits.mdx) for client support.
 
 ## Apply and review
 
 Choose **Apply changes**, or say it in the conversation. The assistant maps the
 reply to the current action without requiring IDs or JSON. Inspect H in Glyphs,
 read its width through the client, and try native Undo and Redo on that glyph.
-The card says **Changes applied. Save your font to keep them.**
+After verification, the conversation says **Changes applied.** Routine progress,
+success and errors stay in the conversation.
 
 An ordinary request such as “Increase H's width by 8.125” uses apply mode and
 applies a complete proposal automatically. Preview requests and proposals with
@@ -48,12 +51,14 @@ warnings or incomplete coverage wait for review.
 ## Finish the experiment
 
 Choose **Undo these changes** to reverse this edit. Conflicts
-with later edits are reported. To keep the result, choose **Save font**
-or **Save As…**. This is a separate save authorization from Save and continue;
-it saves the whole current font. Once saved, the card says **Font saved.**
+with later edits are reported. **Keep changes without saving** leaves the edit
+unsaved and ends the workflow's selective recovery offer; native Undo/Redo
+remains available. To persist the result, choose **Save font** or **Save As…**.
+This is a separate save authorization from Save and continue; it saves the whole
+current font. After verification, the conversation says **Font saved.**
 
 If a call times out, check the existing workflow. Do not submit the same edit
-again under a new request. Closing the card does not cancel authorized work.
+again under a new request. Closing an optional card does not cancel authorized work.
 Every choice remains usable through ordinary conversation when the UI is absent.
 
 The original low-level `start_job`, `get_job`, `apply_job`, `accept_job` and

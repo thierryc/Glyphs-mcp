@@ -121,7 +121,10 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         tools = {decorator.keywords[0].value.value for tree in trees for node in ast.walk(tree)
                  if isinstance(node, ast.FunctionDef) for decorator in node.decorator_list
                  if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr == "tool"}
-        self.assertEqual(len(tools), 20)
+        protocol = ast.parse((_repo_root()/"src/protocol/glyphs_mcp_protocol/models.py").read_text())
+        declared = next(ast.literal_eval(node.value) for node in protocol.body
+                        if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "TOOL_NAMES" for target in node.targets))
+        self.assertEqual(tools, set(declared))
         for name in ("README.md", "content/reference/command-set.mdx", "content/reference/command-set-v2.mdx"):
             text = (_repo_root()/name).read_text()
             self.assertTrue(all("`" + tool + "`" in text for tool in tools), name)

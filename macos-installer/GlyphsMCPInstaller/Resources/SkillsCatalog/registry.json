@@ -23,12 +23,13 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Font Workflows"
     },
     {
       "id": "builtin:glyphs-mcp-spacing",
       "name": "glyphs-mcp-spacing",
-      "description": "Prepare and review reference-based spacing suggestions with preserved native metrics.",
+      "description": "Review or respace glyph sidebearings and widths with reference-based suggestions, preserving metrics keys and native alignment.",
       "author": "Glyphs MCP contributors",
       "license": "Apache-2.0; supporting resources retain their original licenses",
       "classification": "curated",
@@ -47,7 +48,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Spacing"
     },
     {
       "id": "builtin:glyphs-mcp-kerning",
@@ -71,7 +73,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Kerning"
     },
     {
       "id": "builtin:glyphs-mcp-italic-first-pass",
@@ -95,7 +98,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Italic First Pass"
     },
     {
       "id": "builtin:glyphs-mcp-master-compatibility",
@@ -119,7 +123,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Master Compatibility"
     },
     {
       "id": "builtin:glyphs-mcp-outlines-docs",
@@ -143,7 +148,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Outlines"
     },
     {
       "id": "builtin:glyphs-mcp-development",
@@ -167,12 +173,13 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Scripts & Plugins"
     },
     {
       "id": "builtin:glyphs-mcp-scripting",
       "name": "glyphs-mcp-scripting",
-      "description": "Write and run focused Glyphs Python scripts, using direct native execution and saved-version recovery.",
+      "description": "Write and run focused Glyphs Python scripts, using direct native execution and current-state recovery.",
       "author": "Glyphs MCP contributors",
       "license": "Apache-2.0; supporting resources retain their original licenses",
       "classification": "curated",
@@ -191,7 +198,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Font Scripts"
     },
     {
       "id": "builtin:glyphs-mcp-opentype-features",
@@ -215,7 +223,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs OpenType Features"
     },
     {
       "id": "builtin:glyphs-mcp-release",
@@ -239,7 +248,8 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs MCP Release"
     },
     {
       "id": "builtin:glyphs-mcp-maintainer-feedback",
@@ -263,7 +273,31 @@
       "requirements": [
         "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
       ],
-      "bundled": true
+      "bundled": true,
+      "displayName": "Glyphs Issue Reports"
+    },
+    {
+      "id": "thierryc/dekink-native",
+      "name": "dekink-native",
+      "description": "Detect and repair interpolation kinks in selected Glyphs 4 glyphs through native HOI, preserving master outlines and verifying the result.",
+      "author": "Thierry Charbonnel (thierryc)",
+      "license": "Apache-2.0",
+      "classification": "community",
+      "source": {
+        "repository": "https://github.com/thierryc/glyphs-mcp-skills",
+        "directory": "skills/dekink-native",
+        "revision": "3a8cc122347134494e5b13f3909fa4455b54be1e",
+        "archiveSHA256": "635cc7afbb605d00240c6b536526457c8670ff3d132ea06518f3776e72ceac4f"
+      },
+      "compatibleClients": [
+        "codex"
+      ],
+      "requirements": [
+        "macOS, Glyphs 4 and Glyphs MCP v2 advertising script.native.v1. Native evidence recorded on Glyphs 4.1.1 build 4108.",
+        "One internal axis, two ordinary masters and compatible closed line/cubic paths. Native qualification of the one-run repair entry mode and source-residual policy remains pending."
+      ],
+      "bundled": false,
+      "displayName": "Glyphs Dekink"
     }
   ]
 }

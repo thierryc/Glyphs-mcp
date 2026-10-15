@@ -1,5 +1,9 @@
 # Glyphs MCP Desktop 2.0.4
 
+> Development candidate: **2.1.0/build 63**, prepared locally and unpublished.
+> The latest published signed release remains **2.0.4/build 61**.
+
+
 **Released: 2.0.4 · desktop build 61 · Glyphs 4.** Detect the default Glyphs Python, choose the Glyphs 4 copy you use, and export fonts without adding FontTools to Glyphs Python. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.4/Glyphs-MCP-2.0.4.dmg) and see the [2.0.4 release qualification](V2.0.4-RELEASE.md) for validation and recovery limits.
 
 The [twenty-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
@@ -66,17 +70,25 @@ Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The twenty tools are `get_status`, `list_documents`, `create_document`, `duplicate_document`, `open_document`, `import_document`,
+The twenty data/action tools are `get_status`, `list_documents`, `create_document`, `duplicate_document`, `open_document`, `import_document`,
 `activate_document`, `open_edit_tab`, `close_document`, `read_entities`,
 `start_job`, `compare_fonts`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
-`respond_edit_workflow`. The shared MCP App supports preparation, saving and
-review where the host supports interactive Apps; every action also works in
-text. Scripts can run on clean, dirty or pathless fonts without saving.
+`respond_edit_workflow`. The additional display-only `show_edit_workflow` opens
+an optional MCP App when a visual preview, substantial report, live controls or
+recovery information adds value. Routine progress, success and errors stay in
+native chat; unresolved decisions and missing information prefer the host's
+native question tool, grouping related independent questions. Ordinary chat is
+the fallback. Disable Automatic Keep before waiting on a native answer; silence,
+Skip and dismissal apply no choice.
+Every action also works in text. Scripts can run on clean, dirty or pathless fonts without saving.
 The resulting edit remains unsaved until separately authorized. Cards reuse
 matching Script details, and typed results show their intended change. Exact
 source stays optional; fresh server checks still guard actions. See
 [conversation edits](content/tutorial/conversation-edits.mdx).
+The [conversation UI guide](docs/conversation-ui-directives.md) maps use cases to
+native questions, conversation feedback and optional cards, including current
+renderer limits.
 See [installation](content/getting-started/installation.mdx) and the
 [Glyphs 4 contract](content/reference/command-set-v2.mdx).
 
@@ -116,8 +128,12 @@ ordinary task authorizes Run without a separate source review; previews wait.
 Dirty, clean and pathless fonts run without Save under `script.recovery.snapshot.v1`
 and preparation version 3. Restore before run restores a detached full-font copy,
 including earlier unsaved edits; recovery is limited to the current Glyphs session.
-Successful edit cards offer a 30-second countdown to Keep changes without
-saving, ending the workflow recovery offer. Typed Keep preserves native Undo/Redo. Say **“wait for my answer”** to disable it.
+With Automatic Keep enabled, a visible, connected and freshly reconciled
+successful edit or script card offers a 30-second countdown to Keep changes
+without saving, ending the workflow recovery offer. Failed, partial, blocked and
+uncertain outcomes and text-only interaction remain manual. Typed Keep preserves
+native Undo/Redo. Say **“wait for my answer”** to disable the countdown; that
+preference persists until changed.
 See [script execution and recovery](skills/glyphs/references/python-scripts.md).
 
 Native scripts have no 4,096-surface ceiling while retaining

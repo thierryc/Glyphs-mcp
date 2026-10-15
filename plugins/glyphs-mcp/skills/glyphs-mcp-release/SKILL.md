@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs-mcp-release
+# Glyphs MCP Release
 
 Offline build/package work needs no MCP connection or font discovery. For
 requested installation verification, obtain fresh status and compare component

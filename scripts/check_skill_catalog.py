@@ -3,6 +3,9 @@
 import json
 from pathlib import Path
 import re
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from sync_skill_catalog_metadata import synchronize
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,6 +34,7 @@ def check(root=ROOT):
         for label in ('Companion Plugins', 'AI Agents', 'Skills', 'Import from GitHub…', 'Contribute a Skill', 'Replace with backup'):
             if '"'+label+'" =' not in text:
                 raise ValueError('Missing '+language+' label: '+label)
+    synchronize(root, check=True)
     return {'bundledSkills': len(names), 'catalogSchema': catalog['schemaVersion']}
 
 

@@ -44,7 +44,10 @@ def test_v2_catalog_signatures_match_the_base_and_workflow_tools():
     documented = {}
     for name, args in re.findall(r'^\| `([a-z_]+)` \| (.*?) \|', reference, re.M):
         documented[name] = re.findall(r'`([a-z_]+)`', args)
-    assert len(actual) == 20
+    protocol = ast.parse((REPO / 'src/protocol/glyphs_mcp_protocol/models.py').read_text())
+    declared = next(ast.literal_eval(node.value) for node in protocol.body
+                    if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == 'TOOL_NAMES' for target in node.targets))
+    assert set(actual) == set(declared)
     assert documented == actual
 
 

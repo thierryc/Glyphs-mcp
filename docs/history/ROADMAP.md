@@ -1,7 +1,7 @@
 # Glyphs MCP roadmap
 
 > Historical v1 roadmap; the entries below are not the current v2 delivery plan.
-> Use [V2 release notes](V2-RELEASE.md) for current scope and qualification.
+> Use [V2 release notes](../../V2-RELEASE.md) for current scope and qualification.
 
 This roadmap ranks possible additions by expected user value first and relative
 implementation complexity second. Items 1–3 form the Glyphs MCP 1.9 milestone.
@@ -74,4 +74,4 @@ inside Glyphs. The native panel remains usable while the server is stopped.
 
 For the larger guided review design that can consume future snapshots,
 comparisons, and hinting evidence, see the
-[AI font proofreading implementation plan](content/contributor/ai-font-proofreading-plan.mdx).
+[AI font proofreading implementation plan](../../content/contributor/ai-font-proofreading-plan.mdx).

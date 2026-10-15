@@ -1,8 +1,8 @@
 ---
-title: The twenty v2 tools
+title: The v2 tools
 ---
 
-Glyphs MCP **2.0.4** exposes twenty tools, including save-free `open_edit_tab` and `duplicate_document`. Desktop build **61**, coordinated sidecar/bridge product version `2.0.4`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent component identities and advertised capabilities; see [version and identity](version-identity.mdx).
+Glyphs MCP **2.0.4** provides twenty data/action tools plus the optional `show_edit_workflow` display tool, including save-free `open_edit_tab` and `duplicate_document`. Desktop build **61**, coordinated sidecar/bridge product version `2.0.4`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent component identities and advertised capabilities; see [version and identity](version-identity.mdx).
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
@@ -24,7 +24,8 @@ Glyphs MCP **2.0.4** exposes twenty tools, including save-free `open_edit_tab` a
 | `discard_job` | `job_id`, optional `include_preview` | Cancel preparation, discard a proposal or restore current affected live targets. |
 | `save_document` | `document_id`, optional `destination`, `retry_checkpoint_job_id` | Save an explicitly identified unowned document. |
 | `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options`, `auto_keep` (default true) | Retain a requested edit; successful edit cards may Keep after 30 seconds. Honor “wait for my answer” with `auto_keep=false`. |
-| `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance. |
+| `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance without opening a card. |
+| `show_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Open an optional card for useful visual review, reports, live controls or recovery. Reuse it across stages; do not open cards for routine chat outcomes. |
 | `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false) | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. |
 
 ## Create a font
@@ -672,7 +673,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the public count is twenty.
+not extra MCP tools; the data/action count remains twenty; optional card display adds one tool.
 
 ### Kerning discovery
 
@@ -686,7 +687,7 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. The catalog stays twenty tools.
+require a coordinated bridge/sidecar/skills update. These capabilities reuse the twenty data/action tools; card display is separate.
 
 
 ## Native scripts
@@ -716,10 +717,16 @@ state. Set it true for optional View details/Show script. Scripts run on Glyphs'
 main thread; callbacks yield between batches. Cancellation stops remaining calls,
 not the current invocation. Successful execution does not verify intended changes.
 
-`auto_keep=true` on new workflows enables a visible card countdown: after a
-successful edit, **Keep changes without saving** is selected in 30 seconds.
+`auto_keep=true` on new workflows enables a countdown only in a visible,
+connected and freshly reconciled successful result card: **Keep changes without
+saving** is selected after 30 seconds. Failed, partial, blocked and uncertain
+outcomes never automatically Keep.
 Pass `auto_keep=false` for **“wait for my answer”**, or dispatch the existing
 `wait_for_answer` action. This disables the countdown without cancelling work.
+Retain that preference until changed. Disable Automatic Keep before waiting on
+a native question. Silence, Skip and dismissal apply no choice and end no
+recovery offer; do not reopen the same question automatically. Elapsed time
+never authorizes Run, Apply, Save, Undo or Restore.
 Only cards use `automatic=true` when dispatching the timed Keep; the server rejects
 that flag for other actions or outcomes. Hidden cards, open Script details and
 reconnects require a fresh read and countdown. Text-only clients remain manual.
@@ -730,6 +737,20 @@ the countdown; successful background reads preserve time only for an unchanged
 workflow revision and request.
 
 ### Portable workflow cards
+
+Native interaction comes first. The twenty data/action tools do not attach UI
+resources; `show_edit_workflow` is the additional display-only tool. Open one
+card only when a visual comparison, interactive inspection, substantial report,
+meaningful live controls or recovery information adds value, or the user requests
+it. Use native questions for unresolved decisions and missing information,
+grouping related independent questions within host limits; use ordinary chat
+when unavailable. Routine progress, success and errors use native conversation
+or tool feedback. Reuse an existing card as it refreshes; polling does not create
+another card. No additional question is needed for an already authorized action.
+
+Visual glyph comparisons and interactive inspection require a suitable renderer
+or native Glyphs view. The workflow card presents lifecycle state, report details
+and offered controls; it does not itself provide a dedicated outline viewer.
 
 Cards lead with the font, current status, a request summary of at most 140
 characters and known target counts. The filename identifies the document;

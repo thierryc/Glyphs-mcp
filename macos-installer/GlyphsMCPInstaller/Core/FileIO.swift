@@ -119,7 +119,7 @@ public enum InstallerPaths {
 }
 
 public struct InstallerPayload: @unchecked Sendable {
-	public static let legacyManagedSkillNames = ["glyphs-mcp-connect"]
+	public static let legacyManagedSkillNames = ["glyphs-mcp-connect", "glyphs-mcp-features"]
 	private static let extractionLock = NSLock()
 	private static var extractedPayloads: [String: URL] = [:]
 	public static let manifestSchemaVersion = 4

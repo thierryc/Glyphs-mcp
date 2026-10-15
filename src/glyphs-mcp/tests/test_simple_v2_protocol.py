@@ -65,6 +65,7 @@ def test_public_surface_has_sixteen_base_and_three_workflow_tools() -> None:
         "save_document",
         "start_edit_workflow",
         "get_edit_workflow",
+        "show_edit_workflow",
         "respond_edit_workflow",
     )
 

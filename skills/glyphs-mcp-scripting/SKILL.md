@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# Glyphs 4 scripting
+# Glyphs Font Scripts
 
 Create a workspace script for the requested one-off native operation. Reusable
 plugins and ongoing coding sessions use [$glyphs-mcp-development](../glyphs-mcp-development/SKILL.md).
@@ -77,7 +77,10 @@ means review only. Write-and-run includes review and authorized execution.
 Use `mode="apply"` under task authorization when `script.apply-authorized.v1`
 is advertised: preparation and Run are dispatched internally. Explicit previews
 use `mode="preview"` and wait. Source remains available through optional Script details.
-Successful cards default to Keep without saving after 30 seconds, ending recovery.
+With Automatic Keep enabled, a visible, connected and freshly reconciled
+successful card can Keep without saving after 30 seconds, ending recovery.
+Disable it before waiting on a native question; silence, Skip and dismissal
+apply no choice. Failed, partial, blocked and uncertain outcomes remain manual.
 Honor **“wait for my answer”** with `auto_keep=false` on new workflows or the
 existing **Wait for my answer** action; retain that directive for later requests.
 See the shared contract for countdown, visibility and text-only behavior.

@@ -10,6 +10,7 @@ from pydantic import Field
 RESOURCE_URI = "ui://glyphs-mcp/edit-workflow-v1.html"
 RESOURCE_MIME = "text/html;profile=mcp-app"
 UI_META = {"ui": {"resourceUri": RESOURCE_URI, "visibility": ["model", "app"]}}
+DATA_META = {"ui": {"visibility": ["model", "app"]}}
 RESOURCE_META = {"ui": {"prefersBorder": True, "csp": {"connectDomains": [], "resourceDomains": []}}}
 
 
@@ -56,7 +57,7 @@ def register_edit_workflow_tools(mcp, service):
             content = [TextContent(type="text", text=text)]
         return ToolResult(content=content, structured_content=payload)
 
-    @mcp.tool(name="start_edit_workflow", meta=UI_META,
+    @mcp.tool(name="start_edit_workflow", meta=DATA_META,
               annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False})
     def start_edit_workflow(
         document_id: str, kind: str, idempotency_key: str, mode: str = "apply",
@@ -71,20 +72,28 @@ def register_edit_workflow_tools(mcp, service):
 
         Results offer Keep changes without saving, Save and selective typed Undo or whole-font script Restore before run. Script recovery is session-local and ends on Keep or verified Save; scripts do not promise native Undo/Redo. Typed Keep preserves native Undo/Redo. auto_keep=true lets a visible connected successful card Keep after 30 seconds. Set false for 'wait for my answer', disabled automatic feedback or inspection before deciding; honor that directive until changed. Existing workflows use wait_for_answer. Text-only clients remain manual.
 
-        checkpoint_restore loads the selected whole-font version under a clear restore request: replaces later unsaved edits, clears Undo and returns a fresh binding without saving. Opt-in Git checkpoint failure is separate from Save success. Retain workflow_id; poll until a choice/outcome. Missing cards never block authorized work."""
+        checkpoint_restore loads the selected whole-font version under a clear restore request: replaces later unsaved edits, clears Undo and returns a fresh binding without saving. Opt-in Git checkpoint failure is separate from Save success. Retain workflow_id; poll until a choice/outcome. Missing cards never block authorized work.
+
+        Use native chat interaction first. This data tool does not open a card. Ask an unresolved decision with the host's available native question tool, otherwise ordinary chat. Never add another approval for an authorized action. Pause Automatic Keep with wait_for_answer before waiting on a native answer. Use show_edit_workflow only when a visual preview, substantial report, useful live progress/cancellation or recovery controls add value, or the user requests a card. Routine starts, polling and simple success need no card."""
         return result(lambda: service.edit_workflows.start(
             document_id, kind=kind, idempotency_key=idempotency_key, mode=mode,
             delta=delta, glyphs=glyphs, options=options, auto_keep=auto_keep))
 
-    @mcp.tool(name="get_edit_workflow", meta=UI_META,
+    @mcp.tool(name="get_edit_workflow", meta=DATA_META,
               annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False})
     def get_edit_workflow(workflow_id: str, include_review: bool = False) -> ToolResult:
         """Read compact state, request fingerprint, revision, actions and progress. Ordinary polling needs no health/job reads. A read never executes Python, saves or applies edits. Use include_review=true for Show script or requested source/output details. Card-only uiRefreshIntervalMs keeps visible pending choices current without extending agent polling. Optional action presentation groups main/menu/countdown controls. On stale_workflow_action, read this same workflow; never replay the rejected mutation automatically. Cache only matching workflow/document/job/fingerprint; omitted fields preserve evidence, explicit empty values replace it. Refresh open View details on execution completion.
 
-        Text includes the same workflow_id, expected_revision and action_token controls as cards; retain them internally for natural-language replies. Poll the same workflow while poll=true until a choice/outcome; never restart after a timeout or narrate unchanged polls. Preparing is not Applied. blockingWorkflowId identifies earlier unresolved work; use its original choices, including manual typed Keep. Scripts use Keep/Save/Restore, not typed Undo. Restoration availability is display evidence and is validated again at use. Document edits during preparation require fresh preparation."""
+        Text includes the same workflow_id, expected_revision and action_token controls as cards; retain them internally for natural-language replies. Result buttons use Keep, Save and script Restore; optional action tooltip and actionSupportText explain their consequences and confirmed outcomes. Keep means keep without saving; Save saves the whole font. Existing longer conversational phrases remain valid. Poll the same workflow while poll=true until a choice/outcome; never restart after a timeout or narrate unchanged polls. Preparing is not Applied. blockingWorkflowId identifies earlier unresolved work; use its original choices, including manual typed Keep. Scripts use Keep/Save/Restore, not typed Undo. Restoration availability is display evidence and is validated again at use. Document edits during preparation require fresh preparation. This data read never opens another card; use native questions/chat for unresolved decisions, and show_edit_workflow only when the card adds useful information or controls."""
         return result(lambda: service.edit_workflows.get(workflow_id, include_review=include_review))
 
-    @mcp.tool(name="respond_edit_workflow", meta={"ui": {"visibility": ["model", "app"]}},
+    @mcp.tool(name="show_edit_workflow", meta=UI_META,
+              annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False})
+    def show_edit_workflow(workflow_id: str, include_review: bool = False) -> ToolResult:
+        """Open one optional MCP App card for an existing workflow, without applying, saving or starting work. Use only for a visual before/after preview, substantial review/evidence, meaningful live progress/cancellation, useful recovery controls, or an explicit request to see a card. Prefer native chat questions and ordinary text for simple decisions and outcomes; routine starts, polling, empty results and simple success need no card. Reuse the existing card as it refreshes rather than opening one for every stage. Unsupported hosts receive the same text and offered actions. Script/source details remain opt-in via include_review=true."""
+        return result(lambda: service.edit_workflows.get(workflow_id, include_review=include_review))
+
+    @mcp.tool(name="respond_edit_workflow", meta=DATA_META,
               annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False})
     def respond_edit_workflow(
         workflow_id: str, expected_revision: int, action_token: str,

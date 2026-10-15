@@ -1,4 +1,4 @@
 interface:
-  display_name: "Glyphs Vibe Coding"
-  short_description: "Create and iterate native Glyphs 4 scripts and plugins"
-  default_prompt: "Use $glyphs-mcp-development to start a Glyphs 4 coding session in this workspace. Turn my idea into a script or native plugin, use the pinned offline SDK, and iterate through validation and native tests authorised by my request."
+  display_name: "Glyphs Scripts & Plugins"
+  short_description: "Create and iterate native Glyphs scripts and plugins"
+  default_prompt: "Use $glyphs-mcp-development to create or improve my Glyphs script or plugin using the bundled SDK and relevant validation."

@@ -4,7 +4,7 @@ description: Prepare a font-project brief from a user's stated requirements. Use
 license: Apache-2.0
 ---
 
-# Font project brief example
+# Glyphs Project Brief
 
 1. Ask for missing audience, scripts/languages, styles, intended uses and delivery
    requirements. Reuse information already provided by the user.

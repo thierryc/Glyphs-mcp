@@ -110,8 +110,12 @@ private struct DesktopTemplateCard: View {
             Text(entry.description).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let author = entry.template?.author { Text(author).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
             Spacer(minLength: 4)
-            DesktopActionButton(title: "Use Template", symbol: "plus", emphasis: .primary) { model.create(entry.choice) }
-                .accessibilityLabel("Use \(entry.name) template")
+            DesktopActionRow {
+                DesktopActionButton(title: "Preview", symbol: "doc.text.magnifyingglass", emphasis: .secondary) { model.preview(entry.choice) }
+                    .accessibilityLabel("Preview \(entry.name) template")
+                DesktopActionButton(title: "Use Template", symbol: "plus", emphasis: .primary) { model.create(entry.choice) }
+                    .accessibilityLabel("Use \(entry.name) template")
+            }
         }.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .frame(minHeight: 220)
             .modifier(DesktopCardSurface())

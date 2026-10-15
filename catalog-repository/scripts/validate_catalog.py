@@ -143,7 +143,7 @@ def validate(root=ROOT, fetch=False):
             if hashlib.sha256(data).hexdigest() != source['archiveSHA256']:
                 raise ValueError('Archive checksum mismatch')
             validate_files(archive_files(data, source['directory']), entry['name'])
-    for directory in [root/'skills', root/'template']:
+    for directory in [root/'skills', root/'template', root/'candidates']:
         if not directory.exists():
             continue
         for path in directory.rglob('SKILL.md'):
@@ -157,6 +157,18 @@ def validate(root=ROOT, fetch=False):
             value = validate_files(files)
             if value['name'] != folder.name:
                 raise ValueError('Folder and metadata names differ')
+            if directory.name in ('candidates', 'template'):
+                ui = yaml.safe_load(files.get('agents/openai.yaml', b''))
+                interface = ui.get('interface', {}) if isinstance(ui, dict) else {}
+                title = interface.get('display_name', '')
+                if (not isinstance(title, str) or not title.startswith('Glyphs ') or len(title) > 40 or '-' in title
+                        or len(title.split()) < 2 or title != ' '.join(title.split())
+                        or any(word[0].islower() or word[0].isdigit() for word in title.split()[1:])):
+                    raise ValueError('Use a short Glyphs display title with spaces')
+                if '\n# ' + title + '\n' not in files['SKILL.md'].decode():
+                    raise ValueError('Skill heading differs from UI title')
+                if not any(name.startswith('LICENSE') for name in files):
+                    raise ValueError('Skill package needs license attribution')
     return len(registry['skills'])
 
 

@@ -87,7 +87,7 @@ struct ContentView: View {
                minHeight: DesktopDashboardLayout.minimumHeight)
         .task { projects.inspect(); await projects.loadTemplates() }
         .sheet(item: $projects.creation) { creation in
-            DesktopProjectWizard(model: projects, template: creation.template)
+            DesktopProjectWizard(model: projects, template: creation.template, previewFirst: creation.previewFirst)
         }
         .sheet(item: $projects.editing) { editing in
             DesktopProjectSettings(model: projects, path: editing.id)

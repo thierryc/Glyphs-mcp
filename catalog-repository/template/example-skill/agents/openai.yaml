@@ -1,0 +1,4 @@
+interface:
+  display_name: "Glyphs Project Brief"
+  short_description: "Prepare a clear brief for a new font project"
+  default_prompt: "Use $example-skill to draft a font-project brief from my requirements."

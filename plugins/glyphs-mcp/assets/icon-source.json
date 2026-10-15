@@ -1,0 +1,13 @@
+{
+  "asset": "icon.png",
+  "source": "https://www.figma.com/design/ayiaPGUiHrPsMmTKLm9IWp/glyphs-mcp-icon?node-id=265-2",
+  "fileKey": "ayiaPGUiHrPsMmTKLm9IWp",
+  "nodeId": "265:2",
+  "format": "png",
+  "width": 1024,
+  "height": 1024,
+  "appearance": "Complete app icon with rounded light background, green Glyphs mark, and dark sparkles",
+  "sha256": "20d2f865fa67f34da37be0d3da9993bbcad37fc1dc29a2ab864d34516362647e",
+  "usage": "Shared Codex and Cursor plugin icon; upload this same PNG for ChatGPT and Claude connector settings that accept a custom icon",
+  "refresh": "Export Figma node 265:2 as a 1024 x 1024 PNG, replace icon.png, and update this checksum"
+}

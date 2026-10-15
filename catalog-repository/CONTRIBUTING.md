@@ -40,7 +40,24 @@ install hooks, or claims that installing instructions grants tool permissions.
 Record live verification only on disposable fonts and keep saves/exports within
 explicit authorization. An instruction-only skill is a good first contribution.
 
-## Registry entry
+## Readable skill titles
+
+Use **Glyphs + a short descriptive title**, in title case with spaces and at most
+40 characters: for example **Glyphs Spacing** or **Glyphs Beztrace Tracing**.
+Avoid kebab-case, version numbers and redundant technical prefixes in display
+titles. Keep the lowercase folder, frontmatter `name` and invocation identifier
+stable; display titles are separate metadata.
+
+Put the title in `interface.display_name` in `agents/openai.yaml`, use it as the
+first heading in `SKILL.md`, and copy it into the registry's optional
+`displayName`. This UI metadata is the authority for the title. Use a complete
+25–64 character `short_description` and a focused `default_prompt` mentioning
+`$skill-name`. Preserve existing invocation policy and dependency fields.
+Packages must include their license/attribution and resolve all relative links
+inside their own folder. Refer to optional sibling skills by stable invocation
+name and a public source URL, rather than a relative link outside the package.
+
+## Registry metadata
 
 Use `registry-v1.schema.json`. Required fields include `id`, `name`, description,
 author, license, `classification` (`community` for submissions), pinned `source`,

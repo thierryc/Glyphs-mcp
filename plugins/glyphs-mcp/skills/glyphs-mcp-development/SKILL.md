@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# Glyphs Vibe Coding
+# Glyphs Scripts & Plugins
 
 Start with the user's idea, existing artifact and workspace. Choose a script for
 a one-off action or a plugin for reusable native UI/behavior. Glyphs may be

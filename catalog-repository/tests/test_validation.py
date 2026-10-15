@@ -8,7 +8,7 @@ validator = importlib.util.module_from_spec(spec); spec.loader.exec_module(valid
 
 class ValidationTests(unittest.TestCase):
     def test_seed_and_template(self):
-        self.assertEqual(validator.validate(), 11)
+        self.assertEqual(validator.validate(), 12)
 
     def test_plain_and_block_metadata(self):
         parsed = validator.metadata(b'---\nname: test-skill\ndescription: >-\n  A focused\n  workflow\n---\n')

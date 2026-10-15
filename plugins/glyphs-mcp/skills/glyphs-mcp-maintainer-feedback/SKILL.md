@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs-mcp-maintainer-feedback
+# Glyphs Issue Reports
 
 Use existing reproduction evidence and the verified connection context. Obtain
 fresh status when the report needs current runtime/health evidence; use

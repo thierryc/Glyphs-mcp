@@ -170,7 +170,7 @@ def test_external_file_change_does_not_destroy_memory_snapshot(env):
     source.write_text('external change')
     value=service.edit_workflows.get(value['id'])
     assert value['savedVersion']['available']
-    assert any(a['label']=='Restore before run' for a in value['actions'])
+    assert any(a['action']=='restore_saved_script' and a['label']=='Restore' for a in value['actions'])
     assert not bridge.adapter.save_calls
 
 def test_run_never_calls_save_even_if_save_would_fail(env):
@@ -352,7 +352,8 @@ def test_partial_script_blocks_next_task_until_keep(env,status):
     assert a['state']==status
     b=wait(service,start(service,'after-partial'),'blocked_review')
     assert b['blockingWorkflowId']==a['id'] and len(bridge.reviews)==1
-    choose(service,a,'finish_script')
+    kept=choose(service,a,'finish_script')
+    assert kept['actionSupportText']=='Changes kept. No save was performed. Task closed; recovery ended.'
     wait(service,b,'waiting_run')
     assert len(bridge.runs)==1
 

@@ -83,7 +83,7 @@ def test_native_requires_workflow_but_not_source_review(script_env):
     service.edit_workflows.respond(*args)
     assert len(bridge.runs)==1
     value=wait(service,value,'applied')
-    assert any(a['label']=='Restore before run' for a in value['actions'])
+    assert any(a['action']=='restore_saved_script' and a['label']=='Restore' for a in value['actions'])
 
 
 def test_dirty_fonts_reuse_save_choices(script_env):

@@ -1,5 +1,9 @@
 # Permanent desktop application
 
+> Development candidate: **2.1.0/build 63**, prepared locally and unpublished.
+> The latest published signed release remains **2.0.4/build 61**.
+
+
 > Current stable 2.0.4/build 61 is signed, notarized and published.
 > See [release qualification](../V2.0.4-RELEASE.md) for the focused checks and retained
 > earlier core acceptance. Candidate checkpoints below are historical.
@@ -56,6 +60,14 @@ desktop payload. Legacy updater paths reject partial upgrades to the new
 component payload and direct users to the appropriate installer.
 
 ## Build locally
+
+In Project → Browse Templates, each template has a Preview action for its folder
+structure and file contents. Built-in, pinned GitHub and local templates use the
+same browser. Previewing downloads a GitHub template when needed but does not
+create a project. Use Template continues to the naming step; Preview Project
+shows the selected name and connection values substituted into the exact file
+snapshot used by Create Project. Text is selectable, images have inline previews,
+and other binary files show their size. Long text previews are limited to 256 KB.
 
 Use the repository's development Python for build scripts and tests. Fetch
 inputs once on a connected build machine, then build offline:

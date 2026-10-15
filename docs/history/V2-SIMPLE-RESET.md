@@ -2,8 +2,8 @@
 
 > Historical reset decision and implementation record. Tool counts, no-Python
 > boundaries and source-line budgets below describe earlier stages, not current
-> requirements. Use [V2 release notes](V2-RELEASE.md) and the
-> [current tool contract](content/reference/command-set.mdx).
+> requirements. Use [V2 release notes](../../V2-RELEASE.md) and the
+> [current tool contract](../../content/reference/command-set.mdx).
 
 ## Decision
 
@@ -544,7 +544,7 @@ apart from editor layout state; the original source hash is unchanged. Baseline
 HTTP p95 was 9.463 ms, loaded p95 stayed at or below 26.345 ms, and loaded maximum
 was 113.534 ms. Two native-menu probe timeouts are recorded separately from native
 execution. Full evidence and limits are in
-[`build/deep-smoke/fixes-review.md`](build/deep-smoke/fixes-review.md).
+`build/deep-smoke/fixes-review.md` (historical generated report: `build/deep-smoke/fixes-review.md`, no longer retained).
 
 ## First-release non-goals
 

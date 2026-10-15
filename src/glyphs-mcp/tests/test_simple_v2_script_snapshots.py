@@ -254,7 +254,7 @@ def test_duplicate_public_transport_and_timeout_identity(native,monkeypatch):
     async def exercise():
         async with Client(create_server(service)) as client:
             catalog={tool.name:tool for tool in await client.list_tools()}
-            assert set(catalog)==set(TOOL_NAMES) and len(catalog)==20
+            assert set(catalog)==set(TOOL_NAMES) and len(catalog)==len(TOOL_NAMES)
             assert set(catalog['duplicate_document'].inputSchema['required'])=={'document_id','idempotency_key'}
             result=await client.call_tool('duplicate_document',dict(document_id=identity,idempotency_key='public'))
             assert result.data['ok'] and result.data['data']['path'] is None

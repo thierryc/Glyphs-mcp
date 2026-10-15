@@ -228,7 +228,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                 installer_build=42,
             )
 
-            self.assertEqual(result["publicToolCount"], 20)
+            self.assertEqual(result["publicToolCount"], 21)
             protocol.write_text('TOOL_NAMES = ("one", "two")\n', encoding="utf-8")
             result = self.security.validate_unsigned_candidate(
                 root, expected_version="2.3.4", installer_build=42,
@@ -589,7 +589,8 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             self.assertIn("release_asset_inventory.py", script)
             self.assertNotIn("GlyphsMCPInstaller-$version.dmg", script)
         self.assertIn("Glyphs-MCP-latest.dmg", readme)
-        self.assertIn("Choose **Install All** on Setup", installation)
+        self.assertIn("Choose **Install All**.", installation)
+        self.assertIn("## Install from Setup", installation)
         self.assertIn("**Queued**, **Installing** and **Installed**", installation)
         self.assertNotIn("Choose → Install → Ready", installation)
 

@@ -41,8 +41,11 @@ def test_card_is_self_contained_and_accessible():
 
 
 @pytest.mark.parametrize('scenario', [
-    'stale', 'refresh_failure', 'validation', 'external_completion', 'menu',
+    'checkpoint_retry_feedback', 'script_unverified_feedback',
+    'other_actions', 'form_feedback', 'status_feedback', 'uncertain_feedback',
+    'keep_in_button', 'inline_pause', 'action_feedback', 'stale', 'refresh_failure', 'validation', 'external_completion', 'menu',
     'countdown_refresh', 'inspection_during_refresh', 'wrong_response', 'compact', 'focus',
+    'result_buttons', 'result_descriptions', 'outcome_support',
 ])
 def test_card_reconciles_and_simplifies_choices(scenario):
     node = shutil.which('node')
@@ -56,8 +59,8 @@ def test_card_reconciles_and_simplifies_choices(scenario):
     ('ready', 'width_delta', ['apply', 'discard'], []),
     ('waiting_save', 'width_delta', ['save_continue', 'cancel'], ['save_as_continue', 'manual_save']),
     ('waiting_run', 'python_script', ['run_script', 'cancel'], []),
-    ('applied', 'width_delta', ['finish_edit', 'discard'], ['save_result', 'save_result_as']),
-    ('applied', 'python_script', ['finish_script', 'save_result'], ['restore_saved_script']),
+    ('applied', 'width_delta', ['finish_edit', 'save_result', 'discard'], ['save_result_as']),
+    ('applied', 'python_script', ['finish_script', 'save_result', 'restore_saved_script'], []),
     ('cancelled', 'python_script', ['finish_script', 'restore_saved_script'], []),
     ('outdated', 'width_delta', ['reprepare', 'cancel'], ['save_reprepare', 'manual_save']),
     ('uncertain', 'width_delta', ['check_outcome'], []),
@@ -127,3 +130,78 @@ def test_card_refresh_hint_is_independent_of_agent_polling():
     assert public_workflow(value)['uiRefreshIntervalMs'] == 1500
     value.update(state='blocked_review')
     assert public_workflow(value)['uiRefreshIntervalMs'] == 5000
+
+
+@pytest.mark.parametrize('kind,path,save_action,recovery_action', [
+    ('python_script', '/fonts/A.glyphs', 'save_result', 'restore_saved_script'),
+    ('python_script', None, 'save_result_as', 'restore_saved_script'),
+    ('width_delta', '/fonts/A.glyphs', 'save_result', 'discard'),
+])
+def test_result_button_meaning_and_tokens(kind, path, save_action, recovery_action):
+    from glyphs_mcp_sidecar.edit_workflow_state import public_workflow, action_token
+
+    value = dict(id='edit_buttons', nonce='test', revision=7, state='applied',
+                 document=dict(id='doc_a', path=path), request=dict(kind=kind, options={}),
+                 savedVersion=dict(available=True, kind='memory_snapshot'))
+    result = public_workflow(value)
+    keep = 'finish_script' if kind == 'python_script' else 'finish_edit'
+    main = [a for a in result['actions'] if a['presentation'] in {'primary', 'secondary'}]
+    assert [a['action'] for a in main] == [keep, save_action, recovery_action]
+    assert [a['label'] for a in main] == ['Keep', 'Save', 'Restore' if kind == 'python_script' else 'Undo these changes']
+    assert [a['presentation'] for a in main] == ['secondary', 'primary', 'secondary']
+    for a in main:
+        assert a['token'] == action_token(value, a['action'])
+        assert a['tooltip'] in result['text']
+    context = json.loads(result['modelContext'])
+    assert context['actions'][0]['tooltip'] == main[0]['tooltip']
+    assert context['actionSupportText'] == result['actionSupportText']
+    assert 'without saving' in main[0]['tooltip']
+    assert 'including other unsaved edits' in main[1]['tooltip']
+    assert ('new destination' in main[1]['tooltip']) == (path is None)
+    assert main[1]['requiresDestination'] == (path is None)
+    assert 'Choosing Keep or Save closes this task' in result['actionSupportText']
+
+
+@pytest.mark.parametrize('state,job,expected', [
+    ('executed', dict(status='completed'), 'Changes kept. No save was performed. Task closed; recovery ended.'),
+    ('saved', dict(status='accepted'), 'Font saved. Task closed; recovery ended.'),
+    ('discarded', dict(bridgeOperation=dict(scriptResult=dict(beforeRunRestored=True))), 'Pre-run font restored without saving.'),
+    ('discarded', dict(bridgeOperation=dict(scriptResult=dict(savedVersionRestored=True))), 'Saved baseline restored without saving.'),
+    ('executed', dict(status='completed', outcome='unverified'), None),
+    ('uncertain', dict(status='applied'), None),
+    ('interrupted', dict(status='interrupted'), None),
+    ('failed', dict(status='failed'), None),
+    ('discarded', dict(status='discarded'), None),
+])
+def test_result_support_requires_outcome_evidence(state, job, expected):
+    from glyphs_mcp_sidecar.edit_workflow_state import public_workflow
+
+    value = dict(id='edit_receipt', nonce='test', revision=1, state=state, job=job,
+                 document=dict(id='doc_a'), request=dict(kind='python_script', options={}))
+    result = public_workflow(value)
+    if expected:
+        assert result['actionSupportText'].startswith(expected)
+        assert result['actionSupportText'] in result['text']
+    else:
+        assert 'actionSupportText' not in result
+
+
+def test_partial_recovery_and_checkpoint_support():
+    from glyphs_mcp_sidecar.edit_workflow_state import public_workflow
+
+    value = dict(id='edit_partial', nonce='test', revision=1, state='failed',
+                 document=dict(id='doc_a'), request=dict(kind='python_script', options={}),
+                 job=dict(status='failed', bridgeOperation=dict(scriptResult=dict(executed=True))),
+                 savedVersion=dict(available=True))
+    result = public_workflow(value)
+    assert [a['label'] for a in result['actions']] == ['Keep', 'Restore']
+    assert all(a['presentation'] == 'secondary' for a in result['actions'])
+    assert 'Choosing Keep closes this task without saving' in result['actionSupportText']
+    assert 'saved baseline' in result['actions'][1]['tooltip']
+    value.update(state='saved', job=dict(status='accepted'), receipt=dict(checkpoint=dict(status='failed')))
+    result = public_workflow(value)
+    assert 'font save succeeded' in result['actionSupportText']
+    assert 'checkpoint failed' in result['message']
+    value.update(state='discarded', request=dict(kind='width_delta'), job=dict(bridgeOperation=dict(completedChanges=1)))
+    value.pop('receipt')
+    assert 'other edits were retained' in public_workflow(value)['actionSupportText']

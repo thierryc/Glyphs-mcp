@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs-mcp-italic-first-pass
+# Glyphs Italic First Pass
 
 Reuse the verified [$glyphs](../glyphs/SKILL.md) connection, capabilities and
 intended `document_id` already in context; do not repeat setup for this skill.

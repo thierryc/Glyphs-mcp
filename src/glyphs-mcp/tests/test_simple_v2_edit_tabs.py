@@ -254,7 +254,7 @@ def test_http_mcp_schema_and_timeout_identity(setup, monkeypatch):
     async def exercise():
         async with Client(create_server(service)) as client:
             catalog = {t.name: t for t in await client.list_tools()}
-            assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 20
+            assert set(catalog) == set(TOOL_NAMES) and len(catalog) == len(TOOL_NAMES)
             schema = catalog["open_edit_tab"].inputSchema
             assert set(schema["required"]) == {"document_id", "idempotency_key"}
             result = await client.call_tool("open_edit_tab", {"document_id": identity, "idempotency_key": "mcp", "glyphs": ["B", "A"], "master_id": "M1"})

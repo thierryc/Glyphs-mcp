@@ -1,4 +1,4 @@
 interface:
-  display_name: "glyphs-mcp-scripting"
-  short_description: "Native scripts with saved-version recovery"
-  default_prompt: "Use the lean thirteen-tool Glyphs MCP workflow for this task."
+  display_name: "Glyphs Font Scripts"
+  short_description: "Run font scripts with pre-run snapshot recovery"
+  default_prompt: "Use $glyphs-mcp-scripting to write a focused native script for my font task and execute it only when my request authorizes execution."

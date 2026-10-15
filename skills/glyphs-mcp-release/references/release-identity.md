@@ -5,7 +5,15 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The published baseline is product **2.0.4**, release **2.0.4**, stable
+The current release target is product **2.1.0**, installer build **63**, stable
+channel. Its catalog contains twenty data/action tools plus the optional
+read-only `show_edit_workflow` display tool, with eleven managed skills.
+Verify signing, notarization, installation and public availability separately
+using the exact artifacts and `V2.1.0-RELEASE.md`; source metadata alone proves
+none of these. Build 62's earlier local installation evidence remains historical
+and does not qualify build 63.
+
+The previous published baseline is product **2.0.4**, release **2.0.4**, stable
 channel, beta number **0**, installer build **61**: **eleven managed skills**, twenty MCP tools and up to 13
 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision

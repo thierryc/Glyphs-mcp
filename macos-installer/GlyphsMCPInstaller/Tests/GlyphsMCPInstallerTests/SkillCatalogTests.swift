@@ -17,6 +17,32 @@ final class SkillCatalogTests: XCTestCase {
     private func files(_ text: String = "Original") -> [ProjectFile] {
         [.init(path: "SKILL.md", data: Data(("---\nname: test-skill\ndescription: A focused workflow\n---\n" + text).utf8))]
     }
+    func testReadableTitlesPreserveLegacyCatalogAndReceiptCompatibility() throws {
+        let legacy = skill()
+        let decoded = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [legacy])))
+        XCTAssertNil(decoded.skills[0].displayName)
+        XCTAssertEqual(decoded.skills[0].title, "Test Skill")
+        var labeled = legacy; labeled.displayName = "Glyphs Spacing"
+        let updated = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [labeled])))
+        XCTAssertEqual(updated.skills[0].name, legacy.name)
+        XCTAssertEqual(updated.skills[0].title, "Glyphs Spacing")
+        let receipt = SupplementalSkillReceipt(skill: legacy, contentSHA256: SupplementalSkillInstaller.hash(files()))
+        XCTAssertNil(try JSONDecoder().decode(SupplementalSkillReceipt.self, from: JSONEncoder().encode(receipt)).skill.displayName)
+        let merged = try SkillCatalog(skills: [legacy]).includingBundled(SkillCatalog(skills: [labeled]))
+        XCTAssertEqual(merged.skills[0].title, "Glyphs Spacing")
+        for title in ["", "\n", String(repeating: "x", count: 81), "Glyphs\nSpacing"] {
+            labeled.displayName = title
+            XCTAssertThrowsError(try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [labeled]))))
+        }
+    }
+    func testImportReadsOptionalUINameWithoutChangingInvocationIdentifier() throws {
+        let ui = ProjectFile(path: "agents/openai.yaml", data: Data("interface:\n  display_name: \"Glyphs Project Brief\"\npolicy:\n  allow_implicit_invocation: false\n".utf8))
+        XCTAssertEqual(try SkillMetadata.displayName(in: files() + [ui]), "Glyphs Project Brief")
+        XCTAssertEqual(try SkillMetadata.validate(files() + [ui]).name, "test-skill")
+        XCTAssertNil(try SkillMetadata.displayName(in: files()))
+        let invalid = ProjectFile(path: "agents/openai.yaml", data: Data("interface:\n  display_name: !unsafe title\n".utf8))
+        XCTAssertThrowsError(try SkillMetadata.displayName(in: [invalid]))
+    }
     func testCatalogRejectsFloatingSourceMissingHashDuplicatesAndImports() throws {
         let valid = skill()
         _ = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [valid])))

@@ -32,23 +32,39 @@ See the repository documentation for the
 [plugin UI](../../content/getting-started/codex-chatgpt-plugin-ui.mdx) and
 [cross-client skill setup](../../content/getting-started/use-agent-skills.mdx).
 
-The lean Glyphs 4 package exposes eighteen tools: get_status, list_documents, create_document, open_document,
-import_document, activate_document, close_document,
+The lean Glyphs 4 package exposes twenty data/action tools: get_status, list_documents, create_document, duplicate_document, open_document,
+import_document, activate_document, open_edit_tab, close_document,
 read_entities, start_job, compare_fonts, get_job, apply_job, accept_job, discard_job,
-save_document, start_edit_workflow, get_edit_workflow and respond_edit_workflow. There is no arbitrary Python execution tool. Install the pinned
+save_document, start_edit_workflow, get_edit_workflow and respond_edit_workflow.
+The additional read-only show_edit_workflow tool opens an optional workflow card.
+There is no arbitrary Python execution tool. Install the pinned
 Glyphs 3 skills separately when using the 1.11.0 server.
 
 ## Conversation interface
 
-Use one standard MCP App in compatible hosts, including the existing local
-Claude Desktop transport and Cursor's documented MCP Apps support. Detect
-Codex's actual host capabilities; do not infer them from ChatGPT. CLI clients
-and failed/missing UI bridges retain the full text workflow. The shared skills
-and server descriptions map natural-language choices to retained actions.
+Use native questions for unresolved decisions and missing information, grouping
+related independent questions. Use ordinary chat when the host has no available
+question tool. Routine progress, success and errors use conversation feedback.
+Open an optional MCP App card only for useful visual evidence, interactive
+inspection, substantial reports, live controls or recovery information, or when
+the user requests it. Reuse one useful card across stages. A dedicated visual
+glyph comparison or inspector requires a suitable renderer or native Glyphs view;
+the workflow card itself supplies lifecycle state, reports and controls.
+
+Choose by actual host capabilities, not client name. Missing cards never block
+the text workflow. Shared skills and server descriptions map natural-language
+choices to retained actions without asking users for internal identifiers.
 
 Save and continue saves existing work once and resumes the request. Complete
 results apply automatically; previews, warnings and required overwrites wait
 for review. The resulting edit is not saved without separate authorization.
+
+With Automatic Keep enabled, a visible, connected and freshly reconciled
+successful result card can Keep without saving after 30 seconds, ending workflow
+recovery. Failed, partial, blocked and uncertain outcomes remain manual. Disable
+Automatic Keep before waiting on a native question; silence, Skip and dismissal
+apply no choice. Honor “wait for my answer” until the user changes it. Text-only
+clients remain manual; no timer authorizes Run, Apply, Save, Undo or Restore.
 
 `compare_fonts` compares explicit compiled TTF files without a live Glyphs
 document. It requires the optional managed Diffenator runtime and

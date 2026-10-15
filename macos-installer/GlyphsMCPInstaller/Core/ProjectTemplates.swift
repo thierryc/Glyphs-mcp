@@ -128,6 +128,13 @@ public enum ProjectFiles {
          ProjectFile(path: ".gitignore", data: Data(".DS_Store\n*.bak\n".utf8))] +
         ["sources", "exports", "proofs", "documentation"].map { ProjectFile(path: $0, data: nil) }
     }
+    /// Shared by creation and preview so project placeholders show the bytes that will be copied.
+    public static func renderedData(_ data: Data, projectName: String, endpoint: URL) -> Data {
+        guard data.count < 1_000_000, let text = String(data: data, encoding: .utf8) else { return data }
+        return Data(text.replacingOccurrences(of: "{{PROJECT_NAME}}", with: projectName)
+            .replacingOccurrences(of: "{{SERVER_NAME}}", with: InstallerConstants.codexServerName)
+            .replacingOccurrences(of: "{{ENDPOINT_URL}}", with: endpoint.absoluteString).utf8)
+    }
     public static func create(_ files: [ProjectFile], in parent: URL, name: String, endpoint: URL, initializeGit: Bool = false) throws -> URL {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         try validateRelativePath(name)
@@ -155,12 +162,7 @@ public enum ProjectFiles {
             let destination = stage.appendingPathComponent(file.path)
             if let data = file.data {
                 try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-                if let text = String(data: data, encoding: .utf8), data.count < 1_000_000 {
-                    let rendered = text.replacingOccurrences(of: "{{PROJECT_NAME}}", with: name)
-                        .replacingOccurrences(of: "{{SERVER_NAME}}", with: InstallerConstants.codexServerName)
-                        .replacingOccurrences(of: "{{ENDPOINT_URL}}", with: endpoint.absoluteString)
-                    try Data(rendered.utf8).write(to: destination, options: .withoutOverwriting)
-                } else { try data.write(to: destination, options: .withoutOverwriting) }
+                try renderedData(data, projectName: name, endpoint: endpoint).write(to: destination, options: .withoutOverwriting)
                 try fm.setAttributes([.posixPermissions: 0o644], ofItemAtPath: destination.path)
             } else { try fm.createDirectory(at: destination, withIntermediateDirectories: true) }
         }
@@ -177,5 +179,64 @@ public enum ProjectFiles {
             throw ProjectError("The project could not be created at this location: " + String(cString: strerror(errno)))
         }
         return target
+    }
+}
+
+public struct ProjectPreviewNode: Identifiable, Equatable {
+    public let path: String
+    public let children: [Self]?
+    public var id: String { path }
+    public var name: String { path.split(separator: "/").last.map(String.init) ?? path }
+    public var isDirectory: Bool { children != nil }
+
+    public static func hierarchy(_ files: [ProjectFile]) -> [Self] {
+        let root = PreviewBranch(path: "")
+        for file in files {
+            var branch = root
+            let parts = file.path.split(separator: "/").map(String.init)
+            for (index, part) in parts.enumerated() {
+                if branch.children[part] == nil {
+                    branch.children[part] = PreviewBranch(path: branch.path.isEmpty ? part : branch.path + "/" + part)
+                }
+                branch = branch.children[part]!
+                if index < parts.count - 1 || file.data == nil { branch.isDirectory = true }
+            }
+        }
+        return root.nodes()
+    }
+}
+
+private final class PreviewBranch {
+    let path: String
+    var isDirectory = false
+    var children: [String: PreviewBranch] = [:]
+    init(path: String) { self.path = path }
+    func nodes() -> [ProjectPreviewNode] {
+        children.values.map { ProjectPreviewNode(path: $0.path, children: $0.isDirectory ? $0.nodes() : nil) }
+            .sorted {
+                if $0.isDirectory != $1.isDirectory { return $0.isDirectory }
+                let order = $0.name.localizedStandardCompare($1.name)
+                return order == .orderedSame ? $0.path < $1.path : order == .orderedAscending
+            }
+    }
+}
+
+public struct ProjectTextPreview: Equatable {
+    public let text: String
+    public let truncated: Bool
+    /// Bound decoding and display work, and never interpret HTML or execute template code.
+    public static func read(_ data: Data, maximumBytes: Int = 256 * 1024) -> Self? {
+        let limit = max(0, min(maximumBytes, 256 * 1024))
+        var prefix = Data(data.prefix(limit))
+        guard !prefix.contains(0) else { return nil }
+        // A prefix may end inside a UTF-8 scalar. Remove only that incomplete tail.
+        for _ in 0...3 {
+            if let text = String(data: prefix, encoding: .utf8) {
+                return .init(text: text, truncated: prefix.count < data.count)
+            }
+            guard data.count > limit, !prefix.isEmpty else { return nil }
+            prefix.removeLast()
+        }
+        return nil
     }
 }

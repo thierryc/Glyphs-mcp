@@ -259,22 +259,82 @@ def presented_actions(value):
     if state in {'ready', 'needs_review'}:
         secondary = 'discard'
     elif state == 'applied':
-        secondary = 'discard' if 'discard' in names else 'save_result'
+        primary = 'save_result' if 'save_result' in names else 'save_result_as'
+        secondary = None
     elif state in {'failed', 'cancelled'} and 'finish_script' in names:
+        primary = None
         secondary = 'restore_saved_script'
-    labels = {'finish_edit': 'Keep without saving', 'finish_script': 'Keep without saving'}
+    labels = {'finish_edit': 'Keep', 'finish_script': 'Keep', 'save_result': 'Save',
+              'restore_saved_script': 'Restore'}
+    if state == 'applied' and 'save_result' not in names:
+        labels['save_result_as'] = 'Save'
     if state in {'ready', 'needs_review'}:
         labels['discard'] = 'Cancel preview'
+    result_actions = {'finish_edit', 'finish_script', 'restore_saved_script'}
+    if state == 'applied':
+        result_actions.add('discard')
     result = []
     for name, label in offered:
         placement = ('auto_keep' if name == 'wait_for_answer' else
                      'primary' if name == primary else
-                     'secondary' if name == secondary else 'menu')
-        result.append(dict(action=name, label=labels.get(name, label), token=action_token(value, name),
-                           requiresDestination=name in {'save_as_continue', 'save_result_as'},
-                           presentation=placement))
+                     'secondary' if name == secondary or name in result_actions else 'menu')
+        item = dict(action=name, label=labels.get(name, label), token=action_token(value, name),
+                    requiresDestination=name in {'save_as_continue', 'save_result_as'}, presentation=placement)
+        if name in {'finish_edit', 'finish_script'}:
+            item['tooltip'] = 'Keep current changes in Glyphs without saving. Close this task and end its recovery option.'
+        elif name in {'save_result', 'save_result_as'}:
+            item['tooltip'] = ('Choose a new destination and save the whole font, including other unsaved edits. '
+                               if name == 'save_result_as' else
+                               'Save the whole font, including other unsaved edits. ')
+            item['tooltip'] += 'Close this task and end recovery after saving succeeds.'
+        elif name == 'restore_saved_script':
+            item['tooltip'] = ('Restore the whole font to its pre-script state. '
+                               if (value.get('savedVersion') or {}).get('kind') == 'memory_snapshot' else
+                               'Restore the whole font from its saved baseline. ')
+            item['tooltip'] += 'Remove later edits and clear Undo history. Does not save.'
+        elif name == 'discard' and state == 'applied':
+            item['tooltip'] = 'Undo only this edit. Conflicting later edits prevent recovery. Does not save.'
+        result.append(item)
     order = {'primary': 0, 'secondary': 1, 'menu': 2, 'auto_keep': 3}
+    if state == 'applied' or state in {'failed', 'cancelled'} and 'finish_script' in names:
+        # Visual emphasis is independent of order: Save is primary but Keep stays first.
+        result_order = {'finish_edit': 0, 'finish_script': 0, 'save_result': 1,
+                        'restore_saved_script': 2, 'discard': 2}
+        if 'save_result' not in names:
+            result_order['save_result_as'] = 1
+        return sorted(result, key=lambda item: result_order.get(item['action'], 4 if item['presentation'] == 'auto_keep' else 3))
     return sorted(result, key=lambda item: order[item['presentation']])
+
+
+def action_support_text(value):
+    """Outcome receipts come from retained lifecycle evidence, never a local click."""
+    state = value['state']
+    job = value.get('job') or {}
+    operation = job.get('bridgeOperation') or {}
+    evidence = operation.get('scriptResult') or {}
+    if not value.get('blockerId'):
+        names = {name for name, _ in offered_actions(value)}
+        if names.intersection({'finish_edit', 'finish_script'}):
+            return ('Choosing Keep or Save closes this task and ends its temporary recovery option.'
+                    if names.intersection({'save_result', 'save_result_as'}) else
+                    'Choosing Keep closes this task without saving and ends its temporary recovery option.')
+    if value.get('error') or job.get('outcome') == 'unverified' or unresolved(job):
+        return None
+    if state == 'executed' and job.get('status') == 'completed':
+        return 'Changes kept. No save was performed. Task closed; recovery ended.'
+    if state == 'saved' and (job.get('status') == 'accepted' or value.get('receipt')):
+        text = 'Font saved. Task closed; recovery ended.'
+        if ((value.get('receipt') or {}).get('checkpoint') or {}).get('status') == 'failed':
+            text += ' The Git checkpoint failed; the font save succeeded.'
+        return text
+    if state == 'discarded':
+        if evidence.get('beforeRunRestored'):
+            return 'Pre-run font restored without saving. Later edits were removed; task closed.'
+        if evidence.get('savedVersionRestored'):
+            return 'Saved baseline restored without saving. Later edits were removed; task closed.'
+        if value['request']['kind'] != 'python_script' and (operation.get('completedChanges') or 0) > 0:
+            return 'This edit was undone without saving. Task closed; other edits were retained.'
+    return None
 
 
 def compact_summary(summary):
@@ -332,6 +392,8 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         if include_warning:
             result['warning'] = scripts.WARNING
     result['actions'] = presented_actions(value)
+    if support := action_support_text(value):
+        result['actionSupportText'] = support
     result["message"] = MESSAGES.get(value["state"], "Checking your changes…")
     if guidance := GUIDANCE.get(value["state"]):
         result["message"] += "\n" + guidance
@@ -429,6 +491,11 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result["text"] += "\nAvailable choices: " + labels + ". You can reply in ordinary language."
     if menu_labels:
         result['text'] += '\nMore options: ' + menu_labels + '.'
+    for item in result['actions']:
+        if item.get('tooltip'):
+            result['text'] += '\n' + item['label'] + ': ' + item['tooltip']
+    if result.get('actionSupportText'):
+        result['text'] += '\n' + result['actionSupportText']
     if result.get('autoKeep', {}).get('action'):
         result['text'] += '\nIn an active card, Keep changes without saving is selected after 30 seconds. This ends this workflow’s recovery offer. Choose or say “Wait for my answer” to disable it. Text-only clients keep this choice manual.'
     elif value.get('autoKeepEnabled') is False and value['state'] == 'applied':
@@ -452,8 +519,10 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         "requestFingerprint": result.get("requestFingerprint"),
         "blockingWorkflowId": result.get('blockingWorkflowId'),
         "autoKeep": result.get('autoKeep'),
+        "actionSupportText": result.get('actionSupportText'),
         "actions": [dict(action=item["action"], label=item["label"], action_token=item["token"],
-                         requiresDestination=item["requiresDestination"], presentation=item['presentation'])
+                         requiresDestination=item["requiresDestination"], presentation=item['presentation'],
+                         **({'tooltip': item['tooltip']} if item.get('tooltip') else {}))
                     for item in result["actions"]],
     }, ensure_ascii=False, separators=(",", ":"))
     return result

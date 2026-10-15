@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs
+# Glyphs Font Workflows
 
 For compiled TTF comparisons, load [font comparison](references/font-comparison.md).
 This file-based workflow needs the sidecar and optional Diffenator runtime,
@@ -22,6 +22,17 @@ This needs no existing document, saved baseline or script and never saves.
 For UFO/OTF/TTF import, activation, Edit-tab opening or closing, use
 [document lifecycle](references/document-lifecycle.md). Close requires explicit
 save/discard handling and resolves no pending jobs.
+
+## Optional workflows
+
+- For spacing, respacing, sidebearings or widths, use [Glyphs Spacing](../glyphs-mcp-spacing/SKILL.md). Applying existing metrics keys is a separate native command from computing reference-based suggestions.
+- For interpolation-kink detection or HOI repair, use **Glyphs Dekink** (`$dekink-native`) when installed. See the [optional skill catalog](https://github.com/thierryc/glyphs-mcp-skills).
+- For image-to-outline tracing or matching a reference master, use **Glyphs Beztrace Tracing** (`$beztrace-vectorize-image`) or **Glyphs Beztrace Matching** (`$beztrace-match-masters`). See the [Beztrace skill sources](https://github.com/thierryc/beztrace/tree/main/skills).
+- For outline-to-stroke handwriting authoring, use **Glyphs PlotFont Strokes** (`$plotfont-stroke-authoring`) when its research dependencies are available.
+
+Optional instructions do not imply an installed engine, native companion or MCP
+capability. If a skill is unavailable, explain the missing requirement and use
+the app catalog or its source link for setup; do not invent tools or a fallback.
 
 ## Continue from known context
 
@@ -105,8 +116,15 @@ rules are in [the execution contract](references/python-scripts.md). With
 `script.apply-authorized.v1`, authorized Apply requests run after internal preparation;
 explicit previews still wait. Preparation and polling never execute code themselves. For typed edits, ordinary complete results apply
 automatically without saving. Warnings, skipped targets and overwrite approvals
-require report review before application. Present the standard MCP App wherever
-supported; every choice also works in ordinary conversation. “Save and continue”
+require report review before application. For unresolved decisions and missing
+information, prefer the conversation host's available native question tool;
+group related questions when they can be answered together. Use native
+conversation/tool feedback for routine progress, success and errors. Open
+`show_edit_workflow` only when before/after glyph comparisons, interactive
+inspection, substantial reports, useful live controls or recovery information
+add value, or the user requests a card. Follow [decision questions](references/edit-workflow.md#decision-questions)
+without adding another approval for an already authorized action. Every choice
+also works in ordinary conversation. “Save and continue”
 authorizes one prerequisite whole-font save, then preparation and application;
 the resulting edit remains unsaved. Reuse scoped authorization already given.
 
@@ -118,15 +136,19 @@ submit a duplicate. For typed jobs, `discard_job` cancels or restores
 the whole job; native scripts use the explicit **Restore before run**
 conversation action. Application
 is save-free. Successful edits offer Keep without saving, Save and their recovery
-action. Keep ends wrapper recovery while preserving native Undo/Redo. New cards
-automatically Keep after 30 seconds; honor “wait for my answer” with `auto_keep=false`
-or the offered opt-out action. Text-only clients remain manual. When the user's task authorizes persistence after review, call
+action. Typed Keep ends wrapper recovery while preserving native Undo/Redo.
+With Automatic Keep enabled, a visible, connected and freshly reconciled
+successful result card can Keep after 30 seconds. Failed, partial, blocked and
+uncertain outcomes remain manual. Disable Automatic Keep before waiting on a
+native question; silence, Skip and dismissal apply no choice. Honor “wait for
+my answer” with `auto_keep=false` or the offered opt-out action and retain that
+preference until changed. Text-only clients remain manual. When the user's task authorizes persistence after review, call
 `accept_job`; it revalidates affected targets, saves the entire document and
 closes the rollback window. Use `save_document` only for a specifically
 identified document with no active or applied MCP job. Inspect fresh source and
 dirty state for preparation, and never save merely to satisfy `start_job`.
 Never save, publish an export, close or overwrite a font unless the user's task
-authorizes it. The twenty tools expose trusted Python through the separate advertised
+authorizes it. The data/action tools expose trusted Python through the separate advertised
 `python_script` job; follow [its execution contract](references/python-scripts.md).
 There is no plugin reload tool; do not invent an MCP command. An advertised `native_action` is a closed typed job,
 not a general script or remote-object interface.

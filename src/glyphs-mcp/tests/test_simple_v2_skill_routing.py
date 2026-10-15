@@ -273,8 +273,8 @@ def test_stored_kerning_route_is_read_only_exact_and_recovers_without_rediscover
     assert '../../glyphs/references/kerning-reads.md' in workflow
     assert 'For explicitly requested collision-job preparation' in workflow
     metadata = yaml.safe_load((focused/'agents/openai.yaml').read_text())
-    assert metadata['interface']['short_description'] == 'Inspect stored kerning and review collision repairs'
-    assert metadata['interface']['default_prompt'] == 'Use $glyphs and $glyphs-mcp-kerning to inspect stored kerning. Prepare a collision repair only when requested.'
+    assert metadata['interface']['short_description'] == 'Set exact kerning pairs and review collision repairs'
+    assert metadata['interface']['default_prompt'] == 'Use $glyphs-mcp-kerning to inspect the requested pairs and make only the kerning changes I specify.'
     assert 'policy' not in metadata
     assert yaml.safe_load((SKILL/'agents/openai.yaml').read_text())['policy']['allow_implicit_invocation'] is False
     for path in focused.rglob('*'):

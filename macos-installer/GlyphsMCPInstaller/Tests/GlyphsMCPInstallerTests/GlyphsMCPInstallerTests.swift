@@ -1472,7 +1472,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
             "import_document", "activate_document", "open_edit_tab", "close_document", "read_entities",
             "start_job", "compare_fonts", "get_job", "apply_job", "accept_job",
             "discard_job", "save_document", "start_edit_workflow", "get_edit_workflow",
-            "respond_edit_workflow",
+            "show_edit_workflow", "respond_edit_workflow",
         ])
         XCTAssertEqual(Set((lean["runtimes"] as? [String: Any] ?? [:]).keys), ["arm64", "x86_64"])
 
@@ -1590,12 +1590,42 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		_ = try installer.installManagedSkills(from: payload, to: destRoot, clientName: "Codex", overwriteExisting: true)
 
 		XCTAssertEqual(try String(contentsOf: installedGeneric.appendingPathComponent("SKILL.md"), encoding: .utf8), "new managed\n")
-		XCTAssertFalse(FileManager.default.fileExists(atPath: legacyConnect.path))
+		// A name alone cannot prove this is an obsolete app skill.
+		XCTAssertTrue(FileManager.default.fileExists(atPath: legacyConnect.path))
 		XCTAssertEqual(try String(contentsOf: destRoot.appendingPathComponent("glyphs-mcp-scripting/SKILL.md"), encoding: .utf8), "new scripting\n")
 		XCTAssertEqual(try String(contentsOf: destRoot.appendingPathComponent("glyphs-mcp-spacing/SKILL.md"), encoding: .utf8), "new spacing\n")
 		XCTAssertEqual(try String(contentsOf: unrelated.appendingPathComponent("SKILL.md"), encoding: .utf8), "keep me\n")
 	}
 
+	func testKnownLegacySkillsRetireWithBackupAndRepeatUpdateIsIdempotent() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let source = root.appendingPathComponent("payload/skills")
+        let destination = root.appendingPathComponent("installed/skills")
+        try fm.createDirectory(at: source.appendingPathComponent("glyphs"), withIntermediateDirectories: true)
+        try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"}]}"#.write(to: source.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        try "---\nname: glyphs\ndescription: Current workflows\n---\nUse `get_status` and `read_entities`.\n".write(to: source.appendingPathComponent("glyphs/SKILL.md"), atomically: true, encoding: .utf8)
+        for name in ["glyphs-mcp-connect", "glyphs-mcp-features"] {
+            try fm.createDirectory(at: destination.appendingPathComponent(name), withIntermediateDirectories: true)
+            try "---\nname: \(name)\ndescription: Legacy instructions\n---\nUse list_open_fonts.\n".write(to: destination.appendingPathComponent(name + "/SKILL.md"), atomically: true, encoding: .utf8)
+        }
+        let payload = InstallerPayload(payloadDir: root.appendingPathComponent("payload"), pluginBundle: root.appendingPathComponent("plugin"), requirementsTxt: root.appendingPathComponent("requirements.txt"), skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        let preserved = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(preserved.conflicts.count, 2)
+        let replaced = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: true)
+        let retired = replaced.entries.filter { $0.outcome == .retired }
+        XCTAssertEqual(Set(retired.map(\.name)), Set(["glyphs-mcp-connect", "glyphs-mcp-features"]))
+        for entry in retired {
+            XCTAssertFalse(fm.fileExists(atPath: entry.path))
+            XCTAssertTrue(fm.fileExists(atPath: try XCTUnwrap(entry.backupPath) + "/SKILL.md"))
+        }
+        let receipt = try JSONDecoder().decode([String: String].self, from: Data(contentsOf: destination.appendingPathComponent(".glyphs-mcp-skills.json")))
+        XCTAssertEqual(Set(receipt.keys), Set(["glyphs"]))
+        let repeated = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test", overwriteExisting: false)
+        XCTAssertEqual(repeated.entries.map(\.outcome), [.current])
+    }
 	func testProcessRunnerRunStreamingCapturesStdoutAndStderr() async throws {
 		let runner = ProcessRunner()
 		let exe = URL(fileURLWithPath: "/bin/sh")

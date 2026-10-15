@@ -35,6 +35,7 @@ TOOL_NAMES = (
     "save_document",
     "start_edit_workflow",
     "get_edit_workflow",
+    "show_edit_workflow",
     "respond_edit_workflow",
 )
 

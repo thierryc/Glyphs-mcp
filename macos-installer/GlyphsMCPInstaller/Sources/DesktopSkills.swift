@@ -36,10 +36,10 @@ final class DesktopSkillsModel: ObservableObject {
     private var installer: SupplementalSkillInstaller { .init(bundledNames: Set(catalogEntries.filter(\.bundled).map(\.name))) }
     var filtered: [CatalogSkill] {
         skills.filter { skill in
-            (search.isEmpty || (skill.name + " " + skill.description + " " + skill.author).localizedCaseInsensitiveContains(search)) &&
+            (search.isEmpty || (skill.title + " " + skill.name + " " + skill.description + " " + skill.author).localizedCaseInsensitiveContains(search)) &&
             (client == nil || skill.compatibleClients.contains(client!)) &&
             (category == "All" || category == "Included" && skill.bundled || category == "Additional" && !skill.bundled || category == "Installed" && isInstalled(skill))
-        }.sorted { ($0.bundled ? 0 : 1, $0.name) < ($1.bundled ? 0 : 1, $1.name) }
+        }.sorted { ($0.bundled ? 0 : 1, $0.title) < ($1.bundled ? 0 : 1, $1.title) }
     }
     func isInstalled(_ skill: CatalogSkill) -> Bool {
         skill.bundled ? !(bundledObservations[skill.id] ?? []).isEmpty : observations[skill.id]?.values.contains(where: { $0.state != .notInstalled }) == true
@@ -242,26 +242,22 @@ private struct SkillCardPresentation {
     let title: String
     let goal: String
     init(_ skill: CatalogSkill) {
-        let included: [String: (String, String)] = [
-            "glyphs": ("Font workflows", "Find the right workflow for your next font task."),
-            "glyphs-mcp-development": ("Scripts & plugins", "Build tools that make your font work easier."),
-            "glyphs-mcp-italic-first-pass": ("Italic first pass", "Prepare a first slant for your italic design."),
-            "glyphs-mcp-kerning": ("Kerning", "Review the spacing between letter pairs."),
-            "glyphs-mcp-maintainer-feedback": ("Report an issue", "Collect useful details for a clear bug report."),
-            "glyphs-mcp-master-compatibility": ("Master consistency", "Compare contour starts across your masters."),
-            "glyphs-mcp-opentype-features": ("OpenType features", "Write and check your font’s OpenType features."),
-            "glyphs-mcp-outlines-docs": ("Outline review", "Inspect curves and plan focused outline edits."),
-            "glyphs-mcp-release": ("Prepare a release", "Check a Glyphs MCP release before publication."),
-            "glyphs-mcp-scripting": ("Font scripts", "Create a focused script for a font task."),
-            "glyphs-mcp-spacing": ("Spacing", "Prepare spacing suggestions from reference letters.")
+        let goals: [String: String] = [
+            "glyphs": "Find the right workflow for your next font task.",
+            "glyphs-mcp-development": "Build tools that make your font work easier.",
+            "glyphs-mcp-italic-first-pass": "Prepare a first slant for your italic design.",
+            "glyphs-mcp-kerning": "Review the spacing between letter pairs.",
+            "glyphs-mcp-maintainer-feedback": "Collect useful details for a clear bug report.",
+            "glyphs-mcp-master-compatibility": "Compare contour starts across your masters.",
+            "glyphs-mcp-opentype-features": "Write and check your font’s OpenType features.",
+            "glyphs-mcp-outlines-docs": "Inspect curves and plan focused outline edits.",
+            "glyphs-mcp-release": "Check a Glyphs MCP release before publication.",
+            "glyphs-mcp-scripting": "Create a focused script for a font task.",
+            "glyphs-mcp-spacing": "Prepare spacing suggestions from reference letters."
         ]
-        if skill.bundled, let content = included[skill.name] {
-            title = content.0; goal = content.1
-        } else {
-            title = skill.name.replacingOccurrences(of: "-", with: " ").capitalized
-            goal = skill.name == "dekink-native" ? "Find and repair interpolation kinks while preserving your master outlines."
-                : skill.description.components(separatedBy: ". ").first ?? skill.description
-        }
+        title = skill.title
+        goal = skill.bundled ? goals[skill.name] ?? skill.description
+            : skill.description.components(separatedBy: ". ").first ?? skill.description
     }
 }
 
@@ -599,7 +595,8 @@ struct DesktopSkillsView: View {
                             } else { Text("Binary resource; included in installation and export.") }
                         } else { Text("Instructions are not available yet.") }
                     } else if informationTab == "Source" {
-                        Text(skill.name).font(.headline)
+                        Text(skill.title).font(.headline)
+                        Text("Identifier: " + skill.name).font(.caption).textSelection(.enabled)
                         Text(skill.description)
                         Text(skill.author + " · " + skill.license)
                         Text("Revision: " + skill.source.revision).textSelection(.enabled)
@@ -677,7 +674,7 @@ private struct SkillImportSheet: View {
             ScrollView {
                 ForEach(discovered) { skill in
                     HStack {
-                        VStack(alignment: .leading) { Text(skill.name).font(.headline); Text(skill.description).font(.caption) }
+                        VStack(alignment: .leading) { Text(skill.title).font(.headline); Text(skill.description).font(.caption) }
                         Spacer()
                         Button("Add and Review") {
                             busy = true

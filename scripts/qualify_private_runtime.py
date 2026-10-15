@@ -46,11 +46,18 @@ async def check(lean, architecture):
                 log.seek(0); raise TimeoutError('Private runtime did not start: '+log.read()[-2000:])
             expected=['get_status','list_documents','create_document','duplicate_document','open_document','import_document','activate_document','open_edit_tab','close_document',
                       'read_entities','start_job','compare_fonts','get_job','apply_job','accept_job','discard_job','save_document',
-                      'start_edit_workflow','get_edit_workflow','respond_edit_workflow']
+                      'start_edit_workflow','get_edit_workflow','show_edit_workflow','respond_edit_workflow']
             assert [t.name for t in catalog]==expected
+            tools = {tool.name: tool for tool in catalog}
+            for name in ('start_edit_workflow', 'get_edit_workflow', 'respond_edit_workflow'):
+                assert 'resourceUri' not in tools[name].meta['ui']
+            assert tools['show_edit_workflow'].annotations.readOnlyHint is True
+            assert tools['show_edit_workflow'].meta['ui']['resourceUri'] == 'ui://glyphs-mcp/edit-workflow-v1.html'
             command=prefix+[str(python),'-B',str(lean/'sidecar/proxy.py'),url]
             async with Client(StdioTransport(command=command[0],args=command[1:],env=env)) as proxy:
-                assert [t.name for t in await proxy.list_tools()]==expected
+                proxy_catalog = await proxy.list_tools()
+                assert [t.name for t in proxy_catalog]==expected
+                assert {t.name: t.meta for t in proxy_catalog} == {t.name: t.meta for t in catalog}
                 resources = await proxy.read_resource('ui://glyphs-mcp/edit-workflow-v1.html')
                 assert resources[0].mimeType == 'text/html;profile=mcp-app'
                 assert 'ui/initialize' in resources[0].text
@@ -58,7 +65,7 @@ async def check(lean, architecture):
                 response = await proxy.call_tool('get_edit_workflow', {'workflow_id':'not-a-workflow'})
                 assert response.structured_content['ok'] is False and response.content[0].text
             return {'architecture':architecture,'privatePython':True,'httpCatalog':expected,'stdioProxy':True,
-                    'mcpAppResourceAndCSP':True,'structuredAndTextResults':True,'packageDownloads':0,
+                    'mcpAppResourceAndCSP':True,'nativeFirstOptionalCards':True,'structuredAndTextResults':True,'packageDownloads':0,
                     'packagedInstallerCLI':True,'startupSeconds':round(time.monotonic()-started,3)}
         finally:
             process.terminate()

@@ -1,5 +1,9 @@
 # Lean v2 qualification records
 
+## Current release and development candidate
+
+The unpublished 2.1.0/build 62 candidate is recorded in [its local acceptance record](../V2.1.0-RELEASE.md). It does not inherit signed-release qualification from 2.0.4.
+
 For the published stable release, see [2.0.4 qualification](../V2.0.4-RELEASE.md)
 and [build 61 publication](2.0.4-build61-published.md). Its final source gate passed
 2,952 Python tests (two optional skips) and 263 desktop tests; exact signed VM
@@ -14,6 +18,8 @@ The installation investigation is recorded in [Python detection](python-detectio
 its hashes and limits do not describe the published build 61.
 
 [Repository consolidation](repository-cleanup-20261012.md) records the next-development baseline.
+## Historical qualification
+
 The reports below are historical snapshots. Beta guides and validation notes
 removed from the current tree remain available in the
 [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).

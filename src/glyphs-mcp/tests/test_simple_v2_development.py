@@ -324,7 +324,7 @@ def test_entry_metadata_starter_and_private_boundaries():
     assert text.index("Glyphs may be") < text.index("For MCP access")
     assert "--target 4" in text and "scripts/scaffold.py" in text
     meta = yaml.safe_load((SKILL / "agents/openai.yaml").read_text())
-    assert meta["interface"]["display_name"] == "Glyphs Vibe Coding"
+    assert meta["interface"]["display_name"] == "Glyphs Scripts & Plugins"
     assert "$glyphs-mcp-development" in meta["interface"]["default_prompt"]
     assert "policy" not in meta
     assert 25 <= len(meta["interface"]["short_description"]) <= 64

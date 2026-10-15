@@ -319,8 +319,10 @@ def test_mcp_app_and_proxy_preserve_text_resources_metadata_and_actions(env):
         for host in (server, proxy):
             async with Client(host) as client:
                 catalog = {t.name:t for t in await client.list_tools()}
-                assert len(catalog) == 20
-                assert catalog["start_edit_workflow"].meta["ui"]["resourceUri"] == RESOURCE_URI
+                assert len(catalog) == 21
+                assert catalog["show_edit_workflow"].meta["ui"]["resourceUri"] == RESOURCE_URI
+                for name in ("start_edit_workflow", "get_edit_workflow", "respond_edit_workflow"):
+                    assert "resourceUri" not in catalog[name].meta["ui"]
                 resources = await client.read_resource(RESOURCE_URI)
                 assert resources[0].mimeType == RESOURCE_MIME
                 assert resources[0].meta['ui']['csp']['connectDomains'] == []
@@ -329,6 +331,11 @@ def test_mcp_app_and_proxy_preserve_text_resources_metadata_and_actions(env):
                 result = await client.call_tool("start_edit_workflow", dict(document_id="doc_1", kind="width_delta", delta=8, idempotency_key="shared"))
                 assert result.structured_content["data"]["state"] == "waiting_save"
                 assert "Save and continue" in result.content[0].text
+                before = service.edit_workflows.get(result.structured_content["data"]["id"])
+                shown = await client.call_tool("show_edit_workflow", dict(workflow_id=before["id"]))
+                assert shown.structured_content["data"]["state"] == before["state"]
+                assert shown.structured_content["data"]["actions"] == before["actions"]
+                assert not bridge.adapter.save_calls
     asyncio.run(run())
 
 
@@ -414,13 +421,13 @@ def test_full_text_only_mcp_without_skills(env):
                 result = await client.call_tool('get_edit_workflow', dict(workflow_id=data['workflow_id']))
             assert text_control(result)['state'] == 'applied'
             assert 'Changes applied.' in result.content[0].text
-            assert 'Keep changes without saving' in result.content[0].text
+            assert 'Keep current changes in Glyphs without saving' in result.content[0].text
             assert len(bridge.adapter.save_calls) == 1 and source.read_text() == '600'
             # A later plain "Save the font" uses the retained reference and a
             # fresh offered action; no user-supplied identifier is necessary.
             result = await client.call_tool('get_edit_workflow', dict(workflow_id=data['workflow_id']))
             data = text_control(result)
-            selected = next(a for a in data['actions'] if a['label'] == 'Save font')
+            selected = next(a for a in data['actions'] if a['action'] == 'save_result' and a['label'] == 'Save')
             result = await client.call_tool('respond_edit_workflow', dict(workflow_id=data['workflow_id'], expected_revision=data['expected_revision'], action_token=selected['action_token']))
             while text_control(result)['poll']:
                 assert time.monotonic() < deadline

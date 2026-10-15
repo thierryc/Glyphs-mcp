@@ -7,15 +7,68 @@ for requested edits or `mode="preview"` for preview requests, and one unique
 idempotency key retained for that request. Never replace a timed-out request
 with a new key. Compilation and export use the existing job lifecycle.
 
-Use the standard MCP App when the host supports it. Do not select rendering by
-client name or invent separate Claude/Cursor/Codex interfaces. If cards or their
-tool calls are unavailable, present the returned text and use the same tools.
-Supported native choice controls may present these same choices in a text-only
-host; plain conversation is always sufficient. No installed skill is required
-to use the server's tool descriptions and returned choices.
+Use native interaction first: ordinary chat, the host's native question tool,
+and native tool/progress feedback. Starting, reading and responding to workflows
+do not open cards. Call `show_edit_workflow` only when a card adds visual review,
+a substantial report/evidence, meaningful live progress/cancellation, or useful
+recovery controls, or the user explicitly requests it. Reuse one existing card;
+do not create another for each stage. Simple questions, routine starts/polls,
+empty results and short success messages need no card. Select by capability and
+task value, not client name. Ordinary conversation always remains available.
 
 Typed edits and scripts share Keep, Save and their appropriate recovery action. Scripts use their own Run action under
 task authorization, as described at the end and in the shared contract.
+
+## Decision questions
+
+When a user answer is needed, use the native question tool exposed by the
+conversation host (ChatGPT/Codex, Claude, Cursor or another client), if it is
+available and permitted in the current mode. This is an agent instruction, not
+a question form supplied by the MCP card or a new server elicitation endpoint.
+Do not invent a tool name or switch modes just to obtain a question interface.
+
+Use concise questions with choices drawn from the latest workflow's offered
+actions, or free text for missing information. Group related questions in one
+native request when they can be answered independently, within the host's limits
+(for example, master and glyph scope). Ask dependent follow-ups only after the
+earlier answer; do not combine incompatible lifecycle decisions. Use questions
+for unresolved preview acceptance, Save/Save As prerequisites,
+result Keep/Save/recovery decisions, or missing scope/destination information.
+Explain whole-font Save and Restore consequences when those choices are offered;
+keep selective Undo distinct from whole-font Restore. Exact Dimensions old/new
+values still require explicit approval. If the native control cannot express
+the necessary review or fields, use ordinary conversation, adding a card only
+when its preview or controls materially help the user.
+
+Before waiting on a native question, turn off this workflow's automatic Keep
+using its offered `wait_for_answer` action, or start with `auto_keep=false` when
+the need for a decision is already known. Retain the returned revision. A native
+question has no automatic acceptance: silence, Skip, dismissal and an unavailable
+question tool apply no choice and end no recovery offer. After dismissal, leave
+the choices available in conversation with Automatic Keep off; do not open a
+replacement card unless it adds value, and do not reopen the same
+question automatically.
+
+Map the user's answer to the existing `respond_edit_workflow` action. Re-read the
+same workflow before dispatch and check that the answer still refers to the same
+proposal, target and consequences. If those changed, explain the new state and
+obtain a new answer rather than carrying approval to a different proposal. Keep
+all destination, revision, action-token and overwrite checks in the existing
+workflow; never ask users to type tool arguments or internal identifiers.
+
+Prefer native conversation/tool feedback for preparation, running progress,
+success and errors. Keep routine updates concise and report meaningful changes
+without narrating unchanged polls. Completion must reflect a verified outcome;
+on error, explain what happened, what is known about the edit and the useful
+next step. A routine error alone does not need a card. Use cards for before/after
+glyph comparisons, interactive inspection, substantial reports, useful recovery
+controls or meaningful live progress/cancellation.
+If a useful card is already visible when a native question appears, treat it as
+supporting evidence/fallback and ask for one answer only. If the host has no
+native question tool, ask in ordinary text; lack of that tool alone is not a
+reason to open a card. Reuse existing authorization: a native
+question must not add another Run, Apply, Save or Restore approval when the
+requested action and scope are already authorized.
 
 For a known connection and document, use this minimal sequence:
 
@@ -143,6 +196,18 @@ remain manual; elapsed time does not imply an answer. There is no timed Run, Sav
 Undo or Restore. Cards record timed completion as such, not as a human click.
 
 ## Portable card presentation
+
+Cards are optional display surfaces opened with `show_edit_workflow`, not a
+default wrapper around tool results. Keep them for richer previews/reports,
+long-running monitoring with useful controls, and recovery information that
+would be cumbersome in native chat. Do not open a card just to repeat a native
+question or announce a routine outcome. Host-owned historical cards cannot be
+deleted by the agent; avoid creating redundant new ones.
+
+Before/after visual glyph comparisons and interactive inspection require an
+available renderer or native Glyphs view. The workflow card presents lifecycle
+state, reports and actions; it is not itself a dedicated outline viewer. Do not
+promise visual evidence that the available surface cannot display.
 
 Use the server's optional action `presentation` metadata for main choices,
 **More options** and automatic Keep controls. All offered actions remain in the

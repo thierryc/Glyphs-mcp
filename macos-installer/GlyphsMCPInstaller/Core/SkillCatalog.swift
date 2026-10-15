@@ -50,6 +50,7 @@ public struct CatalogSkill: Codable, Equatable, Identifiable, Sendable {
     public enum Classification: String, Codable, Sendable { case curated, community, imported }
     public var id: String
     public var name: String
+    public var displayName: String?
     public var description: String
     public var author: String
     public var license: String
@@ -59,11 +60,13 @@ public struct CatalogSkill: Codable, Equatable, Identifiable, Sendable {
     public var requirements: [String]
     public var bundled: Bool
     public init(id: String, name: String, description: String, author: String, license: String,
-                classification: Classification, source: SkillSource, compatibleClients: [SkillClient], requirements: [String], bundled: Bool = false) {
+                classification: Classification, source: SkillSource, compatibleClients: [SkillClient], requirements: [String], bundled: Bool = false, displayName: String? = nil) {
         self.id = id; self.name = name; self.description = description; self.author = author; self.license = license
+        self.displayName = displayName
         self.classification = classification; self.source = source; self.compatibleClients = compatibleClients
         self.requirements = requirements; self.bundled = bundled
     }
+    public var title: String { displayName ?? name.replacingOccurrences(of: "-", with: " ").capitalized }
     public var categoryTitle: String {
         if bundled { return "Included with Glyphs MCP" }
         switch classification { case .curated: return "Curated"; case .community: return "Community"; case .imported: return "Unreviewed import" }
@@ -83,6 +86,12 @@ public struct SkillCatalog: Codable, Sendable {
               Set(value.skills.map(\.id)).count == value.skills.count,
               Set(value.skills.map { $0.name.lowercased() }).count == value.skills.count else { throw ProjectError("Invalid skills catalog.") }
         for entry in value.skills {
+            if let title = entry.displayName {
+                guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 80,
+                      !title.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else {
+                    throw ProjectError("Invalid skill display name.")
+                }
+            }
             guard SkillMetadata.validName(entry.name), !entry.id.isEmpty, entry.id.count <= 160,
                   !entry.description.isEmpty, entry.description.count <= 1024,
                   !entry.author.isEmpty, !entry.license.isEmpty,
@@ -105,7 +114,13 @@ public struct SkillCatalog: Codable, Sendable {
         let included = bundled.skills.filter(\.bundled)
         let names = Set(included.map(\.name))
         guard !skills.contains(where: { !$0.bundled && names.contains($0.name) }) else { throw ProjectError("A catalog skill conflicts with an included skill.") }
-        return Self(skills: included + skills.filter { !$0.bundled })
+        let snapshotTitles = Dictionary(uniqueKeysWithValues: bundled.skills.map { ($0.id, $0.displayName) })
+        let additional = skills.filter { !$0.bundled }.map { entry in
+            var entry = entry
+            if entry.displayName == nil { entry.displayName = snapshotTitles[entry.id] ?? nil }
+            return entry
+        }
+        return Self(skills: included + additional)
     }
 }
 
@@ -114,6 +129,35 @@ public struct SkillMetadata: Equatable, Sendable {
     public let description: String
     public static func validName(_ value: String) -> Bool {
         value.count <= 64 && value.range(of: #"^[a-z0-9]+(?:-[a-z0-9]+)*$"#, options: .regularExpression) != nil
+    }
+    /// UI labels are optional and never replace the stable SKILL.md identifier.
+    public static func displayName(in files: [ProjectFile]) throws -> String? {
+        guard let data = files.first(where: { $0.path == "agents/openai.yaml" })?.data else { return nil }
+        guard data.count <= 100_000, let text = String(data: data, encoding: .utf8) else { throw ProjectError("Skill UI metadata must be bounded UTF-8 text.") }
+        var inInterface = false
+        var title: String?
+        for line in text.components(separatedBy: .newlines) {
+            if line.isEmpty || line.trimmingCharacters(in: .whitespaces).hasPrefix("#") { continue }
+            if line.first?.isWhitespace != true { inInterface = line == "interface:"; continue }
+            let field = line.trimmingCharacters(in: .whitespaces)
+            guard inInterface, field.hasPrefix("display_name:") else { continue }
+            guard title == nil else { throw ProjectError("Duplicate skill display name.") }
+            let raw = String(field.dropFirst("display_name:".count)).trimmingCharacters(in: .whitespaces)
+            if raw.hasPrefix("\"") {
+                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(raw.utf8)) else { throw ProjectError("Invalid quoted skill display name.") }
+                title = decoded
+            } else if raw.hasPrefix("'"), raw.hasSuffix("'"), raw.count >= 2 {
+                title = String(raw.dropFirst().dropLast()).replacingOccurrences(of: "''", with: "'")
+            } else {
+                guard !raw.hasPrefix("!"), !raw.hasPrefix("&"), !raw.hasPrefix("*"), !raw.hasPrefix("["), !raw.hasPrefix("{"), !raw.hasPrefix("|"), !raw.hasPrefix(">") else { throw ProjectError("Use a plain or quoted skill display name.") }
+                title = raw.components(separatedBy: " #").first?.trimmingCharacters(in: .whitespaces)
+            }
+        }
+        if let title {
+            guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 80,
+                  !title.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else { throw ProjectError("Invalid skill display name.") }
+        }
+        return title
     }
     /// Reads the standard required fields without evaluating YAML tags or programs.
     public static func parse(_ data: Data) throws -> Self {

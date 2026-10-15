@@ -16,6 +16,8 @@ def copy_catalog_fixture(destination):
              'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json']
     files += [f'macos-installer/GlyphsMCPInstaller/Resources/{language}.lproj/Localizable.strings'
               for language in ('en', 'fr', 'zh-Hans')]
+    for skill in json.loads((ROOT/'skills/manifest.json').read_text())['managedSkills']:
+        files += [f'skills/{skill["name"]}/SKILL.md', f'skills/{skill["name"]}/agents/openai.yaml']
     for relative in files:
         target = destination/relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -42,4 +44,23 @@ def test_incorrect_bundled_license_is_rejected(tmp_path):
                      'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json']:
         (tmp_path/relative).write_text(json.dumps(registry))
     with pytest.raises(ValueError, match='bundled license differs'):
+        checker.check(tmp_path)
+
+
+def test_ui_title_drift_is_rejected(tmp_path):
+    copy_catalog_fixture(tmp_path)
+    ui = tmp_path/'skills/glyphs/agents/openai.yaml'
+    ui.write_text(ui.read_text().replace('Glyphs Font Workflows', 'glyphs'))
+    with pytest.raises(ValueError, match='Glyphs display title'):
+        checker.check(tmp_path)
+
+
+def test_duplicate_ui_titles_are_rejected(tmp_path):
+    copy_catalog_fixture(tmp_path)
+    skill = tmp_path/'skills/glyphs-mcp-spacing'
+    ui = skill/'agents/openai.yaml'
+    ui.write_text(ui.read_text().replace('Glyphs Spacing', 'Glyphs Font Workflows'))
+    entry = skill/'SKILL.md'
+    entry.write_text(entry.read_text().replace('# Glyphs Spacing', '# Glyphs Font Workflows'))
+    with pytest.raises(ValueError, match='Duplicate skill display title'):
         checker.check(tmp_path)

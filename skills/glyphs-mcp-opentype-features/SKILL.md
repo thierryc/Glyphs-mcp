@@ -5,7 +5,7 @@ metadata:
   surface: glyphs-mcp-v2
 ---
 
-# Glyphs 4 OpenType features
+# Glyphs OpenType Features
 
 Start from the requested feature, font source and workspace. Use the focused
 [native feature workflow](references/native-features.md) for review, source
@@ -28,8 +28,9 @@ For manual source edits or coordinated changes across prefixes, classes and
 features, offer **direct native scripting** under
 [the shared script contract](../glyphs/references/python-scripts.md#choose-the-route).
 Use one whole script with exact block names, expected old text and replacement
-text in `params`; no artificial layer target is needed. Native script recovery restores feature source by reloading
-the whole unchanged pre-run saved font, including all other edits since that save.
+text in `params`; no artificial layer target is needed. Native script recovery restores the detached pre-run font copy, including
+unsaved feature source and other in-font data. Restore before run discards later
+unsaved edits and clears Undo history.
 Keep collection order and automatic/manual state intact. A few related blocks
 can justify this route; the surface-count threshold does not apply to features.
 Compilation, export and shaping remain separate evidence; MCP diagnostic and

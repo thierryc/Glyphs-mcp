@@ -2,6 +2,14 @@
 title: Edit fonts in the conversation
 ---
 
+Native chat is the default. Decisions and missing information use the
+conversation's native question tool when available, otherwise ordinary text.
+Related, independently answerable questions are grouped. Routine progress,
+success and errors use conversation feedback. Cards open only when a visual
+comparison, interactive inspection, substantial report, meaningful live controls
+or recovery information helps, or when you ask to see one. One useful card can
+follow the whole workflow; routine starts, polling and simple outcomes need none.
+
 Ask for a supported adjustment and specify its glyphs and masters. The agent
 resolves the exact font, native master/layer IDs and foreground/background scope,
 then checks advertised capabilities; a layer name is not an ID. A saved,
@@ -14,8 +22,8 @@ requested adjustment. **The resulting edit remains unsaved.** A prerequisite
 save and saving the result are separate choices.
 
 For a new font, choose **Save As…** and enter an absolute destination folder and
-filename. The card shows the destination before saving; existing files are
-never replaced. You can instead choose **I'll save in Glyphs**, save there,
+filename. The conversation shows the resolved destination before saving;
+existing files are never replaced. You can instead choose **I'll save in Glyphs**, save there,
 then reply **Check and continue**. The original request is retained.
 
 You can inspect the font during preparation. Editing it makes the preparation
@@ -28,23 +36,29 @@ Complete results apply automatically. A preview says **Changes ready to review.*
 targets are reviewed in the conversation first. Existing Dimensions values
 still require approval of the exact proposed replacements.
 
-After application the card says **Changes applied. Save your font to keep them.**
+After verified application, the conversation says **Changes applied.**
 Review the result in Glyphs, then choose **Keep changes without saving**, **Save
 font**, **Save As…**, or **Undo these changes**. Saving includes the entire
 current font. Undo checks for conflicts with later edits instead of overwriting them.
 
 ## Keep and the review countdown
 
-New successful edit and script cards show a **30-second** countdown to **Keep
-changes without saving**. Keep ends that workflow's recovery offer; it does not
+When Automatic Keep is enabled, a visible, connected and freshly reconciled
+successful edit or script card shows a **30-second** countdown to **Keep changes
+without saving**. Keep ends that workflow's recovery offer; it does not
 save the font. For typed edits, native Glyphs Undo/Redo remains available. Say or
-choose **Wait for my answer** to disable the countdown for this workflow, and
-include that instruction in later requests when you want manual review.
+choose **Wait for my answer** to disable the countdown for this workflow. The
+agent retains that preference until you change it.
 
-Hidden cards and open Details pause the countdown; returning reconciles the
-result and starts a fresh countdown. Failed, uncertain and partial outcomes do
-not auto-Keep. Older records and text-only clients remain manual. The countdown
-does not run a script, save a font, restore a version or verify the design.
+Before waiting on a native question, the agent disables Automatic Keep. Silence,
+Skip and dismissal apply no choice and end no recovery offer. The choices remain
+available in conversation without automatically reopening the question.
+
+Hidden cards, open Details/More options and reconnection pause/reset the
+countdown; returning reconciles the result before a fresh countdown. Failed,
+uncertain, partial and blocked outcomes do not auto-Keep. Older records and
+text-only clients remain manual. The countdown
+does not authorize Run, Apply, Save, Undo or Restore, or verify the design.
 
 For your first experiment, say **Wait for my answer** before trying recovery.
 [Native scripts](../workflows/scripts.mdx) use whole-font **Restore before run**;
@@ -67,6 +81,10 @@ Every action also works as an ordinary-language reply, including **save and
 continue**. No tool names, identifiers or JSON are needed. Existing scoped
 authorization is reused. If a card fails to load, or interactive tool calls are
 unavailable, continue through the same choices in text.
+
+Before/after glyph comparisons and interactive inspection need a suitable
+renderer or native Glyphs view. The workflow card supplies lifecycle controls
+and report details; it does not itself provide a dedicated outline viewer.
 
 The implementation follows the [MCP Apps standard](https://apps.extensions.modelcontextprotocol.io/api/documents/overview.html).
 [Cursor documents MCP Apps support](https://cursor.com/docs/mcp).

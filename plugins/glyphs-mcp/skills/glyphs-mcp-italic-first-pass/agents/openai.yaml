@@ -1,4 +1,4 @@
 interface:
-  display_name: "glyphs-mcp-italic-first-pass"
-  short_description: "Prepare and verify a native mechanical slant in Glyphs 4."
-  default_prompt: "Use $glyphs-mcp-italic-first-pass to prepare, review and verify the requested slant with the current lean Glyphs MCP connection."
+  display_name: "Glyphs Italic First Pass"
+  short_description: "Prepare and verify a first mechanical italic slant"
+  default_prompt: "Use $glyphs-mcp-italic-first-pass to prepare and verify the requested slant in the specified glyphs and masters."

@@ -1,11 +1,15 @@
 ---
 name: glyphs-mcp-spacing
-description: Prepare and review reference-based spacing suggestions with preserved native metrics.
+description: Review or respace glyph sidebearings and widths with reference-based suggestions, preserving metrics keys and native alignment.
 metadata:
   surface: glyphs-mcp-v2
 ---
 
-# glyphs-mcp-spacing
+# Glyphs Spacing
+
+Use for spacing or respacing, sidebearing and width review, and applying existing
+metrics keys. Choose the matching route below: applying keys synchronizes existing
+metrics; it does not compute new optical spacing.
 
 For read-only layer measurements, use `read_entities` and the
 [native layer read reference](../glyphs/references/layer-reads.md). Resolve exact

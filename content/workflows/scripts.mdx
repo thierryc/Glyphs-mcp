@@ -38,12 +38,21 @@ not prove the intended design result: inspect the font and verify relevant value
 ## Decide what to keep
 
 After execution, use the offered **Keep changes without saving**, **Save font**
-or **Restore before run** actions. Successful new cards can Keep after 30
-seconds; **Pause countdown** disables that countdown. Before it starts, use
+or **Restore before run** actions. Ask unresolved decisions with native questions
+when available, grouping related independent questions; otherwise use ordinary
+chat. Routine progress, success and errors stay in the conversation. A card is
+optional for useful evidence, substantial reports, live controls or recovery.
+
+With Automatic Keep enabled, a visible, connected and freshly reconciled
+successful result card can Keep after 30 seconds; **Pause countdown** disables
+that countdown. Before it starts, use
 **Turn off automatic Keep**, or say **Wait for my answer** in the conversation.
 **Restore before run** is under **More options** after success and remains
 a main choice when partial edits need recovery. Failed or partial
-execution remains a manual decision and can leave edits behind.
+execution remains a manual decision and can leave edits behind. Blocked and
+uncertain outcomes also remain manual. Disable Automatic Keep before waiting on
+a native answer. Silence, Skip and dismissal apply no choice and preserve
+recovery; “wait for my answer” remains in effect until changed.
 
 **Restore before run** restores the pre-run memory copy for the **whole font**,
 including edits that were already unsaved before Run. It replaces all later unsaved edits, including manual edits outside the
@@ -59,7 +68,7 @@ If the connection times out, use **Check result** on the retained workflow.
 Never submit a new script request merely to bypass an uncertain result. See
 [Safety and recovery](../concepts/safety-model.mdx).
 
-Visible cards refresh while choices remain, including recovery after cancellation.
+When a useful card is open, it refreshes while choices remain, including recovery after cancellation.
 If an offered choice has expired, the card checks the current workflow and removes
 obsolete buttons. If the check fails, use **Check status**. Text-only clients use
 the same retained workflow and current choices; old conversation messages may

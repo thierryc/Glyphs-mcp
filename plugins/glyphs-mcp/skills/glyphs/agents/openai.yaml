@@ -1,7 +1,7 @@
 interface:
-  display_name: "glyphs"
-  short_description: "Identify the Glyphs connection and route font work"
-  default_prompt: "Use $glyphs to identify this MCP connection and choose its matching font workflow."
+  display_name: "Glyphs Font Workflows"
+  short_description: "Find the right workflow for a Glyphs font task"
+  default_prompt: "Use $glyphs to inspect the connection and choose the workflow for my font task."
 
 policy:
   allow_implicit_invocation: false
