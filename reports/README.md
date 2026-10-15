@@ -260,3 +260,5 @@ records the archive checksum and each member's checksum. Keep the archive,
 manifests, native proofs and preserved user-font copies. The build directory also
 contains evidence and source worktrees; cleanup must use inspected generated
 outputs, never a blanket removal of `build/`.
+
+- [2.1.0 published distribution and qualification](../V2.1.0-RELEASE.md): build 63, full source gate, signed artifacts, manual VM upgrade and native exports.

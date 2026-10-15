@@ -4,7 +4,15 @@ title: Release qualification and known limits
 
 ## Published stable release
 
-Glyphs MCP **2.0.4/build 61** uses twenty tools, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID-signed, notarized and stapled. All public asset digests and sizes matched the verified distribution before feed promotion.
+Glyphs MCP **2.1.0/build 63** uses twenty data/action tools plus one optional read-only card-display tool, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID-signed, notarized and stapled. All public asset digests and sizes matched the verified distribution before feed promotion.
+
+## 2.1.0 acceptance
+
+The full publication gate passed **2,980 Python tests** (two optional skips), **270 desktop tests**, deterministic payload comparison, documentation and startup checks for both private runtimes. Both final signed runtimes passed HTTP/stdio catalog, packaged-installer and card-resource checks; x86_64 executed under Rosetta.
+
+The exact signed app passed a manual **2.0.4/build 61 → 2.1.0/build 63** app/component upgrade in the macOS 26.6.2 arm64 VM. The previous manager was backed up. Default official Glyphs Python 3.14.6 detection passed with no saved framework preference, which was restored afterward. Six static TTF/OTF outputs across plain, WOFF and WOFF2 passed table and shaping checks while Glyphs Python had no FontTools or HarfBuzz. Fixture source integrity, installed-file identities, sidecar build 63 and the 21-tool/resource catalog passed. Welcome, Setup and readable Skills titles were checked in the native signed app.
+
+The exact Sparkle older-to-newer upgrade and a new live editor recovery cycle were not rerun. The VM editor stayed closed; this pass does not claim a loaded bridge editing test. Earlier qualification below keeps its original scope. Physical Intel and exact macOS 14.0 execution remain unverified. See [the release record](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.1.0-RELEASE.md).
 
 ## 2.0.4 acceptance
 

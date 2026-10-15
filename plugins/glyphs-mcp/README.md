@@ -2,20 +2,20 @@
 
 This optional repository plugin connects Codex/ChatGPT, Claude Code, Cursor,
 and GitHub Copilot CLI to the Glyphs MCP server at
-`http://127.0.0.1:9680/mcp/`. Version 2.0.2 bundles the general Glyphs launcher
+`http://127.0.0.1:9680/mcp/`. Version 2.1.0 bundles the general Glyphs launcher
 and ten additional managed skills, including reviewed workspace scripting,
 and reusable development, for every host.
 
 Host-native manifests live under `.codex-plugin/`, `.claude-plugin/`,
 `.cursor-plugin/`, and `.github/plugin/`. They all reference this package's
 single `skills/` directory and `.mcp.json`. Skills inherit the package version;
-the coordinated bridge and sidecar product version is 2.0.2. Internal Python
+the coordinated bridge and sidecar product version is 2.1.0. Internal Python
 package versions remain 0.1.0; they are separate from release identity.
 Glyphs 3 uses the separate pinned 1.11.0 bundle and skills.
 
 Glyphs remains the editor. The native bridge panel displays its status and a
 heart button for Welcome & Support. The AI client receives reports and structured
-results from eighteen tools. `accept_job` verifies targets and persists the whole
+results from twenty data/action tools, plus the optional read-only card-display tool. `accept_job` verifies targets and persists the whole
 document; Undo and Redo are grouped per glyph, and discard restores an
 unaccepted job with conflict checks.
 
@@ -70,5 +70,5 @@ clients remain manual; no timer authorizes Run, Apply, Save, Undo or Restore.
 document. It requires the optional managed Diffenator runtime and
 `font.compare.diffenator.v1` in `comparisonCapabilities`. Use `get_job` to review
 its local report and separately authorize `accept_job` publication to a new
-directory. The 2.0.2 source is an unpublished candidate; optional downloads await
+directory. The 2.1.0 source is an unpublished candidate; optional downloads await
 hosted assets and supported-platform qualification.

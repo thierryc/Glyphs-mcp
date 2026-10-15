@@ -2,11 +2,11 @@
 
 Build, test, sign, notarize and upload on the maintainer’s Mac. GitHub Actions deploys documentation, not release artifacts.
 
-The published stable release is Glyphs MCP Desktop **2.0.4/build 61**, under signed tag `v2.0.4`, with twenty tools, eleven managed skills, coordinated bridge/sidecar version `2.0.4`, interface revision `1` and bridge protocol `1`. Curve Inspector remains 0.5.2. The full gate passed 2,952 Python and 263 desktop tests; exact signed VM installation and export checks passed. See [2.0.4 qualification](../V2.0.4-RELEASE.md). Keep prior tags and artifacts intact.
+The published stable release is Glyphs MCP Desktop **2.1.0/build 63**, under signed tag `v2.1.0`, with twenty data/action tools plus one optional read-only display tool, eleven managed skills, coordinated bridge/sidecar version `2.1.0`, interface revision `1` and bridge protocol `1`. Curve Inspector remains 0.5.2. The full gate passed 2,980 Python and 270 desktop tests; exact signed runtime, manual VM upgrade and native export checks passed. See [2.1.0 qualification](../V2.1.0-RELEASE.md). Keep prior tags and artifacts intact.
 
 Historical prerelease guidance remains in the
 [archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
-The Glyphs 4-only payload has twenty tools, eleven managed skills, two optional
+The Glyphs 4-only payload has twenty data/action tools plus one optional display tool, eleven managed skills, two optional
 inspectors, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Diffenator and the updated Beztrace companion use separate optional managed
 downloads, outside Install All, and stay disabled until their catalog is qualified.

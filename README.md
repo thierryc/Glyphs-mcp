@@ -1,12 +1,8 @@
-# Glyphs MCP Desktop 2.0.4
+# Glyphs MCP Desktop 2.1.0
 
-> Development candidate: **2.1.0/build 63**, prepared locally and unpublished.
-> The latest published signed release remains **2.0.4/build 61**.
+**Released: 2.1.0 · desktop build 63 · Glyphs 4.** Review workflow results with Keep, Save and Restore, preview project templates before creation, and find skills through readable “Glyphs …” titles. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.1.0/Glyphs-MCP-2.1.0.dmg) and see the [2.1.0 release qualification](V2.1.0-RELEASE.md) for validation and recovery limits.
 
-
-**Released: 2.0.4 · desktop build 61 · Glyphs 4.** Detect the default Glyphs Python, choose the Glyphs 4 copy you use, and export fonts without adding FontTools to Glyphs Python. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.0.4/Glyphs-MCP-2.0.4.dmg) and see the [2.0.4 release qualification](V2.0.4-RELEASE.md) for validation and recovery limits.
-
-The [twenty-tool contract](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
+The [twenty data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -37,7 +33,7 @@ update checks are enabled by default and can be disabled in Settings. Desktop
 launch at login is a separate opt-in setting.
 
 In Glyphs, **Edit → Glyphs MCP Server…** opens Start/Stop and port settings.
-The compact extension panel displays the project and bridge versions and
+The compact extension panel displays the project version and
 "Ready". Its heart button reopens Glyphs' nonmodal Welcome/support panel with
 documentation, issue and support links.
 
@@ -59,9 +55,8 @@ operations. Native preparation avoids a font copy and worker startup while
 retaining selective recovery. Read-only language proofing offers bounded pairs
 to inspect from a pinned MIT dataset; it does not suggest values or launch
 collision analysis. See the [kerning guidance](skills/glyphs-mcp-kerning/SKILL.md).
-Results offer **Keep changes without saving**, **Save font**, and recovery.
-Typed **Undo these changes** covers the recorded edit; script **Restore before
-run** restores the complete pre-run memory copy, replacing later unsaved edits
+Results offer **Keep**, **Save**, and recovery, with consequences visible beneath the controls. Keep closes the task without saving; Save saves the whole font, including other unsaved edits. Both end the temporary recovery option.
+Typed **Undo these changes** covers the recorded edit; script **Restore** restores the complete pre-run memory copy, replacing later unsaved edits
 and clearing Undo. It preserves edits made before Run; recovery lasts for the
 current Glyphs session.
 Keep ends wrapper recovery without saving and preserves native Undo/Redo.
@@ -96,19 +91,19 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.0.4).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.1.0).
 
-Documentation sources: [v2 · 2.0.4](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.1.0](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
-See [release qualification](V2.0.4-RELEASE.md) for current results and limits.
+See [release qualification](V2.1.0-RELEASE.md) for current results and limits.
 Historical beta reports remain in [the qualification archive](reports/README.md);
 the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.0.4.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.1.0.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 For the next development cycle, see [proposed priorities](docs/maintenance/next-evolution.md) and [Anotherplanet/AP.CX page updates](docs/maintenance/site-updates-2.0.4.md).
@@ -126,11 +121,11 @@ guidance. Native Python uses the advertised `python_script` job and
 `script.native.v1` without adding tools. Preparation never executes code. An
 ordinary task authorizes Run without a separate source review; previews wait.
 Dirty, clean and pathless fonts run without Save under `script.recovery.snapshot.v1`
-and preparation version 3. Restore before run restores a detached full-font copy,
+and preparation version 3. Restore returns to a detached full-font copy,
 including earlier unsaved edits; recovery is limited to the current Glyphs session.
 With Automatic Keep enabled, a visible, connected and freshly reconciled
-successful edit or script card offers a 30-second countdown to Keep changes
-without saving, ending the workflow recovery offer. Failed, partial, blocked and
+successful edit or script card offers a 30-second countdown to **Keep**,
+leaving changes unsaved and ending the workflow recovery offer. Failed, partial, blocked and
 uncertain outcomes and text-only interaction remain manual. Typed Keep preserves
 native Undo/Redo. Say **“wait for my answer”** to disable the countdown; that
 preference persists until changed.
@@ -151,7 +146,7 @@ See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.
 
-## Upgrade to 2.0.4
+## Upgrade to 2.1.0
 
 1. Use **Check for Updates** or download the signed disk image above and replace the desktop app in Applications.
 2. Save your work and quit all open Glyphs 4 copies normally.
@@ -160,7 +155,7 @@ installed editor/app checks, measured costs and remaining limits.
 
 Existing ports, startup preferences and unrelated agent configuration are preserved. A failed Python readiness check offers **Install anyway** after an explicit warning. This permits component installation; it does not install Python or make an unavailable scripting environment work. Install the official module in Glyphs and relaunch to restore scripting. Export verification uses the server's private FontTools/HarfBuzz runtime.
 
-For a failed setup, share the desktop troubleshooting log. It now records application paths and identities, preference domains, detected Python candidates and probe failures. Review it for personal paths before sharing. See the [installation guide](content/getting-started/installation.mdx) and [2.0.4 qualification](V2.0.4-RELEASE.md).
+For a failed setup, share the desktop troubleshooting log. It now records application paths and identities, preference domains, detected Python candidates and probe failures. Review it for personal paths before sharing. See the [installation guide](content/getting-started/installation.mdx) and [2.1.0 qualification](V2.1.0-RELEASE.md).
 
 ## Earlier 2.0.3 release
 

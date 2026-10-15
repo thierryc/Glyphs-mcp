@@ -1,13 +1,7 @@
 # Permanent desktop application
 
-> Development candidate: **2.1.0/build 63**, prepared locally and unpublished.
-> The latest published signed release remains **2.0.4/build 61**.
-
-
-> Current stable 2.0.4/build 61 is signed, notarized and published.
-> See [release qualification](../V2.0.4-RELEASE.md) for the focused checks and retained
-> earlier core acceptance. Candidate checkpoints below are historical.
-
+> Current stable **2.1.0/build 63** is signed, notarized and published.
+> See [release qualification](../V2.1.0-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
 
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 

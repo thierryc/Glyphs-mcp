@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.1.0 — build 63
+## 2.1.0 — stable release, build 63, 15 October 2026
 
 - Preview every project template before creation with a folder tree, selectable text and image contents, and project-name substitutions matching the files copied into the project.
 - Adopt the new Glyphs MCP app icon for client integration assets.
@@ -13,6 +13,7 @@
 - Reuse action buttons for short working/completion feedback, preserve their size, and finish with a slower fade. Keep icon spacing and compact countdown presentation consistent; disable Automatic Keep before native questions.
 - Use Keep, Save and Restore result buttons with Save emphasized, visible recovery consequences and persistent completion receipts. Keep action descriptions accessible without hover tooltips; typed recovery remains Undo these changes.
 - Align current documentation and packaged skills with the [conversation UI guide](docs/conversation-ui-directives.md), including explicit countdown eligibility and Keep without saving.
+- Publish the signed/notarized/stapled universal app, disk image and signed update feed. The full gate passed 2,980 Python tests (two optional skips) and 270 desktop tests; exact signed runtime, manual VM upgrade and native export checks passed.
 - Coordinate desktop, bridge, sidecar and agent packages at 2.1.0. Release checks and retained local acceptance are recorded separately in [the release record](V2.1.0-RELEASE.md).
 
 ## Source follow-up — 12 October 2026
