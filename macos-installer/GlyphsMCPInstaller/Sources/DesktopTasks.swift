@@ -204,10 +204,10 @@ struct DesktopTasksView: View {
                 Text(agent).font(.caption).foregroundStyle(selected == task.id ? .primary : .secondary)
             }
         }
-            .padding(.vertical, 6)
+            .padding(.vertical, 3)
             .listRowBackground(selected == task.id && usesSoftInactiveSelection ? DesktopInactiveTaskSelection() : nil)
             .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+            .listRowInsets(EdgeInsets(top: 3, leading: 12, bottom: 3, trailing: 12))
             .contextMenu {
                 Button("Copy Request") {
                     let request = selected == task.id ? task.prompt(for: promptIntent) : task.copyRequest
