@@ -210,7 +210,7 @@ def build(output: Path, *, runtime_root: Path | None = None, _publish: bool = Tr
                      "sourceDigest": hashlib.sha256(json.dumps(repair_files, sort_keys=True).encode()).hexdigest(),
                      "nativeQualification": "pending"}
     (sidecar / "curve-repair-engine.json").write_text(json.dumps(repair_record, sort_keys=True, indent=2) + "\n")
-    for script, module in (("run", "server"), ("control", "control"), ("proxy", "proxy")):
+    for script, module in (("run", "server"), ("control", "control"), ("proxy", "proxy"), ("task-origin-hook", "task_origin_hook")):
         (sidecar / (script + ".py")).write_text(
             "import os, sys\nsys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))\n"
             "from glyphs_mcp_sidecar." + module + " import main\nraise SystemExit(main())\n",

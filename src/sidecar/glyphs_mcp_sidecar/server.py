@@ -32,6 +32,12 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         """Return sidecar, worker and bridge availability, negotiated read/write/jobCapabilities, job kinds, and the filtered closed nativeActions catalog."""
         return _result(service.get_status)
 
+    @mcp.tool(name="list_tasks", annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False})
+    def list_tasks(cursor: int = 0, limit: int = 50) -> dict[str, Any]:
+        """List all open Glyphs MCP tasks and a page of closed history, including named blockers and original conversation metadata. Passive snapshot: never runs, saves, cancels or closes work. Retain workflowId and use get_edit_workflow for current choices, revisions and tokens before responding in this conversation, including when the original chat is unavailable. Job-only entries use get_job for diagnosis. nextCursor pages only closed history; open tasks repeat on each page. Do not infer success from a failed or uncertain state."""
+        from .task_inventory import list_tasks as inventory
+        return _result(lambda: inventory(service, cursor, limit))
+
     @mcp.tool(name="list_documents")
     def list_documents() -> dict[str, Any]:
         """Discover open Glyphs documents once for the intended target. With document.context.v1, isCurrent is native current-font evidence (true/false, null if unavailable); never infer it from list order. Retain its document_id on this connection for subsequent fresh reads; rediscover after document_not_found or changed target intent."""
@@ -145,7 +151,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
 
     @mcp.tool(name="discard_job")
     def discard_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
-        """Cancel preparation, delete private artifact staging, or selectively undo a still-current typed mutation. Conflicting later edits reject recovery. Terminal diagnostics need no discard. Script Keep/Restore and historical restore results use their original conversation workflow."""
+        """Cancel preparation, delete private artifact staging, or selectively undo a still-current typed mutation. Conflicting later edits reject recovery. Terminal diagnostics need no discard. Script Keep/Restore and historical restore results use their original workflow ID; list_tasks locates it even when the old conversation is unavailable."""
         return _result(lambda: service.discard_job(job_id, include_preview=include_preview))
 
     @mcp.tool(name="save_document")
@@ -184,6 +190,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     service.lifecycle.control_lock = Path.home() / "Library/Application Support/Glyphs MCP/.control.lock"
     server = create_server(service, control_token=token)
+    from .task_history import start_cleanup
+    stop_history_cleanup = start_cleanup(service)
     try:
         if args.transport == "http":
             # Jobs outlive individual stateless HTTP requests and sessions.
@@ -194,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         # FastMCP's MCP lifespan runs per request in stateless mode. Cleanup
         # belongs to the process lifetime, after the transport has stopped.
+        stop_history_cleanup()
         service.close()
     return 0
 

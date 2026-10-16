@@ -245,3 +245,14 @@ When enabled in project settings, authorized Saves also create local Git checkpo
 Keep without saving creates no result checkpoint. Saving and Git failures are
 reported separately; retry only the checkpoint. See [Git checkpoints](git-checkpoints.md)
 for bounded history reads and whole-font historical restoration through Glyphs.
+
+## Recover the workflow context
+
+Use read-only `list_tasks` to find an open workflow and its blockers when the
+original conversation is unavailable. Retrieve the retained workflow with
+`get_edit_workflow` before choosing: use its current revision and offered action
+token. Job-only entries use `get_job` for diagnosis. Do not rerun a script to
+recover a missing conversation. The companion's Tasks view offers conversation
+links where reliable, copyable Review / Close task prompts and guarded Recovery
+Options for abandoned work. A copied prompt or a closed chat does not resolve
+a workflow. Unknown outcomes and active ownership still require reconciliation.

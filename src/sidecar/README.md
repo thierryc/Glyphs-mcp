@@ -1,6 +1,6 @@
 # Glyphs MCP Sidecar
 
-The [current twenty-tool contract](../../content/reference/command-set.mdx) owns
+The [current twenty-two-tool contract](../../content/reference/command-set.mdx) owns
 the public interface and result semantics. Follow [V2 release notes](../../V2-RELEASE.md)
 for current delivery scope; the algorithm notes below describe retained behavior.
 

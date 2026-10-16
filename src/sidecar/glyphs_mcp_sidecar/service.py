@@ -92,6 +92,9 @@ class SidecarService:
                     )
                     saving.reconcile_accepted(self, self.jobs.get(job["id"]))
                     self.jobs.release_bulk_artifacts(job["id"])
+        # Load retained workflows during startup, never as a side effect of opening Tasks.
+        _ = self.edit_workflows
+
     @property
     def edit_workflows(self):
         from .edit_workflow import EditWorkflows

@@ -29,7 +29,7 @@ def catalog():
 def test_current_catalog_examples_remain_valid_and_discoverable(catalog):
     from glyphs_mcp_protocol import TOOL_NAMES
     from glyphs_mcp_sidecar.service import SidecarService
-    assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 21
+    assert set(catalog) == set(TOOL_NAMES) and len(catalog) == 22
     cases = json.loads((Path(__file__).parent/'fixtures/current_tool_routing.json').read_text())
     for case in cases:
         tool = catalog[case['tool']]

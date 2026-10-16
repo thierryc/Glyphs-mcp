@@ -718,7 +718,139 @@
 "Components are shared by Glyphs 4 copies on this Mac." = "Les copies de Glyphs 4 partagent les composants sur ce Mac.";
 "Glyphs Python module" = "Module Python de Glyphs";
 "Selected Python" = "Python sélectionné";
+"Close Glyphs to install or update components." = "Fermez Glyphs pour installer ou mettre à jour les composants.";
+"You can save your fonts when prompted." = "Vous pourrez enregistrer vos polices lorsque cela vous sera proposé.";
+"Quit Glyphs to Install or Update" = "Quitter Glyphs pour installer ou mettre à jour";
 "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "Quittez toutes les copies de Glyphs 4 avant de modifier les composants. Vous pourrez enregistrer les polices lorsque cela vous sera proposé.";
+
+/* Tasks: native navigation, monitoring, and conversation handoff. */
+"Tasks" = "Tâches";
+"Show Tasks" = "Afficher les tâches";
+"Needs decision" = "Décision requise";
+"Blocked" = "Bloquée";
+"Recently closed" = "Récemment terminées";
+"History" = "Historique";
+"Open Conversation…" = "Ouvrir la conversation…";
+"Copy Request" = "Copier la demande";
+"Request copied." = "Demande copiée.";
+"Connected" = "Connecté";
+"Stopped" = "Arrêté";
+"Unavailable" = "Indisponible";
+"Not running" = "Fermé";
+"No Tasks" = "Aucune tâche";
+"Select a Task" = "Sélectionnez une tâche";
+"Tasks appear here when an agent works with Glyphs MCP." = "Les tâches apparaissent ici lorsqu’un agent utilise Glyphs MCP.";
+"Task information is unavailable." = "Les informations des tâches sont indisponibles.";
+"Showing the last observation." = "Affichage du dernier état connu.";
+"Load Earlier Tasks" = "Charger les tâches précédentes";
+"Update Glyphs MCP to show Tasks." = "Mettez Glyphs MCP à jour pour afficher les tâches.";
+"Tasks are unavailable. Try again when the server is connected." = "Les tâches sont indisponibles. Réessayez lorsque le serveur sera connecté.";
+"Review this task in your agent." = "Examinez cette tâche dans votre agent.";
+"Work is in progress in Glyphs." = "Une opération est en cours dans Glyphs.";
+"The conversation could not be opened. Copy the request to continue in your agent." = "Impossible d’ouvrir la conversation. Copiez la demande pour continuer dans votre agent.";
+"Outcome unknown" = "Résultat inconnu";
+"Interrupted" = "Interrompue";
+"Unread" = "Non lue";
+"Read" = "Lue";
+"Created" = "Créée";
+"Last updated" = "Dernière mise à jour";
+"Font at last check" = "Police au dernier contrôle";
+"Unsaved changes" = "Modifications non enregistrées";
+"Saved" = "Enregistrée";
+"%lld unread tasks" = "%lld tâches non lues";
+"Waiting for: %@" = "En attente de : %@";
+"Blocking: %@" = "Bloque : %@";
+"Tasks Unavailable" = "Tâches indisponibles";
+"Loading Tasks…" = "Chargement des tâches…";
+"Install Glyphs MCP in Setup to show Tasks." = "Installez Glyphs MCP dans Configuration pour afficher les tâches.";
+
+/* Visible agent handoff prompt. */
+"Prompt for the Agent" = "Prompt pour l’agent";
+"Copy prompt" = "Copier le prompt";
+"Prompt copied" = "Prompt copié";
+
+/* Task prompt intent and conversation availability. */
+"Review" = "Examiner";
+"Close task" = "Clore la tâche";
+"Prompt purpose" = "Objet du prompt";
+"The conversation could not be identified reliably. Copy the prompt into your agent." = "La conversation n’a pas pu être identifiée avec certitude. Copiez le prompt dans votre agent.";
+"A direct Claude Code conversation link is unavailable. Copy the prompt into your agent." = "Aucun lien direct vers la conversation Claude Code n’est disponible. Copiez le prompt dans votre agent.";
+"No usable conversation link was captured for this task. Copy the prompt into your agent." = "Aucun lien de conversation utilisable n’a été enregistré pour cette tâche. Copiez le prompt dans votre agent.";
+"The conversation could not be opened. Copy the prompt to continue in your agent." = "La conversation n’a pas pu être ouverte. Copiez le prompt pour continuer dans votre agent.";
+
+/* Full-height Tasks list section headings. */
+"Tasks needing attention" = "Tâches nécessitant une attention";
+"Recently closed tasks" = "Tâches récemment closes";
+
+/* Local task history visibility */
+"Clear Closed History…" = "Effacer l’historique des tâches fermées…";
+"Clear Closed History" = "Effacer l’historique des tâches fermées";
+"Clear closed task history?" = "Effacer l’historique des tâches fermées ?";
+"Hide all currently closed tasks from this app, including earlier pages. Open tasks and diagnostic records are kept. You can show cleared history again from History Options." = "Masquer toutes les tâches actuellement fermées dans cette app, y compris les pages précédentes. Les tâches ouvertes et les données de diagnostic sont conservées. Vous pouvez réafficher l’historique effacé dans Options de l’historique.";
+"Show Cleared History" = "Réafficher l’historique effacé";
+"History Options" = "Options de l’historique";
+"Closed history cleared." = "L’historique des tâches fermées a été effacé.";
+
+/* Guarded abandoned-task recovery */
+"Recovery Options…" = "Options de récupération…";
+"Recovery Options" = "Options de récupération";
+"Resolve this task here when its agent conversation is unavailable." = "Résolvez cette tâche ici si sa conversation avec l’agent est indisponible.";
+"Close Without Saving" = "Fermer sans enregistrer";
+"Cancel Remaining Work" = "Annuler le travail restant";
+"Cancel Task" = "Annuler la tâche";
+"Check Again" = "Vérifier à nouveau";
+"Checking task…" = "Vérification de la tâche…";
+"This entry has no workflow to close here. Review the job in your agent." = "Cette entrée n’a pas de processus à fermer ici. Examinez l’opération dans votre agent.";
+"Connect to the server before using Recovery Options." = "Connectez-vous au serveur avant d’utiliser les options de récupération.";
+"Update the sidecar to use Recovery Options. You can still review this task in your agent." = "Mettez à jour le service pour utiliser les options de récupération. Vous pouvez toujours examiner cette tâche dans votre agent.";
+"The task outcome could not be confirmed. Check again before choosing." = "Le résultat de la tâche n’a pas pu être confirmé. Vérifiez à nouveau avant de choisir.";
+"The current outcome could not be checked. Reconnect and check again before closing this task." = "Le résultat actuel n’a pas pu être vérifié. Reconnectez-vous et vérifiez à nouveau avant de fermer cette tâche.";
+"Task cancelled. No save was performed." = "Tâche annulée. Aucun enregistrement n’a été effectué.";
+"This task is already closed. Its recorded outcome has been retained." = "Cette tâche est déjà fermée. Son résultat enregistré a été conservé.";
+"Cancellation is still in progress. Changes already applied may remain; check again for the final outcome." = "L’annulation est toujours en cours. Les modifications déjà appliquées peuvent subsister ; vérifiez à nouveau le résultat final.";
+"The outcome is not confirmed. Check again or continue in your agent. This task cannot be closed safely here yet." = "Le résultat n’est pas confirmé. Vérifiez à nouveau ou continuez dans votre agent. Cette tâche ne peut pas encore être fermée ici en toute sécurité.";
+"No closing action is currently available. Work may still be running or require review in your agent." = "Aucune action de fermeture n’est actuellement disponible. Le travail est peut-être en cours ou doit être examiné dans votre agent.";
+"Review the consequences before resolving this abandoned task." = "Examinez les conséquences avant de résoudre cette tâche abandonnée.";
+"Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available." = "Conservez les modifications actuelles dans Glyphs sans enregistrer. Fermez cette tâche et mettez fin à son annulation sélective. L’annulation native reste disponible.";
+"Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option." = "Conservez les modifications actuelles dans Glyphs sans enregistrer. Fermez cette tâche et mettez fin à sa récupération temporaire.";
+"Request cancellation of remaining targets. Applied changes remain. Cancellation may take time, and recovery may still need a decision." = "Demandez l’annulation des cibles restantes. Les modifications appliquées restent en place. L’annulation peut prendre du temps et la récupération peut encore nécessiter une décision.";
+"Cancel this pending request without saving. Earlier blocking tasks remain open." = "Annulez cette demande en attente sans enregistrer. Les tâches antérieures qui la bloquent restent ouvertes.";
+"Discard this unapplied preview and close the task. No font save or edit is performed." = "Abandonnez cet aperçu non appliqué et fermez la tâche. Aucune police n’est enregistrée ou modifiée.";
+"This choice is outdated or unavailable. Check the task again before choosing." = "Ce choix est périmé ou indisponible. Vérifiez à nouveau la tâche avant de choisir.";
+"Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available. Partial edits may remain; inspect the font before closing." = "Conservez les modifications actuelles dans Glyphs sans enregistrer. Fermez cette tâche et mettez fin à son annulation sélective. L’annulation native reste disponible. Des modifications partielles peuvent subsister ; inspectez la police avant de fermer.";
+"Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option. Partial edits may remain; inspect the font before closing." = "Conservez les modifications actuelles dans Glyphs sans enregistrer. Fermez cette tâche et mettez fin à sa récupération temporaire. Des modifications partielles peuvent subsister ; inspectez la police avant de fermer.";
+
+"Closed" = "Fermée";
+
+"Cancellation pending" = "Annulation en attente";
+
+/* Recovery sheet dismissal */
+"Close Recovery Options" = "Fermer les options de récupération";
+"Close without changing this task" = "Fermer sans modifier cette tâche";
+
+/* Interrupted task archival */
+"Archive Interrupted Task" = "Archiver la tâche interrompue";
+"Unverified" = "Non vérifié";
+"This task could not be identified. Refresh Tasks before choosing." = "Cette tâche n’a pas pu être identifiée. Actualisez les tâches avant de choisir.";
+"Archive this interrupted record after checking the font in Glyphs." = "Archivez cette tâche interrompue après avoir vérifié la police dans Glyphs.";
+"Task archived. Outcome: Unverified. Archiving did not change or save the font. Diagnostics have been retained." = "Tâche archivée. Résultat : non vérifié. L’archivage n’a ni modifié ni enregistré la police. Les diagnostics sont conservés.";
+"Move this interrupted task to recently closed tasks with an Unverified outcome. Keep its diagnostics. This does not stop work, save the font, restore changes, or confirm what happened in Glyphs." = "Déplacez cette tâche interrompue vers les tâches récemment fermées avec un résultat non vérifié. Les diagnostics sont conservés. Cela n’arrête pas le travail, n’enregistre pas la police, ne restaure pas les modifications et ne confirme pas le résultat dans Glyphs.";
+"Only interrupted tasks can be archived. Check this task in your agent." = "Seules les tâches interrompues peuvent être archivées. Vérifiez cette tâche dans votre agent.";
+"This task still belongs to a workflow. Use its existing recovery choices or continue in your agent." = "Cette tâche appartient encore à un workflow. Utilisez ses options de récupération ou poursuivez dans votre agent.";
+"This task is blocking another request. Resolve it in your agent before archiving." = "Cette tâche bloque une autre demande. Résolvez-la dans votre agent avant de l’archiver.";
+"Recovery or save ownership may remain unresolved. Review this task in your agent; it cannot be archived here." = "Une récupération ou un enregistrement peut rester en attente. Examinez cette tâche dans votre agent ; elle ne peut pas être archivée ici.";
+"Work or recovery is still active. Wait for it to finish, then check again." = "Un travail ou une récupération est en cours. Attendez la fin, puis vérifiez à nouveau.";
+"Glyphs must be connected and have no active operations before archiving. Check again when idle." = "Glyphs doit être connecté et sans opération en cours pour archiver. Vérifiez à nouveau une fois disponible.";
+"A native operation still exists for this task. Review its outcome and recovery choices in your agent." = "Une opération native existe encore pour cette tâche. Examinez son résultat et ses options de récupération dans votre agent.";
+"The native operation could not be checked. Reconnect to Glyphs and check again; nothing was archived." = "L’opération native n’a pas pu être vérifiée. Reconnectez Glyphs et vérifiez à nouveau ; rien n’a été archivé.";
+"Archiving is outdated or unsafe. Check the task again before choosing." = "L’archivage n’est plus à jour ou n’est pas sûr. Vérifiez à nouveau la tâche avant de choisir.";
+"The task changed while checking. Check again; nothing was archived." = "La tâche a changé pendant la vérification. Vérifiez à nouveau ; rien n’a été archivé.";
+
+/* Cleared history retention */
+"Hide all currently closed tasks, including earlier pages. Cleared history is removed after 30 days. You can show it again before cleanup from History Options. Open tasks, recovery data, diagnostics, and Unverified outcomes are kept." = "Masquez toutes les tâches fermées, y compris les pages précédentes. L’historique effacé est supprimé après 30 jours. Vous pouvez le réafficher avant le nettoyage via les options d’historique. Les tâches ouvertes, les données de récupération, les diagnostics et les résultats non vérifiés sont conservés.";
+"Update the sidecar to enable 30-day cleanup. History remains hidden." = "Mettez le sidecar à jour pour activer le nettoyage après 30 jours. L’historique reste masqué.";
+"History changes are waiting to sync." = "Les modifications de l’historique attendent leur synchronisation.";
+"History changes are waiting to sync. The 30-day period starts when the server receives Clear." = "Les modifications de l’historique attendent leur synchronisation. Le délai de 30 jours commence lorsque le serveur reçoit la demande d’effacement.";
 
 /* Generic project image comparison */
 "Previous" = "Précédente";
@@ -749,3 +881,43 @@
 "%ld percent before" = "%ld pour cent avant";
 "Fit image" = "Ajuster l’image";
 "Fit Image (⌘0)" = "Ajuster l’image (⌘0)";
+
+/* Server status checks */
+"The server is running, but its status check took too long. Refresh Setup or open Troubleshooting Logs." = "Le serveur fonctionne, mais la vérification de son état a pris trop de temps. Actualisez la configuration ou ouvrez les journaux de dépannage.";
+"The status check took too long. Refresh Setup or open Troubleshooting Logs." = "La vérification de l’état a pris trop de temps. Actualisez la configuration ou ouvrez les journaux de dépannage.";
+"Could not read the server status. Refresh Setup or open Troubleshooting Logs." = "Impossible de lire l’état du serveur. Actualisez la configuration ou ouvrez les journaux de dépannage.";
+
+/* Project font sources and native package copies */
+"Font sources" = "Sources de polices";
+"Refresh font sources" = "Actualiser les sources de polices";
+"Reading font sources…" = "Lecture des sources de polices…";
+"No Glyphs sources in this project." = "Aucune source Glyphs dans ce projet.";
+"Font source actions: %@" = "Actions pour la source : %@";
+"Create Package Copy…" = "Créer une copie en paquet…";
+"Create Package Copy" = "Créer une copie en paquet";
+"Package filename" = "Nom du fichier paquet";
+"Package copy created" = "Copie en paquet créée";
+"Creating and verifying package copy…" = "Création et vérification de la copie en paquet…";
+"Creates a package beside this source and keeps the original. Only saved contents are copied; unsaved Glyphs edits are excluded. Per-glyph modification timestamps may be omitted." = "Crée un paquet à côté de cette source et conserve l’original. Seul le contenu enregistré est copié ; les modifications non enregistrées dans Glyphs sont exclues. Les dates de modification de chaque glyphe peuvent être omises.";
+"The font sources could not be read." = "Impossible de lire les sources de polices.";
+"Enter a filename ending in .glyphspackage, without folders." = "Saisissez un nom de fichier se terminant par .glyphspackage, sans dossier.";
+"That destination already exists. Choose another filename." = "Cette destination existe déjà. Choisissez un autre nom de fichier.";
+"Choose a regular .glyphs source file." = "Choisissez un fichier source .glyphs standard.";
+"A package copy is already running for this source." = "Une copie en paquet est déjà en cours pour cette source.";
+"Glyphs 4 is required to create a package copy." = "Glyphs 4 est requis pour créer une copie en paquet.";
+"The package copy could not be verified." = "Impossible de vérifier la copie en paquet.";
+"The package copy worker returned no result. Rebuild or update Glyphs MCP." = "Le processus de copie en paquet n’a renvoyé aucun résultat. Reconstruisez ou mettez à jour Glyphs MCP.";
+"Package copy components are unavailable. Rebuild or update Glyphs MCP. " = "Les composants de copie en paquet sont indisponibles. Reconstruisez ou mettez à jour Glyphs MCP. ";
+
+/* Project workspace modes */
+"Diff" = "Diff";
+"Config" = "Config";
+"Project view" = "Vue du projet";
+"Saved sources in this project" = "Sources enregistrées dans ce projet";
+"Project root" = "Racine du projet";
+"Name" = "Nom";
+"Folder" = "Dossier";
+"Open project" = "Ouvrir le projet";
+"Edit…" = "Modifier…";
+
+"Resize file list" = "Redimensionner la liste des fichiers";

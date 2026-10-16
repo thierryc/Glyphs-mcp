@@ -3,7 +3,7 @@
 > Current stable **2.1.0/build 63** is signed, notarized and published.
 > See [release qualification](../V2.1.0-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
 
-The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
+The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Tasks provides task status, blockers, conversation handoff and guarded recovery for abandoned work; see [Companion Tasks](../docs/companion-tasks.md). Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
 Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare
 checksum-pinned Sparkle and the audited local PierreDiffsSwift package. Existing
@@ -13,11 +13,12 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout targets the published 2.0.4/build 61 release with twenty MCP
-tools and eleven managed skills. Sidecar and bridge product versions are 2.0.4;
-interface revision and bridge protocol remain 1. The latest published stable
-release is 2.0.4/build 61; earlier signing and acceptance evidence retains its original build scope.
-See [2.0.4 release evidence](../V2.0.4-RELEASE.md).
+This checkout prepares 2.2.0/build 64 with twenty-one data/action tools, one
+optional display tool and eleven managed skills. Sidecar and bridge product
+versions are 2.2.0; interface revision and bridge protocol remain 1. The published
+stable release remains 2.1.0/build 63; earlier signing and acceptance evidence
+retains its original build scope. See [2.2.0 preparation](../V2.2.0-RELEASE.md)
+and [published 2.1.0 release evidence](../V2.1.0-RELEASE.md).
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
@@ -52,6 +53,28 @@ release, original Python dependency installation and version-specific skills;
 the pinned v1 source metadata remains unchanged and is not embedded in this
 desktop payload. Legacy updater paths reject partial upgrades to the new
 component payload and direct users to the appropriate installer.
+
+## Font package copies in Projects
+
+Projects opens in **Diff**, where the Git browser fills the workspace below a
+compact project header. Use the **Diff / Config** segmented control to switch
+views without resetting the current diff selection or zoom. **Config** contains
+font sources, project settings and the actions for opening external tools. Font
+sources are scanned when Config is opened.
+
+The **Font sources** list in Config includes saved `.glyphs` files and `.glyphspackage`
+folders regardless of Git status. Use a source’s three-dot or right-click menu
+and choose **Create Package Copy…**. The filename is editable; the destination
+stays beside the source, and existing destinations are never replaced.
+
+Copies use the bundled CLI and the selected Glyphs 4 application without a live
+MCP connection. They include saved contents only, keep the original, and leave
+open documents and Git staging unchanged. Native package serialization may omit
+per-glyph modification timestamps. The worker reopens and compares the package,
+checks image references and the source hash, then publishes it atomically.
+
+Run `python3 scripts/qualify_package_copy.py --app '/Applications/Glyphs 4.app'`
+for disposable native round trips, including quartic curves and shape groups.
 
 ## Build locally
 

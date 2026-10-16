@@ -27,40 +27,56 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 4) {
-                    sidebarItem("Setup", icon: "shippingbox.and.arrow.backward", destination: .setup)
-                    sidebarItem("Companion Plugins", icon: "puzzlepiece.extension", destination: .companions)
-                    sidebarItem("AI Agents", icon: "sparkles", destination: .agents)
-                    sidebarItem("Skills", icon: "books.vertical", destination: .skills)
-                    sidebarItem("Project", icon: "folder.badge.plus", destination: .templates)
-                    HStack(spacing: 6) {
-                        Button { projectsExpanded.toggle() } label: {
-                            Image(systemName: projectsExpanded ? "chevron.down" : "chevron.right")
-                                .font(.system(size: 10, weight: .semibold)).frame(width: 14, height: 22)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        sidebarItem("Setup", icon: "shippingbox.and.arrow.backward", destination: .setup)
+                        Button { projects.select(.tasks) } label: {
+                            HStack {
+                                Label("Tasks", systemImage: "list.bullet")
+                                Spacer()
+                                DesktopTaskBadge(count: desktop.unreadTaskCount)
+                            }.padding(.horizontal, 10).padding(.vertical, 8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
                         }.buttonStyle(.plain)
-                            .accessibilityLabel(LocalizedStringKey(projectsExpanded ? "Collapse My Project" : "Expand My Project"))
-                        Text("My Project").fontWeight(.semibold).lineLimit(1)
-                            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-                        DesktopProjectActions(model: projects)
-                    }.font(.callout).foregroundStyle(.secondary).padding(.horizontal, 8).padding(.top, 16).padding(.bottom, 4)
-                    if projectsExpanded {
-                        ForEach(projects.navigation.alphabetizedProjects, id: \.self) { path in
-                            projectRow(path)
-                        }
-                        if projects.navigation.recent.isEmpty {
-                            Text("No projects yet").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
+                            .foregroundStyle(projects.navigation.destination == .tasks ? Color.white : Color.primary)
+                            .background(projects.navigation.destination == .tasks ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+                            .accessibilityAddTraits(projects.navigation.destination == .tasks ? .isSelected : [])
+                        sidebarItem("Companion Plugins", icon: "puzzlepiece.extension", destination: .companions)
+                        sidebarItem("AI Agents", icon: "sparkles", destination: .agents)
+                        sidebarItem("Skills", icon: "books.vertical", destination: .skills)
+                        sidebarItem("Project", icon: "folder.badge.plus", destination: .templates)
+                        HStack(spacing: 6) {
+                            Button { projectsExpanded.toggle() } label: {
+                                Image(systemName: projectsExpanded ? "chevron.down" : "chevron.right")
+                                    .font(.system(size: 10, weight: .semibold)).frame(width: 14, height: 22)
+                            }.buttonStyle(.plain)
+                                .accessibilityLabel(LocalizedStringKey(projectsExpanded ? "Collapse My Project" : "Expand My Project"))
+                            Text("My Project").fontWeight(.semibold).lineLimit(1)
+                                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                            DesktopProjectActions(model: projects)
+                        }.font(.callout).foregroundStyle(.secondary).padding(.horizontal, 8).padding(.top, 16).padding(.bottom, 4)
+                        if projectsExpanded {
+                            ForEach(projects.navigation.alphabetizedProjects, id: \.self) { path in
+                                projectRow(path)
+                            }
+                            if projects.navigation.recent.isEmpty {
+                                Text("No projects yet").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
+                            }
                         }
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .safeAreaInset(edge: .bottom) {
-                Button { desktop.showWelcome() } label: {
-                    Label("Welcome & Support", systemImage: "heart.circle").lineLimit(1)
-                        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-                }.buttonStyle(.plain).padding()
+                .clipped()
+                VStack(spacing: 4) {
+                    DesktopHealthStatus().padding(.horizontal).padding(.top, 12)
+                    Button { desktop.showWelcome() } label: {
+                        Label("Welcome & Support", systemImage: "heart.circle").lineLimit(1)
+                            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                    }.buttonStyle(.plain).padding()
+                }
             }
             .modifier(DesktopSidebarToolbarDefaults())
             .frame(minWidth: DesktopDashboardLayout.sidebarMinimumWidth)
@@ -72,6 +88,7 @@ struct ContentView: View {
         } detail: {
             switch projects.navigation.destination {
             case .setup: DesktopSetup { projects.select($0) }
+            case .tasks: DesktopTasksView()
             case .companions: DesktopFocusedSetup(section: .companions) { projects.select(.setup) }
             case .agents: DesktopFocusedSetup(section: .agents) { projects.select(.setup) }
             case .skills: DesktopSkillsView(model: skills, installer: installer, project: projects.navigation.lastProject) { projects.select(.agents) }
@@ -79,7 +96,8 @@ struct ContentView: View {
             case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
             }
         }
-        .onAppear { handleSetupRequest() }
+        .onAppear { handleSetupRequest(); handleTasksRequest() }
+        .onChange(of: desktop.tasksRequested) { _, _ in handleTasksRequest() }
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
         .navigationTitle(DesktopIdentity.applicationTitle)
         .modifier(DesktopSidebarToggle(columnVisibility: $columnVisibility))
@@ -92,6 +110,12 @@ struct ContentView: View {
         .sheet(item: $projects.editing) { editing in
             DesktopProjectSettings(model: projects, path: editing.id)
         }
+    }
+
+    private func handleTasksRequest() {
+        guard desktop.tasksRequested else { return }
+        projects.select(.tasks)
+        desktop.consumeTasksRequest()
     }
 
     private func handleSetupRequest() {
@@ -201,21 +225,16 @@ struct DesktopSetup: View {
                                 Button("Open Troubleshooting Logs") { installer.showTroubleshootingLogs?() }
                             }
                         }
-                        Divider()
-                        DesktopActivityView()
+                        if desktop.status?.worker.available == false {
+                            Text("Glyphs worker unavailable").font(.caption).foregroundStyle(.secondary)
+                        }
                     }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 if installer.application != nil {
                     DesktopPythonSetup()
                 }
                 if installer.running {
-                    HStack(spacing: 12) {
-                        Label("Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted.", systemImage: "exclamationmark.triangle")
-                            .font(.callout).foregroundStyle(.orange)
-                        Spacer()
-                        Button("Quit Glyphs", action: installer.quitGlyphs)
-                            .buttonStyle(.borderedProminent).tint(.orange).disabled(installer.operationsBusy)
-                    }
+                    DesktopComponentPreparation()
                 }
                 HStack(spacing: 12) {
                     Button("Open Glyphs", action: installer.openGlyphs).disabled(installer.application == nil)
@@ -245,6 +264,30 @@ struct DesktopSetup: View {
     }
 }
 
+/// Both installation views keep the preparation action in the same trailing position.
+struct DesktopComponentPreparation: View {
+    @EnvironmentObject private var installer: InstallerViewModel
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Close Glyphs to install or update components.")
+                    .font(.title3.bold())
+                Text("You can save your fonts when prompted.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            DesktopActionButton(title: "Quit Glyphs to Install or Update", emphasis: .primary,
+                                action: installer.quitGlyphs)
+                .disabled(installer.operationsBusy)
+        }
+        .padding(.vertical, 16)
+    }
+}
+
 struct DesktopServerButton: View {
     @EnvironmentObject private var desktop: DesktopModel
     var body: some View {
@@ -252,60 +295,6 @@ struct DesktopServerButton: View {
             desktop.control(desktop.serviceRunning == false ? "start" : "stop")
         }.disabled(!desktop.canChangeSettings)
         .help(LocalizedStringKey(desktop.status?.isBusy == true ? "Wait for the current operation to finish." : "Start or stop the MCP server."))
-    }
-}
-
-struct DesktopActivityView: View {
-    @EnvironmentObject private var desktop: DesktopModel
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let status = desktop.status {
-                if let notice = desktop.activityNotice {
-                    Label(LocalizedStringKey(notice), systemImage: "clock").font(.caption).foregroundStyle(.secondary)
-                }
-                let summary = status.summary
-                if !summary.jobs.isEmpty {
-                    Text(LocalizedStringKey(desktop.stale ? "Last observed activity" : summary.heading)).font(.caption).foregroundStyle(.secondary)
-                    ForEach(summary.jobs) { DesktopActivityRow(job: $0, live: !desktop.stale) }
-                    if summary.additionalCount > 0 {
-                        Text("\(summary.additionalCount) additional tasks").font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                if !status.worker.available {
-                    Text("Glyphs worker unavailable").font(.caption).foregroundStyle(.secondary)
-                } else if status.worker.executions?.isEmpty == false && !summary.jobs.contains(where: \.isBusy) {
-                    Text(LocalizedStringKey(status.workerTitle)).font(.callout)
-                }
-                if !summary.history.isEmpty {
-                    DisclosureGroup("Recent Tasks") {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 12) {
-                                ForEach(summary.history) { job in
-                                    DesktopActivityRow(job: job, live: !desktop.stale)
-                                    Text(job.jobId).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
-                                }
-                            }.padding(.top, 8).frame(maxWidth: .infinity, alignment: .leading)
-                        }.frame(maxHeight: 240)
-                    }.font(.callout)
-                }
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct DesktopActivityRow: View {
-    let job: DesktopActivity
-    let live: Bool
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(job.title).fontWeight(.medium)
-            Text(job.document).foregroundStyle(.secondary)
-            if let progress = job.progressText { Text(progress).font(.callout).monospacedDigit() }
-            if job.isBusy && live {
-                Text(Date(timeIntervalSince1970: job.startedAt), style: .timer).font(.caption).monospacedDigit()
-            }
-            if let message = job.detailMessage { Text(message).font(.caption).foregroundStyle(.secondary) }
-        }
     }
 }
 

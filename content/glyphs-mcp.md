@@ -3,9 +3,9 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.1.0/build 63** connects AI applications to Glyphs 4 through twenty data/action tools and one optional read-only card-display tool. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
+Glyphs MCP **2.2.0/build 64 (in preparation)** connects AI applications to Glyphs 4 through twenty-one data/action tools and one optional read-only card-display tool. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
 
-Version 2.1.0 adds clearer Keep, Save and Restore results, persistent outcome text, project template previews and readable skill titles. Default Glyphs Python detection still needs no saved framework preference. Setup shows the detected Python and offers an application selector when multiple Glyphs 4 copies are found. Export verification uses the private runtime, so FontTools does not need to be installed in Glyphs Python.
+Version 2.2.0 adds Tasks with open workflows, blockers, conversation handoff and guarded recovery for abandoned work. Cleared closed-history summaries have a protected 30-day retention policy. Project diffs compare PNG, JPEG and WebP files with Before / Both / After, a draggable divider and native zoom controls. The published stable release remains 2.1.0/build 63; 2.2.0 has not been published or qualified as a signed distribution.
 
 Open Edit tabs and create independent unsaved document copies directly. Update the bridge and sidecar together through Setup. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/).
 Compiled [font comparisons](workflows/font-comparison.mdx) use the optional

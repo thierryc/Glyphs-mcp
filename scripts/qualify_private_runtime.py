@@ -44,7 +44,7 @@ async def check(lean, architecture):
                     await asyncio.sleep(.1)
             else:
                 log.seek(0); raise TimeoutError('Private runtime did not start: '+log.read()[-2000:])
-            expected=['get_status','list_documents','create_document','duplicate_document','open_document','import_document','activate_document','open_edit_tab','close_document',
+            expected=['get_status','list_tasks','list_documents','create_document','duplicate_document','open_document','import_document','activate_document','open_edit_tab','close_document',
                       'read_entities','start_job','compare_fonts','get_job','apply_job','accept_job','discard_job','save_document',
                       'start_edit_workflow','get_edit_workflow','show_edit_workflow','respond_edit_workflow']
             assert [t.name for t in catalog]==expected

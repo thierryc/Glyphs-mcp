@@ -117,9 +117,13 @@ class EditWorkflows:
                                  details={"workflowId": peers[-1]["id"]})
             value = self.store.create(document, arguments, request, mode, idempotency_key, auto_keep=auto_keep,
                                       script_run_authorized=kind == 'python_script' and mode == 'apply')
-            blockers = self.service.jobs.select(JOB_BUSY, document_id=document_id, include_unresolved=True)
+            if kind == 'python_script':
+                from .script_service import execution_blockers
+                blockers = execution_blockers(self.service)
+            else:
+                blockers = self.service.jobs.select(JOB_BUSY, document_id=document_id, include_unresolved=True)
             if blockers:
-                self._set(value, blockerId=blockers[0]["id"], state="blocked_active")
+                self._set(value, blockerId=blockers[0]["id"], job=blockers[0], state="blocked_active")
                 self._guard(value, lambda: self._advance(value))
             else:
                 self._guard(value, lambda: self._begin(value))
@@ -197,18 +201,32 @@ class EditWorkflows:
 
     def _advance(self, value, *, allow_apply=True):
         if value.get("blockerId"):
+            # Public jobs omit document bindings. The retained dispatch request
+            # identifies the pre-reload owner even when restoration changed the
+            # job's current document ID (historical reloads do this).
+            blocker_record = self.service.jobs.get(value['blockerId'])
+            blocking_document = ((blocker_record.get('restoreRequest') or {}).get('documentId')
+                                 or (blocker_record.get('bridgeOperation') or {}).get('documentId')
+                                 or (blocker_record.get('document') or {}).get('id'))
             job = self.service.get_job(value["blockerId"])
             original = self.store.matching_job(job['id'])
             self._set(value, job=job, blockingWorkflowId=original['id'] if original else None)
             if job["status"] in {"accepted", "discarded", "completed", "cancelled"} and not saved_script.unresolved(job):
                 restored = ((job.get('bridgeOperation') or {}).get('scriptResult') or {})
                 historical = (job.get('bridgeOperation') or {}).get('documentAfter')
-                if job.get('resultKind') == 'historical_restore' and historical:
+                same_document = blocking_document == value['document']['id']
+                if same_document and job.get('resultKind') == 'historical_restore' and historical:
                     self._set(value, document=historical)
-                if (restored.get('savedVersionRestored') or restored.get('beforeRunRestored')) and restored.get('documentAfter'):
+                if same_document and (restored.get('savedVersionRestored') or restored.get('beforeRunRestored')) and restored.get('documentAfter'):
                     # Only this operation's authoritative reload can replace a binding.
                     self._set(value, document=restored['documentAfter'])
                 self._set(value, blockerId=None, blockingWorkflowId=None, job=None, error=None)
+                if value['request']['kind'] == 'python_script':
+                    from .script_service import execution_blockers
+                    remaining = execution_blockers(self.service, value.get('jobId'))
+                    if remaining:
+                        self._set(value, blockerId=remaining[0]['id'], job=remaining[0], state='blocked_active')
+                        return
                 self._begin(value)
             elif job["status"] == "applied" or saved_script.unresolved(job):
                 self._set(value, state="blocked_review")
@@ -331,7 +349,7 @@ class EditWorkflows:
                 job = self.service.discard_job(value["jobId"])
                 self._set(value, job=job, state="discarding", cancelRequested=True)
             else:
-                self._set(value, state="cancelled")
+                self._set(value, state="cancelled", blockerId=None, blockingWorkflowId=None, job=None)
             return
         if action == "manual_save":
             if value.get("jobId"):

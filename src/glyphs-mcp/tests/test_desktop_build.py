@@ -291,12 +291,15 @@ def test_desktop_layout_minimums_keep_navigation_and_diff_controls_visible():
     assert '.frame(maxWidth: .infinity, alignment: .center)' in content
     assert '.frame(maxWidth: .infinity, maxHeight: .infinity)' in content
     assert 'window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth' in delegate
-    assert '.frame(minWidth: 220, idealWidth: 260, maxWidth: 380' in git_workspace
+    assert 'let maximumWidth = min(380, max(180, geometry.size.width - 328))' in git_workspace
+    assert '.accessibilityAdjustableAction' in git_workspace
     assert 'ViewThatFits(in: .horizontal)' in git_workspace
     assert '.frame(minWidth: 140, idealWidth: 175, maxWidth: 190)' in git_workspace
-    assert '.pickerStyle(.segmented).labelsHidden().frame(width: 170)' in git_workspace
+    image_workspace = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopImageComparison.swift').read_text()
+    assert 'DesktopDiffOverlayPicker(selection: $overlay)' in git_workspace
+    assert '.pickerStyle(.segmented).labelsHidden().frame(width: 170)' in image_workspace
     assert 'Toggle("Guides", isOn: $guides).toggleStyle(.checkbox).fixedSize()' in git_workspace
-    assert '.frame(minWidth: 500, maxWidth: .infinity' in git_workspace
+    assert '.frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity).clipped()' in git_workspace
     assert '.toggleStyle(.checkbox).fixedSize()' in git_workspace
 
 

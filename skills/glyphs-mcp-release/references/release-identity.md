@@ -5,16 +5,17 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current release target is product **2.1.0**, installer build **63**, stable
-channel. Its catalog contains twenty data/action tools plus the optional
-read-only `show_edit_workflow` display tool, with eleven managed skills.
-Verify signing, notarization, installation and public availability separately
-using the exact artifacts and `V2.1.0-RELEASE.md`; source metadata alone proves
-none of these. Build 62's earlier local installation evidence remains historical
-and does not qualify build 63.
+The current source target is product **2.2.0**, installer build **64**, stable
+channel, in preparation. Its catalog contains twenty-one data/action tools plus
+the optional read-only `show_edit_workflow` display tool, with eleven managed
+skills. `list_tasks` is passive and does not execute or resolve workflows.
+See `V2.2.0-RELEASE.md` for candidate checks and remaining acceptance.
 
-The previous published baseline is product **2.0.4**, release **2.0.4**, stable
-channel, beta number **0**, installer build **61**: **eleven managed skills**, twenty MCP tools and up to 13
+The published stable baseline is **2.1.0/build 63**, under signed tag `v2.1.0`,
+with twenty data/action tools plus one optional display tool. Preserve its
+signed feeds and assets. Its signing, notarization, installation and public
+availability are recorded in `V2.1.0-RELEASE.md`; none qualifies the new candidate.
+The earlier **2.0.4/build 61** baseline retains twenty MCP tools and up to 13
 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
 **1**, bridge protocol **1**. The dated MCP transport version is negotiated
@@ -29,11 +30,11 @@ These are initialization-time file fingerprints, not in-memory code hashes.
 Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
-Use the helper's release tag and channel URLs. The published baseline uses
-`v2.0.4`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
-and `Glyphs-MCP-2.0.4.dmg` / `Glyphs-MCP-2.0.4.zip`. Exact signing and native
-acceptance are recorded in `V2.0.4-RELEASE.md` and the build-61 publication report.
-The signed `v2.0.4` tag and distribution remain immutable; later source documentation
+Use the helper's release tag and channel URLs. The published stable baseline uses
+`v2.1.0`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
+and `Glyphs-MCP-2.1.0.dmg` / `Glyphs-MCP-2.1.0.zip`. Exact signing and native
+acceptance are recorded in `V2.1.0-RELEASE.md`.
+The signed `v2.1.0` tag and distribution remain immutable; later source documentation
 can have a different skill digest. Rebuild and qualify the next candidate separately.
 Historical evidence retains its original scope. Source identity alone does not
 authorize publication. The separate `lit/v2-beta/appcast.xml` serves the

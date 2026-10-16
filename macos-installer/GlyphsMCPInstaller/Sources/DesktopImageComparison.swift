@@ -190,6 +190,8 @@ private struct ImageCheckerboard: View {
         return Image(decorative: context.makeImage()!, scale: 1).interpolation(.none)
     }()
     var body: some View {
-        Rectangle().fill(ImagePaint(image: Self.tile)).accessibilityHidden(true)
+        // Native image tiling keeps the cell size in points. ImagePaint's
+        // normalized texture coordinates can stretch when the wipe mask moves.
+        Self.tile.resizable(resizingMode: .tile).accessibilityHidden(true)
     }
 }

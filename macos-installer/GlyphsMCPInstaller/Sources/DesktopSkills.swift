@@ -228,8 +228,7 @@ struct DesktopFocusedSetup: View {
                     .foregroundStyle(.secondary)
                 Button("Open Setup", action: showSetup)
                 if section == .companions && installer.running {
-                    Text("Quit Glyphs before changing components. You can save unsaved fonts when prompted.").foregroundStyle(.orange)
-                    Button("Quit Glyphs", action: installer.quitGlyphs).disabled(installer.operationsBusy)
+                    DesktopComponentPreparation()
                 }
                 InstallationView(section: section)
             }.padding(DesktopSetupLayout.contentPadding).frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)

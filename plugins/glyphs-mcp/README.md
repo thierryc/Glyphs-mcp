@@ -2,20 +2,20 @@
 
 This optional repository plugin connects Codex/ChatGPT, Claude Code, Cursor,
 and GitHub Copilot CLI to the Glyphs MCP server at
-`http://127.0.0.1:9680/mcp/`. Version 2.1.0 bundles the general Glyphs launcher
+`http://127.0.0.1:9680/mcp/`. Version 2.2.0 bundles the general Glyphs launcher
 and ten additional managed skills, including reviewed workspace scripting,
 and reusable development, for every host.
 
 Host-native manifests live under `.codex-plugin/`, `.claude-plugin/`,
 `.cursor-plugin/`, and `.github/plugin/`. They all reference this package's
 single `skills/` directory and `.mcp.json`. Skills inherit the package version;
-the coordinated bridge and sidecar product version is 2.1.0. Internal Python
+the coordinated bridge and sidecar product version is 2.2.0. Internal Python
 package versions remain 0.1.0; they are separate from release identity.
 Glyphs 3 uses the separate pinned 1.11.0 bundle and skills.
 
 Glyphs remains the editor. The native bridge panel displays its status and a
 heart button for Welcome & Support. The AI client receives reports and structured
-results from twenty data/action tools, plus the optional read-only card-display tool. `accept_job` verifies targets and persists the whole
+results from twenty-one data/action tools, plus the optional read-only card-display tool. `accept_job` verifies targets and persists the whole
 document; Undo and Redo are grouped per glyph, and discard restores an
 unaccepted job with conflict checks.
 
@@ -32,7 +32,7 @@ See the repository documentation for the
 [plugin UI](../../content/getting-started/codex-chatgpt-plugin-ui.mdx) and
 [cross-client skill setup](../../content/getting-started/use-agent-skills.mdx).
 
-The lean Glyphs 4 package exposes twenty data/action tools: get_status, list_documents, create_document, duplicate_document, open_document,
+The lean Glyphs 4 package exposes twenty-one data/action tools: get_status, list_tasks, list_documents, create_document, duplicate_document, open_document,
 import_document, activate_document, open_edit_tab, close_document,
 read_entities, start_job, compare_fonts, get_job, apply_job, accept_job, discard_job,
 save_document, start_edit_workflow, get_edit_workflow and respond_edit_workflow.
@@ -70,5 +70,5 @@ clients remain manual; no timer authorizes Run, Apply, Save, Undo or Restore.
 document. It requires the optional managed Diffenator runtime and
 `font.compare.diffenator.v1` in `comparisonCapabilities`. Use `get_job` to review
 its local report and separately authorize `accept_job` publication to a new
-directory. The 2.1.0 source is an unpublished candidate; optional downloads await
+directory. The 2.2.0 source is an unpublished candidate; optional downloads await
 hosted assets and supported-platform qualification.

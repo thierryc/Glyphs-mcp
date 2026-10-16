@@ -17,6 +17,7 @@ PROTOCOL_VERSION = 1
 PATCH_VERSION = 1
 TOOL_NAMES = (
     "get_status",
+    "list_tasks",
     "list_documents",
     "create_document",
     "duplicate_document",

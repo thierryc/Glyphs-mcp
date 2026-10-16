@@ -20,7 +20,7 @@ Configuration backs up existing settings and preserves unrelated entries. Modifi
 3. Add that URL to a local client that supports **Streamable HTTP MCP**, or use the installer's supported connection option.
 4. Refresh the client's tools and call `get_status`, then `list_documents`.
 
-The 2.1.0 catalog exposes twenty data/action tools: `get_status`,
+The 2.2.0 catalog exposes twenty-one data/action tools: `get_status`, `list_tasks`,
 `list_documents`, `create_document`, `duplicate_document`, `open_document`, `import_document`,
 `activate_document`, `open_edit_tab`, `close_document`, `read_entities`, `start_job`,
 `compare_fonts`, `get_job`, `apply_job`, `accept_job`, `discard_job`,
@@ -33,7 +33,7 @@ The bridge port 9681 is internal and is not an MCP endpoint. The loopback URL re
 
 ## Optional agent plugin
 
-The matching 2.1.0 agent package adds workflow skills and connection metadata. It does not install the Glyphs components. Use the matching 2.1.0 package; an older marketplace package may describe another interface. See [Skills and optional plugins](use-agent-skills.mdx).
+The matching 2.2.0 agent package adds workflow skills and connection metadata. It does not install the Glyphs components. Use the matching 2.2.0 package; an older marketplace package may describe another interface. See [Skills and optional plugins](use-agent-skills.mdx).
 
 Ordinary conversation tools return text and structured results. The optional
 `show_edit_workflow` opens one standard MCP App. Claude Desktop can use its existing local stdio connection; its proxy
@@ -54,7 +54,7 @@ your connection, with text replies if the interactive card is unavailable.
 
 If you change the MCP port, update the client's connection. After installing new native bundles, restart Glyphs. After changing an agent package, refresh the client according to its own settings. Keep one intended server per MCP port and avoid duplicate connections to the same server.
 
-The current stable release and matching agent package are `2.1.0`. `get_status.agentPackage` gives the
+The current stable release and matching agent package are `2.2.0`. `get_status.agentPackage` gives the
 expected version and skills digest; compare it with the installed package's
 `glyphs-mcp-agent.json`. Refresh a configured local Codex plugin with
 `codex plugin add glyphs-mcp@glyphs-mcp`, then reload the desktop client and

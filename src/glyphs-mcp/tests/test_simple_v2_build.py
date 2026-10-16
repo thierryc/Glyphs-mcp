@@ -54,9 +54,10 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     assert json.loads((first / "manifest.json").read_text()) == manifest_a
     assert manifest_a["tools"] == [
         "get_status",
+        "list_tasks",
         "list_documents",
         "create_document",
-            "duplicate_document",
+        "duplicate_document",
         "open_document",
         "import_document",
         "activate_document",

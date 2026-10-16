@@ -203,3 +203,293 @@ extension DesktopActivityTests {
         XCTAssertEqual(status.bridge.bridgeVersion, "2.0.0")
     }
 }
+
+
+final class DesktopTaskTests: XCTestCase {
+    func testArchiveIsAnOrphanInterruptedActionAndRetainsUnverifiedOutcome() throws {
+        var object: [String: Any] = ["jobId": "job_exact", "revision": 12, "state": "interrupted",
+            "documentName": "HandPrint", "message": "Review before archiving", "closed": false, "pending": false,
+            "actions": [["action": "archive_interrupted", "label": "Archive Interrupted Task",
+                         "consequence": "Outcome remains Unverified; diagnostics retained", "token": "current-token"]]]
+        func decode() throws -> DesktopTaskRecovery {
+            try JSONDecoder().decode(DesktopTaskRecovery.self, from: JSONSerialization.data(withJSONObject: object))
+        }
+        let eligible = try decode()
+        XCTAssertNil(eligible.workflowId); XCTAssertEqual(eligible.jobId, "job_exact")
+        XCTAssertEqual(eligible.closingActions.map(\.action), ["archive_interrupted"])
+        XCTAssertFalse(eligible.closingActions[0].isCancellation)
+        object["workflowId"] = "edit_owner"
+        XCTAssertTrue(try decode().closingActions.isEmpty)
+        object.removeValue(forKey: "workflowId"); object["state"] = "applying"
+        XCTAssertTrue(try decode().closingActions.isEmpty)
+        object["state"] = "archived"; object["closed"] = true
+        object["receipt"] = "Task archived. Outcome: Unverified. Diagnostics retained."
+        let archived = try decode()
+        XCTAssertEqual(archived.statusLabel, "Unverified")
+        XCTAssertTrue(archived.closingActions.isEmpty); XCTAssertNotNil(archived.receipt)
+        XCTAssertEqual(try task(state: "archived").statusLabel, "Unverified")
+    }
+
+    func testRecoveryOffersOnlyClosingActionsAndPreservesPendingOutcome() throws {
+        func snapshot(closed: Bool, pending: Bool, receipt: String?) throws -> DesktopTaskRecovery {
+            var object: [String: Any] = ["workflowId": "edit_exact", "revision": 12, "state": "discarding",
+                "documentName": "Bryan", "message": "Check again", "closed": closed, "pending": pending,
+                "actions": ["finish_script", "finish_edit", "cancel", "discard", "save_result", "restore_saved_script", "run_script", "acknowledge_script_outcome"].map {
+                    ["action": $0, "label": $0, "consequence": "Explicit consequences", "token": "current-token"]
+                }]
+            if let receipt { object["receipt"] = receipt }
+            return try JSONDecoder().decode(DesktopTaskRecovery.self, from: JSONSerialization.data(withJSONObject: object))
+        }
+        let pending = try snapshot(closed: false, pending: true, receipt: nil)
+        XCTAssertEqual(pending.workflowId, "edit_exact"); XCTAssertEqual(pending.revision, 12)
+        XCTAssertTrue(pending.pending); XCTAssertFalse(pending.closed); XCTAssertNil(pending.receipt)
+        XCTAssertEqual(pending.statusLabel, "Cancellation pending")
+        XCTAssertEqual(pending.closingActions.map(\.action), ["finish_script", "finish_edit", "cancel", "discard"])
+        XCTAssertEqual(pending.closingActions.filter(\.isCancellation).map(\.action), ["cancel", "discard"])
+        let closed = try snapshot(closed: true, pending: false, receipt: "Task closed without saving.")
+        XCTAssertTrue(closed.closingActions.isEmpty); XCTAssertNotNil(closed.receipt)
+        XCTAssertEqual(closed.statusLabel, "Closed")
+    }
+    private func task(_ id: String = "edit_a", agent: String = "codex", identity: String = "01a13f8f-4e03-76f2-b8ce-96acc7f0627d", closed: Bool = false, conflict: Bool = false, state: String = "needs_decision") throws -> DesktopTask {
+        let value: [String: Any] = ["id": id, "workflowId": id, "title": "Run script", "documentName": "Bryan", "state": state, "closed": closed, "createdAt": 1, "updatedAt": 2, "blockedBy": [], "blocking": [], "origin": ["agent": agent, "conversationId": identity, "conflict": conflict]]
+        return try JSONDecoder().decode(DesktopTask.self, from: JSONSerialization.data(withJSONObject: value))
+    }
+    func testOnlyVerifiedCodexOriginBuildsFixedSchemeLink() throws {
+        XCTAssertEqual(try task().conversationURL?.absoluteString, "codex://threads/01a13f8f-4e03-76f2-b8ce-96acc7f0627d")
+        XCTAssertNil(try task(agent: "claude_code").conversationURL)
+        XCTAssertNil(try task(identity: "https://example.com").conversationURL)
+        XCTAssertNil(try task(conflict: true).conversationURL)
+        XCTAssertTrue(try task().copyRequest.contains("edit_a"))
+        XCTAssertTrue(try task().copyRequest.contains("Do not repeat"))
+    }
+    func testClosePromptRequiresFreshStateAndASeparateWorkflowDecision() throws {
+        for state in ["running", "blocked", "needs_decision", "interrupted", "unknown"] {
+            let value = try task(state: state)
+            XCTAssertEqual(value.prompt(for: .review), value.copyRequest)
+            let prompt = value.prompt(for: .closeTask)
+            XCTAssertTrue(prompt.contains("task edit_a for Bryan: Run script"))
+            XCTAssertTrue(prompt.contains("Retrieve its current state and blockers"))
+            XCTAssertTrue(prompt.contains("If running, explain cancellation limits"))
+            XCTAssertTrue(prompt.contains("Show only currently available actions and wait for my choice"))
+            XCTAssertTrue(prompt.contains("Do not rerun the script or automatically cancel, save, restore, or close"))
+            XCTAssertNotEqual(prompt, value.copyRequest)
+            XCTAssertFalse(value.closed)
+        }
+    }
+    func testJobOnlyClosePromptUsesExactIdentity() throws {
+        let json = #"{"id":"job_fallback","jobId":"job_exact","title":"Run script","documentName":"LeftyNote","state":"unknown","closed":false,"createdAt":1,"updatedAt":2,"blockedBy":[],"blocking":[]}"#
+        let value = try JSONDecoder().decode(DesktopTask.self, from: Data(json.utf8))
+        XCTAssertTrue(value.prompt(for: .closeTask).contains("task job_exact for LeftyNote"))
+        XCTAssertNil(value.conversationURL)
+        XCTAssertNotNil(value.conversationUnavailableMessage)
+    }
+    func testUnavailableConversationExplainsFallbackWithoutGuessingALink() throws {
+        XCTAssertNil(try task().conversationUnavailableMessage)
+        for value in [try task(agent: "claude_code"), try task(conflict: true), try task(identity: "not-a-conversation")] {
+            XCTAssertNil(value.conversationURL)
+            XCTAssertTrue(try XCTUnwrap(value.conversationUnavailableMessage).contains("Copy the prompt into your agent"))
+            XCTAssertFalse(value.prompt(for: .closeTask).isEmpty)
+        }
+        XCTAssertTrue(try XCTUnwrap(task(agent: "claude_code").conversationUnavailableMessage).contains("Claude Code"))
+        XCTAssertTrue(try XCTUnwrap(task(conflict: true).conversationUnavailableMessage).contains("reliably"))
+    }
+    func testReadCountPersistsWithoutResolvingTask() throws {
+        let suite = "tasks-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let open = try task(), closed = try task("old", closed: true, state: "closed")
+        var state = DesktopTaskReadState(defaults: defaults, namespace: "fixture")
+        state.observe([open, closed])
+        XCTAssertTrue(state.isUnread(open)); XCTAssertFalse(state.isUnread(closed))
+        state.read(open)
+        XCTAssertFalse(state.isUnread(open)); XCTAssertFalse(open.closed)
+        let restored = DesktopTaskReadState(defaults: defaults, namespace: "fixture")
+        XCTAssertFalse(restored.isUnread(open))
+        let other = DesktopTaskReadState(defaults: defaults, namespace: "another-installation")
+        XCTAssertTrue(other.isUnread(open))
+    }
+    func testOlderHistoryPageDoesNotInflateNewTaskCount() throws {
+        let suite = "tasks-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var state = DesktopTaskReadState(defaults: defaults, namespace: "fixture")
+        let first = try task()
+        state.observe([first])
+        let old = try task("older-page", closed: true, state: "closed")
+        state.observe([first, old])
+        XCTAssertFalse(state.isUnread(old)); XCTAssertTrue(state.isUnread(first))
+        let resolved = try task(closed: true, state: "closed")
+        state.observe([resolved])
+        XCTAssertTrue(state.isUnread(resolved))
+    }
+    func testTasksVisibilityAndFileEventsWakeExistingMonitor() {
+        var policy = DesktopMonitorPolicy()
+        policy.dashboardVisible = true; policy.surfaces.insert("tasks")
+        XCTAssertEqual(policy.interval(busy: false), 5)
+        XCTAssertEqual(policy.interval(busy: true), 2)
+        let root = URL(fileURLWithPath: "/tmp/task-installation")
+        XCTAssertTrue(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/edit-workflows/edit_a.json").path, root: root))
+        XCTAssertTrue(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/task-origins/edit_a.json").path, root: root))
+        XCTAssertFalse(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/task-origins/secret.txt").path, root: root))
+    }
+    func testDefaultClosedStatusHasNoCompletedBadge() throws {
+        XCTAssertNil(try task(closed: true, state: "closed").statusLabel)
+        XCTAssertEqual(try task(state: "unknown").statusLabel, "Outcome unknown")
+        XCTAssertEqual(try task(state: "needs_decision").statusLabel, "Needs decision")
+    }
+    func testClearHistoryPersistsOnlyClosedIdentitiesIncludingUnloadedPages() throws {
+        let suite = "tasks-history-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let closed = try task("closed", closed: true, state: "closed")
+        let unloaded = try task("unloaded", closed: true, state: "failed")
+        let open = try task("open", state: "interrupted")
+        let running = try task("running", state: "running")
+        let index = [closed, unloaded, open, running].map(DesktopTaskReference.init)
+        var history = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        history.clearClosed(index)
+        XCTAssertEqual(history.clearedIDs, Set(["closed", "unloaded"]))
+        let restored = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        XCTAssertFalse(restored.isVisible(closed)); XCTAssertFalse(restored.isVisible(index[1]))
+        XCTAssertTrue(restored.isVisible(open)); XCTAssertTrue(restored.isVisible(running))
+        XCTAssertFalse(open.closed); XCTAssertEqual(open.state, "interrupted")
+        XCTAssertTrue(DesktopTaskHistoryState(defaults: defaults, namespace: "other-installation").isVisible(closed))
+    }
+    func testNewlyClosedAndReopenedTasksRemainVisibleAfterClearing() throws {
+        let suite = "tasks-history-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let closed = try task("old", closed: true, state: "closed")
+        let newClosed = try task("new", closed: true, state: "closed")
+        var history = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        history.clearClosed([DesktopTaskReference(task: closed)])
+        history.observeIndex([closed, newClosed].map(DesktopTaskReference.init))
+        XCTAssertFalse(history.isVisible(closed)); XCTAssertTrue(history.isVisible(newClosed))
+        let reopened = try task("old", state: "needs_decision")
+        XCTAssertTrue(history.isVisible(reopened))
+        history.observeIndex([DesktopTaskReference(task: reopened)])
+        XCTAssertTrue(history.isVisible(closed))
+        XCTAssertTrue(DesktopTaskHistoryState(defaults: defaults, namespace: "fixture").isVisible(closed))
+    }
+    func testRestoringClearedHistoryPreservesReadStateAndUnreadFiltering() throws {
+        let suite = "tasks-history-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let open = try task("open")
+        let closed = try task("old", closed: true, state: "closed")
+        var read = DesktopTaskReadState(defaults: defaults, namespace: "fixture")
+        read.observe([open])
+        let index = [open, closed].map(DesktopTaskReference.init)
+        var history = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        XCTAssertEqual(index.filter { history.isVisible($0) && read.isUnread($0) }.count, 2)
+        history.clearClosed(index)
+        XCTAssertEqual(index.filter { history.isVisible($0) && read.isUnread($0) }.count, 1)
+        XCTAssertTrue(read.isUnread(closed))
+        history.restore()
+        XCTAssertTrue(history.isVisible(closed)); XCTAssertTrue(history.clearedIDs.isEmpty)
+        XCTAssertTrue(DesktopTaskHistoryState(defaults: defaults, namespace: "fixture").isVisible(closed))
+    }
+}
+
+extension DesktopTaskTests {
+    func testLegacyClearedHistoryGetsFreshGracePeriodAndPersistentOutbox() throws {
+        let suite = "tasks-retention-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(["old"], forKey: "taskHistory.v1.fixture")
+        let adoption = Date(timeIntervalSince1970: 1_000_000)
+        let migrated = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture", now: adoption)
+        XCTAssertEqual(migrated.clearedAt["old"], adoption.timeIntervalSince1970)
+        XCTAssertEqual(migrated.pendingOperations.map(\.action), ["clear"])
+        XCTAssertEqual(migrated.pendingOperations[0].records.map(\.id), ["old"])
+        let loaded = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture", now: adoption.addingTimeInterval(86400))
+        XCTAssertEqual(loaded.pendingOperations, migrated.pendingOperations)
+        XCTAssertEqual(loaded.clearedAt, migrated.clearedAt)
+    }
+    func testRepeatedClearDoesNotResetDateAndRestoreReclearKeepsOperationOrder() throws {
+        let suite = "tasks-retention-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let day = Date(timeIntervalSince1970: 1_000_000)
+        let index = [DesktopTaskReference(task: try task("closed", closed: true))]
+        var state = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        state.clearClosed(index, now: day)
+        let first = try XCTUnwrap(state.pendingOperations.first)
+        state.clearClosed(index, now: day.addingTimeInterval(86400))
+        XCTAssertEqual(state.clearedAt["closed"], day.timeIntervalSince1970)
+        XCTAssertEqual(state.pendingOperations.count, 1)
+        state.restore(now: day.addingTimeInterval(2*86400))
+        state.clearClosed(index, now: day.addingTimeInterval(3*86400))
+        XCTAssertEqual(state.pendingOperations.map(\.action), ["clear", "restore", "clear"])
+        state.acknowledge(first)
+        state.acknowledge(first) // A late duplicate reply must not acknowledge the next operation.
+        XCTAssertEqual(state.pendingOperations.map(\.action), ["restore", "clear"])
+        let restore = try XCTUnwrap(state.pendingOperations.first)
+        state.acknowledge(restore)
+        XCTAssertTrue(state.clearedIDs.contains("closed"))
+        XCTAssertEqual(state.clearedAt["closed"], day.addingTimeInterval(3*86400).timeIntervalSince1970)
+    }
+    func testOldCachedHistoryWaitsForServerBeforeRestoringAndMissingExpiredRowsArePruned() throws {
+        let suite = "tasks-retention-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let closed = try task("closed", closed: true)
+        var state = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        state.clearClosed([DesktopTaskReference(task: closed)], now: start)
+        state.acknowledge(try XCTUnwrap(state.pendingOperations.first))
+        state.restore(now: start.addingTimeInterval(31*86400))
+        XCTAssertFalse(state.isVisible(closed))
+        XCTAssertEqual(state.pendingOperations.map(\.action), ["restore"])
+        state.observeIndex([], pruneMissing: true)
+        XCTAssertTrue(state.clearedIDs.isEmpty)
+    }
+    func testClearOutboxChunksLargeHistoryAndLeavesOpenTasksAlone() throws {
+        let suite = "tasks-retention-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let closed = try (0..<205).map { DesktopTaskReference(task: try task("closed-\($0)", closed: true)) }
+        let open = try task("open", state: "interrupted")
+        var state = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        state.clearClosed(closed + [DesktopTaskReference(task: open)])
+        XCTAssertEqual(state.pendingOperations.map { $0.records.count }, [100, 100, 5])
+        XCTAssertTrue(state.isVisible(open)); XCTAssertNil(state.clearedAt[open.id])
+    }
+    func testHistoryRevisionTravelsWithClearAndLedgerChangesWakeMonitor() throws {
+        let revision = String(repeating: "a", count: 64)
+        let json = "{\"id\":\"closed\",\"createdAt\":1,\"closed\":true,\"historyRevision\":\"\(revision)\"}"
+        let reference = try JSONDecoder().decode(DesktopTaskReference.self, from: Data(json.utf8))
+        let suite = "tasks-retention-test-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var state = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        state.clearClosed([reference])
+        XCTAssertEqual(state.pendingOperations[0].records[0].revision, revision)
+        let root = URL(fileURLWithPath: "/tmp/task-installation")
+        XCTAssertTrue(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/task-history/ledger.json").path, root: root))
+        XCTAssertFalse(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/task-history/ledger.lock").path, root: root))
+    }
+
+    func testRefreshRetainsLoadedHistoryAndDoesNotResetPagination() throws {
+        func page(_ ids: [Int]) throws -> DesktopTaskPage {
+            let tasks: [[String: Any]] = ids.map { ["id": "old-\($0)", "title": "Spacing", "documentName": "Test", "state": "closed", "closed": true, "createdAt": 1, "updatedAt": 2, "blockedBy": [], "blocking": []] }
+            let index: [[String: Any]] = (0..<6).map { ["id": "old-\($0)", "createdAt": 1, "closed": true] }
+            let object: [String: Any] = ["version": 1, "observedAt": 3, "tasks": tasks, "index": index, "nextCursor": 2]
+            return try JSONDecoder().decode(DesktopTaskPage.self, from: JSONSerialization.data(withJSONObject: object))
+        }
+        let first = try page([0, 1])
+        XCTAssertNil(first.nextHistoryCursor(in: [], ignoring: Set((0..<6).map { "old-\($0)" })))
+        XCTAssertEqual(first.nextHistoryCursor(in: [], ignoring: Set(["old-0", "old-1"])), 2)
+        var loaded = first.mergingHistory([])
+        XCTAssertEqual(first.nextHistoryCursor(in: loaded), 2)
+        let second = try page([2, 3])
+        loaded = second.mergingHistory(loaded)
+        XCTAssertEqual(second.nextHistoryCursor(in: loaded), 4)
+        loaded = first.mergingHistory(loaded)
+        XCTAssertEqual(loaded.count, 4)
+        XCTAssertEqual(first.nextHistoryCursor(in: loaded), 4)
+        let final = try page([4, 5])
+        loaded = final.mergingHistory(loaded)
+        XCTAssertNil(final.nextHistoryCursor(in: loaded))
+    }
+}

@@ -39,6 +39,18 @@ final class DesktopProjectsModel: ObservableObject {
     @Published private(set) var inspecting = false
     @Published private(set) var loadingTemplates = false
     @Published private(set) var message = ""
+    @Published var fontSources: [ProjectFontSource] = []
+    @Published var loadingFontSources = false
+    @Published var fontSourcesError = ""
+    @Published var packageCopySource: ProjectFontSource?
+    @Published var copyingSource: String?
+    @Published var packageCopyError = ""
+    @Published var packageCopyResult: FontPackageCopyResult?
+    @Published var packageCopyProject: String?
+    @Published var selectedFontSource: String?
+    var fontSourcesTask: Task<Void, Never>?
+    var packageCopyTask: Task<Void, Never>?
+    var fontSourcesGeneration = UUID()
     let store = TemplateStore()
     private let defaults: UserDefaults
     private let gitReader = ReadOnlyGit()
@@ -369,31 +381,73 @@ final class DesktopProjectsModel: ObservableObject {
     }
 }
 
+private enum DesktopProjectPane: String, CaseIterable, Identifiable {
+    case diff = "Diff"
+    case config = "Config"
+    var id: String { rawValue }
+}
+
 struct DesktopProjectWorkspace: View {
     @ObservedObject var model: DesktopProjectsModel
     let path: String
+    @State private var pane: DesktopProjectPane = .diff
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top, spacing: 16) {
-                Image(systemName: "folder.fill").font(.system(size: 34)).foregroundStyle(Color.accentColor)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(model.navigation.name(for: path)).font(.largeTitle.bold())
-                    Text(path).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+        VStack(spacing: 0) {
+            header
+            Divider()
+            GeometryReader { geometry in
+                ZStack {
+                    // Keep the same diff view mounted: switching to Config must not
+                    // discard its scroll position, split width, zoom or selections.
+                    DesktopGitWorkspace(model: model, isActive: pane == .diff)
+                        .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+                        .opacity(pane == .diff ? 1 : 0)
+                        .allowsHitTesting(pane == .diff)
+                        .disabled(pane != .diff)
+                        .accessibilityHidden(pane != .diff)
+                    if pane == .config {
+                        DesktopProjectConfiguration(model: model, path: path)
+                            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+                    }
                 }
-                Spacer()
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
             }
-            HStack(spacing: 10) {
-                Group {
-                    Button("Open in Finder") { model.showInFinder(path) }
-                    Button("Open in Editor…") { model.openExternal("projectEditor") }
-                    Button("Open in Git Client…") { model.openExternal("projectGitClient") }
-                }.disabled(!model.folderExists(path))
-                Spacer(minLength: 0)
-                Button { model.edit(path) } label: { Label("Edit", systemImage: "pencil") }
-                    .help("Edit project settings")
-            }
-            DesktopGitWorkspace(model: model)
         }
-        .padding(.horizontal, 28).padding(.top, 28).padding(.bottom, 18)
+        .onChange(of: path) { _, _ in pane = .diff }
+        .onChange(of: pane) { _, value in
+            if value == .config { model.refreshFontSources() }
+        }
+        .sheet(item: $model.packageCopySource) { source in
+            DesktopPackageCopySheet(model: model, source: source)
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 10) {
+                Image(systemName: "folder.fill").font(.system(size: 26)).foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(model.navigation.name(for: path)).font(.title2.weight(.semibold))
+                        .lineLimit(1).truncationMode(.middle)
+                    Text((path as NSString).abbreviatingWithTildeInPath)
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                }
+            }.frame(minWidth: 0, maxWidth: .infinity, alignment: .leading).help(path)
+            Picker("Project view", selection: $pane) {
+                ForEach(DesktopProjectPane.allCases) { value in
+                    Text(LocalizedStringKey(value.rawValue)).tag(value)
+                }
+            }
+            .pickerStyle(.segmented).labelsHidden().frame(width: 180)
+            .accessibilityIdentifier("project-view-picker")
+            Spacer(minLength: 0).frame(maxWidth: .infinity)
+            Menu { DesktopProjectMenuActions(model: model, path: path) } label: {
+                Image(systemName: "ellipsis").frame(width: 22, height: 22)
+            }
+            .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+            .help("More project actions").accessibilityLabel("More project actions")
+        }.padding(.horizontal, 20).padding(.vertical, 14)
     }
 }

@@ -1,7 +1,7 @@
 # Private lean v2 skill policy
 
-Current scope is tracked in [2.0.2 candidate notes](../V2.0.2-RELEASE.md); the
-[twenty-tool contract](../content/reference/command-set.mdx) is the interface
+Current scope is tracked in [2.2.0 candidate notes](../V2.2.0-RELEASE.md); the
+[twenty-two-tool contract](../content/reference/command-set.mdx) is the interface
 reference. Shared skill contracts are [conversation edits](glyphs/references/edit-workflow.md),
 [native scripts](glyphs/references/python-scripts.md) and
 [Git checkpoints](glyphs/references/git-checkpoints.md). Focused skills link to
@@ -13,10 +13,14 @@ its negotiated capabilities before routing a task. Missing required capabilities
 mean the installation needs updating; do not maintain workflows for earlier
 private v2 builds. V1 has separate instructions and is not changed by this policy.
 
-The public interface contains twenty tools: `get_status`, `list_documents`, `create_document`, `open_document`,
-`read_entities`, `start_job`, `get_job`, `apply_job`, `accept_job`,
+The public interface contains twenty-one data/action tools: `get_status`, `list_tasks`,
+`list_documents`, `create_document`, `duplicate_document`, `open_document`,
+`import_document`, `activate_document`, `open_edit_tab`, `close_document`,
+`read_entities`, `start_job`, `compare_fonts`, `get_job`, `apply_job`, `accept_job`,
 `discard_job`, `save_document`, `start_edit_workflow`, `get_edit_workflow` and
-`respond_edit_workflow`, `import_document`, `activate_document`, `close_document` and `compare_fonts`.
+`respond_edit_workflow`. The optional read-only `show_edit_workflow` display tool
+brings the catalog to twenty-two. `list_tasks` passively locates open workflows
+and blockers; resolution uses fresh existing workflow actions.
 There is no typed-prototype or alternate history interface. `python_script`
 requires `script.native.v1` and uses direct native execution with a saved baseline.
 Native script manifests have no fixed target-count ceiling. Complete requests

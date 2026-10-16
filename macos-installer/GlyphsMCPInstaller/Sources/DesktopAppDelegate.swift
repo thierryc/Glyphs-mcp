@@ -18,6 +18,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private var troubleshootingLogs: NSWindow?
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
+    private var taskObservation: AnyCancellable?
+    private var taskMenuTracking: NSObjectProtocol?
     private var preferences: NSObjectProtocol?
     private var activityObservation: AnyCancellable?
     private var menuImages: [Bool: NSImage] = [:]
@@ -33,8 +35,16 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         popover.contentViewController = NSHostingController(rootView: DesktopPopover(
             open: { [weak self] in self?.showDashboard() },
             settings: { [weak self] in self?.showSettings() },
-            support: { [weak self] in self?.showWelcome() }).environmentObject(desktop).desktopDesign())
+            support: { [weak self] in self?.showWelcome() },
+            tasks: { [weak self] in self?.showTasks() }).environmentObject(desktop).desktopDesign())
         updateMenuBar()
+        taskObservation = desktop.objectWillChange.sink { [weak self] _ in
+            DispatchQueue.main.async { self?.updateTaskMenuBadge() }
+        }
+        taskMenuTracking = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification,
+            object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.updateTaskMenuBadge() }
+            }
         activityObservation = Publishers.CombineLatest3(desktop.$status, desktop.$stale, desktop.$serviceRunning)
             .map { status, stale, running in status?.showsActivityDot(stale: stale, running: running) == true }
             .removeDuplicates()
@@ -68,6 +78,33 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         // Sidecar startup is a separate preference; quitting this interface does
         // not send a service stop request.
     }
+
+    @objc func showTasks() {
+        desktop.requestTasks()
+        showDashboard()
+    }
+
+    private func taskMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: NSLocalizedString("Show Tasks", comment: "Task navigation"), action: #selector(showTasks), keyEquivalent: "")
+        item.target = self
+        if desktop.unreadTaskCount > 0 { item.badge = .newItems(count: desktop.unreadTaskCount) }
+        return item
+    }
+    private func updateTaskMenuBadge() {
+        // SwiftUI owns and can rebuild its commands. Find the current menu item
+        // rather than retaining an item from an earlier menu generation.
+        guard let menu = NSApp.mainMenu?.items.first?.submenu,
+              let item = menu.items.first(where: { $0.title == NSLocalizedString("Show Tasks", comment: "Task navigation") }) else { return }
+        item.badge = desktop.unreadTaskCount > 0 ? .newItems(count: desktop.unreadTaskCount) : nil
+    }
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
+        menu.addItem(taskMenuItem())
+        let open = NSMenuItem(title: NSLocalizedString("Show Window", comment: "Dock navigation"), action: #selector(openDashboardFromMenu), keyEquivalent: "")
+        open.target = self; menu.addItem(open)
+        return menu
+    }
+    @objc private func openDashboardFromMenu() { showDashboard() }
 
     func showDashboard() {
         popover.performClose(nil)
@@ -178,6 +215,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             }
             item.button?.setAccessibilityLabel(NSLocalizedString("Glyphs MCP — server status", comment: "Menu bar accessibility label"))
             item.button?.target = self; item.button?.action = #selector(togglePopover)
+            item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
             if let button = item.button {
                 let dot = DesktopActivityDot(frame: .zero)
                 dot.translatesAutoresizingMaskIntoConstraints = false
@@ -210,6 +248,12 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
 
     @objc private func togglePopover() {
         guard let button = statusItem?.button else { return }
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            popover.performClose(nil)
+            let menu = applicationDockMenu(NSApp) ?? NSMenu()
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.minY), in: button)
+            return
+        }
         if popover.isShown { popover.performClose(nil) }
         else { popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY) }
     }
@@ -240,6 +284,7 @@ struct DesktopPopover: View {
     let open: () -> Void
     let settings: () -> Void
     let support: () -> Void
+    let tasks: () -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
@@ -255,7 +300,12 @@ struct DesktopPopover: View {
                 Spacer()
                 Text(LocalizedStringKey(desktop.title)).foregroundStyle(.secondary)
             }
-            DesktopActivityView()
+            DesktopHealthStatus()
+            HStack {
+                DesktopActionButton(title: "Show Tasks", symbol: "list.bullet", action: tasks)
+                Spacer()
+                DesktopTaskBadge(count: desktop.unreadTaskCount)
+            }
             if !desktop.notice.isEmpty { Text(desktop.notice).font(.caption).foregroundStyle(.secondary) }
             if desktop.needsGlyphsRecovery {
                 Button("Check Glyphs in Setup") { desktop.requestSetup(); open() }

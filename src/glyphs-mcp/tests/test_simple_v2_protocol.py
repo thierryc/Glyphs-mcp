@@ -44,12 +44,13 @@ def patch() -> dict:
     }
 
 
-def test_public_surface_has_sixteen_base_and_three_workflow_tools() -> None:
+def test_public_surface_has_twenty_one_data_action_and_one_display_tools() -> None:
     assert TOOL_NAMES == (
         "get_status",
+        "list_tasks",
         "list_documents",
         "create_document",
-            "duplicate_document",
+        "duplicate_document",
         "open_document",
         "import_document",
         "activate_document",
