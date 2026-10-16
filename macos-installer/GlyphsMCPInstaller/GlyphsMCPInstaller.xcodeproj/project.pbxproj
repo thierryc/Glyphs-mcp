@@ -48,6 +48,7 @@
 		4BD5801D03F3BFE8C5753241 /* DesktopProjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 799F925C995B370E8C812ADA /* DesktopProjects.swift */; };
 		A64F540FCB1E8FBA46D0471A /* ProjectTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08C4804E908F36018324252F /* ProjectTemplates.swift */; };
 		CCFECA554C6AFEAAE447F59E /* ReadOnlyGit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */; };
+		4F077521A8B14B3A9F2437FC /* GitImageComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BE5CCC7AD149BCB76828D4 /* GitImageComparison.swift */; };
 		301CC88B1075FB8C7D68E536 /* TemplateArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */; };
 		3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */; };
 		E3E54D6F7E263E4FE22AB626 /* DesktopProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */; };
@@ -67,6 +68,7 @@
 		222E1FD38019AA402B7856A5 /* DesktopTemplateCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */; };
 		236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */; };
 		B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000001 /* DesktopGitWorkspace.swift */; };
+		9E1EE5A889F94544BD267F5D /* DesktopImageComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFB6AEF40C849D3B1FDE38E /* DesktopImageComparison.swift */; };
 		B20000000000000000000002 /* GlyphDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* GlyphDiff.swift */; };
 		B20000000000000000000003 /* PierreDiffsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B40000000000000000000002 /* PierreDiffsSwift */; };
 		F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */; };
@@ -175,6 +177,7 @@
 		799F925C995B370E8C812ADA /* DesktopProjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjects.swift"; sourceTree = "<group>"; };
 		08C4804E908F36018324252F /* ProjectTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectTemplates.swift"; sourceTree = "<group>"; };
 		4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadOnlyGit.swift"; sourceTree = "<group>"; };
+		C7BE5CCC7AD149BCB76828D4 /* GitImageComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GitImageComparison.swift"; sourceTree = "<group>"; };
 		2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemplateArchive.swift"; sourceTree = "<group>"; };
 		95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemplateStore.swift"; sourceTree = "<group>"; };
 		C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectTests.swift"; sourceTree = "<group>"; };
@@ -193,6 +196,7 @@
 		F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopTemplateCatalogTests.swift"; sourceTree = "<group>"; };
 		0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectSettings.swift"; sourceTree = "<group>"; };
 		B30000000000000000000001 /* DesktopGitWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopGitWorkspace.swift; sourceTree = "<group>"; };
+		5DFB6AEF40C849D3B1FDE38E /* DesktopImageComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopImageComparison.swift"; sourceTree = "<group>"; };
 		B30000000000000000000002 /* GlyphDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphDiff.swift; sourceTree = "<group>"; };
 		A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckpointProjectTests.swift"; sourceTree = "<group>"; };
 		CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontCheckpointPolicy.swift"; sourceTree = "<group>"; };
@@ -267,6 +271,7 @@
 				3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */,
 				CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */,
 				B30000000000000000000001 /* DesktopGitWorkspace.swift */,
+				5DFB6AEF40C849D3B1FDE38E /* DesktopImageComparison.swift */,
 				0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */,
 				51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */,
 				79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */,
@@ -360,6 +365,7 @@
 				95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */,
 				2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */,
 				4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */,
+				C7BE5CCC7AD149BCB76828D4 /* GitImageComparison.swift */,
 				08C4804E908F36018324252F /* ProjectTemplates.swift */,
 				6E6E3B10904D60F7875759D9 /* DesktopMonitorPolicy.swift */,
 				F6545F2403F0978EBA9F9CD4 /* DesktopInstallation.swift */,
@@ -591,6 +597,7 @@
 				52BFFDF1CB210FC9AE032E93 /* DesktopSkills.swift in Sources */,
 				2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */,
 				B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */,
+				9E1EE5A889F94544BD267F5D /* DesktopImageComparison.swift in Sources */,
 				236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */,
 				BB8FED442C37149356C19DC9 /* DesktopProjectWizard.swift in Sources */,
 				12B887EC93C336A12F5525CF /* DesktopProjectCatalog.swift in Sources */,
@@ -642,6 +649,7 @@
 				3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */,
 				301CC88B1075FB8C7D68E536 /* TemplateArchive.swift in Sources */,
 				CCFECA554C6AFEAAE447F59E /* ReadOnlyGit.swift in Sources */,
+				4F077521A8B14B3A9F2437FC /* GitImageComparison.swift in Sources */,
 				A64F540FCB1E8FBA46D0471A /* ProjectTemplates.swift in Sources */,
 				D049D2DA83A153A23D72BED5 /* DesktopMonitorPolicy.swift in Sources */,
 				63A2AB3FB5CDB3256C48DA16 /* DesktopInstallation.swift in Sources */,

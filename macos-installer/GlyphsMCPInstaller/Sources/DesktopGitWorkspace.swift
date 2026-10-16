@@ -196,7 +196,10 @@ struct DesktopGitWorkspace: View {
     }
 
     @ViewBuilder private func comparisonView(_ change: GitObservation.Change, comparison: GitFileComparison) -> some View {
-        if change.isGlyphPackageGlyph {
+        if let images = comparison.imagePreview {
+            DesktopImageComparison(comparison: images)
+                .id((model.selectedProject ?? "") + comparison.path + images.identity)
+        } else if change.isGlyphPackageGlyph {
             VStack(spacing: 0) {
                 if !model.glyphMessage.isEmpty {
                     visualPreviewWarning
@@ -458,9 +461,7 @@ struct DesktopGitWorkspace: View {
 
     private var glyphOverlayControls: some View {
         HStack(spacing: 8) {
-            Picker("Overlay", selection: $overlay) {
-                ForEach(GlyphOverlayMode.allCases) { Text($0.rawValue).tag($0) }
-            }.pickerStyle(.segmented).labelsHidden().frame(width: 170)
+            DesktopDiffOverlayPicker(selection: $overlay)
             Toggle("Guides", isOn: $guides).toggleStyle(.checkbox).fixedSize()
         }
     }
@@ -630,7 +631,7 @@ struct DesktopGitWorkspace: View {
     private func icon(_ path: String) -> String {
         if path.hasSuffix(".swift") { return "swift" }
         if path.hasSuffix(".glyph") || path.hasSuffix(".glyphs") { return "character.cursor.ibeam" }
-        if path.hasSuffix(".png") || path.hasSuffix(".jpg") || path.hasSuffix(".svg") { return "photo" }
+        if GitImageComparison.supports(path) || path.lowercased().hasSuffix(".svg") { return "photo" }
         if path.hasSuffix(".md") { return "book.closed" }
         return "doc.text"
     }
@@ -638,13 +639,6 @@ struct DesktopGitWorkspace: View {
     private func number(_ value: Double) -> String {
         value.rounded() == value ? String(Int(value)) : String(format: "%.2f", value)
     }
-}
-
-enum GlyphOverlayMode: String, CaseIterable, Identifiable {
-    case before = "Before"
-    case both = "Both"
-    case after = "After"
-    var id: String { rawValue }
 }
 
 private enum GlyphViewportTarget: Equatable {

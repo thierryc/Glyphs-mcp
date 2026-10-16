@@ -708,3 +708,33 @@
 "Glyphs Python module" = "Glyphs Python module";
 "Selected Python" = "Selected Python";
 "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted.";
+
+/* Generic project image comparison */
+"Previous" = "Previous";
+"Current" = "Current";
+"Compare" = "Compare";
+"Image view" = "Image view";
+"Image comparison divider" = "Image comparison divider";
+"Previous and current images" = "Previous and current images";
+"No image in this version" = "No image in this version";
+"Image preview unavailable" = "Image preview unavailable";
+"Select another file or refresh the comparison." = "Select another file or refresh the comparison.";
+"Different dimensions. Images are aligned at the top left at the same scale." = "Different dimensions. Images are aligned at the top left at the same scale.";
+"Animated images show the first frame." = "Animated images show the first frame.";
+"Transparency uses a checkerboard. Previews are limited to 2048 pixels on the longest side." = "Transparency uses a checkerboard. Previews are limited to 2048 pixels on the longest side.";
+"This version is not a readable PNG, JPEG, or WebP image." = "This version is not a readable PNG, JPEG, or WebP image.";
+"This image exceeds the 16 MB preview limit." = "This image exceeds the 16 MB preview limit.";
+"This image exceeds the 32-megapixel preview limit." = "This image exceeds the 32-megapixel preview limit.";
+"Symbolic links and nonregular files are not previewed." = "Symbolic links and nonregular files are not previewed.";
+"This image could not be read. Refresh the comparison to try again." = "This image could not be read. Refresh the comparison to try again.";
+"Not present in this version." = "Not present in this version.";
+"%ld percent previous" = "%ld percent previous";
+
+/* Shared diff overlay controls */
+"Before" = "Before";
+"Both" = "Both";
+"After" = "After";
+"Before and after images" = "Before and after images";
+"%ld percent before" = "%ld percent before";
+"Fit image" = "Fit image";
+"Fit Image (⌘0)" = "Fit Image (⌘0)";

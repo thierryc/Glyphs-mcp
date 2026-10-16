@@ -97,6 +97,7 @@ public struct GitFileComparison: Equatable, Sendable {
     public let oldContent: GitFileContent
     public let newContent: GitFileContent
     public let textPreview: GitTextPreview
+    public let imagePreview: GitImageComparison?
 
     public init(
         path: String,
@@ -104,13 +105,15 @@ public struct GitFileComparison: Equatable, Sendable {
         kind: GitObservation.Change.Kind,
         oldContent: GitFileContent,
         newContent: GitFileContent,
-        textPreview: GitTextPreview? = nil
+        textPreview: GitTextPreview? = nil,
+        imagePreview: GitImageComparison? = nil
     ) {
         self.path = path
         self.originalPath = originalPath
         self.kind = kind
         self.oldContent = oldContent
         self.newContent = newContent
+        self.imagePreview = imagePreview
         self.textPreview = textPreview ?? ((oldContent.text != nil && newContent.text != nil)
             ? .full : .unavailable(.noTextualChanges, oldSize: oldContent.byteCount, newSize: newContent.byteCount))
     }
@@ -205,11 +208,25 @@ private struct GitComparisonCacheKey: Hashable, Sendable {
 private actor GitComparisonCache {
     static let shared = GitComparisonCache()
     private var values: [GitComparisonCacheKey: GitFileComparison] = [:]
+    private var order: [GitComparisonCacheKey] = []
 
-    func value(for key: GitComparisonCacheKey) -> GitFileComparison? { values[key] }
+    func value(for key: GitComparisonCacheKey) -> GitFileComparison? {
+        guard let value = values[key] else { return nil }
+        order.removeAll { $0 == key }; order.append(key)
+        return value
+    }
     func insert(_ value: GitFileComparison, for key: GitComparisonCacheKey) {
         values = values.filter { $0.key.project != key.project || $0.key.path != key.path }
         values[key] = value
+        order.removeAll { values[$0] == nil || $0 == key }; order.append(key)
+        // Bounded rasters must not accumulate indefinitely across projects.
+        func bytes() -> Int {
+            values.values.reduce(0) { $0 + ($1.imagePreview?.cachedBytes ?? 0)
+                + ($1.oldContent.text?.utf8.count ?? 0) + ($1.newContent.text?.utf8.count ?? 0) }
+        }
+        while order.count > 8 || (bytes() > 64 * 1024 * 1024 && order.count > 1) {
+            values.removeValue(forKey: order.removeFirst())
+        }
     }
 }
 
@@ -229,7 +246,9 @@ public struct ReadOnlyGit {
 
     public func inspect(_ project: URL) async throws -> GitObservation {
         let branch = try await run(project, ["symbolic-ref", "--quiet", "--short", "HEAD"], allowFailure: true).stdout
-        let status = try await run(project, ["status", "--porcelain=v1", "-z", "--untracked-files=normal"]).stdout
+        // Expand new directories into selectable files, including image assets.
+        let status = try await run(project, ["status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                                   maximumStandardOutputBytes: 4 * 1024 * 1024).stdout
         let fields = status.split(separator: "\0", omittingEmptySubsequences: true).map(String.init)
         var changes: [GitObservation.Change] = []
         var index = 0
@@ -281,10 +300,24 @@ public struct ReadOnlyGit {
             workingMetadata: metadata
         )
         if let cached = await GitComparisonCache.shared.value(for: key) { return cached }
+        if GitImageComparison.supports(change.path) || GitImageComparison.supports(change.originalPath ?? "") {
+            let previous: GitImageSide
+            if let headRevision, let object = try await blobObject(project, revision: headRevision, path: change.originalPath ?? change.path) {
+                previous = object.mode == "120000" ? .unavailable(.symbolicLink) : try await imageBlob(project, object: object.id)
+            } else { previous = .missing }
+            let current = try GitImageComparison.working(project, path: change.path)
+            try Task.checkCancellation()
+            let images = GitImageComparison(previous: previous, current: current)
+            let value = GitFileComparison(path: change.path, originalPath: change.originalPath, kind: change.kind,
+                oldContent: previous.fileContent, newContent: current.fileContent,
+                textPreview: .unavailable(.binary, oldSize: nil, newSize: nil), imagePreview: images)
+            await GitComparisonCache.shared.insert(value, for: key)
+            return value
+        }
         let oldPath = change.originalPath ?? change.path
         let oldContent: GitFileContent
         if let headRevision, let object = try await blobObject(project, revision: headRevision, path: oldPath) {
-            oldContent = try await blobContent(project, object: object)
+            oldContent = try await blobContent(project, object: object.id)
         } else {
             oldContent = .missing
         }
@@ -385,7 +418,7 @@ public struct ReadOnlyGit {
         return .modified
     }
 
-    private func blobObject(_ project: URL, revision: String, path: String) async throws -> String? {
+    private func blobObject(_ project: URL, revision: String, path: String) async throws -> (id: String, mode: String)? {
         let result = try await run(project, ["ls-tree", "-z", revision, "--", path])
         guard !result.stdoutData.isEmpty else { return nil }
         guard let tab = result.stdoutData.firstIndex(of: 0x09) else {
@@ -393,7 +426,18 @@ public struct ReadOnlyGit {
         }
         let header = String(decoding: result.stdoutData[..<tab], as: UTF8.self).split(separator: " ")
         guard header.count >= 3, header[1] == "blob" else { return nil }
-        return String(header[2])
+        return (String(header[2]), String(header[0]))
+    }
+
+    private func imageBlob(_ project: URL, object: String) async throws -> GitImageSide {
+        let sizeText = try await run(project, ["cat-file", "-s", object]).stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let size = Int(sizeText), size >= 0 else { return .unavailable(.unreadable) }
+        guard size <= GitRasterImage.maximumBytes else { return .unavailable(.oversized) }
+        do {
+            let data = try await run(project, ["cat-file", "blob", object], maximumStandardOutputBytes: GitRasterImage.maximumBytes).stdoutData
+            try Task.checkCancellation()
+            return GitRasterImage.read(data)
+        } catch is ProcessOutputLimitError { return .unavailable(.oversized) }
     }
 
     private func blobContent(_ project: URL, object: String) async throws -> GitFileContent {

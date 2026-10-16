@@ -719,3 +719,33 @@
 "Glyphs Python module" = "Module Python de Glyphs";
 "Selected Python" = "Python sélectionné";
 "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "Quittez toutes les copies de Glyphs 4 avant de modifier les composants. Vous pourrez enregistrer les polices lorsque cela vous sera proposé.";
+
+/* Generic project image comparison */
+"Previous" = "Précédente";
+"Current" = "Actuelle";
+"Compare" = "Comparer";
+"Image view" = "Affichage des images";
+"Image comparison divider" = "Séparateur de comparaison des images";
+"Previous and current images" = "Images précédente et actuelle";
+"No image in this version" = "Aucune image dans cette version";
+"Image preview unavailable" = "Aperçu de l’image indisponible";
+"Select another file or refresh the comparison." = "Sélectionnez un autre fichier ou actualisez la comparaison.";
+"Different dimensions. Images are aligned at the top left at the same scale." = "Dimensions différentes. Les images sont alignées en haut à gauche, à la même échelle.";
+"Animated images show the first frame." = "Les images animées affichent la première image.";
+"Transparency uses a checkerboard. Previews are limited to 2048 pixels on the longest side." = "La transparence est représentée par un damier. Le côté le plus long des aperçus est limité à 2048 pixels.";
+"This version is not a readable PNG, JPEG, or WebP image." = "Cette version n’est pas une image PNG, JPEG ou WebP lisible.";
+"This image exceeds the 16 MB preview limit." = "Cette image dépasse la limite d’aperçu de 16 Mo.";
+"This image exceeds the 32-megapixel preview limit." = "Cette image dépasse la limite d’aperçu de 32 mégapixels.";
+"Symbolic links and nonregular files are not previewed." = "Les liens symboliques et les fichiers non ordinaires ne sont pas prévisualisés.";
+"This image could not be read. Refresh the comparison to try again." = "Cette image n’a pas pu être lue. Actualisez la comparaison pour réessayer.";
+"Not present in this version." = "Absente de cette version.";
+"%ld percent previous" = "%ld pour cent de l’image précédente";
+
+/* Shared diff overlay controls */
+"Before" = "Avant";
+"Both" = "Les deux";
+"After" = "Après";
+"Before and after images" = "Images avant et après";
+"%ld percent before" = "%ld pour cent avant";
+"Fit image" = "Ajuster l’image";
+"Fit Image (⌘0)" = "Ajuster l’image (⌘0)";
