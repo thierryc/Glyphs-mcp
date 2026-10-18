@@ -2,6 +2,7 @@
 
 ## 2.2.0 — in preparation, build 64, 15 October 2026
 
+- Keep the sidebar palette title compact by removing its explicit version suffix, fixing the duplicated version reported in [#62](https://github.com/thierryc/Glyphs-mcp/issues/62). Version details remain in server settings.
 - Add a full-height native Tasks view for open workflows, blockers and recently closed tasks; remove Recent Tasks from Setup and provide task access from the sidebar, app and status menus, and Dock.
 - Show captured Codex conversation links when reliable. Keep selectable Review / Close task prompts and a compact copy control for Claude Code and missing conversations; ordinary workflow decisions remain in the agent.
 - Provide guarded Recovery Options for abandoned workflows with explicit consequences, a separate close control and existing server revision/token checks. Archive eligible orphaned interrupted records as Unverified, retaining diagnostics.

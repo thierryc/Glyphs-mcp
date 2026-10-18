@@ -24,8 +24,9 @@ fails, cleanup drains synchronously to restore owned settings and reports failur
 Full-font file copying, hashing, Git and external analysis/export stay in the
 sidecar/worker. The bridge performs authorized native document saves and reloads;
 ordinary preparation and typed application do not save. Native scripts can have
-external effects beyond font recovery. Its palette title includes the bridge version; its single
-status row reads “Ready” when connected. A startup error appears in
+external effects beyond font recovery. Its compact palette title is “Glyphs MCP
+Bridge”; version details remain in the server settings panel. Its single status
+row reads “Ready” when connected. A startup error appears in
 the status tooltip when one exists. The fixed 30-point content height fits the
 single row without unused space below.
 
