@@ -33,11 +33,26 @@ commit changes release records only. Published 2.1.0 assets and feeds are unchan
 
 ## Pending and limits
 
-Production Setup started the build-67 MCP component update after gracefully
-quitting the VM editor. Host computer control then became locked. Reconcile the
-existing migration before retrying; final installed/running build-67 bridge and
-sidecar identity are not yet qualified. The working host Glyphs session was not
-changed, installed into, or restarted.
+Production Setup failed native component-migration qualification. The initial
+attempt hit the installed runtime's 30-second import deadline and rolled back.
+Two later attempts hit the 45-second native Python preflight deadline and the
+desktop's 300-second helper deadline. Standalone imports subsequently passed
+(0.64–11.08 seconds), and standalone native startup passed in 0.76 seconds.
+The timing cause remains unknown; these probes do not establish Setup acceptance.
+
+Final reconciliation verified every previous runtime/sidecar payload file byte
+for byte: 6,419 runtime files and 112 sidecar files, with no missing or changed
+files. Extra generated Python caches explain whole-directory hash differences.
+All journals are committed or restored, without cleanup errors. The companion
+is the signed build 67; installed components remain build 66. The VM editor,
+installer helpers and service are stopped, with no pending recovery journal.
+See `vm-component-migration.json` for operation IDs, timings and evidence hashes.
+
+Final installed/running build-67 bridge and sidecar identity remain unqualified.
+Resolve the production Setup timing failure before stable publication. No
+production timeout was changed. The working host Glyphs session was not changed,
+installed into, or restarted. Focused installer/transaction checks passed all
+43 tests after reconciliation; skill and lean-package consistency checks passed.
 
 Invalid-signature/interrupted-download/cancelled-closure/failed-migration native
 acceptance is not claimed here; keep stable publication separate until reviewed.

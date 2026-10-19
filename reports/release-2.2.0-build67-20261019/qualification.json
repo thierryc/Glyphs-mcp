@@ -121,7 +121,7 @@
   "releaseVerificationPassed": true,
   "publication": "draft",
   "remaining": [
-    "component migration and final native running identity/palette-header review",
+    "Resolve production Setup timing failures, then qualify final build67 installed/running bridge and sidecar",
     "adverse update/migration acceptance cases before stable publication",
     "public release/tag/feed phases"
   ],
@@ -144,11 +144,17 @@
     "src/glyphs-mcp/tests/test_desktop_process_pool.py": "069e8150cd3fd12429898979307762dae1e935cbf32ac5dc3ea3ae4d3a17c4ca"
   },
   "vmAcceptance": {
-    "status": "signed upgrade and Setup passed; final component migration awaiting host unlock",
+    "status": "signed app upgrade passed; component migration failed native qualification",
     "nativeBuild66Behavior": "passed on disposable fixture; retained separately",
     "signedBuild66To67Upgrade": "passed",
     "build67Setup": "passed",
     "hostWorkingGlyphs": "not changed or restarted",
-    "componentMigration": "Started MCP component update through production build67 Setup after graceful VM editor quit; reconcile before retry"
+    "componentMigration": "30-second import timeout restored build66; later attempts hit 45-second native preflight and 300-second helper deadlines. Final files and recovery state reconciled; see vm-component-migration.json."
+  },
+  "migrationReconciliationChecks": {
+    "focusedInstallerAndTransactionTestsPassed": 43,
+    "skillSynchronization": true,
+    "leanPackageConsistency": true,
+    "productionCodeChanged": false
   }
 }

@@ -1,0 +1,268 @@
+{
+  "releaseVersion": "2.2.0",
+  "installerBuild": 67,
+  "classification": "failed native component migration; stable release remains blocked",
+  "environment": {
+    "isolation": "VirtualBuddy",
+    "macOS": "14.6.1 (23G93)",
+    "Glyphs": "4.1.1 (4108)",
+    "nativePython": "3.14.6",
+    "privatePython": "3.14.7"
+  },
+  "attempts": [
+    {
+      "operationID": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "result": "30-second installed-runtime import timeout; transaction restored",
+      "helperSeconds": 267.492,
+      "nativePreflightSeconds": 11.728
+    },
+    {
+      "operationID": "1C320BC2-1C0D-461B-865C-4842C2CE6B3B",
+      "result": "45-second native preflight timeout before transaction",
+      "nativePreflightSeconds": 45.702
+    },
+    {
+      "operationID": "36C72A94-CD33-4E4B-8A7C-8AFE52EA070A",
+      "result": "300-second desktop helper deadline; no additional transaction or retained helper",
+      "helperDiagnosticOutput": "Not available: execute does not pass a failure-output callback to runCapturing."
+    }
+  ],
+  "reconciliation": {
+    "companionBuild": "67",
+    "companionExecutableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
+    "companionSignatureVerified": true,
+    "installedComponentsBuild": 66,
+    "journalStates": [
+      {
+        "name": "transaction-6j4psuoj",
+        "state": "restored",
+        "errors": []
+      },
+      {
+        "name": "transaction-rcp46_83",
+        "state": "committed",
+        "errors": []
+      },
+      {
+        "name": "transaction-6_v8_0rv",
+        "state": "committed",
+        "errors": []
+      },
+      {
+        "name": "transaction-rkcv8wm7",
+        "state": "committed",
+        "errors": []
+      },
+      {
+        "name": "transaction-e9rm1oxy",
+        "state": "committed",
+        "errors": []
+      },
+      {
+        "name": "transaction-_xei59xk",
+        "state": "restored",
+        "errors": []
+      }
+    ],
+    "previousPayloadComparison": {
+      "runtime": {
+        "sourceFiles": 6419,
+        "missing": [],
+        "changed": [],
+        "extraGeneratedCaches": 980
+      },
+      "sidecar": {
+        "sourceFiles": 112,
+        "missing": [],
+        "changed": [],
+        "extraGeneratedCaches": 40
+      }
+    },
+    "allPreviousPayloadFilesUnchanged": true,
+    "wholeTreeHashCaveat": "Generated Python caches account for whole-directory identity differences; original payload files match byte for byte. No caches were deleted.",
+    "service": "unloaded, as before migration; VM editor and installer helpers not running",
+    "noPendingRecoveryJournal": true,
+    "fixtureSHA256": "d4c9877d9a634cc8c853abed4fa4f4bcaacd7e673f943bbf7eeadb355ee96dda",
+    "hostWorkingGlyphs": "not modified or restarted"
+  },
+  "diagnosticProbes": {
+    "privateImports": [
+      {
+        "label": "restored66",
+        "exitCode": 0,
+        "seconds": 11.084
+      },
+      {
+        "label": "candidate67",
+        "exitCode": 0,
+        "seconds": 3.25
+      },
+      {
+        "label": "restored66-repeat",
+        "exitCode": 0,
+        "seconds": 0.636
+      },
+      {
+        "label": "candidate67-repeat",
+        "exitCode": 0,
+        "seconds": 1.895
+      }
+    ],
+    "standaloneNativeStartup": {
+      "exitCode": 0,
+      "seconds": 0.758,
+      "plugins": "disabled",
+      "stdout": "NATIVE_READY:3.14.6 (v3.14.6:c63aec69bd5, Jun 10 2026, 08:07:54) [Clang 21.0.0 (clang-2100.1.1.101)]\n"
+    },
+    "companionSample": "Main and event threads waiting in AppKit; no busy-loop stack observed.",
+    "activeWorkerSample": "Attempted after final deadline; worker had exited, so no active worker stack was captured.",
+    "conclusion": "Timing failure remains unexplained. Successful standalone probes do not qualify production Setup. Do not infer a timeout increase or runtime replacement is the fix."
+  },
+  "events": [
+    {
+      "checkId": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "details": {
+        "components": [
+          "curve-inspector",
+          "mcp",
+          "reference-inspector"
+        ],
+        "glyphsPath": "/Applications/Glyphs 4.app",
+        "only": "mcp",
+        "pythonCheckSkipped": false
+      },
+      "event": "installation.requested",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "elapsedSeconds": 11.728,
+      "event": "python.native-result",
+      "exitCode": 0,
+      "schemaVersion": 1,
+      "stderr": "",
+      "stderrCharacters": 0,
+      "stdout": "GLYPHS_MCP_NATIVE_CONTEXT:{\"version\": \"3.14.6\", \"prefix\": \"~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14\", \"executable\": \"<temporary-payload>/Payload/Lean/runtimes/arm64/bin/glyphs\", \"architecture\": \"arm64\"}\nGLYPHS_MCP_NATIVE_READY:3.14.6\n",
+      "stdoutCharacters": 389,
+      "timestamp": "2026-10-19T19:26:41.233382+00:00"
+    },
+    {
+      "checkId": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "elapsedSeconds": 11.739,
+      "event": "python.check-passed",
+      "nativePythonVersion": "3.14.6",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:26:41.244430+00:00"
+    },
+    {
+      "application": "/Applications/Glyphs 4.app",
+      "checkId": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "elapsedSeconds": 11.739,
+      "event": "installation.started",
+      "payload": "<temporary-payload>/Payload/Lean",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:26:41.244743+00:00"
+    },
+    {
+      "checkId": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "elapsedSeconds": 267.492,
+      "errorType": "TimeoutExpired",
+      "event": "installation.failed",
+      "message": "Command '['~/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/python3', '-I', '-B', '-c', 'import fastmcp, glyphs_cli']' timed out after 30 seconds",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:30:56.994783+00:00"
+    },
+    {
+      "checkId": "1A83CA56-738D-4647-8F27-AB51BB7230EC",
+      "details": {
+        "error": "Command '['~/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/python3', '-I', '-B', '-c', 'import fastmcp, glyphs_cli']' timed out after 30 seconds"
+      },
+      "event": "installation.failed",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "1C320BC2-1C0D-461B-865C-4842C2CE6B3B",
+      "details": {
+        "components": [
+          "curve-inspector",
+          "mcp",
+          "reference-inspector"
+        ],
+        "glyphsPath": "/Applications/Glyphs 4.app",
+        "only": "mcp",
+        "pythonCheckSkipped": false
+      },
+      "event": "installation.requested",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "1C320BC2-1C0D-461B-865C-4842C2CE6B3B",
+      "elapsedSeconds": 45.702,
+      "event": "python.native-timeout",
+      "schemaVersion": 1,
+      "stderr": "",
+      "stdout": "",
+      "timeoutSeconds": 45,
+      "timestamp": "2026-10-19T20:42:03.265679+00:00"
+    },
+    {
+      "checkId": "1C320BC2-1C0D-461B-865C-4842C2CE6B3B",
+      "elapsedSeconds": 45.744,
+      "errorType": "TimeoutExpired",
+      "event": "python.check-failed",
+      "message": "Command '['<temporary-payload>/Payload/Lean/runtimes/arm64/bin/glyphs', 'run', '--quiet', '--app', '/Applications/Glyphs 4.app', '--plugins', '', '-c', 'from GlyphsApp import GSFont; import sys,json,platform; print(\"GLYPHS_MCP_NATIVE_CONTEXT:\"+json.dumps({\"version\":sys.version.split()[0],\"prefix\":sys.prefix,\"executable\":sys.executable,\"architecture\":platform.machine()})); print(\"GLYPHS_MCP_NATIVE_READY:\" + sys.version.split()[0])']' timed out after 45 seconds",
+      "reason": "native-timeout",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T20:42:03.314876+00:00"
+    },
+    {
+      "checkId": "1C320BC2-1C0D-461B-865C-4842C2CE6B3B",
+      "details": {
+        "error": "Command '['<temporary-payload>/Payload/Lean/runtimes/arm64/bin/glyphs', 'run', '--quiet', '--app', '/Applications/Glyphs 4.app', '--plugins', '', '-c', 'from GlyphsApp import GSFont; import sys,json,platform; print(\"GLYPHS_MCP_NATIVE_CONTEXT:\"+json.dumps({\"version\":sys.version.split()[0],\"prefix\":sys.prefix,\"executable\":sys.executable,\"architecture\":platform.machine()})); print(\"GLYPHS_MCP_NATIVE_READY:\" + sys.version.split()[0])']' timed out after 45 seconds"
+      },
+      "event": "installation.failed",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "36C72A94-CD33-4E4B-8A7C-8AFE52EA070A",
+      "details": {
+        "components": [
+          "curve-inspector",
+          "mcp",
+          "reference-inspector"
+        ],
+        "glyphsPath": "/Applications/Glyphs 4.app",
+        "only": "mcp",
+        "pythonCheckSkipped": false
+      },
+      "event": "installation.requested",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "36C72A94-CD33-4E4B-8A7C-8AFE52EA070A",
+      "details": {
+        "error": "Command timed out after 300 seconds: python3."
+      },
+      "event": "installation.failed",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    }
+  ],
+  "evidenceSHA256": {
+    "vm-migration-reconciled.json": "50e7a5c636956d8ac311fe33cca042bf9413d55f6a8f5ba7a72ee40a65b9ea51",
+    "vm-runtime-diagnostic.json": "2672b4b58464205ee00fed089830bf6d72fd370a3769f2309406cc1df26f7be0",
+    "vm-native-preflight-diagnostic.json": "c6a80028f4088193af40073ed7cf85b04acbe90ac87013c2ad865c026c2358c4",
+    "vm-final-reconciliation.json": "bfd72c576db5d2d119c02ba3844be34676a12c4ba2b1cc5e716ba302677a4140",
+    "vm-active-setup-samples.json": "a20966429b121c77e3cf753f99495e0e09e0e6f8a78859283b23c14ce723d4d5"
+  },
+  "defaults": {
+    "automaticSidebarSuppression": false,
+    "productionTimeoutsChanged": false,
+    "publicReleasePublished": false
+  }
+}
