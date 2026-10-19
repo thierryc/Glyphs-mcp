@@ -1,0 +1,51 @@
+{
+  "version": "2.2.0",
+  "build": 66,
+  "scope": "VirtualBuddy manual signed upgrade; not Sparkle delivery",
+  "checks": [
+    {
+      "name": "download",
+      "exitCode": 0
+    },
+    {
+      "name": "unpack",
+      "exitCode": 0
+    },
+    {
+      "name": "signature",
+      "exitCode": 0
+    },
+    {
+      "name": "gatekeeper",
+      "exitCode": 0
+    },
+    {
+      "name": "ticket",
+      "exitCode": 0
+    },
+    {
+      "name": "payload",
+      "exitCode": 0
+    },
+    {
+      "name": "python-native-preflight",
+      "exitCode": 0
+    },
+    {
+      "name": "copy-new-app",
+      "exitCode": 0
+    },
+    {
+      "name": "installed-app-signature",
+      "exitCode": 0
+    }
+  ],
+  "archiveSHA256": "eeec718279841e57f3e8248024ec598b5ee6e3158c035ea6c36e47955f6a329b",
+  "previousApplication": {
+    "CFBundleVersion": "57",
+    "CFBundleShortVersionString": "2.0.2"
+  },
+  "appBackup": "/Users/ziggy/gmcp-release-2.2.0-build66-20261019/Glyphs MCP 2.0.2 backup.app",
+  "stage": "app-replaced-components-not-yet-migrated",
+  "candidatePID": 1134
+}

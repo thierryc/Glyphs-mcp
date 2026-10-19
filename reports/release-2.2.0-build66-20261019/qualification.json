@@ -1,0 +1,131 @@
+{
+  "version": "2.2.0",
+  "installerBuild": 66,
+  "channel": "stable",
+  "sourceCommit": "7b81ac3965908344f4446cb614455854f4dc08a1",
+  "sourceInputsSHA256": "f36fa69409d8d14d12d26016e6cb10069912fc78ed97a0a4e69d264d522056c3",
+  "signed": true,
+  "notarized": true,
+  "published": false,
+  "installed": false,
+  "sidebarExperiment": {
+    "classification": "not reproduced",
+    "runs": 20,
+    "passed": 20,
+    "automaticSuppression": false
+  },
+  "appleSubmissions": {
+    "payload": "0af63db4-ac9e-42af-94f1-4633292937d9",
+    "app": "c59b1167-8986-4ed0-8a98-1de5ee48d673",
+    "dmg": "1a66707e-989b-4855-bdd1-e1755adca10b"
+  },
+  "signatureVerification": {
+    "verifiedMachO": 94,
+    "verifiedBundles": 47,
+    "outerApp": "passed",
+    "hardenedRuntime": "passed",
+    "secureTimestamp": "passed"
+  },
+  "finalDistributionVerification": "passed",
+  "checksums": {
+    "Glyphs-MCP-2.2.0.dmg": "9c6f5561c2b54939cfa266cd07725de2f99a3da64fcb63539cdc4ad5b7bea755",
+    "Glyphs-MCP-2.2.0.zip": "eeec718279841e57f3e8248024ec598b5ee6e3158c035ea6c36e47955f6a329b",
+    "Glyphs-MCP-latest.dmg": "9c6f5561c2b54939cfa266cd07725de2f99a3da64fcb63539cdc4ad5b7bea755",
+    "Glyphs.MCP.zip": "eeec718279841e57f3e8248024ec598b5ee6e3158c035ea6c36e47955f6a329b",
+    "appcast.xml": "cf1e8bf6ffb4bb89d946db686e1a4d398d144696c414e2ae362afd6d81ef373b"
+  },
+  "finalRuntimeQualification": [
+    {
+      "architecture": "arm64",
+      "privatePython": true,
+      "httpCatalog": [
+        "get_status",
+        "list_tasks",
+        "list_documents",
+        "create_document",
+        "duplicate_document",
+        "open_document",
+        "import_document",
+        "activate_document",
+        "open_edit_tab",
+        "close_document",
+        "read_entities",
+        "start_job",
+        "compare_fonts",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "show_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "stdioProxy": true,
+      "mcpAppResourceAndCSP": true,
+      "nativeFirstOptionalCards": true,
+      "structuredAndTextResults": true,
+      "packageDownloads": 0,
+      "packagedInstallerCLI": true,
+      "startupSeconds": 5.937
+    },
+    {
+      "architecture": "x86_64",
+      "privatePython": true,
+      "httpCatalog": [
+        "get_status",
+        "list_tasks",
+        "list_documents",
+        "create_document",
+        "duplicate_document",
+        "open_document",
+        "import_document",
+        "activate_document",
+        "open_edit_tab",
+        "close_document",
+        "read_entities",
+        "start_job",
+        "compare_fonts",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "show_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "stdioProxy": true,
+      "mcpAppResourceAndCSP": true,
+      "nativeFirstOptionalCards": true,
+      "structuredAndTextResults": true,
+      "packageDownloads": 0,
+      "packagedInstallerCLI": true,
+      "startupSeconds": 11.805
+    }
+  ],
+  "remaining": [
+    "Resolve companion Setup Python-check UI acceptance",
+    "Loaded native component recovery/header/archive/retention acceptance",
+    "Exact Sparkle delivered upgrade acceptance",
+    "Public release and signed feed promotion"
+  ],
+  "date": "2026-10-19",
+  "hostInstallationChanged": false,
+  "fullGate": {
+    "passed": true,
+    "pythonPassed": 3143,
+    "pythonSkipped": 2,
+    "desktopPassed": 298,
+    "documentationPassed": true,
+    "deterministicPayloads": true,
+    "runtimeArchitectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "physicalIntelHardware": "unavailable per user"
+  },
+  "installedScope": "Host installation unchanged; disposable VirtualBuddy guest was upgraded"
+}

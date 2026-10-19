@@ -1,0 +1,42 @@
+{
+  "scope": "VirtualBuddy production component installer, exact signed payload",
+  "checks": [
+    {
+      "name": "production-component-migration",
+      "exitCode": 0
+    }
+  ],
+  "previousComponents": {
+    "version": "2.0.2",
+    "installerBuild": 57,
+    "components": [
+      "curve-inspector",
+      "mcp",
+      "reference-inspector"
+    ]
+  },
+  "installation": {
+    "version": "2.2.0",
+    "installerBuild": 66,
+    "components": [
+      "curve-inspector",
+      "mcp",
+      "reference-inspector"
+    ],
+    "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup",
+    "restartGlyphsRequired": true,
+    "runtime": {
+      "architecture": "arm64",
+      "dependencyLockSHA256": "d4114c8599f0aee807483ba9f4aa37c3de13432666498d0d337435c75c2d9e65",
+      "glyphsCLI": "bin/glyphs",
+      "glyphsCLIVersion": "0.6.1",
+      "identity": "sha256:79cfbd81e161daea14909fe8379d91a5eae23993926dff19590f3ed2f8b7ebd6",
+      "installedPath": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime",
+      "path": "runtimes/arm64",
+      "python": "bin/python3",
+      "pythonVersion": "3.14.7"
+    }
+  },
+  "installedSourceComparisons": "passed",
+  "passed": true
+}
