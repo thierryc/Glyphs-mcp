@@ -1,0 +1,21 @@
+{
+  "pid": 1759,
+  "command": [
+    "/usr/bin/sandbox-exec",
+    "-f",
+    "/Users/ziggy/sidebar-qualification-20261018T225812/sandbox-baseline-3.sb",
+    "/Users/ziggy/sidebar-qualification-20261018T225812/Glyphs 4.app/Contents/MacOS/Glyphs 4",
+    "-ApplePersistenceIgnoreState",
+    "YES",
+    "-NSQuitAlwaysKeepsWindows",
+    "NO",
+    "-GSPythonFrameworkPath",
+    "/Users/ziggy/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14",
+    "-SUEnableAutomaticChecks",
+    "NO",
+    "-SUAutomaticallyUpdate",
+    "NO",
+    "-GSShowScriptingWindow",
+    "NO"
+  ]
+}

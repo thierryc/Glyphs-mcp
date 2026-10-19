@@ -1,6 +1,6 @@
 # Glyphs MCP Desktop 2.2.0
 
-**In preparation: 2.2.0 · desktop build 64 · Glyphs 4.** Adds Tasks, guarded recovery for abandoned work, cleared-history retention, native image comparisons and verified font package copies. See the [2.2.0 preparation record](V2.2.0-RELEASE.md).
+**In preparation: 2.2.0 · desktop build 66 · Glyphs 4.** Adds Tasks, guarded recovery for abandoned work, cleared-history retention, native image comparisons, a native menu-bar menu and verified font package copies. See the [2.2.0 preparation record](V2.2.0-RELEASE.md).
 
 The published stable release remains **2.1.0/build 63**. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.1.0/Glyphs-MCP-2.1.0.dmg) and see the [2.1.0 release qualification](V2.1.0-RELEASE.md).
 

@@ -5,7 +5,7 @@ import SwiftUI
 import GlyphsMCPInstallerCore
 
 @MainActor
-final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverDelegate {
+final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDelegate {
     private let initializationStartedAt = Date()
     private var firstPresentationRecorded = false
     let desktop = DesktopModel()
@@ -17,7 +17,10 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private var initialWelcome = false
     private var troubleshootingLogs: NSWindow?
     private var statusItem: NSStatusItem?
-    private let popover = NSPopover()
+    private lazy var statusMenu = makeStatusMenu()
+    private enum StatusMenuRow: Int {
+        case summary = 1, mcp, glyphs, tasks, notice, recovery, server, quit
+    }
     private var taskObservation: AnyCancellable?
     private var taskMenuTracking: NSObjectProtocol?
     private var preferences: NSObjectProtocol?
@@ -29,17 +32,12 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         _ = updates
         installer.stopServiceBeforeQuit = { [weak self] in try await self?.desktop.stopForInstallation() }
         installer.showTroubleshootingLogs = { [weak self] in self?.showTroubleshootingLogs() }
-        popover.behavior = .transient
-        popover.animates = false
-        popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: DesktopPopover(
-            open: { [weak self] in self?.showDashboard() },
-            settings: { [weak self] in self?.showSettings() },
-            support: { [weak self] in self?.showWelcome() },
-            tasks: { [weak self] in self?.showTasks() }).environmentObject(desktop).desktopDesign())
         updateMenuBar()
         taskObservation = desktop.objectWillChange.sink { [weak self] _ in
-            DispatchQueue.main.async { self?.updateTaskMenuBadge() }
+            DispatchQueue.main.async {
+                self?.updateTaskMenuBadge()
+                self?.updateStatusMenu()
+            }
         }
         taskMenuTracking = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification,
             object: nil, queue: .main) { [weak self] _ in
@@ -72,7 +70,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         installer.operationsBusy ? .terminateCancel : .terminateNow
     }
     func applicationWillTerminate(_ notification: Notification) {
-        desktop.setVisible("popover", false); desktop.setDashboardVisible(false)
+        desktop.setVisible("statusMenu", false); desktop.setDashboardVisible(false)
         desktop.setMenuBarVisible(false)
         if let item = statusItem { NSStatusBar.system.removeStatusItem(item) }
         // Sidecar startup is a separate preference; quitting this interface does
@@ -107,7 +105,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     @objc private func openDashboardFromMenu() { showDashboard() }
 
     func showDashboard() {
-        popover.performClose(nil)
+        statusMenu.cancelTracking()
         if dashboard == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0,
                 width: DesktopDashboardLayout.initialWidth, height: DesktopDashboardLayout.initialHeight),
@@ -136,8 +134,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         installer.recordPresentation(name, since: initializationStartedAt)
     }
 
-    func showSettings() {
-        popover.performClose(nil)
+    @objc func showSettings() {
+        statusMenu.cancelTracking()
         if settingsWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 532, height: 580),
                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
@@ -155,8 +153,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func showWelcome() {
-        popover.performClose(nil)
+    @objc func showWelcome() {
+        statusMenu.cancelTracking()
         if welcome == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 640),
                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
@@ -214,8 +212,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
                               true: DesktopMenuImage.make(logo: logo, active: true)]
             }
             item.button?.setAccessibilityLabel(NSLocalizedString("Glyphs MCP — server status", comment: "Menu bar accessibility label"))
-            item.button?.target = self; item.button?.action = #selector(togglePopover)
-            item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            item.menu = statusMenu
             if let button = item.button {
                 let dot = DesktopActivityDot(frame: .zero)
                 dot.translatesAutoresizingMaskIntoConstraints = false
@@ -232,7 +229,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             statusItem = item
             updateMenuActivity(desktop.showsActivityDot)
         } else if !visible, let item = statusItem {
-            popover.performClose(nil)
+            statusMenu.cancelTracking()
             NSStatusBar.system.removeStatusItem(item); statusItem = nil
             NSApp.setActivationPolicy(.regular)
         }
@@ -246,19 +243,91 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         statusItem?.button?.setAccessibilityValue(NSLocalizedString(active ? "Task in progress" : "No activity indicated", comment: "Menu bar activity"))
     }
 
-    @objc private func togglePopover() {
-        guard let button = statusItem?.button else { return }
-        if NSApp.currentEvent?.type == .rightMouseUp {
-            popover.performClose(nil)
-            let menu = applicationDockMenu(NSApp) ?? NSMenu()
-            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.minY), in: button)
-            return
+    private func makeStatusMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.delegate = self
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        menu.addItem(.sectionHeader(title: "Glyphs MCP \(version)".trimmingCharacters(in: .whitespaces)))
+        for row in [StatusMenuRow.summary, .mcp, .glyphs] {
+            let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+            item.tag = row.rawValue
+            item.isEnabled = false
+            menu.addItem(item)
         }
-        if popover.isShown { popover.performClose(nil) }
-        else { popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY) }
+        menu.addItem(.separator())
+        let tasks = taskMenuItem()
+        tasks.tag = StatusMenuRow.tasks.rawValue
+        tasks.image = NSImage(systemSymbolName: "list.bullet", accessibilityDescription: nil)
+        menu.addItem(tasks)
+        let notice = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        notice.tag = StatusMenuRow.notice.rawValue
+        notice.isEnabled = false
+        menu.addItem(notice)
+        func action(_ title: String, _ selector: Selector, symbol: String,
+                    row: StatusMenuRow? = nil, key: String = "") {
+            let item = NSMenuItem(title: NSLocalizedString(title, comment: "Status menu action"),
+                                  action: selector, keyEquivalent: key)
+            item.target = self
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+            if let row { item.tag = row.rawValue }
+            menu.addItem(item)
+        }
+        action("Check Glyphs in Setup", #selector(openSetupFromMenu), symbol: "exclamationmark.triangle", row: .recovery)
+        menu.addItem(.separator())
+        action("Stop Server", #selector(toggleServerFromMenu), symbol: "stop.circle", row: .server)
+        action("Open Glyphs MCP", #selector(openDashboardFromMenu), symbol: "macwindow")
+        menu.addItem(.separator())
+        action("Settings…", #selector(showSettings), symbol: "gearshape", key: ",")
+        action("Welcome & Support", #selector(showWelcome), symbol: "heart.circle")
+        action("Quit Glyphs MCP", #selector(quitFromMenu), symbol: "power", row: .quit, key: "q")
+        return menu
     }
-    func popoverDidShow(_ notification: Notification) { desktop.setVisible("popover", true) }
-    func popoverDidClose(_ notification: Notification) { desktop.setVisible("popover", false) }
+
+    private func updateStatusMenu() {
+        func item(_ row: StatusMenuRow) -> NSMenuItem? { statusMenu.item(withTag: row.rawValue) }
+        func localized(_ text: String) -> String { NSLocalizedString(text, comment: "Server status") }
+        item(.summary)?.title = localized(desktop.title)
+        item(.summary)?.image = NSImage(systemSymbolName: desktop.statusSymbol, accessibilityDescription: nil)
+        let connected = desktop.serviceRunning == true && !desktop.stale
+        item(.mcp)?.title = "MCP: " + localized(connected ? "Connected" : desktop.serviceRunning == false ? "Stopped" : "Unavailable")
+        item(.glyphs)?.title = "Glyphs 4: " + localized(desktop.glyphsRunning ? "Running" : "Not running")
+        for (row, available) in [(StatusMenuRow.mcp, connected), (.glyphs, desktop.glyphsRunning)] {
+            let configuration = NSImage.SymbolConfiguration(paletteColors: [available ? .systemGreen : .secondaryLabelColor])
+            let image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
+                .withSymbolConfiguration(configuration)
+            image?.isTemplate = false
+            item(row)?.image = image
+        }
+        item(.tasks)?.badge = desktop.unreadTaskCount > 0 ? .newItems(count: desktop.unreadTaskCount) : nil
+        item(.notice)?.title = desktop.notice
+        item(.notice)?.isHidden = desktop.notice.isEmpty
+        item(.recovery)?.isHidden = !desktop.needsGlyphsRecovery
+        let starts = desktop.serviceRunning == false
+        item(.server)?.title = localized(desktop.controlProgress ?? (starts ? "Start Server" : "Stop Server"))
+        item(.server)?.image = NSImage(systemSymbolName: starts ? "play.circle" : "stop.circle", accessibilityDescription: nil)
+        item(.server)?.isEnabled = desktop.canChangeSettings
+        item(.server)?.toolTip = localized(desktop.status?.isBusy == true
+            ? "Wait for the current operation to finish." : "Start or stop the MCP server.")
+        item(.quit)?.toolTip = localized(desktop.serviceRunning == true
+            ? "Quit the desktop app. The MCP server keeps running." : "Quit the desktop app.")
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        guard menu === statusMenu else { return }
+        updateStatusMenu()
+        desktop.setVisible("statusMenu", true)
+    }
+    func menuDidClose(_ menu: NSMenu) {
+        guard menu === statusMenu else { return }
+        desktop.setVisible("statusMenu", false)
+    }
+    @objc private func openSetupFromMenu() { desktop.requestSetup(); showDashboard() }
+    @objc private func toggleServerFromMenu() {
+        guard desktop.canChangeSettings else { return }
+        desktop.control(desktop.serviceRunning == false ? "start" : "stop")
+    }
+    @objc private func quitFromMenu() { NSApp.terminate(nil) }
     func windowWillClose(_ notification: Notification) {
         if notification.object as? NSWindow === welcome {
             DesktopLaunchPolicy.completeWelcome(defaults: .standard)
@@ -276,50 +345,6 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     func windowDidDeminiaturize(_ notification: Notification) { desktop.setDashboardVisible(true) }
     func windowDidChangeOcclusionState(_ notification: Notification) {
         desktop.setDashboardVisible(dashboard?.isVisible == true && dashboard?.occlusionState.contains(.visible) == true)
-    }
-}
-
-struct DesktopPopover: View {
-    @EnvironmentObject private var desktop: DesktopModel
-    let open: () -> Void
-    let settings: () -> Void
-    let support: () -> Void
-    let tasks: () -> Void
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("Glyphs MCP").font(.headline)
-                    if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
-                        Text(version)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .help(DesktopIdentity.versionLabel)
-                    }
-                }
-                Spacer()
-                Text(LocalizedStringKey(desktop.title)).foregroundStyle(.secondary)
-            }
-            DesktopHealthStatus()
-            HStack {
-                DesktopActionButton(title: "Show Tasks", symbol: "list.bullet", action: tasks)
-                Spacer()
-                DesktopTaskBadge(count: desktop.unreadTaskCount)
-            }
-            if !desktop.notice.isEmpty { Text(desktop.notice).font(.caption).foregroundStyle(.secondary) }
-            if desktop.needsGlyphsRecovery {
-                Button("Check Glyphs in Setup") { desktop.requestSetup(); open() }
-            }
-            Divider()
-            HStack { DesktopServerButton(); Spacer(); Button("Open Glyphs MCP", action: open) }
-            HStack {
-                Button("Settings…", action: settings)
-                Spacer()
-                Button(action: support) { Image(systemName: "heart.circle") }.help("Welcome & Support").accessibilityLabel("Welcome & Support")
-                Button("Quit Glyphs MCP") { NSApp.terminate(nil) }
-                    .help(LocalizedStringKey(desktop.serviceRunning == true ? "Quit the desktop app. The MCP server keeps running." : "Quit the desktop app."))
-            }.font(.callout)
-        }.padding(18).frame(width: 340)
     }
 }
 

@@ -61,6 +61,14 @@ contract](../glyphs/references/python-scripts.md). Choose the smallest useful fo
   `targets`, `params` and `Glyphs`. Use exact identifiers and expected values in
   `params`; `targets:[]` is valid when no layer target is meaningful.
 
+Choose automated edit targets from glyph data, not Font View sidebar filters.
+Capture intentional UI selection once into exact names/layers/surfaces before
+preparation. Whole scripts must preflight every supplied owner before writing;
+see [explicit target guidance](../glyphs/references/python-scripts.md#request-and-targets)
+and the executable [explicit width example](examples/explicit_widths.py).
+Automatic sidebar counting may still run after edits; neither explicit targeting
+nor interface batching guarantees prevention of native sidebar alerts.
+
 **Direct native scripting** requires `script.native.v1`. Use `source`, `params`,
 `entrypoint`, `targets` and optional `summary`; no execution/recovery mode or
 count threshold. Scripts have no fixed surface-count ceiling; the complete

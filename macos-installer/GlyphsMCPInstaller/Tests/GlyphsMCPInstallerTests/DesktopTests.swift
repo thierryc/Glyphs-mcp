@@ -352,10 +352,10 @@ final class DesktopTests: XCTestCase {
         policy.dashboardVisible = true
         XCTAssertEqual(policy.interval(busy: true), 2)
         XCTAssertEqual(policy.interval(busy: false), 5)
-        policy.surfaces.insert("popover")
+        policy.surfaces.insert("statusMenu")
         policy.dashboardVisible = false
         XCTAssertEqual(policy.interval(busy: true), 2)
-        policy.surfaces.remove("popover")
+        policy.surfaces.remove("statusMenu")
         XCTAssertNil(policy.interval(busy: true))
     }
 

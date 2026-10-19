@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-19T00:12:04.987552+00:00",
+  "vm": "/Volumes/T9/VM/Beztrace-0.2.0-qualification.vbvm",
+  "vmIp": "192.168.64.5",
+  "guestAppBuild": "4108",
+  "requiredAppBuild": "4202",
+  "preparedAppArchive": "/private/tmp/beztrace-milestone-7-v0.2.0-20261012/sidebar/glyphs4202.zip",
+  "archiveBytes": 42634601,
+  "archiveSha256": "4f1c05873d7aa3b4ada9f84cfdc06f204f51eb6ff56fe953cd0af6eadf101a5d",
+  "state": "Host Mac locked; guest runtime check entered but not run. No Font View preflight or matrix cases executed.",
+  "nativeRuns": 0,
+  "productionChanges": false
+}

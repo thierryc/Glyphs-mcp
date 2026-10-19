@@ -1,0 +1,53 @@
+{
+  "outcome": "passed",
+  "phase": "qualified-ui",
+  "pid": 1658,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": true,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/Users/ziggy/sidebar-qualification-20261018T225812/report/preflight/Disposable.glyphs",
+    "masters": [
+      "C3CD9CDF-9376-4B54-8263-398B2D1A09EB",
+      "4E19FC84-E033-48A7-8631-D611365773E0"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "editorOpen": {
+    "masters": [
+      "C3CD9CDF-9376-4B54-8263-398B2D1A09EB",
+      "4E19FC84-E033-48A7-8631-D611365773E0"
+    ],
+    "glyphs": 1000,
+    "glyphOrderChanged": true,
+    "missingNames": [],
+    "extraNames": []
+  },
+  "sidebar": {
+    "predicateItems": 46,
+    "eligibleItems": 46,
+    "selectedItems": 0
+  }
+}

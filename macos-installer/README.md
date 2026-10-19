@@ -3,7 +3,7 @@
 > Current stable **2.1.0/build 63** is signed, notarized and published.
 > See [release qualification](../V2.1.0-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
 
-The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the menu-bar popover share one monitor and service controls. Tasks provides task status, blockers, conversation handoff and guarded recovery for abandoned work; see [Companion Tasks](../docs/companion-tasks.md). Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
+The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the native menu-bar menu share one monitor and service controls. Tasks provides task status, blockers, conversation handoff and guarded recovery for abandoned work; see [Companion Tasks](../docs/companion-tasks.md). Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
 Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare
 checksum-pinned Sparkle and the audited local PierreDiffsSwift package. Existing
@@ -13,7 +13,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-This checkout prepares 2.2.0/build 64 with twenty-one data/action tools, one
+This checkout prepares 2.2.0/build 66 with twenty-one data/action tools, one
 optional display tool and eleven managed skills. Sidecar and bridge product
 versions are 2.2.0; interface revision and bridge protocol remain 1. The published
 stable release remains 2.1.0/build 63; earlier signing and acceptance evidence

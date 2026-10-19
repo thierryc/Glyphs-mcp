@@ -1,0 +1,61 @@
+{
+  "python": "/Library/Developer/CommandLineTools/usr/bin/python3",
+  "home": "/Users/ziggy",
+  "mounts": "/bin/sh: mount: command not found",
+  "apps": [
+    {
+      "path": "/Applications/Glyphs 4.app",
+      "id": "com.GeorgSeifert.Glyphs4",
+      "version": "4.1.1",
+      "build": "4108"
+    },
+    {
+      "path": "/Applications/Glyphs MCP.app",
+      "id": "cx.ap.glyphsMcp",
+      "version": "2.0.2",
+      "build": "57"
+    },
+    {
+      "path": "/Applications/Glyphs MCP-2.app",
+      "id": "cx.ap.glyphsMcp",
+      "version": "2.0.0",
+      "build": "54"
+    }
+  ],
+  "runtimes": [
+    {
+      "path": "/Library/Frameworks",
+      "children": [
+        "CoreRepairKit.framework",
+        "CoreRepairCore.framework",
+        "iTunesLibrary.framework"
+      ]
+    },
+    {
+      "path": "/Users/ziggy/Library/Application Support/Glyphs 4",
+      "children": [
+        ".code",
+        "Temp",
+        "Plugins",
+        "Breakpoints.plist",
+        "Repositories",
+        "Plugins (Disabled)",
+        "Macros",
+        "Scripts"
+      ]
+    }
+  ],
+  "plugins": [
+    {
+      "path": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins",
+      "children": [
+        "Glyphs Reference Inspector.glyphsReporter",
+        "Glyphs Curve Inspector.glyphsReporter",
+        "Beztrace.glyphsPlugin",
+        "Glyphs MCP Bridge.glyphsPlugin.before-undo-fix",
+        "Glyphs MCP Bridge.glyphsPlugin"
+      ]
+    }
+  ],
+  "glyphsProcesses": "416 /Applications/Glyphs 4.app/Contents/MacOS/Glyphs 4\n562 /Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/python3 /Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar/run.py --transport http --port 9680 --glyphs-app /Applications/Glyphs 4.app"
+}

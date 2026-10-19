@@ -1,0 +1,4 @@
+
+# Keep raw sidebar experiment evidence locally; publish deterministic gzip copies.
+sidebar-*/**/Disposable.glyphs
+sidebar-*/**/*-request.json

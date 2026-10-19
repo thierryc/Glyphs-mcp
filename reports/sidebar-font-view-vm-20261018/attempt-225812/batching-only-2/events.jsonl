@@ -1,0 +1,3 @@
+{"event": "ui-qualified", "time": 1792380081.5676239}
+{"event": "settled", "time": 1792380089.487543, "label": "after-refresh-before-restoration"}
+{"event": "settled", "time": 1792380091.933857, "label": "after-restoration"}

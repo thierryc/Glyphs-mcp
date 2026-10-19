@@ -4,6 +4,31 @@ Use this reference for Font View categories, Smart Filters, List Filters and
 `Invalid filter in sidebar` warnings. These are separate from outline-processing
 plugins in the Filter menu and export Filter custom parameters.
 
+## Automation: prefer explicit glyph targets
+
+Do not use sidebar predicates to discover or select targets for an MCP edit.
+Read glyph names and supported metadata, build an explicit name list, resolve
+owning layer IDs and surfaces, and submit that fixed manifest. Capture a
+user-requested selection once before preparation; never follow live UI selection
+during the edit. See [script targets](python-scripts.md#request-and-targets).
+
+This does **not** disable automatic category/script counts. Valid predicates can
+still produce native evaluation errors during edits. Do not promise that choosing
+All, closing the sidebar, or batching interface updates prevents these alerts.
+
+`GSSidebarItem.suppressCount` is documented in installed Glyphs 4 headers to
+suppress calculations for unselected items. Temporary suppression is an
+**experimental mitigation**, not a production MCP capability. It does not cancel
+already queued work or protect selected predicates. Sidebar flags need exact
+restoration; the script recovery copy does not establish UI-state recovery.
+
+Run the repository experiment with
+`python3 scripts/run_sidebar_count_experiment.py`. It uses separate plugin-free
+processes and synthetic fixtures, requires an attached Font View/sidebar and
+records blocked qualification if that UI is unavailable. It never switches to
+the working session. No production suppression is enabled. A clean baseline
+means **not reproduced**, not evidence of an effective mitigation.
+
 ## Choose the expression's destination
 
 - **Smart Filter editor:** prefer the built-in rules for ordinary conditions,

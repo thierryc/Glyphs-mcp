@@ -55,6 +55,28 @@ iteration, installers and inspectors in their existing workflows.
 
 ## Request and targets
 
+For automated target selection, use glyph data rather than creating, changing or
+selecting Font View sidebar filters. Resolve the exact document, discover names
+only when needed, read relevant metadata, resolve exact owning layer IDs, and
+submit a fixed `{glyph, layer, surface}` manifest. The metadata projection
+exposes `category`, `subCategory` and `export`, but not `case` or `script`.
+Those require a separately scoped native inspection, not an invented projection
+field or a sidebar predicate. See [metadata reads](metadata-reads.md).
+
+When the user asks for selected glyphs, capture the intended selection once
+through the context read and resolve it into explicit targets before preparation.
+Changing UI selection afterward must not redirect execution. Whole scripts
+receive exact names/IDs in parameters and preflight **all** required owners and
+expected values before their first write. Do not repeatedly read `selectedLayers`
+or `font.selection` inside an edit. Existing explicit-master bulk selectors remain
+valid for an intentionally whole-master scope.
+
+The [explicit width example](../../glyphs-mcp-scripting/examples/explicit_widths.py)
+demonstrates whole-script preflight and one balanced interface refresh. Its names
+and IDs come from the resolved request; it never reads sidebar state. Interface
+batching does not lock background counting. Explicit targeting reduces exposure
+but cannot prevent automatic built-in sidebar counts after edits.
+
 Options: exact `source` (128 KiB), JSON object `params` (64 KiB), optional
 intended-effect `summary` (500 characters), `entrypoint="per_target"|"script"`,
 and `targets`. There is no fixed script target-count ceiling. The complete

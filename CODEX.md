@@ -56,6 +56,6 @@ linked references rather than repeating them in every entry skill.
 
 ## Next development baseline
 
-Prepare 2.2.0/build 64 from the published 2.1.0/build 63 baseline. Keep published tags, signed assets and feeds immutable. Source reports under `reports/` retain their original qualification scope; optional, unmanaged workflow material lives under `extras/`.
+Prepare 2.2.0/build 66 from the published 2.1.0/build 63 baseline. Keep published tags, signed assets and feeds immutable. Source reports under `reports/` retain their original qualification scope; optional, unmanaged workflow material lives under `extras/`.
 
 For the next change, choose a concrete user problem, add the smallest relevant behavior check, and qualify the changed component before advancing a release identity. Preserve the twenty-two-tool contract unless a deliberate protocol change requires otherwise. Priorities and external page refresh copy are in [the maintenance handoff](docs/maintenance/next-evolution.md) and [the site update brief](docs/maintenance/site-updates-2.0.4.md).

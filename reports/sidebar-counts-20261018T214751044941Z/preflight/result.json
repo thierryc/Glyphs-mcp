@@ -1,0 +1,16 @@
+{
+  "outcome": "blocked",
+  "phase": "fixture",
+  "pid": 73128,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": false,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_sidebar_counts_native.py\", line 47, in main\n    font.masters = []\n    ^^^^^^^^^^^^\n  File \"/Applications/Glyphs 4.app/Contents/Scripts/GlyphsApp/__init__.py\", line 4939, in <lambda>\n    lambda self, value: FontFontMasterProxy(self).setter(value)\n                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^\n  File \"/Applications/Glyphs 4.app/Contents/Scripts/GlyphsApp/__init__.py\", line 752, in setter\n    method(NSMutableArray.arrayWithArray_(values))\n    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nobjc.error: NSInternalInconsistencyException - _registerUndoObject:: NSUndoManager 0xc0b0dd1f0 is in invalid state, must begin a group before registering undo\n\n"
+}

@@ -1,0 +1,104 @@
+{
+  "outcome": "blocked",
+  "phase": "attach-font-view",
+  "pid": 1459,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": false,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/Users/ziggy/sidebar-qualification-20261018T223213/report/preflight/Disposable.glyphs",
+    "masters": [
+      "7F2809DB-4DA2-451B-9F16-D7FBCC5CBB74",
+      "BC783A98-A0F9-4FEA-93E3-D9E55E7BD64B"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "editorOpen": {
+    "masters": [
+      "7F2809DB-4DA2-451B-9F16-D7FBCC5CBB74",
+      "BC783A98-A0F9-4FEA-93E3-D9E55E7BD64B"
+    ],
+    "glyphs": 1000,
+    "glyphOrderChanged": true,
+    "missingNames": [],
+    "extraNames": []
+  },
+  "sidebarProbe": {
+    "sidebarClass": "GSFontViewSidebarController",
+    "selectors": [
+      "_isAccessibilityContentNavigatorSectionCandidate",
+      "_isAccessibilityContentSectionCandidate",
+      "_isContentViewController",
+      "_setIsContentViewController_",
+      "accessibilityContentSiblingAbove",
+      "accessibilityContentSiblingBelow",
+      "accessibilityContents",
+      "accessibilityCustomContent",
+      "accessibilityFirstContentSibling",
+      "accessibilityHeaderGroup",
+      "accessibilityLastContentSibling",
+      "accessibilityMarkerGroupUIElement",
+      "accessibilityNextContentSibling",
+      "accessibilityNextContents",
+      "accessibilityPreviousContentSibling",
+      "accessibilityPreviousContents",
+      "addNewItemToFilterGroup_",
+      "autoContentAccessingProxy",
+      "childViewControllerDidChangePreferredContentSize_",
+      "fontScripts",
+      "glyphGroups",
+      "isAccessibilityProtectedContent",
+      "newScriptingObjectOfClass_forValueForKey_withContentsValue_properties_",
+      "outlineView_isGroupItem_",
+      "preferredContentSize",
+      "preferredContentSizeDidChangeForViewController_",
+      "presentViewController_asPopoverRelativeToRect_ofView_preferredEdge_behavior_hasFullSizeContent_",
+      "presentedViewControllerDidChangePreferredContentSize_",
+      "setAccessibilityContentSiblingAbove_",
+      "setAccessibilityContentSiblingBelow_",
+      "setAccessibilityContents_",
+      "setAccessibilityCustomContent_",
+      "setAccessibilityFirstContentSibling_",
+      "setAccessibilityHeaderGroup_",
+      "setAccessibilityLastContentSibling_",
+      "setAccessibilityMarkerGroupUIElement_",
+      "setAccessibilityNextContents_",
+      "setAccessibilityPreviousContents_",
+      "setAccessibilityProtectedContent_",
+      "setGlyphGroups_",
+      "setNextContentSibling_",
+      "setPreferredContentSize_",
+      "setPreviousContentSibling_",
+      "setTreeController_",
+      "treeController",
+      "updateGlyphGroups_"
+    ],
+    "outlineRows": 0,
+    "treeClass": "NSTreeController",
+    "treeContent": "(\n)",
+    "arrangedObjects": "<_NSControllerTreeProxy: 0x6000018dc940>, child nodes {}"
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/ziggy/sidebar-qualification-20261018T223213/source/scripts/qualify_sidebar_counts_native.py\", line 172, in main\n    raise RuntimeError(\"Attached sidebar did not populate its native group model\")\nRuntimeError: Attached sidebar did not populate its native group model\n"
+}

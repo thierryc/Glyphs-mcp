@@ -1,0 +1,57 @@
+{
+  "GSFontViewController": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSFontViewSidebarController": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSGlyphDetailView": {
+    "available": false
+  },
+  "GSImageFlowView": {
+    "available": false
+  },
+  "GSFontListViewTableView": {
+    "available": false
+  },
+  "GSTagsView": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSTagsTableCellView": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSContentView": {
+    "available": false
+  },
+  "GSGlyphFilterSearchField": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSCollectionView": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsKit.framework"
+  },
+  "GSContextOutlineView": {
+    "available": false
+  },
+  "GSWindowController": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSSteppingTextField": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsApp.framework"
+  },
+  "GSTabBarControl": {
+    "available": true,
+    "bundle": "/Applications/Glyphs 4.app/Contents/Frameworks/GlyphsKit.framework"
+  },
+  "GSApplication": {
+    "available": true,
+    "bundle": "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/glyphs_cli/bin"
+  }
+}

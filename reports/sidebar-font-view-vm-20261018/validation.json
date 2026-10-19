@@ -1,0 +1,39 @@
+{
+  "focusedTests": {
+    "passed": 126,
+    "failed": 0,
+    "files": [
+      "test_sidebar_count_experiment.py",
+      "test_simple_v2_python_scripts.py",
+      "test_simple_v2_script_capacity.py",
+      "test_simple_v2_script_snapshots.py",
+      "test_simple_v2_native_guidance.py"
+    ]
+  },
+  "checks": {
+    "skillPackageSync": "passed",
+    "leanPackage": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "nativeSourceComparison": {
+    "scripts/qualify_sidebar_counts_native.py": {
+      "sha256": "a48e6292512dba8d44cbc4ffdcc239cc5b1e023dd997aa2be737b1e1c28bb11b",
+      "matchesNativeSource": true
+    },
+    "scripts/sidebar_count_experiment.py": {
+      "sha256": "87a4cbddb6916337d483647979138b7b45d0dd2f46b080641968324421996232",
+      "matchesNativeSource": true
+    },
+    "scripts/run_sidebar_count_experiment.py": {
+      "sha256": "2a987a5dbb388e45d35762391af40287e9b67e132b81f0eccee74fa92cd6517b",
+      "matchesNativeSource": true
+    }
+  },
+  "additionalLifecycleTests": "Missing owners, changed selection, mixed flags, injected failure, cancellation between callbacks, restoration failure and external watchdog are regression tests; native matrix exercises successful workloads.",
+  "protocolTests": {
+    "passed": 5,
+    "failed": 0,
+    "file": "test_simple_v2_protocol.py"
+  },
+  "totalTestsPassed": 131
+}

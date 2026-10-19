@@ -1,8 +1,9 @@
 # Changelog
 
-## 2.2.0 — in preparation, build 64, 15 October 2026
+## 2.2.0 — in preparation, build 66, 19 October 2026
 
 - Keep the sidebar palette title compact by removing its explicit version suffix, fixing the duplicated version reported in [#62](https://github.com/thierryc/Glyphs-mcp/issues/62). Version details remain in server settings.
+- Replace the menu-bar popover with a native macOS menu, preserving live status information, the unread task badge, service-control guards and all existing actions.
 - Add a full-height native Tasks view for open workflows, blockers and recently closed tasks; remove Recent Tasks from Setup and provide task access from the sidebar, app and status menus, and Dock.
 - Show captured Codex conversation links when reliable. Keep selectable Review / Close task prompts and a compact copy control for Claude Code and missing conversations; ordinary workflow decisions remain in the agent.
 - Provide guarded Recovery Options for abandoned workflows with explicit consequences, a separate close control and existing server revision/token checks. Archive eligible orphaned interrupted records as Unverified, retaining diagnostics.
@@ -13,7 +14,8 @@
 - Open projects in a full-height Diff view with a resizable file list. Move font sources, project settings and external-tool actions into Config, preserving the current diff when switching views.
 - Create verified `.glyphspackage` copies from saved `.glyphs` sources in Config, independently of Git status. Keep originals, refuse overwrites, verify native round trips and disclose possible omission of per-glyph modification timestamps.
 - Document native sidebar predicate contexts and their bounded verification evidence.
-- Coordinate desktop, bridge, sidecar and four host plugin manifests at 2.2.0/build 64. Signing, notarization, installation, native/upgrade qualification and publication remain separate; see [the preparation record](V2.2.0-RELEASE.md).
+- Use fixed glyph/layer/surface manifests for automated edits and capture intentional selection once. Add an explicit-target script example and an isolated sidebar-count experiment; all twenty VM runs passed, but the alert did not reproduce, so automatic count suppression remains off.
+- Coordinate desktop, bridge, sidecar and four host plugin manifests at 2.2.0/build 66. Signing, notarization, installation, native/upgrade qualification and publication remain separate; see [the preparation record](V2.2.0-RELEASE.md).
 
 ## 2.1.0 — stable release, build 63, 15 October 2026
 

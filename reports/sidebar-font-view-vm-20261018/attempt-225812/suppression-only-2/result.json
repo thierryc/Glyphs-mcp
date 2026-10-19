@@ -1,0 +1,81 @@
+{
+  "outcome": "passed",
+  "phase": "workloads",
+  "pid": 1920,
+  "variant": "suppression-only",
+  "workflows": [
+    {
+      "workload": "colors",
+      "id": "edit_d5594b8c7116455690d8086ba2d94a0b",
+      "jobId": "job_cf8be9f0ef244599b79f31ea301ef5be"
+    },
+    {
+      "workload": "shapes",
+      "id": "edit_4df88ca0c69f4c9bb316fc5c541e1016",
+      "jobId": "job_4000642063fa4914879a0b6330151859"
+    },
+    {
+      "workload": "addition",
+      "id": "edit_f07d689e951e484896c3b51e3d1f3a9d",
+      "jobId": "job_759b80de4a7b4677b2eac53e0cdcbed9"
+    }
+  ],
+  "cleanupErrors": [],
+  "checks": [
+    "colors: exact targets and controls verified",
+    "shapes: exact targets and controls verified",
+    "addition: exact targets and controls verified",
+    "UI flags, predicates, selection and responsiveness restored"
+  ],
+  "uiQualified": true,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/Users/ziggy/sidebar-qualification-20261018T225812/report/suppression-only-2/Disposable.glyphs",
+    "masters": [
+      "E3C44116-B08A-44BB-9C38-D90462456B21",
+      "3ADB0F7E-BD88-40A8-B953-F71669C3D1F3"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "editorOpen": {
+    "masters": [
+      "E3C44116-B08A-44BB-9C38-D90462456B21",
+      "3ADB0F7E-BD88-40A8-B953-F71669C3D1F3"
+    ],
+    "glyphs": 1000,
+    "glyphOrderChanged": true,
+    "missingNames": [],
+    "extraNames": []
+  },
+  "sidebar": {
+    "predicateItems": 46,
+    "eligibleItems": 46,
+    "selectedItems": 0
+  },
+  "execution": {
+    "data": {
+      "workloads": 3
+    },
+    "passed": true,
+    "dispatcher": "One native callback per real editor-loop timer turn"
+  }
+}

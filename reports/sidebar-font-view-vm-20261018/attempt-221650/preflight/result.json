@@ -1,0 +1,39 @@
+{
+  "outcome": "blocked",
+  "phase": "attach-font-view",
+  "pid": 1328,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": false,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/Users/ziggy/sidebar-qualification-20261018T221650/report/preflight/Disposable.glyphs",
+    "masters": [
+      "F80462F0-0982-4E01-BD6D-465B5A369771",
+      "A2D7CEB1-B6AB-4621-86E4-27313878DD31"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/ziggy/sidebar-qualification-20261018T221650/source/scripts/qualify_sidebar_counts_native.py\", line 135, in main\n    raise RuntimeError(\"Editor document differs from the disposable fixture\")\nRuntimeError: Editor document differs from the disposable fixture\n"
+}

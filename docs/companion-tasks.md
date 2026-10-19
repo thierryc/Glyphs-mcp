@@ -3,7 +3,7 @@
 Tasks monitors workflows in the existing native desktop app, with a guarded
 recovery route for abandoned tasks. Setup retains
 installation, server controls and health warnings. Task lists and history live
-in Tasks. The app menu, menu-bar popover, status-icon contextual menu and Dock
+in Tasks. The app menu, native menu-bar menu and Dock
 menu all use **Show Tasks** and open the same window.
 
 The sidebar badge counts unviewed tasks, not unresolved decisions. Opening a

@@ -1,0 +1,7 @@
+(version 1)
+(allow default)
+(deny mach-lookup (global-name-regex #"^com\.apple\.cfprefsd.*"))
+(deny file-read* (subpath "/Users/thierryc/Library/Preferences") (subpath "/Users/thierryc/Library/Application Support/Glyphs 4") (subpath "/Users/thierryc/Library/Application Support/Glyphs 3") (subpath "/Users/thierryc/Library/Application Support/Glyphs"))
+(deny file-write* (require-not (subpath "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/sidebar-gui-923afaa7ca")))
+(deny appleevent-send)
+(deny network*)
