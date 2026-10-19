@@ -15,7 +15,7 @@ at v1.11.0 / 13ca805; it is not packaged in v2.
 
 ## Next source candidate
 
-Source is preparing **2.2.0/build 66**, stable channel, with Tasks and native
+Source is preparing **2.2.0/build 67**, stable channel, with Tasks and native
 image comparisons, a native menu-bar menu, a Diff / Config project workspace and verified package
 copies. Its catalog contains twenty-one data/action tools plus the
 optional read-only display tool. Eleven managed skills, interface revision 1,

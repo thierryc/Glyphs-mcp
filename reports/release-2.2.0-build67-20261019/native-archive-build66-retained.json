@@ -1,0 +1,57 @@
+{
+  "scope": "isolated sidecar diagnostic records against actual installed native bridge; no font mutations or installed job-store writes",
+  "checks": [
+    {
+      "name": "native idle",
+      "passed": true
+    },
+    {
+      "name": "native missing-operation guard qualifies orphan",
+      "passed": true
+    },
+    {
+      "name": "archive stays unverified",
+      "passed": true
+    },
+    {
+      "name": "archive preserves exact diagnostic state",
+      "passed": true
+    },
+    {
+      "name": "does not expire before retention",
+      "passed": true
+    },
+    {
+      "name": "expires presentation after native idle checks",
+      "passed": true
+    },
+    {
+      "name": "retention preserves evidence",
+      "passed": true
+    },
+    {
+      "name": "font source unchanged",
+      "passed": true
+    }
+  ],
+  "nativeStatus": {
+    "bridgeVersion": "2.2.0",
+    "bridgeSessionId": "a4e197e4b0124f4eaa64081ef4b6729d",
+    "release": {
+      "version": "2.2.0",
+      "releaseVersion": "2.2.0",
+      "channel": "stable",
+      "betaNumber": 0,
+      "installerBuild": 66
+    },
+    "codeHash": "sha256:f566fba902c17c21f43535b708dc9ff85ed23ed39aa8378513fd8f123a3a8e0b",
+    "activeOperations": 0,
+    "host": {
+      "identifier": "com.GeorgSeifert.Glyphs4",
+      "version": "4.1.1",
+      "build": "4108"
+    }
+  },
+  "jobId": "job_1a48dd3109c44eb089a9db03aedf6de6",
+  "passed": true
+}

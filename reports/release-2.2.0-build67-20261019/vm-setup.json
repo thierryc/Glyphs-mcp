@@ -1,0 +1,248 @@
+{
+  "scope": "Exact final build67 companion; actual native Python check through production Setup lifecycle in VirtualBuddy",
+  "events": [
+    {
+      "details": {
+        "appBuild": "67",
+        "appPath": "/Applications/Glyphs MCP.app",
+        "appVersion": "2.2.0",
+        "architecture": "arm64",
+        "macOS": "Version 14.6.1 (Build 23G93)"
+      },
+      "event": "session.started",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "details": {
+        "copies": [
+          {
+            "beta": false,
+            "bundleIdentifier": "com.GeorgSeifert.Glyphs4",
+            "path": "/Applications/Glyphs 4.app",
+            "version": "4.1.1"
+          }
+        ],
+        "scanScope": "/Applications, ~/Applications and Launch Services bundle lookup",
+        "selectedPath": "/Applications/Glyphs 4.app",
+        "selectionPolicy": "Retain user selection; otherwise prefer stable bundle, then /Applications, then path order"
+      },
+      "event": "glyphs.discovery",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "details": {
+        "bundleIdentifier": "com.GeorgSeifert.Glyphs4",
+        "glyphsPath": "/Applications/Glyphs 4.app",
+        "runningCopies": [
+          {
+            "bundleIdentifier": "com.GeorgSeifert.Glyphs4",
+            "path": "/Applications/Glyphs 4.app",
+            "processId": 1808
+          }
+        ],
+        "version": "4.1.1"
+      },
+      "event": "python-check.requested",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "2260B595-7FCF-47E1-BF3A-459761748615",
+      "details": {
+        "elapsedSeconds": 159.65818798542023,
+        "path": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload",
+        "scope": "caller wait; discovery is shared and cached"
+      },
+      "event": "payload.resolved",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "details": {
+        "elapsedSeconds": 159.759948015213,
+        "path": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload",
+        "scope": "caller wait; discovery is shared and cached"
+      },
+      "event": "payload.resolved",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "details": {
+        "helper": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload/Installer/install_simple_v2.py",
+        "privatePython": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload/Lean/runtimes/arm64/bin/python3",
+        "timeoutSeconds": 60
+      },
+      "event": "python-check.helper-started",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "components": [
+        "mcp"
+      ],
+      "elapsedSeconds": 0.0,
+      "event": "setup.requested",
+      "only": [],
+      "preflightOnly": true,
+      "remove": [],
+      "schemaVersion": 1,
+      "skipPythonCheckRequested": false,
+      "timestamp": "2026-10-19T19:07:16.563082+00:00"
+    },
+    {
+      "application": "/Applications/Glyphs 4.app",
+      "architecture": "arm64",
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 0.001,
+      "event": "python.check-started",
+      "macOS": "14.6.1",
+      "payload": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload/Lean",
+      "privatePython": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload/Lean/runtimes/arm64/bin/python3",
+      "privatePythonVersion": "3.14.7",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:07:16.563936+00:00"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 0.002,
+      "event": "python.launcher",
+      "exists": true,
+      "expectedPythonVersion": "3.14.7",
+      "glyphsCLIVersion": "0.6.1",
+      "path": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload/Lean/runtimes/arm64/bin/glyphs",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:07:16.564869+00:00"
+    },
+    {
+      "build": "4108",
+      "bundleIdentifier": "com.GeorgSeifert.Glyphs4",
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 0.005,
+      "event": "python.app",
+      "path": "/Applications/Glyphs 4.app",
+      "resolvedPath": "/Applications/Glyphs 4.app",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:07:16.568043+00:00",
+      "version": "4.1.1"
+    },
+    {
+      "candidates": [
+        {
+          "exists": true,
+          "isFile": true,
+          "path": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/Current/Python",
+          "resolvedPath": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14/Python"
+        },
+        {
+          "exists": false,
+          "isFile": false,
+          "path": "/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/Current/Python",
+          "resolvedPath": null
+        }
+      ],
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 0.025,
+      "event": "python.default-candidates",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:07:16.588002+00:00"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "domain": "com.GeorgSeifert.Glyphs4",
+      "elapsedSeconds": 0.025,
+      "event": "python.preference",
+      "key": "GSPythonFrameworkPath",
+      "schemaVersion": 1,
+      "selectedFramework": {
+        "exists": true,
+        "isFile": true,
+        "path": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14/Python",
+        "resolvedPath": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14/Python"
+      },
+      "selectedPath": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14",
+      "settingPath": {
+        "exists": true,
+        "isFile": false,
+        "path": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14",
+        "resolvedPath": "~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14"
+      },
+      "state": "present",
+      "timestamp": "2026-10-19T19:07:16.588427+00:00"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 0.025,
+      "event": "python.selection",
+      "reason": "explicit-setting-retained",
+      "schemaVersion": 1,
+      "source": "cli-preference",
+      "timestamp": "2026-10-19T19:07:16.588545+00:00"
+    },
+    {
+      "bytecodeDisabled": true,
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 0.026,
+      "event": "python.native-started",
+      "explicitFramework": null,
+      "plugins": "disabled",
+      "schemaVersion": 1,
+      "timeoutSeconds": 45,
+      "timestamp": "2026-10-19T19:07:16.588617+00:00",
+      "userSiteDisabled": true
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 1.247,
+      "event": "python.native-result",
+      "exitCode": 0,
+      "schemaVersion": 1,
+      "stderr": "",
+      "stderrCharacters": 0,
+      "stdout": "GLYPHS_MCP_NATIVE_CONTEXT:{\"version\": \"3.14.6\", \"prefix\": \"~/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14\", \"executable\": \"/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload/Lean/runtimes/arm64/bin/glyphs\", \"architecture\": \"arm64\"}\nGLYPHS_MCP_NATIVE_READY:3.14.6\n",
+      "stdoutCharacters": 389,
+      "timestamp": "2026-10-19T19:07:17.810280+00:00"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "elapsedSeconds": 1.248,
+      "event": "python.check-passed",
+      "nativePythonVersion": "3.14.6",
+      "schemaVersion": 1,
+      "timestamp": "2026-10-19T19:07:17.810665+00:00"
+    },
+    {
+      "checkId": "F2250FDB-DEA0-4EEC-9558-E444A23D02A8",
+      "details": {
+        "elapsedSeconds": 1.839208960533142,
+        "exitCode": 0,
+        "stdout": "{\"ok\": true, \"pythonVersion\": \"3.14.6\"}\n"
+      },
+      "event": "python-check.helper-finished",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    },
+    {
+      "checkId": "FD0DEC27-97C2-4C6C-84D6-44600D4DFC6F",
+      "details": {
+        "elapsedSeconds": 5.1021575927734375e-05,
+        "path": "/var/folders/12/lpp3l9fn0w77l4zqz_w7j29m0000gn/T/glyphs-mcp-installer-payload-A8DB8757-4E21-45FA-80A4-3DFC71548B2E/Payload",
+        "scope": "caller wait; discovery is shared and cached"
+      },
+      "event": "payload.resolved",
+      "schemaVersion": 1,
+      "sessionId": "DCBBD2F8-E88E-42BC-8DBA-569CB42BC413"
+    }
+  ],
+  "pythonVersion": "3.14.6",
+  "nativeHelperSeconds": 1.839208960533142,
+  "payloadWaitSeconds": 159.65818798542023,
+  "passed": true,
+  "sample": "VM-only process sample showed an idle application after check completion; no second stall observed"
+}

@@ -1,0 +1,24 @@
+{
+  "scope": "Actual Sparkle 2.9.6 update in VirtualBuddy from signed 2.2.0/build66 to the exact final signed and stapled 2.2.0/build67 app",
+  "beforeBuild": 66,
+  "afterBuild": 67,
+  "oldProcessExit": 0,
+  "newProcess": "2097 /Applications/Glyphs MCP.app/Contents/MacOS/Glyphs MCP",
+  "executableMatchesFinal": true,
+  "signatureExit": 0,
+  "archiveSHA256": "590591669ce950bba9b500453168a0dd85534f5e2804b230c89bafb034f8b170",
+  "feed": "Separately signed local test feed; SUFeedURL argument override; unchanged archive and validation settings",
+  "publicGithubTransport": "not exercised",
+  "requests": [
+    {
+      "path": "/update.xml",
+      "time": 1792436027.005471
+    },
+    {
+      "path": "/candidate.zip",
+      "time": 1792436092.0368152
+    }
+  ],
+  "authentication": "VM account authentication entered by user; no credentials recorded",
+  "passed": true
+}
