@@ -1,7 +1,8 @@
 # Changelog
 
-## 2.2.0 — in preparation, build 66, 19 October 2026
+## 2.2.0 — in preparation, build 67, 19 October 2026
 
+- Prevent Setup subprocess capture from exhausting Swift worker threads before launching the Python check, including on small virtual machines.
 - Keep the sidebar palette title compact by removing its explicit version suffix, fixing the duplicated version reported in [#62](https://github.com/thierryc/Glyphs-mcp/issues/62). Version details remain in server settings.
 - Replace the menu-bar popover with a native macOS menu, preserving live status information, the unread task badge, service-control guards and all existing actions.
 - Add a full-height native Tasks view for open workflows, blockers and recently closed tasks; remove Recent Tasks from Setup and provide task access from the sidebar, app and status menus, and Dock.
