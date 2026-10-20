@@ -1,8 +1,8 @@
 # Glyphs MCP Desktop 2.2.0
 
-**In preparation: 2.2.0 · desktop build 66 · Glyphs 4.** Adds Tasks, guarded recovery for abandoned work, cleared-history retention, native image comparisons, a native menu-bar menu and verified font package copies. See the [2.2.0 preparation record](V2.2.0-RELEASE.md).
+**Stable: 2.2.0 · desktop build 67 · Glyphs 4.** Adds Tasks, guarded recovery for abandoned work, cleared-history retention, native image comparisons, a native menu-bar menu and verified font package copies. See the [2.2.0 release qualification](V2.2.0-RELEASE.md).
 
-The published stable release remains **2.1.0/build 63**. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.1.0/Glyphs-MCP-2.1.0.dmg) and see the [2.1.0 release qualification](V2.1.0-RELEASE.md).
+Download the [signed and notarized 2.2.0 disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/Glyphs-MCP-2.2.0.dmg) or see the [GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.2.0). The full gate passed 3,144 Python tests and 298 desktop tests. Native VM acceptance passed with the recorded progress-window limitation; Intel execution was tested through Rosetta. Sidebar alerts did not reproduce in 20 runs, so automatic count suppression remains off. See the [qualification and limits](V2.2.0-RELEASE.md).
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
@@ -26,8 +26,8 @@ Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
 with requirements, its independently signed build 15 release and setup guidance. The app bundles
 the universal stable 0.1.1 engine; the Glyphs plugin remains separate. See [Beztrace setup](content/workflows/beztrace.mdx).
 
-The permanent app includes Setup, Tasks and Project destinations, a static menu-bar
-popover, a dedicated troubleshooting-log window, local and public templates,
+The permanent app includes Setup, Tasks and Project destinations, a native menu-bar
+menu, a dedicated troubleshooting-log window, local and public templates,
 and a Git diff browser with opt-in font checkpoints. The
 project's **Diff / Config** control keeps Diff as the full-height default and
 groups font sources, settings and external-tool actions in Config. Saved

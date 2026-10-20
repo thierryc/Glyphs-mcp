@@ -1,0 +1,60 @@
+{
+  "releaseVersion": "2.2.0",
+  "installerBuild": 67,
+  "tag": "v2.2.0",
+  "tagCommit": "4c63ff4c1975c96a6ee11c140ed0ff86d681e629",
+  "releaseURL": "https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.2.0",
+  "publishedAt": "2026-10-20T02:20:42Z",
+  "verifiedAt": "2026-10-20T02:21:43.821093+00:00",
+  "latest": true,
+  "draft": false,
+  "prerelease": false,
+  "assets": [
+    {
+      "name": "appcast.xml",
+      "size": 1349,
+      "digest": "sha256:83910627680cb7d79fa930d7fa7e8e6ed1faca399b494c6d3d6c740c32fc2c43",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/appcast.xml"
+    },
+    {
+      "name": "Glyphs-MCP-2.2.0.dmg",
+      "size": 159435379,
+      "digest": "sha256:6d2dcb68ced0f877ad40822af2e3701f3b1e9f40658b0a68098953a6541e2e41",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/Glyphs-MCP-2.2.0.dmg"
+    },
+    {
+      "name": "Glyphs-MCP-2.2.0.zip",
+      "size": 157336571,
+      "digest": "sha256:681a87e31f99900f66d48ff9cb3fbeb4dbe92a6451a032bcbe682b6473c84dc7",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/Glyphs-MCP-2.2.0.zip"
+    },
+    {
+      "name": "Glyphs-MCP-latest.dmg",
+      "size": 159435379,
+      "digest": "sha256:6d2dcb68ced0f877ad40822af2e3701f3b1e9f40658b0a68098953a6541e2e41",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/Glyphs-MCP-latest.dmg"
+    },
+    {
+      "name": "Glyphs.MCP.zip",
+      "size": 157336571,
+      "digest": "sha256:590591669ce950bba9b500453168a0dd85534f5e2804b230c89bafb034f8b170",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/Glyphs.MCP.zip"
+    },
+    {
+      "name": "SHA256SUMS",
+      "size": 421,
+      "digest": "sha256:6bc46f63164514af971bacba95b2a1051421a82fc8660c9f7f297b2b192698e7",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.2.0/SHA256SUMS"
+    }
+  ],
+  "fullGate": {
+    "directory": "build/release-test-run.5Ue321",
+    "pythonPassed": 3144,
+    "pythonSkipped": 2,
+    "desktopPassed": 298,
+    "documentationAndPackages": true
+  },
+  "appcastSHA256": "83910627680cb7d79fa930d7fa7e8e6ed1faca399b494c6d3d6c740c32fc2c43",
+  "nativeEvidence": "qualification.json",
+  "automaticSuppression": false
+}

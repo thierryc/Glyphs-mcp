@@ -1,7 +1,10 @@
 # Glyphs MCP 2.2.0 / build 67 qualification
 
 Source candidate: `63432c65c4c29a2a05fe35cf6e8447d24b8aacd2`. The later evidence
-commit changes release records only. Published 2.1.0 assets and feeds are unchanged.
+commit changes release records only. The signed release tag points to
+`4c63ff4c1975c96a6ee11c140ed0ff86d681e629`. Version 2.2.0/build 67 is published
+as Latest, with matching GitHub asset digests and an exact signed public appcast.
+See [publication receipt](publication.json). Prior release assets remain intact.
 
 ## Passed
 

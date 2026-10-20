@@ -42,7 +42,7 @@
     "Glyphs-MCP-2.2.0.zip": "590591669ce950bba9b500453168a0dd85534f5e2804b230c89bafb034f8b170",
     "Glyphs-MCP-latest.dmg": "6d2dcb68ced0f877ad40822af2e3701f3b1e9f40658b0a68098953a6541e2e41",
     "Glyphs.MCP.zip": "590591669ce950bba9b500453168a0dd85534f5e2804b230c89bafb034f8b170",
-    "appcast.xml": "dc8ce01f9a78516cf8db814d4286d12b1b6b4186bb147bd210d19465f726f53f"
+    "appcast.xml": "83910627680cb7d79fa930d7fa7e8e6ed1faca399b494c6d3d6c740c32fc2c43"
   },
   "finalRuntimes": [
     {
@@ -119,10 +119,8 @@
   "executableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
   "payloadSHA256": "698aad9f2bec67dffb55b58e211a8bce85d1e904d73d7891cf03e8d50ddb0308",
   "releaseVerificationPassed": true,
-  "publication": "draft",
-  "remaining": [
-    "public release/tag/feed phases"
-  ],
+  "publication": "published",
+  "remaining": [],
   "limits": [
     "Physical Intel hardware unavailable; x86_64 tested under Rosetta only",
     "Sidebar alert did not reproduce in 20 VM runs; mitigation effectiveness unproven; automatic suppression off",
@@ -178,5 +176,6 @@
     "skillSynchronization": true,
     "leanPackageConsistency": true,
     "productionCodeChanged": false
-  }
+  },
+  "publicationReceipt": "publication.json"
 }
