@@ -32,7 +32,9 @@
   },
   "published": false,
   "updateFeedAdvanced": false,
-  "remainingGate": "Exact VM upgrade/reminder acceptance: observer file-read I/O error under diagnosis; human diagnostic handoff requested",
+  "remainingGate": "Final publisher full test and artifact gates, public download verification, then signed feed advancement",
   "diskImageSavedWindowVisuallyReviewed": true,
-  "repackedUpdateArchiveMatchesVMArchive": true
+  "repackedUpdateArchiveMatchesVMArchive": true,
+  "exactSignedVMUpgradePassed": true,
+  "nativeReminderAndComponentUpdatePassed": true
 }
