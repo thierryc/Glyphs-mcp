@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "tools": {
     "diffenator": {
-      "status": "pending_qualification",
-      "reason": "The signed optional Diffenator runtime awaits hosted release assets and supported-platform qualification.",
+      "status": "deferred",
+      "reason": "Diffenator is deferred beyond 2.3.0 pending a maintained fork and complete dependency, license and platform qualification.",
       "sourceRevision": "cecdab703d462cfea25b748b19ea4813d3f4d680"
     },
     "beztrace-glyphs": {

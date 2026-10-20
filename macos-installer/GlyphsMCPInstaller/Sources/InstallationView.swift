@@ -8,7 +8,6 @@ struct InstallationView: View {
     @EnvironmentObject private var model: InstallerViewModel
     @State private var pendingRemoval: RemovalTarget?
     @State private var showingBeztraceSetup = false
-    @State private var showingDiffenatorSetup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -41,7 +40,6 @@ struct InstallationView: View {
             Text(target.message)
         }
         .onAppear { model.refreshOptionalTools() }
-        .sheet(isPresented: $showingDiffenatorSetup) { DiffenatorSetupView() }
         .sheet(isPresented: $showingBeztraceSetup) {
             BeztraceSetupView()
         }
@@ -88,10 +86,7 @@ struct InstallationView: View {
                 }
                 OptionalToolSetupCard(id: "beztrace-glyphs", title: "Beztrace", symbol: "pencil.and.outline",
                     detail: "Trace images and match master outlines.") { showingBeztraceSetup = true }
-                OptionalToolSetupCard(id: "diffenator", title: "Diffenator", symbol: "doc.on.doc",
-                    detail: "Compare compiled TTF releases and review an HTML report.") {
-                    showingDiffenatorSetup = true
-                }
+
             }
         }
     }
@@ -183,32 +178,6 @@ private struct BeztraceSetupView: View {
                 Text("Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font.")
                     .foregroundStyle(.secondary)
             }
-        }
-        .font(.callout)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(24)
-        .frame(width: 540)
-    }
-}
-
-private struct DiffenatorSetupView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text("Diffenator").font(.title2.bold())
-                Spacer()
-                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
-            }
-            Text("Compare compiled TTF releases and review an HTML report.")
-            Text("Requirements").font(.headline)
-            Text("Diffenator is distributed separately from the desktop app. Setup enables installation only after release qualification for this Mac. Intel support is unavailable until qualified. Install All excludes Diffenator.")
-            Text("Using Diffenator").font(.headline)
-            Text("Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved.")
-            Text("Separate installations").font(.headline)
-            Text("The optional runtime is managed separately. Removing it preserves your fonts and published reports.")
-            DesktopTextLink("Diffenator documentation", destination: URL(string: "https://github.com/googlefonts/diffenator2")!)
         }
         .font(.callout)
         .fixedSize(horizontal: false, vertical: true)
