@@ -1,0 +1,9 @@
+{
+  "version": "2.3.0",
+  "build": 68,
+  "archiveSHA256": "14ee647c8e569c5a2c1e47980b3903f19cf4998a08e8ca9de195d478b10184d0",
+  "archiveSize": 158484843,
+  "feedSHA256": "ed21e654625a414de7097d599f7bebdcbd6b063f06bd693748c81a13ac364cb3",
+  "baselineExecutableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
+  "sourceCommit": "bade8753"
+}

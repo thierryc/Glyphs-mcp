@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "architecture": "arm64",
+  "macOS": "26.7.1",
+  "workingInstallationChanged": false,
+  "engineSHA256": "4968c0d0f1c001991fadf0dcf3a70e8023167ebf8cb33cabc5d9494e59462f11",
+  "sourceCatalogSHA256": "8a5992ee6a5458053004ab82ad870b0fb1e5eae4865ac3cde56b5eb6acdc160c",
+  "managedInstallUpdateRemoveReinstall": true,
+  "modifiedPluginProtected": true,
+  "checksumRejectedBeforeWrite": true,
+  "userSettingsPreserved": true,
+  "sharedEnginePreserved": true,
+  "productionTrustChecksMocked": false,
+  "loadedIntoGlyphs": false
+}

@@ -1,0 +1,38 @@
+{
+  "version": "2.3.0",
+  "build": 68,
+  "sourceCommit": "bade8753",
+  "diffenator": "deferred; absent from Setup; no runtime distributed",
+  "pythonTestsPassed": 3155,
+  "pythonTestsSkipped": 2,
+  "desktopTestsPassed": 304,
+  "subsequentLocalizedDesktopTestsPassed": 33,
+  "subsequentFocusedPythonTestsPassed": 51,
+  "fullArtifactVerificationPassed": true,
+  "allNotarizationsAccepted": true,
+  "managedBeztracePassed": true,
+  "privateRuntimeArchitectures": [
+    "arm64",
+    "x86_64 under Rosetta"
+  ],
+  "physicalIntelTested": false,
+  "assets": {
+    "Glyphs-MCP-2.3.0.dmg": {
+      "sha256": "7396c5dec9021768b1ab9dfe6d9170991614cd9557d7b4f80093206424687343",
+      "size": 160685996
+    },
+    "Glyphs-MCP-2.3.0.zip": {
+      "sha256": "14ee647c8e569c5a2c1e47980b3903f19cf4998a08e8ca9de195d478b10184d0",
+      "size": 158484843
+    },
+    "appcast.xml": {
+      "sha256": "9a4db273f5186a90b9cb7d6cdcc58b69f22a5f5e980c45eda6920c45d1fb59e6",
+      "size": 1349
+    }
+  },
+  "published": false,
+  "updateFeedAdvanced": false,
+  "remainingGate": "Exact VM upgrade/reminder acceptance: observer file-read I/O error under diagnosis; human diagnostic handoff requested",
+  "diskImageSavedWindowVisuallyReviewed": true,
+  "repackedUpdateArchiveMatchesVMArchive": true
+}
