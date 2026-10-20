@@ -1,0 +1,33 @@
+{
+  "state": "signed-2.3.0-upgrade-verified",
+  "macOS": "14.6.1",
+  "model": "VirtualMac2,1",
+  "startedAt": 1792514548.83075,
+  "componentReceiptBeforeSHA256": "27374529940e8c137e196dca51d178ed72f92a03f8e4f23d059b1e1c5a5054cf",
+  "archiveSHA256": "14ee647c8e569c5a2c1e47980b3903f19cf4998a08e8ca9de195d478b10184d0",
+  "resumedAfterVMRestart": true,
+  "oldPID": 778,
+  "beforeVersion": "2.2.0",
+  "beforeBuild": "67",
+  "arguments": [
+    "/Users/ziggy/gmcp-release-230-final-r1/upgrade/Glyphs MCP.app/Contents/MacOS/Glyphs MCP",
+    "-SUFeedURL",
+    "http://127.0.0.1:8788/update.xml",
+    "-SUEnableAutomaticChecks",
+    "YES",
+    "-SUScheduledCheckInterval",
+    "3600"
+  ],
+  "baselineExecutableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
+  "version": "2.3.0",
+  "build": "68",
+  "exactApplicationTreeSHA256": "9c3c9406d1e04b1a02602ffac5f0b31ebfca795c78a14fcbc4f53792cb7c5b54",
+  "referenceApplicationTreeSHA256": "9c3c9406d1e04b1a02602ffac5f0b31ebfca795c78a14fcbc4f53792cb7c5b54",
+  "signatureVerified": true,
+  "componentReceiptUnchanged": true,
+  "currentVersion": "2.3.0",
+  "currentBuild": "68",
+  "stderr.log": "",
+  "stdout.log": "",
+  "requests.log": "{\"path\": \"/update.xml\", \"time\": 1792509814.055066}\n{\"path\": \"/update.xml\", \"time\": 1792514551.186497}\n{\"path\": \"/candidate.zip\", \"time\": 1792514643.667479}\n"
+}

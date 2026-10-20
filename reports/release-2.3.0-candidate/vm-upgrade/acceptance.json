@@ -1,0 +1,15 @@
+{
+  "nativePlatform": "macOS 14.6.1 / Apple Silicon VirtualBuddy",
+  "desktopUpgrade": "passed: exact signed 2.2.0/build67 to 2.3.0/build68 via standard updater",
+  "componentSeparation": "passed: receipt unchanged until explicit card Update",
+  "reminder": "passed: server headline, readable text, Open Setup and Later visible; Open Setup navigates without installation",
+  "cardStates": "passed: MCP Update available primary; unchanged inspectors Installed and secondary; success clears MCP pending state",
+  "glyphsSafeguard": "passed: disabled component writes while guest Glyphs running; explicit quit required",
+  "optionalScope": "passed: Diffenator absent; independent Beztrace protected and older-macOS reason shown",
+  "policyBranches": "Later, once-per-version/location, quiet login, newer/unknown/development installs and failure/cancellation covered by focused desktop tests; no claim that each branch was manually replayed in this VM",
+  "limits": [
+    "No physical Intel hardware; x86_64 runtime tests used Rosetta.",
+    "Guest accessibility tree is not exposed through VirtualBuddy; prior live keyboard/accessibility limits remain."
+  ],
+  "workingHost": "unchanged"
+}

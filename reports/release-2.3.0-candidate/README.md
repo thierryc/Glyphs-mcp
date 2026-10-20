@@ -25,15 +25,29 @@ execution used Rosetta, not physical hardware. The exact Beztrace public plugin
 passed anonymous checksum/inventory/trust checks. Its managed lifecycle passed
 in a disposable home, preserving modified content, settings and shared engines.
 
-## Remaining native gate
+## Native upgrade acceptance
 
-The macOS 14.6.1 VM baseline was signed desktop 2.2.0/build 67 with matching
-components. The exact 2.3.0 archive passed guest Gatekeeper and the standard
-updater displayed the new-version prompt. Component receipts were unchanged at
-that point. The observer then hit an input/output error while reading evidence;
-upgrade completion and reminder behavior are not claimed. A bounded diagnostic
-probe is prepared and awaiting the requested human Terminal handoff.
+After restarting the macOS 14.6.1 VM, evidence reads and guest input worked.
+The exact signed 2.2.0/build 67 app upgraded through its standard signed updater
+to 2.3.0/build 68. The upgraded application tree matches the verified reference
+exactly, strict signature verification passed, and component receipts remained
+unchanged until the explicit MCP card Update.
 
-No 2.3.0 GitHub release, optional Diffenator asset or desktop feed advancement
-has occurred. The host working Glyphs session and component installation were
-not changed. Publication remains blocked by the native acceptance gate.
+The server-update reminder appeared with the intended headline and readable
+text. Open Setup navigated without installing components. The MCP card showed
+Update available and a filled primary Update button; both unchanged inspectors
+showed Installed and secondary Update buttons. The existing Glyphs-running
+safeguard disabled writes until the guest Glyphs app was explicitly quit.
+The MCP-only update then passed, its receipt reports 2.3.0, and its card returned
+to Installed with secondary Update styling. Inspector versions remained unchanged.
+Diffenator is absent; independent Beztrace is preserved and the older-macOS
+requirement is visible. See [native evidence](vm-upgrade/acceptance.json).
+
+Later, once-per-version/location, quiet login, unknown/newer/development-linked
+installations and failure/cancellation policy branches are covered by desktop
+tests; this report does not claim a manual VM replay of every branch. VirtualBuddy
+does not expose guest accessibility elements, so prior live accessibility limits
+remain. The working host Glyphs session and component installation were untouched.
+
+At this evidence commit, publication and desktop feed advancement have not yet
+occurred. Diffenator has no distributable runtime in this release.
