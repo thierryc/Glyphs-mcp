@@ -33,13 +33,16 @@ def test_plugin_and_cli_trust_require_notarized_install_assessment(tmp_path, mon
 
 def catalog(tmp_path, tools=None):
     path = tmp_path / 'catalog.json'
-    path.write_text(json.dumps(dict(schemaVersion=1, tools=tools or {name: dict(status='pending_qualification', reason='Waiting for signing') for name in installer.IDS})))
+    entries = tools or {name: dict(status='pending_qualification', reason='Waiting for signing') for name in installer.IDS}
+    entries['beztrace-glyphs'].setdefault('engineVersion', '0.2.1')
+    path.write_text(json.dumps(dict(schemaVersion=1, tools=entries)))
     return path
 
 
 def test_pending_assets_are_never_downloaded_or_installed(tmp_path):
     tools = installer.OptionalTools(tmp_path / 'home', catalog(tmp_path))
     assert all(not tools.status(name)['available'] for name in installer.IDS)
+    assert all(not tools.status(name)['distributionQualified'] for name in installer.IDS)
     with pytest.raises(ValueError, match='Waiting for signing'): tools.install('diffenator')
     assert not tools.root.exists()
 
@@ -62,6 +65,7 @@ def test_qualification_is_scoped_to_architecture_and_os(tmp_path, monkeypatch, a
     }))
     state = tools.status('beztrace-glyphs')
     assert state['available'] is available
+    assert state['distributionQualified'] is True
     if reason:
         assert reason in state['reason']
         with pytest.raises(ValueError, match=reason):
@@ -122,6 +126,99 @@ def test_runtime_install_update_remove_and_user_modification(tmp_path, monkeypat
     (target / 'bin/python3').write_bytes(payload['runtime/bin/python3'])
     assert tools.remove('diffenator')['installed'] is False
     assert not target.exists()
+
+
+@pytest.fixture
+def beztrace_upgrade(tmp_path, monkeypatch):
+    import io
+    import platform
+    monkeypatch.setattr(platform, 'machine', lambda: 'arm64')
+    monkeypatch.setattr(platform, 'mac_ver', lambda: ('26.6.2', (), ''))
+    info = plistlib.dumps(dict(CFBundleIdentifier='dev.beztrace.glyphs',
+                              CFBundleShortVersionString='0.2.0', CFBundleVersion='25'))
+    archive = tmp_path / 'plugin.zip'
+    with zipfile.ZipFile(archive, 'w') as z:
+        z.writestr('Beztrace.glyphsPlugin/Contents/Info.plist', info)
+    release = dict(version='0.2.0', build=25, directory='beztrace-glyphs-build25',
+                   engineConfiguration='manual-selection', payloadRoot='Beztrace.glyphsPlugin',
+                   archiveURL='https://github.com/example/releases/plugin.zip',
+                   archiveSize=archive.stat().st_size, archiveSHA256=installer.checksum(archive),
+                   files={'Beztrace.glyphsPlugin/Contents/Info.plist': hashlib.sha256(info).hexdigest()},
+                   teamID='N9U29A4T8J', trustSubjects=['.'])
+    tools = installer.OptionalTools(tmp_path / 'home', catalog(tmp_path, {
+        'diffenator': dict(status='pending_qualification'),
+        'beztrace-glyphs': dict(status='qualified', releases={'arm64': release}),
+    }))
+    plugin = tools.target('beztrace-glyphs', release)
+    (plugin / 'Contents').mkdir(parents=True)
+    (plugin / 'Contents/Info.plist').write_bytes(plistlib.dumps(dict(
+        CFBundleIdentifier='dev.beztrace.glyphs', CFBundleShortVersionString='0.1.0', CFBundleVersion='16')))
+    old_engine = tools.home / 'Library/Application Support/beztrace/engines/0.1.1/bin/beztrace'
+    old_engine.parent.mkdir(parents=True); old_engine.write_bytes(b'preserved old engine')
+    config = tools.home / 'Library/Application Support/beztrace/engine-settings-v1.json'
+    config.write_text(json.dumps(dict(schemaVersion=1, managedEngine=str(old_engine),
+                                     userEngine='/explicit/beztrace', extra='preserve')))
+    tools.root.mkdir(parents=True)
+    tools.receipt_path('beztrace-glyphs').write_text(json.dumps(dict(
+        release, version='0.1.0', build=16, target=str(plugin), identity=installer._identity(plugin),
+        managedEngine=str(old_engine))))
+    engine = tmp_path / 'engine'; (engine / 'bin').mkdir(parents=True)
+    (engine / 'bin/beztrace').write_bytes(b'new engine')
+    (engine / 'integration-manifest.json').write_text(json.dumps(dict(
+        version='0.2.1', files={'bin/beztrace': installer.checksum(engine / 'bin/beztrace')})))
+    monkeypatch.setattr(installer.urllib.request, 'urlopen', lambda *a, **kw: io.BytesIO(archive.read_bytes()))
+    monkeypatch.setattr(installer, 'verify_trust', lambda *a: None)  # Synthetic fixture only.
+    return tools, engine, config, old_engine
+
+
+@pytest.mark.parametrize('settings_kind', ['regular', 'malformed', 'symlink'])
+def test_beztrace_upgrade_uses_new_engine_and_preserves_legacy_choices(beztrace_upgrade, settings_kind):
+    tools, engine, config, old_engine = beztrace_upgrade
+    if settings_kind == 'malformed':
+        config.write_bytes(b'{old invalid settings')
+    elif settings_kind == 'symlink':
+        linked = config.with_name('user-settings.json')
+        config.rename(linked); config.symlink_to(linked)
+    before = config.read_bytes()
+    assert tools.install('beztrace-glyphs', engine)['version'] == '0.2.0'
+    version, target, receipt = tools.engine_paths()
+    assert version == '0.2.1'
+    assert (target / 'bin/beztrace').read_bytes() == b'new engine'
+    assert json.loads(receipt.read_text())['version'] == '0.2.1'
+    plugin_receipt = tools.read_receipt('beztrace-glyphs')
+    assert plugin_receipt['build'] == 25
+    assert plugin_receipt['engineExecutable'] == str(target / 'bin/beztrace')
+    assert 'managedEngine' not in plugin_receipt
+    assert config.read_bytes() == before
+    assert old_engine.read_bytes() == b'preserved old engine'
+    # Repeat update, then remove the owned plugin while retaining shared engines/settings.
+    tools.install('beztrace-glyphs', engine)
+    assert tools.remove('beztrace-glyphs')['installed'] is False
+    assert target.exists() and old_engine.exists() and config.read_bytes() == before
+    assert config.is_symlink() is (settings_kind == 'symlink')
+    allowed = tools.recovery_targets('beztrace-glyphs')
+    assert target in allowed and receipt in allowed and old_engine.parent.parent in allowed
+
+
+@pytest.mark.parametrize('failure', ['wrong_version', 'modified_engine', 'unowned_engine'])
+def test_beztrace_upgrade_refuses_invalid_engine_without_replacing_plugin(beztrace_upgrade, failure):
+    tools, engine, config, _ = beztrace_upgrade
+    before = tools.read_receipt('beztrace-glyphs')
+    settings = config.read_bytes()
+    if failure == 'wrong_version':
+        manifest = engine / 'integration-manifest.json'
+        data = json.loads(manifest.read_text()); data['version'] = '0.1.1'
+        manifest.write_text(json.dumps(data))
+    elif failure == 'modified_engine':
+        (engine / 'bin/beztrace').write_bytes(b'modified')
+    else:
+        _, target, _ = tools.engine_paths()
+        target.mkdir(parents=True); (target / 'user-file').write_text('preserve')
+    with pytest.raises(ValueError, match='Incompatible bundled engine|inventory differs|Unowned/modified engine'):
+        tools.install('beztrace-glyphs', engine)
+    assert tools.read_receipt('beztrace-glyphs') == before
+    assert installer._identity(tools.target('beztrace-glyphs', before)) == before['identity']
+    assert config.read_bytes() == settings
 
 
 def engine_module():

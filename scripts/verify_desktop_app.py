@@ -12,7 +12,7 @@ import subprocess
 from desktop_release_identity import load
 
 ROOT = Path(__file__).resolve().parents[1]
-BEZTRACE_VERSION = '0.1.1'
+BEZTRACE_VERSION = '0.2.1'
 BEZTRACE_DIRECTORY = 'Beztrace/beztrace-' + BEZTRACE_VERSION
 BEZTRACE_MANIFEST = 'integration-manifest.json'
 

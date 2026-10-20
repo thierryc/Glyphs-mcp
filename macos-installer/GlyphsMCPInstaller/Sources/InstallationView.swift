@@ -8,6 +8,7 @@ struct InstallationView: View {
     @EnvironmentObject private var model: InstallerViewModel
     @State private var pendingRemoval: RemovalTarget?
     @State private var showingBeztraceSetup = false
+    @State private var showingDiffenatorSetup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -40,6 +41,7 @@ struct InstallationView: View {
             Text(target.message)
         }
         .onAppear { model.refreshOptionalTools() }
+        .sheet(isPresented: $showingDiffenatorSetup) { DiffenatorSetupView() }
         .sheet(isPresented: $showingBeztraceSetup) {
             BeztraceSetupView()
         }
@@ -85,10 +87,10 @@ struct InstallationView: View {
                     )
                 }
                 OptionalToolSetupCard(id: "beztrace-glyphs", title: "Beztrace", symbol: "pencil.and.outline",
-                    detail: "Trace PNG and JPEG images into editable outlines.") { showingBeztraceSetup = true }
+                    detail: "Trace images and match master outlines.") { showingBeztraceSetup = true }
                 OptionalToolSetupCard(id: "diffenator", title: "Diffenator", symbol: "doc.on.doc",
                     detail: "Compare compiled TTF releases and review an HTML report.") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/googlefonts/diffenator2")!)
+                    showingDiffenatorSetup = true
                 }
             }
         }
@@ -170,15 +172,43 @@ private struct BeztraceSetupView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
-                Text("Managed setup installs signed companion 0.1.0 build 16 and uses the bundled engine 0.1.1. Qualified for Apple Silicon on macOS 26.6.2 or later. Engine selection persists when the panel reopens; explicit user choices take priority. Install All excludes Beztrace.")
+                Text("Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace.")
                 DesktopTextLink("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {
+                Text("Separate installations").font(.headline)
+                Text("Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved.")
                 Text("Using Beztrace").font(.headline)
-                Text("Place a PNG or JPEG in the glyph layer, then choose Path → Beztrace…. Position the image on the canvas, choose Trace, adjust the result, then Done. Managed setup selects the bundled engine automatically.")
-                Text("The plugin works independently of the MCP server. Trace adds editable paths; Done keeps them without saving the font.")
+                Text("Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice.")
+                Text("Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font.")
                     .foregroundStyle(.secondary)
             }
+        }
+        .font(.callout)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(24)
+        .frame(width: 540)
+    }
+}
+
+private struct DiffenatorSetupView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text("Diffenator").font(.title2.bold())
+                Spacer()
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            }
+            Text("Compare compiled TTF releases and review an HTML report.")
+            Text("Requirements").font(.headline)
+            Text("Diffenator is distributed separately from the desktop app. Setup enables installation only after release qualification for this Mac. Intel support is unavailable until qualified. Install All excludes Diffenator.")
+            Text("Using Diffenator").font(.headline)
+            Text("Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved.")
+            Text("Separate installations").font(.headline)
+            Text("The optional runtime is managed separately. Removing it preserves your fonts and published reports.")
+            DesktopTextLink("Diffenator documentation", destination: URL(string: "https://github.com/googlefonts/diffenator2")!)
         }
         .font(.callout)
         .fixedSize(horizontal: false, vertical: true)

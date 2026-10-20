@@ -112,6 +112,14 @@ class OptionalTools:
             raise ValueError('Invalid optional tool catalog')
 
     def receipt_path(self, tool): return self.root / ('receipt-' + tool + '.json')
+
+    def engine_paths(self):
+        version = self.catalog['tools']['beztrace-glyphs']['engineVersion']
+        if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version):
+            raise ValueError('Invalid bundled engine version')
+        root = self.home / 'Library/Application Support/beztrace/engines'
+        return version, root / version, root / ('receipt-' + version + '.json')
+
     def read_receipt(self, tool):
         path = self.receipt_path(tool)
         regular_ancestors(path)
@@ -153,7 +161,8 @@ class OptionalTools:
             available, reason = True, None
         except ValueError as exc:
             available, reason = False, str(exc)
-        result = dict(id=tool, available=available, reason=reason, installed=False)
+        result = dict(id=tool, available=available, reason=reason, installed=False,
+                      distributionQualified=self.catalog['tools'][tool].get('status') == 'qualified')
         receipt = self.read_receipt(tool)
         if receipt:
             target = Path(receipt['target'])
@@ -177,8 +186,11 @@ class OptionalTools:
     def recovery_targets(self, tool, release=None):
         targets = {self.receipt_path(tool)}
         if tool == 'beztrace-glyphs':
+            _, engine_target, engine_receipt = self.engine_paths()
             targets.update({self.target(tool, {}),
                             self.home / 'Library/Application Support/beztrace/engine-settings-v1.json',
+                            engine_target, engine_receipt,
+                            # Recover interrupted transactions from the previous catalog, too.
                             self.home / 'Library/Application Support/beztrace/engines/0.1.1',
                             self.home / 'Library/Application Support/beztrace/engines/receipt-0.1.1.json'})
         else:
@@ -209,8 +221,8 @@ class OptionalTools:
             transaction_root = self.root / 'transactions' / tool; transaction_root.mkdir(parents=True, exist_ok=True)
             current = self.root / 'diffenator/current.json'
             config = self.home / 'Library/Application Support/beztrace/engine-settings-v1.json'
-            engine_target = self.home / 'Library/Application Support/beztrace/engines/0.1.1'
-            engine_receipt = engine_target.parent / 'receipt-0.1.1.json'
+            if tool == 'beztrace-glyphs':
+                engine_version, engine_target, engine_receipt = self.engine_paths()
             InstallationTransaction.recover(transaction_root, self.recovery_targets(tool, release))
             receipt = self.read_receipt(tool)
             owned(receipt, target)
@@ -257,26 +269,32 @@ class OptionalTools:
                     if (info.get('CFBundleIdentifier') != 'dev.beztrace.glyphs' or str(info.get('CFBundleVersion')) != str(release['build'])
                             or info.get('CFBundleShortVersionString') != release.get('version')):
                         raise ValueError('Beztrace bundle identity/build differs')
-                    if release.get('engineConfiguration') != 'engine-settings-v1': raise ValueError('Companion lacks persistent engine support')
+                    configuration = release.get('engineConfiguration')
+                    if configuration not in ('engine-settings-v1', 'manual-selection'):
+                        raise ValueError('Unsupported companion engine configuration')
                     if engine is None: raise ValueError('Bundled engine is required')
-                    engine = Path(engine); regular_ancestors(config); regular_ancestors(engine_target)
+                    engine = Path(engine); regular_ancestors(engine_target)
                     regular_ancestors(engine_receipt)
                     previous_engine = json.loads(engine_receipt.read_text()) if engine_receipt.exists() else None
                     if engine_target.exists():
                         expected = (previous_engine or {}).get('identity') or (receipt or {}).get('engineIdentity')
                         if expected != _identity(engine_target): raise ValueError('Unowned/modified engine is preserved')
                     manifest = json.loads((engine / 'integration-manifest.json').read_text())
-                    if manifest.get('version') != '0.1.1': raise ValueError('Incompatible bundled engine')
+                    if manifest.get('version') != engine_version: raise ValueError('Incompatible bundled engine')
                     if any(checksum(engine / safe_relative(name)) != expected for name, expected in manifest['files'].items()): raise ValueError('Bundled engine inventory differs')
                     verify_trust(engine, dict(teamID=release['teamID'], trustSubjects=['bin/beztrace']))
-                    settings = json.loads(config.read_text()) if config.exists() else {'schemaVersion': 1}
-                    if settings.get('schemaVersion') != 1: raise ValueError('Unsupported engine settings')
-                    settings['managedEngine'] = str(engine_target / 'bin/beztrace')
-                    config_stage = stage / 'engine-config.json'; write_json(config_stage, settings)
+                    if configuration == 'engine-settings-v1':
+                        regular_ancestors(config)
+                        settings = json.loads(config.read_text()) if config.exists() else {'schemaVersion': 1}
+                        if settings.get('schemaVersion') != 1: raise ValueError('Unsupported engine settings')
+                        settings['managedEngine'] = str(engine_target / 'bin/beztrace')
+                        config_stage = stage / 'engine-config.json'; write_json(config_stage, settings)
+                        changes.append((config_stage, config))
+                        next_receipt['managedEngine'] = settings['managedEngine']
                     engine_receipt_stage = stage / 'engine-receipt.json'
-                    write_json(engine_receipt_stage, dict(target=str(engine_target), identity=_identity(engine), version='0.1.1'))
-                    changes += [(engine, engine_target), (config_stage, config), (engine_receipt_stage, engine_receipt)]
-                    next_receipt.update(engineIdentity=_identity(engine), managedEngine=settings['managedEngine'])
+                    write_json(engine_receipt_stage, dict(target=str(engine_target), identity=_identity(engine), version=engine_version))
+                    changes += [(engine, engine_target), (engine_receipt_stage, engine_receipt)]
+                    next_receipt.update(engineIdentity=_identity(engine), engineExecutable=str(engine_target / 'bin/beztrace'))
                 next_path = stage / 'receipt.json'; write_json(next_path, next_receipt)
                 changes.append((next_path, self.receipt_path(tool)))
                 InstallationTransaction(transaction_root, changes).apply()
@@ -297,7 +315,7 @@ class OptionalTools:
                     if current.exists() and json.loads(current.read_text()).get('directory') != receipt['directory']:
                         raise ValueError('Changed runtime pointer is preserved')
                     changes.append((None, current))
-                else:
+                elif receipt.get('managedEngine'):
                     config = self.home / 'Library/Application Support/beztrace/engine-settings-v1.json'; regular_ancestors(config)
                     if config.exists():
                         settings = json.loads(config.read_text())

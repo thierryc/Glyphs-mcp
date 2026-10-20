@@ -1,0 +1,392 @@
+{
+  "version": "1",
+  "pip_version": "26.1.2",
+  "install": [
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/c7/d8/bb2f602f5e012e177e1c8560125f9770945d36622595990cf1cb794477c2/poetry_core-2.2.1-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "bdfce710edc10bfcf9ab35041605c480829be4ab23f5bc01202cfe5db8f125ab"
+          },
+          "hash": "sha256=bdfce710edc10bfcf9ab35041605c480829be4ab23f5bc01202cfe5db8f125ab"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": true,
+      "metadata": {
+        "metadata_version": "2.4",
+        "name": "poetry-core",
+        "version": "2.2.1",
+        "summary": "Poetry PEP 517 Build Backend",
+        "description": "# Poetry Core\n[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)\n[![PyPI version](https://img.shields.io/pypi/v/poetry-core)](https://pypi.org/project/poetry-core/)\n[![Python Versions](https://img.shields.io/pypi/pyversions/poetry-core)](https://pypi.org/project/poetry-core/)\n[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)\n[![](https://github.com/python-poetry/poetry-core/workflows/Tests/badge.svg)](https://github.com/python-poetry/poetry-core/actions?query=workflow%3ATests)\n\nA [PEP 517](https://www.python.org/dev/peps/pep-0517/) build backend implementation developed for\n[Poetry](https://github.com/python-poetry/poetry). This project is intended to be a lightweight, fully compliant,\nself-contained package allowing PEP 517-compatible build frontends to build Poetry-managed projects.\n\n## Usage\nIn most cases, the usage of this package is transparent to the end-user as it is either used by Poetry itself\nor a PEP 517 frontend (eg: `pip`).\n\nIn order to enable the use of `poetry-core` as your build backend, the following snippet must be present in your\nproject's `pyproject.toml` file.\n\n```toml\n[build-system]\nrequires = [\"poetry-core\"]\nbuild-backend = \"poetry.core.masonry.api\"\n```\n\nOnce this is present, a PEP 517 frontend like `pip` can build and install your project from source without the need\nfor Poetry or any of its dependencies (besides `poetry-core`).\n\n```shell\n# install to current environment\npip install /path/to/poetry/managed/project\n\n# build a wheel package\npip wheel /path/to/poetry/managed/project\n```\n\n## Why is this required?\nPrior to the release of version `1.1.0`, Poetry was a project management tool that included a PEP 517\nbuild backend. This was inefficient and time consuming when a PEP 517 build was required. For example,\nboth `pip` and `tox` (with isolated builds) would install Poetry and all dependencies it required. Most of these\ndependencies are not required when the objective is to simply build either a source or binary distribution of your\nproject.\n\nIn order to improve the above situation, `poetry-core` was created. Shared functionality pertaining to PEP 517 build\nbackends, including reading `pyproject.toml` and building wheel/sdist, were implemented in this package. This\nmakes PEP 517 builds extremely fast for Poetry-managed packages.\n\n## Contributing\n\nContributing is similar to [the main `poetry` repo](https://github.com/python-poetry/poetry?tab=readme-ov-file#contribute):\n\n```bash\n# For example:\npoetry install\npoetry run pytest\n```\n\nFor full documentation, see [the full contributing documentation](https://python-poetry.org/docs/contributing).\n\n",
+        "description_content_type": "text/markdown",
+        "keywords": [
+          "packaging",
+          "dependency",
+          "poetry"
+        ],
+        "author": "Sébastien Eustace",
+        "author_email": "sebastien@eustace.io",
+        "maintainer": "Arun Babu Neelicattu",
+        "maintainer_email": "arun.neelicattu@gmail.com",
+        "license_expression": "MIT",
+        "license_file": [
+          "LICENSE"
+        ],
+        "classifier": [
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.9",
+          "Programming Language :: Python :: 3.10",
+          "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
+          "Programming Language :: Python :: 3.13",
+          "Programming Language :: Python :: 3.14",
+          "Topic :: Software Development :: Build Tools",
+          "Topic :: Software Development :: Libraries :: Python Modules"
+        ],
+        "requires_python": ">=3.9, <4.0",
+        "project_url": [
+          "Bug Tracker, https://github.com/python-poetry/poetry/issues",
+          "Homepage, https://github.com/python-poetry/poetry-core",
+          "Repository, https://github.com/python-poetry/poetry-core"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/f8/2d/cc9830ff816cfc5b98f09bcce22fc63ca469538c0125f88a0cdadb74b3e7/poetry_dynamic_versioning-1.9.1-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "65a0c814e6d30d4807734a3c34edf261fd7cc3b340dbd23b6a33ee41f7d0b547"
+          },
+          "hash": "sha256=65a0c814e6d30d4807734a3c34edf261fd7cc3b340dbd23b6a33ee41f7d0b547"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": true,
+      "metadata": {
+        "metadata_version": "2.1",
+        "name": "poetry-dynamic-versioning",
+        "version": "1.9.1",
+        "summary": "Plugin for Poetry to enable dynamic versioning based on VCS tags",
+        "description": "# Dynamic versioning plugin for Poetry\nThis is a Python 3.7+ plugin for [Poetry 1.2.0+](https://github.com/sdispater/poetry)\nand [Poetry Core 1.0.0+](https://github.com/python-poetry/poetry-core)\nto enable dynamic versioning based on tags in your version control system,\npowered by [Dunamai](https://github.com/mtkennerly/dunamai).\nMany different version control systems are supported, including Git and Mercurial;\nplease refer to the Dunamai page for the full list\n(and minimum supported version where applicable).\n\nOnce the plugin is set up,\nyou can create tags in your version control system (e.g., `git tag v0.1.0 -m \"New release\"`),\nand the plugin will automatically insert that version into relevant files\n(like `pyproject.toml` or `*.py` files with a `__version__`  line)\nfor the duration of Poetry commands such as `poetry build`,\nthen revert the changes afterwards to keep your repository clean.\nThe plugin aims to inject a static copy of the version into build artifacts (sdists/wheels)\nwithout the need to manually edit and commit changed files in your repository.\n\n`poetry-dynamic-versioning` provides a build backend that patches Poetry Core\nto enable the versioning system in PEP 517 build frontends.\nWhen installed with the `plugin` feature (i.e., `poetry-dynamic-versioning[plugin]`),\nit also integrates with the Poetry CLI to trigger the versioning in commands like `poetry build`.\n\nFor Poetry 1.1.x, you can use an older version of `poetry-dynamic-versioning` (0.17.1 or earlier)\nthat relied on a `*.pth` import hack, but this is no longer supported,\nso you should migrate to the standardized plugin and Poetry 1.2.0+.\n\n## Installation\nIf you've previously installed the deprecated `poetry-dynamic-versioning-plugin` package,\nbe sure to uninstall it before proceeding.\n\n* Install the plugin using one of the options below:\n\n  * For Poetry 2.0.0+, add this to your pyproject.toml and then run `poetry install`:\n    ```toml\n    [tool.poetry.requires-plugins]\n    poetry-dynamic-versioning = { version = \">=1.0.0,<2.0.0\", extras = [\"plugin\"] }\n    ```\n  * For older Poetry versions, depending on how you installed Poetry:\n    * In most cases: `poetry self add \"poetry-dynamic-versioning[plugin]\"`\n    * If you installed Poetry with Pipx: `pipx inject poetry \"poetry-dynamic-versioning[plugin]\"`\n\n  See the [Poetry plugin documentation](https://python-poetry.org/docs/plugins/#using-plugins)\n  for more information about these options.\n* Run this in your project: `poetry dynamic-versioning enable`\n\n  Or you can update your pyproject.toml manually to include these fields:\n\n  ```toml\n  [project]\n  dynamic = [\"version\"]\n\n  [tool.poetry]\n  version = \"0.0.0\"\n\n  [tool.poetry-dynamic-versioning]\n  enable = true\n  ```\n\n  Include the plugin in the `build-system` section of pyproject.toml\n  for interoperability with PEP 517 build frontends:\n\n  ```toml\n  [build-system]\n  requires = [\"poetry-core>=1.0.0\", \"poetry-dynamic-versioning>=1.0.0,<2.0.0\"]\n  build-backend = \"poetry_dynamic_versioning.backend\"\n  ```\n\n  This is a thin wrapper around `poetry.core.masonry.api`.\n\nPoetry still requires the `tool.poetry.version` field to be present in pyproject.toml,\nbut you are encouraged to use `version = \"0.0.0\"` as a standard placeholder.\n\nWith the minimal configuration above,\nthe plugin will automatically take effect when you run commands such as `poetry build`.\nIt will update the version in pyproject.toml, then revert the change when the plugin deactivates.\n\nThe default configuration will also update any pre-existing\n`__version__ = \"0.0.0\"` and `__version_tuple__ = (0, 0, 0)` placeholders in some files.\nYou can configure additional substitution patterns/files as needed (see below).\n\n## Configuration\nIn your pyproject.toml file, you may configure the following options:\n\n* `[tool.poetry-dynamic-versioning]`:\n  General options.\n  * `enable` (boolean, default: false):\n    Since the plugin has to be installed globally,\n    this setting is an opt-in per project.\n  * `vcs` (string, default: `any`):\n    This is the version control system to check for a version.\n    One of: `any`, `git`, `mercurial`, `darcs`, `bazaar`, `subversion`, `fossil`, `pijul`.\n  * `metadata` (boolean, default: unset):\n    If true, include the commit hash in the version,\n    and also include a dirty flag if `dirty` is true.\n    If unset, metadata will only be included if you are on a commit without a version tag.\n    This is ignored when `format` or `format-jinja` is used.\n  * `tagged-metadata` (boolean, default: false):\n    If true, include any tagged metadata discovered as the first part of the metadata segment.\n    Has no effect when `metadata` is set to false.\n    This is ignored when `format` or `format-jinja` is used.\n  * `dirty` (boolean, default: false):\n    If true, include a dirty flag in the metadata,\n    indicating whether there are any uncommitted changes.\n    Has no effect when `metadata` is set to false.\n    This is ignored when `format` or `format-jinja` is used.\n  * `pattern` (string):\n    This is a regular expression which will be used to find a tag representing a version.\n    When this is unset, Dunamai's default pattern is used.\n\n    There must be a capture group named `base` with the main part of the version.\n    Optionally, it may contain another two groups named `stage` and `revision` for prereleases,\n    and it may contain a group named `tagged_metadata` to be used with the `tagged-metadata` option.\n    There may also be a group named `epoch` for the PEP 440 concept.\n\n    If the `base` group is not included,\n    then this will be interpreted as a named preset from the Dunamai `Pattern` class.\n    This includes: `default`, `default-unprefixed` (makes the `v` prefix optional).\n\n    You can check the default for your installed version of Dunamai by running this command:\n    ```\n    poetry run python -c \"import dunamai; print(dunamai.Pattern.Default.regex())\"\n    ```\n\n    Remember that backslashes must be escaped in the TOML file.\n\n    ```toml\n    # Regular expression:\n    pattern = '(?P<base>\\d+\\.\\d+\\.\\d+)'\n    # Named preset:\n    pattern = \"default-unprefixed\"\n    ```\n  * `pattern-prefix` (string):\n    This will be inserted after the pattern's start anchor (`^`).\n    For example, to match tags like `some-package-v1.2.3`,\n    you can keep the default pattern and set the prefix to `some-package-`.\n  * `format` (string, default: unset):\n    This defines a custom output format for the version. Available substitutions:\n\n    * `{base}`\n    * `{stage}`\n    * `{revision}`\n    * `{distance}`\n    * `{commit}`\n    * `{dirty}`\n    * `{tagged_metadata}`\n    * `{branch}`\n    * `{branch_escaped}` which omits any non-letter/number characters\n    * `{timestamp}` of the current commit, which expands to YYYYmmddHHMMSS as UTC\n    * `{major}` (first part of `base` split on `.`, or 0)\n    * `{minor}` (second part of `base` split on `.`, or 0)\n    * `{patch}` (third part of `base` split on `.`, or 0)\n\n    Example: `v{base}+{distance}.{commit}`\n  * `format-jinja` (string, default: unset):\n    This defines a custom output format for the version,\n    using a [Jinja](https://pypi.org/project/Jinja2) template.\n    When this is set, `format` is ignored.\n\n    Available variables:\n\n    * `base` (string)\n    * `stage` (string or None)\n    * `revision` (integer or None)\n    * `distance` (integer)\n    * `commit` (string)\n    * `dirty` (boolean)\n    * `tagged_metadata` (string or None)\n    * `version` (dunumai.Version)\n    * `env` (dictionary of environment variables)\n    * `branch` (string or None)\n    * `branch_escaped` (string or None)\n    * `timestamp` (string or None)\n    * `major` (integer)\n    * `minor` (integer)\n    * `patch` (integer)\n\n    Available functions:\n\n    * `bump_version` ([from Dunamai](https://github.com/mtkennerly/dunamai/blob/fe69436133d0ea2097a9fed1dbb31ec96263cf83/dunamai/__init__.py#L1965-L1977))\n    * `serialize_pep440` ([from Dunamai](https://github.com/mtkennerly/dunamai/blob/fe69436133d0ea2097a9fed1dbb31ec96263cf83/dunamai/__init__.py#L1863-L1886))\n    * `serialize_semver` ([from Dunamai](https://github.com/mtkennerly/dunamai/blob/fe69436133d0ea2097a9fed1dbb31ec96263cf83/dunamai/__init__.py#L1917-L1931))\n    * `serialize_pvp` ([from Dunamai](https://github.com/mtkennerly/dunamai/blob/fe69436133d0ea2097a9fed1dbb31ec96263cf83/dunamai/__init__.py#L1945-L1954))\n\n    Simple example:\n\n    ```toml\n    format-jinja = \"{% if distance == 0 %}{{ base }}{% else %}{{ base }}+{{ distance }}.{{ commit }}{% endif %}\"\n    ```\n\n    Complex example:\n\n    ```toml\n    format-jinja = \"\"\"\n        {%- if distance == 0 -%}\n            {{ serialize_pep440(base, stage, revision) }}\n        {%- elif revision is not none -%}\n            {{ serialize_pep440(base, stage, revision + 1, dev=distance, metadata=[commit]) }}\n        {%- else -%}\n            {{ serialize_pep440(bump_version(base), stage, revision, dev=distance, metadata=[commit]) }}\n        {%- endif -%}\n    \"\"\"\n    ```\n  * `format-jinja-imports` (array of tables, default: empty):\n    This defines additional things to import and make available to the `format-jinja` template.\n    Each table must contain a `module` key and may also contain an `item` key. Consider this example:\n\n    ```toml\n    format-jinja-imports = [\n        { module = \"foo\" },\n        { module = \"bar\", item = \"baz\" },\n    ]\n    ```\n\n    This is roughly equivalent to:\n\n    ```python\n    import foo\n    from bar import baz\n    ```\n\n    `foo` and `baz` would then become available in the Jinja formatting.\n  * `style` (string, default: unset):\n    One of: `pep440`, `semver`, `pvp`.\n    These are preconfigured output formats.\n    If you set both a `style` and a `format`,\n    then the format will be validated against the style's rules.\n    If `style` is unset, the default output format will follow PEP 440,\n    but a custom `format` will only be validated if `style` is set explicitly.\n\n    Regardless of the style you choose,\n    the dynamic version is ultimately subject to Poetry's validation as well,\n    and Poetry is designed around PEP 440 versions.\n    Poetry can usually understand SemVer/etc input,\n    but sometimes, Poetry may reject an otherwise valid version format.\n  * `latest-tag` (boolean, default: false):\n    If true, then only check the latest tag for a version,\n    rather than looking through all the tags until a suitable one is found to match the `pattern`.\n  * `bump` (boolean or table, default: false):\n    If enabled, then increment the last part of the version `base` by 1,\n    unless the `stage` is set,\n    in which case increment the `revision` by 1 or set it to a default of 2 if there was no `revision`.\n    Does nothing when on a commit with a version tag.\n\n    One of:\n\n    * When set to a boolean, true means enable bumping, with other settings as default.\n    * When set to a table, these fields are allowed:\n      * `enable` (boolean, default: false):\n        If true, enable bumping.\n      * `index` (integer, default: -1):\n        Numerical position to increment in the base.\n        This follows Python indexing rules, so positive numbers start from\n        the left side and count up from 0, while negative numbers start from\n        the right side and count down from -1.\n\n    Example, if there have been 3 commits since the `v1.3.1` tag:\n    * PEP 440 with `bump = false`: `1.3.1.post3.dev0+28c1684`\n    * PEP 440 with `bump = true`: `1.3.2.dev3+28c1684`\n  * `tag-dir` (string, default: `tags`):\n    This is the location of tags relative to the root.\n    This is only used for Subversion.\n  * `tag-branch` (string, default: unset):\n    Branch on which to find tags, if different than the current branch.\n    This is only used for Git currently.\n  * `full-commit` (boolean, default: false):\n    If true, get the full commit hash instead of the short form.\n    This is only used for Git and Mercurial.\n  * `commit-length` (integer, default: unset):\n    Use this many characters from the start of the full commit hash.\n  * `commit-prefix` (string, default: unset):\n    Add this prefix to the commit ID when serializing.\n    This can be helpful when an all-numeric commit would be misinterpreted.\n    For example, \"g\" is a common prefix for Git commits.\n  * `strict` (boolean, default: false):\n    If true, then fail instead of falling back to 0.0.0 when there are no tags.\n  * `fix-shallow-repository` (boolean, default: false):\n    If true, then automatically try to fix shallow repositories.\n    Currently, this only supports Git and will run `git fetch --unshallow`.\n  * `ignore-untracked` (boolean, default: false):\n    If true, ignore untracked files when determining whether the repository is dirty.\n  * `escape-with` (string, default: unset):\n    When escaping, replace invalid characters with this substitution.\n    The default is simply to remove invalid characters.\n* `[tool.poetry-dynamic-versioning.substitution]`:\n  Insert the dynamic version into additional files other than just pyproject.toml.\n  These changes will be reverted when the plugin deactivates.\n  * `files` (array of strings): Globs for any files that need substitutions. Default:\n    `[\"*.py\", \"*/__init__.py\", \"*/__version__.py\", \"*/_version.py\"]`.\n    To disable substitution, set this to an empty list.\n  * `patterns` (array of strings/tables):\n    Regular expressions for the text to replace.\n    Each regular expression must have two capture groups,\n    which are any text to preserve before and after the replaced text.\n\n    String items are interpreted as a regular expression directly.\n    Table items support these keys:\n    * `value` (string):\n      This is the regular expression.\n    * `mode` (string, optional):\n      This controls how the version should be inserted. Options:\n      * `str` (default):\n        Serialize version as-is.\n        The capture groups should already include the surrounding quotation marks.\n      * `tuple`:\n        Serialize `0.1.2.dev0+a.b` as `0, 1, 2, \"dev0\", \"a.b\"`.\n        The capture groups should already include the surrounding parentheses.\n\n    Default:\n\n    ```toml\n    patterns = [\n        '''(^__version__\\s*(?::.*?)?=\\s*['\"])[^'\"]*(['\"])''',\n        { value = '''(^__version_tuple__\\s*(?::.*?)?=\\s*\\()[^)]*(\\))''', mode = \"tuple\" },\n    ]\n    ```\n\n    Remember that the backslashes must be escaped in the TOML file.\n  * `folders` (array of tables, default: empty):\n    List of additional folders to check for substitutions.\n\n    Each table supports these options:\n\n    * `path` (string, required):\n      Path to the folder.\n    * `files` (array of strings, optional):\n      Override `substitution.files` for this folder.\n    * `patterns` (array of strings, optional):\n      Override `substitution.patterns` for this folder.\n\n    If you use an `src` layout,\n    you may want to keep the default `files`/`patterns` and just specify the following:\n\n    ```toml\n    folders = [\n      { path = \"src\" }\n    ]\n    ```\n\n    This will check the default file globs (e.g., `./*.py`)\n    as well as the same file globs inside of `src` (e.g., `./src/*.py`).\n* `[tool.poetry-dynamic-versioning.files]` (table, default: empty):\n  This section lets you tweak the behavior for individual files.\n  Each table key is a path to a specific file (no globs) relative to the project root.\n  Each nested table supports these fields:\n\n  If you use these options to generate a file that's ignored by your VCS,\n  but you also want the generated file to be included in the output of `poetry build`,\n  then you'll need to name the file explicitly in your `tool.poetry.include` config.\n\n  * `persistent-substitution` (boolean, optional):\n    If true, then do not revert any substitutions applied to this file.\n    This is primarily useful for editable installs, if you need the version to remain in a file ignored by your VCS.\n  * `initial-content` (string, optional):\n    Set the file content before the substitution phase.\n    The file will be created or overwritten as necessary.\n    Common leading whitespace will be stripped from each line.\n  * `initial-content-jinja` (string, optional):\n    Same as `initial-content`, but using Jinja formatting.\n    If both options are set, this one takes priority.\n    You can use the same imports from `format-jinja-imports` and the same variables from `format-jinja`,\n    with this additional variable:\n\n    * `formatted_version` (string) - version formatted by either the `format` or `format-jinja` option\n\n  Example:\n\n  ```toml\n  [tool.poetry-dynamic-versioning.files.\"package/_version.py\"]\n  persistent-substitution = true\n  initial-content = \"\"\"\n    # These version placeholders will be replaced later during substitution.\n    __version__ = \"0.0.0\"\n    __version_tuple__ = (0, 0, 0)\n  \"\"\"\n  ```\n* `[tool.poetry-dynamic-versioning.from-file]`:\n  This section lets you read the version from a file instead of the VCS.\n\n  * `source` (string):\n    If set, read the version from this file.\n    It must be a path relative to the location of pyproject.toml.\n    By default, the plugin will read the entire content of the file,\n    without leading and trailing whitespace.\n  * `pattern` (string):\n    If set, use this regular expression to extract the version from the file.\n    The first capture group must contain the version.\n\nSimple example:\n\n```toml\n[tool.poetry-dynamic-versioning]\nenable = true\nvcs = \"git\"\nstyle = \"semver\"\n```\n\n## Environment variables\nIn addition to the project-specific configuration above,\nyou can apply some global overrides via environment variables.\n\n* `POETRY_DYNAMIC_VERSIONING_BYPASS`:\n  Use this to bypass the VCS mechanisms and use a static version instead.\n  The value of the environment variable will be used as the version\n  for the active project and any path/SSH dependencies that also use the plugin.\n  This is mainly for distro package maintainers who need to patch existing releases,\n  without needing access to the original repository.\n* `POETRY_DYNAMIC_VERSIONING_OVERRIDE`:\n  Use a static version for specific packages only, but leave dynamic versioning enabled otherwise.\n  For example, `pkg1 = 0.1.0, pkg2 = 0.2.0` (spaces are optional) would set pkg1 to 0.1.0 and pkg2 to 0.2.0.\n  This only affects packages for which poetry-dynamic-versioning is enabled.\n  When both variables are set, `OVERRIDE` takes precedence over `BYPASS`.\n* `POETRY_DYNAMIC_VERSIONING_COMMANDS`:\n  You can set a comma-separated list of Poetry commands during which to activate the versioning.\n  For example, `build,publish` will limit the dynamic versioning to those two commands.\n  Similarly, setting `POETRY_DYNAMIC_VERSIONING_COMMANDS=\"\"` will disable the dynamic versioning altogether,\n  which is useful in isolated environments like Docker where versions may not be computable and not needed anymore.\n* `POETRY_DYNAMIC_VERSIONING_COMMANDS_NO_IO`:\n  Comma-separated list of Poetry commands during which the plugin should **not** directly modify files.\n  The plugin will still set the dynamic version in memory so that Poetry itself can write it as needed.\n  Default: `version`.\n* `POETRY_DYNAMIC_VERSIONING_DEBUG`:\n  If this is set to `1`, then some debug logs will be printed to stderr.\n  Right now, this logs some cases where substitution doesn't find anything to change.\n\n## Command line mode\nThe plugin also has a command line mode for execution on demand.\nThis mode applies the dynamic version to all relevant files and leaves the changes in-place,\nallowing you to inspect the result.\nYour configuration will be detected from pyproject.toml as normal,\nbut the `enable` option is not necessary.\n\nTo activate this mode,\neither use `poetry dynamic-versioning` (provided by the `plugin` feature)\nor `poetry-dynamic-versioning` (standalone script with default features).\n\n## VCS archives\nSometimes, you may only have access to an archive of a repository (e.g., a zip file) without the full history.\nThe plugin can still detect a version in some of these cases.\nRefer to [the Dunamai documentation](https://github.com/mtkennerly/dunamai#vcs-archives) for more info.\n\n## Caveats\nAll of [Dunamai's caveats](https://github.com/mtkennerly/dunamai#other-notes) apply.\nIn addition to those:\n\n* The dynamic version is not available during `poetry run` or `poetry shell`\n  because of a [Poetry design choice](https://github.com/python-poetry/poetry/issues/8092)\n  that prevents the plugin from cleaning up after itself.\n* Regarding PEP 517 support:\n\n  `pip wheel .` and `pip install .` will work with new enough Pip versions\n  that default to in-tree builds or support the `--use-feature=in-tree-build` option.\n  Older versions of Pip will not work because they create an isolated copy of the source code\n  that does not contain the version control history.\n\n  If you want to build wheels of your dependencies, you can do the following,\n  although local path-based dependencies may not work:\n\n  ```\n  poetry export -f requirements.txt -o requirements.txt --without-hashes\n  pip wheel -r requirements.txt\n  ```\n* Regarding PEP 621 support:\n\n  The plugin supports the PEP 621 mode of Poetry 2.0.0+ (`[project]`)\n  as well as the classic mode of older Poetry versions (`[tool.poetry]`).\n  Which mode the plugin uses depends on how your pyproject.toml is configured:\n\n  * For the plugin to use the classic mode, your pyproject.toml must:\n    * specify `tool.poetry.name`\n  * For the plugin to use the PEP 621 mode, your pyproject.toml must:\n    * not specify `tool.poetry.name`\n    * specify `tool.poetry.version` (a placeholder like `\"0.0.0\"` is fine)\n    * specify `project.name`\n    * specify `project.dynamic` to contain `\"version\"`\n    * not specify `project.version`\n\n  Note that, in PEP 621 mode,\n  the plugin must temporarily remove and then re-add the `tool.poetry.version` key.\n  This can result in the key shifting to the bottom of its table.\n  Please put the key at the bottom preemptively to avoid any conflicts.\n\n",
+        "description_content_type": "text/markdown",
+        "keywords": [
+          "poetry",
+          "plugin",
+          "version",
+          "versioning",
+          "dynamic"
+        ],
+        "home_page": "https://github.com/mtkennerly/poetry-dynamic-versioning",
+        "author": "Matthew T. Kennerly",
+        "author_email": "mtkennerly@gmail.com",
+        "license": "MIT",
+        "classifier": [
+          "Development Status :: 5 - Production/Stable",
+          "Environment :: Plugins",
+          "Intended Audience :: End Users/Desktop",
+          "License :: OSI Approved :: MIT License",
+          "Natural Language :: English",
+          "Programming Language :: Python",
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
+          "Programming Language :: Python :: 3.9",
+          "Programming Language :: Python :: 3.10",
+          "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
+          "Programming Language :: Python :: 3.13",
+          "Topic :: Software Development :: Version Control",
+          "Topic :: Software Development :: Version Control :: Bazaar",
+          "Topic :: Software Development :: Version Control :: Git",
+          "Topic :: Software Development :: Version Control :: Mercurial"
+        ],
+        "requires_dist": [
+          "dunamai (>=1.25.0,<2.0.0)",
+          "jinja2 (>=2.11.1,<4)",
+          "poetry (>=1.2.0) ; extra == \"plugin\"",
+          "tomlkit (>=0.4)"
+        ],
+        "requires_python": ">=3.7,<4.0",
+        "project_url": [
+          "Repository, https://github.com/mtkennerly/poetry-dynamic-versioning"
+        ],
+        "provides_extra": [
+          "plugin"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/cc/f4/e3be26f6301535ab4a3a940b09e55615c6286195b07fec9aa2cf8b842563/dunamai-1.26.3-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "cc486963f21ad5b5b20d95424909ff5029990241eea3e2272865e1542c5fd19f"
+          },
+          "hash": "sha256=cc486963f21ad5b5b20d95424909ff5029990241eea3e2272865e1542c5fd19f"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": false,
+      "metadata": {
+        "metadata_version": "2.4",
+        "name": "dunamai",
+        "version": "1.26.3",
+        "summary": "Dynamic version generation",
+        "description": "\n# Dunamai\nDunamai is a Python 3.5+ library and command line tool for producing dynamic,\nstandards-compliant version strings, derived from tags in your version control system.\nThis facilitates uniquely identifying nightly or per-commit builds in continuous integration\nand releasing new versions of your software simply by creating a tag.\n\nDunamai is also available as a [GitHub Action](https://github.com/marketplace/actions/run-dunamai).\n\n## Features\n* Version control system support:\n  * [Git](https://git-scm.com) (2.7.0+ is recommended, but versions as old as 1.8.2.3 will work with some reduced functionality)\n  * [Mercurial](https://www.mercurial-scm.org)\n  * [Darcs](http://darcs.net)\n  * [Subversion](https://subversion.apache.org)\n  * [Bazaar](https://bazaar.canonical.com/en)\n  * [Fossil](https://www.fossil-scm.org/home/doc/trunk/www/index.wiki)\n  * [Pijul](https://pijul.org)\n* Version styles:\n  * [PEP 440](https://www.python.org/dev/peps/pep-0440)\n  * [Semantic Versioning](https://semver.org)\n  * [Haskell Package Versioning Policy](https://pvp.haskell.org)\n  * Custom output formats\n* Can be used for projects written in any programming language.\n  For Python, this means you do not need a setup.py.\n\n## Usage\n### Installation\n```\npip install dunamai\n```\n\n### CLI\n```console\n# Suppose you are on commit g29045e8, 7 commits after the v0.2.0 tag.\n\n# Auto-detect the version control system and generate a version:\n$ dunamai from any\n0.2.0.post7.dev0+g29045e8\n\n# Or use an explicit VCS and style:\n$ dunamai from git --no-metadata --style semver\n0.2.0-post.7\n\n# Custom formats:\n$ dunamai from any --format \"v{base}+{distance}.{commit}\"\nv0.2.0+7.g29045e8\n\n# If you'd prefer to frame the version in terms of progress toward the next\n# release rather than distance from the latest one, you can bump it:\n$ dunamai from any --bump\n0.2.1.dev7+g29045e8\n\n# Validation of custom formats:\n$ dunamai from any --format \"v{base}\" --style pep440\nVersion 'v0.2.0' does not conform to the PEP 440 style\n\n# Validate your own freeform versions:\n$ dunamai check 0.01.0 --style semver\nVersion '0.01.0' does not conform to the Semantic Versioning style\n\n# More info:\n$ dunamai --help\n$ dunamai from --help\n$ dunamai from git --help\n```\n\n### Library\n\n```python\nfrom dunamai import Version, Style\n\n# Let's say you're on commit g644252b, which is tagged as v0.1.0.\nversion = Version.from_git()\nassert version.serialize() == \"0.1.0\"\n\n# Let's say there was a v0.1.0rc5 tag 44 commits ago\n# and you have some uncommitted changes.\nversion = Version.from_any_vcs()\nassert version.serialize() == \"0.1.0rc5.post44.dev0+g644252b\"\nassert version.serialize(metadata=False) == \"0.1.0rc5.post44.dev0\"\nassert version.serialize(dirty=True) == \"0.1.0rc5.post44.dev0+g644252b.dirty\"\nassert version.serialize(style=Style.SemVer) == \"0.1.0-rc.5.post.44+g644252b\"\n```\n\nThe `serialize()` method gives you an opinionated, PEP 440-compliant default\nthat ensures that versions for untagged commits are compatible with Pip's `--pre` flag.\nThe individual parts of the version are also available for you to use and inspect as you please:\n\n```python\nassert version.base == \"0.1.0\"\nassert version.stage == \"rc\"\nassert version.revision == 5\nassert version.distance == 44\nassert version.commit == \"g644252b\"\nassert version.dirty is True\n\n# Available if the latest tag includes metadata, like v0.1.0+linux:\nassert version.tagged_metadata == \"linux\"\n```\n\n### Tips\nBy default, the \"v\" prefix on the tag is required,\nunless you specify a custom tag pattern.\nYou can either write a regular expression:\n\n* Console:\n  ```console\n  $ dunamai from any --pattern \"(?P<base>\\d+\\.\\d+\\.\\d+)\"\n  ```\n* Python:\n  ```python\n  from dunamai import Version\n  version = Version.from_any_vcs(pattern=r\"(?P<base>\\d+\\.\\d+\\.\\d+)\")\n  ```\n\n...or use a named preset:\n\n* Console:\n  ```console\n  $ dunamai from any --pattern default-unprefixed\n  ```\n* Python:\n  ```python\n  from dunamai import Version, Pattern\n  version = Version.from_any_vcs(pattern=Pattern.DefaultUnprefixed)\n  ```\n\nYou can also keep the default pattern and just specify a prefix.\nFor example, this would match tags like `some-package-v1.2.3`:\n\n* Console:\n  ```console\n  $ dunamai from any --pattern-prefix some-package-\n  ```\n* Python:\n  ```python\n  from dunamai import Version\n  version = Version.from_any_vcs(pattern_prefix=\"some-package-\")\n  ```\n\n### VCS archives\nSometimes, you may only have access to an archive of a repository (e.g., a zip file) without the full history.\nDunamai can still detect a version in some of these cases:\n\n* For Git, you can configure `git archive` to produce a file with some metadata for Dunamai.\n\n  Add a `.git_archival.json` file to the root of your repository with this content:\n  ```\n  {\n    \"hash-full\": \"$Format:%H$\",\n    \"hash-short\": \"$Format:%h$\",\n    \"timestamp\": \"$Format:%cI$\",\n    \"refs\": \"$Format:%D$\",\n    \"describe\": \"$Format:%(describe:tags=true,match=v[0-9]*)$\"\n  }\n  ```\n\n  Add this line to your `.gitattributes` file.\n  If you don't already have this file, add it to the root of your repository:\n  ```\n  .git_archival.json  export-subst\n  ```\n\n* For Mercurial, Dunamai will detect and use an `.hg_archival.txt` file created by `hg archive`.\n  It will also recognize `.hgtags` if present.\n\n### Custom formats\nHere are the available substitutions for custom formats.\nIf you have a tag like `v9!0.1.2-beta.3+other`, then:\n\n* `{base}` = `0.1.2`\n* `{stage}` = `beta`\n* `{revision}` = `3`\n* `{distance}` is the number of commits since the last\n* `{commit}` is the commit hash (defaults to short form, unless you use `--full-commit`)\n* `{dirty}` expands to either \"dirty\" or \"clean\" if you have uncommitted modified files\n* `{tagged_metadata}` = `other`\n* `{epoch}` = `9`\n* `{branch}` = `feature/foo`\n* `{branch_escaped}` = `featurefoo` (can be customized using `--escape-with`)\n* `{timestamp}` is in the format `YYYYmmddHHMMSS` as UTC\n* `{major}` = `0`\n* `{minor}` = `1`\n* `{patch}` = `2`\n\nIf you specify a substitution, its value will always be included in the output.\nFor conditional formatting, you can do something like this (Bash):\n\n```bash\ndistance=$(dunamai from any --format \"{distance}\")\nif [ \"$distance\" = \"0\" ]; then\n    dunamai from any --format \"v{base}\"\nelse\n    dunamai from any --format \"v{base}+{distance}.{dirty}\"\nfi\n```\n\n## Comparison to Versioneer\n[Versioneer](https://github.com/warner/python-versioneer)\nis another great library for dynamic versions,\nbut there are some design decisions that prompted the creation of Dunamai as an alternative:\n\n* Versioneer requires a setup.py file to exist, or else `versioneer install` will fail,\n  rendering it incompatible with non-setuptools-based projects such as those using Poetry or Flit.\n  Dunamai can be used regardless of the project's build system.\n* Versioneer has a CLI that generates Python code which needs to be committed into your repository,\n  whereas Dunamai is just a normal importable library\n  with an optional CLI to help statically include your version string.\n* Versioneer produces the version as an opaque string,\n  whereas Dunamai provides a Version class with discrete parts\n  that can then be inspected and serialized separately.\n* Versioneer provides customizability through a config file,\n  whereas Dunamai aims to offer customizability through its library API and CLI\n  for both scripting support and use in other libraries.\n\n## Integration\n* Setting a `__version__` statically:\n\n  ```console\n  $ echo \"__version__ = '$(dunamai from any)'\" > your_library/_version.py\n  ```\n  ```python\n  # your_library/__init__.py\n  from your_library._version import __version__\n  ```\n\n  Or dynamically (but Dunamai becomes a runtime dependency):\n\n  ```python\n  # your_library/__init__.py\n  import dunamai as _dunamai\n  __version__ = _dunamai.get_version(\"your-library\", third_choice=_dunamai.Version.from_any_vcs).serialize()\n  ```\n\n* setup.py (no install-time dependency on Dunamai as long as you use wheels):\n\n  ```python\n  from setuptools import setup\n  from dunamai import Version\n\n  setup(\n      name=\"your-library\",\n      version=Version.from_any_vcs().serialize(),\n  )\n  ```\n\n  Or you could use a static inclusion approach as in the prior example.\n\n* [Poetry](https://poetry.eustace.io):\n\n  ```console\n  $ poetry version $(dunamai from any)\n  ```\n\n  Or you can use the [poetry-dynamic-versioning](https://github.com/mtkennerly/poetry-dynamic-versioning) plugin.\n\n## Other notes\n* Dunamai needs access to the full version history to find tags and compute distance.\n  Be careful if your CI system does a shallow clone by default.\n\n  * For GitHub workflows, invoke `actions/checkout@v3` with `fetch-depth: 0`.\n  * For GitLab pipelines, set the `GIT_DEPTH` variable to 0.\n  * For Docker builds, copy the VCS history (e.g., `.git` folder) into the container.\n\n  For Git, you can also avoid doing a full clone by specifying a remote branch for tags\n  (e.g., `--tag-branch remotes/origin/master`).\n* When using Git, remember that lightweight tags do not store their creation time.\n  Therefore, if a commit has multiple lightweight tags,\n  we cannot reliably determine which one should be considered the newest.\n  The solution is to use annotated tags instead.\n* When using Git, the initial commit should not be both tagged and empty\n  (i.e., created with `--allow-empty`).\n  This is related to a reporting issue in Git.\n  For more info, [click here](https://github.com/mtkennerly/dunamai/issues/14).\n  Dunamai tries to work around this,\n  but multiple tags on an empty initial commit may not be sorted correctly.\n\n",
+        "description_content_type": "text/markdown",
+        "keywords": [
+          "version",
+          "versioning",
+          "dynamic"
+        ],
+        "author": "Matthew T. Kennerly",
+        "author_email": "mtkennerly@gmail.com",
+        "license": "MIT",
+        "license_file": [
+          "LICENSE"
+        ],
+        "classifier": [
+          "Development Status :: 5 - Production/Stable",
+          "Intended Audience :: End Users/Desktop",
+          "License :: OSI Approved :: MIT License",
+          "Natural Language :: English",
+          "Programming Language :: Python",
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
+          "Programming Language :: Python :: 3.9",
+          "Programming Language :: Python :: 3.10",
+          "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
+          "Programming Language :: Python :: 3.13",
+          "Programming Language :: Python :: 3.14"
+        ],
+        "requires_dist": [
+          "importlib-metadata (>=1.6.0) ; python_version < \"3.8\"",
+          "packaging (>=20.9)"
+        ],
+        "requires_python": ">=3.5",
+        "project_url": [
+          "Repository, https://github.com/mtkennerly/dunamai"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+          },
+          "hash": "sha256=85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": false,
+      "metadata": {
+        "metadata_version": "2.4",
+        "name": "Jinja2",
+        "version": "3.1.6",
+        "summary": "A very fast and expressive template engine.",
+        "description": "# Jinja\n\nJinja is a fast, expressive, extensible templating engine. Special\nplaceholders in the template allow writing code similar to Python\nsyntax. Then the template is passed data to render the final document.\n\nIt includes:\n\n-   Template inheritance and inclusion.\n-   Define and import macros within templates.\n-   HTML templates can use autoescaping to prevent XSS from untrusted\n    user input.\n-   A sandboxed environment can safely render untrusted templates.\n-   AsyncIO support for generating templates and calling async\n    functions.\n-   I18N support with Babel.\n-   Templates are compiled to optimized Python code just-in-time and\n    cached, or can be compiled ahead-of-time.\n-   Exceptions point to the correct line in templates to make debugging\n    easier.\n-   Extensible filters, tests, functions, and even syntax.\n\nJinja's philosophy is that while application logic belongs in Python if\npossible, it shouldn't make the template designer's job difficult by\nrestricting functionality too much.\n\n\n## In A Nutshell\n\n```jinja\n{% extends \"base.html\" %}\n{% block title %}Members{% endblock %}\n{% block content %}\n  <ul>\n  {% for user in users %}\n    <li><a href=\"{{ user.url }}\">{{ user.username }}</a></li>\n  {% endfor %}\n  </ul>\n{% endblock %}\n```\n\n## Donate\n\nThe Pallets organization develops and supports Jinja and other popular\npackages. In order to grow the community of contributors and users, and\nallow the maintainers to devote more time to the projects, [please\ndonate today][].\n\n[please donate today]: https://palletsprojects.com/donate\n\n## Contributing\n\nSee our [detailed contributing documentation][contrib] for many ways to\ncontribute, including reporting issues, requesting features, asking or answering\nquestions, and making PRs.\n\n[contrib]: https://palletsprojects.com/contributing/\n\n",
+        "description_content_type": "text/markdown",
+        "maintainer_email": "Pallets <contact@palletsprojects.com>",
+        "license_file": [
+          "LICENSE.txt"
+        ],
+        "classifier": [
+          "Development Status :: 5 - Production/Stable",
+          "Environment :: Web Environment",
+          "Intended Audience :: Developers",
+          "License :: OSI Approved :: BSD License",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
+          "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+          "Topic :: Text Processing :: Markup :: HTML",
+          "Typing :: Typed"
+        ],
+        "requires_dist": [
+          "MarkupSafe>=2.0",
+          "Babel>=2.7 ; extra == \"i18n\""
+        ],
+        "requires_python": ">=3.7",
+        "project_url": [
+          "Changes, https://jinja.palletsprojects.com/changes/",
+          "Chat, https://discord.gg/pallets",
+          "Documentation, https://jinja.palletsprojects.com/",
+          "Donate, https://palletsprojects.com/donate",
+          "Source, https://github.com/pallets/jinja/"
+        ],
+        "provides_extra": [
+          "i18n"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/ad/40/e2d117b048d47282ade906fbfd92814cbee5647afc13fda88a3406039372/markupsafe-3.0.4-cp314-cp314-macosx_11_0_arm64.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "52704c5d36eb6dda8866493decd61111fff86244c9b1ad225ca01b9e91e5970f"
+          },
+          "hash": "sha256=52704c5d36eb6dda8866493decd61111fff86244c9b1ad225ca01b9e91e5970f"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": false,
+      "metadata": {
+        "metadata_version": "2.4",
+        "name": "MarkupSafe",
+        "version": "3.0.4",
+        "dynamic": [
+          "license-file"
+        ],
+        "summary": "Safely add untrusted strings to HTML/XML markup.",
+        "description": "<div align=\"center\"><img src=\"https://raw.githubusercontent.com/pallets/markupsafe/refs/heads/stable/docs/_static/markupsafe-name.svg\" alt=\"\" height=\"150\"></div>\n\n# MarkupSafe\n\nMarkupSafe implements a text object that escapes characters so it is\nsafe to use in HTML and XML. Characters that have special meanings are\nreplaced so that they display as the actual characters. This mitigates\ninjection attacks, meaning untrusted user input can safely be displayed\non a page.\n\n\n## Examples\n\n```pycon\n>>> from markupsafe import Markup, escape\n\n>>> # escape replaces special characters and wraps in Markup\n>>> escape(\"<script>alert(document.cookie);</script>\")\nMarkup('&lt;script&gt;alert(document.cookie);&lt;/script&gt;')\n\n>>> # wrap in Markup to mark text \"safe\" and prevent escaping\n>>> Markup(\"<strong>Hello</strong>\")\nMarkup('<strong>hello</strong>')\n\n>>> escape(Markup(\"<strong>Hello</strong>\"))\nMarkup('<strong>hello</strong>')\n\n>>> # Markup is a str subclass\n>>> # methods and operators escape their arguments\n>>> template = Markup(\"Hello <em>{name}</em>\")\n>>> template.format(name='\"World\"')\nMarkup('Hello <em>&#34;World&#34;</em>')\n```\n\n## Donate\n\nThe Pallets organization develops and supports MarkupSafe and other\npopular packages. In order to grow the community of contributors and\nusers, and allow the maintainers to devote more time to the projects,\n[please donate today][].\n\n[please donate today]: https://palletsprojects.com/donate\n\n## Contributing\n\nSee our [detailed contributing documentation][contrib] for many ways to\ncontribute, including reporting issues, requesting features, asking or answering\nquestions, and making PRs.\n\n[contrib]: https://palletsprojects.com/contributing/\n",
+        "description_content_type": "text/markdown",
+        "maintainer_email": "Pallets <contact@palletsprojects.com>",
+        "license_expression": "BSD-3-Clause",
+        "license_file": [
+          "LICENSE.txt"
+        ],
+        "classifier": [
+          "Development Status :: 5 - Production/Stable",
+          "Environment :: Web Environment",
+          "Intended Audience :: Developers",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
+          "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+          "Topic :: Text Processing :: Markup :: HTML",
+          "Typing :: Typed"
+        ],
+        "requires_python": ">=3.9",
+        "project_url": [
+          "Donate, https://palletsprojects.com/donate",
+          "Documentation, https://markupsafe.palletsprojects.com/",
+          "Changes, https://markupsafe.palletsprojects.com/page/changes/",
+          "Source, https://github.com/pallets/markupsafe/",
+          "Chat, https://discord.gg/pallets"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+          },
+          "hash": "sha256=d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": false,
+      "metadata": {
+        "metadata_version": "2.4",
+        "name": "packaging",
+        "version": "26.3",
+        "summary": "Core utilities for Python packages",
+        "description": "packaging\n=========\n\n.. start-intro\n\nReusable core utilities for various Python Packaging\n`interoperability specifications <https://packaging.python.org/specifications/>`_.\n\nThis library provides utilities that implement the interoperability\nspecifications which have clearly one correct behaviour (eg: :pep:`440`)\nor benefit greatly from having a single shared implementation (eg: :pep:`425`).\n\n.. end-intro\n\nThe ``packaging`` project includes the following: version handling, specifiers,\nmarkers, requirements, tags, metadata, lockfiles, utilities.\n\nDocumentation\n-------------\n\nThe `documentation`_ provides information and the API for the following:\n\n- Version Handling\n- Specifiers\n- Markers\n- Licenses\n- Requirements\n- Metadata\n- Tags\n- Lockfiles (pylock)\n- Direct URL helpers\n- Dependency groups\n- Errors\n- Utilities\n\nInstallation\n------------\n\nUse ``pip`` to install these utilities::\n\n    pip install packaging\n\nThe ``packaging`` library uses calendar-based versioning (``YY.N``).\n\nDiscussion\n----------\n\nIf you run into bugs, you can file them in our `issue tracker`_.\n\nYou can also join discussions on `GitHub Discussions`_ to ask questions or get involved.\n\n.. _`documentation`: https://packaging.pypa.io/\n.. _`issue tracker`: https://github.com/pypa/packaging/issues\n.. _`GitHub Discussions`: https://github.com/pypa/packaging/discussions\n\n\nCode of Conduct\n---------------\n\nEveryone interacting in the packaging project's codebases, issue trackers, chat\nrooms, and mailing lists is expected to follow the `PSF Code of Conduct`_.\n\n.. _PSF Code of Conduct: https://github.com/pypa/.github/blob/main/CODE_OF_CONDUCT.md\n\nContributing\n------------\n\nThe ``CONTRIBUTING.rst`` file outlines how to contribute to this project as\nwell as how to report a potential security issue. The documentation for this\nproject also covers information about `project development`_ and `security`_.\n\n.. _`project development`: https://packaging.pypa.io/en/latest/development/\n.. _`security`: https://packaging.pypa.io/en/latest/security/\n\nProject History\n---------------\n\nPlease review the ``CHANGELOG.rst`` file or the `Changelog documentation`_ for\nrecent changes and project history.\n\n.. _`Changelog documentation`: https://packaging.pypa.io/en/latest/changelog/\n\n",
+        "description_content_type": "text/x-rst",
+        "author_email": "Donald Stufft <donald@stufft.io>",
+        "license_expression": "Apache-2.0 OR BSD-2-Clause",
+        "license_file": [
+          "LICENSE",
+          "LICENSE.APACHE",
+          "LICENSE.BSD"
+        ],
+        "classifier": [
+          "Development Status :: 5 - Production/Stable",
+          "Intended Audience :: Developers",
+          "Programming Language :: Python",
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3 :: Only",
+          "Programming Language :: Python :: 3.9",
+          "Programming Language :: Python :: 3.10",
+          "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
+          "Programming Language :: Python :: 3.13",
+          "Programming Language :: Python :: 3.14",
+          "Programming Language :: Python :: 3.15",
+          "Programming Language :: Python :: Implementation :: CPython",
+          "Programming Language :: Python :: Implementation :: PyPy",
+          "Programming Language :: Python :: Free Threading :: 4 - Resilient",
+          "Typing :: Typed"
+        ],
+        "requires_python": ">=3.9",
+        "project_url": [
+          "Documentation, https://packaging.pypa.io/",
+          "Source, https://github.com/pypa/packaging"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/da/46/7d84138a60a8bd796825b2d38ebe92d0d16501ca57d501b7c5d677401bbc/tomlkit-0.15.2-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "05562412163a3037b94497385fb7f9204c637bc605af7a48199e41cf2272f437"
+          },
+          "hash": "sha256=05562412163a3037b94497385fb7f9204c637bc605af7a48199e41cf2272f437"
+        }
+      },
+      "is_direct": false,
+      "is_yanked": false,
+      "requested": false,
+      "metadata": {
+        "metadata_version": "2.4",
+        "name": "tomlkit",
+        "version": "0.15.2",
+        "summary": "Style preserving TOML library",
+        "description": "[github_release]: https://img.shields.io/github/release/sdispater/tomlkit.svg?logo=github&logoColor=white\n[pypi_version]: https://img.shields.io/pypi/v/tomlkit.svg?logo=python&logoColor=white\n[python_versions]: https://img.shields.io/pypi/pyversions/tomlkit.svg?logo=python&logoColor=white\n[github_license]: https://img.shields.io/github/license/sdispater/tomlkit.svg?logo=github&logoColor=white\n[github_action]: https://github.com/sdispater/tomlkit/actions/workflows/tests.yml/badge.svg\n\n[![GitHub Release][github_release]](https://github.com/sdispater/tomlkit/releases/)\n[![PyPI Version][pypi_version]](https://pypi.org/project/tomlkit/)\n[![Python Versions][python_versions]](https://pypi.org/project/tomlkit/)\n[![License][github_license]](https://github.com/sdispater/tomlkit/blob/master/LICENSE)\n<br>\n[![Tests][github_action]](https://github.com/sdispater/tomlkit/actions/workflows/tests.yml)\n\n# TOML Kit - Style-preserving TOML library for Python\n\nTOML Kit is a **1.1.0-compliant** [TOML](https://toml.io/) library.\n\nIt includes a parser that preserves all comments, indentations, whitespace and internal element ordering,\nand makes them accessible and editable via an intuitive API.\n\nYou can also create new TOML documents from scratch using the provided helpers.\n\nPart of the implementation has been adapted, improved and fixed from [Molten](https://github.com/LeopoldArkham/Molten).\n\n## Usage\n\nSee the [documentation](https://tomlkit.readthedocs.io/) for more information.\n\n## Limitations\n\n`tomlkit` preserves the original layout of a document, with one exception: a\nsub-table that extends an array of tables out of order — for example a\n`[fruit.apple.texture]` header that appears after `[[fruit]]` with an unrelated\ntable in between — is normalized into the array's last element when the document\nis re-serialized, rather than kept at its original position. The data is\npreserved; only the physical placement of that sub-table changes.\n\n## Installation\n\nIf you are using [uv](https://docs.astral.sh/uv), you can\nadd `tomlkit` to your `pyproject.toml` file by using:\n\n```bash\nuv add tomlkit\n```\n\nOr just:\n\n```bash\nuv pip install tomlkit\n```\n\nIf not, you can use `pip`:\n\n```bash\npip install tomlkit\n```\n\n## Running tests\n\nPlease clone the repo with submodules with the following command:\n```bash\ngit clone --recurse-submodules https://github.com/python-poetry/tomlkit.git\n```\nThe `toml-test` submodule is required for running the tests.\n\nYou can then run the tests with\n```bash\npoetry run pytest -q tests\n```\n\n",
+        "description_content_type": "text/markdown",
+        "author": "Sébastien Eustace",
+        "author_email": "sebastien@eustace.io",
+        "license_expression": "MIT",
+        "license_file": [
+          "LICENSE"
+        ],
+        "classifier": [
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.9",
+          "Programming Language :: Python :: 3.10",
+          "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
+          "Programming Language :: Python :: 3.13",
+          "Programming Language :: Python :: 3.14",
+          "Programming Language :: Python :: 3.15"
+        ],
+        "requires_python": ">=3.9",
+        "project_url": [
+          "Changelog, https://github.com/python-poetry/tomlkit/blob/master/CHANGELOG.md",
+          "Homepage, https://github.com/python-poetry/tomlkit",
+          "Repository, https://github.com/python-poetry/tomlkit"
+        ]
+      }
+    }
+  ],
+  "environment": {
+    "implementation_name": "cpython",
+    "implementation_version": "3.14.6",
+    "os_name": "posix",
+    "platform_machine": "arm64",
+    "platform_release": "25.6.0",
+    "platform_system": "Darwin",
+    "platform_version": "Darwin Kernel Version 25.6.0: Fri Aug 21 02:54:00 PDT 2026; root:xnu-12377.161.15.700.19~3/RELEASE_ARM64_T6000",
+    "python_full_version": "3.14.6",
+    "platform_python_implementation": "CPython",
+    "python_version": "3.14",
+    "sys_platform": "darwin"
+  }
+}

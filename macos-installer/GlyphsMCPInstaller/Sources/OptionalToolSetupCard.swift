@@ -59,6 +59,10 @@ struct OptionalToolSetupCard: View {
                 }
             }
         } footer: {
+            if state?.protectedInstallation == true {
+                Text("Setup preserves this separate or modified installation. See Details before changing it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if state?.available != true {
                 Text(state?.reason ?? "This optional distribution awaits release qualification.")
                     .font(.caption).foregroundStyle(.secondary)

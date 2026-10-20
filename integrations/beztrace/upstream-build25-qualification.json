@@ -1,0 +1,325 @@
+{
+  "schemaVersion": 1,
+  "product": "beztrace-glyphs",
+  "version": "0.2.0",
+  "build": 25,
+  "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+  "sourceClean": true,
+  "nativeTestedBuilds": [
+    4202
+  ],
+  "nativeAppleSilicon": true,
+  "nativeIntelTested": false,
+  "nativeIntelOwnerWaived": true,
+  "qualifiedRuntime": true,
+  "artifact": {
+    "format": "zip",
+    "notarization": {
+      "status": "accepted-verified"
+    },
+    "path": "beztrace-glyphs-0.2.0-build25-signed-macos-universal.zip",
+    "sha256": "275f07b88114dbb0c6b889d3ec8f4feffc9d788be00ded16127f3d09e458448f",
+    "signing": {
+      "status": "developer-id-verified",
+      "teamIdentifier": "N9U29A4T8J"
+    },
+    "size": 197257
+  },
+  "unsignedSignedBinding": {
+    "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+    "pythonAndResourcesUnchanged": true,
+    "changedFiles": [
+      "Contents/MacOS/plugin",
+      "Contents/Resources/sbom.spdx.json",
+      "Contents/_CodeSignature/CodeResources"
+    ]
+  },
+  "nativeSignedUI": {
+    "status": "pass",
+    "glyphsVersion": "4.2",
+    "glyphsBuild": 4202,
+    "architecture": "arm64",
+    "installedSignedCompanion": "0.2.0/build25",
+    "signedEngine": "0.2.1",
+    "actualNativeUIApply": true,
+    "uninterruptedNativeUndoRedo": true,
+    "undoExact": true,
+    "redoExact": true,
+    "referenceExact": true,
+    "onCurvesAndNodeStructureExact": true,
+    "hintSettingsUserDataAndAttachmentsExact": true,
+    "widthsExact": true,
+    "changedTargetHandles": 2,
+    "nodesPerMaster": 12,
+    "fitTolerance": 1.0,
+    "jointSmoothing": {
+      "afterMaximumTangencyResidual": 6.245214053949142e-14,
+      "beforeMaximumTangencyResidual": 0.22111683727248602,
+      "changedHandles": [
+        {
+          "contour": 0,
+          "node": 1
+        },
+        {
+          "contour": 0,
+          "node": 11
+        }
+      ],
+      "eligibleJoins": 4,
+      "nativeHOIVerified": false,
+      "proposalDeviation": {
+        "lowerBound": 0.7450789237489963,
+        "uncertainty": 0.04500000002046367,
+        "upperBound": 0.79007892376946
+      },
+      "proposedHandleChanges": 2,
+      "referenceUnchanged": true,
+      "sampleCount": 201,
+      "status": "smoothed",
+      "structurePreserved": true
+    },
+    "nativeStateReceiptSHA256": "1d2145726a385ca778f585b9ae08540769396f87a3a4da1e28ee28db95c0ef06",
+    "excludedTrials": [
+      "Initial observer compared raw hint attachment caches and grouped fixture construction into Undo.",
+      "Guard and menu lookup failures occurred in disposable test preparation.",
+      "A read-only collector tried to access a closed panel plan; it made no font edits."
+    ],
+    "scope": "Owned disposable fixture; live metadata preservation. File writer omission of custom hint userData remains documented separately."
+  },
+  "lifecycle": {
+    "status": "pass",
+    "nativeGlyphsBuild": 4202,
+    "architecture": "arm64",
+    "rollbackVersion": "0.1.0/build15 published signed archive",
+    "rollbackNativeMenuAndDialog": true,
+    "removedNativeMenuAbsent": true,
+    "reinstalledNativeFourModeDialog": true,
+    "finalSignedPayloadSHA256": "1627642607b9aa2982232e125c5b08c9b5e39602888a8f9a32356ab819846c1c",
+    "sharedEngineUnchanged": true,
+    "sharedEngineSHA256": "3695e8fa41e941a21003052add1b65aea758fb8cd72addfd037288a94265e0cf",
+    "signedInitialUpdate": true,
+    "finalNotarizationRequirementVerified": true,
+    "scope": "Exact owned companion only; all test fonts saved and closed before relaunch. Native Intel untested, owner-waived."
+  },
+  "earlierExactPythonSourceQualification": {
+    "nativeUIApplyModes": 4,
+    "nativeSmoothingUndoRedo": true,
+    "nativeHintMetadataPreservedDuringApplyUndoRedo": true,
+    "nativeRecovery": {
+      "glyphsBuild": 4202,
+      "nativeRecovery": true,
+      "cases": [
+        {
+          "case": "post-install",
+          "bothMastersRestored": true,
+          "hintUserDataAndReferencesPreserved": true,
+          "sessionUsable": true,
+          "undoGrouping": 0
+        },
+        {
+          "case": "metadata-corruption",
+          "bothMastersRestored": true,
+          "hintUserDataAndReferencesPreserved": true,
+          "sessionUsable": true,
+          "undoGrouping": 0
+        }
+      ],
+      "scope": "Owned detached native hint fixtures; failure paths only. Live Undo/Redo is recorded separately."
+    },
+    "nativeFileExchange": {
+      "standalonePacketSHA256": "4ddfa992d82f6c55b087345d9e27741dc546b835d8064e16a57617cd4d862528",
+      "nativeImportApply": true,
+      "geometryAndCompatibilityPreserved": true,
+      "axisMappingExplicit": true,
+      "preparationReadOnly": true,
+      "roundTripGeometryExact": true,
+      "nodeCounts": [
+        23,
+        23
+      ],
+      "glyphsBuild": 4202,
+      "scope": "Detached owned native recipient font; source packet produced by the extracted standalone package. Installed UI workflows are qualified separately."
+    },
+    "nativePreviewGuards": {
+      "previewInitiallyReady": true,
+      "settingsInvalidateApply": true,
+      "cancellationRevokesApply": true,
+      "freshPreviewAfterCancellation": true,
+      "externalSourceChangeRevokesApply": true,
+      "sourceRestoredExactly": true,
+      "stageTimesMs": [
+        45.24525000306312,
+        22.118000000773463
+      ],
+      "stagingScopeGlyphs": 5
+    },
+    "nativeSaveReopen": {
+      "nativeSaveReopenPassed": true,
+      "maximumNumericStorageDeviation": 0,
+      "storageTolerance": 0.001,
+      "differences": [],
+      "nativeHintUserDataOmissions": [
+        {
+          "glyph": "qa.smoothing",
+          "master": 0,
+          "hint": 0,
+          "before": [
+            [
+              "beztraceQA",
+              "preserved stem"
+            ]
+          ],
+          "after": []
+        },
+        {
+          "glyph": "qa.smoothing",
+          "master": 1,
+          "hint": 0,
+          "before": [
+            [
+              "beztraceQA",
+              "preserved stem"
+            ]
+          ],
+          "after": []
+        },
+        {
+          "glyph": "qa.hinted",
+          "master": 0,
+          "hint": 0,
+          "before": [
+            [
+              "beztraceQA",
+              "preserved stem"
+            ]
+          ],
+          "after": []
+        },
+        {
+          "glyph": "qa.hinted",
+          "master": 1,
+          "hint": 0,
+          "before": [
+            [
+              "beztraceQA",
+              "preserved stem"
+            ]
+          ],
+          "after": []
+        }
+      ],
+      "unchangedControlGlyph": "qa.hinted",
+      "glyphs": 5,
+      "masters": 2
+    },
+    "compiledVariableFont": {
+      "exportedVariableFont": true,
+      "fontSHA256": "62a46f5846ae5fadcbe9b34256eb6065af094fc2d0e57528dca26ba01a17231c",
+      "sampleCountPerGlyph": 201,
+      "tests": 603,
+      "glyphs": {
+        "uni0050": {
+          "points": 23,
+          "contours": 2,
+          "maximumCompiledLinearInterpolationRoundingError": 0.0008789062500014211
+        },
+        "uni0052": {
+          "points": 44,
+          "contours": 2,
+          "maximumCompiledLinearInterpolationRoundingError": 0.002226562500027285
+        },
+        "uni0053": {
+          "points": 16,
+          "contours": 1,
+          "maximumCompiledLinearInterpolationRoundingError": 0.003691406250027285
+        }
+      },
+      "cmap": {
+        "0x50": "uni0050",
+        "0x52": "uni0052",
+        "0x53": "uni0053"
+      },
+      "compatibleTopologyAtEveryPosition": true,
+      "tolerance": 1.0,
+      "scope": "Compiled TTF topology and coordinate interpolation across the three actual native UI master cases. No shaping cases requested."
+    },
+    "nativeCopyCost": {
+      "architecture": "arm64",
+      "glyphsBuild": 4202,
+      "samples": 3,
+      "warmups": 1,
+      "scope": "Owned detached fonts, native main-thread staging including full-font copy and selected-layer readback; no HOI. This is not a full end-to-end UI latency or native Intel test.",
+      "rows": [
+        {
+          "glyphs": 1,
+          "nodes": 8,
+          "nativeStageMs": [
+            2.2445409995270893,
+            2.1206249948590994,
+            2.986458996019792
+          ],
+          "medianStageMs": 2.2445409995270893,
+          "maximumStageMs": 2.986458996019792,
+          "maximumIncludingReleaseMs": 3.011499997228384
+        },
+        {
+          "glyphs": 101,
+          "nodes": 4608,
+          "nativeStageMs": [
+            3.7312499989639036,
+            3.737916995305568,
+            3.2961249962681904
+          ],
+          "medianStageMs": 3.7312499989639036,
+          "maximumStageMs": 3.737916995305568,
+          "maximumIncludingReleaseMs": 4.300332999264356
+        },
+        {
+          "glyphs": 1001,
+          "nodes": 46008,
+          "nativeStageMs": [
+            17.872290998639073,
+            18.084167000779416,
+            17.512875005195383
+          ],
+          "medianStageMs": 17.872290998639073,
+          "maximumStageMs": 18.084167000779416,
+          "maximumIncludingReleaseMs": 25.195832997269463
+        }
+      ]
+    },
+    "originalPrecisionStorageCheck": {
+      "nativeStorageTopologyPreserved": true,
+      "coordinateStorageTolerance": 0.001,
+      "rows": [
+        {
+          "role": "reference",
+          "maximumCoordinateStorageRounding": 0.00042494923809499596,
+          "maximumControlPointDisplacement": 0.00042494923809499596
+        },
+        {
+          "role": "target",
+          "maximumCoordinateStorageRounding": 0.00011994585395314061,
+          "maximumControlPointDisplacement": 0.00016141592759862732
+        }
+      ],
+      "originalSourceCertifiedUpperBound": 0.79007892376946,
+      "sourceUpperBoundAfterStorageByTriangleInequality": 0.7902403396970586,
+      "fitTolerance": 1.0,
+      "scope": "Controlled smoothing fixture. Same cubic/line structure bounds geometric perturbation by the largest control-point displacement; does not qualify every possible file quantization case."
+    }
+  },
+  "notarization": {
+    "id": "fabcd71c-5b7d-42a7-96b6-5a198fdf8a8c",
+    "message": "Processing complete",
+    "status": "Accepted"
+  },
+  "limits": [
+    "Glyphs 4.2/build 4202 on Apple Silicon is the native acceptance scope.",
+    "Native Intel execution is untested and explicitly owner-waived.",
+    "Glyphs omits custom hint userData on file save for both modified and untouched controls; live Apply/Undo/Redo preserve it.",
+    "Native HOI remains disabled outside specifically supported build 4108; not qualified on 4202.",
+    "Graph selection remains deferred."
+  ],
+  "qualificationStage": "Completed before publication; uploaded assets and anonymous downloads are verified separately"
+}

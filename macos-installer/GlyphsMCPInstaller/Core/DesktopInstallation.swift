@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 /// Receipt-to-payload comparison; independent companions keep their own versions.
 public enum ComponentUpdateStatus: Equatable, Sendable {
@@ -24,6 +25,58 @@ public enum ComponentUpdatePolicy {
         if order == .orderedAscending { return .updateAvailable }
         if let installedBuild, let bundledBuild, installedBuild > bundledBuild { return .newerInstalled }
         return installedIdentities == bundledIdentities ? .current : .updateAvailable
+    }
+
+    /// CodeDirectory hashes omit CMS timestamps; resource hashing omits only signatures and generated caches.
+    public static func stableContentIdentity(_ bundle: URL, nativeCodeHashes: [String]) throws -> String {
+        guard !nativeCodeHashes.isEmpty,
+              let enumerator = FileManager.default.enumerator(atPath: bundle.path) else {
+            throw InstallerError.userFacing("Component content is unavailable.")
+        }
+        var entries: [(String, URL)] = []
+        while let relative = enumerator.nextObject() as? String {
+            let url = bundle.appendingPathComponent(relative)
+            let parts = relative.split(separator: "/").map(String.init)
+            let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .isDirectoryKey])
+            guard values.isSymbolicLink != true else { throw InstallerError.userFacing("Component link cannot be verified.") }
+            if parts.contains("_CodeSignature") || parts.contains("__pycache__") {
+                if values.isDirectory == true { enumerator.skipDescendants() }
+                continue
+            }
+            if relative == "Contents/Info.plist" || relative.hasPrefix("Contents/Resources/") {
+                if values.isRegularFile == true && !["pyc", "pyo"].contains(url.pathExtension) && url.lastPathComponent != ".DS_Store" {
+                    entries.append((relative, url))
+                }
+            }
+        }
+        guard entries.contains(where: { $0.0 == "Contents/Info.plist" }) else {
+            throw InstallerError.userFacing("Component metadata is unavailable.")
+        }
+        var digest = SHA256()
+        for code in nativeCodeHashes.sorted() { digest.update(data: Data((code + "\0").utf8)) }
+        for (relative, url) in entries.sorted(by: { $0.0 < $1.0 }) {
+            let name = Data(relative.utf8)
+            var length = UInt64(name.count).bigEndian
+            withUnsafeBytes(of: &length) { digest.update(data: Data($0)) }
+            digest.update(data: name)
+            digest.update(data: try Data(contentsOf: url))
+        }
+        return "sha256:" + digest.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func nativeCodeHashes(_ bundle: URL) throws -> [String] {
+        let runner = ProcessRunner(), tool = URL(fileURLWithPath: "/usr/bin/codesign")
+        guard runner.runSyncWithStderr(executable: tool, args: ["--verify", "--deep", "--strict", bundle.path]).exitCode == 0 else {
+            throw InstallerError.userFacing("Component signature cannot be verified.")
+        }
+        return try ["arm64", "x86_64"].map { architecture in
+            let result = runner.runSyncWithStderr(executable: tool, args: ["-d", "--verbose=4", "--arch", architecture, bundle.path])
+            guard result.exitCode == 0, let line = result.stderr.split(separator: "\n").first(where: { $0.hasPrefix("CDHash=") }),
+                  line.dropFirst(7).range(of: "^[0-9a-f]{40,64}$", options: .regularExpression) != nil else {
+                throw InstallerError.userFacing("Component code identity cannot be verified.")
+            }
+            return architecture + ":" + line.dropFirst(7)
+        }
     }
 
     public static func discover(installation: DesktopInstallation, lean: URL,
@@ -73,10 +126,23 @@ public enum ComponentUpdatePolicy {
                 guard installed.count == 1, bundled.count == 1 else {
                     result[component.id] = .unableToVerify; continue
                 }
-                result[component.id] = compare(installedVersion: installed[0]["version"] as? String,
+                let state = compare(installedVersion: installed[0]["version"] as? String,
                     bundledVersion: bundled[0]["version"] as? String,
                     installedIdentities: [installed[0]["identity"] as? String],
                     bundledIdentities: [bundled[0]["identity"] as? String])
+                if state == .updateAvailable, installed[0]["version"] as? String == bundled[0]["version"] as? String {
+                    // Re-signing and stapling change full identities without changing code.
+                    // First retain exact ownership checks; then compare stable signed content.
+                    let source = lean.appendingPathComponent(component.bundle)
+                    do {
+                        guard try InstallerPayloadManifestResolver.treeIdentity(path) == installed[0]["identity"] as? String,
+                              try InstallerPayloadManifestResolver.treeIdentity(source) == bundled[0]["identity"] as? String else {
+                            result[component.id] = .unableToVerify; continue
+                        }
+                        result[component.id] = try stableContentIdentity(path, nativeCodeHashes: nativeCodeHashes(path))
+                            == stableContentIdentity(source, nativeCodeHashes: nativeCodeHashes(source)) ? .current : .updateAvailable
+                    } catch { result[component.id] = .unableToVerify }
+                } else { result[component.id] = state }
             }
         }
         return result
@@ -162,12 +228,12 @@ public struct ExternalGlyphsCompanion: Identifiable {
 
     public static let beztrace = ExternalGlyphsCompanion(
         id: "beztrace-glyphs", title: "Beztrace",
-        detail: "Trace PNG and JPEG images into editable outlines in Glyphs.",
-        versionLabel: "Bundled engine 0.1.1 · Plugin installed separately",
-        availability: "Qualified companion · Build 16 · Apple Silicon",
-        requirements: "Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.1.1 stable engine.",
-        documentation: URL(string: "https://github.com/thierryc/beztrace/blob/dbd7a696afda9a215c8e8a4aa42315cd799116f9/Companions/Glyphs/README.md")!,
-        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases")!
+        detail: "Trace images and match master outlines in Glyphs.",
+        versionLabel: "Bundled engine 0.2.1 · Companion 0.2.0 build 25",
+        availability: "Qualified companion · Build 25 · Apple Silicon",
+        requirements: "Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.2.1 stable engine. Native companion testing covers Glyphs 4.2 build 4202.",
+        documentation: URL(string: "https://github.com/thierryc/beztrace/blob/217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054/Companions/Glyphs/README.md")!,
+        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases/tag/v0.2.1")!
     )
 }
 

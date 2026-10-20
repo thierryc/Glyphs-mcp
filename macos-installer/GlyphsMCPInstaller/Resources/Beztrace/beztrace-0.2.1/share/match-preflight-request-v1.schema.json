@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "unitsPerEm",
+    "reference"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "unitsPerEm": {
+      "type": "number",
+      "minimum": 16,
+      "maximum": 16384
+    },
+    "reference": {
+      "$ref": "#/$defs/master"
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "referencePolicy": {
+          "enum": [
+            "fixed",
+            "shared-subdivision"
+          ]
+        },
+        "fitTolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "contourPairs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "startNodes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": -1
+          }
+        },
+        "preserveStructure": {
+          "type": "boolean"
+        },
+        "maxAdditionalOnCurveNodes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024,
+          "default": 0
+        },
+        "maxOnCurveNodes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 1024,
+          "default": 64
+        },
+        "maxNodes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096,
+          "default": 64
+        },
+        "smoothJoins": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "rasterOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invert",
+        "minimumContourArea",
+        "smoothing",
+        "cornerThresholdDegrees"
+      ],
+      "properties": {
+        "threshold": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 255
+        },
+        "invert": {
+          "type": "boolean"
+        },
+        "minimumContourArea": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "smoothing": {
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 3
+        },
+        "cornerThresholdDegrees": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 60
+        }
+      }
+    },
+    "referenceImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "imageData",
+        "transform"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "imageData": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 22369624
+        },
+        "transform": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        }
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "type",
+        "smooth"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "type": {
+          "enum": [
+            "line",
+            "curve",
+            "offcurve"
+          ]
+        },
+        "smooth": {
+          "type": "boolean"
+        }
+      }
+    },
+    "contour": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closed",
+        "nodes"
+      ],
+      "properties": {
+        "closed": {
+          "const": true
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    },
+    "outline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contours"
+      ],
+      "properties": {
+        "contours": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/contour"
+          }
+        }
+      }
+    },
+    "master": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "outline"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "outline": {
+          "$ref": "#/$defs/outline"
+        }
+      }
+    }
+  }
+}

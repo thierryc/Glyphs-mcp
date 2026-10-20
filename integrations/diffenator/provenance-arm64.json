@@ -69,10 +69,15 @@
       "license": "Apache-2.0",
       "name": "diffenator2",
       "path": "diffenator2-0.0.0-py3-none-any.whl",
-      "sha256": "3c7c46da16283e409de357cd40af702df6d2ceb81090160c73a7fd348953dfe4",
+      "sha256": "0c75ff5c4e47c5d3cbc802f1af7d4cc7d6390fbbc6c3a48f42b21ab51da31d95",
       "source": "https://github.com/googlefonts/diffenator2/archive/cecdab703d462cfea25b748b19ea4813d3f4d680.tar.gz",
-      "sourceArchiveSHA256": "0b0274eeca469dfaf186bee7200e3f3494efb9db75d64135814e7a8ebde927bd",
-      "version": "0.0.0"
+      "sourceArchiveSHA256": "6e4d646892a7201807058c3d40685f7f30845c33cfd0ca60431b16a08dd3a785",
+      "version": "0.0.0",
+      "historicalWheelSHA256": "3c7c46da16283e409de357cd40af702df6d2ceb81090160c73a7fd348953dfe4",
+      "historicalSourceArchiveSHA256": "0b0274eeca469dfaf186bee7200e3f3494efb9db75d64135814e7a8ebde927bd",
+      "gitTree": "06b4c99ee33052122e1e7f9ea6bcac8b4517d7f1",
+      "rebuiltFor": "2.3.0",
+      "buildToolsReceipt": "reports/diffenator-arm64-2.3.0/wheel-build-tools.json"
     },
     {
       "license": "MIT",

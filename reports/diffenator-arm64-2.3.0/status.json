@@ -1,0 +1,20 @@
+{
+  "archiveSHA256": "7ea63a23a9e529187f410d16d73f8019d95792509af2600663e8342001de282a",
+  "archiveSize": 114874753,
+  "sourceRevision": "cecdab703d462cfea25b748b19ea4813d3f4d680",
+  "architecture": "arm64",
+  "distributionEnabled": false,
+  "hostPassed": true,
+  "virtualBuddyQualification": "pending: VM availability requires confirmation",
+  "publicDownloadVerified": false,
+  "minimumMacOS": "not yet established",
+  "intel": "excluded; unqualified",
+  "historicalAcceptanceApplied": false,
+  "licenseAuditComplete": false,
+  "blockers": [
+    "VirtualBuddy macOS 14.6.1 qualification pending VM availability",
+    "youseedee 0.7.0 redistribution license unresolved",
+    "Public optional asset and anonymous verification pending preceding gates",
+    "Exact desktop upgrade and final release gates pending"
+  ]
+}

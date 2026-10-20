@@ -3,6 +3,36 @@ import XCTest
 @testable import GlyphsMCPInstallerCore
 
 final class DesktopTests: XCTestCase {
+    func testOptionalToolAvailabilitySeparatesQualificationFromPlatformAndProtection() throws {
+        func state(_ extra: String) throws -> OptionalToolState {
+            try JSONDecoder().decode(OptionalToolState.self, from: Data(("{\"id\":\"diffenator\",\"available\":false,\"installed\":false," + extra + "}").utf8))
+        }
+        XCTAssertEqual(try state("\"distributionQualified\":true").label, "Unavailable on this Mac")
+        XCTAssertEqual(try state("\"distributionQualified\":false").label, "Awaiting release qualification")
+        XCTAssertEqual(try state("\"reason\":\"pending\"").label, "Awaiting release qualification")
+        for value in ["unmanaged", "development_link", "conflict"] {
+            XCTAssertTrue(try state("\"state\":\"" + value + "\"").protectedInstallation)
+        }
+    }
+
+    func testCompanionStableIdentityIgnoresSignaturesButDetectsContentAndNativeCodeChanges() throws {
+        let bundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: bundle) }
+        let resources = bundle.appendingPathComponent("Contents/Resources")
+        let signatures = bundle.appendingPathComponent("Contents/_CodeSignature")
+        for path in [resources, signatures] { try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true) }
+        try Data("plist".utf8).write(to: bundle.appendingPathComponent("Contents/Info.plist"))
+        try Data("original code".utf8).write(to: resources.appendingPathComponent("plugin.py"))
+        try Data("signature one".utf8).write(to: signatures.appendingPathComponent("CodeResources"))
+        let first = try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"])
+        try Data("signature two plus ticket".utf8).write(to: signatures.appendingPathComponent("CodeResources"))
+        try Data("bytecode cache".utf8).write(to: resources.appendingPathComponent("plugin.pyc"))
+        XCTAssertEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"]))
+        XCTAssertNotEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:new code", "x86_64:code"]))
+        try Data("modified code".utf8).write(to: resources.appendingPathComponent("plugin.py"))
+        XCTAssertNotEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"]))
+    }
+
     func testComponentReminderExplainsTheServerUpdateAndNamesTheCorrectCard() {
         XCTAssertEqual(ComponentUpdateReminder.title(needsServerUpdate: true), "A new version of the MCP server in Glyphs is available.")
         XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("click Update on the Glyphs MCP card"))

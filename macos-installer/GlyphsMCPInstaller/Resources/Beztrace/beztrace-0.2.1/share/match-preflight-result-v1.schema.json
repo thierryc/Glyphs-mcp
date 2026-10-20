@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "engineVersion",
+    "eligible",
+    "referenceHash",
+    "referenceContours",
+    "referenceOnCurves",
+    "referenceNodes",
+    "rasterTopologyChecked",
+    "diagnostics",
+    "advisoryScanComplete"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "beztrace-match-preflight"
+    },
+    "engineVersion": {
+      "type": "string"
+    },
+    "eligible": {
+      "type": "boolean"
+    },
+    "referenceHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "referenceContours": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "referenceOnCurves": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "referenceNodes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rasterTopologyChecked": {
+      "type": "boolean"
+    },
+    "rasterSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "masterID",
+        "sha256",
+        "sourceWidth",
+        "sourceHeight",
+        "transform",
+        "threshold",
+        "invert",
+        "options"
+      ],
+      "properties": {
+        "masterID": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sourceWidth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "sourceHeight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "transform": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "invert": {
+          "type": "boolean"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "invert",
+            "minimumContourArea",
+            "smoothing",
+            "cornerThresholdDegrees"
+          ],
+          "properties": {
+            "threshold": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 255
+            },
+            "invert": {
+              "type": "boolean"
+            },
+            "minimumContourArea": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "smoothing": {
+              "type": "number",
+              "minimum": 0.25,
+              "maximum": 3
+            },
+            "cornerThresholdDegrees": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        }
+      }
+    },
+    "rasterContours": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "referenceDepths": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "rasterDepths": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      },
+      "minItems": 0,
+      "maxItems": 128
+    },
+    "advisoryScanComplete": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "stage",
+        "blocking"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 8000
+        },
+        "stage": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "masterID": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "mode": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "field": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "providedValue": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "allowedRange": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "contour",
+              "segment",
+              "parameterRange"
+            ],
+            "properties": {
+              "contour": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 63
+              },
+              "segment": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1023
+              },
+              "startNode": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 131072
+              },
+              "endNode": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 131072
+              },
+              "parameterRange": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "coordinates": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": -1000000000.0,
+            "maximum": 1000000000.0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "classification": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "existedBeforeFitting": {
+          "type": "boolean"
+        },
+        "interpolationFactor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "approximationTolerance": {
+          "type": "number",
+          "minimum": 0
+        },
+        "blocking": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

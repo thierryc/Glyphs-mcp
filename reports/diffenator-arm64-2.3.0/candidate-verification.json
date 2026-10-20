@@ -1,0 +1,14 @@
+{
+  "desktopVersion": "2.3.0",
+  "installerBuild": 68,
+  "pythonTestsPassed": 3154,
+  "pythonTestsSkipped": 2,
+  "desktopTestsPassed": 304,
+  "documentationPassed": true,
+  "packageConsistencyPassed": true,
+  "sourceChangedDuringGate": false,
+  "finalDesktopSigned": false,
+  "finalDesktopNotarized": false,
+  "vmUpgradeVerified": false,
+  "published": false
+}

@@ -1,0 +1,35 @@
+{
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "artifacts": [
+    {
+      "notarized": true,
+      "path": "beztrace-0.2.1-macos-universal.zip",
+      "sha256": "d4514513aa0da6b39991234fc9caeb9c0bf717dc8b3bcc0c9fd08c87df2b7776",
+      "signed": true,
+      "size": 4022147
+    },
+    {
+      "notarized": true,
+      "path": "beztrace-0.2.1.pkg",
+      "sha256": "5598783cd342c169ca48d52468164a5d8cf2bfdd48e3a0cc2225f59ccfaadc2b",
+      "signed": true,
+      "size": 3894021
+    }
+  ],
+  "minimumMacOS": "13.0",
+  "name": "beztrace",
+  "sbom": {
+    "binary": "beztrace-0.2.1-stage/root/Library/Application Support/beztrace/share/sbom-binary.spdx.json",
+    "format": "SPDX",
+    "releaseBinary": "beztrace-0.2.1-binary.spdx.json",
+    "releaseSource": "beztrace-0.2.1-source.spdx.json",
+    "source": "beztrace-0.2.1-stage/root/Library/Application Support/beztrace/share/sbom-source.spdx.json",
+    "version": "2.3"
+  },
+  "schemaVersion": 1,
+  "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+  "version": "0.2.1"
+}

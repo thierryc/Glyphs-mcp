@@ -933,3 +933,24 @@
 "Updates for your Glyphs plugins are available." = "您的 Glyphs 插件有可用更新。";
 "The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." = "桌面应用已更新，但 Glyphs 使用的服务器仍需更新。\n\n打开设置，然后点击 Glyphs MCP 卡片上的“更新”，即可使用最新功能和修复。您可能需要退出并重新打开 Glyphs。";
 "Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs." = "打开设置，然后点击突出显示的插件卡片上的“更新”，即可使用最新功能和修复。\n\n您可能需要退出并重新打开 Glyphs。";
+
+/* Beztrace engine 0.2.1 and companion 0.2.0/build 25. */
+"Trace images and match master outlines." = "描摹图像并匹配母版轮廓。";
+"Trace images and match master outlines in Glyphs." = "在 Glyphs 中描摹图像并匹配母版轮廓。";
+"Bundled engine 0.2.1 · Companion 0.2.0 build 25" = "内置引擎 0.2.1 · 配套插件 0.2.0 构建 25";
+"Qualified companion · Build 25 · Apple Silicon" = "已验证的配套插件 · 构建 25 · Apple Silicon";
+"Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.2.1 stable engine. Native companion testing covers Glyphs 4.2 build 4202." = "托管安装：Apple Silicon 和 macOS 26.6.2 或更高版本。需要 Glyphs 4.1（构建 4107 或更高版本）及 Glyphs 中的 Python 3.9 或更高版本。应用内置 beztrace 0.2.1 稳定引擎。配套插件的原生测试覆盖 Glyphs 4.2 构建 4202。";
+"Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace." = "托管安装会安装已签名的配套插件 0.2.0 构建 25 和引擎 0.2.1。适用于运行 macOS 26.6.2 或更高版本的 Apple Silicon。“全部安装”不包含 Beztrace。";
+"Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice." = "打开“路径 → Beztrace…”或“Beztrace Match Masters…”。在 Additional actions… → Choose engine… 中选择 ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace。重新打开面板时需再次选择；构建 25 不会保留此选择。";
+"Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font." = "选择模式，更新预览，然后点击 Apply to Layer 或 Apply to Masters。此插件独立于 MCP 服务器运行，且不会保存字体。";
+
+// Optional distribution availability and protected installation guidance.
+"Unavailable on this Mac" = "此 Mac 不支持";
+"Setup preserves this separate or modified installation. See Details before changing it." = "设置会保留此独立或已修改的安装。更改前请查看详情。";
+"Separate installations" = "独立安装";
+"Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved." = "设置不会替换独立插件、开发链接或已修改的安装。您可继续使用，或先自行备份并移除，再选择托管安装。共享引擎和用户设置会保留。";
+"Diffenator is distributed separately from the desktop app. Setup enables installation only after release qualification for this Mac. Intel support is unavailable until qualified. Install All excludes Diffenator." = "Diffenator 与桌面应用分开分发。仅在通过此 Mac 的发布验证后才可安装。Intel 支持在验证前不可用。“全部安装”不包含 Diffenator。";
+"Using Diffenator" = "使用 Diffenator";
+"Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved." = "选择明确的已编译字体文件进行比较。查看生成的报告后，将其发布到新文件夹。现有报告和源字体会保留。";
+"The optional runtime is managed separately. Removing it preserves your fonts and published reports." = "可选运行环境独立管理。移除时会保留字体和已发布的报告。";
+"Diffenator documentation" = "Diffenator 文档";

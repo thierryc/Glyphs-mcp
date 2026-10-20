@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "product": "beztrace",
+  "version": "0.2.1",
+  "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+  "sourceClean": true,
+  "qualifiedRuntime": true,
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "executionEvidence": {
+    "arm64": "native tested",
+    "x86_64": "Rosetta tested",
+    "nativeIntel": "untested; explicitly owner-waived for this release"
+  },
+  "localChecks": {
+    "commands": 27,
+    "swiftTestsPerArchitecture": 194,
+    "intentionalSkipsPerArchitecture": 2,
+    "companionTests": 180,
+    "addressSanitizer": "pass"
+  },
+  "standaloneJSONAndSVG": "pass",
+  "pairJobs": 18,
+  "matchingArchitectures": "byte-identical",
+  "smoothingCases": [
+    {
+      "id": "pair-R:0.5:hybrid-swift:greedy",
+      "tolerance": 0.5,
+      "status": "unchanged",
+      "sourceUpperBound": 0,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "pair-R:1.0:hybrid-swift:greedy",
+      "tolerance": 1.0,
+      "status": "unchanged",
+      "sourceUpperBound": 0,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "pair-R:2.0:hybrid-swift:greedy",
+      "tolerance": 2.0,
+      "status": "unchanged",
+      "sourceUpperBound": 0,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "pair-Y:0.5:hybrid-swift:greedy",
+      "tolerance": 0.5,
+      "status": "unchanged",
+      "sourceUpperBound": 0,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "pair-Y:1.0:hybrid-swift:greedy",
+      "tolerance": 1.0,
+      "status": "unchanged",
+      "sourceUpperBound": 0,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "pair-Y:2.0:hybrid-swift:greedy",
+      "tolerance": 2.0,
+      "status": "unchanged",
+      "sourceUpperBound": 0,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "kink-mild:0.5:hybrid-swift:greedy",
+      "tolerance": 0.5,
+      "status": "refused",
+      "sourceUpperBound": 0.7725789237694599,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "kink-mild:1.0:hybrid-swift:greedy",
+      "tolerance": 1.0,
+      "status": "smoothed",
+      "sourceUpperBound": 0.79007892376946,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "kink-mild:2.0:hybrid-swift:greedy",
+      "tolerance": 2.0,
+      "status": "smoothed",
+      "sourceUpperBound": 0.8280506311483755,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "kink-strong:0.5:hybrid-swift:greedy",
+      "tolerance": 0.5,
+      "status": "refused",
+      "sourceUpperBound": 18.333917110138888,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "kink-strong:1.0:hybrid-swift:greedy",
+      "tolerance": 1.0,
+      "status": "refused",
+      "sourceUpperBound": 18.35141711013889,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    },
+    {
+      "id": "kink-strong:2.0:hybrid-swift:greedy",
+      "tolerance": 2.0,
+      "status": "refused",
+      "sourceUpperBound": 18.392462287762264,
+      "identicalToFrozenGeometryAndReport": true,
+      "byteIdenticalNativeAndRosetta": true
+    }
+  ],
+  "graphSelection": "deferred",
+  "performance": {
+    "status": "pass-final-repeat",
+    "maxProcessP95Ms": 746.072791,
+    "peakRSSBytes": 29458432,
+    "warmups": 3,
+    "samples": 30,
+    "fixtureCount": 5,
+    "nativeIntelTested": false,
+    "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+    "binarySHA256": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9",
+    "initialConcurrentVMStartupRun": {
+      "maxProcessP95Ms": 1160.47175,
+      "retained": true
+    },
+    "qualificationScope": "Five tracing fixtures on the recorded Apple Silicon host; not general app latency. First run overlapped VM startup; settled repeat passed."
+  },
+  "installation": {
+    "status": "pass",
+    "environment": {
+      "os": "14.6.1",
+      "architecture": "arm64"
+    },
+    "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+    "artifactSHA256": {
+      "beztrace-0.2.1.pkg": "5598783cd342c169ca48d52468164a5d8cf2bfdd48e3a0cc2225f59ccfaadc2b",
+      "beztrace-0.2.1-macos-universal.zip": "d4514513aa0da6b39991234fc9caeb9c0bf717dc8b3bcc0c9fd08c87df2b7776"
+    },
+    "installedBinarySHA256": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9",
+    "install": true,
+    "rollbackTo020": true,
+    "ownedRemoval": true,
+    "reinstall": true,
+    "gatekeeperEnabledBeforeAndAfter": true,
+    "installedPairExamples": [
+      {
+        "case": "R-mixed-direct",
+        "passed": true,
+        "masterSetSHA256": "6694fce9fa6cf8ea756f85c77ebf9931a4760717b903b7d2830390467b0cf540"
+      },
+      {
+        "case": "Y-images-smart",
+        "passed": true,
+        "masterSetSHA256": "a27b29f483072f51d7cd98cfd210602c2432cc67b4a978daaf3b23e9126f3efb"
+      }
+    ],
+    "guestReceiptSHA256": "cd5d1440f7cc9adf4e1a5cb55270fcd588d8480f0acfe07036cc0d2a688aecd6",
+    "nativeIntelTested": false,
+    "nativeIntelOwnerWaived": true,
+    "hostSharedEngineChanged": false
+  },
+  "notarization": {
+    "engine-zip": {
+      "status": "Accepted",
+      "id": "13ecb471-4228-4303-a87b-12521d4a826c",
+      "message": "Processing complete"
+    },
+    "engine-pkg": {
+      "id": "c465e186-de9e-49f6-9620-b04c2ec1a62e",
+      "message": "Processing complete",
+      "status": "Accepted"
+    }
+  },
+  "limits": [
+    "Controlled glyph silhouettes and benchmark fixtures; not arbitrary-image coverage.",
+    "Native Intel execution is untested and explicitly waived; Rosetta is separate evidence."
+  ],
+  "qualificationStage": "Completed before publication; uploaded assets and anonymous downloads are verified separately"
+}

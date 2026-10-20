@@ -50,6 +50,14 @@ Run `scripts/qualify_diffenator_adapter.py` with the candidate's Python and
 offline execution, cancellation and signed native loading separately on each
 architecture. Preserve dependency license files and provenance with the artifact.
 
+## Fresh 2.3.0 candidate
+
+[The rebuilt arm64 candidate and its evidence](../../reports/diffenator-arm64-2.3.0/README.md)
+record exact archive bytes, source reconstruction, Apple notarization, nine
+network-denied host cases and the real managed lifecycle. Historical evidence is
+not assigned to these new bytes. VM qualification and a dependency-license gap
+remain blocking; the production catalog is disabled.
+
 ## Enable managed distribution
 
 Notarize the distribution and verify its actual signing team/Gatekeeper result.

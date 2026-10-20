@@ -1,0 +1,14 @@
+{
+  "complete": false,
+  "wheelsAudited": 45,
+  "wheelsWithLicenseFiles": 44,
+  "unresolved": [
+    {
+      "name": "youseedee",
+      "version": "0.7.0",
+      "upstreamRevision": "3621a8d668ee1ec3a232e1a65407173b6c26ae7b",
+      "sourceURL": "https://github.com/simoncozens/youseedee/tree/v0.7.0",
+      "reason": "Published wheel has no license file; exact source points the license field at a usage-only README. Redistribution terms are not established by these inputs."
+    }
+  ]
+}

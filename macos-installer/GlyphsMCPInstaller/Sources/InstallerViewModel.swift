@@ -638,7 +638,7 @@ final class InstallerViewModel: ObservableObject {
         var arguments = ["-I", "-B", helper.path, "--catalog", catalog.path, "--action", action]
         if let tool { arguments += ["--tool", tool] }
         if tool == "beztrace-glyphs", let resources = Bundle.main.resourceURL {
-            arguments += ["--engine", resources.appendingPathComponent("Beztrace/beztrace-0.1.1").path]
+            arguments += ["--engine", resources.appendingPathComponent("Beztrace/beztrace-0.2.1").path]
         }
         let result = try await runner.runCapturing(executable: python, args: arguments, timeout: 600, maximumStandardOutputBytes: 1024 * 1024)
         guard result.exitCode == 0 else {
