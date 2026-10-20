@@ -1,4 +1,12 @@
-# Diffenator arm64 candidate for 2.3.0
+# Archived Diffenator candidate — deferred beyond 2.3.0
+
+Diffenator was removed from the 2.3.0 scope at the user’s request. These results
+are retained as historical engineering evidence; none of the candidate runtime
+bytes are distributed with 2.3.0. A future maintained fork will replace
+`youseedee` with an independently written reader for bundled Unicode data. That
+fork requires fresh dependency/license checks, comparisons, signing, notarization
+and supported-macOS qualification before it can return to Setup.
+
 
 This is fresh evidence for archive `diffenator-arm64-r1.zip`, SHA-256
 `7ea63a23a9e529187f410d16d73f8019d95792509af2600663e8342001de282a`,

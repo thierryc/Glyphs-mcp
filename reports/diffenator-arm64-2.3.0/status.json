@@ -16,5 +16,7 @@
     "youseedee 0.7.0 redistribution license unresolved",
     "Public optional asset and anonymous verification pending preceding gates",
     "Exact desktop upgrade and final release gates pending"
-  ]
+  ],
+  "scope": "Deferred beyond 2.3.0; no runtime distribution or Setup option",
+  "blockersApplyTo": "future Diffenator distribution, not desktop 2.3.0"
 }

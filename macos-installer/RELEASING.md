@@ -130,7 +130,7 @@ runtime, then seals code bundles from the inside out. Only glyphs-cli receives
 Glyphs framework. This entitlement is not applied to the installer or Python.
 
 After signing, the release tool regenerates bridge, companion and runtime
-identities in the lean manifest, then the outer payload identity. The bundled stable Beztrace 0.1.1 engine is
+identities in the lean manifest, then the outer payload identity. The bundled stable Beztrace 0.2.1 engine is
 signed separately in the exported app; its integration-copy provenance and checksum
 inventory are refreshed and verified before sealing the app and again in the
 extracted release ZIP. The source distribution is preserved unchanged. Installer

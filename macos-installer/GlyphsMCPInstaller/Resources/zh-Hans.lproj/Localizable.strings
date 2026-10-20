@@ -954,3 +954,10 @@
 "Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved." = "选择明确的已编译字体文件进行比较。查看生成的报告后，将其发布到新文件夹。现有报告和源字体会保留。";
 "The optional runtime is managed separately. Removing it preserves your fonts and published reports." = "可选运行环境独立管理。移除时会保留字体和已发布的报告。";
 "Diffenator documentation" = "Diffenator 文档";
+
+// Optional tool availability.
+"Separate installation preserved" = "已保留独立安装";
+"Development link preserved" = "已保留开发链接";
+"Modified installation preserved" = "已保留修改后的安装";
+"Available on Apple Silicon only." = "仅支持 Apple Silicon。";
+"Requires macOS %@ or later." = "需要 macOS %@ 或更高版本。";

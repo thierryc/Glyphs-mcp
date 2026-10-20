@@ -943,3 +943,10 @@
 "Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved." = "Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved.";
 "The optional runtime is managed separately. Removing it preserves your fonts and published reports." = "The optional runtime is managed separately. Removing it preserves your fonts and published reports.";
 "Diffenator documentation" = "Diffenator documentation";
+
+// Optional tool availability.
+"Separate installation preserved" = "Separate installation preserved";
+"Development link preserved" = "Development link preserved";
+"Modified installation preserved" = "Modified installation preserved";
+"Available on Apple Silicon only." = "Available on Apple Silicon only.";
+"Requires macOS %@ or later." = "Requires macOS %@ or later.";
