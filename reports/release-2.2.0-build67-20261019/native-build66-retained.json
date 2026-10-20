@@ -1,0 +1,87 @@
+{
+  "scope": "installed VM bridge build66 pre-migration acceptance",
+  "passed": true,
+  "checks": [
+    {
+      "name": "bridge ready",
+      "passed": true
+    },
+    {
+      "name": "no unrelated open documents",
+      "passed": true
+    },
+    {
+      "name": "initial widths",
+      "passed": true
+    },
+    {
+      "name": "exact change and untouched control",
+      "passed": true
+    },
+    {
+      "name": "no implicit save",
+      "passed": true
+    },
+    {
+      "name": "facade offers guarded close without saving",
+      "passed": true
+    },
+    {
+      "name": "native exact restoration",
+      "passed": true
+    },
+    {
+      "name": "discard closes task",
+      "passed": true
+    },
+    {
+      "name": "native job evidence retained",
+      "passed": true
+    },
+    {
+      "name": "history actions succeed",
+      "passed": true
+    },
+    {
+      "name": "history leaves evidence unchanged",
+      "passed": true
+    },
+    {
+      "name": "non orphan job cannot archive",
+      "passed": true
+    },
+    {
+      "name": "native save verified",
+      "passed": true
+    },
+    {
+      "name": "saved exact result and control",
+      "passed": true
+    }
+  ],
+  "host": {
+    "version": "4.1.1",
+    "build": "4108"
+  },
+  "vm": {
+    "macOS": "14.6.1",
+    "build": "23G93"
+  },
+  "document": {
+    "id": "doc_36264770e5dc42e7b18ff4675b704cc8",
+    "path": "/Users/ziggy/gmcp-release-2.2.0-build67-20261019/Disposable.glyphs",
+    "dirty": false,
+    "generation": 0,
+    "familyName": "Glyphs MCP V2 Disposable Headless Fixture",
+    "alreadyOpen": false,
+    "openId": "open_cd3564c4fa29dca8dd302d5d59c55c9106a594479d020daab0b0787122151cd1",
+    "bridgeSessionId": "a4e197e4b0124f4eaa64081ef4b6729d"
+  },
+  "workflowIds": [
+    "edit_52a3d6ae13be4bd5ae0b01ae4e1eccfa",
+    "edit_f0745b473e8b4ae8bd021950b05070c6"
+  ],
+  "harnessCorrection": "Initial assertion expected selective Undo in the recovery facade. This was incorrect: companion facade offers Close Without Saving; the original workflow provides selective Undo. Resumed the same workflow, restored exact targets and then verified saving. No product failure was observed.",
+  "evidenceSHA256": "a00c37ce4164bb29621668e97a1e5dcb95f1b549cd7bd11b664104a35b4848be",
+  "transport": "fresh local FastMCP client through installed VM sidecar to native editor; not Codex connector latency"
+}

@@ -170,8 +170,22 @@ same explanations in accessible descriptions and conversational results; tooltip
 without saving; Save saves the whole font; script Restore uses the recovery
 actually offered by that workflow. Existing natural-language phrases remain
 valid. These presentation fields change no action identifiers, freshness tokens,
-mutation signatures or persisted workflow records. A companion Tasks view and
-broader blocker discovery remain separate future work.
+mutation signatures or persisted workflow records.
+
+The companion’s **Tasks** inventory is passive. Use `list_tasks` to find
+unresolved work and its blockers, then
+`get_edit_workflow` for the selected task’s current choices and tokens. An old
+or unavailable conversation never requires rerunning its script: review the
+existing workflow from the current chat. **Open Conversation…** navigates to a
+recorded Codex origin; **Copy Request** prepares review context for Claude Code
+or a missing link. Neither control takes a workflow action. The separate
+**Recovery Options…** sheet is an exceptional route for abandoned tasks:
+it exposes only server-offered Keep/finish and cancellation choices with explicit
+consequences, current revisions/tokens and the same dispatch guards. It cannot
+Save, Restore, Apply, Run or acknowledge an unknown outcome. An agent should
+refresh before acting after companion recovery, and retain an authoritative
+external-completion receipt without replaying its old choice. See
+[Companion Tasks](companion-tasks.md) for origin capture and compatibility.
 
 ## Implementation responsibilities
 

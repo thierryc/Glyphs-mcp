@@ -25,6 +25,41 @@ final class DesktopModel: ObservableObject {
     func consumeSetupRequest() { setupRequested = false }
     var onWelcome: (() -> Void)?
     func showWelcome() { onWelcome?() }
+    @Published private(set) var tasks: [DesktopTask] = []
+    private var taskIndex: [DesktopTaskReference] = []
+    @Published private(set) var tasksNotice: String?
+    @Published private(set) var taskHistoryNotice: String?
+    @Published private(set) var tasksStale = false
+    @Published private(set) var tasksLoading = false
+    @Published private(set) var tasksObservedAt: Date?
+    @Published private(set) var tasksNextCursor: Int?
+    @Published private(set) var tasksRequested = false
+    @Published private(set) var glyphsRunning = false
+    private lazy var taskReadState = DesktopTaskReadState(defaults: .standard, namespace: installation.root.path)
+    private lazy var taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: installation.root.path)
+    var visibleTasks: [DesktopTask] { tasks.filter { taskHistoryState.isVisible($0) } }
+    var canClearTaskHistory: Bool { taskIndex.contains { $0.closed && taskHistoryState.isVisible($0) } }
+    var hasClearedTaskHistory: Bool { !taskHistoryState.clearedIDs.isEmpty }
+    var unreadTaskCount: Int { taskIndex.filter { taskHistoryState.isVisible($0) && taskReadState.isUnread($0) }.count }
+    func clearClosedTaskHistory() {
+        objectWillChange.send()
+        taskHistoryState.clearClosed(taskIndex)
+        tasksNextCursor = nil
+        Task { await refreshTasks() }
+    }
+    func restoreTaskHistory() {
+        objectWillChange.send()
+        taskHistoryState.restore()
+        Task { await refreshTasks() }
+    }
+    func isUnread(_ task: DesktopTask) -> Bool { taskReadState.isUnread(task) }
+    func readTask(_ task: DesktopTask) {
+        guard taskReadState.isUnread(task) else { return }
+        objectWillChange.send(); taskReadState.read(task)
+    }
+    func requestTasks() { tasksRequested = true }
+    func consumeTasksRequest() { tasksRequested = false }
+
     private var visibility = DesktopMonitorPolicy()
     private var sampler: Task<Void, Never>?
     private var refreshing = false
@@ -56,7 +91,7 @@ final class DesktopModel: ObservableObject {
         for event in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification, NSWorkspace.didActivateApplicationNotification] {
             observers.append(center.addObserver(forName: event, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
-                    guard let self, self.visibility.visible || self.visibility.menuBarVisible else { return }
+                    guard let self, self.visibility.visible || self.visibility.menuBarVisible || self.visibility.dashboardVisible else { return }
                     await self.refresh()
                 }
             })
@@ -74,6 +109,7 @@ final class DesktopModel: ObservableObject {
     }
     func setDashboardVisible(_ visible: Bool) {
         visibility.dashboardVisible = visible
+        updateEventMonitor()
         updateSampler()
         if visible { Task { await refresh() } }
     }
@@ -82,13 +118,17 @@ final class DesktopModel: ObservableObject {
     func setMenuBarVisible(_ visible: Bool) {
         guard visible != visibility.menuBarVisible else { return }
         visibility.menuBarVisible = visible
-        if visible {
-            jobEvents = DesktopJobEvents(root: installation.root) { [weak self] in
-                self?.jobStateChanged()
-            }
-            Task { await refresh() }
-        } else { jobEvents?.stop(); jobEvents = nil; eventPending = false }
+        updateEventMonitor()
         updateSampler()
+        if visible { Task { await refresh() } }
+    }
+
+    private func updateEventMonitor() {
+        if visibility.menuBarVisible || visibility.dashboardVisible {
+            if jobEvents == nil {
+                jobEvents = DesktopJobEvents(root: installation.root) { [weak self] in self?.jobStateChanged() }
+            }
+        } else { jobEvents?.stop(); jobEvents = nil; eventPending = false }
     }
 
     private func jobStateChanged() {
@@ -125,15 +165,32 @@ final class DesktopModel: ObservableObject {
         eventPending = false; lastAttempt = .now
         refreshing = true
         defer { refreshing = false; updateSampler() }
+        glyphsRunning = NSWorkspace.shared.runningApplications.contains { app in
+            guard GlyphsRunningProcessDetector.supportedBundleIdentifiers.contains(app.bundleIdentifier ?? ""),
+                  let url = app.bundleURL else { return false }
+            return !GlyphsCopySelectionPolicy.copies(from: GlyphsApplicationDetector.allApplications(candidates: [url])).isEmpty
+        }
         let current = DesktopInstallation()
-        if current != installation { installation = current }
-        guard current.hasServer else { status = nil; notice = ""; stale = false; serviceRunning = nil; return }
+        if current != installation {
+            let changedRoot = current.root != installation.root
+            installation = current
+            if changedRoot {
+                taskReadState = DesktopTaskReadState(defaults: .standard, namespace: current.root.path)
+                taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: current.root.path)
+                tasks = []; taskIndex = []; tasksObservedAt = nil; tasksNextCursor = nil
+                tasksNotice = nil; tasksStale = false
+                jobEvents?.stop(); jobEvents = nil; updateEventMonitor()
+            }
+        }
+        guard current.hasServer else {
+            status = nil; notice = ""; stale = false; serviceRunning = nil
+            tasksStale = tasksObservedAt != nil
+            tasksNotice = NSLocalizedString("Install Glyphs MCP in Setup to show Tasks.", comment: "Tasks prerequisite")
+            return
+        }
         do {
             let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
-            var request = URLRequest(url: URL(string: "http://127.0.0.1:\(current.port)/internal/status")!)
-            request.timeoutInterval = 3
-            request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
-            request.cachePolicy = .reloadIgnoringLocalCacheData
+            let request = DesktopStatusRequest.make(port: current.port, token: token)
             let (data, response) = try await URLSession.shared.data(for: request)
             guard !controlling, !Task.isCancelled else { return }
             guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -154,6 +211,7 @@ final class DesktopModel: ObservableObject {
                 status = observed
             }
             lastObserved = Date(); stale = false; serviceRunning = true
+            await refreshTasks()
             // Development links are mutable by design and use a lightweight
             // receipt without immutable payload fingerprints. Their explicit
             // Setup status is the trust signal; managed installs still require
@@ -165,14 +223,129 @@ final class DesktopModel: ObservableObject {
         } catch is CancellationError {
         } catch {
             guard !Task.isCancelled, !controlling else { return }
+            tasksStale = tasksObservedAt != nil
+            tasksNotice = NSLocalizedString("Tasks are unavailable. Try again when the server is connected.", comment: "Task inventory error")
             stale = status != nil
-            let message = (error as? URLError) != nil ? "The server is not responding. Refresh Setup or open the troubleshooting logs." : error.localizedDescription
             if let observed = try? await serviceAction("status"), let data = observed["data"] as? [String: Any] {
                 serviceRunning = data["processRunning"] as? Bool ?? data["running"] as? Bool
             } else { serviceRunning = nil }
+            let message = DesktopDiagnostics.statusFailure(error, running: serviceRunning)
             if serviceRunning == false { notice = "" }
             else if notice != message { notice = message; remember(message) }
         }
+    }
+
+    func refreshTasks(loadMore: Bool = false) async {
+        guard !tasksLoading, installation.hasServer, !controlling else { return }
+        if loadMore && tasksNextCursor == nil { return }
+        tasksLoading = true
+        defer { tasksLoading = false }
+        let root = installation.root
+        do {
+            await syncTaskHistory(root: root)
+            guard root == installation.root, !controlling, !Task.isCancelled else { return }
+            let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+            let cursor = loadMore ? tasksNextCursor ?? 0 : 0
+            var request = URLRequest(url: URL(string: "http://127.0.0.1:\(installation.port)/internal/tasks?cursor=\(cursor)")!)
+            request.timeoutInterval = 3
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard root == installation.root, !controlling, !Task.isCancelled else { return }
+            let code = (response as? HTTPURLResponse)?.statusCode
+            if code == 404 {
+                tasksNotice = NSLocalizedString("Update Glyphs MCP to show Tasks.", comment: "Older task inventory")
+                tasksStale = tasksObservedAt != nil
+                return
+            }
+            guard code == 200 else { throw URLError(.badServerResponse) }
+            struct Envelope: Decodable { let ok: Bool; let data: DesktopTaskPage? }
+            let envelope = try JSONDecoder().decode(Envelope.self, from: data)
+            guard envelope.ok, let page = envelope.data, page.version == 1 else { throw URLError(.cannotParseResponse) }
+            tasks = page.mergingHistory(tasks)
+            taskIndex = page.index ?? tasks.map(DesktopTaskReference.init)
+            taskReadState.observeIndex(taskIndex)
+            taskHistoryState.observeIndex(taskIndex, pruneMissing: page.index != nil)
+            tasksNextCursor = page.nextHistoryCursor(in: tasks, ignoring: taskHistoryState.clearedIDs)
+            tasksObservedAt = Date(timeIntervalSince1970: page.observedAt)
+            tasksStale = false; tasksNotice = nil
+        } catch {
+            tasksStale = tasksObservedAt != nil
+            tasksNotice = NSLocalizedString("Tasks are unavailable. Try again when the server is connected.", comment: "Task inventory error")
+        }
+    }
+
+    private func syncTaskHistory(root: URL) async {
+        guard !taskHistoryState.pendingOperations.isEmpty else { taskHistoryNotice = nil; return }
+        do {
+            let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+            // Bound work per refresh; the persisted queue survives app shutdown.
+            for _ in 0..<10 {
+                guard let operation = taskHistoryState.pendingOperations.first else { break }
+                var request = URLRequest(url: URL(string: "http://127.0.0.1:\(installation.port)/internal/task-history")!)
+                request.httpMethod = "POST"; request.timeoutInterval = 5
+                request.cachePolicy = .reloadIgnoringLocalCacheData
+                request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                struct Payload: Encodable { let action: String; let records: [DesktopTaskHistoryState.Record] }
+                request.httpBody = try JSONEncoder().encode(Payload(action: operation.action, records: operation.records))
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard root == installation.root, !controlling, !Task.isCancelled else { return }
+                if (response as? HTTPURLResponse)?.statusCode == 404 {
+                    taskHistoryNotice = NSLocalizedString("Update the sidecar to enable 30-day cleanup. History remains hidden.", comment: "History compatibility")
+                    return
+                }
+                struct Envelope: Decodable { struct Result: Decodable { let version: Int }; let ok: Bool; let data: Result? }
+                let envelope = try JSONDecoder().decode(Envelope.self, from: data)
+                guard (response as? HTTPURLResponse)?.statusCode == 200, envelope.ok, envelope.data?.version == 1 else {
+                    throw URLError(.badServerResponse)
+                }
+                taskHistoryState.acknowledge(operation)
+            }
+            taskHistoryNotice = taskHistoryState.pendingOperations.isEmpty ? nil : NSLocalizedString("History changes are waiting to sync.", comment: "History outbox")
+        } catch {
+            guard root == installation.root else { return }
+            taskHistoryNotice = NSLocalizedString("History changes are waiting to sync. The 30-day period starts when the server receives Clear.", comment: "History offline")
+        }
+    }
+
+    func taskRecovery(_ task: DesktopTask, choice: DesktopTaskRecovery.Action? = nil,
+                      revision: Int? = nil) async throws -> DesktopTaskRecovery {
+        guard let identity = task.workflowId ?? task.jobId else {
+            throw InstallerError.userFacing("This task could not be identified. Refresh Tasks before choosing.")
+        }
+        guard installation.hasServer, !controlling else {
+            throw InstallerError.userFacing("Connect to the server before using Recovery Options.")
+        }
+        let root = installation.root
+        let identityKey = task.workflowId == nil ? "job_id" : "workflow_id"
+        var payload: [String: Any] = ["action": "options", identityKey: identity]
+        if let choice, let revision {
+            payload = ["action": "respond", identityKey: identity,
+                       "expected_revision": revision, "action_token": choice.token]
+        }
+        let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(installation.port)/internal/task-recovery")!)
+        request.httpMethod = "POST"; request.timeoutInterval = 30
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard root == installation.root, !Task.isCancelled else { throw CancellationError() }
+        if (response as? HTTPURLResponse)?.statusCode == 404 {
+            throw InstallerError.userFacing("Update the sidecar to use Recovery Options. You can still review this task in your agent.")
+        }
+        struct Failure: Decodable { let message: String }
+        struct Envelope: Decodable { let ok: Bool; let data: DesktopTaskRecovery?; let error: Failure? }
+        let result = try JSONDecoder().decode(Envelope.self, from: data)
+        guard (response as? HTTPURLResponse)?.statusCode == 200, result.ok,
+              let recovery = result.data,
+              (task.workflowId != nil ? recovery.workflowId == identity : recovery.workflowId == nil && recovery.jobId == identity) else {
+            throw InstallerError.userFacing(result.error?.message ?? "The task outcome could not be confirmed. Check again before choosing.")
+        }
+        if choice != nil { await refreshTasks() }
+        return recovery
     }
 
     private func serviceAction(_ action: String, value: String? = nil) async throws -> [String: Any] {

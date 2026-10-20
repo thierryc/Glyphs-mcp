@@ -1,0 +1,84 @@
+{
+  "pid": 95501,
+  "appClass": "GSApplication",
+  "delegate": "None",
+  "mainBundle": "/Applications/Glyphs 4.app",
+  "fontCount": 0,
+  "classes": {
+    "GSLocalNumberFormatTransformer": {
+      "available": false,
+      "error": "GSLocalNumberFormatTransformer"
+    },
+    "GSWeightClassUIValueTransformer": {
+      "available": false,
+      "error": "GSWeightClassUIValueTransformer"
+    },
+    "GSWidthClassUIValueTransformer": {
+      "available": false,
+      "error": "GSWidthClassUIValueTransformer"
+    },
+    "GSArrayToStringTransformer": {
+      "available": false,
+      "error": "GSArrayToStringTransformer"
+    },
+    "GSApplication": {
+      "available": true,
+      "ownMethods": [
+        "currentDocument",
+        "versionNumber",
+        "buildNumber",
+        "documents",
+        "font",
+        "fonts",
+        "reporters",
+        "activeReporters",
+        "filters",
+        "pluginInstances",
+        "defaults",
+        "registerDefault",
+        "registerDefaults",
+        "boolDefaults",
+        "colorDefaults",
+        "intDefaults",
+        "floatDefaults",
+        "scriptAbbreviations",
+        "scriptSuffixes",
+        "languageScripts",
+        "languageData",
+        "unicodeRanges",
+        "editViewWidth",
+        "handleSize",
+        "versionString",
+        "menu",
+        "open",
+        "showMacroWindow",
+        "showGlyphInfoPanelWithSearchString",
+        "glyphInfoForName",
+        "glyphInfoForUnicode",
+        "niceGlyphName",
+        "productionGlyphName",
+        "ligatureComponents",
+        "addCallback",
+        "removeCallback",
+        "redraw",
+        "showNotification",
+        "localize",
+        "activateReporter",
+        "deactivateReporter",
+        "currentFontDocument"
+      ]
+    },
+    "GSApplicationDelegate": {
+      "available": false,
+      "error": "GSApplicationDelegate"
+    }
+  },
+  "transformers": [
+    "NSUnarchiveFromData",
+    "NSNegateBoolean",
+    "NSIsNil",
+    "NSSecureUnarchiveFromData",
+    "NSIsNotNil",
+    "NSKeyedUnarchiveFromData"
+  ]
+}

@@ -54,9 +54,10 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     assert json.loads((first / "manifest.json").read_text()) == manifest_a
     assert manifest_a["tools"] == [
         "get_status",
+        "list_tasks",
         "list_documents",
         "create_document",
-            "duplicate_document",
+        "duplicate_document",
         "open_document",
         "import_document",
         "activate_document",
@@ -185,7 +186,13 @@ def test_bridge_is_a_fixed_minimal_palette_without_activity_ui() -> None:
     assert "self.max = PALETTE_HEIGHT" in source
     assert '"Stopped" if bridge_lifecycle.stopped' in source
     assert '"Ready" if ready' in source
-    assert '"Glyphs MCP Bridge {}".format(PROJECT_VERSION)' in source
+    name_assignment = next(
+        node
+        for node in ast.walk(bridge_class)
+        if isinstance(node, ast.Assign)
+        and any(ast.unparse(target) == "self.name" for target in node.targets)
+    )
+    assert ast.literal_eval(name_assignment.value) == "Glyphs MCP Bridge"
     assert "_details" not in source
     assert "PALETTE_HEIGHT = 30" in source
 

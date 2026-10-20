@@ -11,6 +11,12 @@ def validate_capabilities(service, options, error):
         raise error('unsupported_job', 'native scripts require a coordinated runtime update (script.native.v1, script.recovery.snapshot.v1, preparation version 3)')
 
 
+def execution_blockers(service, job_id=None):
+    return [job for job in service.jobs.select(
+        {'preparing', 'cancelling', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding'},
+        include_unresolved=True) if job['id'] != job_id]
+
+
 def run(service, job_id, workflow_id, error):
     workflow = service.edit_workflows.store.records.get(workflow_id)
     if not workflow or workflow.get('jobId') != job_id or workflow.get('pendingAction') != 'run_script':
@@ -18,9 +24,9 @@ def run(service, job_id, workflow_id, error):
     job = service._job(job_id)
     if job.get('resultKind') != 'script' or job['status'] != 'ready':
         raise error('job_not_ready', 'script review is not ready')
-    for other in service.jobs.select({'preparing', 'cancelling', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding'}, include_unresolved=True):
+    for other in execution_blockers(service, job_id):
         if other['id'] != job_id:
-            raise error('document_busy', 'resolve outstanding MCP mutations before native execution')
+            raise error('document_busy', 'resolve outstanding MCP mutations before native execution', details={'blockingJobId': other['id']})
     validate_capabilities(service, job['request']['options'], error)
     doc = service._document(job['document']['id'])
     if any(doc.get(key) != job['document'].get(key) for key in ('path', 'generation', 'dirty')):

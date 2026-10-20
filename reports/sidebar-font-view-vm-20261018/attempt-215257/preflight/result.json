@@ -1,0 +1,39 @@
+{
+  "outcome": "blocked",
+  "phase": "attach-font-view",
+  "pid": 1128,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": false,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/Users/ziggy/sidebar-qualification-20261018T215257/report/preflight/Disposable.glyphs",
+    "masters": [
+      "16560BA1-57DA-46BA-8BE7-0CB77F25DB6F",
+      "058664CE-DFC5-4BF3-BF33-DA17B7FC70F4"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/ziggy/sidebar-qualification-20261018T215257/source/scripts/qualify_sidebar_counts_native.py\", line 147, in main\n    guard = CountGuard(items(), font, selected(), identity=objc.pyobjc_id)\n                       ~~~~~^^\n  File \"/Users/ziggy/sidebar-qualification-20261018T215257/source/scripts/qualify_sidebar_counts_native.py\", line 139, in items\n    pending = list(sidebar.glyphGroups()); result = []; seen = set()\nTypeError: 'NoneType' object is not iterable\n"
+}

@@ -1,0 +1,43 @@
+{
+  "scope": "Read-only installed VM sidecar over localhost MCP",
+  "passed": true,
+  "release": {
+    "version": "2.2.0",
+    "releaseVersion": "2.2.0",
+    "channel": "stable",
+    "betaNumber": 0,
+    "installerBuild": 66
+  },
+  "runtimeId": "2.2.0+de1581ecd96e",
+  "codeHash": "sha256:de1581ecd96e7c9b1ec9bb907fb8f04f5b819a19f1c4bc8a44810cc2cade8a6c",
+  "tools": [
+    "get_status",
+    "list_tasks",
+    "list_documents",
+    "create_document",
+    "duplicate_document",
+    "open_document",
+    "import_document",
+    "activate_document",
+    "open_edit_tab",
+    "close_document",
+    "read_entities",
+    "start_job",
+    "compare_fonts",
+    "get_job",
+    "apply_job",
+    "accept_job",
+    "discard_job",
+    "save_document",
+    "start_edit_workflow",
+    "get_edit_workflow",
+    "show_edit_workflow",
+    "respond_edit_workflow"
+  ],
+  "workerAvailable": true,
+  "activeCount": 0,
+  "retainedClosedTasks": 3,
+  "allRetainedTasksClosed": true,
+  "bridgeReachable": false,
+  "limitation": "Glyphs editor remained closed; no loaded bridge or recovery mutation qualification."
+}

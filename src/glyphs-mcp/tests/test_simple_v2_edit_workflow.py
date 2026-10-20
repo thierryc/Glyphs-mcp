@@ -319,7 +319,7 @@ def test_mcp_app_and_proxy_preserve_text_resources_metadata_and_actions(env):
         for host in (server, proxy):
             async with Client(host) as client:
                 catalog = {t.name:t for t in await client.list_tools()}
-                assert len(catalog) == 21
+                assert len(catalog) == 22
                 assert catalog["show_edit_workflow"].meta["ui"]["resourceUri"] == RESOURCE_URI
                 for name in ("start_edit_workflow", "get_edit_workflow", "respond_edit_workflow"):
                     assert "resourceUri" not in catalog[name].meta["ui"]

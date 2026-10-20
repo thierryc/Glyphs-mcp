@@ -1,8 +1,10 @@
-# Glyphs MCP Desktop 2.1.0
+# Glyphs MCP Desktop 2.2.0
 
-**Released: 2.1.0 · desktop build 63 · Glyphs 4.** Review workflow results with Keep, Save and Restore, preview project templates before creation, and find skills through readable “Glyphs …” titles. Download the [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.1.0/Glyphs-MCP-2.1.0.dmg) and see the [2.1.0 release qualification](V2.1.0-RELEASE.md) for validation and recovery limits.
+**In preparation: 2.2.0 · desktop build 66 · Glyphs 4.** Adds Tasks, guarded recovery for abandoned work, cleared-history retention, native image comparisons, a native menu-bar menu and verified font package copies. See the [2.2.0 preparation record](V2.2.0-RELEASE.md).
 
-The [twenty data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
+The published stable release remains **2.1.0/build 63**. Download its [signed and notarized disk image](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.1.0/Glyphs-MCP-2.1.0.dmg) and see the [2.1.0 release qualification](V2.1.0-RELEASE.md).
+
+The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge
 and a separate MCP server. The installer includes its private Python runtime;
@@ -24,11 +26,15 @@ Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
 with requirements, its independently signed build 15 release and setup guidance. The app bundles
 the universal stable 0.1.1 engine; the Glyphs plugin remains separate. See [Beztrace setup](content/workflows/beztrace.mdx).
 
-The permanent app includes Setup and Project destinations, a static menu-bar
+The permanent app includes Setup, Tasks and Project destinations, a static menu-bar
 popover, a dedicated troubleshooting-log window, local and public templates,
-and a Git diff browser with opt-in font checkpoints. Its
-native file tree opens source diffs in unified or split form and can compare
-individual `.glyphspackage` glyphs as visual overlays or source text. Automatic
+and a Git diff browser with opt-in font checkpoints. The
+project's **Diff / Config** control keeps Diff as the full-height default and
+groups font sources, settings and external-tool actions in Config. Saved
+`.glyphs` sources offer **Create Package Copy…** with source preservation and
+native verification; see [font package copies](macos-installer/README.md#font-package-copies-in-projects).
+The native file tree opens source diffs in unified or split form and can compare
+individual `.glyphspackage` glyphs as visual overlays or source text. PNG, JPEG and WebP diffs use Before / Both / After, a draggable divider and shared zoom controls. [Tasks](docs/companion-tasks.md) shows open workflows and blockers, conversation handoff and guarded recovery for abandoned work. Automatic
 update checks are enabled by default and can be disabled in Settings. Desktop
 launch at login is a separate opt-in setting.
 
@@ -65,7 +71,7 @@ Spacing proposals and
 reference display ignore differences of at most 0.001 font units. Exact
 native history and recovery keep the original values without rounding.
 
-The twenty data/action tools are `get_status`, `list_documents`, `create_document`, `duplicate_document`, `open_document`, `import_document`,
+The twenty-one data/action tools are `get_status`, `list_tasks`, `list_documents`, `create_document`, `duplicate_document`, `open_document`, `import_document`,
 `activate_document`, `open_edit_tab`, `close_document`, `read_entities`,
 `start_job`, `compare_fonts`, `get_job`, `apply_job`, `accept_job`, `discard_job`, and
 `save_document`, `start_edit_workflow`, `get_edit_workflow`, and
@@ -93,11 +99,11 @@ documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
 [GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.1.0).
 
-Documentation sources: [v2 · 2.1.0](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.2.0 in preparation](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
-See [release qualification](V2.1.0-RELEASE.md) for current results and limits.
+See [2.2.0 preparation](V2.2.0-RELEASE.md) and [published qualification](V2.1.0-RELEASE.md) for their separate results and limits.
 Historical beta reports remain in [the qualification archive](reports/README.md);
 the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
@@ -141,7 +147,7 @@ limits are unchanged. Qualification is tracked in [the V2 release notes](V2-RELE
 The opt-in project setting records exact saved baselines and authorized MCP saves
 as font-scoped Git checkpoints. Keep stays unsaved; failed checkpoints can be
 retried without another Save. Bounded history, recorded actions, comparison and
-whole-font historical reload share the existing twenty tools and app project UI.
+whole-font historical reload share the existing twenty-two tools and app project UI.
 See [checkpoint workflow](skills/glyphs/references/git-checkpoints.md).
 See the [milestone 6 qualification report](reports/beta8-milestone6/README.md) for
 installed editor/app checks, measured costs and remaining limits.

@@ -1,0 +1,9 @@
+{
+  "model": "VirtualMac2,1",
+  "version": "4.2",
+  "build": "4202",
+  "framework": "/Users/ziggy/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14",
+  "archiveSha256": "4f1c05873d7aa3b4ada9f84cfdc06f204f51eb6ff56fe953cd0af6eadf101a5d",
+  "sourceArchiveSha256": "fcb47889143dd0885c86df6f4777fb05fb20d8c9525b39bf1cf0d53c5e6cd036",
+  "executableSha256": "a298199112586f43bc7a23f8040be53dbd22c44e19319e07b33ed78285a93173"
+}

@@ -123,6 +123,18 @@ public struct DesktopServerStatus: Decodable, Equatable {
     }
 }
 
+public enum DesktopStatusRequest {
+    public static func make(port: Int, token: String) -> URLRequest {
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/internal/status")!)
+        // Status waits for the Glyphs bridge, whose own timeout is 15 seconds.
+        // Let the sidecar finish that check and return its reachability result.
+        request.timeoutInterval = 20
+        request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        return request
+    }
+}
+
 public enum DesktopDiagnostics {
     public static func serverTitle(
         hasServer: Bool,
@@ -141,8 +153,20 @@ public enum DesktopDiagnostics {
 
     public static func needsGlyphsRecovery(hasServer: Bool, running: Bool?, stale: Bool,
                                           status: DesktopServerStatus?, hasNotice: Bool) -> Bool {
-        guard hasServer, running != false else { return false }
-        return stale || status?.bridge.reachable == false || (status == nil && hasNotice)
+        // A failed HTTP refresh says nothing about Glyphs startup dialogs.
+        // Only a fresh bridge check can support that recovery advice.
+        guard hasServer, running != false, !stale else { return false }
+        return status?.bridge.reachable == false
+    }
+
+    public static func statusFailure(_ error: Error, running: Bool?) -> String {
+        guard let error = error as? URLError else { return error.localizedDescription }
+        if error.code == .timedOut {
+            return NSLocalizedString(running == true
+                ? "The server is running, but its status check took too long. Refresh Setup or open Troubleshooting Logs."
+                : "The status check took too long. Refresh Setup or open Troubleshooting Logs.", comment: "Status timeout")
+        }
+        return NSLocalizedString("Could not read the server status. Refresh Setup or open Troubleshooting Logs.", comment: "Status connection failure")
     }
 
     public static func statusFailure(_ code: Int?) -> String {

@@ -59,6 +59,35 @@ public final class ProcessRunner {
 
 	public init() {}
 
+	private static func readOutput(
+		_ handle: FileHandle,
+		maximumBytes: Int? = nil,
+		onLimit: @escaping (Int) -> Void = { _ in }
+	) async -> Data {
+		// Pipe reads block until the child writes or exits. Keep them off Swift's
+		// cooperative pool so process launch, cancellation and deadlines can run
+		// even on a machine with fewer worker threads than output pipes.
+		await withCheckedContinuation { continuation in
+			DispatchQueue.global(qos: .utility).async {
+				var data = Data()
+				do {
+					while let chunk = try handle.read(upToCount: 64 * 1024), !chunk.isEmpty {
+						if let maximumBytes, data.count + chunk.count > maximumBytes {
+							let remaining = max(0, maximumBytes - data.count)
+							if remaining > 0 { data.append(chunk.prefix(remaining)) }
+							onLimit(data.count + max(1, chunk.count - remaining))
+							break
+						}
+						data.append(chunk)
+					}
+				} catch {
+					// A launch or exit error is reported separately by the caller.
+				}
+				continuation.resume(returning: data)
+			}
+		}
+	}
+
 	public func runSync(executable: URL, args: [String], environment: [String: String]? = nil) -> String {
 		let res = runSyncWithStderr(executable: executable, args: args, environment: environment)
 		return res.stdout
@@ -114,34 +143,13 @@ public final class ProcessRunner {
 		proc.standardError = errPipe
 
 		let outTask = Task {
-			var data = Data()
-			do {
-				while let chunk = try outPipe.fileHandleForReading.read(upToCount: 64 * 1024), !chunk.isEmpty {
-					if let maximumStandardOutputBytes,
-					   data.count + chunk.count > maximumStandardOutputBytes {
-						let remaining = max(0, maximumStandardOutputBytes - data.count)
-						if remaining > 0 { data.append(chunk.prefix(remaining)) }
-						outputLimit.exceeded(data.count + max(1, chunk.count - remaining))
-						if proc.isRunning { proc.terminate() }
-						break
-					}
-					data.append(chunk)
-				}
-			} catch {
-				// A launch or exit error is reported separately below.
+			await Self.readOutput(outPipe.fileHandleForReading, maximumBytes: maximumStandardOutputBytes) { count in
+				outputLimit.exceeded(count)
+				if proc.isRunning { proc.terminate() }
 			}
-			return data
 		}
 		let errTask = Task {
-			var data = Data()
-			do {
-				while let chunk = try errPipe.fileHandleForReading.read(upToCount: 64 * 1024), !chunk.isEmpty {
-					data.append(chunk)
-				}
-			} catch {
-				// A launch or exit error is reported separately below.
-			}
-			return data
+			await Self.readOutput(errPipe.fileHandleForReading)
 		}
 
 		let status: Int32

@@ -718,4 +718,206 @@
 "Components are shared by Glyphs 4 copies on this Mac." = "这台 Mac 上的 Glyphs 4 副本共用组件。";
 "Glyphs Python module" = "Glyphs Python 模块";
 "Selected Python" = "所选 Python";
+"Close Glyphs to install or update components." = "关闭 Glyphs 以安装或更新组件。";
+"You can save your fonts when prompted." = "出现提示时，您可以保存字体。";
+"Quit Glyphs to Install or Update" = "退出 Glyphs 以安装或更新";
 "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "更改组件前，请退出所有 Glyphs 4 副本。出现提示时，您可以保存尚未保存的字体。";
+
+/* Tasks: native navigation, monitoring, and conversation handoff. */
+"Tasks" = "任务";
+"Show Tasks" = "显示任务";
+"Needs decision" = "等待决定";
+"Blocked" = "已阻塞";
+"Recently closed" = "最近关闭";
+"History" = "历史记录";
+"Open Conversation…" = "打开对话…";
+"Copy Request" = "复制请求";
+"Request copied." = "请求已复制。";
+"Connected" = "已连接";
+"Stopped" = "已停止";
+"Unavailable" = "不可用";
+"Not running" = "未运行";
+"No Tasks" = "暂无任务";
+"Select a Task" = "选择任务";
+"Tasks appear here when an agent works with Glyphs MCP." = "代理使用 Glyphs MCP 时，任务会显示在此处。";
+"Task information is unavailable." = "任务信息不可用。";
+"Showing the last observation." = "正在显示上次观察到的状态。";
+"Load Earlier Tasks" = "加载更早的任务";
+"Update Glyphs MCP to show Tasks." = "请更新 Glyphs MCP 以显示任务。";
+"Tasks are unavailable. Try again when the server is connected." = "任务不可用。请在服务器连接后重试。";
+"Review this task in your agent." = "请在代理中查看此任务。";
+"Work is in progress in Glyphs." = "Glyphs 中的操作正在进行。";
+"The conversation could not be opened. Copy the request to continue in your agent." = "无法打开对话。请复制请求并在代理中继续。";
+"Outcome unknown" = "结果未知";
+"Interrupted" = "已中断";
+"Unread" = "未读";
+"Read" = "已读";
+"Created" = "创建时间";
+"Last updated" = "最后更新时间";
+"Font at last check" = "上次检查的字体状态";
+"Unsaved changes" = "未保存的更改";
+"Saved" = "已保存";
+"%lld unread tasks" = "%lld 个未读任务";
+"Waiting for: %@" = "正在等待：%@";
+"Blocking: %@" = "阻塞：%@";
+"Tasks Unavailable" = "任务不可用";
+"Loading Tasks…" = "正在加载任务…";
+"Install Glyphs MCP in Setup to show Tasks." = "请在设置中安装 Glyphs MCP 以显示任务。";
+
+/* Visible agent handoff prompt. */
+"Prompt for the Agent" = "发送给智能体的提示词";
+"Copy prompt" = "复制提示词";
+"Prompt copied" = "提示词已复制";
+
+/* Task prompt intent and conversation availability. */
+"Review" = "查看";
+"Close task" = "关闭任务";
+"Prompt purpose" = "提示词用途";
+"The conversation could not be identified reliably. Copy the prompt into your agent." = "无法可靠地确定对应的对话。请将提示词复制到智能体中。";
+"A direct Claude Code conversation link is unavailable. Copy the prompt into your agent." = "没有可用的 Claude Code 对话直达链接。请将提示词复制到智能体中。";
+"No usable conversation link was captured for this task. Copy the prompt into your agent." = "未记录此任务的可用对话链接。请将提示词复制到智能体中。";
+"The conversation could not be opened. Copy the prompt to continue in your agent." = "无法打开对话。请复制提示词以在智能体中继续。";
+
+/* Full-height Tasks list section headings. */
+"Tasks needing attention" = "需要处理的任务";
+"Recently closed tasks" = "最近关闭的任务";
+
+/* Local task history visibility */
+"Clear Closed History…" = "清除已关闭任务历史记录…";
+"Clear Closed History" = "清除已关闭任务历史记录";
+"Clear closed task history?" = "清除已关闭任务的历史记录？";
+"Hide all currently closed tasks from this app, including earlier pages. Open tasks and diagnostic records are kept. You can show cleared history again from History Options." = "在此 App 中隐藏所有当前已关闭的任务，包括较早的页面。未关闭的任务和诊断记录会保留。您可以通过“历史记录选项”再次显示已清除的历史记录。";
+"Show Cleared History" = "显示已清除的历史记录";
+"History Options" = "历史记录选项";
+"Closed history cleared." = "已清除已关闭任务的历史记录。";
+
+/* Guarded abandoned-task recovery */
+"Recovery Options…" = "恢复选项…";
+"Recovery Options" = "恢复选项";
+"Resolve this task here when its agent conversation is unavailable." = "当此任务的智能体对话不可用时，可在此处理任务。";
+"Close Without Saving" = "关闭但不保存";
+"Cancel Remaining Work" = "取消剩余工作";
+"Cancel Task" = "取消任务";
+"Check Again" = "重新检查";
+"Checking task…" = "正在检查任务…";
+"This entry has no workflow to close here. Review the job in your agent." = "此条目没有可在此关闭的工作流。请在智能体中查看作业。";
+"Connect to the server before using Recovery Options." = "请先连接服务器，再使用恢复选项。";
+"Update the sidecar to use Recovery Options. You can still review this task in your agent." = "请更新 sidecar 服务以使用恢复选项。您仍可在智能体中查看此任务。";
+"The task outcome could not be confirmed. Check again before choosing." = "无法确认任务结果。请选择前重新检查。";
+"The current outcome could not be checked. Reconnect and check again before closing this task." = "无法检查当前结果。请重新连接并检查后再关闭此任务。";
+"Task cancelled. No save was performed." = "任务已取消。未执行保存。";
+"This task is already closed. Its recorded outcome has been retained." = "此任务已关闭。已记录的结果仍然保留。";
+"Cancellation is still in progress. Changes already applied may remain; check again for the final outcome." = "仍在取消中。已应用的更改可能保留；请重新检查最终结果。";
+"The outcome is not confirmed. Check again or continue in your agent. This task cannot be closed safely here yet." = "结果尚未确认。请重新检查或在智能体中继续。目前无法在此安全关闭该任务。";
+"No closing action is currently available. Work may still be running or require review in your agent." = "当前没有可用的关闭操作。工作可能仍在运行，或需要在智能体中审查。";
+"Review the consequences before resolving this abandoned task." = "处理此遗留任务前，请查看操作后果。";
+"Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available." = "保留 Glyphs 中的当前更改，不保存。关闭此任务并结束其选择性撤销选项。原生撤销仍可使用。";
+"Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option." = "保留 Glyphs 中的当前更改，不保存。关闭此任务并结束其临时恢复选项。";
+"Request cancellation of remaining targets. Applied changes remain. Cancellation may take time, and recovery may still need a decision." = "请求取消剩余目标。已应用的更改会保留。取消可能需要时间，恢复仍可能需要进一步决定。";
+"Cancel this pending request without saving. Earlier blocking tasks remain open." = "取消此待处理请求，不保存。之前阻塞此任务的任务仍保持打开。";
+"Discard this unapplied preview and close the task. No font save or edit is performed." = "丢弃此尚未应用的预览并关闭任务。不保存或编辑字体。";
+"This choice is outdated or unavailable. Check the task again before choosing." = "此选项已过期或不可用。请选择前重新检查任务。";
+"Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available. Partial edits may remain; inspect the font before closing." = "保留 Glyphs 中的当前更改，不保存。关闭此任务并结束其选择性撤销选项。原生撤销仍可使用。 可能保留部分编辑；请在关闭前检查字体。";
+"Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option. Partial edits may remain; inspect the font before closing." = "保留 Glyphs 中的当前更改，不保存。关闭此任务并结束其临时恢复选项。 可能保留部分编辑；请在关闭前检查字体。";
+
+"Closed" = "已关闭";
+
+"Cancellation pending" = "等待取消";
+
+/* Recovery sheet dismissal */
+"Close Recovery Options" = "关闭恢复选项";
+"Close without changing this task" = "关闭且不更改此任务";
+
+/* Interrupted task archival */
+"Archive Interrupted Task" = "归档已中断的任务";
+"Unverified" = "未验证";
+"This task could not be identified. Refresh Tasks before choosing." = "无法识别此任务。请刷新任务后再选择。";
+"Archive this interrupted record after checking the font in Glyphs." = "在 Glyphs 中检查字体后归档此中断记录。";
+"Task archived. Outcome: Unverified. Archiving did not change or save the font. Diagnostics have been retained." = "任务已归档。结果：未验证。归档未修改或保存字体。诊断记录已保留。";
+"Move this interrupted task to recently closed tasks with an Unverified outcome. Keep its diagnostics. This does not stop work, save the font, restore changes, or confirm what happened in Glyphs." = "将此中断任务移至最近关闭的任务，结果保持未验证。保留诊断记录。此操作不会停止工作、保存字体、恢复更改或确认 Glyphs 中的结果。";
+"Only interrupted tasks can be archived. Check this task in your agent." = "仅可归档已中断的任务。请在智能体中检查此任务。";
+"This task still belongs to a workflow. Use its existing recovery choices or continue in your agent." = "此任务仍属于工作流程。请使用现有恢复选项或在智能体中继续。";
+"This task is blocking another request. Resolve it in your agent before archiving." = "此任务正阻止其他请求。请在智能体中解决后再归档。";
+"Recovery or save ownership may remain unresolved. Review this task in your agent; it cannot be archived here." = "恢复或保存状态可能尚未解决。请在智能体中检查此任务；此处无法归档。";
+"Work or recovery is still active. Wait for it to finish, then check again." = "工作或恢复仍在进行。请等待完成后重新检查。";
+"Glyphs must be connected and have no active operations before archiving. Check again when idle." = "归档前 Glyphs 必须已连接且无活动操作。请在空闲时重新检查。";
+"A native operation still exists for this task. Review its outcome and recovery choices in your agent." = "此任务仍有原生操作。请在智能体中检查结果及恢复选项。";
+"The native operation could not be checked. Reconnect to Glyphs and check again; nothing was archived." = "无法检查原生操作。请重新连接 Glyphs 后再检查；未归档任何内容。";
+"Archiving is outdated or unsafe. Check the task again before choosing." = "归档选项已过期或不安全。请选择前重新检查任务。";
+"The task changed while checking. Check again; nothing was archived." = "检查期间任务已更改。请重新检查；未归档任何内容。";
+
+/* Cleared history retention */
+"Hide all currently closed tasks, including earlier pages. Cleared history is removed after 30 days. You can show it again before cleanup from History Options. Open tasks, recovery data, diagnostics, and Unverified outcomes are kept." = "隐藏所有已关闭的任务，包括较早的页面。已清除的历史记录将在 30 天后移除。清理前可通过历史选项重新显示。未关闭的任务、恢复数据、诊断记录和未验证的结果将保留。";
+"Update the sidecar to enable 30-day cleanup. History remains hidden." = "请更新 sidecar 以启用 30 天清理。历史记录仍处于隐藏状态。";
+"History changes are waiting to sync." = "历史记录更改正在等待同步。";
+"History changes are waiting to sync. The 30-day period starts when the server receives Clear." = "历史记录更改正在等待同步。30 天期限从服务器收到清除请求时开始。";
+
+/* Generic project image comparison */
+"Previous" = "先前";
+"Current" = "当前";
+"Compare" = "比较";
+"Image view" = "图像视图";
+"Image comparison divider" = "图像比较分隔线";
+"Previous and current images" = "先前和当前图像";
+"No image in this version" = "此版本中没有图像";
+"Image preview unavailable" = "图像预览不可用";
+"Select another file or refresh the comparison." = "请选择其他文件或刷新比较。";
+"Different dimensions. Images are aligned at the top left at the same scale." = "尺寸不同。图像按相同比例在左上角对齐。";
+"Animated images show the first frame." = "动态图像显示第一帧。";
+"Transparency uses a checkerboard. Previews are limited to 2048 pixels on the longest side." = "透明区域以棋盘格显示。预览的最长边限制为 2048 像素。";
+"This version is not a readable PNG, JPEG, or WebP image." = "此版本不是可读取的 PNG、JPEG 或 WebP 图像。";
+"This image exceeds the 16 MB preview limit." = "此图像超过 16 MB 的预览限制。";
+"This image exceeds the 32-megapixel preview limit." = "此图像超过 3200 万像素的预览限制。";
+"Symbolic links and nonregular files are not previewed." = "不预览符号链接和非常规文件。";
+"This image could not be read. Refresh the comparison to try again." = "无法读取此图像。请刷新比较以重试。";
+"Not present in this version." = "此版本中不存在。";
+"%ld percent previous" = "先前图像占 %ld%%";
+
+/* Shared diff overlay controls */
+"Before" = "之前";
+"Both" = "两者";
+"After" = "之后";
+"Before and after images" = "前后图像";
+"%ld percent before" = "之前图像占 %ld%%";
+"Fit image" = "适合图像";
+"Fit Image (⌘0)" = "适合图像 (⌘0)";
+
+/* Server status checks */
+"The server is running, but its status check took too long. Refresh Setup or open Troubleshooting Logs." = "服务器正在运行，但状态检查耗时过长。请刷新设置或打开故障排除日志。";
+"The status check took too long. Refresh Setup or open Troubleshooting Logs." = "状态检查耗时过长。请刷新设置或打开故障排除日志。";
+"Could not read the server status. Refresh Setup or open Troubleshooting Logs." = "无法读取服务器状态。请刷新设置或打开故障排除日志。";
+
+/* Project font sources and native package copies */
+"Font sources" = "字体源文件";
+"Refresh font sources" = "刷新字体源文件";
+"Reading font sources…" = "正在读取字体源文件…";
+"No Glyphs sources in this project." = "此项目中没有 Glyphs 源文件。";
+"Font source actions: %@" = "字体源文件操作：%@";
+"Create Package Copy…" = "创建包副本…";
+"Create Package Copy" = "创建包副本";
+"Package filename" = "包文件名";
+"Package copy created" = "包副本已创建";
+"Creating and verifying package copy…" = "正在创建并验证包副本…";
+"Creates a package beside this source and keeps the original. Only saved contents are copied; unsaved Glyphs edits are excluded. Per-glyph modification timestamps may be omitted." = "在此源文件旁创建包并保留原文件。仅复制已保存的内容，不包含 Glyphs 中未保存的编辑。可能省略各字形的修改时间。";
+"The font sources could not be read." = "无法读取字体源文件。";
+"Enter a filename ending in .glyphspackage, without folders." = "请输入以 .glyphspackage 结尾的文件名，不含文件夹。";
+"That destination already exists. Choose another filename." = "该目标已存在。请选择其他文件名。";
+"Choose a regular .glyphs source file." = "请选择普通 .glyphs 源文件。";
+"A package copy is already running for this source." = "此源文件的包副本创建操作正在进行中。";
+"Glyphs 4 is required to create a package copy." = "创建包副本需要 Glyphs 4。";
+"The package copy could not be verified." = "无法验证包副本。";
+"The package copy worker returned no result. Rebuild or update Glyphs MCP." = "包副本进程未返回结果。请重新构建或更新 Glyphs MCP。";
+"Package copy components are unavailable. Rebuild or update Glyphs MCP. " = "包副本组件不可用。请重新构建或更新 Glyphs MCP。 ";
+
+/* Project workspace modes */
+"Diff" = "差异";
+"Config" = "配置";
+"Project view" = "项目视图";
+"Saved sources in this project" = "此项目中已保存的源文件";
+"Project root" = "项目根目录";
+"Name" = "名称";
+"Folder" = "文件夹";
+"Open project" = "打开项目";
+"Edit…" = "编辑…";
+
+"Resize file list" = "调整文件列表大小";

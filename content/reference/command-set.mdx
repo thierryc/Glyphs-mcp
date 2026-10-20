@@ -2,11 +2,12 @@
 title: The v2 tools
 ---
 
-Glyphs MCP **2.1.0** provides twenty data/action tools plus the optional `show_edit_workflow` display tool, including save-free `open_edit_tab` and `duplicate_document`. Desktop build **63**, coordinated sidecar/bridge product version `2.1.0`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent component identities and advertised capabilities; see [version and identity](version-identity.mdx).
+Glyphs MCP **2.2.0** provides twenty-one data/action tools plus the optional `show_edit_workflow` display tool, including save-free `open_edit_tab` and `duplicate_document`. Desktop build **66**, coordinated sidecar/bridge product version `2.2.0`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent component identities and advertised capabilities; see [version and identity](version-identity.mdx).
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
 | `get_status` | None | Read sidecar, worker and bridge availability plus negotiated read/write/job capabilities. |
+| `list_tasks` | optional `cursor` (0), `limit` (50) | Read open workflows, blockers and paginated closed history without native polling, execution or action tokens. |
 | `list_documents` | None | Identify open documents and their paths, saved state, edit generation and native `isCurrent` (true/false/null when unavailable). |
 | `duplicate_document` | `document_id`, `idempotency_key`, optional `family_name` | Copy the current font, including unsaved edits, into an independent unsaved document. Requires `document.duplicate.v1`; never saves either font. |
 | `create_document` | `family_name`, `idempotency_key`, optional `units_per_em` (1000) | Create and open an unsaved font with one Regular master and instance. Requires `document.create.v1`. |
@@ -27,6 +28,16 @@ Glyphs MCP **2.1.0** provides twenty data/action tools plus the optional `show_e
 | `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance without opening a card. |
 | `show_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Open an optional card for useful visual review, reports, live controls or recovery. Reuse it across stages; do not open cards for routine chat outcomes. |
 | `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false) | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. |
+
+## Find an open task
+
+`list_tasks(cursor=0, limit=50)` returns all unresolved entries on every page,
+with closed history paginated separately. It correlates workflow and job IDs
+and reports blockers and known origins. The inventory is passive: it does not
+execute, save, close, or poll a native operation and does not mint action tokens.
+Use a retained workflow ID with `get_edit_workflow` for fresh state, revision
+and offered choices; use `get_job` for unmatched job diagnostics. Resume an
+abandoned workflow through its existing lifecycle rather than rerunning a script.
 
 ## Create a font
 
@@ -673,7 +684,7 @@ editing uses bounded `outline_edit` schemas; complete-target Glyphs commands use
 the negotiated closed `native_action` catalog. Compilation and export are
 closed job kinds over typed arguments, not generic compiler/export endpoints.
 None is a generic selector or object protocol. The companions add native views,
-not extra MCP tools; the data/action count remains twenty; optional card display adds one tool.
+not extra MCP tools; the data/action count is twenty-one; optional card display adds one tool.
 
 ### Kerning discovery
 
@@ -687,7 +698,7 @@ most 256 groups/entries, including misses. `total` is null (unavailable); follow
 native glyph-name resolution, including explicit unresolved IDs. Pages are live,
 not atomic; restart after an observed edit or `stale_kerning_cursor`. These are
 reads only: no effective-kerning engine, job or Save. Missing private capabilities
-require a coordinated bridge/sidecar/skills update. These capabilities reuse the twenty data/action tools; card display is separate.
+require a coordinated bridge/sidecar/skills update. These capabilities reuse the twenty-one data/action tools; card display is separate.
 
 
 ## Native scripts
@@ -738,7 +749,7 @@ workflow revision and request.
 
 ### Portable workflow cards
 
-Native interaction comes first. The twenty data/action tools do not attach UI
+Native interaction comes first. The twenty-one data/action tools do not attach UI
 resources; `show_edit_workflow` is the additional display-only tool. Open one
 card only when a visual comparison, interactive inspection, substantial report,
 meaningful live controls or recovery information adds value, or the user requests

@@ -12,6 +12,8 @@ struct GlyphsMCPInstallerApp: App {
                 }
                 CommandGroup(after: .appInfo) {
                     Button("Check for Updates…") { delegate.updates.check() }
+                    Divider()
+                    Button("Show Tasks") { delegate.showTasks() }
                 }
                 CommandGroup(replacing: .appTermination) {
                     Button("Quit Glyphs MCP") { NSApp.terminate(nil) }

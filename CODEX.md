@@ -2,9 +2,10 @@
 
 Glyphs 4 uses the external sidecar, bounded native bridge, and independent
 Curve Inspector and Reference Inspector. Glyphs 3 stays pinned to 1.11.0.
-The current interface has twenty tools; use the
+The current interface has twenty-two tools; use the
 [tool contract](content/reference/command-set.mdx) and
-[2.0.4 qualification](V2.0.4-RELEASE.md), not historical roadmaps, for scope.
+[2.2.0 preparation](V2.2.0-RELEASE.md), with
+[published 2.1.0 qualification](V2.1.0-RELEASE.md), for scope and acceptance.
 Native scripts use `python_script` with `script.native.v1` in the conversation
 workflow. Preparation never executes code or saves. Typed results retain
 selective recovery; scripts restore the complete pre-run memory copy, preserving
@@ -30,7 +31,7 @@ using scripts/build_private_runtime.py. Downloads are a maintainer preparation
 step, never an end-user installation step. The installer copies selected
 components transactionally, preserving unrelated files and preferences.
 
-Protect dependency boundaries, bounded reads/requests, the twenty-tool surface,
+Protect dependency boundaries, bounded reads/requests, the twenty-two-tool surface,
 capability negotiation and package isolation with behavioral tests. There are no
 source-line budgets. Consolidate proven duplication; do not split code merely
 to meet a file-length target. Preserve useful algorithms and external analysis/
@@ -55,6 +56,6 @@ linked references rather than repeating them in every entry skill.
 
 ## Next development baseline
 
-Start from current main after the published 2.0.4/build 61 release. Keep the v2.0.4 tag and signed release assets immutable. Source reports under `reports/` retain their original qualification scope; optional, unmanaged workflow material lives under `extras/`.
+Prepare 2.2.0/build 66 from the published 2.1.0/build 63 baseline. Keep published tags, signed assets and feeds immutable. Source reports under `reports/` retain their original qualification scope; optional, unmanaged workflow material lives under `extras/`.
 
-For the next change, choose a concrete user problem, add the smallest relevant behavior check, and qualify the changed component before advancing a release identity. Preserve the twenty-tool contract unless a deliberate protocol change requires otherwise. Priorities and external page refresh copy are in [the maintenance handoff](docs/maintenance/next-evolution.md) and [the site update brief](docs/maintenance/site-updates-2.0.4.md).
+For the next change, choose a concrete user problem, add the smallest relevant behavior check, and qualify the changed component before advancing a release identity. Preserve the twenty-two-tool contract unless a deliberate protocol change requires otherwise. Priorities and external page refresh copy are in [the maintenance handoff](docs/maintenance/next-evolution.md) and [the site update brief](docs/maintenance/site-updates-2.0.4.md).

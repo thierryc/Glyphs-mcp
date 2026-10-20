@@ -6,6 +6,7 @@ import PierreDiffsSwift
 
 struct DesktopGitWorkspace: View {
     @ObservedObject var model: DesktopProjectsModel
+    var isActive = true
     @Environment(\.colorScheme) private var colorScheme
     @State private var showCheckpoints = false
     @State private var checkpointSheet: CheckpointSheet?
@@ -26,9 +27,11 @@ struct DesktopGitWorkspace: View {
     @State private var selectedDifferenceIndex: Int?
     @State private var viewportStore = GlyphViewportSessionStore()
     @State private var showGlyphErrorDetails = false
+    @State private var fileListWidth: CGFloat = 260
+    @State private var fileListDragStart: CGFloat?
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             checkpointToolbar
             Divider()
             Group {
@@ -63,14 +66,17 @@ struct DesktopGitWorkspace: View {
             showCheckpoints = false
             model.checkpointHistory.cancel()
         }
+        .onChange(of: isActive) { _, active in
+            if !active { showCheckpoints = false }
+        }
         .onChange(of: model.historicalComparison) { _, _ in
             selectedDifferenceIndex = nil; selectedLayerID = nil
             showGlyphErrorDetails = false
             viewportStore = GlyphViewportSessionStore()
             viewportRequest = .init(id: viewportRequest.id + 1, target: .fit)
         }
-        .modifier(DesktopCardSurface())
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+        .accessibilityIdentifier("project-diff-view")
         .onChange(of: model.selectedChange?.path) { _, _ in
             selectedDifferenceIndex = nil
             showGlyphErrorDetails = false
@@ -87,6 +93,10 @@ struct DesktopGitWorkspace: View {
                 Text(context.checkpoint.dateLabel + " → Latest checkpoint")
                     .font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                     .help(context.checkpoint.helpText + "\nLatest checkpoint revision: " + context.after)
+            } else if let git = model.git {
+                Label(git.branch, systemImage: "arrow.triangle.branch")
+                    .font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
+                Text(fileCountLabel(git)).font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
             Button { showCheckpoints.toggle() } label: {
@@ -102,7 +112,12 @@ struct DesktopGitWorkspace: View {
                 } label: { Image(systemName: "ellipsis") }
                     .menuIndicator(.hidden).fixedSize().accessibilityLabel("Checkpoint actions")
             }
-        }.padding(10)
+            Button(action: model.refreshComparison) { Image(systemName: "arrow.clockwise") }
+                .buttonStyle(.borderless)
+                .help(LocalizedStringKey(model.historicalComparison == nil ? "Refresh working changes" : "Refresh this checkpoint comparison"))
+                .accessibilityLabel("Refresh comparison")
+                .disabled(model.inspecting || model.loadingCheckpoint)
+        }.padding(.horizontal, 16).padding(.vertical, 10)
     }
 
     private func cleanState(_ git: GitObservation) -> some View {
@@ -111,47 +126,60 @@ struct DesktopGitWorkspace: View {
             Text("Working tree is clean").font(.headline)
             Text(git.branch).foregroundStyle(.secondary)
             Button("Refresh", action: model.inspect).disabled(model.inspecting)
-        }.frame(maxWidth: .infinity, minHeight: 340, maxHeight: .infinity)
+        }.frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
     private func browser(_ git: GitObservation) -> some View {
-        HSplitView {
-            VStack(spacing: 0) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(model.historicalComparison?.document.filename ?? git.branch).font(.headline).lineLimit(1).truncationMode(.middle)
-                        Text(fileCountLabel(git))
-                            .font(.caption).foregroundStyle(.secondary)
+        GeometryReader { geometry in
+            // Reserve room for the diff and divider even in a compact window.
+            let maximumWidth = min(380, max(180, geometry.size.width - 328))
+            let sidebarWidth = min(max(180, fileListWidth), maximumWidth)
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    TextField("Filter files", text: $model.fileFilter).textFieldStyle(.roundedBorder).padding(10)
+                    Divider()
+                    List {
+                        OutlineGroup(tree(filtered(git.changes)), children: \.children) { node in row(node) }
                     }
-                    Spacer()
-                    Button(action: model.refreshComparison) { Image(systemName: "arrow.clockwise") }
-                        .buttonStyle(.borderless).help(LocalizedStringKey(model.historicalComparison == nil ? "Refresh working changes" : "Refresh this checkpoint comparison"))
-                        .accessibilityLabel("Refresh comparison").disabled(model.inspecting || model.loadingCheckpoint)
-                }.padding(12)
-                Divider()
-                TextField("Filter files", text: $model.fileFilter).textFieldStyle(.roundedBorder).padding(10)
-                Divider()
-                List {
-                    OutlineGroup(tree(filtered(git.changes)), children: \.children) { node in row(node) }
+                    .listStyle(.sidebar)
+                    .scrollContentBackground(.hidden)
+                    .environment(\.defaultMinListRowHeight, 28)
+                    if !model.checkpointPageError.isEmpty {
+                        Text(model.checkpointPageError).font(.caption).foregroundStyle(.orange).padding(8)
+                    }
+                    if model.checkpointNextOffset != nil {
+                        Button(LocalizedStringKey(model.checkpointPageError.isEmpty ? "Load more files…" : "Retry loading files")) { model.moreCheckpointChanges() }
+                            .disabled(model.loadingCheckpointPage).padding(8)
+                    }
+                    if model.loadingCheckpointPage { ProgressView().controlSize(.small).padding(8) }
                 }
-                .listStyle(.sidebar)
-                .scrollContentBackground(.hidden)
-                .environment(\.defaultMinListRowHeight, 28)
-                if !model.checkpointPageError.isEmpty {
-                    Text(model.checkpointPageError).font(.caption).foregroundStyle(.orange).padding(8)
-                }
-                if model.checkpointNextOffset != nil {
-                    Button(LocalizedStringKey(model.checkpointPageError.isEmpty ? "Load more files…" : "Retry loading files")) { model.moreCheckpointChanges() }
-                        .disabled(model.loadingCheckpointPage).padding(8)
-                }
-                if model.loadingCheckpointPage { ProgressView().controlSize(.small).padding(8) }
-            }
-            .frame(minWidth: 220, idealWidth: 260, maxWidth: 380, maxHeight: .infinity)
+                .frame(width: sidebarWidth).frame(maxHeight: .infinity).clipped()
 
-            detail
-                .frame(minWidth: 500, maxWidth: .infinity, maxHeight: .infinity)
+                Rectangle().fill(Color(nsColor: .separatorColor))
+                    .frame(width: 1).frame(width: 8).contentShape(Rectangle())
+                    .onHover { hovering in
+                        if hovering { NSCursor.resizeLeftRight.push() }
+                        else { NSCursor.pop() }
+                    }
+                    .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .global).onChanged { value in
+                        if fileListDragStart == nil { fileListDragStart = sidebarWidth }
+                        fileListWidth = min(maximumWidth, max(180, (fileListDragStart ?? sidebarWidth) + value.translation.width))
+                    }.onEnded { _ in fileListDragStart = nil })
+                    .accessibilityElement()
+                    .accessibilityLabel("Resize file list")
+                    .accessibilityAdjustableAction { direction in
+                        switch direction {
+                        case .increment: fileListWidth = min(maximumWidth, sidebarWidth + 20)
+                        case .decrement: fileListWidth = max(180, sidebarWidth - 20)
+                        @unknown default: break
+                        }
+                    }
+
+                detail
+                    .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity).clipped()
+            }
         }
-        .frame(minHeight: 410, maxHeight: .infinity)
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
     private func fileCountLabel(_ git: GitObservation) -> String {
@@ -196,7 +224,10 @@ struct DesktopGitWorkspace: View {
     }
 
     @ViewBuilder private func comparisonView(_ change: GitObservation.Change, comparison: GitFileComparison) -> some View {
-        if change.isGlyphPackageGlyph {
+        if let images = comparison.imagePreview {
+            DesktopImageComparison(comparison: images)
+                .id((model.selectedProject ?? "") + comparison.path + images.identity)
+        } else if change.isGlyphPackageGlyph {
             VStack(spacing: 0) {
                 if !model.glyphMessage.isEmpty {
                     visualPreviewWarning
@@ -458,9 +489,7 @@ struct DesktopGitWorkspace: View {
 
     private var glyphOverlayControls: some View {
         HStack(spacing: 8) {
-            Picker("Overlay", selection: $overlay) {
-                ForEach(GlyphOverlayMode.allCases) { Text($0.rawValue).tag($0) }
-            }.pickerStyle(.segmented).labelsHidden().frame(width: 170)
+            DesktopDiffOverlayPicker(selection: $overlay)
             Toggle("Guides", isOn: $guides).toggleStyle(.checkbox).fixedSize()
         }
     }
@@ -630,7 +659,7 @@ struct DesktopGitWorkspace: View {
     private func icon(_ path: String) -> String {
         if path.hasSuffix(".swift") { return "swift" }
         if path.hasSuffix(".glyph") || path.hasSuffix(".glyphs") { return "character.cursor.ibeam" }
-        if path.hasSuffix(".png") || path.hasSuffix(".jpg") || path.hasSuffix(".svg") { return "photo" }
+        if GitImageComparison.supports(path) || path.lowercased().hasSuffix(".svg") { return "photo" }
         if path.hasSuffix(".md") { return "book.closed" }
         return "doc.text"
     }
@@ -638,13 +667,6 @@ struct DesktopGitWorkspace: View {
     private func number(_ value: Double) -> String {
         value.rounded() == value ? String(Int(value)) : String(format: "%.2f", value)
     }
-}
-
-enum GlyphOverlayMode: String, CaseIterable, Identifiable {
-    case before = "Before"
-    case both = "Both"
-    case after = "After"
-    var id: String { rawValue }
 }
 
 private enum GlyphViewportTarget: Equatable {

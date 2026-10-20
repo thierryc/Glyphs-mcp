@@ -5,7 +5,7 @@ public struct DesktopMonitorPolicy {
     public var surfaces: Set<String> = []
     public var menuBarVisible = false
     public init() {}
-    public var visible: Bool { surfaces.contains("popover") || (dashboardVisible && surfaces.contains("setup")) }
+    public var visible: Bool { surfaces.contains("statusMenu") || (dashboardVisible && (surfaces.contains("setup") || surfaces.contains("tasks"))) }
     public func interval(busy: Bool) -> UInt64? {
         visible ? (busy ? 2 : 5) : menuBarVisible && busy ? 2 : nil
     }

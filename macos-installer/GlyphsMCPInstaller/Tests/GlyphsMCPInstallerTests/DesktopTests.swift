@@ -3,6 +3,42 @@ import XCTest
 @testable import GlyphsMCPInstallerCore
 
 final class DesktopTests: XCTestCase {
+    func testSlowHealthyStatusResponseSurvivesTheOldThreeSecondDeadline() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SlowStatusURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let request = DesktopStatusRequest.make(port: 9680, token: "test-token")
+        // The client must outlast the bridge's 15-second reachability check.
+        XCTAssertGreaterThan(request.timeoutInterval, 15)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
+        XCTAssertEqual(request.cachePolicy, .reloadIgnoringLocalCacheData)
+        let (data, response) = try await session.data(for: request)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        struct Envelope: Decodable { let ok: Bool; let data: DesktopServerStatus }
+        let result = try JSONDecoder().decode(Envelope.self, from: data)
+        XCTAssertTrue(result.ok)
+        XCTAssertEqual(result.data.title, "Ready")
+        XCTAssertTrue(result.data.bridge.reachable)
+    }
+
+    func testStatusTimeoutDoesNotClaimAWorkingServiceHasStopped() {
+        let timeout = URLError(.timedOut)
+        let running = DesktopDiagnostics.statusFailure(timeout, running: true)
+        XCTAssertTrue(running.contains("server is running"))
+        XCTAssertTrue(running.contains("took too long"))
+        for knownRunning in [false, nil] as [Bool?] {
+            let unknown = DesktopDiagnostics.statusFailure(timeout, running: knownRunning)
+            XCTAssertTrue(unknown.contains("took too long"))
+            XCTAssertFalse(unknown.contains("server is running"))
+        }
+        let connection = DesktopDiagnostics.statusFailure(URLError(.cannotConnectToHost), running: nil)
+        XCTAssertFalse(connection.contains("took too long"))
+        XCTAssertFalse(connection.contains("server is running"))
+        let rejected = InstallerError.userFacing(DesktopDiagnostics.statusFailure(403))
+        XCTAssertTrue(DesktopDiagnostics.statusFailure(rejected, running: true).contains("authentication"))
+    }
+
     func testExternalBeztraceIsExcludedFromBundledInstallAndRemovalPlans() {
         let id = ExternalGlyphsCompanion.beztrace.id
         XCTAssertFalse(DesktopComponent.ids.contains(id))
@@ -96,15 +132,17 @@ final class DesktopTests: XCTestCase {
         }
     }
 
-    func testGlyphsRecoveryCoversFirstFailureCachedFailureAndUnreachableBridge() throws {
+    func testGlyphsRecoveryRequiresAFreshUnreachableBridge() throws {
         let ready = try JSONDecoder().decode(DesktopServerStatus.self,
             from: Data(#"{"sidecarVersion":"2.0.0","bridge":{"reachable":true},"worker":{"available":true}}"#.utf8))
         let waiting = try JSONDecoder().decode(DesktopServerStatus.self,
             from: Data(#"{"sidecarVersion":"2.0.0","bridge":{"reachable":false},"worker":{"available":true}}"#.utf8))
-        XCTAssertTrue(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
             stale: false, status: nil, hasNotice: true))
-        XCTAssertTrue(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: nil,
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: nil,
             stale: true, status: ready, hasNotice: true))
+        XCTAssertFalse(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
+            stale: true, status: waiting, hasNotice: true))
         XCTAssertTrue(DesktopDiagnostics.needsGlyphsRecovery(hasServer: true, running: true,
             stale: false, status: waiting, hasNotice: true))
         // An identity notice on a reachable bridge is not a startup-dialog signal.
@@ -314,10 +352,10 @@ final class DesktopTests: XCTestCase {
         policy.dashboardVisible = true
         XCTAssertEqual(policy.interval(busy: true), 2)
         XCTAssertEqual(policy.interval(busy: false), 5)
-        policy.surfaces.insert("popover")
+        policy.surfaces.insert("statusMenu")
         policy.dashboardVisible = false
         XCTAssertEqual(policy.interval(busy: true), 2)
-        policy.surfaces.remove("popover")
+        policy.surfaces.remove("statusMenu")
         XCTAssertNil(policy.interval(busy: true))
     }
 
@@ -347,4 +385,28 @@ final class DesktopTests: XCTestCase {
         defaults.set(false, forKey: DesktopIdentity.showMenuBarKey)
         XCTAssertFalse(DesktopLaunchPolicy.showsMenuBar(defaults: defaults))
     }
+}
+
+
+/// Reproduce a healthy bridge response arriving after Setup's old deadline.
+private final class SlowStatusURLProtocol: URLProtocol {
+    private var reply: DispatchWorkItem?
+    override class func canInit(with request: URLRequest) -> Bool {
+        request.url?.path == "/internal/status"
+    }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, let url = self.request.url,
+                  let response = HTTPURLResponse(url: url, statusCode: 200,
+                    httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"]) else { return }
+            let body = Data(#"{"ok":true,"data":{"sidecarVersion":"2.1.0","bridge":{"reachable":true},"worker":{"available":true},"controlProtocol":1}}"#.utf8)
+            self.client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            self.client?.urlProtocol(self, didLoad: body)
+            self.client?.urlProtocolDidFinishLoading(self)
+        }
+        reply = work
+        DispatchQueue.global().asyncAfter(deadline: .now() + 3.5, execute: work)
+    }
+    override func stopLoading() { reply?.cancel(); reply = nil }
 }

@@ -13,6 +13,16 @@ downloads, outside Install All, and stay disabled until their catalog is qualifi
 Glyphs 3 remains available through its separate pinned v1.11.0 release
 at v1.11.0 / 13ca805; it is not packaged in v2.
 
+## Next source candidate
+
+Source is preparing **2.2.0/build 67**, stable channel, with Tasks and native
+image comparisons, a native menu-bar menu, a Diff / Config project workspace and verified package
+copies. Its catalog contains twenty-one data/action tools plus the
+optional read-only display tool. Eleven managed skills, interface revision 1,
+bridge protocol 1, independent companion versions and pinned Glyphs 3 remain
+unchanged. See [2.2.0 preparation](../V2.2.0-RELEASE.md). Preserve published 2.1.0
+artifacts and signed feeds until separately qualified publication.
+
 ## Prerequisites
 
 Use Xcode, Git, authenticated GitHub CLI, a Python 3.14 development environment,

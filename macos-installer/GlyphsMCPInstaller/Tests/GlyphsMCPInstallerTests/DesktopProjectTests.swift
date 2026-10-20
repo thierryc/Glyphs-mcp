@@ -1,8 +1,138 @@
 import Foundation
 import XCTest
+import ImageIO
+import UniformTypeIdentifiers
 @testable import GlyphsMCPInstallerCore
 
 final class DesktopProjectTests: XCTestCase {
+    private func imageFixture(width: Int = 20, height: Int = 12, type: UTType = .png,
+                              green: CGFloat = 0, orientation: Int = 1) throws -> Data {
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 1 - green, green: green, blue: 0.2, alpha: 0.7))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        let data = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, type.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, try XCTUnwrap(context.makeImage()), [kCGImagePropertyOrientation: orientation] as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        return data as Data
+    }
+
+    func testRasterFormatsOrientationAndPreviewBounds() throws {
+        let png = try imageFixture(width: 3000, height: 2)
+        let value = try XCTUnwrap(GitRasterImage.read(png).image)
+        XCTAssertEqual(value.width, 3000); XCTAssertEqual(value.height, 2); XCTAssertEqual(value.format, "PNG")
+        let source = try XCTUnwrap(CGImageSourceCreateWithData(value.previewData as CFData, nil))
+        let preview = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        XCTAssertLessThanOrEqual(preview.width, GitRasterImage.previewDimension)
+        XCTAssertNotEqual(preview.alphaInfo, .none)
+        let jpeg = try imageFixture(width: 30, height: 15, type: .jpeg, orientation: 6)
+        let rotated = try XCTUnwrap(GitRasterImage.read(jpeg).image)
+        XCTAssertEqual(rotated.width, 15); XCTAssertEqual(rotated.height, 30); XCTAssertEqual(rotated.format, "JPEG")
+        let webP = try XCTUnwrap(Data(base64Encoded: "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA"))
+        let web = try XCTUnwrap(GitRasterImage.read(webP).image)
+        XCTAssertEqual(web.format, "WebP"); XCTAssertEqual(web.width, 1); XCTAssertEqual(web.height, 1)
+        XCTAssertTrue(GitImageComparison.supports("arbitrary/project/SCREENSHOT.PNG"))
+        XCTAssertTrue(GitImageComparison.supports("photo.jpeg")); XCTAssertTrue(GitImageComparison.supports("photo.JPG"))
+        XCTAssertFalse(GitImageComparison.supports("drawing.svg"))
+    }
+
+    func testInvalidAndOversizedImageBytesNeverBecomeRenderable() throws {
+        XCTAssertEqual(GitRasterImage.read(Data("<svg><image href='https://example.invalid'/></svg>".utf8)), .unavailable(.invalid))
+        XCTAssertEqual(GitRasterImage.read(Data()), .unavailable(.invalid))
+        XCTAssertEqual(GitRasterImage.read(Data(repeating: 0, count: GitRasterImage.maximumBytes + 1)), .unavailable(.oversized))
+        // Valid, highly compressed grayscale PNG: small encoded bytes must not
+        // bypass the decoded-pixel budget. This uses 32 MB of fixture pixels.
+        let width = 8001, height = 4000
+        let provider = try XCTUnwrap(CGDataProvider(data: Data(repeating: 0, count: width * height) as CFData))
+        let raster = try XCTUnwrap(CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 8,
+            bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGBitmapInfo(rawValue: 0),
+            provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent))
+        let bytes = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes, UTType.png.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, raster, nil); XCTAssertTrue(CGImageDestinationFinalize(destination))
+        XCTAssertEqual(GitRasterImage.read(bytes as Data), .unavailable(.dimensions))
+    }
+
+    func testImageCanvasKeepsCommonScaleAndMissingSidesExplicit() throws {
+        let before = GitRasterImage.read(try imageFixture(width: 40, height: 20))
+        let after = GitRasterImage.read(try imageFixture(width: 20, height: 60, green: 1))
+        let pair = GitImageComparison(previous: before, current: after)
+        XCTAssertTrue(pair.canCompare); XCTAssertTrue(pair.dimensionsDiffer)
+        XCTAssertEqual(pair.canvasWidth, 40); XCTAssertEqual(pair.canvasHeight, 60)
+        XCTAssertNotEqual(before.image?.identity, after.image?.identity)
+        XCTAssertFalse(GitImageComparison(previous: .missing, current: after).canCompare)
+        XCTAssertFalse(GitImageComparison(previous: before, current: .unavailable(.invalid)).canCompare)
+    }
+
+    func testImageGitComparisonsAcrossProjectsAndChangeKindsRemainReadOnly() async throws {
+        let reader = ReadOnlyGit(), runner = ProcessRunner()
+        let git = try requiredGit(reader), project = try temporary()
+        func command(_ args: [String]) throws -> Data {
+            let result = runner.runSyncWithStderr(executable: git, args: ["-C", project.path] + args)
+            guard result.exitCode == 0 else { throw ProjectError(result.stderr) }
+            return result.stdoutData
+        }
+        _ = try command(["init"])
+        for (index, name) in ["staged.png", "mixed.png", "deleted.png", "rename-old.png"].enumerated() {
+            try imageFixture(width: 20 + index).write(to: project.appendingPathComponent(name))
+        }
+        _ = try command(["add", "."])
+        _ = try command(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "image fixture"])
+        let previous = try Data(contentsOf: project.appendingPathComponent("mixed.png"))
+        try imageFixture(green: 1).write(to: project.appendingPathComponent("staged.png"))
+        _ = try command(["add", "staged.png"])
+        try imageFixture(green: 1).write(to: project.appendingPathComponent("mixed.png"))
+        _ = try command(["add", "mixed.png"])
+        let current = try imageFixture(width: 31, green: 0.5)
+        try current.write(to: project.appendingPathComponent("mixed.png"))
+        _ = try command(["rm", "deleted.png"])
+        _ = try command(["mv", "rename-old.png", "rename-new.png"])
+        try imageFixture(type: .jpeg).write(to: project.appendingPathComponent("new.jpg"))
+        try imageFixture().write(to: project.appendingPathComponent("added.png"))
+        _ = try command(["add", "added.png"])
+        let indexBefore = try command(["diff", "--cached", "--binary"])
+        let observed = try await reader.inspect(project)
+        func image(_ name: String) async throws -> GitImageComparison {
+            let change = try XCTUnwrap(observed.changes.first { $0.path == name })
+            let value = try await reader.comparison(project, change: change, headRevision: observed.headRevision)
+            return try XCTUnwrap(value.imagePreview)
+        }
+        let mixed = try await image("mixed.png")
+        XCTAssertEqual(mixed.previous.image?.identity, GitRasterImage.read(previous).image?.identity)
+        XCTAssertEqual(mixed.current.image?.identity, GitRasterImage.read(current).image?.identity)
+        let staged = try await image("staged.png"); XCTAssertTrue(staged.canCompare)
+        let deleted = try await image("deleted.png"); XCTAssertEqual(deleted.current, .missing)
+        let added = try await image("added.png"); XCTAssertEqual(added.previous, .missing)
+        let untracked = try await image("new.jpg"); XCTAssertEqual(untracked.previous, .missing); XCTAssertEqual(untracked.current.image?.format, "JPEG")
+        let renamed = try await image("rename-new.png")
+        XCTAssertEqual(renamed.previous.image?.identity, renamed.current.image?.identity)
+        XCTAssertEqual(try command(["diff", "--cached", "--binary"]), indexBefore)
+        XCTAssertEqual(try Data(contentsOf: project.appendingPathComponent("mixed.png")), current)
+        // No directory name or project-specific activation is involved.
+        let other = try temporary(); _ = runner.runSyncWithStderr(executable: git, args: ["-C", other.path, "init"])
+        try FileManager.default.createDirectory(at: other.appendingPathComponent("assets/anywhere"), withIntermediateDirectories: true)
+        try imageFixture().write(to: other.appendingPathComponent("assets/anywhere/OTHER.PNG"))
+        let otherChanges = try await reader.inspect(other)
+        let otherResult = try await reader.comparison(other, change: XCTUnwrap(otherChanges.changes.first), headRevision: nil)
+        XCTAssertNotNil(otherResult.imagePreview?.current.image)
+    }
+
+    func testImageFilesNeverFollowLinksAndFailuresStayExplicit() async throws {
+        let project = try temporary(), outside = try temporary()
+        try imageFixture().write(to: outside.appendingPathComponent("outside.png"))
+        try FileManager.default.createSymbolicLink(at: project.appendingPathComponent("link.png"), withDestinationURL: outside.appendingPathComponent("outside.png"))
+        XCTAssertEqual(try GitImageComparison.working(project, path: "link.png"), .unavailable(.symbolicLink))
+        try FileManager.default.createSymbolicLink(at: project.appendingPathComponent("directory"), withDestinationURL: outside)
+        XCTAssertEqual(try GitImageComparison.working(project, path: "directory/outside.png"), .unavailable(.symbolicLink))
+        XCTAssertThrowsError(try GitImageComparison.working(project, path: "../outside.png"))
+        XCTAssertEqual(try GitImageComparison.working(project, path: "deleted.png"), .missing)
+        try Data("broken image".utf8).write(to: project.appendingPathComponent("broken.webp"))
+        XCTAssertEqual(try GitImageComparison.working(project, path: "broken.webp"), .unavailable(.invalid))
+        try Data(repeating: 0, count: GitRasterImage.maximumBytes + 1).write(to: project.appendingPathComponent("large.png"))
+        XCTAssertEqual(try GitImageComparison.working(project, path: "large.png"), .unavailable(.oversized))
+    }
+
     private func temporary() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

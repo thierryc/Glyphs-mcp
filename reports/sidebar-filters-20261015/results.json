@@ -1,0 +1,119 @@
+{
+  "application": "4.2",
+  "build": "4202",
+  "tests": [
+    {
+      "expression": "case == 2 AND category == \"Letter\"",
+      "glyphs": [
+        {
+          "name": "A",
+          "match": false
+        },
+        {
+          "name": "a",
+          "match": true
+        },
+        {
+          "name": "a.sc",
+          "match": false
+        },
+        {
+          "name": "one",
+          "match": false
+        },
+        {
+          "name": "acutecomb",
+          "match": false
+        }
+      ],
+      "parsed": "case == 2 AND category == \"Letter\"",
+      "sidebarPredicate": "case == 2 AND category == \"Letter\"",
+      "sidebarCount": -1
+    },
+    {
+      "expression": "case == lower AND category == \"Letter\"",
+      "glyphs": [
+        {
+          "name": "A",
+          "match": false
+        },
+        {
+          "name": "a",
+          "match": false
+        },
+        {
+          "name": "a.sc",
+          "match": false
+        },
+        {
+          "name": "one",
+          "match": false
+        },
+        {
+          "name": "acutecomb",
+          "match": false
+        }
+      ],
+      "parsed": "case == lower AND category == \"Letter\"",
+      "sidebarPredicate": "case == lower AND category == \"Letter\"",
+      "sidebarCount": -1
+    },
+    {
+      "expression": "glyphInfo.case == 2 AND category == \"Letter\"",
+      "glyphs": [
+        {
+          "name": "A",
+          "match": false
+        },
+        {
+          "name": "a",
+          "match": false
+        },
+        {
+          "name": "a.sc",
+          "match": false
+        },
+        {
+          "name": "one",
+          "match": false
+        },
+        {
+          "name": "acutecomb",
+          "match": false
+        }
+      ],
+      "parsed": "glyphInfo.case == 2 AND category == \"Letter\"",
+      "sidebarPredicate": "glyphInfo.case == 2 AND category == \"Letter\"",
+      "sidebarCount": -1
+    },
+    {
+      "expression": "subCategory == \"Lowercase\" AND category == \"Letter\"",
+      "glyphs": [
+        {
+          "name": "A",
+          "match": false
+        },
+        {
+          "name": "a",
+          "match": false
+        },
+        {
+          "name": "a.sc",
+          "match": false
+        },
+        {
+          "name": "one",
+          "match": false
+        },
+        {
+          "name": "acutecomb",
+          "match": false
+        }
+      ],
+      "parsed": "subCategory == \"Lowercase\" AND category == \"Letter\"",
+      "sidebarPredicate": "subCategory == \"Lowercase\" AND category == \"Letter\"",
+      "sidebarCount": -1
+    }
+  ],
+  "assertionsPassed": true
+}

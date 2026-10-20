@@ -1,0 +1,29 @@
+{
+  "appVersion": "2.2.0",
+  "appBuild": 67,
+  "executableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
+  "scope": "Exact notarized production app; separately signed localhost qualification feed, volatile launch override; public feed unchanged",
+  "invalidFeed": {
+    "passed": true,
+    "requestPaths": [
+      "/invalid.xml"
+    ],
+    "nativeMessage": "The update feed is improperly signed and could not be validated. Please try again later or contact the app developer.",
+    "archiveRequested": false,
+    "appUnchanged": true,
+    "screenshotSHA256": "35286a3557c4011ca266d68917eeb04a1f0d9673fd6bd4b815d7ad66c6e0a809"
+  },
+  "interruptedDownload": {
+    "passed": true,
+    "requestPaths": [
+      "/interrupted.xml",
+      "/candidate.zip"
+    ],
+    "advertisedBytes": 157336571,
+    "deliveredBytes": 65536,
+    "nativeMessage": "An error occurred while downloading the update. Please try again later.",
+    "appUnchanged": true,
+    "screenshotSHA256": "177d56709b7f3b5aadbe2c8fa734e10779c757d143f3c92035e75d2fb4b3c737"
+  },
+  "validationRelaxed": false
+}

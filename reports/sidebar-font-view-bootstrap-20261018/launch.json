@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/usr/bin/sandbox-exec",
+    "-f",
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/sidebar-gui-923afaa7ca/isolation.sb",
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/sidebar-gui-923afaa7ca/Glyphs Isolated Probe.app/Contents/MacOS/Glyphs 4",
+    "-ApplePersistenceIgnoreState",
+    "YES",
+    "-NSQuitAlwaysKeepsWindows",
+    "NO",
+    "-GSPythonFrameworkPath",
+    "/Library/Frameworks/Python.framework/Versions/3.14",
+    "-SUEnableAutomaticChecks",
+    "NO",
+    "-SUAutomaticallyUpdate",
+    "NO",
+    "-GSShowScriptingWindow",
+    "NO"
+  ],
+  "pid": 1797,
+  "exitCode": -15,
+  "reason": "timeout",
+  "seconds": 45.03178800000751,
+  "unchangedSourceHashes": {
+    "Contents/Info.plist": "df186aa7bb44c82c672e2e6f509beea719eaa50120d1dc9ec8460412d15bcc6c",
+    "Contents/MacOS/Glyphs 4": "a298199112586f43bc7a23f8040be53dbd22c44e19319e07b33ed78285a93173"
+  }
+}

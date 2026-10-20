@@ -51,6 +51,7 @@ names. Exact symbols, indexed paths and titles remain directly searchable.
 | Selected objects and indices | `GSLayer.selection`, `GSNode`, `GSLayer.paths`, `GSLayer.shapes` |
 | Native callback | Exact class/method name |
 | Font-design operation | Handbook topic: `spacing`, `masters`, `guides` |
+| Font View sidebar filters or predicate warnings | Read [sidebar predicate guidance](../../glyphs/references/sidebar-filters.md), then `handbook:036_font-view_filtering.md` and `handbook:090_layout_feature-code_layout_tokens.md` as needed; distinguish raw predicates, feature tokens and Python |
 | Serialization | `GlyphsFileFormatv4`, or explicitly version 3 |
 
 Prefer small qualified API sections to full wrapper source. Original sources,

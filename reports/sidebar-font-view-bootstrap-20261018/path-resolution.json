@@ -1,0 +1,26 @@
+[
+  {
+    "path": "/private/tmp/glyphs-sidebar-bootstrap/signed-gui-e60730987a/Glyphs Isolated Probe.app",
+    "outcome": "timeout"
+  },
+  {
+    "path": "/private/tmp/glyphs-sidebar-bootstrap/signed-gui-e60730987a/home",
+    "outcome": "timeout"
+  },
+  {
+    "path": "/Applications/Glyphs 4.app",
+    "exit": 0,
+    "output": "/Applications/Glyphs 4.app",
+    "error": "Using Glyphs 4.2 (4202)\nUsing Python 3.14\n"
+  },
+  {
+    "path": "/Library/Frameworks/Python.framework/Versions/3.14",
+    "exit": 0,
+    "output": "/Library/Frameworks/Python.framework/Versions/3.14",
+    "error": "Using Glyphs 4.2 (4202)\nUsing Python 3.14\n"
+  },
+  {
+    "path": "/private/tmp/glyphs-sidebar-bootstrap/signed-gui-e60730987a/home/Library/Application Support/Glyphs 4",
+    "outcome": "timeout"
+  }
+]

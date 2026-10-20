@@ -1,0 +1,80 @@
+{
+  "scope": "installed final signed build67 native acceptance",
+  "checks": [
+    {
+      "name": "final bridge build",
+      "passed": true
+    },
+    {
+      "name": "final sidecar build",
+      "passed": true
+    },
+    {
+      "name": "bridge identity matches installed receipt",
+      "passed": true
+    },
+    {
+      "name": "sidecar identity matches installed receipt",
+      "passed": true
+    },
+    {
+      "name": "only final owned fixture",
+      "passed": true
+    },
+    {
+      "name": "baseline widths",
+      "passed": true
+    },
+    {
+      "name": "exact target and unchanged control",
+      "passed": true
+    },
+    {
+      "name": "outlines unchanged",
+      "passed": true
+    },
+    {
+      "name": "no implicit save",
+      "passed": true
+    },
+    {
+      "name": "exact undo",
+      "passed": true
+    },
+    {
+      "name": "guarded baseline still exact",
+      "passed": true
+    },
+    {
+      "name": "existing save guard",
+      "passed": true
+    },
+    {
+      "name": "second exact target and control",
+      "passed": true
+    },
+    {
+      "name": "second outline unchanged",
+      "passed": true
+    },
+    {
+      "name": "native and source hash save verification",
+      "passed": true
+    },
+    {
+      "name": "saved result and control",
+      "passed": true
+    },
+    {
+      "name": "native workflows closed",
+      "passed": true
+    }
+  ],
+  "documentID": "doc_12649337081946b3aef05a6a106a4347",
+  "discardWorkflowID": "edit_1d6db25222a04106a1ed74ab66a2dc9d",
+  "finalSourceSHA256": "7ecd4a37b5d3c50e02e40029b3aab9b14c11620132fc774622b0a0a3cc64beef",
+  "passed": true,
+  "savedWorkflowID": "edit_a46e3268e9714ec7b38e330e35fe5d63",
+  "evidenceSHA256": "8cf820fc7aaaa167f737ce3495c600d3b145be893b95afae9c4f12ea7abcea8b",
+  "harnessCorrection": "Followed the existing save_continue guard after selective undo left the native document dirty; no protocol guard bypassed."
+}

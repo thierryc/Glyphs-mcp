@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Welcome to Glyphs",
+    "class": "NSWindow",
+    "texts": [
+      "<NSImage 0x600000dedc20 Name=NSApplicationIcon Size={128, 128} RepProvider=<NSImageISIconRepProvider:0x600003cb7440 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T215257/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:3B32DB64-0243-02E8-3AE1-7ED5129030E5 reps:(\n    \"<NSISIconImageRep:0x600001f95630 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T215257/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:3B32DB64-0243-02E8-3AE1-7ED5129030E5 size(points):{32, 32} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001f95680 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T215257/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:3B32DB64-0243-02E8-3AE1-7ED5129030E5 size(points):{32, 32} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001f956d0 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T215257/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:3B32DB64-0243-02E8-3AE1-7ED5129030E5 size(points):{32, 32} scale: 2.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001f95720 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T215257/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:3B32DB64-0243-02E8-3AE1-7ED5129030E5 size(points):{32, 32} scale: 2.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001f95770 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T215257/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:3B32DB64-0243-02E8-3AE1-7ED5129030E5 size(points):{16, 16} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001f957c0 icon:<ISBundleIcon: 0x600001fc35c0> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T2",
+      "0",
+      "Continue Trial",
+      "Continue Trial",
+      "0",
+      "Purchase License",
+      "Purchase License",
+      "This copy of Glyphs is not registered. The test version will work for 30 days until November\u00a017,\u00a02026.\nYou can activate this version by purchasing a license at glyphsapp.com."
+    ]
+  }
+]

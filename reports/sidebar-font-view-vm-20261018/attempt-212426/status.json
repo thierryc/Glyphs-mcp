@@ -1,0 +1,9 @@
+{
+  "model": "VirtualMac2,1",
+  "root": "/Users/ziggy/sidebar-qualification-20261018T212426",
+  "state": "blocked",
+  "nativeRuns": 1,
+  "transport": "in-process SidecarService/BridgeCore; HTTP and installed-client transport excluded",
+  "lastCase": "preflight",
+  "lastReason": "exited"
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "title": "Welcome to Glyphs",
+    "windowClass": "NSWindow",
+    "texts": [
+      "This copy of Glyphs is not registered. The test version will work for 30 days until November\u00a017,\u00a02026.\nYou can activate this version by purchasing a license at glyphsapp.com.",
+      "1",
+      "Continue Trial",
+      "0",
+      "Purchase License",
+      "0",
+      "I have read the license agreement."
+    ]
+  },
+  {
+    "title": "",
+    "windowClass": "_NSAlertPanel",
+    "texts": [
+      "0",
+      "OK",
+      "The operation couldn\u2019t be completed. (Problem parsing repository source error 123.)"
+    ]
+  }
+]

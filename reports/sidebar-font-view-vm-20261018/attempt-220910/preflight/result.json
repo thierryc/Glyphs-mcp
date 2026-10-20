@@ -1,0 +1,39 @@
+{
+  "outcome": "blocked",
+  "phase": "attach-font-view",
+  "pid": 1258,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": false,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/Users/ziggy/sidebar-qualification-20261018T220910/report/preflight/Disposable.glyphs",
+    "masters": [
+      "42D137D8-78C6-4171-9215-680A5763642D",
+      "93929E39-A249-49B7-AF27-76DC637606A7"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/ziggy/sidebar-qualification-20261018T220910/source/scripts/qualify_sidebar_counts_native.py\", line 145, in main\n    raise RuntimeError(\"Attached sidebar did not populate its native group model\")\nRuntimeError: Attached sidebar did not populate its native group model\n"
+}

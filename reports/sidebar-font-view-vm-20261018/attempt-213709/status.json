@@ -1,0 +1,8 @@
+{
+  "model": "VirtualMac2,1",
+  "root": "/Users/ziggy/sidebar-qualification-20261018T213709",
+  "state": "preparing",
+  "nativeRuns": 0,
+  "transport": "in-process SidecarService/BridgeCore; HTTP and installed-client transport excluded",
+  "sandboxBoundary": "VM filesystem boundary; child denies network, Apple Events and original guest plugin reads"
+}

@@ -48,6 +48,7 @@
 		4BD5801D03F3BFE8C5753241 /* DesktopProjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 799F925C995B370E8C812ADA /* DesktopProjects.swift */; };
 		A64F540FCB1E8FBA46D0471A /* ProjectTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08C4804E908F36018324252F /* ProjectTemplates.swift */; };
 		CCFECA554C6AFEAAE447F59E /* ReadOnlyGit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */; };
+		4F077521A8B14B3A9F2437FC /* GitImageComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BE5CCC7AD149BCB76828D4 /* GitImageComparison.swift */; };
 		301CC88B1075FB8C7D68E536 /* TemplateArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */; };
 		3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */; };
 		E3E54D6F7E263E4FE22AB626 /* DesktopProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */; };
@@ -67,6 +68,7 @@
 		222E1FD38019AA402B7856A5 /* DesktopTemplateCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */; };
 		236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */; };
 		B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000001 /* DesktopGitWorkspace.swift */; };
+		9E1EE5A889F94544BD267F5D /* DesktopImageComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFB6AEF40C849D3B1FDE38E /* DesktopImageComparison.swift */; };
 		B20000000000000000000002 /* GlyphDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* GlyphDiff.swift */; };
 		B20000000000000000000003 /* PierreDiffsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B40000000000000000000002 /* PierreDiffsSwift */; };
 		F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */; };
@@ -84,6 +86,13 @@
 		54226012FBAC5F05E6D38CE4 /* SharedInitializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BA100AC3DA98EDF83E4FAC /* SharedInitializationTests.swift */; };
 		36EE3FED468A52FA0F2ADACE /* OptionalToolSetupCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D264F8CACBB9BC61AA7B390 /* OptionalToolSetupCard.swift */; };
 		C9D9461CB4B4D1B226676FAA /* OptionalToolState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C913C9EB70BB21C6B52D2146 /* OptionalToolState.swift */; };
+		795E2441E694D6A78376B50E /* DesktopTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EE252852A295D20A62772D /* DesktopTask.swift */; };
+		D071DC58367D116A94F18659 /* DesktopTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D3983B5B770E5954F32B5B /* DesktopTasks.swift */; };
+		60E1A3D307F1801ADF1C6FFD /* DesktopFontSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB358BBF72D5F4E37496F28 /* DesktopFontSources.swift */; };
+		FB168A2E41DF4BE462317E99 /* FontPackageCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC0DEF5F6C9A6D6D82E5571 /* FontPackageCopy.swift */; };
+		2E4AB5E4567465C177277EFC /* GlyphsCLIRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C4663A17A310C8D1622B9F /* GlyphsCLIRuntime.swift */; };
+		1DD3D44B878C6C5A040D637C /* FontPackageCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53B5304C9B752BD15D6E160 /* FontPackageCopyTests.swift */; };
+		527313415549594A34FF51E3 /* DesktopProjectConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC4AA0BA626074002FBE595 /* DesktopProjectConfiguration.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -175,6 +184,7 @@
 		799F925C995B370E8C812ADA /* DesktopProjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjects.swift"; sourceTree = "<group>"; };
 		08C4804E908F36018324252F /* ProjectTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectTemplates.swift"; sourceTree = "<group>"; };
 		4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadOnlyGit.swift"; sourceTree = "<group>"; };
+		C7BE5CCC7AD149BCB76828D4 /* GitImageComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GitImageComparison.swift"; sourceTree = "<group>"; };
 		2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemplateArchive.swift"; sourceTree = "<group>"; };
 		95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemplateStore.swift"; sourceTree = "<group>"; };
 		C4E77E1829B42BE676AEFC3D /* DesktopProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectTests.swift"; sourceTree = "<group>"; };
@@ -193,6 +203,7 @@
 		F69E0F96309801202E00841B /* DesktopTemplateCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopTemplateCatalogTests.swift"; sourceTree = "<group>"; };
 		0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectSettings.swift"; sourceTree = "<group>"; };
 		B30000000000000000000001 /* DesktopGitWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopGitWorkspace.swift; sourceTree = "<group>"; };
+		5DFB6AEF40C849D3B1FDE38E /* DesktopImageComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopImageComparison.swift"; sourceTree = "<group>"; };
 		B30000000000000000000002 /* GlyphDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphDiff.swift; sourceTree = "<group>"; };
 		A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckpointProjectTests.swift"; sourceTree = "<group>"; };
 		CC3D81D529D86A450518A882 /* FontCheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontCheckpointPolicy.swift"; sourceTree = "<group>"; };
@@ -209,6 +220,13 @@
 		86BA100AC3DA98EDF83E4FAC /* SharedInitializationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharedInitializationTests.swift"; sourceTree = "<group>"; };
 		1D264F8CACBB9BC61AA7B390 /* OptionalToolSetupCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionalToolSetupCard.swift"; sourceTree = "<group>"; };
 		C913C9EB70BB21C6B52D2146 /* OptionalToolState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionalToolState.swift"; sourceTree = "<group>"; };
+		E2EE252852A295D20A62772D /* DesktopTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTask.swift; sourceTree = "<group>"; };
+		81D3983B5B770E5954F32B5B /* DesktopTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTasks.swift; sourceTree = "<group>"; };
+		3FB358BBF72D5F4E37496F28 /* DesktopFontSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopFontSources.swift"; sourceTree = "<group>"; };
+		EFC0DEF5F6C9A6D6D82E5571 /* FontPackageCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontPackageCopy.swift"; sourceTree = "<group>"; };
+		50C4663A17A310C8D1622B9F /* GlyphsCLIRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GlyphsCLIRuntime.swift"; sourceTree = "<group>"; };
+		C53B5304C9B752BD15D6E160 /* FontPackageCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontPackageCopyTests.swift"; sourceTree = "<group>"; };
+		DEC4AA0BA626074002FBE595 /* DesktopProjectConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectConfiguration.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -262,11 +280,15 @@
 		AA0000000000000000000003 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				DEC4AA0BA626074002FBE595 /* DesktopProjectConfiguration.swift */,
+				3FB358BBF72D5F4E37496F28 /* DesktopFontSources.swift */,
+				81D3983B5B770E5954F32B5B /* DesktopTasks.swift */,
 				1D264F8CACBB9BC61AA7B390 /* OptionalToolSetupCard.swift */,
 				F73D61233AFD15A408D8FEB4 /* DesktopInitializationStatus.swift */,
 				3D6807CE612CA303FE5DCE7F /* DesktopSkills.swift */,
 				CBA278F713A5C31DBD3D5CE6 /* DesktopCheckpointHistory.swift */,
 				B30000000000000000000001 /* DesktopGitWorkspace.swift */,
+				5DFB6AEF40C849D3B1FDE38E /* DesktopImageComparison.swift */,
 				0748BF3FE7A5EC33A8E94DD1 /* DesktopProjectSettings.swift */,
 				51217EC4D8AA7AD6079F9881 /* DesktopProjectWizard.swift */,
 				79FDCE0E9723C6BE768AC691 /* DesktopProjectCatalog.swift */,
@@ -329,6 +351,7 @@
 		AA0000000000000000000008 /* GlyphsMCPInstallerTests */ = {
 			isa = PBXGroup;
 			children = (
+				C53B5304C9B752BD15D6E160 /* FontPackageCopyTests.swift */,
 				86BA100AC3DA98EDF83E4FAC /* SharedInitializationTests.swift */,
 				5C2222222222222222222221 /* SkillCatalogTests.swift */,
 				A2FC39F4550E14E917AA3903 /* CheckpointProjectTests.swift */,
@@ -345,6 +368,9 @@
 		AA00000000000000000000C7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				50C4663A17A310C8D1622B9F /* GlyphsCLIRuntime.swift */,
+				EFC0DEF5F6C9A6D6D82E5571 /* FontPackageCopy.swift */,
+				E2EE252852A295D20A62772D /* DesktopTask.swift */,
 				C913C9EB70BB21C6B52D2146 /* OptionalToolState.swift */,
 				8DCC566CD9ED04D9BDA9C1A4 /* SharedInitialization.swift */,
 				B0563B0D8E6E674BE984FA5E /* SupplementalSkillInstaller.swift */,
@@ -360,6 +386,7 @@
 				95D90AE2D889DFE2DA67B0E9 /* TemplateStore.swift */,
 				2E0A2AE83BF82B1BED14C418 /* TemplateArchive.swift */,
 				4B835ED3BEA22F725C8CE779 /* ReadOnlyGit.swift */,
+				C7BE5CCC7AD149BCB76828D4 /* GitImageComparison.swift */,
 				08C4804E908F36018324252F /* ProjectTemplates.swift */,
 				6E6E3B10904D60F7875759D9 /* DesktopMonitorPolicy.swift */,
 				F6545F2403F0978EBA9F9CD4 /* DesktopInstallation.swift */,
@@ -586,11 +613,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				527313415549594A34FF51E3 /* DesktopProjectConfiguration.swift in Sources */,
+				60E1A3D307F1801ADF1C6FFD /* DesktopFontSources.swift in Sources */,
+				D071DC58367D116A94F18659 /* DesktopTasks.swift in Sources */,
 				36EE3FED468A52FA0F2ADACE /* OptionalToolSetupCard.swift in Sources */,
 				849533CAC7F22E04CACA3BBE /* DesktopInitializationStatus.swift in Sources */,
 				52BFFDF1CB210FC9AE032E93 /* DesktopSkills.swift in Sources */,
 				2C976460FFAA24CEC33A766B /* DesktopCheckpointHistory.swift in Sources */,
 				B20000000000000000000001 /* DesktopGitWorkspace.swift in Sources */,
+				9E1EE5A889F94544BD267F5D /* DesktopImageComparison.swift in Sources */,
 				236B4C66C61F57542ED4641A /* DesktopProjectSettings.swift in Sources */,
 				BB8FED442C37149356C19DC9 /* DesktopProjectWizard.swift in Sources */,
 				12B887EC93C336A12F5525CF /* DesktopProjectCatalog.swift in Sources */,
@@ -611,6 +642,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1DD3D44B878C6C5A040D637C /* FontPackageCopyTests.swift in Sources */,
 				54226012FBAC5F05E6D38CE4 /* SharedInitializationTests.swift in Sources */,
 				5C2222222222222222222222 /* SkillCatalogTests.swift in Sources */,
 				F4D41F9345CFF5157BDC2174 /* CheckpointProjectTests.swift in Sources */,
@@ -627,6 +659,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E4AB5E4567465C177277EFC /* GlyphsCLIRuntime.swift in Sources */,
+				FB168A2E41DF4BE462317E99 /* FontPackageCopy.swift in Sources */,
+				795E2441E694D6A78376B50E /* DesktopTask.swift in Sources */,
 				C9D9461CB4B4D1B226676FAA /* OptionalToolState.swift in Sources */,
 				DCAAD432691DCA5A392DF33D /* SharedInitialization.swift in Sources */,
 				4FAEDF09AFAE2EF0D6AE2B12 /* SupplementalSkillInstaller.swift in Sources */,
@@ -642,6 +677,7 @@
 				3798197D32341A75E4B09817 /* TemplateStore.swift in Sources */,
 				301CC88B1075FB8C7D68E536 /* TemplateArchive.swift in Sources */,
 				CCFECA554C6AFEAAE447F59E /* ReadOnlyGit.swift in Sources */,
+				4F077521A8B14B3A9F2437FC /* GitImageComparison.swift in Sources */,
 				A64F540FCB1E8FBA46D0471A /* ProjectTemplates.swift in Sources */,
 				D049D2DA83A153A23D72BED5 /* DesktopMonitorPolicy.swift in Sources */,
 				63A2AB3FB5CDB3256C48DA16 /* DesktopInstallation.swift in Sources */,
@@ -818,7 +854,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 63;
+				CURRENT_PROJECT_VERSION = 67;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -832,7 +868,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.2.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";
@@ -854,7 +890,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 63;
+				CURRENT_PROJECT_VERSION = 67;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -868,7 +904,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.2.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";

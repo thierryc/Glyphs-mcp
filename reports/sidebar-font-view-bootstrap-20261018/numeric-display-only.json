@@ -1,0 +1,39 @@
+{
+  "outcome": "blocked",
+  "phase": "attach-font-view",
+  "pid": 95732,
+  "variant": "baseline",
+  "workflows": [],
+  "cleanupErrors": [],
+  "checks": [],
+  "uiQualified": false,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0",
+    "appClass": "GSApplication"
+  },
+  "fixture": {
+    "path": "/private/tmp/glyphs-sidebar-bootstrap/numeric-display/Disposable.glyphs",
+    "masters": [
+      "B450AB93-AEF5-4A00-B340-3A71FCC56C53",
+      "B3E48F3B-0DF5-4743-9F5E-74D142E9EC25"
+    ],
+    "glyphs": 1000,
+    "controls": 200,
+    "categories": [
+      "Letter",
+      "Mark",
+      "Number",
+      "Punctuation",
+      "Separator",
+      "Symbol"
+    ],
+    "scripts": [
+      "None",
+      "arabic",
+      "han",
+      "latin"
+    ]
+  },
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_sidebar_counts_native.py\", line 118, in main\n    h.doc.makeWindowControllers()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\nValueError: NSInvalidArgumentException - -[NSView setDelegate:]: unrecognized selector sent to instance 0x81330b200\n"
+}

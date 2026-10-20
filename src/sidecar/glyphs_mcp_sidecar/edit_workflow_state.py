@@ -188,6 +188,8 @@ def _offered_actions(value):
         return [('check_outcome','Check result'),('acknowledge_restore_outcome','Acknowledge uncertain restore')]
     if state == 'failed' and (value.get('job') or {}).get('status') == 'ready' and str((value.get('error') or {}).get('code','')).startswith('checkpoint_'):
         return [('apply', 'Retry baseline and apply'), ('cancel', 'Cancel')]
+    if state == 'failed' and (value.get('job') or {}).get('status') == 'ready':
+        return [('cancel', 'Cancel')]
     if state == 'saved' and ((value.get('receipt') or {}).get('checkpoint') or {}).get('status') == 'failed':
         return [('retry_checkpoint', 'Retry checkpoint without saving')]
     if value.get('blockerId') and (value.get('job') or {}).get('resultKind') == 'script':
@@ -432,7 +434,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
     if value['state'] == 'applied':
         result['message'] += '\n' + current_save_status(value)
     if value.get('blockerId') and (value.get('job') or {}).get('resultKind') == 'script':
-        result['message'] = 'Finish the earlier script in its original conversation workflow before continuing.'
+        result['message'] = 'Resolve the earlier task in your agent before continuing. You can review it from another conversation.'
         result['message'] += '\nUse that workflow’s available Keep, Save or Restore saved version actions. Restore replaces all subsequent unsaved edits in the whole font.'
     if (value.get('job') or {}).get('checkpointEnabled') and value['state'] == 'applied':
         result['message'] += '\nSave font also creates a local Git checkpoint. Keep does not create a result checkpoint.'

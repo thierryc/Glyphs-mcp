@@ -1,0 +1,62 @@
+{
+  "variant": "baseline",
+  "repeat": 0,
+  "outcome": "blocked",
+  "exitCode": 0,
+  "seconds": 7.239887957999599,
+  "command": [
+    "/Library/Frameworks/Python.framework/Versions/3.14/bin/glyphs",
+    "run",
+    "--app",
+    "/Applications/Glyphs 4.app",
+    "--plugins",
+    "",
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_sidebar_counts_native.py",
+    "--",
+    "--output",
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/sidebar-counts-20261018T215032999638Z/preflight/result.json",
+    "--variant",
+    "baseline",
+    "--preflight"
+  ],
+  "directory": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/sidebar-counts-20261018T215032999638Z/preflight",
+  "native": {
+    "outcome": "blocked",
+    "phase": "attach-font-view",
+    "pid": 74545,
+    "variant": "baseline",
+    "workflows": [],
+    "cleanupErrors": [],
+    "checks": [],
+    "uiQualified": false,
+    "host": {
+      "version": "4.2",
+      "build": "4202.0",
+      "appClass": "GSApplication"
+    },
+    "fixture": {
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/sidebar-counts-20261018T215032999638Z/preflight/Disposable.glyphs",
+      "masters": [
+        "E478FB0F-5FBA-43F1-B624-560BC5DEEE3B",
+        "A366E5CF-400D-42A5-9532-A024AB8A07DC"
+      ],
+      "glyphs": 1000,
+      "controls": 200,
+      "categories": [
+        "Letter",
+        "Mark",
+        "Number",
+        "Punctuation",
+        "Separator",
+        "Symbol"
+      ],
+      "scripts": [
+        "None",
+        "arabic",
+        "han",
+        "latin"
+      ]
+    },
+    "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/scripts/qualify_sidebar_counts_native.py\", line 118, in main\n    h.doc.makeWindowControllers()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\nobjc.error: NSInternalInconsistencyException - Cannot find value transformer with name GSLocalNumberFormatTransformer\n"
+  }
+}

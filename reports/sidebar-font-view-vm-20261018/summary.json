@@ -1,0 +1,368 @@
+{
+  "classification": "not reproduced",
+  "nativeUIQualification": "passed",
+  "matrixRuns": 20,
+  "passed": 20,
+  "alerts": 0,
+  "timeouts": 0,
+  "cleanupErrors": 0,
+  "workflows": 60,
+  "variants": {
+    "baseline": {
+      "passed": 5,
+      "measured": 5
+    },
+    "batching-only": {
+      "passed": 5,
+      "measured": 5
+    },
+    "suppression-only": {
+      "passed": 5,
+      "measured": 5
+    },
+    "combined": {
+      "passed": 5,
+      "measured": 5
+    }
+  },
+  "app": {
+    "model": "VirtualMac2,1",
+    "version": "4.2",
+    "build": "4202",
+    "framework": "/Users/ziggy/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14",
+    "archiveSha256": "4f1c05873d7aa3b4ada9f84cfdc06f204f51eb6ff56fe953cd0af6eadf101a5d",
+    "sourceArchiveSha256": "14512daeb59a8762ae9ae47c78ff12c7c4eda151e9c5e5cf2a4aa7acc254712b",
+    "executableSha256": "a298199112586f43bc7a23f8040be53dbd22c44e19319e07b33ed78285a93173"
+  },
+  "automaticSuppression": false,
+  "transport": "in-process SidecarService/BridgeCore; HTTP and installed-client transport excluded",
+  "limitations": [
+    "Clean baseline leaves effectiveness unproven.",
+    "Native matrix covers successful workloads; failure/cancellation/mixed-flag cases are regression tests.",
+    "Bounded settling is not a background-worker lock; queued work and selected predicates remain limitations.",
+    "Launch timings include manual Continue Trial interaction."
+  ],
+  "runs": [
+    {
+      "variant": "baseline",
+      "repeat": 1,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 322.469761208,
+      "nativeObservationSeconds": 17.977906942367554,
+      "pid": 1706,
+      "evidence": "attempt-225812/baseline-1/result.json"
+    },
+    {
+      "variant": "baseline",
+      "repeat": 2,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 226.72498925000002,
+      "nativeObservationSeconds": 16.315349102020264,
+      "pid": 1734,
+      "evidence": "attempt-225812/baseline-2/result.json"
+    },
+    {
+      "variant": "baseline",
+      "repeat": 3,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 236.51057187499998,
+      "nativeObservationSeconds": 14.516396045684814,
+      "pid": 1759,
+      "evidence": "attempt-225812/baseline-3/result.json"
+    },
+    {
+      "variant": "baseline",
+      "repeat": 4,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 216.98370287499995,
+      "nativeObservationSeconds": 15.861502885818481,
+      "pid": 1785,
+      "evidence": "attempt-225812/baseline-4/result.json"
+    },
+    {
+      "variant": "baseline",
+      "repeat": 5,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 55.93502616699993,
+      "nativeObservationSeconds": 14.73512315750122,
+      "pid": 1806,
+      "evidence": "attempt-225812/baseline-5/result.json"
+    },
+    {
+      "variant": "batching-only",
+      "repeat": 1,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 56.98124520800002,
+      "nativeObservationSeconds": 16.445268869400024,
+      "pid": 1813,
+      "evidence": "attempt-225812/batching-only-1/result.json"
+    },
+    {
+      "variant": "batching-only",
+      "repeat": 2,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 54.182256499999994,
+      "nativeObservationSeconds": 10.366233110427856,
+      "pid": 1825,
+      "evidence": "attempt-225812/batching-only-2/result.json"
+    },
+    {
+      "variant": "batching-only",
+      "repeat": 3,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 72.25401533299987,
+      "nativeObservationSeconds": 11.54727292060852,
+      "pid": 1837,
+      "evidence": "attempt-225812/batching-only-3/result.json"
+    },
+    {
+      "variant": "batching-only",
+      "repeat": 4,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 85.67667791599979,
+      "nativeObservationSeconds": 12.997926950454712,
+      "pid": 1858,
+      "evidence": "attempt-225812/batching-only-4/result.json"
+    },
+    {
+      "variant": "batching-only",
+      "repeat": 5,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 83.69933516700007,
+      "nativeObservationSeconds": 11.211143732070923,
+      "pid": 1875,
+      "evidence": "attempt-225812/batching-only-5/result.json"
+    },
+    {
+      "variant": "suppression-only",
+      "repeat": 1,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 101.5376409999999,
+      "nativeObservationSeconds": 18.26960587501526,
+      "pid": 1894,
+      "evidence": "attempt-225812/suppression-only-1/result.json"
+    },
+    {
+      "variant": "suppression-only",
+      "repeat": 2,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 110.05814066700009,
+      "nativeObservationSeconds": 14.367969036102295,
+      "pid": 1920,
+      "evidence": "attempt-225812/suppression-only-2/result.json"
+    },
+    {
+      "variant": "suppression-only",
+      "repeat": 3,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 113.038049667,
+      "nativeObservationSeconds": 14.409389972686768,
+      "pid": 1937,
+      "evidence": "attempt-225812/suppression-only-3/result.json"
+    },
+    {
+      "variant": "suppression-only",
+      "repeat": 4,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 109.7657657909997,
+      "nativeObservationSeconds": 12.075210094451904,
+      "pid": 1956,
+      "evidence": "attempt-225812/suppression-only-4/result.json"
+    },
+    {
+      "variant": "suppression-only",
+      "repeat": 5,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 176.37139233300013,
+      "nativeObservationSeconds": 16.383903980255127,
+      "pid": 1976,
+      "evidence": "attempt-225812/suppression-only-5/result.json"
+    },
+    {
+      "variant": "combined",
+      "repeat": 1,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 145.91466229100024,
+      "nativeObservationSeconds": 14.79236888885498,
+      "pid": 1995,
+      "evidence": "attempt-225812/combined-1/result.json"
+    },
+    {
+      "variant": "combined",
+      "repeat": 2,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 158.43284408399995,
+      "nativeObservationSeconds": 14.809054136276245,
+      "pid": 2022,
+      "evidence": "attempt-225812/combined-2/result.json"
+    },
+    {
+      "variant": "combined",
+      "repeat": 3,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 156.4496797500001,
+      "nativeObservationSeconds": 13.447945833206177,
+      "pid": 2043,
+      "evidence": "attempt-225812/combined-3/result.json"
+    },
+    {
+      "variant": "combined",
+      "repeat": 4,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 233.79125854199992,
+      "nativeObservationSeconds": 13.474992990493774,
+      "pid": 2064,
+      "evidence": "attempt-225812/combined-4/result.json"
+    },
+    {
+      "variant": "combined",
+      "repeat": 5,
+      "outcome": "passed",
+      "cleanupErrors": [],
+      "checks": [
+        "colors: exact targets and controls verified",
+        "shapes: exact targets and controls verified",
+        "addition: exact targets and controls verified",
+        "UI flags, predicates, selection and responsiveness restored"
+      ],
+      "launchSeconds": 170.4534073750001,
+      "nativeObservationSeconds": 18.20468807220459,
+      "pid": 2084,
+      "evidence": "attempt-225812/combined-5/result.json"
+    }
+  ],
+  "reportArchiveSha256": "092d62df8920fa8ff474c86a769ef8a0405789d2a952157f54488de0c6a25534"
+}

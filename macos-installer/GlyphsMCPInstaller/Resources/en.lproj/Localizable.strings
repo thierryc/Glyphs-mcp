@@ -707,4 +707,206 @@
 "Components are shared by Glyphs 4 copies on this Mac." = "Components are shared by Glyphs 4 copies on this Mac.";
 "Glyphs Python module" = "Glyphs Python module";
 "Selected Python" = "Selected Python";
+"Close Glyphs to install or update components." = "Close Glyphs to install or update components.";
+"You can save your fonts when prompted." = "You can save your fonts when prompted.";
+"Quit Glyphs to Install or Update" = "Quit Glyphs to Install or Update";
 "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted." = "Quit all copies of Glyphs 4 before changing components. You can save unsaved fonts when prompted.";
+
+/* Tasks: native navigation, monitoring, and conversation handoff. */
+"Tasks" = "Tasks";
+"Show Tasks" = "Show Tasks";
+"Needs decision" = "Needs decision";
+"Blocked" = "Blocked";
+"Recently closed" = "Recently closed";
+"History" = "History";
+"Open Conversation…" = "Open Conversation…";
+"Copy Request" = "Copy Request";
+"Request copied." = "Request copied.";
+"Connected" = "Connected";
+"Stopped" = "Stopped";
+"Unavailable" = "Unavailable";
+"Not running" = "Not running";
+"No Tasks" = "No Tasks";
+"Select a Task" = "Select a Task";
+"Tasks appear here when an agent works with Glyphs MCP." = "Tasks appear here when an agent works with Glyphs MCP.";
+"Task information is unavailable." = "Task information is unavailable.";
+"Showing the last observation." = "Showing the last observation.";
+"Load Earlier Tasks" = "Load Earlier Tasks";
+"Update Glyphs MCP to show Tasks." = "Update Glyphs MCP to show Tasks.";
+"Tasks are unavailable. Try again when the server is connected." = "Tasks are unavailable. Try again when the server is connected.";
+"Review this task in your agent." = "Review this task in your agent.";
+"Work is in progress in Glyphs." = "Work is in progress in Glyphs.";
+"The conversation could not be opened. Copy the request to continue in your agent." = "The conversation could not be opened. Copy the request to continue in your agent.";
+"Outcome unknown" = "Outcome unknown";
+"Interrupted" = "Interrupted";
+"Unread" = "Unread";
+"Read" = "Read";
+"Created" = "Created";
+"Last updated" = "Last updated";
+"Font at last check" = "Font at last check";
+"Unsaved changes" = "Unsaved changes";
+"Saved" = "Saved";
+"%lld unread tasks" = "%lld unread tasks";
+"Waiting for: %@" = "Waiting for: %@";
+"Blocking: %@" = "Blocking: %@";
+"Tasks Unavailable" = "Tasks Unavailable";
+"Loading Tasks…" = "Loading Tasks…";
+"Install Glyphs MCP in Setup to show Tasks." = "Install Glyphs MCP in Setup to show Tasks.";
+
+/* Visible agent handoff prompt. */
+"Prompt for the Agent" = "Prompt for the Agent";
+"Copy prompt" = "Copy prompt";
+"Prompt copied" = "Prompt copied";
+
+/* Task prompt intent and conversation availability. */
+"Review" = "Review";
+"Close task" = "Close task";
+"Prompt purpose" = "Prompt purpose";
+"The conversation could not be identified reliably. Copy the prompt into your agent." = "The conversation could not be identified reliably. Copy the prompt into your agent.";
+"A direct Claude Code conversation link is unavailable. Copy the prompt into your agent." = "A direct Claude Code conversation link is unavailable. Copy the prompt into your agent.";
+"No usable conversation link was captured for this task. Copy the prompt into your agent." = "No usable conversation link was captured for this task. Copy the prompt into your agent.";
+"The conversation could not be opened. Copy the prompt to continue in your agent." = "The conversation could not be opened. Copy the prompt to continue in your agent.";
+
+/* Full-height Tasks list section headings. */
+"Tasks needing attention" = "Tasks needing attention";
+"Recently closed tasks" = "Recently closed tasks";
+
+/* Local task history visibility */
+"Clear Closed History…" = "Clear Closed History…";
+"Clear Closed History" = "Clear Closed History";
+"Clear closed task history?" = "Clear closed task history?";
+"Hide all currently closed tasks from this app, including earlier pages. Open tasks and diagnostic records are kept. You can show cleared history again from History Options." = "Hide all currently closed tasks from this app, including earlier pages. Open tasks and diagnostic records are kept. You can show cleared history again from History Options.";
+"Show Cleared History" = "Show Cleared History";
+"History Options" = "History Options";
+"Closed history cleared." = "Closed history cleared.";
+
+/* Guarded abandoned-task recovery */
+"Recovery Options…" = "Recovery Options…";
+"Recovery Options" = "Recovery Options";
+"Resolve this task here when its agent conversation is unavailable." = "Resolve this task here when its agent conversation is unavailable.";
+"Close Without Saving" = "Close Without Saving";
+"Cancel Remaining Work" = "Cancel Remaining Work";
+"Cancel Task" = "Cancel Task";
+"Check Again" = "Check Again";
+"Checking task…" = "Checking task…";
+"This entry has no workflow to close here. Review the job in your agent." = "This entry has no workflow to close here. Review the job in your agent.";
+"Connect to the server before using Recovery Options." = "Connect to the server before using Recovery Options.";
+"Update the sidecar to use Recovery Options. You can still review this task in your agent." = "Update the sidecar to use Recovery Options. You can still review this task in your agent.";
+"The task outcome could not be confirmed. Check again before choosing." = "The task outcome could not be confirmed. Check again before choosing.";
+"The current outcome could not be checked. Reconnect and check again before closing this task." = "The current outcome could not be checked. Reconnect and check again before closing this task.";
+"Task cancelled. No save was performed." = "Task cancelled. No save was performed.";
+"This task is already closed. Its recorded outcome has been retained." = "This task is already closed. Its recorded outcome has been retained.";
+"Cancellation is still in progress. Changes already applied may remain; check again for the final outcome." = "Cancellation is still in progress. Changes already applied may remain; check again for the final outcome.";
+"The outcome is not confirmed. Check again or continue in your agent. This task cannot be closed safely here yet." = "The outcome is not confirmed. Check again or continue in your agent. This task cannot be closed safely here yet.";
+"No closing action is currently available. Work may still be running or require review in your agent." = "No closing action is currently available. Work may still be running or require review in your agent.";
+"Review the consequences before resolving this abandoned task." = "Review the consequences before resolving this abandoned task.";
+"Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available." = "Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available.";
+"Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option." = "Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option.";
+"Request cancellation of remaining targets. Applied changes remain. Cancellation may take time, and recovery may still need a decision." = "Request cancellation of remaining targets. Applied changes remain. Cancellation may take time, and recovery may still need a decision.";
+"Cancel this pending request without saving. Earlier blocking tasks remain open." = "Cancel this pending request without saving. Earlier blocking tasks remain open.";
+"Discard this unapplied preview and close the task. No font save or edit is performed." = "Discard this unapplied preview and close the task. No font save or edit is performed.";
+"This choice is outdated or unavailable. Check the task again before choosing." = "This choice is outdated or unavailable. Check the task again before choosing.";
+"Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available. Partial edits may remain; inspect the font before closing." = "Keep current changes in Glyphs without saving. Close this task and end its selective Undo option. Native Undo remains available. Partial edits may remain; inspect the font before closing.";
+"Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option. Partial edits may remain; inspect the font before closing." = "Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option. Partial edits may remain; inspect the font before closing.";
+
+"Closed" = "Closed";
+
+"Cancellation pending" = "Cancellation pending";
+
+/* Recovery sheet dismissal */
+"Close Recovery Options" = "Close Recovery Options";
+"Close without changing this task" = "Close without changing this task";
+
+/* Interrupted task archival */
+"Archive Interrupted Task" = "Archive Interrupted Task";
+"Unverified" = "Unverified";
+"This task could not be identified. Refresh Tasks before choosing." = "This task could not be identified. Refresh Tasks before choosing.";
+"Archive this interrupted record after checking the font in Glyphs." = "Archive this interrupted record after checking the font in Glyphs.";
+"Task archived. Outcome: Unverified. Archiving did not change or save the font. Diagnostics have been retained." = "Task archived. Outcome: Unverified. Archiving did not change or save the font. Diagnostics have been retained.";
+"Move this interrupted task to recently closed tasks with an Unverified outcome. Keep its diagnostics. This does not stop work, save the font, restore changes, or confirm what happened in Glyphs." = "Move this interrupted task to recently closed tasks with an Unverified outcome. Keep its diagnostics. This does not stop work, save the font, restore changes, or confirm what happened in Glyphs.";
+"Only interrupted tasks can be archived. Check this task in your agent." = "Only interrupted tasks can be archived. Check this task in your agent.";
+"This task still belongs to a workflow. Use its existing recovery choices or continue in your agent." = "This task still belongs to a workflow. Use its existing recovery choices or continue in your agent.";
+"This task is blocking another request. Resolve it in your agent before archiving." = "This task is blocking another request. Resolve it in your agent before archiving.";
+"Recovery or save ownership may remain unresolved. Review this task in your agent; it cannot be archived here." = "Recovery or save ownership may remain unresolved. Review this task in your agent; it cannot be archived here.";
+"Work or recovery is still active. Wait for it to finish, then check again." = "Work or recovery is still active. Wait for it to finish, then check again.";
+"Glyphs must be connected and have no active operations before archiving. Check again when idle." = "Glyphs must be connected and have no active operations before archiving. Check again when idle.";
+"A native operation still exists for this task. Review its outcome and recovery choices in your agent." = "A native operation still exists for this task. Review its outcome and recovery choices in your agent.";
+"The native operation could not be checked. Reconnect to Glyphs and check again; nothing was archived." = "The native operation could not be checked. Reconnect to Glyphs and check again; nothing was archived.";
+"Archiving is outdated or unsafe. Check the task again before choosing." = "Archiving is outdated or unsafe. Check the task again before choosing.";
+"The task changed while checking. Check again; nothing was archived." = "The task changed while checking. Check again; nothing was archived.";
+
+/* Cleared history retention */
+"Hide all currently closed tasks, including earlier pages. Cleared history is removed after 30 days. You can show it again before cleanup from History Options. Open tasks, recovery data, diagnostics, and Unverified outcomes are kept." = "Hide all currently closed tasks, including earlier pages. Cleared history is removed after 30 days. You can show it again before cleanup from History Options. Open tasks, recovery data, diagnostics, and Unverified outcomes are kept.";
+"Update the sidecar to enable 30-day cleanup. History remains hidden." = "Update the sidecar to enable 30-day cleanup. History remains hidden.";
+"History changes are waiting to sync." = "History changes are waiting to sync.";
+"History changes are waiting to sync. The 30-day period starts when the server receives Clear." = "History changes are waiting to sync. The 30-day period starts when the server receives Clear.";
+
+/* Generic project image comparison */
+"Previous" = "Previous";
+"Current" = "Current";
+"Compare" = "Compare";
+"Image view" = "Image view";
+"Image comparison divider" = "Image comparison divider";
+"Previous and current images" = "Previous and current images";
+"No image in this version" = "No image in this version";
+"Image preview unavailable" = "Image preview unavailable";
+"Select another file or refresh the comparison." = "Select another file or refresh the comparison.";
+"Different dimensions. Images are aligned at the top left at the same scale." = "Different dimensions. Images are aligned at the top left at the same scale.";
+"Animated images show the first frame." = "Animated images show the first frame.";
+"Transparency uses a checkerboard. Previews are limited to 2048 pixels on the longest side." = "Transparency uses a checkerboard. Previews are limited to 2048 pixels on the longest side.";
+"This version is not a readable PNG, JPEG, or WebP image." = "This version is not a readable PNG, JPEG, or WebP image.";
+"This image exceeds the 16 MB preview limit." = "This image exceeds the 16 MB preview limit.";
+"This image exceeds the 32-megapixel preview limit." = "This image exceeds the 32-megapixel preview limit.";
+"Symbolic links and nonregular files are not previewed." = "Symbolic links and nonregular files are not previewed.";
+"This image could not be read. Refresh the comparison to try again." = "This image could not be read. Refresh the comparison to try again.";
+"Not present in this version." = "Not present in this version.";
+"%ld percent previous" = "%ld percent previous";
+
+/* Shared diff overlay controls */
+"Before" = "Before";
+"Both" = "Both";
+"After" = "After";
+"Before and after images" = "Before and after images";
+"%ld percent before" = "%ld percent before";
+"Fit image" = "Fit image";
+"Fit Image (⌘0)" = "Fit Image (⌘0)";
+
+/* Server status checks */
+"The server is running, but its status check took too long. Refresh Setup or open Troubleshooting Logs." = "The server is running, but its status check took too long. Refresh Setup or open Troubleshooting Logs.";
+"The status check took too long. Refresh Setup or open Troubleshooting Logs." = "The status check took too long. Refresh Setup or open Troubleshooting Logs.";
+"Could not read the server status. Refresh Setup or open Troubleshooting Logs." = "Could not read the server status. Refresh Setup or open Troubleshooting Logs.";
+
+/* Project font sources and native package copies */
+"Font sources" = "Font sources";
+"Refresh font sources" = "Refresh font sources";
+"Reading font sources…" = "Reading font sources…";
+"No Glyphs sources in this project." = "No Glyphs sources in this project.";
+"Font source actions: %@" = "Font source actions: %@";
+"Create Package Copy…" = "Create Package Copy…";
+"Create Package Copy" = "Create Package Copy";
+"Package filename" = "Package filename";
+"Package copy created" = "Package copy created";
+"Creating and verifying package copy…" = "Creating and verifying package copy…";
+"Creates a package beside this source and keeps the original. Only saved contents are copied; unsaved Glyphs edits are excluded. Per-glyph modification timestamps may be omitted." = "Creates a package beside this source and keeps the original. Only saved contents are copied; unsaved Glyphs edits are excluded. Per-glyph modification timestamps may be omitted.";
+"The font sources could not be read." = "The font sources could not be read.";
+"Enter a filename ending in .glyphspackage, without folders." = "Enter a filename ending in .glyphspackage, without folders.";
+"That destination already exists. Choose another filename." = "That destination already exists. Choose another filename.";
+"Choose a regular .glyphs source file." = "Choose a regular .glyphs source file.";
+"A package copy is already running for this source." = "A package copy is already running for this source.";
+"Glyphs 4 is required to create a package copy." = "Glyphs 4 is required to create a package copy.";
+"The package copy could not be verified." = "The package copy could not be verified.";
+"The package copy worker returned no result. Rebuild or update Glyphs MCP." = "The package copy worker returned no result. Rebuild or update Glyphs MCP.";
+"Package copy components are unavailable. Rebuild or update Glyphs MCP. " = "Package copy components are unavailable. Rebuild or update Glyphs MCP. ";
+
+/* Project workspace modes */
+"Diff" = "Diff";
+"Config" = "Config";
+"Project view" = "Project view";
+"Saved sources in this project" = "Saved sources in this project";
+"Project root" = "Project root";
+"Name" = "Name";
+"Folder" = "Folder";
+"Open project" = "Open project";
+"Edit…" = "Edit…";
+
+"Resize file list" = "Resize file list";

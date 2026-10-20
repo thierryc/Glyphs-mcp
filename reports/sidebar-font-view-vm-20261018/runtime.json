@@ -1,0 +1,25 @@
+{
+  "/Applications/Glyphs 4.app/Contents/Frameworks": [],
+  "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime": [
+    "bin/python3",
+    "lib/python3.14/site-packages"
+  ],
+  "/Applications/Glyphs MCP.app/Contents/Resources": [],
+  "/Users/ziggy/Library/Application Support/Glyphs 4/Repositories": [
+    "Python",
+    "Python/Python.framework",
+    "Python/Python.framework/Python",
+    "Python/Python.framework/Versions/3.14/Python",
+    "Python/Python.framework/Versions/3.14/bin/python3",
+    "Python/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "Python/Python.framework/Versions/3.14/lib/python3.14/site-packages"
+  ],
+  "pythonSettings": {
+    "GSPythonFrameworkPath": "/Users/ziggy/Library/Application Support/Glyphs 4/Repositories/Python/Python.framework/Versions/3.14"
+  },
+  "runtimeInspection": {
+    "returncode": 1,
+    "stdout": "3.14.7 (main, Sep  1 2026, 14:05:28) [Clang 22.1.3 ]\n",
+    "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import sys; print(sys.version); import objc; print(objc.__file__); import fastmcp; print(fastmcp.__file__)\n                                    ^^^^^^^^^^^\nModuleNotFoundError: No module named 'objc'\n"
+  }
+}

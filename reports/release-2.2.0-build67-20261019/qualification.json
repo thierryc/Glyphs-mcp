@@ -1,0 +1,182 @@
+{
+  "releaseVersion": "2.2.0",
+  "installerBuild": 67,
+  "sourceCommit": "63432c65c4c29a2a05fe35cf6e8447d24b8aacd2",
+  "fullGate": {
+    "directory": "build/release-test-run.EMbxKZ",
+    "pythonPassed": 3144,
+    "pythonSkipped": 2,
+    "desktopPassed": 298,
+    "docsAndPackageConsistency": true
+  },
+  "regression": {
+    "cases": 10,
+    "externalSupervisor": true,
+    "normalAndRestrictedSwiftWorkers": true
+  },
+  "appleSubmissions": {
+    "payload": {
+      "message": "Successfully received submission info",
+      "createdDate": "2026-10-19T18:18:17.764Z",
+      "status": "Accepted",
+      "name": "GlyphsMCPNotaryPayload.zip",
+      "id": "828fbc36-8f41-4fc2-9e79-071548babab7"
+    },
+    "app": {
+      "id": "8cc1228d-e471-47d5-b49d-4cb941fcd4b2",
+      "createdDate": "2026-10-19T18:28:12.643Z",
+      "name": "Glyphs MCP.zip",
+      "status": "Accepted",
+      "message": "Successfully received submission info"
+    },
+    "dmg": {
+      "name": "Glyphs-MCP-2.2.0.dmg",
+      "message": "Successfully received submission info",
+      "status": "Accepted",
+      "createdDate": "2026-10-19T18:37:51.720Z",
+      "id": "8386198c-703a-4712-b6de-d05fa5b15154"
+    }
+  },
+  "checksums": {
+    "Glyphs-MCP-2.2.0.dmg": "6d2dcb68ced0f877ad40822af2e3701f3b1e9f40658b0a68098953a6541e2e41",
+    "Glyphs-MCP-2.2.0.zip": "590591669ce950bba9b500453168a0dd85534f5e2804b230c89bafb034f8b170",
+    "Glyphs-MCP-latest.dmg": "6d2dcb68ced0f877ad40822af2e3701f3b1e9f40658b0a68098953a6541e2e41",
+    "Glyphs.MCP.zip": "590591669ce950bba9b500453168a0dd85534f5e2804b230c89bafb034f8b170",
+    "appcast.xml": "dc8ce01f9a78516cf8db814d4286d12b1b6b4186bb147bd210d19465f726f53f"
+  },
+  "finalRuntimes": [
+    {
+      "architecture": "arm64",
+      "privatePython": true,
+      "httpCatalog": [
+        "get_status",
+        "list_tasks",
+        "list_documents",
+        "create_document",
+        "duplicate_document",
+        "open_document",
+        "import_document",
+        "activate_document",
+        "open_edit_tab",
+        "close_document",
+        "read_entities",
+        "start_job",
+        "compare_fonts",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "show_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "stdioProxy": true,
+      "mcpAppResourceAndCSP": true,
+      "nativeFirstOptionalCards": true,
+      "structuredAndTextResults": true,
+      "packageDownloads": 0,
+      "packagedInstallerCLI": true,
+      "startupSeconds": 4.626
+    },
+    {
+      "architecture": "x86_64",
+      "privatePython": true,
+      "httpCatalog": [
+        "get_status",
+        "list_tasks",
+        "list_documents",
+        "create_document",
+        "duplicate_document",
+        "open_document",
+        "import_document",
+        "activate_document",
+        "open_edit_tab",
+        "close_document",
+        "read_entities",
+        "start_job",
+        "compare_fonts",
+        "get_job",
+        "apply_job",
+        "accept_job",
+        "discard_job",
+        "save_document",
+        "start_edit_workflow",
+        "get_edit_workflow",
+        "show_edit_workflow",
+        "respond_edit_workflow"
+      ],
+      "stdioProxy": true,
+      "mcpAppResourceAndCSP": true,
+      "nativeFirstOptionalCards": true,
+      "structuredAndTextResults": true,
+      "packageDownloads": 0,
+      "packagedInstallerCLI": true,
+      "startupSeconds": 10.387
+    }
+  ],
+  "executableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
+  "payloadSHA256": "698aad9f2bec67dffb55b58e211a8bce85d1e904d73d7891cf03e8d50ddb0308",
+  "releaseVerificationPassed": true,
+  "publication": "draft",
+  "remaining": [
+    "public release/tag/feed phases"
+  ],
+  "limits": [
+    "Physical Intel hardware unavailable; x86_64 tested under Rosetta only",
+    "Sidebar alert did not reproduce in 20 VM runs; mitigation effectiveness unproven; automatic suppression off",
+    "VirtualBuddy visible progress-window migrations timed out; exact notarized desktop migration passed with its window minimized. No timeout or validation changes."
+  ],
+  "sourceInputsSHA256": "7ba57bd090bf740e1c288e3ca93e01328eb1f099d44f43c2599ba83a9e55ca1d",
+  "sidebarExperiment": {
+    "classification": "not reproduced",
+    "freshProcessRuns": 20,
+    "passed": 20,
+    "automaticSuppression": false,
+    "report": "reports/sidebar-font-view-vm-20261018"
+  },
+  "sourceHashes": {
+    "macos-installer/GlyphsMCPInstaller/Core/ProcessRunner.swift": "21a4b559545bdcae6e0ff1eacca0f3f397116074187eadb8438a69eab8c570e7",
+    "scripts/qualify_process_runner_pool.py": "19f7ce79fae98d999d52a438651b7bfb9f7f057b676d7353bcaae93d78990fc1",
+    "scripts/fixtures/process-runner-pool.swift": "b9642471d5de03298d01bb82549f1fdf3dd20be59f143128936e1b21e51e40d3",
+    "src/glyphs-mcp/tests/test_desktop_process_pool.py": "069e8150cd3fd12429898979307762dae1e935cbf32ac5dc3ea3ae4d3a17c4ca"
+  },
+  "vmAcceptance": {
+    "status": "Passed with documented VM progress-window limitation",
+    "nativeBuild66Behavior": "passed on disposable fixture; retained separately",
+    "signedBuild66To67Upgrade": "passed",
+    "build67Setup": "passed",
+    "hostWorkingGlyphs": "not changed or restarted",
+    "componentMigration": "Exact notarized build67 desktop update passed in 9.311 seconds with normal validation and deadlines. Window minimized in the graphics-constrained VM; earlier visible-window failures remain recorded.",
+    "finalNativeBuild67": {
+      "passed": true,
+      "checks": 17,
+      "report": "native-build67.json"
+    },
+    "finalSignedCLIMigration": {
+      "passed": true,
+      "seconds": 18.86,
+      "report": "vm-component-migration-cli.json"
+    },
+    "adverseUpdater": {
+      "passed": true,
+      "report": "vm-adverse-updates.json"
+    },
+    "cancelledGlyphsClosure": {
+      "passed": true,
+      "report": "vm-cancelled-closure.json"
+    },
+    "finalDesktopMigration": {
+      "passed": true,
+      "seconds": 9.311,
+      "report": "vm-final-desktop-migration.json"
+    }
+  },
+  "migrationReconciliationChecks": {
+    "focusedInstallerAndTransactionTestsPassed": 43,
+    "skillSynchronization": true,
+    "leanPackageConsistency": true,
+    "productionCodeChanged": false
+  }
+}

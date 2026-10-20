@@ -1,0 +1,76 @@
+[
+  {
+    "title": "Start Window",
+    "class": "GSTitleLessWindow",
+    "texts": [
+      "Title",
+      "0",
+      "Getting Started",
+      "Getting Started",
+      "0",
+      "Open Help",
+      "Open Help",
+      "0",
+      "Ask on the Forum",
+      "Ask on the Forum",
+      "1",
+      "Show window on startup",
+      "Show window on startup",
+      "Version: 4.2 (4202)",
+      "Welcome to Glyphs",
+      "<NSImage 0x600000933b60 Name=NSApplicationIcon Size={128, 128} RepProvider=<NSImageISIconRepProvider:0x6000038644c0 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 reps:(\n    \"<NSISIconImageRep:0x600001b40ff0 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41040 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41090 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 2.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b410e0 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 2.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41130 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{16, 16} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41180 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T2",
+      "0",
+      "10/8/26, 10:30:02\u202fAM",
+      "fresh-demo.glyphs",
+      "<NSImage 0x600000929860 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/fresh-install-20261006/fresh-demo.glyphs Size={1000, 1000} RepProvider=<NSImageArrayRepProvider: 0x600003a28960, reps:(\n    \"NSPDFImageRep 0x600001b4eb20 Size={1000, 1000} ColorSpace=Generic RGB colorspace BPS=0 Pixels=0x0 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:51:58\u202fAM",
+      "saved.glyphspackage",
+      "<NSImage 0x600000929a40 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/saved.glyphspackage Size={128, 128} RepProvider=<NSImageArrayRepProvider: 0x600003a286f0, reps:(\n    \"NSCGImageRep 0x600001b4e210 Size={16, 16} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=16x16 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4e170 Size={32, 32} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=32x32 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4eb70 Size={128, 128} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=128x128 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4ebc0 Size={256, 256} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=256x256 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4ed50 Size={512, 512} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=512x512 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4eda0 Size={16, 16} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=32x32 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4edf0 Size={32, 32} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=64x64 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4ee90 Size={128, 128} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=256x256 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4ef30 Size={256, 256} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=512x512 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:51:59\u202fAM",
+      "imported-ttf.glyphs",
+      "<NSImage 0x600000921040 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/imported-ttf.glyphs Size={1000, 1000} RepProvider=<NSImageArrayRepProvider: 0x600003a1bfc0, reps:(\n    \"NSPDFImageRep 0x600001b45db0 Size={1000, 1000} ColorSpace=Generic RGB colorspace BPS=0 Pixels=0x0 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:52:00\u202fAM",
+      "imported-otf.glyphs",
+      "<NSImage 0x600000922d00 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/imported-otf.glyphs Size={1000, 1000} RepProvider=<NSImageArrayRepProvider: 0x600003a63390, reps:(\n    \"NSPDFImageRep 0x600001b45d10 Size={1000, 1000} ColorSpace=Generic RGB colorspace BPS=0 Pixels=0x0 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:52:00\u202fAM",
+      "fixture.ufo",
+      "<NSImage 0x6000009299a0 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/fixture.ufo Size={1000, 1000} RepProvider=<NSImageArrayRepProvider: 0x600003a37b80, reps:(\n    \"NSPDFImageRep 0x600001b4c820 Size={1000, 1000} ColorSpace=Generic RGB colorspace BPS=0 Pixels=0x0 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:52:00\u202fAM",
+      "imported-ufo.glyphs",
+      "<NSImage 0x6000009297c0 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/imported-ufo.glyphs Size={1000, 1000} RepProvider=<NSImageArrayRepProvider: 0x600003a37e40, reps:(\n    \"NSPDFImageRep 0x600001b4e260 Size={1000, 1000} ColorSpace=Generic RGB colorspace BPS=0 Pixels=0x0 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:52:00\u202fAM",
+      "fixture.glyphs",
+      "<NSImage 0x600000929900 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/fixture.glyphs Size={128, 128} RepProvider=<NSImageArrayRepProvider: 0x600003a37760, reps:(\n    \"NSCGImageRep 0x600001b4ca00 Size={16, 16} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=16x16 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4cdc0 Size={32, 32} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=32x32 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4caf0 Size={128, 128} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=128x128 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4cf00 Size={256, 256} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=256x256 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4ceb0 Size={512, 512} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=512x512 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4d2c0 Size={16, 16} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=32x32 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4d270 Size={32, 32} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=64x64 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4d400 Size={128, 128} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=256x256 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b4d770 Size={256, 256} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=512x512 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "10/8/26, 11:53:44\u202fAM",
+      "recovered.glyphs",
+      "<NSImage 0x600000922c60 Name=/Users/ziggy/Library/Application Support/Glyphs MCP Release QA/201-native-e58b075b0bbc443faf359b3317c8e666/recovered.glyphs Size={128, 128} RepProvider=<NSImageArrayRepProvider: 0x600003a63100, reps:(\n    \"NSCGImageRep 0x600001b45810 Size={16, 16} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=16x16 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b45900 Size={32, 32} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=32x32 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b458b0 Size={128, 128} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=128x128 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b45950 Size={256, 256} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=256x256 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b459a0 Size={512, 512} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=512x512 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b459f0 Size={16, 16} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=32x32 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b45a40 Size={32, 32} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=64x64 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b45ae0 Size={128, 128} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=256x256 Alpha=NO AppearanceName=(null)\",\n    \"NSCGImageRep 0x600001b45b80 Size={256, 256} ColorSpace=sRGB IEC61966-2.1 colorspace BPS=0 Pixels=512x512 Alpha=NO AppearanceName=(null)\"\n)>>",
+      "0",
+      "New File"
+    ]
+  },
+  {
+    "title": "Welcome to Glyphs",
+    "class": "NSWindow",
+    "texts": [
+      "<NSImage 0x600000933b60 Name=NSApplicationIcon Size={128, 128} RepProvider=<NSImageISIconRepProvider:0x6000038644c0 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 reps:(\n    \"<NSISIconImageRep:0x600001b40ff0 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41040 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41090 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 2.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b410e0 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{32, 32} scale: 2.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41130 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T213709/Glyphs%204.app/ type: (null) tag: (null) tag class: (null) digest:F59E2B4E-3E9D-004D-35A9-AA61772A6943 size(points):{16, 16} scale: 1.0 _allowPlaceholder?: NO>\",\n    \"<NSISIconImageRep:0x600001b41180 icon:<ISBundleIcon: 0x600001b34690> Bundle URL: file:///Users/ziggy/sidebar-qualification-20261018T2",
+      "0",
+      "Continue Trial",
+      "Continue Trial",
+      "0",
+      "Purchase License",
+      "Purchase License",
+      "This copy of Glyphs is not registered. The test version will work for 30 days until November\u00a017,\u00a02026.\nYou can activate this version by purchasing a license at glyphsapp.com."
+    ]
+  },
+  {
+    "title": "",
+    "class": "_NSAlertPanel",
+    "texts": [
+      "0",
+      "OK",
+      "OK",
+      "The operation couldn\u2019t be completed. (Problem parsing repository source error 123.)",
+      "<NSImage 0x60000093fa20 Size={32, 32} RepProvider=<NSImageArrayRepProvider: 0x600003a03740, reps:(\n    \"NSCompositeImageRep 0x60000167a000 Size={32, 32} ColorSpace=Generic RGB colorspace BPS=0 Pixels=0x0 Alpha=NO AppearanceName=(null)\"\n)>>"
+    ]
+  }
+]

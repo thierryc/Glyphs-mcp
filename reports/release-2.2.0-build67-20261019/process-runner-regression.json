@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "mode": "capture",
+      "strictPool": false,
+      "exitCode": 0,
+      "stdout": "passed:capture\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.437
+    },
+    {
+      "mode": "timeout",
+      "strictPool": false,
+      "exitCode": 0,
+      "stdout": "passed:timeout\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.114
+    },
+    {
+      "mode": "cancel",
+      "strictPool": false,
+      "exitCode": 0,
+      "stdout": "passed:cancel\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.117
+    },
+    {
+      "mode": "limit",
+      "strictPool": false,
+      "exitCode": 0,
+      "stdout": "passed:limit\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.011
+    },
+    {
+      "mode": "launch-failure",
+      "strictPool": false,
+      "exitCode": 0,
+      "stdout": "passed:launch-failure\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.013
+    },
+    {
+      "mode": "capture",
+      "strictPool": true,
+      "exitCode": 0,
+      "stdout": "passed:capture\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.013
+    },
+    {
+      "mode": "timeout",
+      "strictPool": true,
+      "exitCode": 0,
+      "stdout": "passed:timeout\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.113
+    },
+    {
+      "mode": "cancel",
+      "strictPool": true,
+      "exitCode": 0,
+      "stdout": "passed:cancel\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.118
+    },
+    {
+      "mode": "limit",
+      "strictPool": true,
+      "exitCode": 0,
+      "stdout": "passed:limit\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.014
+    },
+    {
+      "mode": "launch-failure",
+      "strictPool": true,
+      "exitCode": 0,
+      "stdout": "passed:launch-failure\n",
+      "stderr": "",
+      "passed": true,
+      "elapsedSeconds": 0.012
+    }
+  ]
+}

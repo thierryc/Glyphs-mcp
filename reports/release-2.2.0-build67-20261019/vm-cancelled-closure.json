@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "Native cancelled Glyphs closure through build67 Setup in VirtualBuddy",
+  "fixture": "Final67.glyphs",
+  "temporaryChange": "A color changed without saving; native save prompt Cancel clicked; Glyphs remained running and Setup retained Close Glyphs guard",
+  "cleanup": "Second closure request, Don\u2019t Save; editor exited; persisted fixture unchanged",
+  "sourceSHA256": "7ecd4a37b5d3c50e02e40029b3aab9b14c11620132fc774622b0a0a3cc64beef",
+  "nativeWorkflows": "previous final native workflows closed before UI-only color change",
+  "screenshotSHA256": "e0c045428b8cc7745b95b4a011124b7fcba6d9de1bd79e2a8dcb836529709f68",
+  "cleanupEvidenceSHA256": "66db37316bc782dd6fb80741f8f112121fc3968eb10cf918e40ef1a552aeda37",
+  "hostWorkingSession": "untouched"
+}
