@@ -2,6 +2,7 @@ import Foundation
 
 public struct OptionalToolState: Decodable, Identifiable {
     public let id: String
+    public let distributionQualified: Bool?
     public let available: Bool
     public let installed: Bool
     public let reason: String?
@@ -22,6 +23,7 @@ public struct OptionalToolState: Decodable, Identifiable {
             let buildLabel = build.map { " (build " + $0 + ")" } ?? ""
             return "Installed" + revision + buildLabel + (state == "restart_required" ? " · Restart required" : id == "beztrace-glyphs" && loadedVerified != true ? " · Loading unverified" : "")
         }
-        return available ? "Not installed" : "Awaiting release qualification"
+        if available { return "Not installed" }
+        return distributionQualified == true ? "Unavailable on this Mac" : "Awaiting release qualification"
     }
 }

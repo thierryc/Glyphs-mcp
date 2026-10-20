@@ -1,0 +1,262 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "unitsPerEm": {
+      "type": "number",
+      "minimum": 16,
+      "maximum": 16384
+    },
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "tag",
+        "locations"
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "kind": {
+            "enum": [
+              "outline",
+              "image"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "transform": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 6,
+            "maxItems": 6
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "path"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "image"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "transform"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "transform"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "strategy": {
+      "enum": [
+        "direct",
+        "retrace-target",
+        "retrace-both",
+        "smart"
+      ]
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "referencePolicy": {
+          "enum": [
+            "fixed",
+            "shared-subdivision"
+          ],
+          "description": "fixed keeps every reference node exact; shared-subdivision permits exact shared splits and line elevation within all explicit limits."
+        },
+        "fitTolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Font units. Defaults to unitsPerEm/1000. Rendering and fitting share this one final source-fidelity allowance."
+        },
+        "maxAdditionalOnCurveNodes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024,
+          "description": "Maximum added reference on-curves across the entire glyph. Fixed reference requires zero. This never raises either absolute ceiling."
+        },
+        "maxOnCurveNodes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 1024
+        },
+        "maxNodes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096,
+          "description": "Absolute ceiling per output master including cubic controls; one cubic split costs three total nodes."
+        },
+        "contourPairs": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "startNodes": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "smoothJoins": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": []
+    },
+    "rasterOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "threshold": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 255
+        },
+        "invert": {
+          "type": "boolean"
+        },
+        "minimumContourArea": {
+          "type": "number",
+          "minimum": 0
+        },
+        "smoothing": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cornerThresholdDegrees": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 180
+        }
+      },
+      "required": [
+        "invert",
+        "minimumContourArea",
+        "smoothing",
+        "cornerThresholdDegrees"
+      ]
+    },
+    "renderHeight": {
+      "type": "integer",
+      "minimum": 256,
+      "maximum": 4096
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "unitsPerEm",
+    "axis",
+    "inputs"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beztrace.dev/schema/pair-job-v1.json",
+  "title": "BezTrace file-based pair job v1",
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "inputs": {
+                "prefixItems": [
+                  {
+                    "properties": {
+                      "kind": {
+                        "const": "image"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "options": {
+                "properties": {
+                  "referencePolicy": {
+                    "const": "shared-subdivision"
+                  }
+                },
+                "required": [
+                  "referencePolicy"
+                ]
+              }
+            },
+            "required": [
+              "options"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "required": [
+          "options"
+        ],
+        "properties": {
+          "options": {
+            "required": [
+              "maxOnCurveNodes",
+              "maxNodes"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

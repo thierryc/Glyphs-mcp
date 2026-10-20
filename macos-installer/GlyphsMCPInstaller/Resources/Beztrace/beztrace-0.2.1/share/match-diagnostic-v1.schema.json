@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "code",
+    "message",
+    "stage",
+    "blocking"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "stage": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "role": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "masterID": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "mode": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "field": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "providedValue": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "allowedRange": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contour",
+          "segment",
+          "parameterRange"
+        ],
+        "properties": {
+          "contour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63
+          },
+          "segment": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1023
+          },
+          "startNode": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 131072
+          },
+          "endNode": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 131072
+          },
+          "parameterRange": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 2
+    },
+    "coordinates": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": -1000000000.0,
+        "maximum": 1000000000.0
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "classification": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "existedBeforeFitting": {
+      "type": "boolean"
+    },
+    "interpolationFactor": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "approximationTolerance": {
+      "type": "number",
+      "minimum": 0
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "section": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1023
+    },
+    "measuredDeviation": {
+      "type": "number",
+      "minimum": 0
+    },
+    "allowedDeviation": {
+      "type": "number",
+      "minimum": 0
+    },
+    "cause": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "boundarySpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contour",
+        "startPoint",
+        "endPoint",
+        "fractions"
+      ],
+      "properties": {
+        "contour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 63
+        },
+        "startPoint": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 131072
+        },
+        "endPoint": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 131072
+        },
+        "fractions": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  }
+}

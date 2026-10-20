@@ -11,6 +11,30 @@ import sign_embedded_beztrace as signer
 import verify_desktop_app as verifier
 
 
+def test_source_catalog_and_bundled_engine_match_published_companion():
+    root = Path(__file__).resolve().parents[3]
+    catalog = json.loads((root / 'integrations/optional-tools.json').read_text())['tools']['beztrace-glyphs']
+    companion = json.loads((root / 'integrations/beztrace/upstream-build25-manifest.json').read_text())
+    release = catalog['releases']['arm64']
+    artifact = companion['artifacts'][0]
+    assert (release['version'], release['build']) == (companion['version'], companion['build']) == ('0.2.0', 25)
+    assert release['archiveURL'].endswith('/glyphs-v0.2.0/' + artifact['path'])
+    assert release['archiveSHA256'] == artifact['sha256']
+    assert release['archiveSize'] == artifact['size']
+    assert release['files'] == {companion['bundleName'] + '/' + item['path']: item['sha256']
+                                for item in companion['payload']}
+    assert release['engineConfiguration'] == 'manual-selection'
+    assert verifier.BEZTRACE_VERSION == catalog['engineVersion'] == '0.2.1'
+    assert catalog['engineVersion'] in companion['engine']['versions']
+    engine = root / 'macos-installer/GlyphsMCPInstaller/Resources' / verifier.BEZTRACE_DIRECTORY
+    manifest = json.loads((engine / verifier.BEZTRACE_MANIFEST).read_text())
+    assert manifest['version'] == catalog['engineVersion']
+    assert manifest['sourceRevision'] == companion['sourceRevision']
+    assert manifest['files']['bin/beztrace'] == manifest['upstreamRelease']['executableSHA256']
+    for relative, digest in manifest['files'].items():
+        assert hashlib.sha256((engine / relative).read_bytes()).hexdigest() == digest
+
+
 @pytest.fixture
 def engine_bundle(tmp_path, monkeypatch):
     app = tmp_path / 'Glyphs MCP.app'
@@ -19,14 +43,14 @@ def engine_bundle(tmp_path, monkeypatch):
     engine.parent.mkdir(parents=True)
     engine.write_bytes(b'unsigned fixture')
     engine.chmod(0o755)
-    upstream = {'version': '0.1.1', 'sourceRevision': 'fixture-source',
+    upstream = {'version': '0.2.1', 'sourceRevision': 'fixture-source',
                 'architectures': ['arm64', 'x86_64'], 'minimumMacOS': '13.0',
-                'artifacts': [{'path': 'beztrace-0.1.1-macos-universal.zip', 'sha256': 'fixture-archive'}]}
+                'artifacts': [{'path': 'beztrace-0.2.1-macos-universal.zip', 'sha256': 'fixture-archive'}]}
     upstream_path = root / 'upstream-release-manifest.json'
     upstream_path.write_text(json.dumps(upstream))
     original_hash = hashlib.sha256(engine.read_bytes()).hexdigest()
     upstream_hash = hashlib.sha256(upstream_path.read_bytes()).hexdigest()
-    manifest = {'version': '0.1.1', 'architectures': ['arm64', 'x86_64'],
+    manifest = {'version': '0.2.1', 'architectures': ['arm64', 'x86_64'],
                 'minimumMacOS': '13.0', 'schemaVersion': 1, 'pathDataVersion': 2,
                 'sourceRevision': 'fixture-source',
                 'upstreamRelease': {'manifestSHA256': upstream_hash,

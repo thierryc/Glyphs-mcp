@@ -3,6 +3,143 @@ import XCTest
 @testable import GlyphsMCPInstallerCore
 
 final class DesktopTests: XCTestCase {
+    func testOptionalToolAvailabilitySeparatesQualificationFromPlatformAndProtection() throws {
+        func state(_ extra: String) throws -> OptionalToolState {
+            try JSONDecoder().decode(OptionalToolState.self, from: Data(("{\"id\":\"diffenator\",\"available\":false,\"installed\":false," + extra + "}").utf8))
+        }
+        XCTAssertEqual(try state("\"distributionQualified\":true").label, "Unavailable on this Mac")
+        XCTAssertEqual(try state("\"distributionQualified\":false").label, "Awaiting release qualification")
+        XCTAssertEqual(try state("\"reason\":\"pending\"").label, "Awaiting release qualification")
+        for value in ["unmanaged", "development_link", "conflict"] {
+            XCTAssertTrue(try state("\"state\":\"" + value + "\"").protectedInstallation)
+        }
+    }
+
+    func testCompanionStableIdentityIgnoresSignaturesButDetectsContentAndNativeCodeChanges() throws {
+        let bundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: bundle) }
+        let resources = bundle.appendingPathComponent("Contents/Resources")
+        let signatures = bundle.appendingPathComponent("Contents/_CodeSignature")
+        for path in [resources, signatures] { try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true) }
+        try Data("plist".utf8).write(to: bundle.appendingPathComponent("Contents/Info.plist"))
+        try Data("original code".utf8).write(to: resources.appendingPathComponent("plugin.py"))
+        try Data("signature one".utf8).write(to: signatures.appendingPathComponent("CodeResources"))
+        let first = try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"])
+        try Data("signature two plus ticket".utf8).write(to: signatures.appendingPathComponent("CodeResources"))
+        try Data("bytecode cache".utf8).write(to: resources.appendingPathComponent("plugin.pyc"))
+        XCTAssertEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"]))
+        XCTAssertNotEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:new code", "x86_64:code"]))
+        try Data("modified code".utf8).write(to: resources.appendingPathComponent("plugin.py"))
+        XCTAssertNotEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"]))
+    }
+
+    func testComponentReminderExplainsTheServerUpdateAndNamesTheCorrectCard() {
+        XCTAssertEqual(ComponentUpdateReminder.title(needsServerUpdate: true), "A new version of the MCP server in Glyphs is available.")
+        XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("click Update on the Glyphs MCP card"))
+        XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("\n\n"))
+        XCTAssertEqual(ComponentUpdateReminder.title(needsServerUpdate: false), "Updates for your Glyphs plugins are available.")
+        XCTAssertFalse(ComponentUpdateReminder.message(needsServerUpdate: false).contains("server"))
+        XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: false).contains("highlighted plugin cards"))
+    }
+
+    func testComponentUpdateComparisonRequiresVerifiedIndependentIdentities() {
+        let old = "sha256:" + String(repeating: "a", count: 64)
+        let new = "sha256:" + String(repeating: "b", count: 64)
+        func compare(_ installed: String?, _ bundled: String?, _ left: String?, _ right: String?) -> ComponentUpdateStatus {
+            ComponentUpdatePolicy.compare(installedVersion: installed, bundledVersion: bundled,
+                installedIdentities: [left], bundledIdentities: [right])
+        }
+        XCTAssertEqual(compare("2.1.0", "2.2.0", old, new), .updateAvailable)
+        XCTAssertEqual(compare("2.2.0", "2.2.0", new, new), .current)
+        XCTAssertEqual(compare("2.2.0", "2.2.0", old, new), .updateAvailable)
+        XCTAssertEqual(compare("2.3.0", "2.2.0", old, new), .newerInstalled)
+        XCTAssertEqual(compare("0.5.2", "0.5.2", old, old), .current)
+        XCTAssertEqual(compare(nil, "2.2.0", old, new), .unableToVerify)
+        XCTAssertEqual(compare("unknown", "2.2.0", old, new), .unableToVerify)
+        XCTAssertEqual(compare("2.1.0", "2.2.0", nil, new), .unableToVerify)
+        XCTAssertEqual(compare("2.1.0", "2.2.0", old, "invalid"), .unableToVerify)
+        XCTAssertEqual(ComponentUpdatePolicy.compare(installedVersion: "2.2.0", bundledVersion: "2.2.0",
+            installedIdentities: [old], bundledIdentities: [new], installedBuild: 68, bundledBuild: 67), .newerInstalled)
+        XCTAssertEqual(ComponentUpdatePolicy.compare(installedVersion: "2.1.0", bundledVersion: "2.2.0",
+            installedIdentities: [old], bundledIdentities: [new], developmentLinked: true), .developmentLinked)
+    }
+
+    func testComponentDiscoveryKeepsUnchangedInspectorsCurrentAndReconcilesReceipts() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let root = home.appendingPathComponent("Library/Application Support/Glyphs MCP/lean-v2")
+        let plugins = home.appendingPathComponent("Library/Application Support/Glyphs 4/Plugins")
+        let lean = home.appendingPathComponent("bundled/Lean")
+        for path in [root, lean] + DesktopComponent.all.map({ plugins.appendingPathComponent($0.bundle) }) {
+            try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
+        }
+        let old = "sha256:" + String(repeating: "a", count: 64)
+        let new = "sha256:" + String(repeating: "b", count: 64)
+        let companions: [[String: Any]] = [
+            ["id": "curve-inspector", "version": "0.5.2", "identity": old],
+            ["id": "reference-inspector", "version": "0.1.0", "identity": old]]
+        var receipt: [String: Any] = ["components": Array(DesktopComponent.ids), "version": "2.1.0",
+            "bridge": ["version": "2.1.0", "identity": old, "release": ["installerBuild": 63]],
+            "sidecar": ["identity": old, "release": ["version": "2.1.0"]],
+            "runtime": ["identity": old], "companions": companions]
+        let manifest: [String: Any] = ["version": "2.2.0", "installerBuild": 67,
+            "bridge": ["identity": new], "sidecar": ["identity": new],
+            "runtimes": ["arm64": ["identity": old]], "companions": companions]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: lean.appendingPathComponent("manifest.json"))
+        func discover() throws -> [String: ComponentUpdateStatus] {
+            try JSONSerialization.data(withJSONObject: receipt).write(to: root.appendingPathComponent("installation.json"))
+            return ComponentUpdatePolicy.discover(installation: DesktopInstallation(home: home), lean: lean, architecture: "arm64")
+        }
+        let pending = try discover()
+        XCTAssertEqual(pending["mcp"], .updateAvailable)
+        XCTAssertEqual(pending["curve-inspector"], .current)
+        XCTAssertEqual(pending["reference-inspector"], .current)
+        // A failed/cancelled update leaves the original receipt and indication intact.
+        XCTAssertEqual(try discover(), pending)
+        receipt["version"] = "2.2.0"
+        receipt["bridge"] = ["version": "2.2.0", "identity": new, "release": ["installerBuild": 67]]
+        receipt["sidecar"] = ["identity": new, "release": ["version": "2.2.0"]]
+        XCTAssertEqual(try discover()["mcp"], .current)
+        receipt["sidecar"] = ["identity": new, "release": ["version": "2.1.0"]]
+        XCTAssertEqual(try discover()["mcp"], .unableToVerify)
+        try FileManager.default.removeItem(at: plugins.appendingPathComponent("Glyphs Curve Inspector.glyphsReporter"))
+        XCTAssertEqual(try discover()["curve-inspector"], .unableToVerify)
+        receipt["components"] = ["mcp"]
+        XCTAssertNil(try discover()["reference-inspector"])
+        let bridge = plugins.appendingPathComponent("Glyphs MCP Bridge.glyphsPlugin")
+        try FileManager.default.removeItem(at: bridge)
+        try FileManager.default.createSymbolicLink(at: bridge, withDestinationURL: lean)
+        XCTAssertEqual(try discover()["mcp"], .developmentLinked)
+        try Data("invalid receipt".utf8).write(to: root.appendingPathComponent("installation.json"))
+        let unknown = ComponentUpdatePolicy.discover(installation: DesktopInstallation(home: home), lean: lean, architecture: "arm64")
+        XCTAssertFalse(unknown.values.contains(where: \.needsUpdate))
+    }
+
+    func testComponentReminderIsOncePerAppBuildAndInstallationAndDefersWithoutConsumption() {
+        let statuses: [String: ComponentUpdateStatus] = ["mcp": .updateAvailable]
+        XCTAssertTrue(ComponentUpdateReminder.shouldPresent(statuses: statuses, alreadyShown: false,
+            interactive: true, busy: false, otherDialog: false))
+        for conditions in [(true, true, false, false), (false, false, false, false),
+                           (false, true, true, false), (false, true, false, true)] {
+            XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: statuses, alreadyShown: conditions.0,
+                interactive: conditions.1, busy: conditions.2, otherDialog: conditions.3))
+        }
+        for state in [ComponentUpdateStatus.current, .newerInstalled, .unableToVerify, .developmentLinked] {
+            XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: ["mcp": state], alreadyShown: false,
+                interactive: true, busy: false, otherDialog: false))
+        }
+        let root = URL(fileURLWithPath: "/fixture/installation")
+        let key = ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root)
+        XCTAssertEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root))
+        XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "68", root: root))
+        XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.3.0", build: "67", root: root))
+        XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root.appendingPathComponent("other")))
+        // Later is tracked separately; the card still reports Update available.
+        XCTAssertTrue(statuses["mcp"]!.needsUpdate)
+        XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: ["beztrace-glyphs": .updateAvailable],
+            alreadyShown: false, interactive: true, busy: false, otherDialog: false))
+    }
+
     func testSlowHealthyStatusResponseSurvivesTheOldThreeSecondDeadline() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SlowStatusURLProtocol.self]

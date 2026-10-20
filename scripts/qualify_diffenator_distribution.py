@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Qualify exact optional-runtime bytes in disposable directories; never use a live font."""
+from __future__ import annotations
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import subprocess
+import sys
+from threading import Event, Timer
+import time
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
+import install_optional_tools as installer
+
+
+def qualify(archive: Path, release_path: Path, output: Path, phase: str):
+    output.mkdir(parents=True, exist_ok=False)
+    record = dict(architecture=platform.machine(), macOS=platform.mac_ver()[0],
+                  phase=phase, passed=False, productionTrustChecksMocked=False,
+                  workingInstallationChanged=False)
+    started = time.monotonic()
+    try:
+        release = json.loads(release_path.read_text())
+        actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+        record.update(archiveSHA256=actual, archiveSize=archive.stat().st_size,
+                      sourceRevision=release['sourceRevision'])
+        if actual != release['archiveSHA256'] or archive.stat().st_size != release['archiveSize']:
+            raise ValueError('Qualification archive identity differs')
+        unpacked = output / 'unpacked'; unpacked.mkdir()
+        installer.extract(archive, unpacked, release['files'])
+        runtime = unpacked / release['payloadRoot']
+        python = runtime / 'bin/python3'
+        before = installer._identity(runtime)
+        if phase in ('adapter', 'all'):
+            command = [str(python), '-I', '-B', str(ROOT / 'scripts/qualify_diffenator_adapter.py'),
+                       '--python', str(python), '--unicode-data', str(runtime / 'share/diffenator-ucd'),
+                       '--output', str(output / 'offline-cases')]
+            with (output / 'offline-cases.log').open('w') as log:
+                subprocess.run(['/usr/bin/sandbox-exec', '-p', '(version 1)(allow default)(deny network*)', *command],
+                               check=True, stdout=log, stderr=subprocess.STDOUT, timeout=600)
+            cases = json.loads((output / 'offline-cases/qualification.json').read_text())['cases']
+            assert len(cases) == 9
+            record['offlineCasesPassed'] = len(cases)
+            record['networkDenied'] = True
+        if phase in ('lifecycle', 'all'):
+            # Only transport is redirected to the already hashed local qualification archive.
+            # Extraction, inventory, code-signing, Gatekeeper and transactions are production code.
+            release['status'] = 'qualified'
+            catalog = output / 'qualification-catalog.json'
+            catalog.write_text(json.dumps(dict(schemaVersion=1, tools={
+                'diffenator': dict(status='qualified', releases={'arm64': release}),
+                'beztrace-glyphs': dict(status='pending_qualification', engineVersion='0.2.1')})))
+            home = output / 'isolated-home'; home.mkdir()
+            tools = installer.OptionalTools(home, catalog)
+            original_urlopen = installer.urllib.request.urlopen
+            def local_transport(url, **kwargs):
+                if url != release['archiveURL']: raise ValueError('Unexpected qualification URL')
+                return archive.open('rb')
+            installer.urllib.request.urlopen = local_transport
+            try:
+                installed = tools.install('diffenator'); assert installed['installed']
+                target = tools.target('diffenator', release)
+                assert installer._identity(target) == before
+                updated = tools.install('diffenator'); assert updated['installed']
+                assert installer._identity(target) == before
+                record['managedInstallAndUpdate'] = True
+                sys.path[:0] = [str(ROOT / 'src/protocol'), str(ROOT / 'src/sidecar')]
+                from glyphs_mcp_sidecar.font_comparison import ComparisonWorker, ComparisonError, run_process
+                from glyphs_mcp_sidecar.service import SidecarService, ServiceError
+                from glyphs_mcp_sidecar.jobs import JobStore
+                import qualify_diffenator_adapter as fixtures
+                source = output / 'fixture.ttf'; fixtures.make_font(source)
+                source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+                class NoBridge:
+                    def __getattr__(self, name): raise AssertionError('Qualification must not contact Glyphs: ' + name)
+                worker = ComparisonWorker(tools.root / 'diffenator')
+                assert worker.status()['available']
+                service = SidecarService(NoBridge(), jobs=JobStore(output / 'jobs'), worker=object(), comparison_worker=worker)
+                def wait(identity):
+                    deadline = time.monotonic() + 120
+                    while time.monotonic() < deadline:
+                        job = service.get_job(identity)
+                        if job['status'] not in ('preparing', 'cancelling'): return job
+                        time.sleep(.05)
+                    raise TimeoutError('Installed comparison timed out')
+                try:
+                    job = service.compare_fonts([str(source)], [str(source)])
+                    ready = wait(job['id']); assert ready['status'] == 'ready', ready
+                    destination = output / 'published-report'
+                    accepted = service.accept_job(job['id'], destination=str(destination))
+                    assert accepted['status'] == 'accepted' and Path(accepted['entryPoint']).is_file()
+                    second = service.compare_fonts([str(source)], [str(source)])
+                    assert wait(second['id'])['status'] == 'ready'
+                    try: service.accept_job(second['id'], destination=str(destination))
+                    except ServiceError: pass
+                    else: raise AssertionError('Existing report destination was overwritten')
+                    service.discard_job(second['id'])
+                    record['comparisonWorkflowIDs'] = [job['id'], second['id']]
+                    record['createOnlyHTMLPublication'] = True
+                    record['inputUnchanged'] = hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
+                    assert record['inputUnchanged']
+                    cancel = Event(); timer = Timer(.2, cancel.set); timer.start(); cancel_started = time.monotonic()
+                    try:
+                        try: run_process([str(target / 'bin/python3'), '-I', '-B', '-c', 'import time; time.sleep(30)'], output, dict(os.environ), cancel, timeout=5)
+                        except ComparisonError as exc: assert exc.code == 'comparison_cancelled'
+                        else: raise AssertionError('Cancellation did not stop the native process')
+                    finally: timer.cancel()
+                    record['cancellationSeconds'] = round(time.monotonic() - cancel_started, 3)
+                    assert record['cancellationSeconds'] < 5
+                finally: service.close()
+                assert not tools.remove('diffenator')['installed']
+                assert tools.install('diffenator')['installed']
+                assert not tools.remove('diffenator')['installed']
+                record['managedRemoveReinstallAndFinalCleanup'] = True
+                record['relocatedRuntimeVerified'] = True
+                record['trustSubjectsVerified'] = len(release['trustSubjects'])
+            finally: installer.urllib.request.urlopen = original_urlopen
+        assert installer._identity(runtime) == before
+        record['archiveInventoryUnchanged'] = True
+        record['passed'] = True
+    except BaseException as exc:
+        record['error'] = dict(type=type(exc).__name__, message=str(exc))
+        raise
+    finally:
+        record['seconds'] = round(time.monotonic() - started, 3)
+        (output / 'qualification.json').write_text(json.dumps(record, indent=2) + '\n')
+    return record
+
+
+if __name__ == '__main__':
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--archive', type=Path, required=True)
+    p.add_argument('--release', type=Path, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--phase', choices=('adapter', 'lifecycle', 'all'), default='all')
+    a = p.parse_args()
+    print(json.dumps(qualify(a.archive.resolve(), a.release.resolve(), a.output.resolve(), a.phase), indent=2))

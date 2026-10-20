@@ -23,8 +23,8 @@ The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
 and Cursor connections. **Install All** reconciles every item; each card also
 supports independent install, update, removal and retry. Setup also lists the
-optional managed Diffenator and Beztrace cards. Managed Beztrace setup is qualified on Apple Silicon with macOS 26.6.2 or later;
-Diffenator downloads remain unavailable. Both are excluded from Install All. One serialized queue
+optional managed Beztrace card. Managed Beztrace setup is qualified on Apple Silicon with macOS 26.6.2 or later;
+Diffenator is deferred beyond 2.3.0 and is not offered in Setup. Beztrace is excluded from Install All. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
 

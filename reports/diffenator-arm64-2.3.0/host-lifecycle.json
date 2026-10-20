@@ -1,0 +1,24 @@
+{
+  "archiveSHA256": "7ea63a23a9e529187f410d16d73f8019d95792509af2600663e8342001de282a",
+  "archiveSize": 114874753,
+  "architecture": "arm64",
+  "macOS": "26.7.1",
+  "sourceRevision": "cecdab703d462cfea25b748b19ea4813d3f4d680",
+  "phase": "lifecycle",
+  "passed": true,
+  "productionTrustChecksMocked": false,
+  "workingInstallationChanged": false,
+  "managedInstallAndUpdate": true,
+  "comparisonWorkflowIDs": [
+    "job_2c647519598e46ba94bd066e7174db29",
+    "job_63c94e60ee984fd1ab16796eff68994a"
+  ],
+  "createOnlyHTMLPublication": true,
+  "inputUnchanged": true,
+  "cancellationSeconds": 0.208,
+  "managedRemoveReinstallAndFinalCleanup": true,
+  "relocatedRuntimeVerified": true,
+  "trustSubjectsVerified": 81,
+  "archiveInventoryUnchanged": true,
+  "seconds": 70.457
+}

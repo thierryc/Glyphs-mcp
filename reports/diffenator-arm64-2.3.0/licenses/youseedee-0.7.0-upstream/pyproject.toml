@@ -1,0 +1,39 @@
+[project]
+dynamic = ["version"]
+
+name = "youseedee"
+description = "Interface to the latest version of the Unicode Character Database"
+
+license = { file = "README.md" }
+
+authors = [{ name = "Simon Cozens", email = "simon@simon-cozens.org" }]
+
+readme = { file = "README.md", content-type = "text/markdown" }
+
+keywords = []
+dependencies = [
+    "requests",
+    "filelock",
+    "platformdirs>=4.3",
+]
+
+[project.urls]
+homepage = "https://pypi.org/project/youseedee"
+repository = "https://github.com/simoncozens/youseedee"
+
+[build-system]
+requires = ["setuptools>=74.1.0", "setuptools_scm[toml]>=8.1.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["lib"]
+
+[tool.setuptools_scm]
+git_describe_command = "git describe --match 'v*' --tags"
+
+[project.scripts]
+
+youseedee = "youseedee.__main__:main"
+
+[tool.pylint."messages control"]
+max-line-length = 120

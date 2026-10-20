@@ -1,7 +1,7 @@
 {
   "name": "glyphs-mcp",
   "displayName": "Glyphs MCP",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Edit Glyphs fonts through a shared MCP App or conversation, with explicit saving and guarded recovery.",
   "author": {
     "name": "Thierry Charbonnel"

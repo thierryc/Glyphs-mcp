@@ -1,4 +1,10 @@
-# Persistent Beztrace engine handoff — release dependency
+# Historical persistent Beztrace engine handoff — build 16
+
+The current catalog uses the unmodified upstream companion **0.2.0/build 25**
+with engine **0.2.1**. Its manifest and qualification receipt are preserved in
+`upstream-build25-manifest.json` and `upstream-build25-qualification.json`. Build 25
+requires manual engine selection; this historical overlay is not applied to it.
+See [current setup](../../content/workflows/beztrace.mdx).
 
 This overlay targets companion source dbd7a696afda9a215c8e8a4aa42315cd799116f9
 (build 15). SOURCE.json binds its original files. It changes no separate checkout,

@@ -1,0 +1,295 @@
+{
+  "adapter": "pinned Diffenator 2 implementation",
+  "cases": [
+    {
+      "case": "identical",
+      "matchedStyles": [
+        {
+          "baselineStyle": "Regular",
+          "candidateStyle": "Regular",
+          "baselineCoordinates": {
+            "wght": 400
+          },
+          "candidateCoordinates": {
+            "wght": 400
+          },
+          "changedTables": [],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 0,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "changed",
+      "matchedStyles": [
+        {
+          "baselineStyle": "Regular",
+          "candidateStyle": "Regular",
+          "baselineCoordinates": {
+            "wght": 400
+          },
+          "candidateCoordinates": {
+            "wght": 400
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "custom-wordlist",
+      "matchedStyles": [
+        {
+          "baselineStyle": "Regular",
+          "candidateStyle": "Regular",
+          "baselineCoordinates": {
+            "wght": 400
+          },
+          "candidateCoordinates": {
+            "wght": 400
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "variable-instances",
+      "matchedStyles": [
+        {
+          "baselineStyle": "Bold",
+          "candidateStyle": "Bold",
+          "baselineCoordinates": {
+            "wght": 700.0
+          },
+          "candidateCoordinates": {
+            "wght": 700.0
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        },
+        {
+          "baselineStyle": "Regular",
+          "candidateStyle": "Regular",
+          "baselineCoordinates": {
+            "wght": 400.0
+          },
+          "candidateCoordinates": {
+            "wght": 400.0
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "variable-cross-product",
+      "matchedStyles": [
+        {
+          "baselineStyle": "wght-100_0",
+          "candidateStyle": "wght-100_0",
+          "baselineCoordinates": {
+            "wght": 100.0
+          },
+          "candidateCoordinates": {
+            "wght": 100.0
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        },
+        {
+          "baselineStyle": "wght-400_0",
+          "candidateStyle": "wght-400_0",
+          "baselineCoordinates": {
+            "wght": 400.0
+          },
+          "candidateCoordinates": {
+            "wght": 400.0
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        },
+        {
+          "baselineStyle": "wght-900_0",
+          "candidateStyle": "wght-900_0",
+          "baselineCoordinates": {
+            "wght": 900.0
+          },
+          "candidateCoordinates": {
+            "wght": 900.0
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "variable-masters",
+      "matchedStyles": [
+        {
+          "baselineStyle": "wght-900_0",
+          "candidateStyle": "wght-900_0",
+          "baselineCoordinates": {
+            "wght": 900.0
+          },
+          "candidateCoordinates": {
+            "wght": 900.0
+          },
+          "changedTables": [
+            "glyf",
+            "gvar",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        },
+        {
+          "baselineStyle": "wght-100_0",
+          "candidateStyle": "wght-100_0",
+          "baselineCoordinates": {
+            "wght": 100.0
+          },
+          "candidateCoordinates": {
+            "wght": 100.0
+          },
+          "changedTables": [
+            "glyf",
+            "gvar",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "variable-location-change",
+      "matchedStyles": [
+        {
+          "baselineStyle": "Bold",
+          "candidateStyle": "Bold",
+          "baselineCoordinates": {
+            "wght": 700.0
+          },
+          "candidateCoordinates": {
+            "wght": 700.0
+          },
+          "changedTables": [
+            "fvar",
+            "head"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 0,
+          "changedWords": 0
+        },
+        {
+          "baselineStyle": "Regular",
+          "candidateStyle": "Regular",
+          "baselineCoordinates": {
+            "wght": 400.0
+          },
+          "candidateCoordinates": {
+            "wght": 500.0
+          },
+          "changedTables": [
+            "fvar",
+            "head"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "variable-style-filter",
+      "matchedStyles": [
+        {
+          "baselineStyle": "Bold",
+          "candidateStyle": "Bold",
+          "baselineCoordinates": {
+            "wght": 700.0
+          },
+          "candidateCoordinates": {
+            "wght": 700.0
+          },
+          "changedTables": [
+            "glyf",
+            "head",
+            "hhea"
+          ],
+          "addedGlyphs": 0,
+          "removedGlyphs": 0,
+          "modifiedGlyphs": 1,
+          "changedWords": 0
+        }
+      ]
+    },
+    {
+      "case": "style-mismatch",
+      "rejected": true
+    }
+  ],
+  "signedRuntimeVerified": false,
+  "intelNativeVerified": false,
+  "installedRuntimeVerified": false
+}

@@ -910,3 +910,43 @@
 "Edit…" = "Edit…";
 
 "Resize file list" = "Resize file list";
+
+/* Component updates after a desktop upgrade. */
+"Update your Glyphs components" = "Update your Glyphs components";
+"The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation." = "The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation.";
+"Later" = "Later";
+"Unable to verify component version" = "Unable to verify component version";
+
+/* Clear server and plugin update messaging. */
+"A new version of the MCP server in Glyphs is available." = "A new version of the MCP server in Glyphs is available.";
+"Updates for your Glyphs plugins are available." = "Updates for your Glyphs plugins are available.";
+"The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." = "The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs.";
+"Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs." = "Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs.";
+
+/* Beztrace engine 0.2.1 and companion 0.2.0/build 25. */
+"Trace images and match master outlines." = "Trace images and match master outlines.";
+"Trace images and match master outlines in Glyphs." = "Trace images and match master outlines in Glyphs.";
+"Bundled engine 0.2.1 · Companion 0.2.0 build 25" = "Bundled engine 0.2.1 · Companion 0.2.0 build 25";
+"Qualified companion · Build 25 · Apple Silicon" = "Qualified companion · Build 25 · Apple Silicon";
+"Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.2.1 stable engine. Native companion testing covers Glyphs 4.2 build 4202." = "Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.2.1 stable engine. Native companion testing covers Glyphs 4.2 build 4202.";
+"Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace." = "Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace.";
+"Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice." = "Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice.";
+"Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font." = "Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font.";
+
+// Optional distribution availability and protected installation guidance.
+"Unavailable on this Mac" = "Unavailable on this Mac";
+"Setup preserves this separate or modified installation. See Details before changing it." = "Setup preserves this separate or modified installation. See Details before changing it.";
+"Separate installations" = "Separate installations";
+"Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved." = "Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved.";
+"Diffenator is distributed separately from the desktop app. Setup enables installation only after release qualification for this Mac. Intel support is unavailable until qualified. Install All excludes Diffenator." = "Diffenator is distributed separately from the desktop app. Setup enables installation only after release qualification for this Mac. Intel support is unavailable until qualified. Install All excludes Diffenator.";
+"Using Diffenator" = "Using Diffenator";
+"Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved." = "Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved.";
+"The optional runtime is managed separately. Removing it preserves your fonts and published reports." = "The optional runtime is managed separately. Removing it preserves your fonts and published reports.";
+"Diffenator documentation" = "Diffenator documentation";
+
+// Optional tool availability.
+"Separate installation preserved" = "Separate installation preserved";
+"Development link preserved" = "Development link preserved";
+"Modified installation preserved" = "Modified installation preserved";
+"Available on Apple Silicon only." = "Available on Apple Silicon only.";
+"Requires macOS %@ or later." = "Requires macOS %@ or later.";

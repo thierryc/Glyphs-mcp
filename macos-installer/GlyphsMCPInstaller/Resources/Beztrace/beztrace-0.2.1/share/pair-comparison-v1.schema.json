@@ -1,0 +1,525 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "beztrace-pair-comparison"
+    },
+    "engineVersion": {
+      "type": "string"
+    },
+    "strategy": {
+      "enum": [
+        "direct",
+        "retrace-target",
+        "retrace-both",
+        "smart"
+      ]
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "referencePolicy": {
+          "enum": [
+            "fixed",
+            "shared-subdivision"
+          ]
+        },
+        "fitTolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "contourPairs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "startNodes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": -1
+          }
+        },
+        "preserveStructure": {
+          "type": "boolean"
+        },
+        "maxAdditionalOnCurveNodes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024,
+          "default": 0
+        },
+        "maxOnCurveNodes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 1024,
+          "default": 64
+        },
+        "maxNodes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096,
+          "default": 64
+        },
+        "smoothJoins": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "sourceHashes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "sourceOutlines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "outline": {
+            "$ref": "#/$defs/outline"
+          }
+        },
+        "required": [
+          "id",
+          "outline"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 2
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "route": {
+            "enum": [
+              "direct",
+              "retrace-target",
+              "retrace-both",
+              "joint-images",
+              "sequential-images"
+            ]
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "refusal": {
+            "type": "string"
+          },
+          "diagnostic": {
+            "$ref": "match-diagnostic-v1.schema.json"
+          },
+          "sourceDeviations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lowerBound": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "upperBound": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "uncertainty": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "lowerBound",
+                "upperBound",
+                "uncertainty"
+              ]
+            },
+            "minItems": 0,
+            "maxItems": 2
+          },
+          "onCurveNodes": {
+            "type": "integer"
+          },
+          "totalNodes": {
+            "type": "integer"
+          },
+          "excessSmoothJoinResidual": {
+            "type": "number"
+          },
+          "referenceUnchanged": {
+            "type": "boolean"
+          },
+          "targetUnchanged": {
+            "type": "boolean"
+          },
+          "renderedSources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "masterID": {
+                  "type": "string"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "transform": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 6,
+                  "maxItems": 6
+                },
+                "pixelWidth": {
+                  "type": "integer"
+                },
+                "pixelHeight": {
+                  "type": "integer"
+                },
+                "unitsPerPixel": {
+                  "type": "number"
+                },
+                "paddingPixels": {
+                  "type": "integer"
+                },
+                "fillRule": {
+                  "const": "nonzero"
+                }
+              },
+              "required": [
+                "masterID",
+                "sha256",
+                "transform",
+                "pixelWidth",
+                "pixelHeight",
+                "unitsPerPixel",
+                "paddingPixels",
+                "fillRule"
+              ]
+            },
+            "minItems": 0,
+            "maxItems": 2
+          },
+          "envelopeAdjustments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "masterID",
+                "previousYBounds",
+                "fittedYBounds",
+                "scaleY",
+                "translateY"
+              ],
+              "properties": {
+                "masterID": {
+                  "type": "string"
+                },
+                "previousYBounds": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "fittedYBounds": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "scaleY": {
+                  "type": "number"
+                },
+                "translateY": {
+                  "type": "number"
+                },
+                "method": {
+                  "enum": [
+                    "local-span-constraint"
+                  ]
+                }
+              }
+            },
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "route",
+          "accepted",
+          "sourceDeviations",
+          "renderedSources",
+          "envelopeAdjustments"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "accepted": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "onCurveNodes",
+                "totalNodes",
+                "referenceUnchanged",
+                "targetUnchanged"
+              ],
+              "properties": {
+                "sourceDeviations": {
+                  "minItems": 2
+                }
+              }
+            },
+            "else": {
+              "required": [
+                "refusal"
+              ]
+            }
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 3
+    },
+    "recommendedRoute": {
+      "type": "string"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sampledOnly": {
+      "const": true
+    },
+    "nativeHOIVerified": {
+      "const": false
+    },
+    "inputFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "sha256"
+        ]
+      },
+      "minItems": 2,
+      "maxItems": 2
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "engineVersion",
+    "strategy",
+    "options",
+    "sourceHashes",
+    "sourceOutlines",
+    "candidates",
+    "reasons",
+    "sampledOnly",
+    "nativeHOIVerified"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beztrace.dev/schema/pair-comparison-v1.json",
+  "title": "BezTrace pair comparison v1",
+  "$defs": {
+    "rect": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "type",
+        "smooth"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "type": {
+          "enum": [
+            "line",
+            "curve",
+            "offcurve"
+          ]
+        },
+        "smooth": {
+          "type": "boolean"
+        }
+      }
+    },
+    "contour": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closed",
+        "nodes"
+      ],
+      "properties": {
+        "closed": {
+          "const": true
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "imageWidth",
+        "imageHeight",
+        "inkBoundsPixels",
+        "sourceBoundsPixels",
+        "targetYMin",
+        "targetYMax",
+        "scale",
+        "translationX",
+        "translationY",
+        "finalBounds",
+        "advanceWidth",
+        "leftSideBearing",
+        "rightSideBearing",
+        "outOfTarget"
+      ],
+      "properties": {
+        "imageWidth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "imageHeight": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inkBoundsPixels": {
+          "$ref": "#/$defs/rect"
+        },
+        "sourceBoundsPixels": {
+          "$ref": "#/$defs/rect"
+        },
+        "targetYMin": {
+          "type": "number"
+        },
+        "targetYMax": {
+          "type": "number"
+        },
+        "scale": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "translationX": {
+          "type": "number"
+        },
+        "translationY": {
+          "type": "number"
+        },
+        "finalBounds": {
+          "$ref": "#/$defs/rect"
+        },
+        "advanceWidth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "leftSideBearing": {
+          "type": "number"
+        },
+        "rightSideBearing": {
+          "type": "number"
+        },
+        "outOfTarget": {
+          "type": "boolean"
+        }
+      }
+    },
+    "outline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contours": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contour"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        }
+      },
+      "required": [
+        "contours"
+      ]
+    }
+  }
+}

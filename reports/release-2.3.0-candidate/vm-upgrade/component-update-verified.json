@@ -1,0 +1,24 @@
+{
+  "state": "component-update-verified",
+  "desktopVersion": "2.3.0",
+  "desktopBuild": "68",
+  "receiptVersion": "2.3.0",
+  "receiptSHA256": "76265f5478a81b0eff05501176f2e709e38a7ff25088a0a66c03794af87853ee",
+  "companions": [
+    {
+      "id": "curve-inspector",
+      "version": "0.5.2"
+    },
+    {
+      "id": "reference-inspector",
+      "version": "0.1.0"
+    }
+  ],
+  "reminderPreferences": {
+    "componentUpdateReminder.2.3.0.68./Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2": true
+  },
+  "checkedAt": 1792516269.579427,
+  "runningDesktopProcesses": [
+    "  829 /Users/ziggy/gmcp-release-230-final-r1/upgrade/Glyphs MCP.app/Contents/MacOS/Glyphs MCP"
+  ]
+}

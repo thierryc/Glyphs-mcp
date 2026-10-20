@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "anonymousDownload": true,
+  "archiveURL": "https://github.com/thierryc/beztrace/releases/download/glyphs-v0.2.0/beztrace-glyphs-0.2.0-build25-signed-macos-universal.zip",
+  "archiveSHA256": "275f07b88114dbb0c6b889d3ec8f4feffc9d788be00ded16127f3d09e458448f",
+  "archiveSize": 197257,
+  "filesVerified": 57,
+  "teamID": "N9U29A4T8J",
+  "productionTrustVerified": true,
+  "version": "0.2.0",
+  "build": 25,
+  "minimumMacOS": "26.6.2",
+  "architecture": "arm64"
+}

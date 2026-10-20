@@ -1,0 +1,5 @@
+{
+  "scripts/qualify_diffenator_distribution.py": "b85d0f2675d9f49047ef6e5ed4c28c0198f1d4f30893d1a127352a0f2a7eab11",
+  "scripts/qualify_diffenator_adapter.py": "594b35ccda78e7b18f0ce703803402208f4df9810aa7407f0449b8d87fb5898d",
+  "scripts/install_optional_tools.py": "f069d6d56a779a5f4100e6c9d116e41bbbbcf90b5c4aaf5555877bfcdc04336e"
+}

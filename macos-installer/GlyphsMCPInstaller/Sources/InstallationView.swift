@@ -75,6 +75,7 @@ struct InstallationView: View {
                     ComponentSetupCard(
                         component: component,
                         state: model.state(for: component),
+                        updateStatus: model.componentUpdates[component.id],
                         disabled: !model.canChangeComponents,
                         pythonReady: model.canInstallComponents,
                         install: { model.installComponent(component.id) },
@@ -84,11 +85,8 @@ struct InstallationView: View {
                     )
                 }
                 OptionalToolSetupCard(id: "beztrace-glyphs", title: "Beztrace", symbol: "pencil.and.outline",
-                    detail: "Trace PNG and JPEG images into editable outlines.") { showingBeztraceSetup = true }
-                OptionalToolSetupCard(id: "diffenator", title: "Diffenator", symbol: "doc.on.doc",
-                    detail: "Compare compiled TTF releases and review an HTML report.") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/googlefonts/diffenator2")!)
-                }
+                    detail: "Trace images and match master outlines.") { showingBeztraceSetup = true }
+
             }
         }
     }
@@ -169,13 +167,15 @@ private struct BeztraceSetupView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Plugin availability").font(.headline)
-                Text("Managed setup installs signed companion 0.1.0 build 16 and uses the bundled engine 0.1.1. Qualified for Apple Silicon on macOS 26.6.2 or later. Engine selection persists when the panel reopens; explicit user choices take priority. Install All excludes Beztrace.")
+                Text("Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace.")
                 DesktopTextLink("Read plugin setup and verification", destination: companion.documentation)
             }
             VStack(alignment: .leading, spacing: 8) {
+                Text("Separate installations").font(.headline)
+                Text("Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved.")
                 Text("Using Beztrace").font(.headline)
-                Text("Place a PNG or JPEG in the glyph layer, then choose Path → Beztrace…. Position the image on the canvas, choose Trace, adjust the result, then Done. Managed setup selects the bundled engine automatically.")
-                Text("The plugin works independently of the MCP server. Trace adds editable paths; Done keeps them without saving the font.")
+                Text("Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice.")
+                Text("Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -227,6 +227,7 @@ struct SetupCardGrid: Layout {
 private struct ComponentSetupCard: View {
     let component: DesktopComponent
     let state: SetupItemState
+    let updateStatus: ComponentUpdateStatus?
     let disabled: Bool
     let pythonReady: Bool
     let install: () -> Void
@@ -242,9 +243,19 @@ private struct ComponentSetupCard: View {
         } detail: {
             Text(LocalizedStringKey(component.detail))
         } status: {
-            SetupStatus(state: state)
+            VStack(alignment: .leading, spacing: 5) {
+                if state == .installed && updateStatus == .updateAvailable {
+                    DesktopStatus(title: "Update available", tone: .attention, symbol: "arrow.clockwise")
+                } else {
+                    SetupStatus(state: state)
+                }
+                if updateStatus == .unableToVerify {
+                    Text("Unable to verify component version").font(.caption).foregroundStyle(.secondary)
+                }
+            }
         } actions: {
-            SetupCardActions(state: state, disabled: disabled, canInstall: pythonReady, install: install, update: update, remove: remove, retry: retry)
+            SetupCardActions(state: state, disabled: disabled, canInstall: pythonReady,
+                updateAvailable: updateStatus == .updateAvailable, install: install, update: update, remove: remove, retry: retry)
         } footer: {
             DesktopTextLink("Documentation", destination: component.documentation).font(.caption)
                 .accessibilityLabel("\(component.title) documentation")
@@ -344,6 +355,7 @@ private struct SetupCardActions: View {
     let state: SetupItemState
     let disabled: Bool
     var canInstall = true
+    var updateAvailable = false
     let install: () -> Void
     let update: () -> Void
     let remove: () -> Void
@@ -356,7 +368,10 @@ private struct SetupCardActions: View {
                 DesktopActionButton(title: "Install", symbol: "arrow.down.to.line", emphasis: .primary, action: install)
                     .disabled(disabled || !canInstall)
             case .installed:
-                DesktopActionButton(title: "Update", symbol: "arrow.clockwise", action: update).disabled(disabled || !canInstall)
+                DesktopActionButton(title: "Update", symbol: "arrow.clockwise",
+                    emphasis: updateAvailable ? .primary : .secondary, action: update)
+                    .fontWeight(updateAvailable ? .semibold : .regular)
+                    .disabled(disabled || !canInstall)
                 DesktopActionButton(title: "Uninstall", action: remove).disabled(disabled)
             case .developmentLinked:
                 DesktopActionButton(title: "Install bundled version", symbol: "arrow.down.to.line", emphasis: .primary, action: update)

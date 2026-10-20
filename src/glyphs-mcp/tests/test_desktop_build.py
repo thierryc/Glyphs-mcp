@@ -60,7 +60,7 @@ def bundle(tmp_path, monkeypatch):
         (catalog / (name + '.imageset')).mkdir(parents=True)
     monkeypatch.setattr(verifier, 'load', lambda root: {'version': '2.0.0', 'installerBuild': 43})
     monkeypatch.setattr(verifier, 'validate_embedded_payload', lambda app: {'schemaVersion': 4})
-    monkeypatch.setattr(verifier, 'validate_embedded_beztrace', lambda app: {'version': '0.1.1'})
+    monkeypatch.setattr(verifier, 'validate_embedded_beztrace', lambda app: {'version': '0.2.1'})
     monkeypatch.setattr(verifier.subprocess, 'check_output', lambda command: json.dumps([
         {'Name': 'GlyphsMCPMenu'}, {'Name': 'GitHubMark'}]).encode())
     return app, tmp_path
@@ -448,3 +448,15 @@ def test_test_cache_cleanup_preserves_results_products_and_runtime_inputs(tmp_pa
     assert not (run / paths[0]).exists()
     assert not (run / paths[1]).exists()
     assert all((run / name).is_file() for name in paths[2:])
+
+
+def test_diffenator_is_deferred_from_230_setup_and_distribution():
+    import json
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[3]
+    catalog = json.loads((root / 'integrations/optional-tools.json').read_text())['tools']['diffenator']
+    assert catalog['status'] == 'deferred'
+    assert not catalog.get('releases')
+    view = (root / 'macos-installer/GlyphsMCPInstaller/Sources/InstallationView.swift').read_text()
+    assert 'OptionalToolSetupCard(id: "diffenator"' not in view
+    assert 'OptionalToolSetupCard(id: "beztrace-glyphs"' in view

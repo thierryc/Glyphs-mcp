@@ -921,3 +921,43 @@
 "Edit…" = "Modifier…";
 
 "Resize file list" = "Redimensionner la liste des fichiers";
+
+/* Component updates after a desktop upgrade. */
+"Update your Glyphs components" = "Mettez à jour vos composants Glyphs";
+"The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation." = "L’application a été mise à jour. Mettez à jour les composants dans Configuration pour profiter des nouvelles fonctionnalités et corrections dans Glyphs. Il peut être nécessaire de quitter Glyphs pendant l’installation.";
+"Later" = "Plus tard";
+"Unable to verify component version" = "Impossible de vérifier la version du composant";
+
+/* Clear server and plugin update messaging. */
+"A new version of the MCP server in Glyphs is available." = "Une nouvelle version du serveur MCP pour Glyphs est disponible.";
+"Updates for your Glyphs plugins are available." = "Des mises à jour de vos extensions Glyphs sont disponibles.";
+"The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." = "L’application a été mise à jour, mais le serveur utilisé par Glyphs doit encore être mis à jour.\n\nOuvrez Configuration, puis cliquez sur Mettre à jour dans la carte Glyphs MCP pour profiter des nouvelles fonctionnalités et corrections. Il peut être nécessaire de quitter et de rouvrir Glyphs.";
+"Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs." = "Ouvrez Configuration, puis cliquez sur Mettre à jour dans les cartes d’extensions mises en évidence pour profiter des nouvelles fonctionnalités et corrections.\n\nIl peut être nécessaire de quitter et de rouvrir Glyphs.";
+
+/* Beztrace engine 0.2.1 and companion 0.2.0/build 25. */
+"Trace images and match master outlines." = "Vectorisez des images et faites correspondre les contours des masters.";
+"Trace images and match master outlines in Glyphs." = "Vectorisez des images et faites correspondre les contours des masters dans Glyphs.";
+"Bundled engine 0.2.1 · Companion 0.2.0 build 25" = "Moteur intégré 0.2.1 · Plugin compagnon 0.2.0 build 25";
+"Qualified companion · Build 25 · Apple Silicon" = "Plugin compagnon validé · Build 25 · Apple Silicon";
+"Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.2.1 stable engine. Native companion testing covers Glyphs 4.2 build 4202." = "Installation gérée : Apple Silicon et macOS 26.6.2 ou ultérieur. Nécessite Glyphs 4.1 (build 4107 ou ultérieur) et Python 3.9 ou ultérieur dans Glyphs. L’application inclut le moteur stable beztrace 0.2.1. Les tests natifs du plugin compagnon couvrent Glyphs 4.2 build 4202.";
+"Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace." = "L’installation gérée installe le plugin compagnon signé 0.2.0 build 25 et le moteur 0.2.1. Disponible sur Apple Silicon avec macOS 26.6.2 ou ultérieur. « Tout installer » exclut Beztrace.";
+"Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice." = "Ouvrez Tracé → Beztrace… ou Beztrace Match Masters…. Dans Additional actions… → Choose engine…, sélectionnez ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Répétez à chaque réouverture du panneau ; le build 25 ne mémorise pas ce choix.";
+"Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font." = "Choisissez un mode, actualisez l’aperçu, puis cliquez sur Apply to Layer ou Apply to Masters. Le plugin fonctionne indépendamment du serveur MCP et n’enregistre jamais la fonte.";
+
+// Optional distribution availability and protected installation guidance.
+"Unavailable on this Mac" = "Indisponible sur ce Mac";
+"Setup preserves this separate or modified installation. See Details before changing it." = "La configuration préserve cette installation séparée ou modifiée. Consultez les détails avant de la modifier.";
+"Separate installations" = "Installations séparées";
+"Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved." = "La configuration ne remplace pas un plugin séparé, un lien de développement ou une installation modifiée. Continuez à l’utiliser, ou sauvegardez-le et supprimez-le vous-même avant de choisir une installation gérée. Les moteurs partagés et vos réglages sont préservés.";
+"Diffenator is distributed separately from the desktop app. Setup enables installation only after release qualification for this Mac. Intel support is unavailable until qualified. Install All excludes Diffenator." = "Diffenator est distribué séparément de l’application. La configuration autorise l’installation uniquement après validation pour ce Mac. Intel reste indisponible avant validation. Tout installer exclut Diffenator.";
+"Using Diffenator" = "Utiliser Diffenator";
+"Choose explicit compiled font files for comparison. Review the generated report, then publish it to a new folder. Existing reports and source fonts are preserved." = "Choisissez les fichiers de polices compilées à comparer. Consultez le rapport généré, puis publiez-le dans un nouveau dossier. Les rapports existants et les polices sources sont préservés.";
+"The optional runtime is managed separately. Removing it preserves your fonts and published reports." = "L’environnement facultatif est géré séparément. Sa suppression préserve vos polices et les rapports publiés.";
+"Diffenator documentation" = "Documentation de Diffenator";
+
+// Optional tool availability.
+"Separate installation preserved" = "Installation séparée préservée";
+"Development link preserved" = "Lien de développement préservé";
+"Modified installation preserved" = "Installation modifiée préservée";
+"Available on Apple Silicon only." = "Disponible uniquement sur Apple Silicon.";
+"Requires macOS %@ or later." = "Nécessite macOS %@ ou une version ultérieure.";

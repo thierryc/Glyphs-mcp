@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "fullIdentities": [
+    "sha256:c8e86421fd0f172ba258cb9554dd4ef4e46519be9e26189c05ed2103675aed6a",
+    "sha256:202c2ea69b73c110de5bdb2e3b2384a547558208d590470f435ec38224fc56dc"
+  ],
+  "stableContentIdentity": "sha256:bfc1f6c6a1305d9943c1c4a7ee9f41ee2db5c7958cf5bead8a2c485707a44aa6",
+  "nativeCodeHashes": [
+    "arm64:9427bd69cbd6801bd44c203a31c64bfed47c02f6",
+    "x86_64:594c90442ed62d599fea70ba451b72d0b5671fbc"
+  ],
+  "signaturesVerified": true,
+  "signingTimestampOnlyIgnored": true
+}

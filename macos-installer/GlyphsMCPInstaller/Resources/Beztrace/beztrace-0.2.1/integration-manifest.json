@@ -1,0 +1,48 @@
+{
+  "version": "0.2.1",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "minimumMacOS": "13.0",
+  "schemaVersion": 1,
+  "pathDataVersion": 2,
+  "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+  "sourceTreeDirty": false,
+  "developerIDSigning": "upstream-developer-id",
+  "notarization": "upstream-accepted",
+  "upstreamRelease": {
+    "releaseURL": "https://github.com/thierryc/beztrace/releases/tag/v0.2.1",
+    "archiveURL": "https://github.com/thierryc/beztrace/releases/download/v0.2.1/beztrace-0.2.1-macos-universal.zip",
+    "archiveSHA256": "d4514513aa0da6b39991234fc9caeb9c0bf717dc8b3bcc0c9fd08c87df2b7776",
+    "manifestSHA256": "440d707b8ca7c3b30378a3eb56044b6443046910cc5e59b1bd9b9ff29bbf56b2",
+    "executableSHA256": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9",
+    "qualificationSHA256": "84a5df9e4dbd8dbc328677109629cd947e29456a67716bd3a6dbba1d7ed18508"
+  },
+  "files": {
+    "bin/beztrace": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9",
+    "share/CHANGELOG.md": "2be812b0952f602b832eae6bac48f5622b8be34bdcb50fbb71e7744caa2d4f59",
+    "share/LICENSE-APACHE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "share/LICENSE-MIT": "59089b8a33e7baa1dfd38901bc3dd25bc32d5550a1f47c8081d743beb0c799bb",
+    "share/README.md": "0d9d62007652f5723923ff733330fbe0f2267d079b6213ca458fd3d92b16ec21",
+    "share/THIRD_PARTY_NOTICES": "739edf36c8911a22c3a6bc90960b8c0068319b34a517d68791ba8c427d48ee64",
+    "share/joint-smoothing-request-v1.schema.json": "10b29a1be06a725e208e7fb154443b7fbfbd8cc40513c996611fbe88654fe15d",
+    "share/joint-smoothing-result-v1.schema.json": "8b9771bf2f3c718120cc7980b57541b8f9fb99def98daa1d45463e06dd8a42a9",
+    "share/master-set-v1.schema.json": "d7027ebd58b66aa211ea18dbdda06dd7e6052caf0117b4ff4f193696b94925c6",
+    "share/match-diagnostic-v1.schema.json": "c0dde15b5c490e6f61331f8da3d608e61b8468ce9717263a442fbcde9a4687b9",
+    "share/match-preflight-request-v1.schema.json": "aa0640104f5edf134f94994a84fe7062dbba7067ddff80e9655e75c217ca6b8c",
+    "share/match-preflight-result-v1.schema.json": "45341c0b8095eea94d2a2c7ad69071c32a483cea661e232046d204d1d51f1219",
+    "share/match-request-v1.schema.json": "72062f089b6f8f13e1b19078f080418cf10a172df77f6ed5ecd23b5fa92e2ba9",
+    "share/pair-comparison-v1.schema.json": "38e325f62f534ccb12bd9932d38989a7317a1da7accd18663af9ec77bd8172c2",
+    "share/pair-job-v1.schema.json": "88746e060c7728b7775d53c700b4d909ddbfa11e8b8e14c4d63a328a4d8277a4",
+    "share/raster-match-request-v1.schema.json": "9b349de0e460ca5638973fc7dc1846030cd2a5205aff63831aa36c11a9d6f8bd",
+    "share/raster-plan-v1.schema.json": "5e21db54c5084d0f56e2f6d81795eb7ae7d8829babb0bd8961ade1bcfaeca895",
+    "share/release-manifest-v1.schema.json": "a3838cf90031e5681be1506b3cd140daaa247d2b2507f64f09dcce1dfe0cfec0",
+    "share/sbom-binary.spdx.json": "756366852837526eaa4075f8a1c901411fdd6a52e69e638611a8633be7cfd0f3",
+    "share/sbom-source.spdx.json": "9b230bf744778d4f6412980fa768fc8de3f2b9c52ea3442187eaa40abb0c858b",
+    "share/trace-result-v1.schema.json": "b05b8cea12a25287ffb388ac813c2cc29b1982aa5aeb5a7281ea9f6a79d331be",
+    "upstream-SHA256SUMS": "04c85fc2f37ddee77182293138e1ef086dff2a1e4a367faf174dd5efd6934b2c",
+    "upstream-qualification.json": "84a5df9e4dbd8dbc328677109629cd947e29456a67716bd3a6dbba1d7ed18508",
+    "upstream-release-manifest.json": "440d707b8ca7c3b30378a3eb56044b6443046910cc5e59b1bd9b9ff29bbf56b2"
+  }
+}

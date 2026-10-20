@@ -26,7 +26,7 @@ struct OptionalToolSetupCard: View {
         } title: {
             Text(title).font(.headline)
         } detail: {
-            Text(detail)
+            Text(LocalizedStringKey(detail))
         } status: {
             DesktopStatus(title: active ? progressTitle : state?.label ?? "Checking optional setup…",
                 tone: active ? (lastAction == "remove" ? .neutral : .progress) : state?.installed == true ? .installed : .neutral,
@@ -59,9 +59,22 @@ struct OptionalToolSetupCard: View {
                 }
             }
         } footer: {
-            if state?.available != true {
-                Text(state?.reason ?? "This optional distribution awaits release qualification.")
+            if state?.protectedInstallation == true {
+                Text("Setup preserves this separate or modified installation. See Details before changing it.")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            if state?.available != true {
+                Group {
+                    if let reason = state?.reason,
+                       reason.hasPrefix("This optional distribution requires macOS "), reason.hasSuffix(" or later") {
+                        let minimum = String(reason.dropFirst("This optional distribution requires macOS ".count).dropLast(" or later".count))
+                        Text("Requires macOS \(minimum) or later.")
+                    } else if state?.reason == "This optional distribution is not qualified for x86_64" {
+                        Text("Available on Apple Silicon only.")
+                    } else {
+                        Text(state?.reason ?? "This optional distribution awaits release qualification.")
+                    }
+                }.font(.caption).foregroundStyle(.secondary)
             }
             Button("Details", action: details).buttonStyle(.link).font(.caption)
         }

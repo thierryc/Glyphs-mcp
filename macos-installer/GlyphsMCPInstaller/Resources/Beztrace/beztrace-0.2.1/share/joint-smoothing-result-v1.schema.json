@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beztrace.dev/schema/joint-smoothing-result-v1.json",
+  "title": "Reference-locked compatible master smoothing result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "pathDataVersion",
+    "engineVersion",
+    "reference",
+    "target",
+    "sourceTargetHash",
+    "report",
+    "unitsPerEm",
+    "fitTolerance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "beztrace-joint-smoothing"
+    },
+    "pathDataVersion": {
+      "const": 2
+    },
+    "engineVersion": {
+      "type": "string"
+    },
+    "reference": {
+      "$ref": "#/$defs/outline"
+    },
+    "target": {
+      "$ref": "#/$defs/outline"
+    },
+    "sourceTargetHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "eligibleJoins",
+        "changedHandles",
+        "proposedHandleChanges",
+        "referenceUnchanged",
+        "structurePreserved",
+        "sampleCount",
+        "nativeHOIVerified"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "smoothed",
+            "unchanged",
+            "refused"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "eligibleJoins": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "changedHandles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "contour",
+              "node"
+            ],
+            "properties": {
+              "contour": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "node": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "proposedHandleChanges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "proposalDeviation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lowerBound",
+            "upperBound",
+            "uncertainty"
+          ],
+          "properties": {
+            "lowerBound": {
+              "type": "number",
+              "minimum": 0
+            },
+            "upperBound": {
+              "type": "number",
+              "minimum": 0
+            },
+            "uncertainty": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "beforeMaximumTangencyResidual": {
+          "type": "number",
+          "minimum": 0
+        },
+        "afterMaximumTangencyResidual": {
+          "type": "number",
+          "minimum": 0
+        },
+        "referenceUnchanged": {
+          "const": true
+        },
+        "structurePreserved": {
+          "const": true
+        },
+        "sampleCount": {
+          "const": 201
+        },
+        "nativeHOIVerified": {
+          "const": false
+        }
+      }
+    },
+    "unitsPerEm": {
+      "type": "number",
+      "minimum": 16,
+      "maximum": 16384
+    },
+    "fitTolerance": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "type",
+        "smooth"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "type": {
+          "enum": [
+            "line",
+            "curve",
+            "offcurve"
+          ]
+        },
+        "smooth": {
+          "type": "boolean"
+        }
+      }
+    },
+    "contour": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closed",
+        "nodes"
+      ],
+      "properties": {
+        "closed": {
+          "const": true
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    },
+    "outline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contours"
+      ],
+      "properties": {
+        "contours": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/contour"
+          }
+        }
+      }
+    }
+  }
+}
