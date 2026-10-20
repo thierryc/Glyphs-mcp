@@ -1,8 +1,8 @@
-# Glyphs MCP Desktop 2.2.0
+# Glyphs MCP Desktop 2.3.0
 
-**In preparation: 2.3.0 · desktop build 68 · Glyphs 4.** Adds a one-time reminder when installed components need updating and prominent primary Update buttons on affected component cards. See the [2.3.0 release record](V2.3.0-RELEASE.md).
+**Stable · desktop build 68 · Glyphs 4.** [Download 2.3.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.0). The app now reminds you when the MCP server inside Glyphs needs updating. Open **Setup**, then click the blue **Update** button on the affected card. Updating the desktop app and updating its Glyphs components are separate steps.
 
-The published stable release remains [2.2.0/build 67](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.2.0) until 2.3.0 qualification and publication complete.
+See the [2.3.0 release record](V2.3.0-RELEASE.md) for qualification and platform limits.
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
@@ -22,9 +22,9 @@ Claude Desktop and Cursor. Bundled component cards also support independent inst
 update, removal and retry. Upgrades preserve ports, startup settings and
 unrelated agent configuration.
 
-Setup also introduces **Beztrace**, an independent Glyphs image-tracing plugin,
-with requirements, its independently signed build 15 release and setup guidance. The app bundles
-the universal stable 0.1.1 engine; the Glyphs plugin remains separate. See [Beztrace setup](content/workflows/beztrace.mdx).
+Setup offers **Beztrace** engine 0.2.1 and companion 0.2.0/build 25 for Apple Silicon on macOS 26.6.2 or later. Choose the engine manually in Beztrace; independent installations, engines and settings are protected. Beztrace stays outside Install All. See [Beztrace setup](content/workflows/beztrace.mdx).
+
+Diffenator is deferred to a future release and removed from Setup. No Diffenator runtime is distributed in 2.3.0.
 
 The permanent app includes Setup, Tasks and Project destinations, a native menu-bar
 menu, a dedicated troubleshooting-log window, local and public templates,
@@ -99,11 +99,11 @@ documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
 [GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.1.0).
 
-Documentation sources: [v2 · 2.2.0 in preparation](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.3.0](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
-See [2.2.0 preparation](V2.2.0-RELEASE.md) and [published qualification](V2.1.0-RELEASE.md) for their separate results and limits.
+See [2.3.0 qualification](V2.3.0-RELEASE.md) and [2.2.0 qualification](V2.2.0-RELEASE.md) for their separate results and limits.
 Historical beta reports remain in [the qualification archive](reports/README.md);
 the original beta guides and plans are preserved in the [v2.0.0 source tag](https://github.com/thierryc/Glyphs-mcp/tree/v2.0.0).
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).

@@ -2,24 +2,25 @@
 
 Build, test, sign, notarize and upload on the maintainer’s Mac. GitHub Actions deploys documentation, not release artifacts.
 
-The published stable release is Glyphs MCP Desktop **2.2.0/build 67**, under signed tag `v2.2.0`, with twenty-one data/action tools plus one optional read-only display tool, eleven managed skills, coordinated bridge/sidecar version `2.2.0`, interface revision `1` and bridge protocol `1`. Curve Inspector remains 0.5.2. The full gate passed 3,144 Python and 298 desktop tests. Signed distribution, VM upgrade/recovery and native checks passed with the documented VM progress-window limitation. Intel execution was tested through Rosetta. See [2.2.0 qualification](../V2.2.0-RELEASE.md). Keep prior tags and artifacts intact.
+The published stable release is Glyphs MCP Desktop **2.3.0/build 68**, under signed tag `v2.3.0`, with twenty-one data/action tools plus one optional read-only display tool, eleven managed skills, coordinated bridge/sidecar version `2.3.0`, interface revision `1` and bridge protocol `1`. Curve Inspector remains 0.5.2 and Reference Inspector remains 0.1.0. The final full gate passed 3,155 Python tests (two skipped), 304 desktop tests and documentation/package checks. Signed/notarized distribution, exact signed 2.2.0 → 2.3.0 VM upgrade, reminder and component-update checks passed. Intel execution used Rosetta. See [2.3.0 qualification](../V2.3.0-RELEASE.md). Keep prior tags and artifacts intact.
 
 Historical prerelease guidance remains in the
 [archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
-The Glyphs 4-only payload has twenty data/action tools plus one optional display tool, eleven managed skills, two optional
+The Glyphs 4-only payload has twenty-one data/action tools plus one optional display tool, eleven managed skills, two optional
 inspectors, the Cursor plugin and private Python runtimes for Apple Silicon and
-Intel. Diffenator and the updated Beztrace companion use separate optional managed
-downloads, outside Install All, and stay disabled until their catalog is qualified.
+Intel. Beztrace uses a separate optional managed download outside Install All,
+qualified for Apple Silicon/macOS 26.6.2 or later. Diffenator is deferred and absent
+from Setup; no Diffenator runtime is distributed.
 Glyphs 3 remains available through its separate pinned v1.11.0 release
 at v1.11.0 / 13ca805; it is not packaged in v2.
 
 ## Current release record
 
-The 2.2.0/build 67 release includes Tasks, native image comparisons, a native
-menu-bar menu, a Diff / Config project workspace and verified package copies.
-Its signed feed points to the verified GitHub archive. Automatic sidebar count
-suppression remains off because baseline alerts did not reproduce in the VM.
-See [2.2.0 qualification](../V2.2.0-RELEASE.md) before planning another release.
+The 2.3.0/build 68 release adds clear component-update reminders, primary pending
+Update actions and qualified Beztrace integration. Its signed feed points to the
+verified public GitHub archive. Automatic sidebar count suppression remains off
+because baseline alerts did not reproduce in the VM. See [2.3.0 qualification](../V2.3.0-RELEASE.md)
+before planning another release.
 
 ## Prerequisites
 

@@ -1,0 +1,45 @@
+{
+  "oldSHA256": "14ee647c8e569c5a2c1e47980b3903f19cf4998a08e8ca9de195d478b10184d0",
+  "newSHA256": "387bc376c33252c30b7dc8225e2aa71052c7ecc6608177b3224a62180299c8e7",
+  "fileContentDifferences": [],
+  "metadataDifferences": [
+    {
+      "file": "Glyphs MCP.app/Contents/Resources/Beztrace/beztrace-0.2.1/bin/._beztrace",
+      "changes": {
+        "extra": [
+          "b'UX\\x08\\x00\\xca\\x81\\xd7j\\xc9\\x81\\xd7j'",
+          "b'UX\\x08\\x00P\\x8a\\xd7j\\xc9\\x81\\xd7j'"
+        ]
+      }
+    },
+    {
+      "file": "Glyphs MCP.app/Contents/Resources/Beztrace/beztrace-0.2.1/bin/beztrace",
+      "changes": {
+        "extra": [
+          "b'UX\\x08\\x00\\xca\\x81\\xd7j\\xc9\\x81\\xd7j'",
+          "b'UX\\x08\\x00P\\x8a\\xd7j\\xc9\\x81\\xd7j'"
+        ]
+      }
+    },
+    {
+      "file": "Glyphs MCP.app/Contents/Resources/._GlyphsMCPUpdater",
+      "changes": {
+        "extra": [
+          "b'UX\\x08\\x00j\\x81\\xd7jj\\x81\\xd7j'",
+          "b'UX\\x08\\x00\\x82\\x8a\\xd7jj\\x81\\xd7j'"
+        ]
+      }
+    },
+    {
+      "file": "Glyphs MCP.app/Contents/Resources/GlyphsMCPUpdater",
+      "changes": {
+        "extra": [
+          "b'UX\\x08\\x00j\\x81\\xd7jj\\x81\\xd7j'",
+          "b'UX\\x08\\x00\\x82\\x8a\\xd7jj\\x81\\xd7j'"
+        ]
+      }
+    }
+  ],
+  "onlyOld": [],
+  "onlyNew": []
+}

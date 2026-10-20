@@ -1,4 +1,4 @@
-# 2.3.0/build 68 — signed candidate, not published
+# 2.3.0/build 68 — published qualification
 
 Diffenator is deferred beyond this release and removed from Setup. Its future
 maintained fork must pass fresh dependency/license, comparison, signing,
@@ -49,5 +49,8 @@ tests; this report does not claim a manual VM replay of every branch. VirtualBud
 does not expose guest accessibility elements, so prior live accessibility limits
 remain. The working host Glyphs session and component installation were untouched.
 
-At this evidence commit, publication and desktop feed advancement have not yet
-occurred. Diffenator has no distributable runtime in this release.
+The release is published and all six assets passed anonymous download verification.
+The exact VM-qualified archive was preserved after repacking altered only ZIP
+access-time metadata; complete artifact security checks passed again.
+See [public downloads](public-downloads.json). Diffenator has no distributable
+runtime in this release.

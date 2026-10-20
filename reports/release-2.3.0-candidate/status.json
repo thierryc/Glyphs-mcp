@@ -30,11 +30,13 @@
       "size": 1349
     }
   },
-  "published": false,
-  "updateFeedAdvanced": false,
-  "remainingGate": "Final publisher full test and artifact gates, public download verification, then signed feed advancement",
+  "published": true,
+  "updateFeedAdvanced": true,
+  "remainingGate": null,
   "diskImageSavedWindowVisuallyReviewed": true,
   "repackedUpdateArchiveMatchesVMArchive": true,
   "exactSignedVMUpgradePassed": true,
-  "nativeReminderAndComponentUpdatePassed": true
+  "nativeReminderAndComponentUpdatePassed": true,
+  "finalPublisherFullGatePassed": true,
+  "anonymousPublicAssetsVerified": 6
 }
