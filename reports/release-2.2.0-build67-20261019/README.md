@@ -31,31 +31,49 @@ commit changes release records only. Published 2.1.0 assets and feeds are unchan
   `native-archive-build66-retained.json`.
 - Actual native compact palette title observed as “Glyphs MCP Bridge”, Ready.
 
-## Pending and limits
+## Migration follow-up and final acceptance
 
-Production Setup failed native component-migration qualification. The initial
-attempt hit the installed runtime's 30-second import deadline and rolled back.
-Two later attempts hit the 45-second native Python preflight deadline and the
-desktop's 300-second helper deadline. Standalone imports subsequently passed
-(0.64–11.08 seconds), and standalone native startup passed in 0.76 seconds.
-The timing cause remains unknown; these probes do not establish Setup acceptance.
+The original desktop migration attempts timed out; their operation IDs,
+rollback and byte-for-byte reconciliation remain in
+`vm-component-migration.json`. A later invocation of the exact final signed
+installer CLI passed every production check and committed build 67 in 18.86
+seconds. No timeout or validation was relaxed. See
+`vm-component-migration-cli.json`.
 
-Final reconciliation verified every previous runtime/sidecar payload file byte
-for byte: 6,419 runtime files and 112 sidecar files, with no missing or changed
-files. Extra generated Python caches explain whole-directory hash differences.
-All journals are committed or restored, without cleanup errors. The companion
-is the signed build 67; installed components remain build 66. The VM editor,
-installer helpers and service are stopped, with no pending recovery journal.
-See `vm-component-migration.json` for operation IDs, timings and evidence hashes.
+After a normal companion restart in the VM, desktop Setup passed its native
+Python check again. The installed final build-67 bridge and sidecar then passed
+17 native checks: receipt-matched identities, exact targets and untouched controls,
+unchanged outlines, no implicit save, selective undo, the existing dirty-document
+save guard, verified Save and closed workflows. See `native-build67.json`.
+The initial harness assumed undo would clear the native dirty flag; it resumed
+through the existing save guard, without bypassing protocol validation.
 
-Final installed/running build-67 bridge and sidecar identity remain unqualified.
-Resolve the production Setup timing failure before stable publication. No
-production timeout was changed. The working host Glyphs session was not changed,
-installed into, or restarted. Focused installer/transaction checks passed all
-43 tests after reconciliation; skill and lean-package consistency checks passed.
+Final exact notarized build-67 desktop component migration passed in **9.311
+seconds**, including native preflight in 0.750 seconds, installed import checks
+and normal service restart. The progress window was minimized in VirtualBuddy.
+Earlier visible-window attempts timed out and remain recorded. Process sampling
+showed heavy WindowServer load; graphics contention is a supported inference,
+not a proven root cause. A diagnostic activity/QoS guard did not fix visible-window
+failures and was excluded from production. No timeout or validation was relaxed.
+See `vm-final-desktop-migration.json`.
 
-Invalid-signature/interrupted-download/cancelled-closure/failed-migration native
-acceptance is not claimed here; keep stable publication separate until reviewed.
+Fresh post-migration native reads verified both build-67 running identities
+against the installed receipt, all 22 tools, exact A/B widths 616/600, unchanged
+fixture bytes and only committed/restored journals. The first read-only check
+waited behind Glyphs' trial reminder; it passed after continuing the previously
+accepted trial. No font write was performed in this follow-up.
+
+Invalid signed feed rejection and an interrupted archive download passed on the
+exact notarized app, with its executable unchanged. Native UI showed signature
+validation and download errors respectively. See `vm-adverse-updates.json`.
+Cancelled native Glyphs closure also passed: Cancel preserved the unsaved fixture
+and blocked installation; subsequent Don't Save closed the editor with persisted
+source unchanged. See `vm-cancelled-closure.json`.
+
+The native acceptance phase is complete with the VM limitation above. Public
+release/tag/feed verification remains a separate publication phase. The working
+host Glyphs session was not changed or restarted.
+
 Physical Intel hardware is unavailable. Exact macOS 14.0 and broader
 client/accessibility/localization coverage retain their earlier limitations.
 

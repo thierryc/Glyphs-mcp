@@ -121,13 +121,12 @@
   "releaseVerificationPassed": true,
   "publication": "draft",
   "remaining": [
-    "Resolve production Setup timing failures, then qualify final build67 installed/running bridge and sidecar",
-    "adverse update/migration acceptance cases before stable publication",
     "public release/tag/feed phases"
   ],
   "limits": [
     "Physical Intel hardware unavailable; x86_64 tested under Rosetta only",
-    "Sidebar alert did not reproduce in 20 VM runs; mitigation effectiveness unproven; automatic suppression off"
+    "Sidebar alert did not reproduce in 20 VM runs; mitigation effectiveness unproven; automatic suppression off",
+    "VirtualBuddy visible progress-window migrations timed out; exact notarized desktop migration passed with its window minimized. No timeout or validation changes."
   ],
   "sourceInputsSHA256": "7ba57bd090bf740e1c288e3ca93e01328eb1f099d44f43c2599ba83a9e55ca1d",
   "sidebarExperiment": {
@@ -144,12 +143,35 @@
     "src/glyphs-mcp/tests/test_desktop_process_pool.py": "069e8150cd3fd12429898979307762dae1e935cbf32ac5dc3ea3ae4d3a17c4ca"
   },
   "vmAcceptance": {
-    "status": "signed app upgrade passed; component migration failed native qualification",
+    "status": "Passed with documented VM progress-window limitation",
     "nativeBuild66Behavior": "passed on disposable fixture; retained separately",
     "signedBuild66To67Upgrade": "passed",
     "build67Setup": "passed",
     "hostWorkingGlyphs": "not changed or restarted",
-    "componentMigration": "30-second import timeout restored build66; later attempts hit 45-second native preflight and 300-second helper deadlines. Final files and recovery state reconciled; see vm-component-migration.json."
+    "componentMigration": "Exact notarized build67 desktop update passed in 9.311 seconds with normal validation and deadlines. Window minimized in the graphics-constrained VM; earlier visible-window failures remain recorded.",
+    "finalNativeBuild67": {
+      "passed": true,
+      "checks": 17,
+      "report": "native-build67.json"
+    },
+    "finalSignedCLIMigration": {
+      "passed": true,
+      "seconds": 18.86,
+      "report": "vm-component-migration-cli.json"
+    },
+    "adverseUpdater": {
+      "passed": true,
+      "report": "vm-adverse-updates.json"
+    },
+    "cancelledGlyphsClosure": {
+      "passed": true,
+      "report": "vm-cancelled-closure.json"
+    },
+    "finalDesktopMigration": {
+      "passed": true,
+      "seconds": 9.311,
+      "report": "vm-final-desktop-migration.json"
+    }
   },
   "migrationReconciliationChecks": {
     "focusedInstallerAndTransactionTestsPassed": 43,

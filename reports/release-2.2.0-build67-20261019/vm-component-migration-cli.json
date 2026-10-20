@@ -1,0 +1,491 @@
+{
+  "status": "complete",
+  "started": "2026-10-19T21:59:37.441441+00:00",
+  "supervisorSeconds": 600,
+  "operationID": "dbdeb8f1-6578-4e86-80f4-2c94e7a855fe",
+  "exitCode": 0,
+  "seconds": 18.86,
+  "journals": [
+    {
+      "name": "transaction-6j4psuoj",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6j4psuoj/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "errors": [],
+        "launchAgentWasLoaded": false,
+        "state": "restored"
+      }
+    },
+    {
+      "name": "transaction-rcp46_83",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/Glyphs Curve Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/Glyphs Reference Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/5",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rcp46_83/stage/6",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "launchAgentWasLoaded": true,
+        "serviceWasStopped": true,
+        "state": "committed"
+      }
+    },
+    {
+      "name": "transaction-6_v8_0rv",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/Glyphs Curve Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/Glyphs Reference Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/5",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-6_v8_0rv/stage/6",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "launchAgentWasLoaded": false,
+        "state": "committed"
+      }
+    },
+    {
+      "name": "transaction-e8d0nn85",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e8d0nn85/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "launchAgentWasLoaded": false,
+        "state": "committed"
+      }
+    },
+    {
+      "name": "transaction-rkcv8wm7",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/Glyphs Curve Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/Glyphs Reference Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/5",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-rkcv8wm7/stage/6",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "launchAgentWasLoaded": false,
+        "state": "committed"
+      }
+    },
+    {
+      "name": "transaction-e9rm1oxy",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/Glyphs Curve Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/Glyphs Reference Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/5",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-e9rm1oxy/stage/6",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "launchAgentWasLoaded": false,
+        "state": "committed"
+      }
+    },
+    {
+      "name": "transaction-_xei59xk",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/Glyphs Curve Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/3",
+            "started": false,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/Glyphs Reference Inspector.glyphsReporter",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/4",
+            "started": false,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/5",
+            "started": false,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-_xei59xk/stage/6",
+            "started": false,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "errors": [],
+        "launchAgentWasLoaded": false,
+        "state": "restored"
+      }
+    },
+    {
+      "name": "transaction-a1hqvo54",
+      "data": {
+        "entries": [
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/backup/runtime",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/stage/0",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/backup/sidecar",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/stage/1",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/sidecar"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/backup/Glyphs MCP Bridge.glyphsPlugin",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/stage/2",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/backup/com.ap.cx.glyphs-mcp-sidecar.plist",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/stage/3",
+            "started": true,
+            "target": "/Users/ziggy/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist"
+          },
+          {
+            "backup": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/backup/installation.json",
+            "existed": true,
+            "replacement": true,
+            "stage": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/transaction-a1hqvo54/stage/4",
+            "started": true,
+            "target": "/Users/ziggy/Library/Application Support/Glyphs MCP/lean-v2/installation.json"
+          }
+        ],
+        "errors": [],
+        "launchAgentWasLoaded": false,
+        "state": "restored"
+      }
+    }
+  ],
+  "beforeBuild": 66,
+  "afterBuild": 67,
+  "scope": "Exact final signed installer CLI, all production checks enabled; desktop UI acceptance recorded separately.",
+  "evidenceSHA256": "753433de60698c0c043d1f913c214e8334620e2ac1e22aa593f202d7fcf8302e",
+  "productionTimeoutChanged": false
+}

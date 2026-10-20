@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "appVersion": "2.2.0",
+  "appBuild": 67,
+  "executableSHA256": "572310942b7ceef7834b7cee44540d1d84a5a125c35339183bca99da59a1af2a",
+  "operationID": "0CC083A2-9393-4B32-9936-050401AFC8CA",
+  "sessionID": "5AE5DB90-8BDD-468B-B90A-A798CDC4B4D7",
+  "helperSeconds": 9.311,
+  "nativePreflightSeconds": 0.75,
+  "checksSkipped": false,
+  "timeoutsChanged": false,
+  "appWindow": "Minimized during migration to reduce graphics contention in VirtualBuddy",
+  "qualificationLimit": "Visible progress-window attempts timed out in this VM. A diagnostic activity/QoS change did not resolve them and was excluded. Minimized-window migration passed on exact unmodified notarized build67. Graphics contention is an inference, not a proven root cause.",
+  "nativeReconciliation": {
+    "passed": true,
+    "sidecarBuild": 67,
+    "bridgeBuild": 67,
+    "sidecarIdentity": "sha256:d8d9013ad484847c5b609f487189324d74d8b78f631238824581c7e14c40e273",
+    "bridgeIdentity": "sha256:fd3eb08f5aae31c4db64894eb36b703d689789fe569a542510a9ae6a741f7528",
+    "catalogCount": 22,
+    "widths": [
+      616,
+      600
+    ],
+    "documentID": "doc_f7a1c88f7d324974986783517fda2c5b",
+    "readOnly": true
+  },
+  "fixtureSHA256": "7ecd4a37b5d3c50e02e40029b3aab9b14c11620132fc774622b0a0a3cc64beef",
+  "journalStates": [
+    {
+      "name": "transaction-8gkt8tve",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-6j4psuoj",
+      "state": "restored"
+    },
+    {
+      "name": "transaction-nbxm9ra_",
+      "state": "restored"
+    },
+    {
+      "name": "transaction-rcp46_83",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-oyrtx0kt",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-oiocj9dw",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-6_v8_0rv",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-6o19r7a5",
+      "state": "restored"
+    },
+    {
+      "name": "transaction-e8d0nn85",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-rkcv8wm7",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-pccxc8t9",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-e9rm1oxy",
+      "state": "committed"
+    },
+    {
+      "name": "transaction-v7t_u0zk",
+      "state": "restored"
+    },
+    {
+      "name": "transaction-_xei59xk",
+      "state": "restored"
+    },
+    {
+      "name": "transaction-a1hqvo54",
+      "state": "restored"
+    },
+    {
+      "name": "transaction-at319h36",
+      "state": "restored"
+    }
+  ],
+  "initialReconciliation": "Read-only client waited behind the native trial reminder; continued the existing trial, then reran successfully. No font write was performed.",
+  "evidenceSHA256": "f13793ec371cff6493a5e4603a15641daae1520e495bce8ffb97676881db048d",
+  "hostWorkingGlyphs": "untouched"
+}
