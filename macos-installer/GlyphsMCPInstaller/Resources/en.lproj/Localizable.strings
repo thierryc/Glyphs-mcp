@@ -910,3 +910,15 @@
 "Edit…" = "Edit…";
 
 "Resize file list" = "Resize file list";
+
+/* Component updates after a desktop upgrade. */
+"Update your Glyphs components" = "Update your Glyphs components";
+"The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation." = "The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation.";
+"Later" = "Later";
+"Unable to verify component version" = "Unable to verify component version";
+
+/* Clear server and plugin update messaging. */
+"A new version of the MCP server in Glyphs is available." = "A new version of the MCP server in Glyphs is available.";
+"Updates for your Glyphs plugins are available." = "Updates for your Glyphs plugins are available.";
+"The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." = "The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs.";
+"Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs." = "Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs.";

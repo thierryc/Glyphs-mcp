@@ -75,6 +75,7 @@ struct InstallationView: View {
                     ComponentSetupCard(
                         component: component,
                         state: model.state(for: component),
+                        updateStatus: model.componentUpdates[component.id],
                         disabled: !model.canChangeComponents,
                         pythonReady: model.canInstallComponents,
                         install: { model.installComponent(component.id) },
@@ -227,6 +228,7 @@ struct SetupCardGrid: Layout {
 private struct ComponentSetupCard: View {
     let component: DesktopComponent
     let state: SetupItemState
+    let updateStatus: ComponentUpdateStatus?
     let disabled: Bool
     let pythonReady: Bool
     let install: () -> Void
@@ -242,9 +244,19 @@ private struct ComponentSetupCard: View {
         } detail: {
             Text(LocalizedStringKey(component.detail))
         } status: {
-            SetupStatus(state: state)
+            VStack(alignment: .leading, spacing: 5) {
+                if state == .installed && updateStatus == .updateAvailable {
+                    DesktopStatus(title: "Update available", tone: .attention, symbol: "arrow.clockwise")
+                } else {
+                    SetupStatus(state: state)
+                }
+                if updateStatus == .unableToVerify {
+                    Text("Unable to verify component version").font(.caption).foregroundStyle(.secondary)
+                }
+            }
         } actions: {
-            SetupCardActions(state: state, disabled: disabled, canInstall: pythonReady, install: install, update: update, remove: remove, retry: retry)
+            SetupCardActions(state: state, disabled: disabled, canInstall: pythonReady,
+                updateAvailable: updateStatus == .updateAvailable, install: install, update: update, remove: remove, retry: retry)
         } footer: {
             DesktopTextLink("Documentation", destination: component.documentation).font(.caption)
                 .accessibilityLabel("\(component.title) documentation")
@@ -344,6 +356,7 @@ private struct SetupCardActions: View {
     let state: SetupItemState
     let disabled: Bool
     var canInstall = true
+    var updateAvailable = false
     let install: () -> Void
     let update: () -> Void
     let remove: () -> Void
@@ -356,7 +369,10 @@ private struct SetupCardActions: View {
                 DesktopActionButton(title: "Install", symbol: "arrow.down.to.line", emphasis: .primary, action: install)
                     .disabled(disabled || !canInstall)
             case .installed:
-                DesktopActionButton(title: "Update", symbol: "arrow.clockwise", action: update).disabled(disabled || !canInstall)
+                DesktopActionButton(title: "Update", symbol: "arrow.clockwise",
+                    emphasis: updateAvailable ? .primary : .secondary, action: update)
+                    .fontWeight(updateAvailable ? .semibold : .regular)
+                    .disabled(disabled || !canInstall)
                 DesktopActionButton(title: "Uninstall", action: remove).disabled(disabled)
             case .developmentLinked:
                 DesktopActionButton(title: "Install bundled version", symbol: "arrow.down.to.line", emphasis: .primary, action: update)

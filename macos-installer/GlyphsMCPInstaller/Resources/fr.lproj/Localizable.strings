@@ -921,3 +921,15 @@
 "Edit…" = "Modifier…";
 
 "Resize file list" = "Redimensionner la liste des fichiers";
+
+/* Component updates after a desktop upgrade. */
+"Update your Glyphs components" = "Mettez à jour vos composants Glyphs";
+"The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation." = "L’application a été mise à jour. Mettez à jour les composants dans Configuration pour profiter des nouvelles fonctionnalités et corrections dans Glyphs. Il peut être nécessaire de quitter Glyphs pendant l’installation.";
+"Later" = "Plus tard";
+"Unable to verify component version" = "Impossible de vérifier la version du composant";
+
+/* Clear server and plugin update messaging. */
+"A new version of the MCP server in Glyphs is available." = "Une nouvelle version du serveur MCP pour Glyphs est disponible.";
+"Updates for your Glyphs plugins are available." = "Des mises à jour de vos extensions Glyphs sont disponibles.";
+"The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." = "L’application a été mise à jour, mais le serveur utilisé par Glyphs doit encore être mis à jour.\n\nOuvrez Configuration, puis cliquez sur Mettre à jour dans la carte Glyphs MCP pour profiter des nouvelles fonctionnalités et corrections. Il peut être nécessaire de quitter et de rouvrir Glyphs.";
+"Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs." = "Ouvrez Configuration, puis cliquez sur Mettre à jour dans les cartes d’extensions mises en évidence pour profiter des nouvelles fonctionnalités et corrections.\n\nIl peut être nécessaire de quitter et de rouvrir Glyphs.";

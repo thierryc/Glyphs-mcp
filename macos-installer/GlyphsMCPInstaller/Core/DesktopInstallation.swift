@@ -1,5 +1,106 @@
 import Foundation
 
+/// Receipt-to-payload comparison; independent companions keep their own versions.
+public enum ComponentUpdateStatus: Equatable, Sendable {
+    case current, updateAvailable, newerInstalled, unableToVerify, developmentLinked
+    public var needsUpdate: Bool { self == .updateAvailable }
+}
+
+public enum ComponentUpdatePolicy {
+    public static func compare(installedVersion: String?, bundledVersion: String?,
+                               installedIdentities: [String?], bundledIdentities: [String?],
+                               installedBuild: Int? = nil, bundledBuild: Int? = nil,
+                               developmentLinked: Bool = false) -> ComponentUpdateStatus {
+        if developmentLinked { return .developmentLinked }
+        guard let installedVersion, let bundledVersion,
+              installedVersion.range(of: "^[0-9]+(\\.[0-9]+){1,3}$", options: .regularExpression) != nil,
+              bundledVersion.range(of: "^[0-9]+(\\.[0-9]+){1,3}$", options: .regularExpression) != nil,
+              !installedIdentities.isEmpty, installedIdentities.count == bundledIdentities.count,
+              (installedIdentities + bundledIdentities).allSatisfy({ value in
+                  value?.range(of: "^sha256:[0-9a-f]{64}$", options: .regularExpression) != nil
+              }) else { return .unableToVerify }
+        let order = installedVersion.compare(bundledVersion, options: .numeric)
+        if order == .orderedDescending { return .newerInstalled }
+        if order == .orderedAscending { return .updateAvailable }
+        if let installedBuild, let bundledBuild, installedBuild > bundledBuild { return .newerInstalled }
+        return installedIdentities == bundledIdentities ? .current : .updateAvailable
+    }
+
+    public static func discover(installation: DesktopInstallation, lean: URL,
+                                architecture: String) -> [String: ComponentUpdateStatus] {
+        func object(_ url: URL) -> [String: Any] {
+            (try? Data(contentsOf: url)).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
+        }
+        let receipt = object(installation.root.appendingPathComponent("installation.json"))
+        let manifest = object(lean.appendingPathComponent("manifest.json"))
+        let installedCompanions = receipt["companions"] as? [[String: Any]] ?? []
+        let bundledCompanions = manifest["companions"] as? [[String: Any]] ?? []
+        let plugins = installation.root.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Glyphs 4/Plugins")
+        var result: [String: ComponentUpdateStatus] = [:]
+        for component in DesktopComponent.all where installation.components.contains(component.id) {
+            let path = plugins.appendingPathComponent(component.bundle)
+            guard !installation.developmentLinkedComponents.contains(component.id),
+                  !installation.brokenDevelopmentLinkedComponents.contains(component.id) else {
+                result[component.id] = .developmentLinked; continue
+            }
+            guard FileManager.default.fileExists(atPath: path.path) else {
+                result[component.id] = .unableToVerify; continue
+            }
+            if component.id == "mcp" {
+                let installedBridge = receipt["bridge"] as? [String: Any] ?? [:]
+                let installedSidecar = receipt["sidecar"] as? [String: Any] ?? [:]
+                let bundledBridge = manifest["bridge"] as? [String: Any] ?? [:]
+                let bundledSidecar = manifest["sidecar"] as? [String: Any] ?? [:]
+                let runtime = receipt["runtime"] as? [String: Any] ?? [:]
+                let runtimes = manifest["runtimes"] as? [String: [String: Any]] ?? [:]
+                let release = installedBridge["release"] as? [String: Any] ?? [:]
+                // A partial or mixed receipt is not evidence of an available update.
+                let sidecarRelease = installedSidecar["release"] as? [String: Any] ?? [:]
+                let version = installedBridge["version"] as? String
+                guard version == receipt["version"] as? String,
+                      version == sidecarRelease["version"] as? String else {
+                    result[component.id] = .unableToVerify; continue
+                }
+                result[component.id] = compare(installedVersion: version,
+                    bundledVersion: manifest["version"] as? String,
+                    installedIdentities: [installedBridge["identity"] as? String, installedSidecar["identity"] as? String, runtime["identity"] as? String],
+                    bundledIdentities: [bundledBridge["identity"] as? String, bundledSidecar["identity"] as? String, runtimes[architecture]?["identity"] as? String],
+                    installedBuild: release["installerBuild"] as? Int, bundledBuild: manifest["installerBuild"] as? Int)
+            } else {
+                let installed = installedCompanions.filter { $0["id"] as? String == component.id }
+                let bundled = bundledCompanions.filter { $0["id"] as? String == component.id }
+                guard installed.count == 1, bundled.count == 1 else {
+                    result[component.id] = .unableToVerify; continue
+                }
+                result[component.id] = compare(installedVersion: installed[0]["version"] as? String,
+                    bundledVersion: bundled[0]["version"] as? String,
+                    installedIdentities: [installed[0]["identity"] as? String],
+                    bundledIdentities: [bundled[0]["identity"] as? String])
+            }
+        }
+        return result
+    }
+}
+
+public enum ComponentUpdateReminder {
+    public static func title(needsServerUpdate: Bool) -> String {
+        needsServerUpdate ? "A new version of the MCP server in Glyphs is available." : "Updates for your Glyphs plugins are available."
+    }
+    public static func message(needsServerUpdate: Bool) -> String {
+        needsServerUpdate ? "The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." : "Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs."
+    }
+    public static func key(version: String, build: String, root: URL) -> String {
+        "componentUpdateReminder." + version + "." + build + "." + root.standardizedFileURL.path
+    }
+    public static func shouldPresent(statuses: [String: ComponentUpdateStatus], alreadyShown: Bool,
+                                     interactive: Bool, busy: Bool, otherDialog: Bool) -> Bool {
+        !alreadyShown && interactive && !busy && !otherDialog && statuses.contains {
+            DesktopComponent.ids.contains($0.key) && $0.value.needsUpdate
+        }
+    }
+}
+
 public enum DesktopIdentity {
     public static let bundleIdentifier = "cx.ap.glyphsMcp"
     public static let serviceLabel = "com.ap.cx.glyphs-mcp-sidecar"

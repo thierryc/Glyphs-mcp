@@ -921,3 +921,15 @@
 "Edit…" = "编辑…";
 
 "Resize file list" = "调整文件列表大小";
+
+/* Component updates after a desktop upgrade. */
+"Update your Glyphs components" = "更新 Glyphs 组件";
+"The desktop app has been updated. Update the components in Setup to use the new features and fixes in Glyphs. Glyphs may need to quit during installation." = "桌面应用已更新。请在“设置”中更新组件，以在 Glyphs 中使用新功能和修复。安装期间可能需要退出 Glyphs。";
+"Later" = "稍后";
+"Unable to verify component version" = "无法验证组件版本";
+
+/* Clear server and plugin update messaging. */
+"A new version of the MCP server in Glyphs is available." = "Glyphs 中的 MCP 服务器有新版本可用。";
+"Updates for your Glyphs plugins are available." = "您的 Glyphs 插件有可用更新。";
+"The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." = "桌面应用已更新，但 Glyphs 使用的服务器仍需更新。\n\n打开设置，然后点击 Glyphs MCP 卡片上的“更新”，即可使用最新功能和修复。您可能需要退出并重新打开 Glyphs。";
+"Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs." = "打开设置，然后点击突出显示的插件卡片上的“更新”，即可使用最新功能和修复。\n\n您可能需要退出并重新打开 Glyphs。";

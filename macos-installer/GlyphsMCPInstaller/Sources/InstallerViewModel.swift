@@ -7,6 +7,12 @@ final class InstallerViewModel: ObservableObject {
     @Published private(set) var applications: [GlyphsApplicationInfo] = []
     @Published private(set) var installed: Set<String> = []
     @Published private(set) var componentStates: [String: SetupItemState] = [:]
+    @Published private(set) var componentUpdates: [String: ComponentUpdateStatus] = [:]
+    private var componentUpdateTask: Task<Void, Never>?
+    var componentUpdateReminderKey: String {
+        ComponentUpdateReminder.key(version: projectVersion,
+            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown", root: root)
+    }
     @Published private(set) var connectorStates: [InstallerClientKind: SetupItemState] = [:]
     @Published private(set) var detectedClients: Set<InstallerClientKind> = []
     @Published private(set) var connectorVersions: [InstallerClientKind: String] = [:]
@@ -141,6 +147,7 @@ final class InstallerViewModel: ObservableObject {
         pythonCheckTask?.cancel()
         refreshTask?.cancel()
         optionalTask?.cancel()
+        componentUpdateTask?.cancel()
     }
 
     func checkForUpdates() {
@@ -214,6 +221,7 @@ final class InstallerViewModel: ObservableObject {
         }
         refreshConnectorDetection(resetFailures: resetFailures)
         refreshRunning()
+        refreshComponentUpdates()
 
         }
     }
@@ -454,7 +462,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     private func runBulkQueue(_ queue: [SetupQueueItem]) async {
-        defer { busy = false }
+        defer { busy = false; refreshComponentUpdates() }
         do {
             refreshRunning()
             guard !running else { throw InstallerError.userFacing("Quit Glyphs, then try again.") }
@@ -520,7 +528,7 @@ final class InstallerViewModel: ObservableObject {
         notice = .information(operation.progressLabel.replacingOccurrences(of: "…", with: "") + " " + componentTitle(id) + "…")
         task = Task { [weak self] in
             guard let self else { return }
-            defer { self.busy = false }
+            defer { self.busy = false; self.refreshComponentUpdates() }
             do {
                 if operation == .remove {
                     try await self.executeComponentRemoval(id)
@@ -857,6 +865,29 @@ final class InstallerViewModel: ObservableObject {
 
     private func componentTitle(_ id: String) -> String {
         DesktopComponent.all.first { $0.id == id }?.title ?? id
+    }
+
+    private func refreshComponentUpdates() {
+        componentUpdateTask?.cancel()
+        componentUpdateTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let payload = try await self.resolvePayload()
+                guard !Task.isCancelled else { return }
+                let lean = payload.payloadDir.appendingPathComponent("Lean")
+                let architecture = Self.processArchitecture
+                let statuses = await Task.detached(priority: .utility) {
+                    ComponentUpdatePolicy.discover(installation: DesktopInstallation(), lean: lean,
+                        architecture: architecture)
+                }.value
+                guard !Task.isCancelled else { return }
+                self.componentUpdates = statuses
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.componentUpdates = [:]
+                self.record("Component update availability could not be verified: \(error.localizedDescription)")
+            }
+        }
     }
 
     private func appendLog(_ text: String) {

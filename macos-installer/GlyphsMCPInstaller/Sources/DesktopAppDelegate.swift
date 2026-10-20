@@ -25,11 +25,23 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private var taskMenuTracking: NSObjectProtocol?
     private var preferences: NSObjectProtocol?
     private var activityObservation: AnyCancellable?
+    private var componentUpdateObservation: AnyCancellable?
+    private var componentDialogObservers: [NSObjectProtocol] = []
     private var menuImages: [Bool: NSImage] = [:]
     private weak var activityDot: DesktopActivityDot?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = updates
+        componentUpdateObservation = installer.objectWillChange.sink { [weak self] _ in
+            DispatchQueue.main.async { self?.presentComponentUpdateReminder() }
+        }
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didEndSheetNotification,
+                     NSApplication.didBecomeActiveNotification] {
+            componentDialogObservers.append(NotificationCenter.default.addObserver(forName: name,
+                object: nil, queue: .main) { [weak self] _ in
+                    Task { @MainActor in self?.presentComponentUpdateReminder() }
+                })
+        }
         installer.stopServiceBeforeQuit = { [weak self] in try await self?.desktop.stopForInstallation() }
         installer.showTroubleshootingLogs = { [weak self] in self?.showTroubleshootingLogs() }
         updateMenuBar()
@@ -126,6 +138,33 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         recordFirstPresentation("Dashboard presentation")
         NSApp.activate(ignoringOtherApps: true)
         desktop.setDashboardVisible(true)
+        presentComponentUpdateReminder()
+    }
+
+    private func presentComponentUpdateReminder() {
+        let interactive = !initialWelcome && NSApp.isActive && dashboard?.isVisible == true
+            && dashboard?.isMiniaturized == false && welcome?.isVisible != true
+        let otherDialog = NSApp.modalWindow != nil || NSApp.windows.contains { $0.attachedSheet != nil }
+        let key = installer.componentUpdateReminderKey
+        guard ComponentUpdateReminder.shouldPresent(statuses: installer.componentUpdates,
+            alreadyShown: UserDefaults.standard.bool(forKey: key), interactive: interactive,
+            busy: installer.operationsBusy, otherDialog: otherDialog), let dashboard else { return }
+        let alert = NSAlert()
+        let needsServerUpdate = installer.componentUpdates["mcp"] == .updateAvailable
+        alert.alertStyle = .informational
+        alert.messageText = NSLocalizedString(ComponentUpdateReminder.title(needsServerUpdate: needsServerUpdate), comment: "Component update reminder headline")
+        alert.informativeText = NSLocalizedString(ComponentUpdateReminder.message(needsServerUpdate: needsServerUpdate), comment: "Component update reminder guidance")
+        // Give the headline and two short paragraphs room while retaining native alert behavior.
+        alert.accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 0))
+        alert.addButton(withTitle: NSLocalizedString("Open Setup", comment: "Component update reminder action"))
+        alert.addButton(withTitle: NSLocalizedString("Later", comment: "Component update reminder action"))
+        alert.beginSheetModal(for: dashboard) { [weak self] response in
+            if response == .alertFirstButtonReturn {
+                self?.desktop.requestSetup()
+                self?.showDashboard()
+            }
+        }
+        UserDefaults.standard.set(true, forKey: key)
     }
 
     private func recordFirstPresentation(_ name: String) {
