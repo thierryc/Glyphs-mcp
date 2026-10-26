@@ -1557,6 +1557,51 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertEqual(managed, ["glyphs", "glyphs-mcp-development", "glyphs-mcp-scripting", "glyphs-mcp-spacing"])
 	}
 
+    func testDevelopmentSkillSelectionPreservesLocalToolsAndConnectionSuccess() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let source = root.appendingPathComponent("payload/skills")
+        let destination = root.appendingPathComponent("installed/skills")
+        let names = ["glyphs", "glyphs-mcp-development", "glyphs-mcp-release"]
+        for name in names {
+            try fm.createDirectory(at: source.appendingPathComponent(name), withIntermediateDirectories: true)
+            try "bundled \(name)".write(to: source.appendingPathComponent(name + "/SKILL.md"), atomically: true, encoding: .utf8)
+        }
+        try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-development","surface":"workspace"},{"name":"glyphs-mcp-release","surface":"workspace"}]}"#
+            .write(to: source.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        let payload = InstallerPayload(payloadDir: root.appendingPathComponent("payload"),
+            pluginBundle: root.appendingPathComponent("plugin"), requirementsTxt: root.appendingPathComponent("requirements.txt"), skillsDir: source)
+        let installer = AgentSkillBundleInstaller(log: { _ in })
+        let basic = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test",
+            overwriteExisting: false, includeDevelopmentSkills: false)
+        XCTAssertEqual(basic.entries.map(\.name), ["glyphs"])
+        for name in names.dropFirst() { XCTAssertFalse(fm.fileExists(atPath: destination.appendingPathComponent(name).path)) }
+        let enabled = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test",
+            overwriteExisting: false, includeDevelopmentSkills: true)
+        XCTAssertEqual(Set(enabled.entries.filter { $0.outcome == .installed }.map(\.name)), Set(names.dropFirst()))
+        let receiptURL = destination.appendingPathComponent(".glyphs-mcp-skills.json")
+        let receipt = try JSONDecoder().decode([String: String].self, from: Data(contentsOf: receiptURL))
+        for name in names.dropFirst() {
+            try "local \(name)".write(to: destination.appendingPathComponent(name + "/SKILL.md"), atomically: true, encoding: .utf8)
+        }
+        let disabled = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test",
+            overwriteExisting: false, includeDevelopmentSkills: false)
+        XCTAssertEqual(disabled.entries.map(\.name), ["glyphs"])
+        XCTAssertEqual(try JSONDecoder().decode([String: String].self, from: Data(contentsOf: receiptURL)), receipt)
+        let preserved = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test",
+            overwriteExisting: false, includeDevelopmentSkills: true)
+        XCTAssertEqual(Set(preserved.conflicts.map(\.name)), Set(names.dropFirst()))
+        XCTAssertTrue(preserved.connectionConflicts.isEmpty)
+        for name in names.dropFirst() {
+            XCTAssertEqual(try String(contentsOf: destination.appendingPathComponent(name + "/SKILL.md"), encoding: .utf8), "local \(name)")
+        }
+        try "local font workflow".write(to: destination.appendingPathComponent("glyphs/SKILL.md"), atomically: true, encoding: .utf8)
+        let mixed = try installer.installManagedSkills(from: payload, to: destination, clientName: "Test",
+            overwriteExisting: false, includeDevelopmentSkills: true)
+        XCTAssertEqual(mixed.connectionConflicts.map(\.name), ["glyphs"])
+    }
+
 	func testAgentSkillBundleInstallerOverwritesManagedSkillsOnlyWhenRequested() throws {
 		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let payloadDir = tmp.appendingPathComponent("Payload", isDirectory: true)

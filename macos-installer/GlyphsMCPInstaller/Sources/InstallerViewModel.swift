@@ -19,6 +19,9 @@ final class InstallerViewModel: ObservableObject {
     @Published var notice: ComponentNotice = .none
     @Published private(set) var log = ""
     @Published private(set) var busy = false
+    @Published var includeDevelopmentSkills = UserDefaults.standard.bool(forKey: "includeGlyphsMCPDevelopmentSkills") {
+        didSet { UserDefaults.standard.set(includeDevelopmentSkills, forKey: "includeGlyphsMCPDevelopmentSkills") }
+    }
     @Published var supplementalSkillsBusy = false
     @Published private(set) var optionalStates: [String: OptionalToolState] = [:]
     @Published private(set) var optionalErrors: [String: String] = [:]
@@ -432,8 +435,8 @@ final class InstallerViewModel: ObservableObject {
 
     func connectorGuidance(_ client: InstallerClientKind) -> String {
         switch client {
-        case .codex: return "Reload Codex after setup changes. MCP settings and managed skills are included."
-        case .claudeCode: return "Restart Claude Code after setup changes. MCP settings and managed skills are included."
+        case .codex: return "Reload Codex after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins."
+        case .claudeCode: return "Restart Claude Code after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins."
         case .claudeDesktop: return "Restart Claude Desktop after setup changes."
         case .cursor: return "Reload or restart Cursor to activate the local Glyphs MCP plug-in."
         }
@@ -724,10 +727,10 @@ final class InstallerViewModel: ObservableObject {
         switch client {
         case .codex:
             try await CodexConfigurator(runner: runner, endpointURL: endpoint, log: logger).configure()
-            try throwOnSkillConflicts(try skills.installCodexSkills(payload: payload, overwriteExisting: false))
+            try throwOnSkillConflicts(try skills.installCodexSkills(payload: payload, overwriteExisting: false, includeDevelopmentSkills: includeDevelopmentSkills))
         case .claudeCode:
             try await ClaudeCodeConfigurator(runner: runner, endpointURL: endpoint, log: logger).configureIfAvailable()
-            try throwOnSkillConflicts(try skills.installClaudeCodeSkills(payload: payload, overwriteExisting: false))
+            try throwOnSkillConflicts(try skills.installClaudeCodeSkills(payload: payload, overwriteExisting: false, includeDevelopmentSkills: includeDevelopmentSkills))
         case .claudeDesktop:
             let proxy = [root.appendingPathComponent("runtime/bin/python3").path,
                          "-B", root.appendingPathComponent("sidecar/proxy.py").path]
@@ -764,8 +767,8 @@ final class InstallerViewModel: ObservableObject {
     }
 
     private func throwOnSkillConflicts(_ result: SkillInstallationResult) throws {
-        guard !result.conflicts.isEmpty else { return }
-        let paths = result.conflicts.map(\.path).joined(separator: "\n")
+        guard !result.connectionConflicts.isEmpty else { return }
+        let paths = result.connectionConflicts.map(\.path).joined(separator: "\n")
         throw InstallerError.userFacing("Modified or unowned skills were preserved:\n" + paths)
     }
 

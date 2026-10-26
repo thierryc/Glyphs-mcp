@@ -1,6 +1,8 @@
-# Glyphs MCP Desktop 2.3.0
+# Glyphs MCP Desktop 2.3.1 (in preparation)
 
-**Stable · desktop build 68 · Glyphs 4.** [Download 2.3.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.0). The app now reminds you when the MCP server inside Glyphs needs updating. Open **Setup**, then click the blue **Update** button on the affected card. Updating the desktop app and updating its Glyphs components are separate steps.
+**Patch candidate · desktop build 69 · Glyphs 4.** Development skills are optional during setup, and existing local development skills are preserved with positive guidance. See [2.3.1 preparation](V2.3.1-RELEASE.md).
+
+Published stable: [Download 2.3.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.0). The app now reminds you when the MCP server inside Glyphs needs updating. Open **Setup**, then click the blue **Update** button on the affected card. Updating the desktop app and updating its Glyphs components are separate steps.
 
 See the [2.3.0 release record](V2.3.0-RELEASE.md) for qualification and platform limits.
 

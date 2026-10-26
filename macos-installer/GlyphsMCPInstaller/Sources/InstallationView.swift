@@ -98,6 +98,13 @@ struct InstallationView: View {
                 Text(section == .overview ? LocalizedStringKey("Install All configures every connection, even when its host app is not detected.") : LocalizedStringKey("Choose Install or Update for the agent you want to connect."))
                     .font(.callout).foregroundStyle(.secondary)
             }
+            VStack(alignment: .leading, spacing: 4) {
+                Toggle("Include Glyphs MCP development skills", isOn: $model.includeDevelopmentSkills)
+                    .toggleStyle(.checkbox)
+                    .disabled(model.operationsBusy)
+                Text("Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             SetupCardGrid {
                 ForEach(InstallerClientKind.allCases) { client in
                     ConnectorSetupCard(

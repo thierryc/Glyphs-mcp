@@ -1,7 +1,7 @@
 # Permanent desktop application
 
-> Current stable **2.2.0/build 67** is signed, notarized and published.
-> See [release qualification](../V2.2.0-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
+> Current stable **2.3.0/build 68** is signed, notarized and published.
+> See [release qualification](../V2.3.0-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
 
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the native menu-bar menu share one monitor and service controls. Tasks provides task status, blockers, conversation handoff and guarded recovery for abandoned work; see [Companion Tasks](../docs/companion-tasks.md). Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
@@ -12,6 +12,9 @@ candidate without the private control protocol must be stopped through its
 existing controls before migration.
 
 # Glyphs MCP local installer
+
+The next source patch is **2.3.1/build 69**, with optional development skills in
+Connections. See [patch preparation](../V2.3.1-RELEASE.md).
 
 The published stable release is 2.2.0/build 67 with twenty-one data/action tools,
 one optional display tool and eleven managed skills. Sidecar and bridge product
