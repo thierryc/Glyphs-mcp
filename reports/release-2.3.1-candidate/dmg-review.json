@@ -1,0 +1,12 @@
+{
+  "tag": "v2.3.1",
+  "artifact": "Glyphs-MCP-2.3.1.dmg",
+  "readOnlyMount": true,
+  "visualReview": "passed",
+  "observed": [
+    "Legible installation heading and drag instruction",
+    "Glyphs MCP.app and Applications icons separated by an arrow",
+    "Footer instructions and macOS/Glyphs requirements visible"
+  ],
+  "applicationLaunched": false
+}

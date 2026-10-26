@@ -1,10 +1,8 @@
-# Glyphs MCP Desktop 2.3.1 (in preparation)
+# Glyphs MCP Desktop 2.3.1
 
-**Patch candidate · desktop build 69 · Glyphs 4.** Development skills are optional during setup, and existing local development skills are preserved with positive guidance. See [2.3.1 preparation](V2.3.1-RELEASE.md).
+**Stable · desktop build 69 · Glyphs 4.** [Download 2.3.1](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.1). Development skills are optional during agent setup, and existing local development skills are preserved with positive guidance.
 
-Published stable: [Download 2.3.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.0). The app now reminds you when the MCP server inside Glyphs needs updating. Open **Setup**, then click the blue **Update** button on the affected card. Updating the desktop app and updating its Glyphs components are separate steps.
-
-See the [2.3.0 release record](V2.3.0-RELEASE.md) for qualification and platform limits.
+See the [2.3.1 release record](V2.3.1-RELEASE.md) for qualification and platform limits.
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 

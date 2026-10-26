@@ -1,0 +1,25 @@
+{
+  "version": "2.3.1",
+  "build": 69,
+  "tag": "v2.3.1",
+  "sourceCommit": "f6c312d4eed5e9ea6743f034201079116119737f",
+  "mergePullRequest": "https://github.com/thierryc/Glyphs-mcp/pull/65",
+  "pythonPassed": 3155,
+  "pythonSkipped": 2,
+  "desktopPassed": 305,
+  "documentation": "passed",
+  "deterministicPayloads": "passed",
+  "signedRuntimes": [
+    "arm64",
+    "x86_64 via Rosetta"
+  ],
+  "notarization": {
+    "payload": "6898af3d-6e1a-4511-959b-2fc45dc9e879",
+    "app": "a1b1f965-22ab-49dd-8557-c6c9d4d8257f",
+    "dmg": "6b96606c-081a-4e1b-ab9a-3362c7ff224b"
+  },
+  "publicAssetsVerified": 6,
+  "feedSHA256": "cd4cf3d007d71cc3ebd2c25f68aa861f5e4a4b783c45cc8589bc337588297840",
+  "published": true,
+  "installedLocally": false
+}

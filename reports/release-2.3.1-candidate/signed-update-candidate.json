@@ -1,0 +1,16 @@
+{
+  "releaseVersion": "2.3.1",
+  "channel": "stable",
+  "tag": "v2.3.1",
+  "version": "2.3.1",
+  "build": "69",
+  "bundleIdentifier": "cx.ap.glyphsMcp",
+  "publicKey": "K5EkYQQZFhOWgsw2dtO2dPnCry+8VKhG0eHYeUd2iP8=",
+  "archive": "Glyphs-MCP-2.3.1.zip",
+  "signature": "ozdyNjxiGCgMMYBK6zApHqZSiiDkHxTrd5/3kIz0OcYD181BQ96bwdujuP5WbeC8p5s1whpqQ/+I7fuZc3zvAQ==",
+  "checksums": {
+    "Glyphs-MCP-2.3.1.zip": "c41ebc2a923685db64096d8e6598328da7821cd31af407bf0e6a95e7bdb8cf39",
+    "appcast.xml": "cd4cf3d007d71cc3ebd2c25f68aa861f5e4a4b783c45cc8589bc337588297840"
+  },
+  "published": false
+}
