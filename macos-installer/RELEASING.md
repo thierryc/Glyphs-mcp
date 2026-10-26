@@ -22,6 +22,11 @@ verified public GitHub archive. Automatic sidebar count suppression remains off
 because baseline alerts did not reproduce in the VM. See [2.3.0 qualification](../V2.3.0-RELEASE.md)
 before planning another release.
 
+## Next patch candidate
+
+Source targets **2.3.1/build 69**, with optional development skills and positive
+connection setup guidance. See [2.3.1 preparation](../V2.3.1-RELEASE.md).
+
 ## Prerequisites
 
 Use Xcode, Git, authenticated GitHub CLI, a Python 3.14 development environment,

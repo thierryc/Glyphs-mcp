@@ -273,12 +273,17 @@ public struct SkillInstallationResult: Equatable {
     }
     public var entries: [Entry] = []
     public var conflicts: [Entry] { entries.filter { $0.outcome == .preservedConflict } }
+    /// Local development tools may coexist with the bundled font-workflow skills.
+    public var connectionConflicts: [Entry] {
+        conflicts.filter { !AgentSkillBundleInstaller.developmentSkillNames.contains($0.name) }
+    }
     public var summary: String {
         entries.map { "\($0.outcome.rawValue): \($0.path)\($0.backupPath.map { " — backup: " + $0 } ?? "")\($0.repairAction.map { " — " + $0 } ?? "")" }.joined(separator: "\n")
     }
 }
 
 public struct AgentSkillBundleInstaller {
+    public static let developmentSkillNames: Set<String> = ["glyphs-mcp-development", "glyphs-mcp-release"]
 	let log: (String) -> Void
 
 	public init(log: @escaping (String) -> Void) {
@@ -286,13 +291,13 @@ public struct AgentSkillBundleInstaller {
 	}
 
 	@discardableResult
-	public func installCodexSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> SkillInstallationResult {
-		try installManagedSkills(from: payload, to: InstallerPaths.codexSkillsDir, clientName: "Codex", overwriteExisting: overwriteExisting)
+	public func installCodexSkills(payload: InstallerPayload, overwriteExisting: Bool, includeDevelopmentSkills: Bool = true) throws -> SkillInstallationResult {
+		try installManagedSkills(from: payload, to: InstallerPaths.codexSkillsDir, clientName: "Codex", overwriteExisting: overwriteExisting, includeDevelopmentSkills: includeDevelopmentSkills)
 	}
 
 	@discardableResult
-	public func installClaudeCodeSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> SkillInstallationResult {
-		try installManagedSkills(from: payload, to: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code", overwriteExisting: overwriteExisting)
+	public func installClaudeCodeSkills(payload: InstallerPayload, overwriteExisting: Bool, includeDevelopmentSkills: Bool = true) throws -> SkillInstallationResult {
+		try installManagedSkills(from: payload, to: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code", overwriteExisting: overwriteExisting, includeDevelopmentSkills: includeDevelopmentSkills)
 	}
 
 	@discardableResult
@@ -300,7 +305,8 @@ public struct AgentSkillBundleInstaller {
 		from payload: InstallerPayload,
 		to destRoot: URL,
 		clientName: String,
-		overwriteExisting: Bool
+		overwriteExisting: Bool,
+        includeDevelopmentSkills: Bool = true
 	) throws -> SkillInstallationResult {
 		let managedSkills = payload.managedSkillDirectories()
 		guard !managedSkills.isEmpty else {
@@ -316,6 +322,8 @@ public struct AgentSkillBundleInstaller {
         var result = SkillInstallationResult()
 
 		for skillDir in managedSkills {
+            // Opting out leaves existing copies and ownership receipts untouched.
+            if !includeDevelopmentSkills && Self.developmentSkillNames.contains(skillDir.lastPathComponent) { continue }
 			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
             let name = skillDir.lastPathComponent
             let sourceIdentity = try InstallerPayloadManifestResolver.treeIdentity(skillDir)

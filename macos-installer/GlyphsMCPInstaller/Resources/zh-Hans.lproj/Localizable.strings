@@ -271,8 +271,8 @@
 "Quit Glyphs before changing components. You can save unsaved fonts when prompted." = "更改组件前请退出 Glyphs。出现提示时可保存尚未保存的字体。";
 "Quit Glyphs" = "退出 Glyphs";
 "Open Glyphs" = "打开 Glyphs";
-"Reload Codex after setup changes. MCP settings and managed skills are included." = "设置更改后请重新载入 Codex。包含 MCP 设置和托管技能。";
-"Restart Claude Code after setup changes. MCP settings and managed skills are included." = "设置更改后请重启 Claude Code。包含 MCP 设置和托管技能。";
+"Reload Codex after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins." = "设置更改后请重新载入 Codex。包含 MCP 设置和托管技能。 您还可以在技能中找到 Glyphs MCP 开发技能，用于创建脚本和插件。";
+"Restart Claude Code after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins." = "设置更改后请重启 Claude Code。包含 MCP 设置和托管技能。 您还可以在技能中找到 Glyphs MCP 开发技能，用于创建脚本和插件。";
 "Restart Claude Desktop after setup changes." = "设置更改后请重启 Claude Desktop。";
 "Reload or restart Cursor to activate the local Glyphs MCP plug-in." = "请重新载入或重启 Cursor，以启用本地 Glyphs MCP 插件。";
 
@@ -961,3 +961,7 @@
 "Modified installation preserved" = "已保留修改后的安装";
 "Available on Apple Silicon only." = "仅支持 Apple Silicon。";
 "Requires macOS %@ or later." = "需要 macOS %@ 或更高版本。";
+
+// Optional development skills
+"Include Glyphs MCP development skills" = "包含 Glyphs MCP 开发技能";
+"Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept." = "在设置时向 Codex 和 Claude Code 添加用于创建 Glyphs 脚本、插件和发布版本的技能。保留现有开发技能。";

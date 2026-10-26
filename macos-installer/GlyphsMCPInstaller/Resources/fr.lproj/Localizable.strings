@@ -271,8 +271,8 @@
 "Quit Glyphs before changing components. You can save unsaved fonts when prompted." = "Quittez Glyphs avant de modifier les composants. Vous pourrez enregistrer les polices non sauvegardées lorsque vous y serez invité.";
 "Quit Glyphs" = "Quitter Glyphs";
 "Open Glyphs" = "Ouvrir Glyphs";
-"Reload Codex after setup changes. MCP settings and managed skills are included." = "Rechargez Codex après les modifications. Les réglages MCP et les skills gérés sont inclus.";
-"Restart Claude Code after setup changes. MCP settings and managed skills are included." = "Redémarrez Claude Code après les modifications. Les réglages MCP et les skills gérés sont inclus.";
+"Reload Codex after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins." = "Rechargez Codex après les modifications. Les réglages MCP et les skills gérés sont inclus. Le skill de développement Glyphs MCP est également disponible dans Skills pour créer des scripts et des plugins.";
+"Restart Claude Code after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins." = "Redémarrez Claude Code après les modifications. Les réglages MCP et les skills gérés sont inclus. Le skill de développement Glyphs MCP est également disponible dans Skills pour créer des scripts et des plugins.";
 "Restart Claude Desktop after setup changes." = "Redémarrez Claude Desktop après les modifications.";
 "Reload or restart Cursor to activate the local Glyphs MCP plug-in." = "Rechargez ou redémarrez Cursor pour activer le plug-in Glyphs MCP local.";
 
@@ -961,3 +961,7 @@
 "Modified installation preserved" = "Installation modifiée préservée";
 "Available on Apple Silicon only." = "Disponible uniquement sur Apple Silicon.";
 "Requires macOS %@ or later." = "Nécessite macOS %@ ou une version ultérieure.";
+
+// Optional development skills
+"Include Glyphs MCP development skills" = "Inclure les skills de développement Glyphs MCP";
+"Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept." = "Ajoutez à Codex et Claude Code des skills pour créer des scripts, des plugins et des versions de Glyphs lors de la configuration. Les skills de développement existants sont conservés.";
