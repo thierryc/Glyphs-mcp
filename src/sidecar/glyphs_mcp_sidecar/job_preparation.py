@@ -99,8 +99,14 @@ def prepare_external(service, job_id, cancel):
         if cancel.is_set():
             raise WorkerError("job cancelled")
         service.jobs.update(job_id, phase="preparing")
+        worker_request = dict(job["request"])
+        if worker_request["kind"] == "font_export":
+            from .export_instance_binding import capture
+            worker_request["_instanceBinding"] = capture(
+                service, job["document"], worker_request["options"]["instanceId"], fingerprint
+            )
         prepared = service.worker.prepare(
-            service.jobs.path(job_id), job["document"], job["request"],
+            service.jobs.path(job_id), job["document"], worker_request,
             source_path, fingerprint, cancel,
         )
         result = validate_worker_result(prepared)

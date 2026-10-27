@@ -474,6 +474,13 @@ def _artifact_service(tmp_path):
     bridge = NS(
         documents=lambda: [dict(document)],
         status=lambda: {"jobCapabilities": [], "readCapabilities": [], "writeCapabilities": []},
+        read_entities=lambda document_id, entities, fields: (
+            [{"values": {"items": [{"id": "instance-1", "name": "Regular", "type": "static",
+                "exports": True, "outlineFormat": "ttf"}], "total": 1, "complete": True, "nextCursor": None}}]
+            if entities[0]["kind"] == "instances" else
+            [{"entity": entities[0], "values": {"id": "instance-1", "name": "Regular", "type": "static",
+                "exports": True, "outlineFormat": "ttf", "axisValues": [400.0]}}]
+        ),
     )
     service = SidecarService(
         bridge, jobs=JobStore(tmp_path / "jobs"), worker=_artifact_worker()

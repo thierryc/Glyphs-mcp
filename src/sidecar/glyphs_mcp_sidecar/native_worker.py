@@ -71,7 +71,8 @@ def build_result(payload: dict[str, Any]) -> dict[str, Any]:
         from .font_export_job import generate as export_generate
 
         report = export_generate(
-            _load_font(Path(payload["source"])), request, Path(payload["output"]).parent
+            _load_font(Path(payload["source"])), request, Path(payload["output"]).parent,
+            instance_binding=payload.get("instanceBinding"), source_hash=payload["sourceHash"],
         )
         Path(payload["output"]).with_name("report.json").write_text(
             json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
