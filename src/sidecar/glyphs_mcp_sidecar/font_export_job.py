@@ -156,10 +156,18 @@ def _native_constants() -> tuple[dict[str, Any], dict[str, Any]]:
         return {"otf": "CFF", "ttf": "TT"}, {"plain": "plain", "woff": "woff", "woff2": "woff2"}
 
 
-def generate(font: Any, request: Mapping[str, Any], job_root: Path) -> dict[str, Any]:
+def generate(font: Any, request: Mapping[str, Any], job_root: Path, *,
+             instance_binding: Mapping[str, Any] | None = None,
+             source_hash: str | None = None) -> dict[str, Any]:
     """Generate only in Glyphs Python, without private verification dependencies."""
     options = request["options"]
-    instance = _instance(font, options["instanceId"])
+    resolution = None
+    if instance_binding is not None:
+        from .export_instance_binding import native_records, resolve
+        index, resolution = resolve(native_records(font), instance_binding, options["instanceId"], source_hash)
+        instance = list(_value(font, "instances", []) or [])[index]
+    else:
+        instance = _instance(font, options["instanceId"])
     instance_type = _instance_type(instance)
     variable = instance_type == "variable"
     generation = dict(options["generation"])
@@ -196,6 +204,7 @@ def generate(font: Any, request: Mapping[str, Any], job_root: Path) -> dict[str,
         "success": False,
         "instanceId": options["instanceId"],
         "instanceName": str(_value(instance, "name", "") or ""),
+        **({"instanceResolution": resolution} if resolution is not None else {}),
         "instanceType": instance_type,
         "format": options["format"],
         "containers": list(options["containers"]),

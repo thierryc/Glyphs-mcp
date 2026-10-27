@@ -16,6 +16,14 @@ and needed fields from `id`, `name`, `type`, `exports`, `outlineFormat` and
 `axisValues`. Do not use a display name as `instanceId`; disabled instances are
 rejected.
 
+The sidecar binds that exact live ID to the immutable saved snapshot using the
+complete ordered instance collection, including all axis values. If native
+recovery regenerated IDs, a unique descriptor in the verified slot can resolve
+the requested instance. Changed, incomplete or ambiguous evidence fails without
+a source Save or ID rewrite. Inspect `report.instanceResolution` for the method,
+requested live ID, saved ID and index. Do not substitute a display name or saved
+ID yourself.
+
 Require `font.export.static.v1` or `font.export.variable.v1` for that instance.
 WOFF or WOFF2 additionally requires `font.export.web.v1`. Requested shaping
 cases require `font.verify.shaping.v1`.

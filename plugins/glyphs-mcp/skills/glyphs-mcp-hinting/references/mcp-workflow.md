@@ -114,7 +114,7 @@ that cleanup recipe to the canonical font or unrelated recovery.
 Failed/cancelled scripts can contain partial edits; they
 must not be auto-kept. Do not settle another document's recovery to unblock work.
 
-## Typed export and a tested binding limitation
+## Typed export and source-bound instance identities
 
 Read instances with `{kind:'instances',limit:100}`, fields `['items']`; follow
 opaque cursors. Use the returned exact ID, not a display name. Start one export:
@@ -146,14 +146,26 @@ review its report, source binding and exact manifest. Artifact jobs have no
 staged files to the authorized location; it is not permission to upload them.
 Do not save the font to “fix” an exporter error without a source-save reason.
 
-During the LeftyNote format-4 qualification on Glyphs MCP 2.4.0/Glyphs4.2(4202),
-typed export rejected the exact instance ID returned by `read_entities` as
-unavailable in the saved source. That operation failed before export; no source
-change followed. Treat this as a binding limitation to reconcile/report, not
-proof that every format-4 export fails. Never guess another instance ID or repeat
-an uncertain job. The native script inventory route was tested separately on a
-private font copy; the repository's explicit saved-source worker remains its
-qualified production export path. This skill does not modify the MCP installation.
+The 2026-10-27 LeftyNote test exposed live instance IDs that differed from the
+saved snapshot after native recovery. A subsequently tested sidecar fix retains
+the exact requested live ID and binds it to the immutable saved source through
+the complete ordered instance collection: names, types, export flags, outline
+formats and all axis values. An absent saved ID is resolved only when that
+descriptor is unique and the complete collection matches. Changed, stale or
+ambiguous bindings fail. No source Save or ID rewrite is required.
+
+On a fixed build, inspect `report.instanceResolution`: `requestedId`, `savedId`,
+`index` and `method` (`exact-id` or `source-bound-slot`). LeftyNote's three static
+instances passed real MCP OTF/WOFF2 export, table and explicit shaping checks on
+Glyphs4.2(4202), with source hashes unchanged. This qualified local sidecar has
+runtime ID `2.4.0+a08ed849364c`; the version label 2.4.0 alone does not identify
+the fix. Older installations may still reject the live ID. Reconcile/report
+that error; never guess another ID, repeat an uncertain job, or Save to work
+around it. This skill does not install the patch automatically.
+
+These are diagnostic exports. The repository's explicitly bound saved-source
+worker retains its separate production qualification for precision, preparation
+and release identity. Static LeftyNote tests do not qualify variable export.
 
 ## Comparison plan
 

@@ -100,14 +100,18 @@ class GlyphsCliWorker:
             raise WorkerError("glyphs-cli and an exact Glyphs application are required")
         request_path = job_root / "worker-request.json"
         output_path = job_root / "worker-result.json"
+        native_request = dict(request)
+        instance_binding = native_request.pop("_instanceBinding", None)
         payload = {
             "jobId": job_root.name,
             "document": dict(document),
-            "request": dict(request),
+            "request": native_request,
             "source": str(source_path),
             "sourceHash": source_hash,
             "output": str(output_path),
         }
+        if request.get("kind") == "font_export" and instance_binding is not None:
+            payload["instanceBinding"] = instance_binding
         request_path.write_text(
             json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
             encoding="utf-8",
