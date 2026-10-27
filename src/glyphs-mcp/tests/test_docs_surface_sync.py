@@ -119,7 +119,7 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         trees = [ast.parse((_repo_root()/"src/sidecar/glyphs_mcp_sidecar"/name).read_text())
                  for name in ("server.py", "edit_workflow_ui.py")]
         tools = {decorator.keywords[0].value.value for tree in trees for node in ast.walk(tree)
-                 if isinstance(node, ast.FunctionDef) for decorator in node.decorator_list
+                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) for decorator in node.decorator_list
                  if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr == "tool"}
         protocol = ast.parse((_repo_root()/"src/protocol/glyphs_mcp_protocol/models.py").read_text())
         declared = next(ast.literal_eval(node.value) for node in protocol.body

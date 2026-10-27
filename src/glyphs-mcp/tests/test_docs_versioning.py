@@ -34,7 +34,7 @@ def test_v2_catalog_signatures_match_the_base_and_workflow_tools():
                                for name in ('server.py','edit_workflow_ui.py')))
     actual = {}
     for node in ast.walk(tree):
-        if not isinstance(node, ast.FunctionDef):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         if any(isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
                and d.func.attr == 'tool' for d in node.decorator_list):
