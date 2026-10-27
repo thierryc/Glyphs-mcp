@@ -2,7 +2,15 @@
 title: Release qualification and known limits
 ---
 
-## 2.2.0 preparation
+## 2.4.0 preparation
+
+The next source target is **2.4.0/build 71**, stable channel, with the task-management update. Local implementation checks passed 1,918 lean runtime tests (one skipped), 308 desktop tests and 114 final regression checks. The unsigned app and source receipt were verified before the metadata bump; version and package checks are performed separately for the new identity.
+
+This candidate separates Working, Waiting, Needs attention and Finished, retains recovery per document and explains actual resource conflicts. The catalog stays at 22 tools and 12 managed skills, interface revision 1 and bridge protocol 1. Update both components to negotiate `tasks.document-recovery.v1`.
+
+Installation, live Glyphs verification, signed/notarized distribution, update acceptance and publication remain pending. Source checks and an unsigned local build do not qualify those stages. See the repository's `V2.4.0-RELEASE.md` preparation record.
+
+## Earlier 2.2.0 preparation
 
 Source targets **2.2.0/build 66**, with twenty-one data/action tools plus one
 optional read-only card-display tool, eleven managed skills, interface revision 1
@@ -15,7 +23,7 @@ published stable release and feeds remain 2.1.0. See the
 
 ## Published stable release
 
-Glyphs MCP **2.1.0/build 63** uses twenty data/action tools plus one optional read-only card-display tool, eleven managed skills, lean interface revision 1 and bridge protocol 1. The universal app, nested payload and DMG are Developer ID-signed, notarized and stapled. All public asset digests and sizes matched the verified distribution before feed promotion.
+Glyphs MCP **2.3.1/build 69** remains the published stable release. Its complete gate passed 3,155 Python tests (two skipped), 305 desktop tests, documentation, deterministic payloads and skill/package checks. The app, nested payload and disk image are signed, notarized and stapled; public downloads and the signed update feed were verified. See [published qualification](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.3.1-RELEASE.md). These results retain their 2.3.1 scope.
 
 ## 2.1.0 acceptance
 

@@ -28,6 +28,14 @@ The current patch is **2.3.1/build 69**, with optional development skills and
 positive connection setup guidance. The complete gate, signing, notarization
 and public-download checks passed. See [2.3.1 qualification](../V2.3.1-RELEASE.md).
 
+## Next source candidate
+
+Prepare **2.4.0/build 71** for the stable channel with the task-management update.
+The source identity and all host manifests are coordinated; the public baseline
+remains 2.3.1/build 69. See [2.4.0 preparation](../V2.4.0-RELEASE.md) for local
+checks and remaining acceptance. Preserve published tags, assets and signed feed
+bytes until final verification and separately authorized publication.
+
 ## Prerequisites
 
 Use Xcode, Git, authenticated GitHub CLI, a Python 3.14 development environment,

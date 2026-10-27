@@ -1,9 +1,13 @@
 # Permanent desktop application
 
-> Current stable **2.3.1/build 69** is signed, notarized and published.
+> Published stable **2.3.1/build 69** is signed, notarized and published.
 > See [release qualification](../V2.3.1-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
 
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the native menu-bar menu share one monitor and service controls. Tasks provides task status, blockers, conversation handoff and guarded recovery for abandoned work; see [Companion Tasks](../docs/companion-tasks.md). Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
+
+The next source candidate is **2.4.0/build 71**, with simpler task states,
+document-scoped recovery and precise blockers. See [release preparation](../V2.4.0-RELEASE.md).
+It is not a published or signed release.
 
 Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare
 checksum-pinned Sparkle and the audited local PierreDiffsSwift package. Existing
@@ -30,6 +34,9 @@ optional managed Beztrace card. Managed Beztrace setup is qualified on Apple Sil
 Diffenator is deferred beyond 2.3.0 and is not offered in Setup. Beztrace is excluded from Install All. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
+Existing modified or unowned skills are kept in place and reported as
+information under **Configured**. Successful setup uses a positive informational
+summary; actual configuration failures retain their error details.
 
 Claude Desktop and Claude Code connection removal requires an ownership receipt
 and an exact match of the complete managed entry. Custom environment values,

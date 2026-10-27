@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.0 — in preparation, build 71, 27 October 2026
+
+- Show task creation dates in the list and start, last-activity and expiry times in details.
+- Add Settings → Tasks with a one-day default for inactive-task expiry. Retain unknown outcomes and diagnostics, stop old queued intent, and preserve active work and available recovery.
+- Simplify Tasks into Needs attention, Active and Finished, with clear Working/Waiting states and separate result and recovery information.
+- Scope stopped script recovery to its owning document so independent font work can continue. Preserve same-document decisions and active execution, cleanup and uncertain-outcome protections.
+- Explain blocker ownership, affected fonts and next actions; add View blocking task in the native app.
+- Accept busy requests as Waiting and resume them automatically when Glyphs is ready. Preserve order within each font, allow independent fonts to proceed, and keep queued requests inspectable and cancellable during native work.
+- Show successful preservation of existing skills as information under Configured, with a positive setup summary. Keep actual configuration failures distinct.
+- Preserve retained snapshots during operation pruning and show lost or unavailable recovery accurately.
+- Keep partial failures, incomplete typed recovery and export destination conflicts visible. Fold associated internal steps into their request and permit independent staged-export publication.
+- Update English, French and Simplified Chinese task copy and synchronized agent guidance.
+- Coordinate app, bridge, sidecar and host plugins at 2.4.0/build 71. Keep 22 tools, 12 managed skills, interface revision 1 and bridge protocol 1; negotiate the additive tasks.document-recovery.v1 capability.
+- Prepare the next stable release without changing published 2.3.1 assets or the signed feed. See [release preparation](V2.4.0-RELEASE.md) for qualification and remaining work.
+
 ## 2.2.0 — in preparation, build 67, 19 October 2026
 
 - Prevent Setup subprocess capture from exhausting Swift worker threads before launching the Python check, including on small virtual machines.
