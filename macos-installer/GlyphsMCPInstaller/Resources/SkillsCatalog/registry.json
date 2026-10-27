@@ -227,6 +227,32 @@
       "displayName": "Glyphs OpenType Features"
     },
     {
+      "id": "builtin:glyphs-mcp-hinting",
+      "name": "glyphs-mcp-hinting",
+      "description": "Inventory, diagnose and compare PostScript/CFF, CFF2 or TrueType font hinting with Glyphs MCP. Use for stems, alignment zones, manual versus automatic hints, and small-size rendering problems before scoped repairs.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-hinting",
+        "revision": "b3a75ba688e70877ff406ef1e366d6194d510925"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge.",
+        "Python with fontTools for binary helpers and Pillow with FreeType for raster comparisons. Native hint inventories require Glyphs 4; OTS, AFDKO and a second rasterizer are separate optional tools."
+      ],
+      "bundled": true,
+      "displayName": "Glyphs Hinting"
+    },
+    {
       "id": "builtin:glyphs-mcp-release",
       "name": "glyphs-mcp-release",
       "description": "Prepare and verify a local Glyphs MCP candidate while keeping publication separate.",

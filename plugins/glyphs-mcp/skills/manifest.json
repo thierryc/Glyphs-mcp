@@ -38,6 +38,10 @@
       "surface": "glyphs-mcp-v2"
     },
     {
+      "name": "glyphs-mcp-hinting",
+      "surface": "glyphs-mcp-v2"
+    },
+    {
       "name": "glyphs-mcp-release",
       "surface": "glyphs-mcp-v2"
     },

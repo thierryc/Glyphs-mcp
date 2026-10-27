@@ -148,7 +148,7 @@ appropriate native styles.
 Setup remains the overview. Companion Plugins, AI Agents and Skills reuse the
 same installer state and operation gates. Optional skills use their own hash
 receipts, advisory destination locks, atomic folder replacement and recovery
-journals; they do not change the managed eleven-skill bundle or MCP interface.
+journals; they do not change the managed twelve-skill bundle or MCP interface.
 
 The skill details sheet has independent Install / Update and Remove controls for
 each compatible local agent. Personal discovery includes the shared

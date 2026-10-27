@@ -1,0 +1,10 @@
+interface:
+  display_name: "Glyphs Hinting"
+  short_description: "Audit hints and compare rendering through Glyphs MCP"
+  default_prompt: "Use $glyphs-mcp-hinting to inventory my font’s hints and compare rendering options before applying changes."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "glyphs_mcp_server"
+      description: "Glyphs MCP document, native script and export tools"
