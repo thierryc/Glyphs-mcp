@@ -984,6 +984,13 @@
 "Restored" = "已恢复";
 "Discarded" = "已放弃";
 
+/* Successful setup and skill preservation */
+"Your existing skills were kept in place." = "您现有的技能已保留。";
+"Configured" = "已配置";
+"Setup is complete. Your existing skills were kept. Reload your connected apps and open Glyphs." = "设置已完成。您现有的技能已保留。请重新加载已连接的应用并打开 Glyphs。";
+"Setup is complete. Reload your connected apps and open Glyphs." = "设置已完成。请重新加载已连接的应用并打开 Glyphs。";
+"Components installed. Some connections could not be configured. See their details." = "组件已安装。部分连接未能完成配置。请查看其详细信息。";
+
 /* Task dates and automatic expiry */
 "Started" = "创建时间";
 "Last activity" = "最近活动";

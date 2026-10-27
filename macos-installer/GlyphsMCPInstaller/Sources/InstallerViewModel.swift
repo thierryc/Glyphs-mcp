@@ -15,6 +15,7 @@ final class InstallerViewModel: ObservableObject {
     }
     @Published private(set) var connectorStates: [InstallerClientKind: SetupItemState] = [:]
     @Published private(set) var detectedClients: Set<InstallerClientKind> = []
+    @Published private(set) var connectorInformation: [InstallerClientKind: String] = [:]
     @Published private(set) var connectorVersions: [InstallerClientKind: String] = [:]
     @Published var notice: ComponentNotice = .none
     @Published private(set) var log = ""
@@ -495,6 +496,7 @@ final class InstallerViewModel: ObservableObject {
         }
 
         var connectorFailures = 0
+        var preservedSkills = false
         let connectorItems = queue.compactMap { item -> (InstallerClientKind, SetupOperation)? in
             if case .connector(let client, let operation) = item { return (client, operation) }
             return nil
@@ -503,20 +505,21 @@ final class InstallerViewModel: ObservableObject {
             connectorStates[client] = .active(operation)
             notice = .information("Configuring \(client.displayName)…")
             do {
-                try await executeConnector(client, operation: operation)
+                let information = try await executeConnector(client, operation: operation)
+                connectorInformation[client] = information
+                preservedSkills = preservedSkills || information != nil
                 connectorStates[client] = .installed
                 connectorVersions[client] = payload?.plugin(for: .v4).version.shortVersion ?? projectVersion
                 record("Configured \(client.displayName).")
             } catch {
                 connectorFailures += 1
+                connectorInformation[client] = nil
                 connectorStates[client] = .failed(operation, error.localizedDescription)
                 record("\(client.displayName) failed: \(error.localizedDescription)")
             }
         }
         refreshPreservingOperationResults()
-        notice = connectorFailures == 0
-            ? .information("Setup is complete. Reload your connected apps and open Glyphs.")
-            : .failure("Components installed; \(connectorFailures) connection\(connectorFailures == 1 ? "" : "s") need attention.")
+        notice = .setupCompletion(failedConnections: connectorFailures, preservedSkills: preservedSkills)
     }
 
     private func performComponent(_ id: String, operation: SetupOperation) {
@@ -566,13 +569,15 @@ final class InstallerViewModel: ObservableObject {
             guard let self else { return }
             defer { self.busy = false }
             do {
-                try await self.executeConnector(client, operation: operation)
+                let information = try await self.executeConnector(client, operation: operation)
+                self.connectorInformation[client] = information
                 self.connectorStates[client] = operation == .remove ? .notInstalled : .installed
                 if operation == .remove { self.connectorVersions.removeValue(forKey: client) }
                 else { self.connectorVersions[client] = self.payload?.plugin(for: .v4).version.shortVersion ?? self.projectVersion }
-                self.notice = .information("\(client.displayName) \(operation == .remove ? "removed" : "configured").")
+                self.notice = .information(information ?? "\(client.displayName) \(operation == .remove ? "removed" : "configured").")
                 self.record("\(operation.rawValue.capitalized) completed for \(client.displayName).")
             } catch {
+                self.connectorInformation[client] = nil
                 self.connectorStates[client] = .failed(operation, error.localizedDescription)
                 self.notice = .failure(error.localizedDescription)
                 self.record("\(client.displayName) failed: \(error.localizedDescription)")
@@ -699,7 +704,7 @@ final class InstallerViewModel: ObservableObject {
         try await execute(python, args)
     }
 
-    private func executeConnector(_ client: InstallerClientKind, operation: SetupOperation) async throws {
+    private func executeConnector(_ client: InstallerClientKind, operation: SetupOperation) async throws -> String? {
         let payload = try await resolvePayload()
         let endpoint = DesktopInstallation().endpoint
         let logger: (String) -> Void = { [weak self] text in self?.appendLog(text) }
@@ -709,28 +714,28 @@ final class InstallerViewModel: ObservableObject {
             case .codex:
                 try ConnectorConfigurationRemover.removeCodex(endpoint: endpoint)
                 let result = try skills.removeOwnedSkills(from: payload, under: InstallerPaths.codexSkillsDir)
-                try throwOnSkillConflicts(result)
+                return result.preservationInformation
             case .claudeCode:
                 try ConnectorConfigurationRemover.removeClaude(client: .claudeCode, at: InstallerPaths.claudeCodeConfig,
                     serverName: InstallerConstants.claudeCodeServerName, endpoint: endpoint)
                 let result = try skills.removeOwnedSkills(from: payload, under: InstallerPaths.claudeCodeSkillsDir)
-                try throwOnSkillConflicts(result)
+                return result.preservationInformation
             case .claudeDesktop:
                 try ConnectorConfigurationRemover.removeClaude(client: .claudeDesktop, at: InstallerPaths.claudeDesktopConfig,
                     serverName: InstallerConstants.claudeDesktopServerName, endpoint: endpoint)
             case .cursor:
                 try makeCursorInstaller(payload, logger: logger).remove()
             }
-            return
+            return nil
         }
 
         switch client {
         case .codex:
             try await CodexConfigurator(runner: runner, endpointURL: endpoint, log: logger).configure()
-            try throwOnSkillConflicts(try skills.installCodexSkills(payload: payload, overwriteExisting: false, includeDevelopmentSkills: includeDevelopmentSkills))
+            return try skills.installCodexSkills(payload: payload, overwriteExisting: false, includeDevelopmentSkills: includeDevelopmentSkills).preservationInformation
         case .claudeCode:
             try await ClaudeCodeConfigurator(runner: runner, endpointURL: endpoint, log: logger).configureIfAvailable()
-            try throwOnSkillConflicts(try skills.installClaudeCodeSkills(payload: payload, overwriteExisting: false, includeDevelopmentSkills: includeDevelopmentSkills))
+            return try skills.installClaudeCodeSkills(payload: payload, overwriteExisting: false, includeDevelopmentSkills: includeDevelopmentSkills).preservationInformation
         case .claudeDesktop:
             let proxy = [root.appendingPathComponent("runtime/bin/python3").path,
                          "-B", root.appendingPathComponent("sidecar/proxy.py").path]
@@ -738,6 +743,7 @@ final class InstallerViewModel: ObservableObject {
         case .cursor:
             try makeCursorInstaller(payload, logger: logger).installOrUpdate()
         }
+        return nil
     }
 
     private func resolvePayload(operationID: String? = nil) async throws -> InstallerPayload {
@@ -764,12 +770,6 @@ final class InstallerViewModel: ObservableObject {
             throw InstallerError.userFacing("The installer payload does not contain the Cursor plug-in.")
         }
         return CursorPluginInstaller(source: source, expectedIdentity: identity, version: version, log: logger)
-    }
-
-    private func throwOnSkillConflicts(_ result: SkillInstallationResult) throws {
-        guard !result.connectionConflicts.isEmpty else { return }
-        let paths = result.connectionConflicts.map(\.path).joined(separator: "\n")
-        throw InstallerError.userFacing("Modified or unowned skills were preserved:\n" + paths)
     }
 
     private func execute(_ executable: URL, _ args: [String]) async throws {

@@ -366,6 +366,14 @@ public enum ComponentNotice: Equatable {
         }
     }
     public var isFailure: Bool { if case .failure = self { return true }; return false }
+    public static func setupCompletion(failedConnections: Int, preservedSkills: Bool) -> ComponentNotice {
+        if failedConnections > 0 {
+            return .failure("Components installed. Some connections could not be configured. See their details.")
+        }
+        return .information(preservedSkills
+            ? "Setup is complete. Your existing skills were kept. Reload your connected apps and open Glyphs."
+            : "Setup is complete. Reload your connected apps and open Glyphs.")
+    }
     public mutating func glyphsRunningChanged(_ running: Bool) {
         if !running && self == .waitingForGlyphs { self = .none }
     }

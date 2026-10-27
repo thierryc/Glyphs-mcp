@@ -973,6 +973,13 @@
 "Restored" = "Restored";
 "Discarded" = "Discarded";
 
+/* Successful setup and skill preservation */
+"Your existing skills were kept in place." = "Your existing skills were kept in place.";
+"Configured" = "Configured";
+"Setup is complete. Your existing skills were kept. Reload your connected apps and open Glyphs." = "Setup is complete. Your existing skills were kept. Reload your connected apps and open Glyphs.";
+"Setup is complete. Reload your connected apps and open Glyphs." = "Setup is complete. Reload your connected apps and open Glyphs.";
+"Components installed. Some connections could not be configured. See their details." = "Components installed. Some connections could not be configured. See their details.";
+
 /* Task dates and automatic expiry */
 "Started" = "Started";
 "Last activity" = "Last activity";

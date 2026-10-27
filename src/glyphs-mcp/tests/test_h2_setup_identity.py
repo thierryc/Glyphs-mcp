@@ -104,4 +104,6 @@ def test_desktop_copy_uses_existing_release_label_and_real_backup_location():
     assert '(bridge 0.1.0)' not in text and '(0.1.0)' not in welcome
     model = (ROOT/'macos-installer/GlyphsMCPInstaller/Sources/InstallerViewModel.swift').read_text()
     assert 'beside their original paths' not in model
-    assert 'Modified or unowned skills were preserved' in model
+    assert 'throwOnSkillConflicts' not in model
+    assert 'return result.preservationInformation' in model
+    assert 'connectorInformation[client] = information' in model

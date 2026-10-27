@@ -984,6 +984,13 @@
 "Restored" = "Restauré";
 "Discarded" = "Abandonné";
 
+/* Successful setup and skill preservation */
+"Your existing skills were kept in place." = "Vos skills existants ont été conservés.";
+"Configured" = "Configuré";
+"Setup is complete. Your existing skills were kept. Reload your connected apps and open Glyphs." = "La configuration est terminée. Vos skills existants ont été conservés. Rechargez les applications connectées et ouvrez Glyphs.";
+"Setup is complete. Reload your connected apps and open Glyphs." = "La configuration est terminée. Rechargez les applications connectées et ouvrez Glyphs.";
+"Components installed. Some connections could not be configured. See their details." = "Les composants sont installés. Certaines connexions n’ont pas pu être configurées. Consultez leurs détails.";
+
 /* Task dates and automatic expiry */
 "Started" = "Créée le";
 "Last activity" = "Dernière activité";

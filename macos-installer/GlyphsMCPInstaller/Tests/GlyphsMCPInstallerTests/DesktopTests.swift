@@ -208,6 +208,20 @@ final class DesktopTests: XCTestCase {
         XCTAssertFalse(ComponentNotice.information("Checking…").isFailure)
     }
 
+    func testSuccessfulSetupAndPreservedSkillsUseInformation() {
+        for preserved in [false, true] {
+            let notice = ComponentNotice.setupCompletion(failedConnections: 0, preservedSkills: preserved)
+            XCTAssertFalse(notice.isFailure)
+            XCTAssertTrue(notice.text.contains("Setup is complete"))
+            XCTAssertFalse(notice.text.contains("attention"))
+        }
+        let preserved = ComponentNotice.setupCompletion(failedConnections: 0, preservedSkills: true)
+        XCTAssertTrue(preserved.text.contains("existing skills were kept"))
+        let failed = ComponentNotice.setupCompletion(failedConnections: 1, preservedSkills: true)
+        XCTAssertTrue(failed.isFailure)
+        XCTAssertTrue(failed.text.contains("could not be configured"))
+    }
+
     func testConnectionFailuresDoNotInventAnAvailableUpdate() {
         for code in [nil, 401, 403, 404, 500, 503] as [Int?] {
             let text = DesktopDiagnostics.statusFailure(code)

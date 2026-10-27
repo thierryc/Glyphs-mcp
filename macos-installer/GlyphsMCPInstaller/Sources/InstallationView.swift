@@ -108,6 +108,7 @@ struct InstallationView: View {
             SetupCardGrid {
                 ForEach(InstallerClientKind.allCases) { client in
                     ConnectorSetupCard(
+                        information: model.connectorInformation[client],
                         client: client,
                         state: model.state(for: client),
                         detected: model.detectedClients.contains(client),
@@ -281,6 +282,7 @@ private struct ComponentSetupCard: View {
 }
 
 private struct ConnectorSetupCard: View {
+    var information: String? = nil
     let client: InstallerClientKind
     let state: SetupItemState
     let detected: Bool
@@ -313,7 +315,7 @@ private struct ConnectorSetupCard: View {
                 if let version { Text("Managed version \(version)").font(.caption) }
             }
         } status: {
-            SetupStatus(state: state)
+            SetupStatus(state: state, information: information, installedTitle: "Configured")
         } actions: {
             SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
         } footer: {
@@ -324,10 +326,16 @@ private struct ConnectorSetupCard: View {
 
 private struct SetupStatus: View {
     let state: SetupItemState
+    var information: String? = nil
+    var installedTitle: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             DesktopStatus(title: title, tone: tone, symbol: symbol, spinning: state.isActive || isQueued)
+            if let information, state.failureMessage == nil {
+                Label(information, systemImage: "info.circle")
+                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+            }
             if let failure = state.failureMessage {
                 Text(failure).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
             }
@@ -336,6 +344,7 @@ private struct SetupStatus: View {
 
     private var title: String {
         if case .active(.remove) = state { return "Uninstalling…" }
+        if state == .installed, let installedTitle { return installedTitle }
         return state.statusLabel
     }
     private var isQueued: Bool { if case .queued = state { return true }; return false }

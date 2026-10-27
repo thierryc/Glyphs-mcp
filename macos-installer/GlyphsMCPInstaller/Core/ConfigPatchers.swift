@@ -277,6 +277,11 @@ public struct SkillInstallationResult: Equatable {
     public var connectionConflicts: [Entry] {
         conflicts.filter { !AgentSkillBundleInstaller.developmentSkillNames.contains($0.name) }
     }
+    public var preservationInformation: String? {
+        guard !conflicts.isEmpty else { return nil }
+        return NSLocalizedString("Your existing skills were kept in place.", comment: "Successful preservation of local skills")
+            + "\n" + conflicts.map(\.path).joined(separator: "\n")
+    }
     public var summary: String {
         entries.map { "\($0.outcome.rawValue): \($0.path)\($0.backupPath.map { " — backup: " + $0 } ?? "")\($0.repairAction.map { " — " + $0 } ?? "")" }.joined(separator: "\n")
     }
