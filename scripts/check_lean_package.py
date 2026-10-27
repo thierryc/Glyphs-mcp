@@ -30,7 +30,7 @@ def check_tool_catalog(root):
                     for name in ('server.py', 'edit_workflow_ui.py')]
     tools = [
         keyword.value.value
-        for tree in server_trees for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
+        for tree in server_trees for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
         for decorator in node.decorator_list
         if isinstance(decorator, ast.Call)
         and isinstance(decorator.func, ast.Attribute)

@@ -135,7 +135,7 @@ def restore(service, workflow, error):
     service.edit_workflows._set(workflow, job=service._public(changed), state=operation['status'], savedVersion=None)
     after = operation.get('scriptResult', {}).get('documentAfter')
     if after and operation['status'] == 'discarded':
-        service.edit_workflows._set(workflow, document=after)
+        service.edit_workflows._rebind(workflow, after)
 
 
 def reconcile_save(service, workflow, error):

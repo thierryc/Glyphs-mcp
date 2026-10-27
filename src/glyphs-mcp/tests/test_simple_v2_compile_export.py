@@ -425,7 +425,7 @@ def test_bridge_status_exposes_live_compile_only_when_qualified(monkeypatch):
     monkeypatch.setattr("glyphs_mcp_bridge.core.feature_compile.available", lambda: False)
     assert "feature.compile.live.v1" not in core.status()["jobCapabilities"]
     monkeypatch.setattr("glyphs_mcp_bridge.core.feature_compile.available", lambda: True)
-    assert core.status()["jobCapabilities"] == ["feature.compile.live.v1"]
+    assert set(core.status()["jobCapabilities"]) == {"feature.compile.live.v1", "tasks.document-recovery.v1"}
 
 
 def _artifact_worker():
@@ -521,6 +521,43 @@ def test_artifact_acceptance_rejects_stale_source_and_existing_destination(tmp_p
         service.accept_job(job["id"], destination=str(tmp_path / "new"))
     assert error.value.code == "stale_source"
     assert service.jobs.get(job["id"])["status"] == "ready"
+
+
+def test_staged_export_publication_is_independent_of_live_python(tmp_path):
+    from glyphs_mcp_sidecar.task_inventory import list_tasks
+    service, _, _, _ = _artifact_service(tmp_path)
+    try:
+        job = service.start_job('doc', kind='font_export', options={'instanceId': 'instance-1', 'format': 'ttf'})
+        _wait(service, job['id'], 'ready')
+        other = service.jobs.create({'id': 'other-font'}, {'kind': 'python_script'})
+        service.jobs.update(other['id'], status='applying', resultKind='script')
+        target = tmp_path / 'published-independent'
+        result = service.accept_job(job['id'], destination=str(target))
+        assert result['status'] == 'accepted'
+        assert (target / 'Regular.ttf').read_bytes() == b'verified font bytes'
+        item = next(task for task in list_tasks(service)['tasks'] if task['jobId'] == job['id'])
+        assert item['taskStatus'] == 'finished' and item['outcomeLabel'] == 'Exported'
+        assert service.jobs.get(other['id'])['status'] == 'applying'
+    finally:
+        service.close()
+
+
+def test_export_destination_conflict_is_visible_and_retryable(tmp_path):
+    from glyphs_mcp_sidecar.task_inventory import list_tasks
+    service, _, _, _ = _artifact_service(tmp_path)
+    try:
+        job = service.start_job('doc', kind='font_export', options={'instanceId': 'instance-1', 'format': 'ttf'})
+        _wait(service, job['id'], 'ready')
+        target = tmp_path / 'existing'; target.mkdir()
+        with pytest.raises(ServiceError):
+            service.accept_job(job['id'], destination=str(target))
+        item = next(task for task in list_tasks(service)['tasks'] if task['jobId'] == job['id'])
+        assert item['taskStatus'] == 'needs_attention'
+        assert str(target) in item['message'] and 'Choose a new export destination' in item['message']
+        assert service.jobs.get(job['id'])['status'] == 'ready'
+        assert service.accept_job(job['id'], destination=str(tmp_path / 'new'))['status'] == 'accepted'
+    finally:
+        service.close()
 
 
 def test_artifact_discard_deletes_private_staging(tmp_path):

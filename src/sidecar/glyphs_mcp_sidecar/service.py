@@ -61,6 +61,7 @@ class SidecarService:
         from .font_comparison import ComparisonWorker
         self.comparison_worker = comparison_worker or ComparisonWorker()
         self._cancellations: dict[str, Event] = {}
+        self._document_cache = {}
         self._lock, self._script_dispatch_lock = RLock(), RLock()
         self._checkpoint_lock = RLock()
         self.lifecycle = ServiceLifecycle(self, ServiceError)
@@ -131,7 +132,11 @@ class SidecarService:
     def get_status(self) -> dict[str, Any]:
         try:
             bridge = {"reachable": True, **dict(self.bridge.status())}
+            from glyphs_mcp_protocol.task_conflicts import CAPABILITY
+            self._task_scoped_recovery = CAPABILITY in bridge.get("jobCapabilities", [])
+            self._task_bridge_session = bridge.get("bridgeSessionId")
         except Exception as exc:
+            self._task_scoped_recovery = False
             bridge = {"reachable": False, "error": self._error(exc).as_dict()}
         status = getattr(self.worker, "status", None)
         worker = status() if callable(status) else {"available": True, "kind": "injected"}
@@ -180,14 +185,17 @@ class SidecarService:
             "bridge": bridge,
             "worker": worker,
             "controlProtocol": 1,
-            "workflowCapabilities": ["edit.workflow.v1", "script.apply-authorized.v1", "font.checkpoints.v1"],
+            "workflowCapabilities": ["edit.queue.automatic.v1", "edit.workflow.v1", "script.apply-authorized.v1", "font.checkpoints.v1"],
             "activity": self.lifecycle.snapshot(),
             "acceptance": "Call accept_job to verify and save an applied job. apply_job remains reversible and never saves.",
         }
 
     def list_documents(self) -> list[dict[str, Any]]:
         try:
-            return self.bridge.documents()
+            documents = self.bridge.documents()
+            with self._lock:
+                self._document_cache = {d["id"]: dict(d) for d in documents}
+            return documents
         except Exception as exc:
             raise self._error(exc) from exc
 
@@ -568,10 +576,19 @@ class SidecarService:
     ) -> dict[str, Any]:
         job = self._job(job_id)
         if job.get("resultKind") == "artifact":
-            return self._artifact_publisher(job).accept(
-                self, ServiceError, job,
-                destination=destination, include_preview=include_preview,
-            )
+            try:
+                return self._artifact_publisher(job).accept(
+                    self, ServiceError, job,
+                    destination=destination, include_preview=include_preview,
+                )
+            except Exception as exc:
+                error = self._error(exc)
+                if destination is not None:
+                    error.details.setdefault('destination', str(destination))
+                # A preflight refusal remains retryable and visible in Tasks.
+                # Publication owns any status transition after writes begin.
+                self.jobs.update(job_id, error=error.as_dict())
+                raise error from exc
         return saving.accept_job(
             self, ServiceError, job_id,
             destination=destination, include_preview=include_preview,

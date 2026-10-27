@@ -1,5 +1,7 @@
 """Small persistent interaction records; no font snapshots or mutation replay."""
 from copy import deepcopy
+from functools import wraps
+from threading import RLock
 import hashlib
 import json
 from pathlib import Path
@@ -8,12 +10,22 @@ from uuid import uuid4
 from glyphs_mcp_protocol import scripts
 from .saved_script import unresolved
 
-TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed"}
-ACTIVE = {"preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
+TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed", "expired"}
+ACTIVE = {"queued", "preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
+
+
+def _store_locked(method):
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        with self.lock:
+            return method(self, *args, **kwargs)
+    return locked
 
 
 class WorkflowStore:
     def __init__(self, root):
+        self.lock = RLock()
+        self.next_queue_sequence = 1
         self.root = Path(root) / "edit-workflows"
         self.records = {}
         self._active, self._keys, self._jobs, self._peers = {}, {}, {}, {}
@@ -24,28 +36,34 @@ class WorkflowStore:
                     value = json.loads(path.read_text())
                     if value["id"] != path.stem or value.get("version") != 1:
                         continue
+                    self.next_queue_sequence = max(self.next_queue_sequence, value.get("queueSequence", 0) + 1)
                     self.records[value["id"]] = value
                     self._remember(value)
                     if value["state"] not in TERMINAL and value["state"] != "interrupted":
                         value["resumeState"] = value["state"]
-                        self.update(value, state="interrupted", scriptRunAuthorized=False, error={
+                        self.update(value, state="interrupted", scriptRunAuthorized=False,
+                                    lastActivityAt=value.get('lastActivityAt', value.get('updatedAt', value['createdAt'])), error={
                             "code": "workflow_interrupted",
                             "message": "The service restarted. No save or edit was replayed. Check the existing outcome before starting new work.",
                         })
                 except (OSError, ValueError, KeyError, TypeError):
                     continue
 
+    @_store_locked
     def create(self, document, arguments, request, mode, key, *, auto_keep=False, script_run_authorized=False):
-        value = dict(version=1, id="edit_" + uuid4().hex, nonce=uuid4().hex,
+        sequence = self.next_queue_sequence
+        self.next_queue_sequence += 1
+        value = dict(queueSequence=sequence, version=1, id="edit_" + uuid4().hex, nonce=uuid4().hex,
                      document=deepcopy(document), arguments=deepcopy(arguments), request=request,
                      mode=mode, idempotencyKey=key, state="starting", revision=0,
                      jobId=None, blockerId=None, job=None, error=None, receipt=None,
-                     usedActions={}, createdAt=time.time(), autoKeepRequested=auto_keep,
+                     usedActions={}, createdAt=time.time(), lastActivityAt=time.time(), autoKeepRequested=auto_keep,
                      autoKeepEnabled=auto_keep, scriptRunAuthorized=script_run_authorized)
         self.records[value["id"]] = value
         self.update(value)
         return value
 
+    @_store_locked
     def update(self, value, *, advance_revision=True, **fields):
         value.update(deepcopy(fields))
         if advance_revision:
@@ -59,6 +77,7 @@ class WorkflowStore:
         temporary.replace(path)
         self._remember(value)
 
+    @_store_locked
     def _remember(self, value):
         identity = value['id']
         active = (value['state'] in ACTIVE - {'uncertain'}
@@ -80,15 +99,19 @@ class WorkflowStore:
         else:
             self._active.pop(identity, None)
 
+    @_store_locked
     def active_records(self):
         return [self.records[key] for key in self._active]
 
+    @_store_locked
     def matching_key(self, key):
         return next((self.records[identity] for identity in self._keys.get(key, ())), None)
 
+    @_store_locked
     def matching_job(self, job_id):
         return next((self.records[key] for key in self._jobs.get(job_id, ())), None)
 
+    @_store_locked
     def peers(self, document_id):
         return [self.records[key] for key in self._peers.get(document_id, ())]
 
@@ -121,10 +144,12 @@ def report_needs_review(service, job, *, include_overwrites=True):
 
 
 MESSAGES = {
+    "expired": "Task expired after inactivity.",
     "waiting_run": "Script ready.",
     "executed": "Changes kept without saving.",
     "waiting_save": "Save your font to continue.",
     "waiting_manual": "Save your font in Glyphs, then continue here.",
+    "queued": "Waiting for Glyphs. This task will continue automatically when Glyphs is ready.",
     "preparing": "Preparing changes…",
     "ready": "Changes ready to review.",
     "needs_review": "Some changes need your review.",
@@ -132,7 +157,7 @@ MESSAGES = {
     "applied": "Changes applied.",
     "saving": "Saving font…",
     "discarding": "Discarding changes…",
-    "blocked_active": "Waiting for an earlier change to this font.",
+    "blocked_active": "Waiting for Glyphs. This task will continue automatically when Glyphs is ready.",
     "blocked_review": "Keep, save or undo the earlier changes to continue.",
     "blocked_proposal": "Review the earlier preview to continue.",
     "resolving": "Finishing the earlier change before continuing…",
@@ -184,6 +209,10 @@ def offered_actions(value):
 
 def _offered_actions(value):
     state = value["state"]
+    if state == 'expired':
+        return []
+    if state == "queued":
+        return [("cancel", "Cancel this request")]
     if value['request']['kind'] == 'checkpoint_restore' and state in {'failed','interrupted','uncertain'} and unresolved(value.get('job') or {}):
         return [('check_outcome','Check result'),('acknowledge_restore_outcome','Acknowledge uncertain restore')]
     if state == 'failed' and (value.get('job') or {}).get('status') == 'ready' and str((value.get('error') or {}).get('code','')).startswith('checkpoint_'):
@@ -346,8 +375,9 @@ def compact_summary(summary):
 
 def public_workflow(value, *, include_review=False, include_warning=False):
     result = {key: deepcopy(value.get(key)) for key in (
-        "id", "revision", "document", "mode", "state", "jobId", "blockerId", "blockingWorkflowId", "job", "error", "receipt", "reviewInConversation", "savedVersion")}
+        "id", "revision", "document", "mode", "state", "jobId", "blockerId", "blockingWorkflowId", "blocker", "job", "error", "receipt", "reviewInConversation", "savedVersion", "expiration")}
     request = value["request"]
+    result["queue"] = None
     if value.get('blockerId') and (result.get('job') or {}).get('resultKind') == 'script':
         result['job'] = {k: v for k, v in (result.get('job') or {}).items()
                          if k in {'id', 'status', 'resultKind', 'summary'}}
@@ -399,6 +429,8 @@ def public_workflow(value, *, include_review=False, include_warning=False):
     result["message"] = MESSAGES.get(value["state"], "Checking your changes…")
     if guidance := GUIDANCE.get(value["state"]):
         result["message"] += "\n" + guidance
+    if value['state'] == 'expired':
+        result['message'] += '\n' + (value.get('expiration') or {}).get('message', 'The recorded outcome and diagnostics were retained. No font change or save was performed.')
     if value.get("error"):
         result["message"] += "\nCheck your font in Glyphs and review Details before continuing."
     if request['kind'] == 'python_script':
@@ -433,11 +465,33 @@ def public_workflow(value, *, include_review=False, include_warning=False):
                              'Font saved and checkpoint '+('reused: ' if checkpoint.get('status') == 'reused' else 'created: ')+checkpoint.get('revision','')[:12]+'.')
     if value['state'] == 'applied':
         result['message'] += '\n' + current_save_status(value)
-    if value.get('blockerId') and (value.get('job') or {}).get('resultKind') == 'script':
-        result['message'] = 'Resolve the earlier task in your agent before continuing. You can review it from another conversation.'
-        result['message'] += '\nUse that workflow’s available Keep, Save or Restore saved version actions. Restore replaces all subsequent unsaved edits in the whole font.'
+    if value.get('blocker'):
+        from glyphs_mcp_protocol.task_conflicts import describe
+        result['message'] = describe(value['blocker'])
+        if value['blocker']['reason'] == 'recovery' and (value.get('job') or {}).get('resultKind') == 'script':
+            result['message'] += '\nUse the earlier task’s available Keep, Save or Restore choices. Restore replaces later edits in that whole font.'
     if (value.get('job') or {}).get('checkpointEnabled') and value['state'] == 'applied':
         result['message'] += '\nSave font also creates a local Git checkpoint. Keep does not create a result checkpoint.'
+    automatic_wait = (value['state'] == 'queued' or value['state'] == 'blocked_active') and (
+        not value.get('blocker') or value['blocker'].get('wait') == 'automatic')
+    if automatic_wait:
+        result['queue'] = dict(status='waiting', automaticResume=True, queuedAt=value.get('queuedAt'),
+                              predecessorWorkflowId=value.get('queuePredecessorId'))
+        continuation = ('Preparation will continue automatically when Glyphs is ready. Running still requires your review.'
+                        if value.get('mode') == 'preview' and not value.get('queuedAction') else
+                        'This task will continue automatically when Glyphs is ready.')
+        result['message'] = 'Waiting for Glyphs. ' + continuation
+        if value.get('blocker'):
+            from glyphs_mcp_protocol.task_conflicts import describe
+            result['message'] += '\n' + describe(value['blocker'])
+        if value.get('cancelRequested'):
+            result['message'] = 'Cancelling this waiting request. It will not run.'
+            result['queue'].update(status='cancelling', automaticResume=False)
+    elif value['state'] == 'queued' and value.get('blocker'):
+        from glyphs_mcp_protocol.task_conflicts import describe
+        result['queue'] = dict(status='waiting', automaticResume=False, queuedAt=value.get('queuedAt'),
+                              predecessorWorkflowId=value.get('queuePredecessorId'))
+        result['message'] = describe(value['blocker'])
     labels = '; '.join(item['label'] for item in result['actions']
                        if item['presentation'] in {'primary', 'secondary'})
     menu_labels = '; '.join(item['label'] for item in result['actions'] if item['presentation'] == 'menu')
@@ -508,9 +562,11 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result["text"] += "\nDetails: " + str(value["error"].get("message", ""))
     result["poll"] = (value["state"] in ACTIVE and (value["state"] != "uncertain" or bool(value.get("jobId")))
                       or value["state"] == "ready" and value.get("mode") == "apply")
+    if (value.get('blocker') or {}).get('wait') in {'decision', 'check'}:
+        result['poll'] = False
     # Card updates must not instruct a conversational agent to poll a pending
     # user decision. Recovery actions on failed/cancelled scripts still refresh.
-    processing = (value['state'] in {'preparing', 'applying', 'saving', 'discarding', 'resolving', 'blocked_active'}
+    processing = (value['state'] in {'queued', 'preparing', 'applying', 'saving', 'discarding', 'resolving', 'blocked_active'}
                   or value['state'] == 'ready' and value.get('mode') == 'apply')
     result['uiRefreshIntervalMs'] = 1500 if processing else 5000 if result['actions'] else 0
     # Some hosts omit structuredContent from the model's conversation. Keep the
@@ -520,6 +576,9 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         "document_id": result["document"]["id"], "state": result["state"], "poll": result["poll"],
         "requestFingerprint": result.get("requestFingerprint"),
         "blockingWorkflowId": result.get('blockingWorkflowId'),
+        "blocker": result.get("blocker"),
+        "queue": result.get("queue"),
+        "expiration": result.get("expiration"),
         "autoKeep": result.get('autoKeep'),
         "actionSupportText": result.get('actionSupportText'),
         "actions": [dict(action=item["action"], label=item["label"], action_token=item["token"],

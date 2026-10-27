@@ -11,7 +11,7 @@ def test_keep_releases_waiter_without_save_and_survives_reconnect(env):
     service, bridge, worker, source = env
     first = wait(service, start(env), 'applied')
     second = service.edit_workflows.start('doc_1', kind='width_delta', delta=8, idempotency_key='second')
-    assert second['state'] == 'blocked_review'
+    second = wait(service, second, 'blocked_review')
     assert second['blockingWorkflowId'] == first['id']
     original = deepcopy(first)
     finished = choose(service, first, 'finish_edit')
@@ -41,7 +41,8 @@ def test_keep_direct_job_from_waiting_workflow(env):
         time.sleep(.01)
     service.apply_job(direct['id'])
     waiter = start(env)
-    assert waiter['state'] == 'blocked_review' and waiter['blockingWorkflowId'] is None
+    waiter = wait(service, waiter, 'blocked_review')
+    assert waiter['blockingWorkflowId'] is None
     waiter = choose(service, waiter, 'keep_previous')
     assert wait(service, waiter, 'waiting_save')['blockerId'] is None
     assert not bridge.adapter.save_calls

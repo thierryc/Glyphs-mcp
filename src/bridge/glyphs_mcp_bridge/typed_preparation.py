@@ -40,7 +40,8 @@ def begin(core, value, error):
         _check(core, operation, error)
         operation['prepareIterator'] = simple.iterator(core.adapter._font(patch['documentId']), request)
         # Same bounded retry window as apply; no separate durable preparation registry.
-        finished = [key for key, op in core._operations.items() if op['status'] not in {'preparing','applying','accepting','discarding','rolling_back'}]
+        from glyphs_mcp_protocol.task_conflicts import retained
+        finished = [key for key, op in core._operations.items() if not retained(op)]
         for key in finished[:-7]:
             del core._operations[key]
         core._operations[job_id] = operation

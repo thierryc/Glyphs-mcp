@@ -206,6 +206,77 @@ extension DesktopActivityTests {
 
 
 final class DesktopTaskTests: XCTestCase {
+    func testDatesAndExpiredOutcomeRemainDistinct() throws {
+        let json = #"{"id":"old","title":"Edit outlines","documentName":"Font","state":"expired","taskStatus":"finished","outcomeLabel":"Outcome unknown","closed":true,"createdAt":1792239449,"updatedAt":1792256103,"expiredAt":1793200000,"blockedBy":[],"blocking":[]}"#
+        let task = try JSONDecoder().decode(DesktopTask.self, from: Data(json.utf8))
+        XCTAssertEqual(task.startedDate, Date(timeIntervalSince1970: 1792239449))
+        XCTAssertEqual(task.lastActivityDate, Date(timeIntervalSince1970: 1792256103))
+        XCTAssertEqual(task.expirationDate, Date(timeIntervalSince1970: 1793200000))
+        XCTAssertEqual(task.rowStatusLabel, "Expired")
+        XCTAssertEqual(task.statusLabel, "Expired")
+        XCTAssertEqual(task.outcomeLabel, "Outcome unknown")
+        XCTAssertEqual(task.taskGroup, "finished")
+        XCTAssertFalse(task.recoveryAvailable)
+    }
+
+    func testUnknownDatesDoNotInventAnEpochDate() throws {
+        let json = #"{"id":"old","title":"Task","documentName":"Font","state":"interrupted","closed":false,"createdAt":0,"updatedAt":0,"blockedBy":[],"blocking":[]}"#
+        let task = try JSONDecoder().decode(DesktopTask.self, from: Data(json.utf8))
+        XCTAssertNil(task.startedDate)
+        XCTAssertNil(task.lastActivityDate)
+        XCTAssertNil(task.expirationDate)
+    }
+
+    func testExpiryPreferenceDefaultsToOneDayAndPersistsSharedSchema() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertEqual(try DesktopTaskExpiryPolicy.read(under: root).inactivityDays, 1)
+        try DesktopTaskExpiryPolicy(inactivityDays: 7).write(under: root)
+        XCTAssertEqual(try DesktopTaskExpiryPolicy.read(under: root).inactivityDays, 7)
+        let data = try Data(contentsOf: DesktopTaskExpiryPolicy.file(under: root))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Int])
+        XCTAssertEqual(json, ["version": 1, "inactivityDays": 7])
+        for invalid in [0, -1, 366] {
+            XCTAssertThrowsError(try DesktopTaskExpiryPolicy(inactivityDays: invalid).write(under: root))
+        }
+        try Data(#"{"version":1,"inactivityDays":0}"#.utf8).write(to: DesktopTaskExpiryPolicy.file(under: root))
+        XCTAssertThrowsError(try DesktopTaskExpiryPolicy.read(under: root))
+    }
+
+    func testSimpleTaskGroupsAndRecoveryAreIndependentOfClosure() throws {
+        for (status, group, label) in [("working", "active", "Working"), ("waiting", "active", "Waiting"),
+                                       ("needs_attention", "attention", "Needs attention"), ("finished", "finished", "Finished")] {
+            let object: [String: Any] = ["id": "edit_a", "title": "Edit outlines", "documentName": "Font",
+                "state": "needs_decision", "taskStatus": status, "closed": false, "createdAt": 1, "updatedAt": 2,
+                "recoveryStatus": "available", "outcomeLabel": "Changes applied", "blockedBy": [], "blocking": []]
+            let task = try JSONDecoder().decode(DesktopTask.self, from: JSONSerialization.data(withJSONObject: object))
+            XCTAssertEqual(task.taskGroup, group)
+            XCTAssertEqual(task.statusLabel, label)
+            XCTAssertTrue(task.recoveryAvailable)
+            XCTAssertFalse(task.closed) // Finished does not release or hide recovery.
+        }
+    }
+
+    func testBlockerHasAnExactTaskLinkAndExplainsAutomaticWaiting() throws {
+        let json = #"{"id":"edit_b","title":"Edit outlines","documentName":"Other","state":"blocked","taskStatus":"waiting","closed":false,"createdAt":1,"updatedAt":2,"blockedBy":["edit_a"],"blocking":[],"blockers":[{"jobId":"job_a","taskId":"edit_a","workflowId":"edit_a","documentId":"doc_a","documentName":"Font","scope":"session","reason":"execution","wait":"automatic","message":"Waiting for script execution and cleanup in Font."}]}"#
+        let task = try JSONDecoder().decode(DesktopTask.self, from: Data(json.utf8))
+        XCTAssertEqual(task.taskGroup, "active")
+        XCTAssertEqual(task.blockers?.first?.taskId, "edit_a")
+        XCTAssertEqual(task.blockers?.first?.wait, "automatic")
+        XCTAssertEqual(task.statusLabel, "Waiting")
+        XCTAssertFalse(task.recoveryAvailable)
+    }
+
+    func testOlderTaskPayloadsRemainReadableWithoutNewFields() throws {
+        let unknown = try task(state: "unknown")
+        XCTAssertEqual(unknown.taskGroup, "attention")
+        XCTAssertNil(unknown.blockers)
+        XCTAssertFalse(unknown.recoveryAvailable)
+        XCTAssertEqual(unknown.taskActionLabel, "Check result…")
+        XCTAssertEqual(try task(closed: true).taskGroup, "finished")
+        XCTAssertEqual(try task(state: "running").taskGroup, "active")
+    }
+
     func testArchiveIsAnOrphanInterruptedActionAndRetainsUnverifiedOutcome() throws {
         var object: [String: Any] = ["jobId": "job_exact", "revision": 12, "state": "interrupted",
             "documentName": "HandPrint", "message": "Review before archiving", "closed": false, "pending": false,

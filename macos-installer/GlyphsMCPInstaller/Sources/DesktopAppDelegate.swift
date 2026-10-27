@@ -176,14 +176,14 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     @objc func showSettings() {
         statusMenu.cancelTracking()
         if settingsWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 532, height: 580),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 532, height: 740),
                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
             window.title = NSLocalizedString("Settings…", comment: "Settings window title")
             window.identifier = NSUserInterfaceItemIdentifier("glyphs-mcp-settings")
             window.isReleasedWhenClosed = false
             window.contentViewController = NSHostingController(rootView:
                 DesktopSettings(updates: updates).environmentObject(desktop)
-                    .desktopDesign().frame(height: 580))
+                    .desktopDesign().frame(height: 740))
             window.center()
             settingsWindow = window
         }
@@ -394,6 +394,8 @@ struct DesktopSettings: View {
     @State private var loginEnabled = SMAppService.mainApp.status == .enabled
     @State private var loginError = ""
     @State private var port = ""
+    @State private var taskExpiryDays = 1
+    @State private var taskExpiryError = ""
     var body: some View {
         Form {
             Section("Desktop") {
@@ -418,8 +420,24 @@ struct DesktopSettings: View {
                 Button("Check for Updates…", action: updates.check).disabled(!updates.canCheck)
                 if !updates.message.isEmpty { Text(updates.message).font(.caption).foregroundStyle(.secondary) }
             }
+            Section("Tasks") {
+                Picker("Expire inactive tasks after", selection: Binding(get: { taskExpiryDays }, set: setTaskExpiry)) {
+                    Text("1 day").tag(1)
+                    Text("7 days").tag(7)
+                    Text("30 days").tag(30)
+                    Text("90 days").tag(90)
+                    if ![1, 7, 30, 90].contains(taskExpiryDays) { Text("\(taskExpiryDays) days").tag(taskExpiryDays) }
+                }
+                Text("Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if !taskExpiryError.isEmpty { Text(taskExpiryError).font(.caption).foregroundStyle(.secondary) }
+            }
         }.formStyle(.grouped).frame(width: 500).padding()
-        .onAppear { port = String(desktop.installation.port) }
+        .onAppear {
+            port = String(desktop.installation.port)
+            do { taskExpiryDays = try DesktopTaskExpiryPolicy.read(under: desktop.installation.root).inactivityDays }
+            catch { taskExpiryError = error.localizedDescription }
+        }
         .task { await desktop.refresh() }
     }
     private func setLogin(_ enabled: Bool) {
@@ -428,5 +446,12 @@ struct DesktopSettings: View {
             loginEnabled = SMAppService.mainApp.status == .enabled
             loginError = SMAppService.mainApp.status == .requiresApproval ? "Allow Glyphs MCP in System Settings → Login Items." : ""
         } catch { loginError = error.localizedDescription }
+    }
+    private func setTaskExpiry(_ days: Int) {
+        do {
+            try DesktopTaskExpiryPolicy(inactivityDays: days).write(under: desktop.installation.root)
+            taskExpiryDays = days
+            taskExpiryError = ""
+        } catch { taskExpiryError = error.localizedDescription }
     }
 }

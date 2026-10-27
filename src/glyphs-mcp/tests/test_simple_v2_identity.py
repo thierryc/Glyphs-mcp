@@ -102,7 +102,7 @@ def test_status_does_not_rehash_or_read_receipt_or_fonts(tmp_path, monkeypatch):
     assert status['interface'] == 'glyphs-mcp-sidecar' and status['interfaceVersion'] == 1
     assert status['jobKinds'] == list(JOB_KINDS)
     assert len(status['tools']) == 22 and status['protocol'] == 1
-    assert status['workflowCapabilities'] == ['edit.workflow.v1', 'script.apply-authorized.v1', 'font.checkpoints.v1']
+    assert status['workflowCapabilities'] == ['edit.queue.automatic.v1', 'edit.workflow.v1', 'script.apply-authorized.v1', 'font.checkpoints.v1']
     assert status['codeHash'] is None  # unpackaged source cannot claim a release
 
 

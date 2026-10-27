@@ -154,10 +154,23 @@ A whole script runs once and has no invented progress percentage. Cancellation
 stops remaining callbacks; it cannot safely force-stop a running invocation.
 Progress updates keep the same running Cancel action usable; a state, error or
 job identity change invalidates it. Run and Restore remain revision-bound.
-Resolve outstanding MCP mutations first. Generated scripts should not save or
+With `tasks.document-recovery.v1`, Run waits for active native work and conflicts
+in its own document. Stopped recovery in another document does not block it.
+An older runtime retains its existing global protection. Generated scripts should not save or
 close fonts. If a script does, report the observed outcome accurately.
-When a task waits on an earlier script, use `blockingWorkflowId` to read and
-resolve that original workflow. Use its offered Keep, Save or Restore action;
+With `edit.queue.automatic.v1`, an occupied connection accepts the request as
+**Waiting** with the same workflow ID and idempotency key. The supervisor resumes
+it automatically when Glyphs is ready. Tell the user: “Waiting for Glyphs. This
+task will continue automatically when Glyphs is ready.” No permission question
+is needed for an automatic wait. Preview requests resume preparation only;
+their Run decision stays explicit. Cancelling a waiting request leaves other
+tasks and their recovery unchanged. After a service restart, queued requests
+require review; an uncertain execution is never rerun automatically.
+When a task waits on an earlier script, refresh the waiting workflow and inspect
+its `blocker` reason and scope. Automatic execution waits need no recovery
+decision. Keep polling the same workflow while `poll=true`; do not resubmit it.
+For a genuine recovery conflict, use `blockingWorkflowId` to read and
+resolve that original workflow. Never settle unrelated recovery just to free a task. Use its offered Keep, Save or Restore action;
 never route a script blocker through typed Undo. Partial failed/cancelled edits
 remain unresolved until Keep or Restore. After restoration, use only its returned
 fresh document binding, then prepare the waiting request again.

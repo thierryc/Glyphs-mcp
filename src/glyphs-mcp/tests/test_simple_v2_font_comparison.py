@@ -185,5 +185,7 @@ def test_comparison_does_not_break_close_guards_for_live_documents(service):
     guard(service, document, ServiceError)
     live = service.jobs.create(document, dict(kind='width_delta', delta=10, glyphs=['A']))
     service.jobs.update(live['id'], status='applied')
-    with pytest.raises(ServiceError, match='pending MCP job'):
+    with pytest.raises(ServiceError, match='recovery available') as failure:
         guard(service, document, ServiceError)
+    assert failure.value.details['jobId'] == live['id']
+    assert failure.value.details['blocker']['documentId'] == document['id']

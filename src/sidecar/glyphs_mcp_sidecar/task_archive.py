@@ -84,13 +84,15 @@ def options(service, job_id):
             service._task_archive_secret = secrets.token_bytes(32)
         token = hmac.new(service._task_archive_secret, ('archive_interrupted:' + digest).encode(), hashlib.sha256).hexdigest()
         document = job.get('document') or {}
+        expired = job['status'] == 'expired'
+        expiration_receipt = (job.get('expiration') or {}).get('message')
         return dict(workflowId=None, jobId=job['id'], revision=int(digest[:13], 16),
                     state='archived' if archived else job['status'],
                     documentName=document.get('familyName') or 'Untitled font', path=document.get('path'),
-                    message=RECEIPT if archived else reason or 'Archive this interrupted record after checking the font in Glyphs.',
-                    warning=(job.get('error') or {}).get('message'), closed=bool(archived), pending=False,
-                    receipt=RECEIPT if archived else None,
-                    actions=[] if archived or reason else [dict(action='archive_interrupted', label='Archive Interrupted Task',
+                    message=expiration_receipt if expired else RECEIPT if archived else reason or 'Archive this interrupted record after checking the font in Glyphs.',
+                    warning=(job.get('error') or {}).get('message'), closed=bool(archived) or expired, pending=False,
+                    receipt=expiration_receipt if expired else RECEIPT if archived else None,
+                    actions=[] if expired or archived or reason else [dict(action='archive_interrupted', label='Archive Interrupted Task',
                                                               consequence=CONSEQUENCE, token=token)])
 
 

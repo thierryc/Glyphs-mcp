@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 from pathlib import Path
 from typing import Any, Callable
 
@@ -28,59 +29,59 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
     mcp = FastMCP(name="Glyphs MCP Sidecar", version=RELEASE_VERSION)
 
     @mcp.tool(name="get_status")
-    def get_status() -> dict[str, Any]:
+    async def get_status() -> dict[str, Any]:
         """Return sidecar, worker and bridge availability, negotiated read/write/jobCapabilities, job kinds, and the filtered closed nativeActions catalog."""
-        return _result(service.get_status)
+        return await asyncio.to_thread(_result, service.get_status)
 
     @mcp.tool(name="list_tasks", annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False})
-    def list_tasks(cursor: int = 0, limit: int = 50) -> dict[str, Any]:
-        """List all open Glyphs MCP tasks and a page of closed history, including named blockers and original conversation metadata. Passive snapshot: never runs, saves, cancels or closes work. Retain workflowId and use get_edit_workflow for current choices, revisions and tokens before responding in this conversation, including when the original chat is unavailable. Job-only entries use get_job for diagnosis. nextCursor pages only closed history; open tasks repeat on each page. Do not infer success from a failed or uncertain state."""
+    async def list_tasks(cursor: int = 0, limit: int = 50) -> dict[str, Any]:
+        """List all open Glyphs MCP tasks and a page of closed history, including createdAt/updatedAt/expiredAt dates, taskStatus (working, waiting, needs_attention, finished), outcomeLabel, recoveryStatus, precise resource blockers and original conversation metadata. Expired inactive tasks are closed and retain unknown or partial outcomes; expiry never proves success. Finished work can retain recovery while closed=false; closing and completion are separate. Passive snapshot: never runs, saves, cancels or closes work. Retain workflowId and use get_edit_workflow for current choices, revisions and tokens before responding in this conversation, including when the original chat is unavailable. Job-only entries use get_job for diagnosis. nextCursor pages only closed history; open tasks repeat on each page. Do not infer success from a failed or uncertain state."""
         from .task_inventory import list_tasks as inventory
-        return _result(lambda: inventory(service, cursor, limit))
+        return await asyncio.to_thread(_result, lambda: inventory(service, cursor, limit))
 
     @mcp.tool(name="list_documents")
-    def list_documents() -> dict[str, Any]:
+    async def list_documents() -> dict[str, Any]:
         """Discover open Glyphs documents once for the intended target. With document.context.v1, isCurrent is native current-font evidence (true/false, null if unavailable); never infer it from list order. Retain its document_id on this connection for subsequent fresh reads; rediscover after document_not_found or changed target intent."""
-        return _result(service.list_documents)
+        return await asyncio.to_thread(_result, service.list_documents)
 
     @mcp.tool(name="create_document")
-    def create_document(family_name: str, idempotency_key: str, units_per_em: int = 1000) -> dict[str, Any]:
+    async def create_document(family_name: str, idempotency_key: str, units_per_em: int = 1000) -> dict[str, Any]:
         """With font-creation authorization, create and open a new unsaved Glyphs font with one Regular master and one Regular instance; no existing document is required. Requires document.create.v1. family_name is 1-255 characters; units_per_em is an integer from 16 to 16384 (default 1000). Return its id for subsequent reads/edits/save_document, plus native masterIds and instanceIds. Creation never saves. Save As uses save_document with separate existing/explicit save authorization and a new absolute .glyphs or .glyphspackage destination. Retain a fresh idempotency_key per intended font and retry exactly the same arguments after a timeout. A reused key with different arguments conflicts; a closed created document is not recreated. After a bridge restart, creation_outcome_unknown requires reconciliation of the original font rather than another creation request. No saved baseline or edit workflow is required."""
-        return _result(lambda: service.create_document(family_name, idempotency_key, units_per_em))
+        return await asyncio.to_thread(_result, lambda: service.create_document(family_name, idempotency_key, units_per_em))
 
     @mcp.tool(name="duplicate_document")
-    def duplicate_document(document_id: str, idempotency_key: str, family_name: str | None = None) -> dict[str, Any]:
+    async def duplicate_document(document_id: str, idempotency_key: str, family_name: str | None = None) -> dict[str, Any]:
         """With duplication authorization, copy the exact live font including unsaved edits into a new pathless document. Requires document.duplicate.v1; never Save or alter the original. Optional family_name renames only the copy. Return its id for edits, proof tabs and separately authorized Save As. Preserve one key per intended copy; identical retries reuse it, changed arguments conflict, closed copies are not recreated, and bridge restarts require reconciliation. Pending jobs owning the source must be resolved first."""
-        return _result(lambda: service.duplicate_document(document_id, idempotency_key, family_name))
+        return await asyncio.to_thread(_result, lambda: service.duplicate_document(document_id, idempotency_key, family_name))
 
     @mcp.tool(name="open_document")
-    def open_document(path: str, idempotency_key: str) -> dict[str, Any]:
+    async def open_document(path: str, idempotency_key: str) -> dict[str, Any]:
         """With file-opening authorization, open an existing absolute local .glyphs file or .glyphspackage folder in Glyphs 4. Requires document.open.v1; no existing document, saved baseline or script is needed. Reuse an already-open source without reloading, saving, discarding unsaved edits or duplicating its document. Return its id, path, familyName, dirty, generation, alreadyOpen, openId and bridgeSessionId; retain id for subsequent reads/edits/save_document. Opening never saves or closes another font. Use a fresh retained idempotency_key per intended Open and retry identical arguments after a timeout. A changed path conflicts; a closed result is not reopened by a retry. After a bridge restart, opening_outcome_unknown requires reconciling the original document. Missing paths and non-native formats reject; binary/UFO import is separate. A partial native failure may return documentId in error details; inspect it without repeating Open."""
-        return _result(lambda: service.open_document(path, idempotency_key))
+        return await asyncio.to_thread(_result, lambda: service.open_document(path, idempotency_key))
 
     @mcp.tool(name="import_document")
-    def import_document(path: str, idempotency_key: str) -> dict[str, Any]:
+    async def import_document(path: str, idempotency_key: str) -> dict[str, Any]:
         """Import an absolute local .ufo folder, .otf file or .ttf file through Glyphs. No open font is required. Reuse the same key after lost responses; never replay an uncertain import with a new key. Import never saves or overwrites its source. Compiled fonts are view-only until Save As to a new .glyphs/.glyphspackage source, and can lose hinting or OpenType tables. Use the returned exact document ID."""
-        return _result(lambda: service.import_document(path, idempotency_key))
+        return await asyncio.to_thread(_result, lambda: service.import_document(path, idempotency_key))
 
     @mcp.tool(name="activate_document")
-    def activate_document(document_id: str) -> dict[str, Any]:
+    async def activate_document(document_id: str) -> dict[str, Any]:
         """Show the window for an exact live document ID and bring Glyphs to the front. Resolve IDs with list_documents; never substitute the current font. Repeated activation is safe and never reopens a closed font. Does not change outlines, save or resolve jobs."""
-        return _result(lambda: service.activate_document(document_id))
+        return await asyncio.to_thread(_result, lambda: service.activate_document(document_id))
 
     @mcp.tool(name="open_edit_tab")
-    def open_edit_tab(document_id: str, idempotency_key: str, text: str | None = None,
+    async def open_edit_tab(document_id: str, idempotency_key: str, text: str | None = None,
                       glyphs: list[str] | None = None, master_id: str | None = None) -> dict[str, Any]:
         """Open and activate a new Edit tab in an exact live font, including dirty or pathless fonts, without Save, scripts or edit jobs. Requires document.edit-tab.open.v1. Supply text (up to 4096 Unicode characters, with native /glyphName syntax) OR 1-100 exact glyph names in display order; omit both for a blank tab. Repeated glyphs are preserved. Optional master_id is an exact native master ID; otherwise retain the current master. Missing glyph/master layers reject before opening. Preserve existing tabs and font geometry; never saves or resolves jobs. Pending jobs owning the document block the action. Return documentId, session-local tabId, bridgeSessionId, masterId and creation/activation receipt. Retain a fresh idempotency_key per intended tab; retry identical arguments after lost responses. Changed arguments conflict, closed tabs are not recreated, and a bridge restart or partial failure requires outcome reconciliation. Tab listing/editing/closing and special layers are not supported by this tool."""
-        return _result(lambda: service.open_edit_tab(document_id, idempotency_key, text, glyphs, master_id))
+        return await asyncio.to_thread(_result, lambda: service.open_edit_tab(document_id, idempotency_key, text, glyphs, master_id))
 
     @mcp.tool(name="close_document")
-    def close_document(document_id: str, idempotency_key: str, unsaved_changes: str = "refuse", destination: str | None = None) -> dict[str, Any]:
+    async def close_document(document_id: str, idempotency_key: str, unsaved_changes: str = "refuse", destination: str | None = None) -> dict[str, Any]:
         """Close an exact live font with explicit unsaved handling: refuse (default), save, or discard. Discard requires the user's explicit authorization to lose all unsaved edits in this font. Save verifies the native save and file hash first; pathless/imported fonts require a new .glyphs/.glyphspackage destination. Failure leaves the font open. Active, ready, applied or unresolved jobs block Close; resolve their existing lifecycle first. Cancel means do not call this tool. Reuse the same key and options after lost responses; a stale font requires renewed review before a new key. Never closes another font or prompts through a modal dialog."""
-        return _result(lambda: service.close_document(document_id, idempotency_key, unsaved_changes, destination))
+        return await asyncio.to_thread(_result, lambda: service.close_document(document_id, idempotency_key, unsaved_changes, destination))
 
     @mcp.tool(name="read_entities")
-    def read_entities(
+    async def read_entities(
         document_id: str, entities: list[dict[str, Any]], fields: list[str]
     ) -> dict[str, Any]:
         """Read fresh, bounded evidence for a known document_id. Dirty and unsaved fonts need no Save. Request 1-100 entities and 1-32 fields. Reuse the binding; rediscover on document_not_found, not target_not_found. Never substitute another font. Check get_status readCapabilities; missing support requires a coordinated installation update.
@@ -96,10 +97,10 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         Paths require paths.list.v1/path.geometry.v1: sole {kind:paths,glyph,layer,limit?,cursor?} with fields [items]; {kind:path,glyph,layer,index,limit?,cursor?} with fields [nodes]; or {kind:segment,glyph,layer,path,endNode} with type/startNode/endNode/controlNodes/points/length/pathHash. Path/node limits 100/256. outline.background.read.v1 allows surface:background on layer/path selectors; IDs identify the owning foreground layer. Never substitute foreground geometry or create missing backgrounds.
 
         With features.read.v1, sole {kind:feature_blocks,blockType:prefix|class|feature,limit:100,cursor?}, fields [items], or exact {kind:feature_block,blockType,id}. With instances.read.v1, sole {kind:instances,limit:100,cursor?}, fields [items], or exact {kind:instance,id}; returned persistent IDs feed export jobs. With font.checkpoints.v1, fields [checkpoint] and one checkpoint_history/checkpoint_details/checkpoint_compare/checkpoint_scope selector read bounded Git evidence using full revisions/cursors. Invalid selector input returns invalid_request; keep the document binding and correct the input. Full selectors/fields: shipped Glyphs references and the nineteen-tool command reference."""
-        return _result(lambda: service.read_entities(document_id, entities, fields))
+        return await asyncio.to_thread(_result, lambda: service.read_entities(document_id, entities, fields))
 
     @mcp.tool(name="start_job")
-    def start_job(
+    async def start_job(
         document_id: str,
         kind: str,
         delta: float | None = None,
@@ -111,37 +112,37 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         Use typed options and exact targets. outline_edit supports surface:background only with outline.background.edit.v1; layer/reference IDs identify owning foregrounds. native_action uses only get_status.nativeActions: e.g. options={action:set_glyph_color,arguments:{color:orange},targets:[{glyph:A}]}; color:none clears. dimensions_edit requires master.dimensions.edit.v1 and options.changes of 1-100 {master,key,value} entries (number or null to clear), without delta/glyphs. Inspect full report.targets/requiredOverwrites; existing-value overwrites or clears require conversational approval.
 
         Mutation preparation requires a saved clean font. Application remains separate and never saves. checkpoint_restore, with font.checkpoint-restore.v1 and options={revision:full_revision}, prepares a whole-font historical reload; applying replaces later unsaved edits and clears Undo, returning a fresh binding without saving. Retain job_id and reconcile after timeouts; never replace an uncertain operation.        kerning_edit requires kerning.edit.exact.v1 and uses options.edits (1-100). Each entry has op=set|remove, exact master, direction=LTR|RTL|vertical, left/right={kind:glyph,name:...}|{kind:group,key:...}; only set takes finite value, including zero. No top-level glyphs/delta. Native preparation needs no source copy or external worker. Reuses guarded application and selective Undo; no collision analysis."""
-        return _result(
+        return await asyncio.to_thread(_result,
             lambda: service.start_job(
                 document_id, kind=kind, delta=delta, glyphs=glyphs, options=options
             )
         )
 
     @mcp.tool(name="compare_fonts")
-    def compare_fonts(baseline_files: list[str], candidate_files: list[str], options: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def compare_fonts(baseline_files: list[str], candidate_files: list[str], options: dict[str, Any] | None = None) -> dict[str, Any]:
         """Compare explicit local static/variable TTF files with the optional managed Diffenator runtime. Requires font.compare.diffenator.v1 in get_status.comparisonCapabilities. No live Glyphs document or Save is required. Each list contains 1-32 absolute existing TTF paths. options: styles=instances (default), masters or cross_product; filterStyles=style regex; userWordlist=absolute .txt/.csv file. Inputs are privately snapshotted and hashed. Return a job ID; use get_job for stages/HTML entry point, discard_job for cancellation and accept_job with a new destination directory to publish the report. Comparison never applies changes or saves fonts. Completion is not a judgement that differences are acceptable."""
-        return _result(lambda: service.compare_fonts(baseline_files, candidate_files, options))
+        return await asyncio.to_thread(_result, lambda: service.compare_fonts(baseline_files, candidate_files, options))
 
     @mcp.tool(name="get_job")
-    def get_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
+    async def get_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
         """Return progress and a typed mutation, diagnostic or artifact result with report, manifest, warnings and bounded previews. Use include_preview=false for compact polling."""
-        return _result(lambda: service.get_job(job_id, include_preview=include_preview))
+        return await asyncio.to_thread(_result, lambda: service.get_job(job_id, include_preview=include_preview))
 
     @mcp.tool(name="apply_job")
-    def apply_job(job_id: str, include_preview: bool = True, approved_overwrites: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    async def apply_job(job_id: str, include_preview: bool = True, approved_overwrites: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         """Apply mutation jobs only; diagnostic or artifact results cannot be applied. This is not acceptance and never saves. Typed application verifies guarded targets and retains selective Undo. checkpoint_restore replaces the whole font, later unsaved edits and Undo history.
 
         Dimensions blank fills need no confirmation. Before overwriting/clearing existing values, show every master/field and exact old/new value and obtain explicit conversational approval. Then pass exact report.requiredOverwrites as approved_overwrites. This records assistant-reported approval, not authenticated consent. Mixed batches wait together; prepare a reduced job for declined changes."""
-        return _result(lambda: service.apply_job(job_id, include_preview=include_preview, approved_overwrites=approved_overwrites))
+        return await asyncio.to_thread(_result, lambda: service.apply_job(job_id, include_preview=include_preview, approved_overwrites=approved_overwrites))
 
     @mcp.tool(name="accept_job")
-    def accept_job(
+    async def accept_job(
         job_id: str,
         destination: str | None = None,
         include_preview: bool = True,
     ) -> dict[str, Any]:
         """With save authorization, verify an applied mutation and save the whole font (including later edits), ending workflow recovery. Optional destination is an absolute new Save As path and must not exist. Native Undo remains. For artifact jobs, publish verified export or compiled-font comparison artifacts to a new absolute destination directory. Return source-bound receipts; reconcile uncertain outcomes instead of replaying."""
-        return _result(
+        return await asyncio.to_thread(_result,
             lambda: service.accept_job(
                 job_id,
                 destination=destination,
@@ -150,16 +151,16 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         )
 
     @mcp.tool(name="discard_job")
-    def discard_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
+    async def discard_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
         """Cancel preparation, delete private artifact staging, or selectively undo a still-current typed mutation. Conflicting later edits reject recovery. Terminal diagnostics need no discard. Script Keep/Restore and historical restore results use their original workflow ID; list_tasks locates it even when the old conversation is unavailable."""
-        return _result(lambda: service.discard_job(job_id, include_preview=include_preview))
+        return await asyncio.to_thread(_result, lambda: service.discard_job(job_id, include_preview=include_preview))
 
     @mcp.tool(name="save_document")
-    def save_document(
+    async def save_document(
         document_id: str, destination: str | None = None, retry_checkpoint_job_id: str | None = None
     ) -> dict[str, Any]:
         """With explicit or existing save authorization, save one document's whole live contents without a dialog. Optional destination is an absolute new .glyphs or .glyphspackage Save As path; never overwrite a Save As destination. Applied-job owners require accept_job or their workflow Save action. With font.checkpoints.v1, enabled projects create a local checkpoint after verified Save. Git failure does not undo the Save; retry_checkpoint_job_id retries only that recorded checkpoint and never saves again."""
-        return _result(
+        return await asyncio.to_thread(_result,
             lambda: service.save_document(document_id, destination=destination, retry_checkpoint_job_id=retry_checkpoint_job_id)
         )
 

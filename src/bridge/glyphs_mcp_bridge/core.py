@@ -120,7 +120,8 @@ class BridgeCore:
         actions = native_actions.available_actions()
         if actions:
             write_capabilities.append("native.action.v1")
-        job_capabilities = (["feature.compile.live.v1"] if feature_compile.available() else [])
+        from glyphs_mcp_protocol.task_conflicts import CAPABILITY as TASK_CAPABILITY
+        job_capabilities = [TASK_CAPABILITY] + (["feature.compile.live.v1"] if feature_compile.available() else [])
         from . import saved_script, script_snapshot
         if script_snapshot.available():
             job_capabilities.extend([scripts.NATIVE, scripts.SNAPSHOT])
@@ -306,8 +307,9 @@ class BridgeCore:
             self._check_owner(patch["documentId"], ignore_job_id=job_id)
             # Keep a bounded recent retry/discard window. Native Undo owns
             # its inverses independently of these bridge operation records.
+            from glyphs_mcp_protocol.task_conflicts import retained
             finished = [key for key, item in self._operations.items()
-                        if item["status"] not in ACTIVE]
+                        if item["status"] not in ACTIVE and not retained(item)]
             for key in finished[:-7]:
                 del self._operations[key]
             self._operations[job_id] = operation
@@ -315,18 +317,23 @@ class BridgeCore:
         return self._public(operation)
 
     def _check_owner(self, document_id, *, ignore_job_id=None):
-        from .script_execution import unresolved
-        if any(unresolved(item) and item['jobId'] != ignore_job_id for item in self._operations.values()):
-            raise BridgeError('document_busy', 'resolve the stopped native operation before another mutation')
-        if any(item.get('scriptRequest') and item['status'] in ACTIVE and item['jobId'] != ignore_job_id
-               for item in self._operations.values()):
-            raise BridgeError('document_busy', 'native Python is executing')
-        if any(item["documentId"] == document_id and item["status"] in ACTIVE
-               and item["jobId"] != ignore_job_id for item in self._operations.values()):
-            raise BridgeError("document_busy", "another operation is changing this document")
-        if any(item["documentId"] == document_id and item["status"] == "saving"
-               for item in self._saves.values()):
-            raise BridgeError("document_busy", "another operation is changing this document")
+        from glyphs_mcp_protocol.task_conflicts import conflicts, protection, describe
+        for item in self._operations.values():
+            if item['jobId'] == ignore_job_id:
+                continue
+            owner = protection(item)
+            if not owner:
+                continue
+            # Typed recovery keeps its existing selective-conflict checks.
+            if owner['reason'] == 'preview' or (owner['reason'] == 'recovery'
+                    and not item.get('scriptRequest') and not item.get('checkpointRestore')):
+                continue
+            if conflicts(item, document_id):
+                raise BridgeError('document_busy', describe(owner), details={'blocker': owner, 'blockingJobId': item['jobId']})
+        for item in self._saves.values():
+            if item['documentId'] == document_id and item['status'] == 'saving':
+                owner = protection(item)
+                raise BridgeError('document_busy', describe(owner), details={'blocker': owner})
 
     def _launch(self, operation):
         try:
@@ -594,6 +601,11 @@ class BridgeCore:
             "nativeSave": copy.deepcopy(operation.get("nativeSave")),
             "scriptResult": copy.deepcopy(operation.get("scriptResult")),
             "receipt": copy.deepcopy(operation.get("receipt")),
+            "restorationClosed": bool(operation.get("restorationClosed")),
+            "recoveryAvailable": (bool((operation.get('scriptResult') or {}).get('recovery', {}).get('available'))
+                                  if operation.get('scriptRequest') else
+                                  bool(operation.get('resolved') and operation['status'] == 'applied'
+                                       and not operation.get('restorationClosed'))),
             "message": (
                 "Historical font restored without saving. Keep or save separately; selective Undo is unavailable."
                 if operation.get("checkpointRestore") else

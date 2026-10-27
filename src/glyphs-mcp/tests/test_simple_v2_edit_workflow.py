@@ -260,8 +260,10 @@ def test_pending_request_resumes_after_previous_saved(env):
     first = wait(service, start(env), "applied")
     second = service.edit_workflows.start("doc_1", kind="width_delta", delta=8, idempotency_key="second")
     second = wait(service, second, "blocked_review")
-    with pytest.raises(ServiceError, match="existing request"):
-        service.edit_workflows.start("doc_1", kind="width_delta", delta=8, idempotency_key="third")
+    third = service.edit_workflows.start("doc_1", kind="width_delta", delta=8, idempotency_key="third")
+    assert third['state'] == 'queued'
+    assert third['blocker']['wait'] == 'decision'
+    choose(service, third, 'cancel')
     second = choose(service, second, "save_previous")
     wait(service, second, "applied")
     assert bridge.adapter.value == 616 and float(source.read_text()) == 608
@@ -373,14 +375,15 @@ def test_guarded_discard_preserves_subsequent_edit(env):
     assert not bridge.adapter.save_calls
 
 
-def test_lowlevel_job_resolution_and_one_pending_request(env):
+def test_lowlevel_job_resolution_and_multiple_pending_requests(env):
     service, bridge, worker, _ = env
     worker.gate = Event()
     first = service.start_job('doc_1', kind='width_delta', delta=8)
     value = start(env)
     assert value['blockerId'] == first['id']
-    with pytest.raises(ServiceError, match='existing request'):
-        service.edit_workflows.start('doc_1', kind='width_delta', delta=16, idempotency_key='third')
+    third = service.edit_workflows.start('doc_1', kind='width_delta', delta=16, idempotency_key='third')
+    assert third['state'] == 'queued'
+    choose(service, third, 'cancel')
     worker.gate.set()
     value = wait(service, value, 'blocked_proposal')
     service.discard_job(first['id'])

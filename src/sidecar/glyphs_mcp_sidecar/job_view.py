@@ -44,4 +44,7 @@ def public_job(job: Mapping[str, Any], *, include_preview: bool = True) -> dict[
         if isinstance(result["report"], dict):
             result["report"] = {k: v for k, v in result["report"].items() if k not in {"sample", "review", "output", "manifest", "targets"}}
         result["previewIncluded"] = False
+    if status == 'expired':
+        result['expiration'] = job.get('expiration')
+        result['message'] = (job.get('expiration') or {}).get('message', 'Task expired after inactivity. Diagnostics were retained.')
     return result

@@ -41,7 +41,7 @@ def open_edit_tab(service, error_type, document_id, idempotency_key, text=None, 
             guard(service, document, error_type)
         except error_type as exc:
             if exc.code == "document_busy":
-                raise error_type(exc.code, "Resolve the pending MCP job before opening an Edit tab", details=exc.details) from exc
+                raise error_type(exc.code, exc.message, details=exc.details) from exc
             raise
         if not record.exists():
             write(record, request)

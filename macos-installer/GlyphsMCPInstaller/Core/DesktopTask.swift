@@ -28,6 +28,7 @@ public struct DesktopTaskRecovery: Decodable, Equatable {
     public let receipt: String?
     public let actions: [Action]
     public var statusLabel: String {
+        if state == "expired" { return "Expired" }
         if state == "archived" { return "Unverified" }
         if closed { return "Closed" }
         if pending { return "Cancellation pending" }
@@ -46,6 +47,18 @@ public struct DesktopTaskRecovery: Decodable, Equatable {
 }
 
 public struct DesktopTask: Decodable, Equatable, Identifiable {
+    public struct Blocker: Decodable, Equatable, Identifiable {
+        public let jobId: String?
+        public let taskId: String?
+        public let workflowId: String?
+        public let documentId: String?
+        public let documentName: String
+        public let scope: String
+        public let reason: String
+        public let wait: String
+        public let message: String
+        public var id: String { taskId ?? jobId ?? documentName }
+    }
     public struct Origin: Decodable, Equatable {
         public let agent: String
         public let conversationId: String
@@ -72,6 +85,43 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
     public let origin: Origin?
     public let blockedBy: [String]
     public let blocking: [String]
+    public let taskStatus: String?
+    public let recoveryStatus: String?
+    public let outcomeLabel: String?
+    public let blockers: [Blocker]?
+    public let expiredAt: TimeInterval?
+
+    public var startedDate: Date? { Self.validDate(createdAt) }
+    public var lastActivityDate: Date? {
+        guard let updated = Self.validDate(updatedAt) else { return startedDate }
+        return startedDate.map { max($0, updated) } ?? updated
+    }
+    public var expirationDate: Date? { expiredAt.flatMap(Self.validDate) }
+    private static func validDate(_ timestamp: TimeInterval) -> Date? {
+        guard timestamp.isFinite, timestamp > 0,
+              timestamp <= Date.distantFuture.timeIntervalSince1970 else { return nil }
+        return Date(timeIntervalSince1970: timestamp)
+    }
+
+    // Presentation is independent of closure: a finished task may retain recovery.
+    public var displayStatus: String {
+        if let taskStatus { return taskStatus }
+        if closed { return "finished" }
+        if state == "running" { return "working" }
+        return "needs_attention"
+    }
+    public var taskGroup: String {
+        switch displayStatus {
+        case "working", "waiting": return "active"
+        case "finished": return "finished"
+        default: return "attention"
+        }
+    }
+    public var rowStatusLabel: String? { state == "expired" ? "Expired" : taskGroup == "finished" ? outcomeLabel ?? statusLabel : statusLabel }
+    public var recoveryAvailable: Bool { recoveryStatus == "available" }
+    public var taskActionLabel: String {
+        state == "unknown" || state == "interrupted" ? "Check result…" : "Task actions…"
+    }
 
     public var agentName: String? {
         switch origin?.agent { case "codex": return "Codex"; case "claude_code": return "Claude Code"; default: return nil }
@@ -92,6 +142,15 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
         return "No usable conversation link was captured for this task. Copy the prompt into your agent."
     }
     public var statusLabel: String? {
+        if state == "expired" { return "Expired" }
+        if taskStatus != nil {
+            switch displayStatus {
+            case "working": return "Working"
+            case "waiting": return "Waiting"
+            case "finished": return "Finished"
+            default: return "Needs attention"
+            }
+        }
         switch state {
         case "running": return "Running"
         case "needs_decision": return "Needs decision"
@@ -115,6 +174,28 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
     }
     public var copyRequest: String {
         "Review Glyphs MCP task \(workflowId ?? jobId ?? id) for \(documentName): \(title). Retrieve its current state and blockers, then show the existing available choices in this conversation. Do not repeat the script or automatically save, restore, or close the task."
+    }
+}
+
+public struct DesktopTaskExpiryPolicy: Codable, Equatable {
+    public var version = 1
+    public var inactivityDays = 1
+    public init(inactivityDays: Int = 1) { self.inactivityDays = inactivityDays }
+    public static func file(under root: URL) -> URL { root.appendingPathComponent("jobs/task-policy.json") }
+    public static func read(under root: URL) throws -> Self {
+        let file = file(under: root)
+        guard FileManager.default.fileExists(atPath: file.path) else { return Self() }
+        let policy = try JSONDecoder().decode(Self.self, from: Data(contentsOf: file))
+        guard policy.version == 1, (1...365).contains(policy.inactivityDays) else {
+            throw CocoaError(.coderReadCorrupt)
+        }
+        return policy
+    }
+    public func write(under root: URL) throws {
+        guard version == 1, (1...365).contains(inactivityDays) else { throw CocoaError(.coderInvalidValue) }
+        let file = Self.file(under: root)
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(self).write(to: file, options: .atomic)
     }
 }
 

@@ -45,7 +45,7 @@ support from a client name such as ChatGPT, Codex, Claude or Cursor.
 | A short warning needs a decision | Conversation explanation plus native question | Explain coverage and consequences before asking. Reuse existing authorization where it covers the proposal. |
 | A successful result needs a Keep/Save/recovery decision | Native choice question | Offer current valid choices; explain saving and recovery consequences. Disable Automatic Keep before waiting. |
 | The user requests Save or Restore clearly and within scope | No repeated question | Revalidate current state and execute under existing authorization. Clarify only unresolved scope or consequences. |
-| An earlier workflow blocks a new request | Native question about the earlier workflow | Resolve its current Keep/Save/recovery choices. Do not automatically settle it or invent an Undo option for a script. |
+| An earlier workflow blocks a new request | Explain its current blocker reason and resource scope | Wait for active execution automatically. Refresh obsolete dependencies. Ask about existing Keep/Save/recovery choices only for a genuine decision; never settle unrelated recovery or invent script Undo. |
 | The user skips, dismisses or does not answer | Conversation fallback when appropriate | Apply no choice, leave Automatic Keep off and preserve recovery. Do not reopen the same question automatically. |
 
 Questions use the workflow's latest offered actions. Do not invent actions to

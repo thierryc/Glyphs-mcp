@@ -33,11 +33,14 @@ def begin(core, request, error):
                 or old['preparedReport']['manifest'] != request['manifest']):
             raise error('job_conflict', 'script execution differs from the prepared request')
     core._check_owner(request['documentId'], ignore_job_id=identity)
-    if any(unresolved(o) or o['status'] in {'applying', 'rolling_back', 'discarding', 'accepting', 'applied', 'accept_uncertain'} for o in core._operations.values()):
-        raise error('document_busy', 'resolve existing MCP mutations before native execution')
-    if any(o['status'] == 'saving' for o in core._saves.values()):
-        raise error('document_busy', 'a document is being saved')
-    finished = [key for key, item in core._operations.items() if item['status'] not in {'preparing', 'applying', 'rolling_back', 'discarding', 'accepting'}]
+    from glyphs_mcp_protocol.task_conflicts import conflicts, protection, describe, retained
+    for other in list(core._operations.values()) + list(core._saves.values()):
+        if other.get('jobId') == identity:
+            continue
+        if conflicts(other, request['documentId'], exclusive=True):
+            owner = protection(other)
+            raise error('document_busy', describe(owner), details={'blocker': owner, 'blockingJobId': owner['jobId']})
+    finished = [key for key, item in core._operations.items() if not retained(item)]
     for key in finished[:-7]:
         del core._operations[key]
     state = core.adapter.document_state(request['documentId'])

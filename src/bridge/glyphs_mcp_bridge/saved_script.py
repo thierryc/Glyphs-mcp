@@ -36,8 +36,11 @@ def restore(core, request, error):
         return core._public(op)  # Never repeat a potentially attempted reload.
     if op['status'] not in {'applied', 'failed', 'cancelled'} or not op['scriptResult']['executed']:
         raise error('job_not_ready', 'script must have stopped before restoring')
-    if any(o is not op and o['status'] in {'applying', 'applied', 'discarding', 'rolling_back', 'accepting', 'accept_uncertain'} for o in core._operations.values()):
-        raise error('document_busy', 'resolve outstanding MCP changes before restoring a whole document')
+    from glyphs_mcp_protocol.task_conflicts import conflicts, protection, describe
+    for other in core._operations.values():
+        if other is not op and conflicts(other, op['documentId']):
+            owner = protection(other)
+            raise error('document_busy', describe(owner), details={'blocker': owner, 'blockingJobId': owner['jobId']})
     core._check_owner(op['documentId'], ignore_job_id=op['jobId'])
     state = core.adapter.document_state(op['documentId'])
     if op['scriptResult'].get('recovery', {}).get('kind') == 'memory_snapshot':

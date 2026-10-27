@@ -30,6 +30,37 @@ def test_native_preview_and_keep_never_launch_worker_or_copy(env):
     assert source.read_text()=='600' and not bridge.adapter.save_calls
 
 
+def test_typed_preparation_never_prunes_another_fonts_recovery(env):
+    _, bridge, _, source = env
+    enable(bridge)
+    snapshot = object()
+    held = dict(jobId='held', documentId='other-font', status='applied', scriptRequest={'options': {}},
+                scriptResult={'executed': True}, scriptSnapshot=snapshot)
+    bridge.core._operations['held'] = held
+    for index in range(11):
+        value = dict(request(source), jobId=f'prepare_{index}')
+        typed_preparation.begin(bridge.core, value, BridgeError)
+        bridge.queue.drain()
+    assert bridge.core._operations['held'] is held
+    assert held['scriptSnapshot'] is snapshot
+
+
+def test_typed_edit_and_keep_proceed_while_another_font_retains_partial_recovery(env):
+    service, bridge, _, _ = env
+    enable(bridge)
+    job = service.jobs.create({'id': 'other-font', 'familyName': 'Other'}, {'kind': 'python_script'})
+    operation = dict(jobId=job['id'], documentId='other-font', status='failed',
+                     scriptRequest={'options': {}}, scriptResult={'executed': True}, scriptSnapshot=object())
+    bridge.core._operations[job['id']] = operation
+    service.jobs.update(job['id'], status='failed', resultKind='script',
+                        bridgeOperation={'scriptResult': {'executed': True}})
+    value = wait(service, start(env), 'applied')
+    assert bridge.adapter.value == 608
+    assert choose(service, value, 'finish_edit')['state'] == 'executed'
+    assert bridge.core._operations[job['id']] is operation
+    assert operation['scriptSnapshot'] is not None
+
+
 def request(source, count=1):
     return dict(jobId='job_prepare',documentId='doc_1',sourcePath=str(source),sourceHash='sha256:'+'a'*64,
         generation=1, request=dict(kind='width_delta',delta=.25,glyphs=[]))

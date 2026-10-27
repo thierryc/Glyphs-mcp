@@ -965,3 +965,33 @@
 // Optional development skills
 "Include Glyphs MCP development skills" = "包含 Glyphs MCP 开发技能";
 "Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept." = "在设置时向 Codex 和 Claude Code 添加用于创建 Glyphs 脚本、插件和发布版本的技能。保留现有开发技能。";
+
+/* Task status and recovery presentation */
+"Active" = "进行中";
+"Finished" = "已结束";
+"Waiting" = "等待中";
+"Recovery available" = "可恢复";
+"Recovery available in this Glyphs session" = "可在此 Glyphs 会话中恢复";
+"View blocking task" = "查看阻塞任务";
+"Task actions…" = "任务操作…";
+"Check result…" = "检查结果…";
+"Script finished" = "脚本已结束";
+"Changes applied" = "更改已应用";
+"Partial changes may remain" = "可能保留部分更改";
+"Changes kept" = "已保留更改";
+"Issues found" = "发现问题";
+"Exported" = "已导出";
+"Restored" = "已恢复";
+"Discarded" = "已放弃";
+
+/* Task dates and automatic expiry */
+"Started" = "创建时间";
+"Last activity" = "最近活动";
+"Expired" = "已过期";
+"Expire inactive tasks after" = "非活动任务过期时间";
+"1 day" = "1 天";
+"7 days" = "7 天";
+"30 days" = "30 天";
+"90 days" = "90 天";
+"%lld days" = "%lld 天";
+"Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "非活动任务将移至“已完成”并标记为“已过期”。正在进行的任务和可用的恢复选项会保留，历史记录和诊断信息仍可查看。";

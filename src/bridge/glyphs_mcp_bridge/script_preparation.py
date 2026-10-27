@@ -63,10 +63,8 @@ def begin(core, request, error):
             error=None, longestPreparationChunk=0, startedAt=time.time(), finishedAt=None)
         check(core, op, error)
         op['prepareIterator'] = report_iterator(core, request, error)
-        from .script_execution import unresolved
-        finished = [key for key, item in core._operations.items()
-                    if item['status'] not in {'preparing', 'applying', 'accepting', 'discarding', 'rolling_back', 'applied', 'accept_uncertain'}
-                    and not unresolved(item)]
+        from glyphs_mcp_protocol.task_conflicts import retained
+        finished = [key for key, item in core._operations.items() if not retained(item)]
         for key in finished[:-7]: del core._operations[key]
         core._operations[identity] = op
     schedule(core, op, error)

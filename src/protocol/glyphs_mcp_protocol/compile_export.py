@@ -12,6 +12,7 @@ from .models import PATCH_VERSION, ProtocolError, validate_patch
 
 
 JOB_CAPABILITIES = (
+    "tasks.document-recovery.v1",
     "script.native.v1",
     "script.recovery.snapshot.v1",
     "feature.compile.live.v1",

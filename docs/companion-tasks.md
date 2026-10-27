@@ -20,6 +20,82 @@ selection and focus handling. Focused selection and Increase Contrast use the
 system highlight without a custom row background. The lighter treatment adapts
 to light and dark appearances and does not affect task state.
 
+## Simple task states and independent work
+
+Rows show their creation date. Details show creation and last-activity times,
+plus the expiry time when applicable, using the user's local date/time format.
+
+**Settings → Tasks → Expire inactive tasks after** defaults to **1 day** and
+offers 1, 7, 30 or 90 days. The preference is shared with the sidecar and takes
+effect on its next maintenance pass without a restart. Background checks run
+about once per minute; opening Tasks does not perform maintenance.
+
+An inactive request moves to **Finished → Expired** after that period once
+Glyphs is connected and idle and its native operation/recovery is gone. A stale
+unapplied preview can be cancelled without changing the font. Work in progress
+and usable recovery are never expired by age. Expiry retains reports, errors,
+receipts and action history; an unknown or partial outcome stays unknown or
+partial. No Keep, Save, Undo or Restore choice is made automatically. Closed
+history continues to follow the separate existing clear/retention rules.
+
+Polling, queue progress and service startup do not renew old execution intent.
+An overdue queued request cannot run when Glyphs becomes available: it expires
+before admission, or its prepared result loses automatic execution permission
+while maintenance checks its owner. Explicit user interaction renews activity.
+
+Tasks has three sections: **Needs attention**, **Active**, and **Finished**.
+Active contains **Working** and **Waiting** tasks. Waiting means another
+operation must finish automatically; a required decision belongs in Needs
+attention. Finished shows a separate outcome (including cancellation or failure).
+Successful scripts say Script finished, not that their intended edits were verified.
+Incomplete typed recovery also stays in Needs attention for inspection even when
+the stopped job is closed; it retains its diagnostics without inventing a new lock
+or offering unavailable recovery actions.
+
+Completion and recovery are separate. A finished result can retain **Recovery
+available** while its workflow remains open (`closed=false`). It stays in the
+unpaginated inventory and cannot be cleared as closed history. Keep, verified
+Save or Restore ends the existing recovery offer. Opening, reading or hiding a
+task never performs those actions or starts an Automatic Keep countdown.
+
+The bridge advertises `tasks.document-recovery.v1`. With matching sidecar support,
+known stopped recovery protects only its exact live document. Independent fonts
+can continue; same-font mutations still require the original recovery decision.
+Unrestricted Python execution and cleanup protect the Glyphs session. Unknown
+execution retains protection until existing reconciliation establishes its outcome.
+Save and export retain their document/path validation and destination protections.
+Older bridges keep the previous protection and explain when an update is needed.
+
+The shared protocol classifier supplies resource scope, owner identity, reason,
+and automatic-wait/decision/check semantics. Workflows and passive inventory use
+that evidence; the bridge rechecks native ownership on dispatch. Blockers identify
+the affected font and offer **View blocking task**. Refreshing a waiting workflow
+re-evaluates obsolete dependencies without closing its former owner. Restoring a
+font refreshes only that font's binding. Live recovery records are excluded from
+recent-operation pruning, including pruning during typed preparation.
+
+One workflow row includes its exact associated preparation/job and prerequisite
+save checkpoint; independent jobs remain visible. `taskStatus`, `outcomeLabel`,
+`recoveryStatus`, and `blockers` are additive presentation fields. Existing
+workflow/job states, action tokens, history retention and unread markers remain
+independent of that presentation.
+
+The sidecar advertises `edit.queue.automatic.v1`. A busy connection accepts a
+validated request as **Waiting**, returns its workflow identity, and resumes it
+when the required resource is free. Requests keep their order within a document;
+another font can proceed while that document awaits a decision. Waiting for
+execution needs no user action. Waiting for a preview, Save or recovery decision
+identifies that task and appears in Needs attention. No unrelated recovery is
+closed to make room. A queued preview only prepares; it never gains Run approval.
+
+Queue intake, passive inspection and cancellation remain available while native
+dispatch occupies Glyphs. The bounded queue retains up to 128 waiting requests
+with their idempotency keys; repeated submissions return the original request.
+Glyphs unavailability before dispatch uses a short retry backoff. Known busy
+preflight refusals can wait and resume; unknown writes retain their existing
+outcome checks and are never replayed. A sidecar restart marks queued work
+interrupted for review, rather than replaying saved execution authorization.
+
 ## Inventory and decisions
 
 `list_tasks(cursor=0, limit=50)` and authenticated loopback
@@ -137,7 +213,7 @@ check again. They are never force-deleted or acknowledged automatically.
 
 For an orphan interrupted job, Recovery Options can offer **Archive Interrupted
 Task** as a neutral native capsule. Its visible consequences explain that this
-moves the record into Recently closed tasks with an **Unverified** outcome. It
+moves the record into Finished with an **Unverified** outcome. It
 does not cancel execution, save, restore, release recovery, or confirm success.
 The original warning remains visible, including after archiving.
 

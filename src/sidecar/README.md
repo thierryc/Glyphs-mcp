@@ -17,6 +17,17 @@ visits active workflows; unchanged job observations do not rewrite their records
 or advance timestamps. Volatile indexes are rebuilt from persisted evidence on
 startup. Failed/cancelled scripts that executed remain unresolved until their
 existing Keep/Restore workflow is settled; reconnect never replays code.
+With `tasks.document-recovery.v1`, stopped recovery protects its exact document,
+while execution/cleanup and unknown script execution protect the Glyphs session.
+Task completion, recovery ownership and saved state are separate. The companion
+groups tasks into Needs attention, Active and Finished with precise blockers.
+`edit.queue.automatic.v1` accepts validated work while Glyphs is occupied and
+resumes it through the existing supervisor. Short store locks keep intake,
+inspection and cancellation independent of native dispatch. MCP bridge calls run
+outside the transport event loop. The bounded queue preserves document order,
+allows independent fonts to proceed, and never resolves another task's recovery.
+Preview and saving decisions remain explicit; restart and uncertain execution
+require reconciliation rather than replay.
 Complete authorized edits apply automatically; previews and report warnings
 wait for review. A prerequisite Save and continue saves existing work once;
 the resulting edit remains unsaved until separately authorized.

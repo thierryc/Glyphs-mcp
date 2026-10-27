@@ -2,6 +2,7 @@
 from glyphs_mcp_protocol import scripts
 from .bridge_client import BridgeClientError
 from .saved_script import unresolved
+from glyphs_mcp_protocol.task_conflicts import CAPABILITY, conflicts, protection, describe
 
 
 def validate_capabilities(service, options, error):
@@ -11,10 +12,29 @@ def validate_capabilities(service, options, error):
         raise error('unsupported_job', 'native scripts require a coordinated runtime update (script.native.v1, script.recovery.snapshot.v1, preparation version 3)')
 
 
-def execution_blockers(service, job_id=None):
-    return [job for job in service.jobs.select(
-        {'preparing', 'cancelling', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding'},
-        include_unresolved=True) if job['id'] != job_id]
+def scoped_recovery(service, *, refresh=False):
+    if refresh:
+        try:
+            native = service.bridge.status()
+            service._task_scoped_recovery = CAPABILITY in native.get('jobCapabilities', [])
+            service._task_bridge_session = native.get('bridgeSessionId')
+        except Exception:
+            service._task_scoped_recovery = False
+    return getattr(service, '_task_scoped_recovery', False)
+
+
+BLOCKING_STATUSES = {'preparing', 'cancelling', 'ready', 'applying', 'applied', 'accepting', 'accept_uncertain', 'discarding', 'interrupted'}
+
+
+def execution_blockers(service, job_id=None, *, document_id=None, exclusive=True, refresh=False, records=None):
+    candidates = records if records is not None else service.jobs.select(BLOCKING_STATUSES, include_unresolved=True)
+    if scoped_recovery(service, refresh=refresh) and document_id is not None:
+        return [job for job in candidates if job['id'] != job_id
+                and conflicts(job, document_id, exclusive=exclusive)]
+    legacy = BLOCKING_STATUSES - {'ready', 'interrupted'}
+    return [job for job in candidates if job['id'] != job_id and (
+        job['status'] in legacy or unresolved(job) or
+        document_id is not None and conflicts(job, document_id, exclusive=exclusive))]
 
 
 def run(service, job_id, workflow_id, error):
@@ -24,9 +44,11 @@ def run(service, job_id, workflow_id, error):
     job = service._job(job_id)
     if job.get('resultKind') != 'script' or job['status'] != 'ready':
         raise error('job_not_ready', 'script review is not ready')
-    for other in execution_blockers(service, job_id):
+    for other in execution_blockers(service, job_id, document_id=job['document']['id'], refresh=True):
         if other['id'] != job_id:
-            raise error('document_busy', 'resolve outstanding MCP mutations before native execution', details={'blockingJobId': other['id']})
+            owner = protection(other)
+            raise error('document_busy', describe(owner) if owner else 'Resolve outstanding MCP mutations before native execution.',
+                        details={'blockingJobId': other['id'], 'blocker': owner})
     validate_capabilities(service, job['request']['options'], error)
     doc = service._document(job['document']['id'])
     if any(doc.get(key) != job['document'].get(key) for key in ('path', 'generation', 'dirty')):
@@ -42,9 +64,10 @@ def run(service, job_id, workflow_id, error):
     try:
         operation = service.bridge.run_script(request)
     except Exception as exc:
-        # Never dispatch automatically again, even after a known preflight failure.
+        # Only a confirmed preflight refusal can return to the queue. A lost
+        # response keeps the native attempt protected and is never replayed.
         certain = isinstance(exc, BridgeClientError) and exc.details.get('execution') != 'uncertain'
-        service.jobs.update(job_id, status='failed' if certain else 'applying', error=service._error(exc).as_dict())
+        service.jobs.update(job_id, status=('ready' if exc.code == 'document_busy' else 'failed') if certain else 'applying', error=service._error(exc).as_dict())
         raise service._error(exc) from exc
     return service._public(service.jobs.update(job_id, status='applying', bridgeOperation=operation))
 
@@ -80,12 +103,42 @@ def mutation_guard(method):
     def guarded(service, *args, **kwargs):
         from .service import ServiceError
         with service._script_dispatch_lock:
+            scoped = scoped_recovery(service, refresh=True)
             with service._lock:
-                if any(j['request']['kind'] in {'python_script','checkpoint_restore'}
-                       and (unresolved(j) or j['status'] in {'applying', 'discarding', 'accept_uncertain'}
-                            or j['status'] == 'interrupted' and (j.get('error') or {}).get('code') == 'bridge_operation_lost')
-                       for j in service.jobs.select({'applying', 'discarding', 'accept_uncertain', 'interrupted'}, include_unresolved=True)):
-                    raise ServiceError('document_busy', 'reconcile native execution before another mutation')
+                document_id, own_job = None, None
+                if args:
+                    if method.__name__ in {'run_script', 'finish_edit', 'apply_job', 'accept_job'}:
+                        own_job = service._job(args[0])
+                        document_id = (own_job.get('document') or {}).get('id')
+                    else:
+                        document_id = args[0]
+                elif 'document_id' in kwargs:
+                    document_id = kwargs['document_id']
+                elif 'job_id' in kwargs:
+                    own_job = service._job(kwargs['job_id'])
+                    document_id = (own_job.get('document') or {}).get('id')
+                # Publishing staged files has no live Glyphs dependency. Its
+                # destination is protected by the atomic publication service.
+                if own_job and own_job.get('resultKind') == 'artifact':
+                    return method(service, *args, **kwargs)
+                for job in service.jobs.select(BLOCKING_STATUSES, include_unresolved=True):
+                    if own_job and job['id'] == own_job['id']:
+                        continue
+                    if job['request']['kind'] not in {'python_script', 'checkpoint_restore'}:
+                        continue
+                    if scoped:
+                        owner = protection(job)
+                        diagnostic = method.__name__ == 'start_job' and kwargs.get('kind') in {'feature_compile', 'font_export'}
+                        blocked = conflicts(job, document_id) and not (
+                            diagnostic and owner and owner['reason'] in {'recovery', 'preview'})
+                    else:
+                        blocked = (unresolved(job) or job['status'] in {'applying', 'discarding', 'accept_uncertain'}
+                                   or job['status'] == 'interrupted' and (job.get('error') or {}).get('code') == 'bridge_operation_lost')
+                        owner = protection(job)
+                    if blocked:
+                        raise ServiceError('document_busy', describe(owner) if scoped and owner else
+                                           'reconcile native execution before another mutation',
+                                           details={'blockingJobId': job['id'], 'blocker': owner})
             return method(service, *args, **kwargs)
     return guarded
 

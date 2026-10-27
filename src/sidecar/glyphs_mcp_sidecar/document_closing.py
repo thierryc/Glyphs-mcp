@@ -27,6 +27,9 @@ def write(record, value):
 
 
 def guard(service, document, error_type, *, ignore_job_id=None):
+    from .script_service import scoped_recovery
+    from glyphs_mcp_protocol.task_conflicts import conflicts, protection, describe
+    scoped = scoped_recovery(service)
     # Fresh disk records also cover preparation owned by another sidecar process.
     for job in JobStore(service.jobs.root).records():
         if job["id"] == ignore_job_id:
@@ -35,9 +38,11 @@ def guard(service, document, error_type, *, ignore_job_id=None):
         same = (owner.get("id") == document["id"] or
                 (owner.get("path") and document.get("path") and
                  saving._same_path(Path(owner["path"]), Path(document["path"]))))
-        if unresolved(job) or (same and job["status"] in contract.OWNING_STATUSES):
-            raise error_type("document_busy", "Resolve the pending MCP job before closing this font",
-                             details={"jobId": job["id"], "status": job["status"]})
+        protected = conflicts(job, document["id"]) if scoped else unresolved(job)
+        if protected or (same and job["status"] in contract.OWNING_STATUSES):
+            owner = protection(job)
+            raise error_type("document_busy", describe(owner) if owner else "Resolve the pending MCP job before closing this font",
+                             details={"jobId": job["id"], "status": job["status"], "blocker": owner})
 
 
 def close_document(service, error_type, document_id, idempotency_key, unsaved_changes="refuse", destination=None):

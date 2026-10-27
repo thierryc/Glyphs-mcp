@@ -78,17 +78,17 @@ struct DesktopTasksView: View {
                 HSplitView {
                     VStack(spacing: 0) {
                         List(selection: $selected) {
-                            let running = desktop.visibleTasks.filter { !$0.closed && $0.state == "running" }
-                            if !running.isEmpty {
-                                taskGroup("In progress", tasks: running)
+                            let attention = desktop.visibleTasks.filter { $0.taskGroup == "attention" }
+                            if !attention.isEmpty {
+                                taskGroup("Needs attention", tasks: attention)
                             }
-                            let open = desktop.visibleTasks.filter { !$0.closed && $0.state != "running" }
-                            if !open.isEmpty {
-                                taskGroup("Tasks needing attention", tasks: open)
+                            let active = desktop.visibleTasks.filter { $0.taskGroup == "active" }
+                            if !active.isEmpty {
+                                taskGroup("Active", tasks: active)
                             }
-                            let closed = desktop.visibleTasks.filter(\.closed)
-                            if !closed.isEmpty {
-                                taskGroup("Recently closed tasks", tasks: closed)
+                            let finished = desktop.visibleTasks.filter { $0.taskGroup == "finished" }
+                            if !finished.isEmpty {
+                                taskGroup("Finished", tasks: finished)
                             }
                             if desktop.tasksNextCursor != nil {
                                 Button("Load Earlier Tasks") { Task { await desktop.refreshTasks(loadMore: true) } }
@@ -192,16 +192,25 @@ struct DesktopTasksView: View {
                 .lineLimit(1).truncationMode(.middle)
             Text(LocalizedStringKey(task.title)).font(.callout)
                 .foregroundStyle(selected == task.id ? .primary : .secondary).lineLimit(2)
-            if let status = task.statusLabel {
-                if selected == task.id {
-                    Text(LocalizedStringKey(status)).font(.caption)
-                } else {
-                    Text(LocalizedStringKey(status)).font(.caption)
-                        .foregroundStyle(task.state == "running" ? Color.secondary : Color.orange)
+            HStack(spacing: 8) {
+                if let status = task.rowStatusLabel {
+                    if selected == task.id {
+                        Text(LocalizedStringKey(status))
+                    } else {
+                        Text(LocalizedStringKey(status))
+                            .foregroundStyle(task.taskGroup == "attention" ? Color.orange : Color.secondary)
+                    }
                 }
-            }
-            if let agent = task.agentName {
-                Text(agent).font(.caption).foregroundStyle(selected == task.id ? .primary : .secondary)
+                Spacer(minLength: 4)
+                if let date = task.startedDate {
+                    Text(date, format: .dateTime.year().month(.abbreviated).day())
+                        .foregroundStyle(selected == task.id ? .primary : .secondary)
+                        .help(date.formatted(date: .complete, time: .shortened))
+                }
+            }.font(.caption).lineLimit(1)
+            if task.recoveryAvailable {
+                Label("Recovery available", systemImage: "arrow.uturn.backward")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
             .padding(.vertical, 3)
@@ -232,6 +241,25 @@ struct DesktopTasksView: View {
                 Text([task.path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? task.documentName, task.agentName].compactMap { $0 }.joined(separator: " · "))
                     .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
+            HStack(spacing: 12) {
+                if let status = task.statusLabel { Text(LocalizedStringKey(status)) }
+                if let outcome = task.outcomeLabel { Text(LocalizedStringKey(outcome)) }
+            }.font(.callout).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                if let date = task.startedDate {
+                    HStack { Text("Started"); Text(date, format: .dateTime.year().month(.abbreviated).day().hour().minute()) }
+                }
+                if let date = task.lastActivityDate, date != task.startedDate {
+                    HStack { Text("Last activity"); Text(date, format: .dateTime.year().month(.abbreviated).day().hour().minute()) }
+                }
+                if let date = task.expirationDate {
+                    HStack { Text("Expired"); Text(date, format: .dateTime.year().month(.abbreviated).day().hour().minute()) }
+                }
+            }.font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+            if task.recoveryAvailable {
+                Label("Recovery available in this Glyphs session", systemImage: "arrow.uturn.backward")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
             if task.closed, let support = task.supportText { Text(support).textSelection(.enabled) }
             if let message = task.message {
                 Text(message).foregroundStyle(.secondary).lineSpacing(3).textSelection(.enabled)
@@ -241,13 +269,23 @@ struct DesktopTasksView: View {
                 ProgressView(value: Double(progress), total: Double(total))
                 Text("\(progress) of \(total) changes").font(.caption).foregroundStyle(.secondary)
             }
-            if !task.blockedBy.isEmpty {
-                Text("Waiting for: \(names(task.blockedBy))").foregroundStyle(.orange)
+            if let blockers = task.blockers, !blockers.isEmpty {
+                ForEach(blockers) { blocker in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(blocker.message).textSelection(.enabled)
+                        if let identity = blocker.taskId {
+                            Button("View blocking task") { selected = identity }
+                                .buttonStyle(DesktopSecondaryButtonStyle()).controlSize(.small)
+                        }
+                    }
+                }
+            } else if !task.blockedBy.isEmpty {
+                Text("Waiting for: \(names(task.blockedBy))").foregroundStyle(.secondary)
             }
             if !task.blocking.isEmpty {
                 Text("Blocking: \(names(task.blocking))").foregroundStyle(.orange)
             }
-            if !task.closed {
+            if !task.closed || task.taskGroup == "attention" {
                 if task.state == "running" {
                     Text("Work is in progress in Glyphs.").font(.callout).foregroundStyle(.secondary)
                 }
@@ -267,8 +305,10 @@ struct DesktopTasksView: View {
                     Text(LocalizedStringKey(explanation)).font(.caption).foregroundStyle(.secondary)
                 }
                 DesktopTaskPrompt(request: task.prompt(for: promptIntent), intent: $promptIntent, copied: $copied, copyPrompt: copyPrompt)
-                Button("Recovery Options…") { recoveryTask = task }
-                    .buttonStyle(DesktopSecondaryButtonStyle()).controlSize(.small)
+                if !task.closed {
+                    Button(LocalizedStringKey(task.taskActionLabel)) { recoveryTask = task }
+                        .buttonStyle(DesktopSecondaryButtonStyle()).controlSize(.small)
+                }
             }
             Divider()
             DisclosureGroup("History", isExpanded: $historyExpanded) {

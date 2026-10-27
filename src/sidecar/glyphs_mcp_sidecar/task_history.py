@@ -113,7 +113,7 @@ def _safe(service, task, jobs):
         return False
     if not job:
         return True
-    if unresolved(job) or job['status'] not in {'accepted', 'completed', 'discarded', 'cancelled', 'failed', 'interrupted'}:
+    if unresolved(job) or job['status'] not in {'accepted', 'completed', 'discarded', 'cancelled', 'failed', 'interrupted', 'expired'}:
         return False
     if job['status'] == 'interrupted' and task['state'] != 'archived':
         return False
@@ -195,12 +195,17 @@ def start_cleanup(service, *, interval=3600):
     """Process lifetime worker, independent of the companion and MCP requests."""
     stopped = Event()
     def run():
+        from .task_expiration import expire
+        next_history = 0
         while not stopped.is_set():
             try:
-                cleanup(service)
+                expire(service)
+                if time.monotonic() >= next_history:
+                    cleanup(service)
+                    next_history = time.monotonic() + interval
             except Exception:
-                logging.getLogger(__name__).warning('History cleanup postponed; retained records were left intact.')
-            if stopped.wait(interval):
+                logging.getLogger(__name__).info('Task maintenance postponed; retained records were left intact.')
+            if stopped.wait(min(interval, 60)):
                 break
     thread = Thread(target=run, name='glyphs-history-retention', daemon=True)
     thread.start()

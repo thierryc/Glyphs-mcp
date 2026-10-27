@@ -7,6 +7,13 @@ for requested edits or `mode="preview"` for preview requests, and one unique
 idempotency key retained for that request. Never replace a timed-out request
 with a new key. Compilation and export use the existing job lifecycle.
 
+Inactive intent can expire under **Settings → Tasks**, defaulting to one day.
+An expired workflow has no execution actions and stays in Finished with its
+recorded outcome and diagnostics. Expiry is not verification of earlier edits.
+Do not replay an expired or unknown result automatically; a new edit needs
+current font evidence and current authorization. Active work and available
+recovery remain protected. Reading a task does not renew its expiry period.
+
 Use native interaction first: ordinary chat, the host's native question tool,
 and native tool/progress feedback. Starting, reading and responding to workflows
 do not open cards. Call `show_edit_workflow` only when a card adds visual review,

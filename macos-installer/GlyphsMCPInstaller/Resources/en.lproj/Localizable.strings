@@ -954,3 +954,33 @@
 // Optional development skills
 "Include Glyphs MCP development skills" = "Include Glyphs MCP development skills";
 "Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept." = "Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept.";
+
+/* Task status and recovery presentation */
+"Active" = "Active";
+"Finished" = "Finished";
+"Waiting" = "Waiting";
+"Recovery available" = "Recovery available";
+"Recovery available in this Glyphs session" = "Recovery available in this Glyphs session";
+"View blocking task" = "View blocking task";
+"Task actions…" = "Task actions…";
+"Check result…" = "Check result…";
+"Script finished" = "Script finished";
+"Changes applied" = "Changes applied";
+"Partial changes may remain" = "Partial changes may remain";
+"Changes kept" = "Changes kept";
+"Issues found" = "Issues found";
+"Exported" = "Exported";
+"Restored" = "Restored";
+"Discarded" = "Discarded";
+
+/* Task dates and automatic expiry */
+"Started" = "Started";
+"Last activity" = "Last activity";
+"Expired" = "Expired";
+"Expire inactive tasks after" = "Expire inactive tasks after";
+"1 day" = "1 day";
+"7 days" = "7 days";
+"30 days" = "30 days";
+"90 days" = "90 days";
+"%lld days" = "%lld days";
+"Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available.";
