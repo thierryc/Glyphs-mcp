@@ -2,6 +2,8 @@
 
 ## 2.4.0 — in preparation, build 71, 27 October 2026
 
+- Keep typed exports bound to verified live and saved instance identities after native recovery regenerates IDs; reject ambiguity or source drift without saving or rewriting the font.
+- Add Glyphs Hinting to the managed skill catalog, with source/binary hint inventories and controlled rendering comparisons.
 - Show task creation dates in the list and start, last-activity and expiry times in details.
 - Add Settings → Tasks with a one-day default for inactive-task expiry. Retain unknown outcomes and diagnostics, stop old queued intent, and preserve active work and available recovery.
 - Simplify Tasks into Needs attention, Active and Finished, with clear Working/Waiting states and separate result and recovery information.
