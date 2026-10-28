@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.4.0 — in preparation, build 71, 27 October 2026
+## 2.4.0 — stable release, build 71, 27 October 2026
 
 - Keep typed exports bound to verified live and saved instance identities after native recovery regenerates IDs; reject ambiguity or source drift without saving or rewriting the font.
 - Add Glyphs Hinting to the managed skill catalog, with source/binary hint inventories and controlled rendering comparisons.
@@ -15,7 +15,7 @@
 - Keep partial failures, incomplete typed recovery and export destination conflicts visible. Fold associated internal steps into their request and permit independent staged-export publication.
 - Update English, French and Simplified Chinese task copy and synchronized agent guidance.
 - Coordinate app, bridge, sidecar and host plugins at 2.4.0/build 71. Keep 22 tools, 12 managed skills, interface revision 1 and bridge protocol 1; negotiate the additive tasks.document-recovery.v1 capability.
-- Prepare the next stable release without changing published 2.3.1 assets or the signed feed. See [release preparation](V2.4.0-RELEASE.md) for qualification and remaining work.
+- Publish the signed, notarized universal app, DMG and signed update feed after 3,267 Python tests, 312 desktop tests, 37 isolated native checks and public-download verification. Prior releases remain intact. See [qualification](V2.4.0-RELEASE.md).
 
 ## 2.2.0 — in preparation, build 67, 19 October 2026
 

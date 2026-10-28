@@ -1,0 +1,136 @@
+{
+  "data": {
+    "checks": [
+      {
+        "name": "default expiry is one day",
+        "passed": true
+      },
+      {
+        "name": "lost native operation expires",
+        "passed": true
+      },
+      {
+        "name": "unknown diagnostics retained",
+        "passed": true
+      },
+      {
+        "name": "expiry did not edit native font",
+        "passed": true
+      },
+      {
+        "name": "old unapplied native preview expires",
+        "passed": true
+      },
+      {
+        "name": "native preview was cancelled without Run",
+        "passed": true
+      },
+      {
+        "name": "native preview expiry left width unchanged",
+        "passed": true
+      },
+      {
+        "name": "expired preview has no Run action",
+        "passed": true
+      },
+      {
+        "name": "100-day-old available recovery does not expire",
+        "passed": true
+      },
+      {
+        "name": "recovery snapshot and edited font remain intact",
+        "passed": true
+      },
+      {
+        "name": "changed seven-day setting is read without restart",
+        "passed": true
+      },
+      {
+        "name": "changing back to one day expires eligible task",
+        "passed": true
+      },
+      {
+        "name": "protected snapshot identity is unchanged",
+        "passed": true
+      },
+      {
+        "name": "protected Restore still works after expiry maintenance",
+        "passed": true
+      },
+      {
+        "name": "no fixture font save was performed",
+        "passed": true
+      }
+    ],
+    "defaultDays": 1,
+    "scope": "Real native Glyphs font with exact signed build-71 bridge and sidecar; isolated scripting process. No editor font or installed task record accessed."
+  },
+  "passed": true,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "checks": [
+    {
+      "name": "default expiry is one day",
+      "passed": true
+    },
+    {
+      "name": "lost native operation expires",
+      "passed": true
+    },
+    {
+      "name": "unknown diagnostics retained",
+      "passed": true
+    },
+    {
+      "name": "expiry did not edit native font",
+      "passed": true
+    },
+    {
+      "name": "old unapplied native preview expires",
+      "passed": true
+    },
+    {
+      "name": "native preview was cancelled without Run",
+      "passed": true
+    },
+    {
+      "name": "native preview expiry left width unchanged",
+      "passed": true
+    },
+    {
+      "name": "expired preview has no Run action",
+      "passed": true
+    },
+    {
+      "name": "100-day-old available recovery does not expire",
+      "passed": true
+    },
+    {
+      "name": "recovery snapshot and edited font remain intact",
+      "passed": true
+    },
+    {
+      "name": "changed seven-day setting is read without restart",
+      "passed": true
+    },
+    {
+      "name": "changing back to one day expires eligible task",
+      "passed": true
+    },
+    {
+      "name": "protected snapshot identity is unchanged",
+      "passed": true
+    },
+    {
+      "name": "protected Restore still works after expiry maintenance",
+      "passed": true
+    },
+    {
+      "name": "no fixture font save was performed",
+      "passed": true
+    }
+  ]
+}

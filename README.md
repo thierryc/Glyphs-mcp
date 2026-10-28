@@ -1,8 +1,8 @@
 # Glyphs MCP Desktop 2.4.0
 
-**Next release · in preparation · desktop build 71 · Glyphs 4.** Tasks now separates Needs attention, Active and Finished, explains blockers, and lets independent fonts continue while another font retains recovery.
+**Stable · desktop build 71 · Glyphs 4.** [Download 2.4.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.4.0). Tasks now explains blockers and supports independent fonts; typed exports retain instance selection after native recovery.
 
-See the [2.4.0 preparation record](V2.4.0-RELEASE.md) for changes, local checks and remaining release work. The published stable release remains [2.3.1/build 69](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.1), with its [qualification](V2.3.1-RELEASE.md).
+See the [2.4.0 qualification record](V2.4.0-RELEASE.md) for signed artifacts, checks and retained limits. Prior [2.3.1 qualification](V2.3.1-RELEASE.md) keeps its original scope.
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
@@ -97,9 +97,9 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.3.1).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.4.0).
 
-Documentation sources: [v2 · 2.4.0 source](content/glyphs-mcp.md) and
+Documentation sources: [v2 · 2.4.0](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
@@ -109,7 +109,7 @@ the original beta guides and plans are preserved in the [v2.0.0 source tag](http
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.3.1.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.4.0.dmg`.
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 For the next development cycle, see [proposed priorities](docs/maintenance/next-evolution.md) and [Anotherplanet/AP.CX page updates](docs/maintenance/site-updates-2.0.4.md).

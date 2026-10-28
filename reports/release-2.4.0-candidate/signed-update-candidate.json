@@ -1,0 +1,16 @@
+{
+  "archive": "Glyphs-MCP-2.4.0.zip",
+  "build": "71",
+  "bundleIdentifier": "cx.ap.glyphsMcp",
+  "channel": "stable",
+  "checksums": {
+    "Glyphs-MCP-2.4.0.zip": "16bce75b3564c8796c14378f422f709f05a44fe765cb9ecac446d1ed2c6c4016",
+    "appcast.xml": "553ba76715e18d9b1c030966134b97b29819eb05ba1fcc2b741091498d156161"
+  },
+  "publicKey": "K5EkYQQZFhOWgsw2dtO2dPnCry+8VKhG0eHYeUd2iP8=",
+  "published": false,
+  "releaseVersion": "2.4.0",
+  "signature": "cYhAZNctlpHZF5fhLDQu6TgHT3mtxuxxpHcPNYo+pKt0p5AS8QytpLXyUOUXS6TgyPcwYNFC5YMY9TR1j06kBA==",
+  "tag": "v2.4.0",
+  "version": "2.4.0"
+}

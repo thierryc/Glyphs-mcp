@@ -6,15 +6,15 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 or signed-release identity from each other.
 
 The current source target is product **2.4.0**, installer build **71**, stable
-channel, in preparation. Its catalog contains twenty-one data/action tools plus
+channel, published. Its catalog contains twenty-one data/action tools plus
 the optional read-only `show_edit_workflow` display tool, with twelve managed
 skills. `list_tasks` is passive and does not execute or resolve workflows.
-See `V2.4.0-RELEASE.md` for candidate checks and remaining acceptance.
+See `V2.4.0-RELEASE.md` for qualification and retained limits.
 
-The published stable baseline is **2.3.1/build 69**, under signed tag `v2.3.1`,
+The published stable baseline is **2.4.0/build 71**, under signed tag `v2.4.0`,
 with twenty-one data/action tools plus one optional display tool. Preserve its
 signed feeds and assets. Its signing, notarization, installation and public
-availability are recorded in `V2.3.1-RELEASE.md`; none qualifies the new candidate.
+availability are recorded in `V2.4.0-RELEASE.md`; historical evidence retains its original artifact scope.
 The earlier **2.0.4/build 61** baseline retains twenty MCP tools and up to 13
 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
@@ -31,10 +31,10 @@ Missing identity is unavailable evidence; changed files do not prove a running
 process reloaded them. Identity checks need no font discovery or Save.
 
 Use the helper's release tag and channel URLs. The published stable baseline uses
-`v2.3.1`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
-and `Glyphs-MCP-2.3.1.dmg` / `Glyphs-MCP-2.3.1.zip`. Exact signing and native
-acceptance are recorded in `V2.3.1-RELEASE.md`.
-The signed `v2.3.1` tag and distribution remain immutable; later source documentation
+`v2.4.0`, `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`,
+and `Glyphs-MCP-2.4.0.dmg` / `Glyphs-MCP-2.4.0.zip`. Exact signing and native
+acceptance are recorded in `V2.4.0-RELEASE.md`.
+The signed `v2.4.0` tag and distribution remain immutable; later source documentation
 can have a different skill digest. Rebuild and qualify the next candidate separately.
 Historical evidence retains its original scope. Source identity alone does not
 authorize publication. The separate `lit/v2-beta/appcast.xml` serves the

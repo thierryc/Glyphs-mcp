@@ -6,7 +6,7 @@ The prior stable baseline is Glyphs MCP Desktop **2.3.0/build 68**, under signed
 
 Historical prerelease guidance remains in the
 [archived beta release plan](https://github.com/thierryc/Glyphs-mcp/blob/v2.0.0/BETA-LAUNCH.md).
-The Glyphs 4-only payload has twenty-one data/action tools plus one optional display tool, eleven managed skills, two optional
+The Glyphs 4-only payload has twenty-one data/action tools plus one optional display tool, twelve managed skills, two optional
 inspectors, the Cursor plugin and private Python runtimes for Apple Silicon and
 Intel. Beztrace uses a separate optional managed download outside Install All,
 qualified for Apple Silicon/macOS 26.6.2 or later. Diffenator is deferred and absent
@@ -24,17 +24,13 @@ before planning another release.
 
 ## Published patch
 
-The current patch is **2.3.1/build 69**, with optional development skills and
+The prior patch is **2.3.1/build 69**, with optional development skills and
 positive connection setup guidance. The complete gate, signing, notarization
 and public-download checks passed. See [2.3.1 qualification](../V2.3.1-RELEASE.md).
 
-## Next source candidate
+## Published 2.4.0
 
-Prepare **2.4.0/build 71** for the stable channel with the task-management update.
-The source identity and all host manifests are coordinated; the public baseline
-remains 2.3.1/build 69. See [2.4.0 preparation](../V2.4.0-RELEASE.md) for local
-checks and remaining acceptance. Preserve published tags, assets and signed feed
-bytes until final verification and separately authorized publication.
+Stable **2.4.0/build 71** is signed, notarized and published with task management, expiry and source-bound typed exports. The source identity and all host manifests are coordinated. See [2.4.0 qualification](../V2.4.0-RELEASE.md) for checks and retained limits. Keep its signed tag, assets and feed bytes immutable; prepare later releases separately.
 
 ## Prerequisites
 

@@ -1,0 +1,207 @@
+{
+  "data": {
+    "checks": [
+      {
+        "name": "packaged sidecar is 2.4.0",
+        "passed": true
+      },
+      {
+        "name": "packaged bridge is 2.4.0",
+        "passed": true
+      },
+      {
+        "name": "automatic queuing is advertised",
+        "passed": true
+      },
+      {
+        "name": "document-scoped recovery is advertised",
+        "passed": true
+      },
+      {
+        "name": "font A execution is active before submitting B",
+        "passed": true
+      },
+      {
+        "name": "font B is accepted as Waiting",
+        "passed": true
+      },
+      {
+        "name": "Waiting promises automatic resumption",
+        "passed": true
+      },
+      {
+        "name": "queue intake did not wait for native execution",
+        "passed": true
+      },
+      {
+        "name": "idempotent queue retry keeps the same task",
+        "passed": true
+      },
+      {
+        "name": "queued state is inspectable while native execution is occupied",
+        "passed": true
+      },
+      {
+        "name": "another waiting request cancels immediately",
+        "passed": true
+      },
+      {
+        "name": "font B resumed automatically without a second Run",
+        "passed": true
+      },
+      {
+        "name": "only the intended changes ran once",
+        "passed": true
+      },
+      {
+        "name": "font A snapshot identity stayed unchanged",
+        "passed": true
+      },
+      {
+        "name": "font A recovery remains open after B finishes",
+        "passed": true
+      },
+      {
+        "name": "both finished tasks retain recovery",
+        "passed": true
+      },
+      {
+        "name": "same-font recovery requires its own decision",
+        "passed": true
+      },
+      {
+        "name": "cancelling a dependent request preserves both recoveries",
+        "passed": true
+      },
+      {
+        "name": "font A recovery remains usable after independent queued work",
+        "passed": true
+      },
+      {
+        "name": "restoring A retains its earlier unsaved edits",
+        "passed": true
+      },
+      {
+        "name": "restoring A does not change B or close B recovery",
+        "passed": true
+      },
+      {
+        "name": "fixture B cleanup uses only its own Keep action",
+        "passed": true
+      }
+    ],
+    "queueIntakeSeconds": 0.000974165988736786,
+    "queuedWorkflowId": "edit_e2a8f8956cb14b68943e6f83f525c7c5",
+    "cancelledWorkflowId": "edit_6ee3f378fe3e48a0ba47cd11540288e7",
+    "originalDocumentIds": [
+      "doc_a426ffd8cff443189a53bffeba322e02",
+      "doc_fc79da9e030b48baae029b321dd3fb8b"
+    ],
+    "sidecarVersion": "2.4.0",
+    "bridgeVersion": "2.4.0",
+    "bridgeCodeHash": "sha256:cac5a4f868d19433efa23e16a9d51e35a6080a30f14eca6677b61bfad57b6b96",
+    "sidecarCodeHash": "sha256:ccb6d813e283a7365fcd9bbaece78da10af65b0852a621263faaf4063fa5ff61",
+    "modulePaths": {
+      "bridge": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/output/release-2.4.0-build71-with-export/signed-payload/Payload/Lean/Glyphs MCP Bridge.glyphsPlugin/Contents/Resources/glyphs_mcp_bridge/core.py",
+      "workflow": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/output/release-2.4.0-build71-with-export/signed-payload/Payload/Lean/sidecar/glyphs_mcp_sidecar/edit_workflow.py"
+    },
+    "scope": "Packaged 2.4.0 bridge and sidecar, real native Glyphs fonts in an isolated scripting process; live editor connection unchanged."
+  },
+  "passed": true,
+  "host": {
+    "version": "4.2",
+    "build": "4202.0"
+  },
+  "saveAdapter": "Native GSFont writer for standalone fixture; editor NSDocument save not exercised",
+  "checks": [
+    {
+      "name": "packaged sidecar is 2.4.0",
+      "passed": true
+    },
+    {
+      "name": "packaged bridge is 2.4.0",
+      "passed": true
+    },
+    {
+      "name": "automatic queuing is advertised",
+      "passed": true
+    },
+    {
+      "name": "document-scoped recovery is advertised",
+      "passed": true
+    },
+    {
+      "name": "font A execution is active before submitting B",
+      "passed": true
+    },
+    {
+      "name": "font B is accepted as Waiting",
+      "passed": true
+    },
+    {
+      "name": "Waiting promises automatic resumption",
+      "passed": true
+    },
+    {
+      "name": "queue intake did not wait for native execution",
+      "passed": true
+    },
+    {
+      "name": "idempotent queue retry keeps the same task",
+      "passed": true
+    },
+    {
+      "name": "queued state is inspectable while native execution is occupied",
+      "passed": true
+    },
+    {
+      "name": "another waiting request cancels immediately",
+      "passed": true
+    },
+    {
+      "name": "font B resumed automatically without a second Run",
+      "passed": true
+    },
+    {
+      "name": "only the intended changes ran once",
+      "passed": true
+    },
+    {
+      "name": "font A snapshot identity stayed unchanged",
+      "passed": true
+    },
+    {
+      "name": "font A recovery remains open after B finishes",
+      "passed": true
+    },
+    {
+      "name": "both finished tasks retain recovery",
+      "passed": true
+    },
+    {
+      "name": "same-font recovery requires its own decision",
+      "passed": true
+    },
+    {
+      "name": "cancelling a dependent request preserves both recoveries",
+      "passed": true
+    },
+    {
+      "name": "font A recovery remains usable after independent queued work",
+      "passed": true
+    },
+    {
+      "name": "restoring A retains its earlier unsaved edits",
+      "passed": true
+    },
+    {
+      "name": "restoring A does not change B or close B recovery",
+      "passed": true
+    },
+    {
+      "name": "fixture B cleanup uses only its own Keep action",
+      "passed": true
+    }
+  ],
+  "published": false
+}

@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "c9f535278a66fcc6051b0eda448ead0e133d3c2f",
+  "inputFingerprint": "2cc430bbab57a1b74775afded861522e71f1e10d364a5605bbdcf9093fec9f2c",
+  "pythonPassed": 3267,
+  "pythonSkipped": 2,
+  "desktopPassed": 312,
+  "documentation": "passed",
+  "deterministicPayloads": "passed",
+  "runtimeStartup": [
+    "arm64",
+    "x86_64 via Rosetta"
+  ],
+  "gateDirectory": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/release-test-run.mxEr27",
+  "typedExportFixCommit": "d346020e",
+  "mergeCommit": "39486dca"
+}

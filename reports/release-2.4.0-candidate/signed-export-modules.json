@@ -1,0 +1,10 @@
+{
+  "payloadArchiveSHA256": "2c802a48e0c37e9602b0949b8ca12396dd83404779fa6812ef745e6798f99e42",
+  "modules": {
+    "export_instance_binding.py": "65e3fd3428f43f73b1812655478de186d45b6b081bc27f2373a464bb9b23330e",
+    "font_export_job.py": "4985ea45df7a8861a117da2a887ca98a62a4232a45b1bd166cda0d23da8c4810",
+    "job_preparation.py": "960d21bb8480ef81c153d9dc1a9f41b7e55e1d119eafa73efb6c53459f5cc954",
+    "native_worker.py": "42a17bf9209f6a0d0d4ae77ca3252cfb046da3eecec129e8f8f1cb9cae0173a6",
+    "worker.py": "c00e637277b4c56341dda2fb37b6bca96c5652ee88436444dd7309561250a22f"
+  }
+}

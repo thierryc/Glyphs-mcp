@@ -1,13 +1,11 @@
 # Permanent desktop application
 
-> Published stable **2.3.1/build 69** is signed, notarized and published.
-> See [release qualification](../V2.3.1-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
+> Published stable **2.4.0/build 71** is signed, notarized and published.
+> See [release qualification](../V2.4.0-RELEASE.md) for the full gate, exact distribution checks and retained limits. Candidate checkpoints below are historical.
 
 The product is **Glyphs MCP.app**, bundle identifier `cx.ap.glyphsMcp`. The Xcode project and scheme retain the historical GlyphsMCPInstaller name. Setup and the native menu-bar menu share one monitor and service controls. Tasks provides task status, blockers, conversation handoff and guarded recovery for abandoned work; see [Companion Tasks](../docs/companion-tasks.md). Setup also owns the transactional component queue and agent connections. Projects supports independent template copies and read-only Git inspection. Desktop login, sidecar startup and update checks are separate preferences.
 
-The next source candidate is **2.4.0/build 71**, with simpler task states,
-document-scoped recovery and precise blockers. See [release preparation](../V2.4.0-RELEASE.md).
-It is not a published or signed release.
+Stable **2.4.0/build 71** adds simpler task states, document-scoped recovery, precise blockers, inactive-task expiry and source-bound typed exports. See [release qualification](../V2.4.0-RELEASE.md).
 
 Run `python3 scripts/prepare_desktop_dependencies.py` before building to prepare
 checksum-pinned Sparkle and the audited local PierreDiffsSwift package. Existing
@@ -17,7 +15,7 @@ existing controls before migration.
 
 # Glyphs MCP local installer
 
-The current patch is **2.3.1/build 69**, with optional development skills in
+The earlier patch is **2.3.1/build 69**, with optional development skills in
 Connections. See [patch qualification](../V2.3.1-RELEASE.md).
 
 The earlier 2.2.0/build 67 baseline shipped with twenty-one data/action tools,

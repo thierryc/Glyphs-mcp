@@ -70,5 +70,5 @@ clients remain manual; no timer authorizes Run, Apply, Save, Undo or Restore.
 document. It requires the optional managed Diffenator runtime and
 `font.compare.diffenator.v1` in `comparisonCapabilities`. Use `get_job` to review
 its local report and separately authorize `accept_job` publication to a new
-directory. The 2.4.0 source is in preparation; the published stable release remains 2.3.1.
+directory. The 2.4.0 source matches the published stable release.
 Optional downloads retain their separately recorded supported-platform qualification.

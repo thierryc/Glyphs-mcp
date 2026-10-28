@@ -1,0 +1,27 @@
+{
+  "version": "2.4.0",
+  "build": 71,
+  "tag": "v2.4.0",
+  "sourceCommit": "c9f535278a66fcc6051b0eda448ead0e133d3c2f",
+  "typedExportFixCommit": "d346020e",
+  "mergeCommit": "39486dca",
+  "pythonPassed": 3267,
+  "pythonSkipped": 2,
+  "desktopPassed": 312,
+  "documentation": "passed",
+  "deterministicPayloads": "passed",
+  "nativeChecksPassed": 37,
+  "signedRuntimes": [
+    "arm64",
+    "x86_64 via Rosetta"
+  ],
+  "notarization": {
+    "payload": "7a3e8af6-6bbe-413e-960e-cb297fcbedea",
+    "app": "fe3881ea-586d-4ff5-8c22-d211ffe9f3db",
+    "dmg": "2aff143c-9bc0-4d6b-aa0d-5b4a13d58f87"
+  },
+  "publicAssetsVerified": 6,
+  "feedSHA256": "553ba76715e18d9b1c030966134b97b29819eb05ba1fcc2b741091498d156161",
+  "published": true,
+  "installedLocally": false
+}
