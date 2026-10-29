@@ -39,11 +39,8 @@ def _node(node):
 
 
 def _path_state(path):
-    nodes = list(_value(path, "nodes", []) or [])
-    if len(nodes) > 4096:
-        raise WorkerError("path exceeds the 4,096-node limit")
-    return {"closed": bool(_value(path, "closed", False)), "locked": bool(_value(path, "locked", False)),
-            "nodes": [_node(node) for node in nodes]}
+    from .path_doctor import path_state
+    return path_state(path)
 
 
 def _shape_state(layer):
@@ -296,7 +293,10 @@ def _apply(layer, operation):
         _insert_path(layer, index, _new_path(operation)); return operation, [], None
     path = _path(layer, index)
     inserted = []
-    if op == "split_segment":
+    if op == "normalize_closed_seam":
+        from .path_doctor import normalize
+        seam = normalize(layer, path, operation['stateHash'])
+    elif op == "split_segment":
         state = _path_state(path); kind, start, points = _segment(state, operation["endNode"])
         if start != operation["startNode"]: raise WorkerError("split startNode does not identify the requested segment")
         times = _path_times(kind, points, operation["fractions"], operation["measure"])
@@ -346,7 +346,7 @@ def _apply(layer, operation):
         return operation, inserted, None
     else: raise WorkerError("unsupported outline operation")
     _validate(path)
-    return operation, inserted, removal if op == "remove_node" else None
+    return operation, inserted, seam if op == "normalize_closed_seam" else removal if op == "remove_node" else None
 
 
 def _glyph(font, name):
@@ -383,6 +383,16 @@ def _copy(layer):
     clone = layer.copy()
     if clone is None: raise WorkerError("Glyphs could not copy an outline layer")
     if clone is layer: raise WorkerError("Glyphs did not detach the outline copy")
+    # Native layer.copy() may retain its owning glyph. Simulating an edit with
+    # that parent attached can emit owner change notifications despite detached
+    # geometry. Detach before any flag or outline mutation.
+    detach = getattr(clone, 'setParent_', None)
+    if callable(detach):
+        detach(None)
+    elif hasattr(clone, 'parent'):
+        clone.parent = None
+    if _value(clone, 'parent', None) is not None:
+        raise WorkerError('native layer copy retained its owner; preparation is unsafe')
     setter = getattr(clone, "setTemporarilyDisableRounding_", None)
     if callable(setter): setter(True)
     return clone
@@ -405,6 +415,9 @@ def _ordinary(font, glyph, *, stored_only=False):
 
 def prepare_iter(font, request, *, stored_only=False):
     options = validate_options(request.get("options"))
+    if options['compatibilityPolicy'] != 'preserve' and any(
+            op['op'] == 'normalize_closed_seam' for t in options['targets'] for op in t['operations']):
+        raise WorkerError('seam normalization requires preserved master correspondence')
     changes, rows, expanded, edits, glyph_states = [], [], 0, {}, {}
     for target in options["targets"]:
         glyph = _glyph(font, target["glyph"])
@@ -427,6 +440,13 @@ def prepare_iter(font, request, *, stored_only=False):
             raise WorkerError("outline target selected no writable layers")
         expanded += len(selected)
         if expanded > 4096: raise WorkerError("outline job expands beyond 4,096 layer changes")
+        seam_request = any(op['op'] == 'normalize_closed_seam' for op in target['operations'])
+        if seam_request:
+            master_ids = {identity for identity, _ in ordinary}
+            if surface != 'foreground' or any(identity not in master_ids for identity, _ in selected):
+                raise WorkerError('seam normalization is qualified only for foreground ordinary-master layers')
+            if bool(_value(glyph, 'locked', False)):
+                raise WorkerError('seam normalization is blocked by a locked glyph')
         for identity, layer in selected:
             layer = _surface_layer(layer, surface)
             key = (target["glyph"], identity, surface)
@@ -435,7 +455,7 @@ def prepare_iter(font, request, *, stored_only=False):
                 edits[key] = {"layer": layer, "clone": clone,
                     "beforeHash": outline_state_hash(_shape_state(layer)),
                     "beforeNodes": sum(len(path.nodes) for path in _paths(layer)),
-                    "operations": [], "inserted": [], "removals": [], "rawDeletions": 0}
+                    "operations": [], "inserted": [], "removals": [], "seams": [], "rawDeletions": 0}
                 if surface == "foreground" and identity in state["simulations"]:
                     state["simulations"][identity] = clone
             edit = edits[key]; clone = edit["clone"]
@@ -444,7 +464,7 @@ def prepare_iter(font, request, *, stored_only=False):
                 item, additions, removal = _apply(clone, dict(operation))
                 edit["operations"].append(item); edit["inserted"].extend(additions)
                 if removal is not None:
-                    edit["removals"].append(removal)
+                    edit["seams" if "nodeMap" in removal else "removals"].append(removal)
                 yield
                 if operation["op"] == "delete_nodes":
                     edit["rawDeletions"] += 1
@@ -460,7 +480,7 @@ def prepare_iter(font, request, *, stored_only=False):
                         "operations": edit["operations"]})
         rows.append({"glyph": glyph_name, "layer": identity, "surface": surface, "status": "ready",
                      "rawNodeDelta": after_nodes-edit["beforeNodes"], "insertedNodes": edit["inserted"],
-                     "nativeRemovals": edit["removals"], "rawDeletionCount": edit["rawDeletions"],
+                     "nativeRemovals": edit["removals"], "seamNormalizations": edit["seams"], "rawDeletionCount": edit["rawDeletions"],
                      "beforeHash": edit["beforeHash"], "afterHash": after_hash})
         yield
     incompatible = []
@@ -485,6 +505,7 @@ def prepare_iter(font, request, *, stored_only=False):
         warnings.append("Explicitly allowed incompatible master topology.")
     report = {"claim": "Prepared typed outline edits on detached native copies; native removals use Glyphs keep-shape behavior; no font was saved.",
               "policy": options["compatibilityPolicy"], "layers": rows,
+              "persistence": {"saved": False, "note": "Native Save may serialize coordinates at reduced precision; repair qualification covers exact in-memory edits and profiles, not lossless native persistence."},
               "compatibilityChanges": incompatible,
               "warnings": warnings,
               "warning": ("Explicitly allowed incompatible master topology."

@@ -11,7 +11,10 @@ and its pinned Glyphs 3 skills remain separate.
 
 The release helper `scripts/desktop_release_identity.py` reads `release.json`
 and the Xcode project. The managed skill inventory comes from
-`skills/manifest.json`. This checkout currently targets:
+`skills/manifest.json`. This checkout retains the published product identity while preparing Path Doctor
+for the next version. The development skill/job inventory below includes those
+unreleased additions; installed 2.4.0 runtimes do not gain them automatically.
+This checkout currently targets:
 
 | Item | Value |
 | --- | --- |
@@ -23,9 +26,9 @@ and the Xcode project. The managed skill inventory comes from
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
-| Managed skills | `12` |
+| Managed skills | `13` |
 | MCP tools | `22` |
-| Job kinds | `up to 13`, capability-derived |
+| Job kinds | `up to 14`, capability-derived |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 

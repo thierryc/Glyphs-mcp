@@ -158,6 +158,7 @@ class SidecarService:
             "jobKinds": list(JOB_KINDS)
                         + (["checkpoint_restore"] if "font.checkpoint-restore.v1" in advertised_writes else [])
                         + (['python_script'] if scripts.NATIVE in job_capabilities else [])
+                        + (["path_diagnostics"] if "path.diagnostics.v1" in job_capabilities else [])
                         + (["outline_edit"] if "outline.edit.v1" in advertised_writes else [])
                         + (["native_action"] if native_actions else [])
                         + (["dimensions_edit"] if dimensions.WRITE_CAPABILITY in advertised_writes else [])
@@ -174,7 +175,7 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.duplicate.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1", "document.edit-tab.open.v1")
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, "outline.normalize-closed-seam.v1", NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.duplicate.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1", "document.edit-tab.open.v1")
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
             "jobCapabilities": job_capabilities,
@@ -294,9 +295,9 @@ class SidecarService:
         if kind == 'python_script' and not _workflow:
             raise ServiceError('workflow_required', 'native scripts require start_edit_workflow and its revision-bound Run action')
         document = self._document(document_id)
-        if not document.get("path") and kind != "python_script":
+        if not document.get("path") and kind not in ("python_script", "path_diagnostics"):
             raise ServiceError("document_path_required", "Save or Save As before starting a large job")
-        if document.get("dirty") is not False and not (_workflow and kind == 'python_script'):
+        if document.get("dirty") is not False and not (kind == 'path_diagnostics' or _workflow and kind == 'python_script'):
             raise ServiceError("document_not_clean", "Save the font before starting a large job")
         if not isinstance(document.get("generation"), int):
             raise ServiceError("generation_unavailable", "Glyphs did not expose a bounded edit generation")
@@ -338,6 +339,11 @@ class SidecarService:
             from .script_service import validate_capabilities
             validate_capabilities(self, request['options'], ServiceError)
             return request
+        if kind == 'path_diagnostics':
+            status = self.bridge.status()
+            if 'path.diagnostics.v1' not in status.get('jobCapabilities', []) or not self._native_preparation_available(request, status):
+                raise ServiceError('unsupported_job', 'path_diagnostics requires path.diagnostics.v1 and native preparation')
+            return request
         native_prepare = False
         if kind in ("outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit"):
             try:
@@ -350,6 +356,8 @@ class SidecarService:
                 raise ServiceError("unsupported_job", "exact kerning edits require a qualified native bridge; update the installation")
             if kind == "dimensions_edit" and dimensions.WRITE_CAPABILITY not in advertised:
                 raise ServiceError("unsupported_job", "Dimensions writes are not qualified by the live bridge")
+            if kind == 'outline_edit' and any(op['op'] == 'normalize_closed_seam' for t in request['options']['targets'] for op in t['operations']) and 'outline.normalize-closed-seam.v1' not in advertised:
+                raise ServiceError('unsupported_job', 'qualified seam repair is not advertised by the live bridge')
             if kind == "outline_edit" and "outline.edit.v1" not in advertised:
                 raise ServiceError("unsupported_job", "outline_edit requires bridge capability outline.edit.v1")
             if (kind == "outline_edit"

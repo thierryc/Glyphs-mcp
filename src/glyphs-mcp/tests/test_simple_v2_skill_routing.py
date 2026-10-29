@@ -383,7 +383,7 @@ def test_specialized_scope_is_focused_and_does_not_claim_retired_audits():
     retired = {'icon-font','litsquare-metadata','color-font','variable-font',
                'production-audit','unicode-semantics','export-validation'}
     assert not {f'glyphs-mcp-{name}' for name in retired} & names
-    assert len(names) == 12
+    assert len(names) == 13
     # Unsupported audits remain scoped; a native task is never an MCP fallback.
     assert 'does not prove that a current lean runtime needs updating' in text
     assert 'never claim that a partial read completes a full audit' in text

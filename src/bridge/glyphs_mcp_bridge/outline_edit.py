@@ -67,12 +67,8 @@ def shape_state(layer):
     result = []
     for shape in shapes:
         if _is_path(shape):
-            nodes = list(_value(shape, "nodes", []) or [])
-            if len(nodes) > 4096:
-                raise ValueError("path exceeds the 4,096-node limit")
-            result.append({"kind": "path", "closed": bool(_value(shape, "closed", False)),
-                           "locked": bool(_value(shape, "locked", False)),
-                           "nodes": [_node_state(node) for node in nodes]})
+            from glyphs_mcp_protocol.preparation.path_doctor import path_state
+            result.append({'kind': 'path', **path_state(shape)})
         else:
             result.append({"kind": "component", "name": str(_value(shape, "componentName", "") or ""),
                            "transform": _transform(shape)})
@@ -85,13 +81,14 @@ def hash_layer(layer):
 
 def _path_snap(path):
     nodes = list(path.nodes)
+    from glyphs_mcp_protocol.preparation.path_attributes import snapshot
     properties = []
     for node in nodes:
-        properties.append({"node": node, "position": _point(node), "type": _value(node, "type"),
+        properties.append({"node": node, "attributes": snapshot(node), "position": _point(node), "type": _value(node, "type"),
                            "connection": _value(node, "connection", None),
                            "smooth": bool(_value(node, "smooth", False)),
                            "name": _value(node, "name", None), "orientation": _value(node, "orientation", None)})
-    return {"path": path, "nodes": nodes, "properties": properties,
+    return {"path": path, "attributes": snapshot(path), "nodes": nodes, "properties": properties,
             "closed": bool(_value(path, "closed", False)), "locked": bool(_value(path, "locked", False))}
 
 
@@ -155,6 +152,7 @@ def _retain_selection(layer, selected):
 
 
 def restore(layer, snapshot):
+    from glyphs_mcp_protocol.preparation.path_attributes import restore as restore_attributes
     selected = _selected(layer)
     _set_shapes(layer, snapshot["shapes"])
     for item in snapshot["paths"]:
@@ -165,6 +163,7 @@ def restore(layer, snapshot):
             path.locked = item["locked"]
         except Exception:
             pass
+        restore_attributes(path, item["attributes"])
         for state in item["properties"]:
             node = state["node"]
             node.position = state["position"]
@@ -182,6 +181,7 @@ def restore(layer, snapshot):
                     node.orientation = state["orientation"]
                 except Exception:
                     pass
+            restore_attributes(node, state["attributes"])
     _retain_selection(layer, selected)
 
 
@@ -312,7 +312,10 @@ def apply_operation(layer, operation):
         _insert_path(layer, index, _new_path(operation))
         return
     path = _path(layer, index)
-    if op == "split_segment":
+    if op == "normalize_closed_seam":
+        from glyphs_mcp_protocol.preparation.path_doctor import normalize
+        normalize(layer, path, operation['stateHash'])
+    elif op == "split_segment":
         nodes = list(path.nodes)
         if operation["startNode"] >= len(nodes) or operation["endNode"] >= len(nodes):
             raise ValueError("split segment indices are unavailable")

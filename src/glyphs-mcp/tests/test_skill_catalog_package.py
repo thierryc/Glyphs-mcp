@@ -25,7 +25,7 @@ def copy_catalog_fixture(destination):
 
 
 def test_packaged_catalog_matches_core_skills_and_languages():
-    assert checker.check()['bundledSkills'] == 12
+    assert checker.check()['bundledSkills'] == 13
 
 
 def test_mismatched_snapshot_is_rejected(tmp_path):

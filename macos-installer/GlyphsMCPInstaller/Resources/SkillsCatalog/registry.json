@@ -152,6 +152,31 @@
       "displayName": "Glyphs Outlines"
     },
     {
+      "id": "builtin:glyphs-mcp-path-doctor",
+      "name": "glyphs-mcp-path-doctor",
+      "description": "Diagnose Glyphs path structure, explain stroke/profile findings, and propose or apply explicitly requested qualified closed-seam repairs while preserving authored geometry and profiles.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-path-doctor",
+        "revision": "39193e1fad3412790d0535cbbc91834b77a42207"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs 4 and Glyphs MCP with path.diagnostics.v1; seam repair additionally requires qualified outline.normalize-closed-seam.v1."
+      ],
+      "bundled": true,
+      "displayName": "Glyphs Path Doctor"
+    },
+    {
       "id": "builtin:glyphs-mcp-development",
       "name": "glyphs-mcp-development",
       "description": "Create, test and iterate native Glyphs 4 scripts and plugins in a workspace, including vibe coding and debugging existing plugins.",

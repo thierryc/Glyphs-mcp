@@ -115,6 +115,9 @@ class BridgeCore:
             write_capabilities.append("document.edit-tab.open.v1")
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
+        from .path_doctor_qualification import repair_available
+        if repair_available():
+            write_capabilities.append("outline.normalize-closed-seam.v1")
         if dimensions.available():
             write_capabilities.append("master.dimensions.edit.v1")
         actions = native_actions.available_actions()
@@ -131,6 +134,7 @@ class BridgeCore:
             from glyphs_mcp_protocol.preparation.simple import CAPABILITY
             job_capabilities.append(CAPABILITY)
             write_capabilities.append("kerning.edit.exact.v1")
+            job_capabilities.append("path.diagnostics.v1")
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             "bridgeSessionId": self.bridge_session_id,
@@ -265,6 +269,10 @@ class BridgeCore:
                 "unsupported_change",
                 "remove_node requires bridge capability outline.remove-node.v1",
             )
+        if any(op['op'] == 'normalize_closed_seam' for c in patch['changes'] if c['kind'] == 'outline' for op in c['operations']):
+            from .path_doctor_qualification import repair_available
+            if not repair_available():
+                raise BridgeError('unsupported_change', 'seam repair is not qualified for this native host')
         available_actions = set(native_actions.available_actions())
         requested_actions = {
             change["action"] for change in patch["changes"]
@@ -281,6 +289,8 @@ class BridgeCore:
         with self._lock:
             existing = self._operations.get(job_id)
             if existing is not None:
+                if existing.get("diagnostic"):
+                    raise BridgeError("job_not_applicable", "diagnostic jobs cannot be applied")
                 if existing["patch"] != patch:
                     raise BridgeError("job_conflict", "job ID already belongs to another patch")
                 if not (existing.get("prepared") and existing["status"] == "ready"):

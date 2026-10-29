@@ -13,7 +13,7 @@ def _check(core, operation, error):
     request = operation['prepareRequest']
     if state.get('path') != request['sourcePath'] or state.get('generation') != request['generation']:
         raise error('stale_document', 'the intended document changed during preparation')
-    if state.get('dirty') is not False:
+    if not operation.get('diagnostic') and state.get('dirty') is not False:
         raise error('document_not_clean', 'save the font before preparing typed changes')
     return state
 
@@ -25,7 +25,11 @@ def begin(core, value, error):
     if not isinstance(value, dict) or set(value) != fields:
         raise error('invalid_request', 'native preparation fields are incomplete or unexpected')
     request = simple.validate_request(value['request'])
-    patch = validate_patch(dict(version=1, **{k: value[k] for k in fields - {'request'}}, changes=[], summary='Preparing typed changes'))
+    diagnostic = request['kind'] == 'path_diagnostics'
+    metadata = {k: value[k] for k in fields - {'request'}}
+    # Diagnostic jobs have no saved baseline. This placeholder never becomes a mutation patch.
+    if diagnostic: metadata['sourcePath'] = metadata['sourcePath'] or 'live:' + str(metadata['documentId'])
+    patch = validate_patch(dict(version=1, **metadata, changes=[], summary='Preparing typed changes'))
     job_id = patch['jobId']
     with core._lock:
         old = core._operations.get(job_id)
@@ -33,10 +37,16 @@ def begin(core, value, error):
             if old.get('prepareRequest') != value:
                 raise error('job_conflict', 'this job ID already belongs to another operation')
             return core._public(old)
-        core._check_owner(patch['documentId'])
+        if diagnostic:
+            # Read-only scans coexist with stopped recovery; never interleave a write.
+            for op in core._operations.values():
+                if op['status'] in {'applying', 'discarding', 'accepting', 'rolling_back'}:
+                    raise error('bridge_busy', 'wait for active native work before a live scan')
+        else:
+            core._check_owner(patch['documentId'])
         operation = dict(jobId=job_id, documentId=patch['documentId'], patch=patch, status='preparing',
             index=0, applied=[], resolved=[], error=None, nativeStateBytes=0, startedAt=time.time(),
-            prepareRequest=copy.deepcopy(value), prepared=True, longestPreparationChunk=0)
+            prepareRequest=copy.deepcopy(value), prepared=True, diagnostic=diagnostic, longestPreparationChunk=0)
         _check(core, operation, error)
         operation['prepareIterator'] = simple.iterator(core.adapter._font(patch['documentId']), request)
         # Same bounded retry window as apply; no separate durable preparation registry.
@@ -74,12 +84,27 @@ def advance(core, operation, error):
             except StopIteration as done:
                 changes, report = done.value
                 request = operation['prepareRequest']
-                patch = simple.patch(operation['jobId'], dict(id=operation['documentId'], path=request['sourcePath'],
-                    generation=request['generation']), request['sourceHash'], request['request'], changes, report)
+                if operation.get('diagnostic'):
+                    for issue in report['issues']:
+                        issue['target']['document'] = operation['documentId']
+                    report['document'] = core.adapter.document_state(operation['documentId'])
+                    report['coverage']['consistency'] = 'generation-guarded sliced live scan; not an atomic native snapshot'
+                    from .path_doctor_qualification import repair_available
+                    report['repairAvailable'] = repair_available()
+                    if not report['repairAvailable']:
+                        for issue in report['issues']:
+                            if issue.get('repair'):
+                                issue['proposedRepair'] = issue['repair']
+                                issue['repair'] = None
+                                issue['heldReasons'].append('native host repair qualification is incomplete')
+                    patch = operation['patch']  # Empty, never applicable.
+                else:
+                    patch = simple.patch(operation['jobId'], dict(id=operation['documentId'], path=request['sourcePath'],
+                        generation=request['generation']), request['sourceHash'], request['request'], changes, report)
                 if len(json.dumps(dict(patch=patch, report=report), ensure_ascii=False).encode()) > MAX_RESULT_BYTES:
                     raise error('request_too_large', 'prepared contents exceed the existing 4 MiB bridge limit')
                 _check(core, operation, error)
-                operation.update(status='ready', patch=patch, preparedReport=report, finishedAt=time.time())
+                operation.update(status='completed' if operation.get('diagnostic') else 'ready', patch=patch, preparedReport=report, finishedAt=time.time())
                 operation.pop('prepareIterator', None)
                 break
             operation['index'] += 1
@@ -93,9 +118,11 @@ def advance(core, operation, error):
 
 def result(core, job_id, error):
     op = core._operations.get(job_id)
-    if not op or not op.get('prepared') or op['status'] != 'ready':
+    if not op or not op.get('prepared') or op['status'] != ('completed' if op.get('diagnostic') else 'ready'):
         raise error('job_not_ready', 'typed preparation is not ready')
     _check(core, op, error)
+    if op.get('diagnostic'):
+        return dict(resultKind='diagnostic', report=copy.deepcopy(op['preparedReport']), longestChunkSeconds=op['longestPreparationChunk'])
     return dict(patch=copy.deepcopy(op['patch']), report=copy.deepcopy(op.get('preparedReport')),
                 longestChunkSeconds=op['longestPreparationChunk'])
 

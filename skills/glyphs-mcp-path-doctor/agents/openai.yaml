@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs Path Doctor"
+  short_description: "Diagnose paths and preserve authored stroke profiles"
+  default_prompt: "Use $glyphs-mcp-path-doctor to inspect these paths and propose precise repairs while preserving my geometry and profiles."
+
+policy:
+  allow_implicit_invocation: true

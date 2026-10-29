@@ -128,7 +128,7 @@ def mutation_guard(method):
                         continue
                     if scoped:
                         owner = protection(job)
-                        diagnostic = method.__name__ == 'start_job' and kwargs.get('kind') in {'feature_compile', 'font_export'}
+                        diagnostic = method.__name__ == 'start_job' and kwargs.get('kind') in {'feature_compile', 'font_export', 'path_diagnostics'}
                         blocked = conflicts(job, document_id) and not (
                             diagnostic and owner and owner['reason'] in {'recovery', 'preview'})
                     else:

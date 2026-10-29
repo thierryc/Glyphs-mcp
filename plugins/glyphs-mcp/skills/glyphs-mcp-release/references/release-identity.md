@@ -7,7 +7,7 @@ or signed-release identity from each other.
 
 The current source target is product **2.4.0**, installer build **71**, stable
 channel, published. Its catalog contains twenty-one data/action tools plus
-the optional read-only `show_edit_workflow` display tool, with twelve managed
+the optional read-only `show_edit_workflow` display tool, with thirteen managed
 skills. `list_tasks` is passive and does not execute or resolve workflows.
 See `V2.4.0-RELEASE.md` for qualification and retained limits.
 
@@ -15,8 +15,8 @@ The published stable baseline is **2.4.0/build 71**, under signed tag `v2.4.0`,
 with twenty-one data/action tools plus one optional display tool. Preserve its
 signed feeds and assets. Its signing, notarization, installation and public
 availability are recorded in `V2.4.0-RELEASE.md`; historical evidence retains its original artifact scope.
-The earlier **2.0.4/build 61** baseline retains twenty MCP tools and up to 13
-capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
+The current development catalog has up to 14
+capability-gated job kinds. The earlier **2.0.4/build 61** baseline retains twenty MCP tools and up to 13 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision
 **1**, bridge protocol **1**. The dated MCP transport version is negotiated
 separately. Independent companions retain their own versions. The v2

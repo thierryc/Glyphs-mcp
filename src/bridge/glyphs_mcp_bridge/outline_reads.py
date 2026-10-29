@@ -29,11 +29,11 @@ def _node(node):
 
 
 def path_state(path):
-    nodes = list(value(path, "nodes", []) or [])
-    if len(nodes) > 4096:
-        raise BridgeError("unsupported_read", "path exceeds the 4,096-node safety limit")
-    return {"closed": bool(value(path, "closed", False)), "locked": bool(value(path, "locked", False)),
-            "nodes": [_node(node) for node in nodes]}
+    from glyphs_mcp_protocol.preparation.path_doctor import path_state as capture
+    try:
+        return capture(path)
+    except (ValueError, TypeError) as exc:
+        raise BridgeError("unsupported_read", str(exc)) from exc
 
 
 def surface_layer(layer, surface="foreground"):

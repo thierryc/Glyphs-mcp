@@ -84,6 +84,9 @@ def validate_operation(value: Any, *, resolved: bool = False) -> dict[str, Any]:
     item = _object(value, "outline operation")
     op = item.get("op")
     common = {"op", "path"}
+    if op == "normalize_closed_seam":
+        from .path_doctor import operation
+        return operation(item)
     if op == "split_segment":
         allowed = common | {"startNode", "endNode", "fractions", "measure"}
         if resolved:
@@ -296,12 +299,12 @@ def _float(value: Any) -> str:
 
 def node_state(node: Any) -> list[Any]:
     return [_float(node["x"]), _float(node["y"]), str(node["type"]),
-            bool(node.get("smooth", False)), node.get("name") or None]
+            bool(node.get("smooth", False)), node.get("name") or None, node.get("attributeState", {})]
 
 
 def path_hash(path: Mapping[str, Any]) -> str:
     state = [bool(path["closed"]), bool(path.get("locked", False)),
-             [node_state(node) for node in path["nodes"]]]
+             [node_state(node) for node in path["nodes"]], path.get("attributeState", {})]
     return "sha256:" + hashlib.sha256(canonical_json(state).encode()).hexdigest()
 
 
@@ -310,7 +313,7 @@ def outline_state_hash(shapes: list[Mapping[str, Any]]) -> str:
     for shape in shapes:
         if shape["kind"] == "path":
             state.append(["path", bool(shape["closed"]), bool(shape.get("locked", False)),
-                          [node_state(node) for node in shape["nodes"]]])
+                          [node_state(node) for node in shape["nodes"]], shape.get("attributeState", {})])
         else:
             state.append(["component", shape.get("name"), shape.get("transform")])
     return "sha256:" + hashlib.sha256(canonical_json(state).encode()).hexdigest()

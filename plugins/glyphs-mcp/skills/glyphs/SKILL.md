@@ -25,6 +25,8 @@ save/discard handling and resolves no pending jobs.
 
 ## Optional workflows
 
+- For structural path diagnosis and profile-preserving seam repair, use [Path Doctor](../glyphs-mcp-path-doctor/SKILL.md).
+
 - For spacing, respacing, sidebearings or widths, use [Glyphs Spacing](../glyphs-mcp-spacing/SKILL.md). Applying existing metrics keys is a separate native command from computing reference-based suggestions.
 - For hinting stems, alignment zones, manual or automatic hints and small-size rendering, use [Glyphs Hinting](../glyphs-mcp-hinting/SKILL.md).
 - For interpolation-kink detection or HOI repair, use **Glyphs Dekink** (`$dekink-native`) when installed. See the [optional skill catalog](https://github.com/thierryc/glyphs-mcp-skills).

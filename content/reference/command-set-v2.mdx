@@ -15,3 +15,18 @@ Start with the [first session](../tutorial/first-session.mdx) or read the
 [complete signatures, selectors and job kinds](command-set.mdx). Application is
 save-free; `accept_job` performs verified whole-document persistence after
 review, while recovery and native history retain exact values.
+
+## Path Doctor
+
+`path_diagnostics` uses `start_job` / `get_job` with `path.diagnostics.v1`.
+Options select `glyphs: "all" | [names]`, `layers: "all_masters" | [exact IDs]`.
+The read-only sliced live job accepts dirty/pathless fonts, never saves, excludes
+backgrounds/history/component expansion, and returns diagnostic evidence with
+coverage, stable issue IDs, full state guards and qualified repair proposals.
+
+`normalize_closed_seam` is an explicit `outline_edit` operation with `path` and
+`stateHash`, requiring `outline.normalize-closed-seam.v1`. It preserves the real
+incoming line/cubic and profiles; conflicting profiles, locks and unsupported
+references are held. It never changes fill/smoothness. Repair availability is
+native-qualification gated; a diagnostic proposal does not authorize mutation.
+See the Path Doctor skill and `docs/path-doctor-architecture.md`.

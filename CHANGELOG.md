@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — Path Doctor
+
+- Add live read-only path diagnostics and an explicit closed-seam outline operation.
+- Preserve native stroke profiles, attributes and precision through guards and recovery.
+- Add the Glyphs Path Doctor skill, original generic regressions and native qualification.
+- Keep fill/smoothness separate and hold conflicting profiles or unsupported references.
+- Limit repair to the qualified native host; document native Save precision limits.
+
+See `V2.5.0-PREPARATION.md`. No release is published by these changes.
+
 ## 2.4.0 — stable release, build 71, 27 October 2026
 
 - Keep typed exports bound to verified live and saved instance identities after native recovery regenerates IDs; reject ambiguity or source drift without saving or rewriting the font.

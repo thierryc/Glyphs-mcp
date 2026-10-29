@@ -48,7 +48,8 @@ def prepare_native_typed(service, job_id, cancel):
     try:
         job = service.jobs.get(job_id)
         service.jobs.update(job_id, phase="preparing_native")
-        fingerprint = source_hash(Path(job["document"]["path"]))
+        diagnostic = job['request']['kind'] == 'path_diagnostics'
+        fingerprint = 'sha256:' + '0'*64 if diagnostic else source_hash(Path(job["document"]["path"]))
         if cancel.is_set(): raise WorkerError("job cancelled")
         started = True
         operation = service.bridge.prepare_typed(dict(jobId=job_id, documentId=job['document']['id'],
@@ -57,11 +58,23 @@ def prepare_native_typed(service, job_id, cancel):
         while operation['status'] == 'preparing':
             if cancel.wait(.01): raise WorkerError('job cancelled')
             operation = service.bridge.operation(job_id)
-        if operation['status'] != 'ready':
+        if operation['status'] not in ('ready', 'completed'):
             from .bridge_client import BridgeClientError
             failure = operation.get('error') or dict(code='job_failed', message='native preparation did not finish')
             raise BridgeClientError(failure['code'], failure['message'], failure.get('details'))
         result = service.bridge.prepared_typed(job_id)
+        if diagnostic:
+            if result.get('resultKind') != 'diagnostic': raise WorkerError('expected a read-only diagnostic result')
+            report = result['report']
+            report_path = service.jobs.write_json(job_id, 'report.json', report)
+            with service._lock:
+                if cancel.is_set() or service.jobs.get(job_id)['status'] != 'preparing':
+                    raise WorkerError('job cancelled')
+                service.jobs.update(job_id, status='completed', resultKind='diagnostic', sourceHash=None,
+                    summary='Path Doctor live diagnostics', changeCount=0, sample=[],
+                    report={**report, 'path':str(report_path)},
+                    preparationMetrics=dict(longestChunkSeconds=result.get('longestChunkSeconds')))
+            return
         patch = validate_patch(result['patch'])
         service.jobs.write_json(job_id, 'patch.json', patch)
         report = result.get('report')
@@ -167,6 +180,8 @@ def _mutation_report(report, path):
     for name in ("action", "scope", "targetCount", "changedCount", "noChangeCount", "skippedCount"):
         if name in report:
             summary[name] = report[name]
+    if "persistence" in report:
+        summary["persistence"] = report["persistence"]
     if report.get("kind") == "dimensions_edit":
         # At most 100 entries: never hide an overwrite behind the sample limit.
         summary["targets"] = rows
