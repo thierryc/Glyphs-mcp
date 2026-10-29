@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-path-doctor
-description: Diagnose Glyphs path structure, explain stroke/profile findings, and propose or apply explicitly requested qualified closed-seam repairs while preserving authored geometry and profiles.
+description: Diagnose Glyphs paths and Pen-point distribution, preserve master correspondence, and perform explicitly requested qualified seam repairs or measured stroke-profile cleanup.
 metadata:
   surface: glyphs-mcp-v2
 ---
@@ -16,6 +16,12 @@ that job. Diagnostics never apply, save, close, reload or resolve another task.
 Read [diagnosis](references/diagnosis.md) for request scope and report meanings.
 No Path Doctor top-level tool exists.
 
+For crowded, misplaced or excessive Pen points, use the focused
+[Pen-point cleanup](references/pen-points.md) mode. Establish exact-preservation
+versus bounded-change intent, inspect profile correspondence independently of
+outline compatibility, and qualify changes against native expanded strokes.
+Even spacing and equal point counts alone are not quality criteria.
+
 Explain definite structural defects separately from appearance questions,
 suspicion and valid drawing conventions. An intentional open return/retrace is
 valid. Inactive open-start profiles are authored data to preserve. Corner flags
@@ -24,11 +30,13 @@ closing seam are separate findings. Do not attribute native editing failures to
 a seam without reproducing them on a disposable.
 
 Inspection or a repair proposal does not authorize mutation. Apply only a repair
-explicitly requested by the user and qualified by fresh evidence. Initial scope
+explicitly requested by the user and qualified by fresh evidence. The typed repair
 is `normalize_closed_seam` within `outline_edit`, requiring the advertised
 `outline.normalize-closed-seam.v1` capability. Follow
-[repair and verification](references/repair.md). Missing capabilities mean the
-installation needs a coordinated update, not a scripted bypass.
+[repair and verification](references/repair.md). Missing advertised typed
+capabilities mean the installation needs a coordinated update, not a scripted
+bypass. Custom interior Pen-point editing follows its focused reference and the
+existing native-script recovery contract.
 
 Preserve authored native coordinates, segment direction, intentional lines,
 start position, stroke order, profiles and inherited defaults. Do not bundle

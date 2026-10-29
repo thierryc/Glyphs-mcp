@@ -154,7 +154,7 @@
     {
       "id": "builtin:glyphs-mcp-path-doctor",
       "name": "glyphs-mcp-path-doctor",
-      "description": "Diagnose Glyphs path structure, explain stroke/profile findings, and propose or apply explicitly requested qualified closed-seam repairs while preserving authored geometry and profiles.",
+      "description": "Diagnose Glyphs paths and Pen-point distribution, preserve master correspondence, and perform explicitly requested qualified seam repairs or measured stroke-profile cleanup.",
       "author": "Glyphs MCP contributors",
       "license": "Apache-2.0; supporting resources retain their original licenses",
       "classification": "curated",

@@ -100,3 +100,26 @@ for actually performed checks and remaining limits. Repair capability is limited
 exact in-memory repair/recovery and differential native persistence are distinct
 claims. Saving requires its own authorization and does not promise lossless
 serialization of arbitrary live coordinates.
+
+## Pen-point distribution mode
+
+The skill also routes crowded/interior Pen-point requests to a focused reference
+and a font-independent measurement/selection helper. This adds no MCP tool or
+typed mutation operation. Authorized custom experiments use the existing native
+script preparation, document guards and whole-font session recovery.
+
+First establish profile correspondence: native outline compatibility does not
+include all Pen-point ownership/count information. An already mismatched native
+interpolation is not automatically a valid reference. Alignment trials preserve
+authored masters within an explicit budget and report intermediate changes
+separately. Only then does joint adaptive knot removal compare each cumulative
+proposal against the same correspondence-correct reference. Its decision uses
+the worst measured native stroke-boundary/profile error across masters and
+required intermediate instances, protecting meaningful pressure transitions.
+
+Close spacing is a candidate-ranking signal, not proof of redundancy. The
+helper provides conservative sampled boundary bounds and deterministic greedy
+selection; it neither edits a font nor proves a global minimum or aesthetic
+quality. Native expansion, profile interpolation, overlaps, editing behavior and
+perceptual review remain separate qualification requirements. Private trials
+and their exact data remain ignored and local.
