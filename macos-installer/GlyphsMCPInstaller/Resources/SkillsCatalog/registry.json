@@ -161,7 +161,7 @@
       "source": {
         "repository": "https://github.com/thierryc/Glyphs-mcp",
         "directory": "skills/glyphs-mcp-path-doctor",
-        "revision": "39193e1fad3412790d0535cbbc91834b77a42207"
+        "revision": "cb69216c2c20375a7542248015855e464ec01d64"
       },
       "compatibleClients": [
         "codex",
