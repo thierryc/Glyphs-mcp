@@ -45,7 +45,7 @@ def test_card_is_self_contained_and_accessible():
     'other_actions', 'form_feedback', 'status_feedback', 'uncertain_feedback',
     'keep_in_button', 'inline_pause', 'action_feedback', 'stale', 'refresh_failure', 'validation', 'external_completion', 'menu',
     'countdown_refresh', 'inspection_during_refresh', 'wrong_response', 'compact', 'focus',
-    'result_buttons', 'result_descriptions', 'outcome_support',
+    'result_buttons', 'result_descriptions', 'outcome_support', 'activity_progress',
 ])
 def test_card_reconciles_and_simplifies_choices(scenario):
     node = shutil.which('node')

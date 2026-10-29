@@ -6,26 +6,49 @@ public struct CodexConfigurator {
 	let runner: ProcessRunner
 	let log: (String) -> Void
 	let endpointURL: URL
+	let configURL: URL
+	let connectionCheck: (URL) async -> CodexEffectiveConnection.Status
 
-	public init(runner: ProcessRunner, endpointURL: URL = InstallerConstants.endpointURL, log: @escaping (String) -> Void) {
+	public init(runner: ProcessRunner, endpointURL: URL = InstallerConstants.endpointURL, log: @escaping (String) -> Void,
+                configURL: URL = InstallerPaths.codexConfig,
+                connectionCheck: @escaping (URL) async -> CodexEffectiveConnection.Status = CodexEffectiveConnection.status) {
 		self.runner = runner
 		self.endpointURL = endpointURL
 		self.log = log
+		self.configURL = configURL
+		self.connectionCheck = connectionCheck
 	}
 
 	public func configure() async throws {
 		log("Configuring Codex…")
-		try patchCodexToml(at: InstallerPaths.codexConfig)
-		log("Codex configured.")
-	}
-
-	private func hasDesiredCodexConfig(at url: URL) -> Bool {
-		guard FileManager.default.fileExists(atPath: url.path),
-		      let toml = try? String(contentsOf: url, encoding: .utf8),
-		      let server = CodexTomlInspector.readServerConfig(toml: toml, serverName: InstallerConstants.codexServerName) else {
-			return false
+		try Task.checkCancellation()
+        let existed = FileManager.default.fileExists(atPath: configURL.path)
+		let existing = existed
+            ? try String(contentsOf: configURL, encoding: .utf8) : ""
+		if let server = CodexTomlInspector.readServerConfig(toml: existing, serverName: InstallerConstants.codexServerName) {
+			guard server.url == endpointURL.absoluteString, server.enabled != false else {
+				throw InstallerError.userFacing(NSLocalizedString("The existing Glyphs MCP connection in Codex has custom or disabled settings and was preserved. Review it in Codex settings.", comment: "Preserved Codex connection"))
+			}
+			log("Existing Codex connection preserved.")
+			return
 		}
-		return server.url == endpointURL.absoluteString
+        let status = await connectionCheck(endpointURL)
+        try Task.checkCancellation()
+        let existsNow = FileManager.default.fileExists(atPath: configURL.path)
+        let current = existsNow ? try String(contentsOf: configURL, encoding: .utf8) : ""
+        guard existed == existsNow, current == existing else {
+            throw InstallerError.userFacing(NSLocalizedString("Codex settings changed during setup and were preserved. Run setup again to check the current settings.", comment: "Stale Codex settings"))
+        }
+        if status == .matching {
+			log("Using the existing Codex connection; no standalone entry was added.")
+			return
+		}
+        guard status != .conflict else {
+            throw InstallerError.userFacing(NSLocalizedString("The existing Glyphs MCP connection in Codex has custom or disabled settings and was preserved. Review it in Codex settings.", comment: "Preserved Codex connection"))
+        }
+		try Task.checkCancellation()
+		try patchCodexToml(at: configURL)
+		log("Codex configured.")
 	}
 
 	private func patchCodexToml(at url: URL) throws {
@@ -39,12 +62,48 @@ public struct CodexConfigurator {
 			]
 		)
 
-		let existing = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+		let existing = FileManager.default.fileExists(atPath: url.path) ? try String(contentsOf: url, encoding: .utf8) : ""
 		let updated = CodexTomlPatcher.patch(toml: existing, block: desired)
 		_ = try FileIO.backupIfExists(url)
 		try FileIO.writeUTF8Atomically(updated, to: url)
 		log("Wrote: \(url.path)")
 	}
+}
+
+/// Reads Codex's effective configuration, including enabled plugin connections.
+/// Never infers installation from private cache paths or changes plugin state.
+public enum CodexEffectiveConnection {
+    public enum Status: Equatable, Sendable { case matching, absent, conflict, unavailable }
+
+    public static func matches(json: Data, endpoint: URL) -> Bool {
+        status(json: json, endpoint: endpoint) == .matching
+    }
+
+    public static func status(json: Data, endpoint: URL) -> Status {
+        guard let rows = (try? JSONSerialization.jsonObject(with: json)) as? [[String: Any]] else { return .unavailable }
+        let matches = rows.filter { ($0["name"] as? String) == InstallerConstants.codexServerName }
+        guard !matches.isEmpty else { return .absent }
+        guard matches.count == 1, let row = matches.first, row["enabled"] as? Bool == true,
+              let transport = row["transport"] as? [String: Any],
+              ["http", "streamable_http"].contains(transport["type"] as? String ?? ""),
+              transport["url"] as? String == endpoint.absoluteString else { return .conflict }
+        return .matching
+    }
+
+    public static func isConfigured(endpoint: URL) async -> Bool {
+        await status(endpoint: endpoint) == .matching
+    }
+
+    public static func status(endpoint: URL) async -> Status {
+        guard let path = ToolLocator.findTool(named: "codex", extraCandidates: ["/opt/homebrew/bin/codex", "/usr/local/bin/codex"]) else { return .unavailable }
+        do {
+            let result = try await ProcessRunner().runCapturing(executable: URL(fileURLWithPath: path),
+                args: ["mcp", "list", "--json"],
+                environment: ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: path),
+                timeout: 8, maximumStandardOutputBytes: 1_048_576)
+            return result.exitCode == 0 ? status(json: result.stdoutData, endpoint: endpoint) : .unavailable
+        } catch { return .unavailable }
+    }
 }
 
 public struct CodexTomlBlock {

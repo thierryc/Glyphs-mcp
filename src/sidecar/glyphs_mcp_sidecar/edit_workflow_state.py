@@ -9,6 +9,7 @@ import time
 from uuid import uuid4
 from glyphs_mcp_protocol import scripts
 from .saved_script import unresolved
+from .activity_feedback import workflow_progress
 
 TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed", "expired"}
 ACTIVE = {"queued", "preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
@@ -423,6 +424,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         op['message'] = None
         if include_warning:
             result['warning'] = scripts.WARNING
+    result['progress'] = workflow_progress(value)
     result['actions'] = presented_actions(value)
     if support := action_support_text(value):
         result['actionSupportText'] = support
@@ -575,6 +577,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         "workflow_id": result["id"], "expected_revision": result["revision"],
         "document_id": result["document"]["id"], "state": result["state"], "poll": result["poll"],
         "requestFingerprint": result.get("requestFingerprint"),
+        "progress": result['progress'],
         "blockingWorkflowId": result.get('blockingWorkflowId'),
         "blocker": result.get("blocker"),
         "queue": result.get("queue"),

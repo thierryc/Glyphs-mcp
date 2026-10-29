@@ -1000,5 +1000,8 @@
 "7 days" = "7 jours";
 "30 days" = "30 jours";
 "90 days" = "90 jours";
+"The existing Glyphs MCP connection in Codex has custom or disabled settings and was preserved. Review it in Codex settings." = "La connexion Glyphs MCP existante dans Codex possède des réglages personnalisés ou est désactivée. Elle a été conservée. Vérifiez-la dans les réglages de Codex.";
+"This connection is managed in Codex. Manage or remove it in Codex settings." = "Cette connexion est gérée dans Codex. Modifiez-la ou supprimez-la dans les réglages de Codex.";
 "%lld days" = "%lld jours";
 "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "Les tâches inactives passent dans Terminées avec le statut Expirée. Les tâches en cours et les options de récupération disponibles sont conservées. L’historique et les diagnostics restent accessibles.";
+"Codex settings changed during setup and were preserved. Run setup again to check the current settings." = "Les réglages Codex ont changé pendant la configuration et ont été conservés. Relancez la configuration pour vérifier les réglages actuels.";

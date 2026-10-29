@@ -11,18 +11,18 @@ and its pinned Glyphs 3 skills remain separate.
 
 The release helper `scripts/desktop_release_identity.py` reads `release.json`
 and the Xcode project. The managed skill inventory comes from
-`skills/manifest.json`. This checkout retains the published product identity while preparing Path Doctor
-for the next version. The development skill/job inventory below includes those
-unreleased additions; installed 2.4.0 runtimes do not gain them automatically.
+`skills/manifest.json`. This checkout prepares the unreleased 2.5.0 candidate.
+The development skill/job inventory below includes its additions; installed
+2.4.0 runtimes do not gain them automatically.
 This checkout currently targets:
 
 | Item | Value |
 | --- | --- |
-| Product version | `2.4.0` |
-| Release version | `2.4.0` |
+| Product version | `2.5.0` |
+| Release version | `2.5.0` |
 | Channel | `stable` |
 | Beta number | `0` |
-| Installer build | `71` |
+| Installer build | `72` |
 | Lean interface | `glyphs-mcp-sidecar` |
 | Interface revision | `1` |
 | Bridge protocol | `1` |
@@ -31,6 +31,12 @@ This checkout currently targets:
 | Job kinds | `up to 14`, capability-derived |
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
+
+The unreleased candidate reserves tag `v2.5.0` and archive names
+`Glyphs-MCP-2.5.0.dmg` and `Glyphs-MCP-2.5.0.zip`. Its stable feed URL is
+`https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`.
+These names describe the preparation target; 2.5.0 distribution and feed
+promotion still require final qualification and publication authorization.
 
 Stable **2.4.0/build 71** is published under signed tag `v2.4.0`, with verified archives `Glyphs-MCP-2.4.0.dmg` and `Glyphs-MCP-2.4.0.zip`. The task-management update adds `tasks.document-recovery.v1` and `edit.queue.automatic.v1` while keeping interface revision 1, bridge protocol 1 and 22 tools.
 

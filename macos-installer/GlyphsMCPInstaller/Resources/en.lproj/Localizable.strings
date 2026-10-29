@@ -989,5 +989,8 @@
 "7 days" = "7 days";
 "30 days" = "30 days";
 "90 days" = "90 days";
+"The existing Glyphs MCP connection in Codex has custom or disabled settings and was preserved. Review it in Codex settings." = "The existing Glyphs MCP connection in Codex has custom or disabled settings and was preserved. Review it in Codex settings.";
+"This connection is managed in Codex. Manage or remove it in Codex settings." = "This connection is managed in Codex. Manage or remove it in Codex settings.";
 "%lld days" = "%lld days";
 "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available.";
+"Codex settings changed during setup and were preserved. Run setup again to check the current settings." = "Codex settings changed during setup and were preserved. Run setup again to check the current settings.";

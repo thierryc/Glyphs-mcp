@@ -52,6 +52,7 @@ def test_build_is_deterministic_and_excludes_the_old_runtime(tmp_path: Path) -> 
     manifest_b = BUILDER.build(second)
     assert manifest_a == manifest_b
     assert json.loads((first / "manifest.json").read_text()) == manifest_a
+    assert (first / 'sidecar/glyphs_mcp_sidecar/assets/icon.png').read_bytes() == (REPO / 'plugins/glyphs-mcp/assets/icon.png').read_bytes()
     assert manifest_a["tools"] == [
         "get_status",
         "list_tasks",

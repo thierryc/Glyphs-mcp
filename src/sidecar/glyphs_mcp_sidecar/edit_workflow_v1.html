@@ -12,22 +12,28 @@ progress{display:block;width:100%;height:8px;accent-color:var(--accent);margin:8
 
 /* Workflow presentation: preserves host themes and existing controls. */
 
-body{padding:24px;font-size:14px;-webkit-font-smoothing:antialiased}main{max-width:640px}
-.badge{display:inline-block;font-weight:650;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
-h1{font-size:24px;letter-spacing:-.035em;font-weight:650;margin:0 0 18px}
-#status{border-radius:10px;padding:12px 14px;background:light-dark(#edf5f1,#253b32);color:light-dark(#215e43,#a0dfbd);font-weight:650;font-size:15px;margin-bottom:18px}
-#scope{font-size:15px;font-weight:550}#targets,#path{font-size:12px}#message,#restore-coverage{color:var(--muted);font-size:13px;line-height:1.65}
-#proposal{margin:18px 0}#proposal>p{font-size:12px;font-weight:650}#proposal pre{margin:0;padding:9px 12px;background:light-dark(#f5f6f5,#292b29);border-bottom:1px solid var(--line)}
+body{padding:10px 12px;font-size:12px;line-height:1.4;-webkit-font-smoothing:antialiased}main{position:relative;max-width:460px}p{margin:6px 0}
+.card-header{display:flex;align-items:baseline;gap:8px;min-width:0;padding-right:52px}
+.badge{flex-shrink:0;font-weight:600;font-size:9px;letter-spacing:.06em;text-transform:uppercase;margin:0}
+h1{min-width:0;font-size:12px;letter-spacing:0;font-weight:600;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.activity-line{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+#status{flex:1;min-width:0;padding:0;background:none;color:var(--fg);font-weight:500;font-size:12px;margin:0}
+#progress{flex-shrink:0;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap;margin:0}
+#activity-progress{height:3px;margin:6px 0}
+#targets,#activity-updated{font-size:11px}#message,#restore-coverage{color:var(--muted);font-size:11px;line-height:1.45}
+#proposal{margin:8px 0}#proposal>p{font-size:11px;font-weight:600}#proposal pre{margin:0;padding:6px 8px;background:light-dark(#f5f6f5,#292b29);border-bottom:1px solid var(--line)}
+#proposal:empty{display:none}
 #proposal pre:first-of-type{border-radius:8px 8px 0 0}#proposal pre:last-of-type{border-radius:0 0 8px 8px;border-bottom:0}
-#warnings:empty{display:none}#warnings p{padding:12px 14px;border:1px solid light-dark(#ead7ab,#705b30);background:light-dark(#fff9ed,#342d1e);border-radius:10px;font-size:13px}
-button{border-radius:9px;font-size:13px;font-weight:550;padding:10px 15px;min-height:42px}button.primary{background:light-dark(#246849,#a0dfbd);color:light-dark(#fff,#14291e);border-color:transparent}
+#warnings:empty{display:none}#warnings p{padding:6px 8px;border:1px solid light-dark(#ead7ab,#705b30);background:light-dark(#fff9ed,#342d1e);border-radius:6px;font-size:11px}
+button{border-radius:6px;font-size:11px;font-weight:550;padding:5px 9px;min-height:28px}button.primary{background:light-dark(#246849,#a0dfbd);color:light-dark(#fff,#14291e);border-color:transparent}
 button:hover:not(:disabled){filter:brightness(.96)}
-#more-options>summary,#result-details>summary{font-size:12px;color:var(--muted)}#result-details{margin-top:20px}#details,#script-source,#script-params,#script-output{background:light-dark(#f5f6f5,#292b29);padding:12px;border-radius:8px}
-:root:is([data-state="needs_review"],[data-state="waiting_save"],[data-state="outdated"],[data-state="blocked_review"],[data-state="uncertain"],[data-state="interrupted"]) #status{background:light-dark(#fff7e6,#3b311e);color:light-dark(#795815,#e6c77e)}
-:root[data-state="failed"] #status{background:light-dark(#fff0ec,#3d2725);color:light-dark(#9d382d,#ffb8ae)}
+#more-options>summary,#result-details>summary{font-size:10px;color:var(--muted)}#result-details{border:0;padding:0;margin:0}#result-details>summary{position:absolute;top:-3px;right:0;min-height:24px;padding:4px 0}#result-details[open]{border-top:1px solid var(--line);margin-top:6px;padding-top:6px}#details,#script-source,#script-params,#script-output{background:light-dark(#f5f6f5,#292b29);padding:8px;border-radius:6px}
+:root:is([data-state="needs_review"],[data-state="waiting_save"],[data-state="outdated"],[data-state="blocked_review"],[data-state="uncertain"],[data-state="interrupted"]) #status{color:light-dark(#795815,#e6c77e)}
+:root[data-state="failed"] #status{color:light-dark(#9d382d,#ffb8ae)}
+:root:is([data-state="failed"],[data-state="cancelled"]) .activity-line{display:block}
 button.primary,button[data-action="finish_edit"],button[data-action="finish_script"]{position:relative;overflow:hidden}
 .restore-icon{width:14px;height:14px;vertical-align:-2px;margin-right:6px;flex-shrink:0}
-#action-support,#restore-coverage{font-size:12px;line-height:1.6;color:var(--muted)}
+#action-support,#restore-coverage{font-size:11px;line-height:1.45;color:var(--muted)}
 #auto-keep-progress{position:absolute;left:0;bottom:0;width:100%;height:4px;margin:0;border:0;border-radius:0;background:transparent;pointer-events:none;appearance:none;accent-color:light-dark(#143f2c,#5d917a)}
 #auto-keep-progress::-webkit-progress-bar{background:transparent}
 #auto-keep-progress::-webkit-progress-value{background:light-dark(#143f2c,#5d917a)}
@@ -36,9 +42,10 @@ button.primary,button[data-action="finish_edit"],button[data-action="finish_scri
 #auto-keep p{font-size:11px;line-height:1.45;color:var(--muted);margin:0}
 #auto-keep[hidden][data-reserved="true"]{display:block!important;visibility:hidden}
 #action-row:has(+ #auto-keep[data-reserved="true"]){margin-bottom:6px}
-#auto-keep-actions button.icon-button{width:42px;height:42px;padding:0;display:inline-grid;place-items:center}
+#auto-keep-actions button.icon-button{width:28px;height:28px;padding:0;display:inline-grid;place-items:center}
 button.icon-button::before{content:"";display:block;width:4px;height:14px;border-radius:1px;background:currentColor;box-shadow:8px 0 0 currentColor;transform:translateX(-4px)}
-#action-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin:16px 0}
+#action-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin:8px 0}
+#action-row:has(#actions[hidden]):has(#auto-keep-actions[hidden]){display:none}
 #action-row #actions{display:contents}
 #action-row #auto-keep-actions{margin:0;flex-shrink:0}
 #action-row button{width:auto;min-width:0;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -49,7 +56,7 @@ main[data-form-open="true"] #cancel-form:disabled{visibility:hidden}
 button.icon-button[data-feedback-phase="working"]::before{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;background:none;box-shadow:none;transform:none;animation:action-spin .8s linear infinite}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* Shared icon/label spacing covers actions, menu items, forms and status checks. */
-button[data-in-button-feedback]{--icon-label-gap:6px;--icon-label-padding:13px;position:relative;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;padding-left:var(--icon-label-padding);padding-right:var(--icon-label-padding);opacity:1;transition:opacity 600ms ease-in-out}
+button[data-in-button-feedback]{--icon-label-gap:5px;--icon-label-padding:9px;position:relative;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;padding-left:var(--icon-label-padding);padding-right:var(--icon-label-padding);opacity:1;transition:opacity 600ms ease-in-out}
 button[data-in-button-feedback]::before{display:inline-block;box-sizing:border-box;vertical-align:-1px;width:10px;height:10px;margin-right:var(--icon-label-gap);font-size:11px;text-align:center}
 button[data-in-button-feedback][data-feedback-phase="working"]::before{content:"";border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:action-spin .8s linear infinite}
 button[data-in-button-feedback][data-feedback-phase="done"]::before,button[data-in-button-feedback][data-feedback-phase="fading"]::before{content:"✓";line-height:10px}
@@ -57,17 +64,16 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
 @keyframes action-spin{to{transform:rotate(360deg)}}
 @keyframes action-fade{from{opacity:1}to{opacity:0}}
 @media(prefers-reduced-motion:reduce){button.icon-button[data-feedback-phase="working"]::before{animation:none}button[data-in-button-feedback]{transition:none;animation:none!important}button[data-in-button-feedback]::before{animation:none!important}}
-@media(max-width:400px){body{padding:16px}h1{font-size:22px}}
-@media(max-width:400px){#action-row button:not(.icon-button){padding:8px;font-size:12px}button[data-in-button-feedback]{--icon-label-gap:4px;--icon-label-padding:7px}#action-row button[data-in-button-feedback]{padding-left:var(--icon-label-padding);padding-right:var(--icon-label-padding)}}
+@media(max-width:400px){#action-row button:not(.icon-button){padding:5px 7px;font-size:11px}button[data-in-button-feedback]{--icon-label-gap:4px;--icon-label-padding:7px}#action-row button[data-in-button-feedback]{padding-left:var(--icon-label-padding);padding-right:var(--icon-label-padding)}}
 
 </style>
 </head>
 <body>
 <main aria-busy="false">
-  <span class="badge">Glyphs MCP</span><h1 id="title">Font adjustment</h1>
-  <p id="status" class="status" role="status" aria-live="polite" tabindex="-1">Connecting to this conversation…</p>
-  <p id="scope" class="scope"></p><p id="targets" class="muted"></p><p id="path" class="path muted"></p>
-  <p id="message"></p><p id="progress" class="muted"></p>
+  <header class="card-header"><span class="badge">Glyphs MCP</span><h1 id="title">Font adjustment</h1></header>
+  <div class="activity-line"><p id="status" class="status" role="status" aria-live="polite" tabindex="-1">Connecting…</p><p id="progress" class="muted" role="status" aria-live="polite"></p></div>
+  <progress id="activity-progress" aria-label="Current operation progress" hidden></progress>
+  <p id="message"></p>
   <div id="warnings"></div><div id="proposal"></div><div id="approvals"></div>
   <div id="action-feedback" class="actions" role="status" aria-live="polite" hidden></div>
   <span id="inline-feedback-status" class="sr-only" role="status" aria-live="polite"></span>
@@ -95,8 +101,10 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
   <p id="error" class="error" role="alert"></p>
   <button id="check-status" type="button" hidden>Check status</button>
   <p id="fallback" class="muted">You can always continue in the conversation using ordinary language.</p>
-  <details id="result-details"><summary>View details</summary>
+  <details id="result-details"><summary>Details</summary>
+    <p id="scope" class="scope" hidden></p><p id="path" class="path muted" hidden></p>
     <p class="detail-label">Document</p><p id="full-path" class="path muted"></p>
+    <p id="targets" class="muted"></p><p id="activity-updated" class="muted" hidden></p>
     <p class="detail-label">Request</p><p id="full-summary" class="scope"></p>
     <p id="full-guidance" class="muted"></p>
     <p id="auto-keep-coverage" class="muted" hidden>This ends this workflow’s recovery offer without saving. Pause the countdown to inspect the result.</p>
@@ -253,7 +261,7 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
     window.parent.postMessage({jsonrpc:"2.0", method, params:params || {}}, origin);
   }
   function resize() {
-    notify("ui/notifications/size-changed", {height:Math.ceil(document.querySelector("main").getBoundingClientRect().height) + 32});
+    notify("ui/notifications/size-changed", {height:Math.ceil(document.querySelector("main").getBoundingClientRect().height) + 20});
   }
   function toolCallsAvailable() { return connected && !!host.serverTools; }
   const optedOut = new Set();
@@ -391,6 +399,7 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
     const doc = display.document || {}, job = display.job || {}, scope = display.scope || {};
     const report = current.job?.report || job.report || {};
     setText("title", doc.familyName || "Untitled font");
+    byId("title").title = doc.path || doc.familyName || "Untitled font";
     setText("path", doc.path ? doc.path.slice(doc.path.lastIndexOf("/") + 1) : "Not saved yet");
     setText("full-path", current.document?.path || "Not saved yet");
     const summary = current.summary || (scope.kind || "Font adjustment").replaceAll("_", " ");
@@ -413,10 +422,30 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
     if (byId("action-support").textContent !== (showSupport ? support : "")) setActionSupport(showSupport ? support : "");
     byId("action-support").hidden = !showSupport;
     byId("auto-keep-coverage").hidden = !canAutoKeep();
-    const progress = current.job?.bridgeOperation || {};
-    const showProgress = current.entrypoint !== "script" && ["preparing", "applying", "saving", "discarding", "resolving"].includes(current.state) && Number.isFinite(progress.totalChanges) && progress.totalChanges > 0 && (progress.completedChanges || 0) < progress.totalChanges;
-    setText("progress", showProgress ? `${progress.completedChanges || 0} / ${progress.totalChanges} ${current.entrypoint ? "callbacks completed" : "changes"}` : "");
-    byId("progress").hidden = !showProgress;
+    const activity = current.progress?.workflowId === current.id && current.progress?.jobId === current.jobId
+      && current.progress?.state === current.state ? current.progress : null;
+    const progress = activity || current.job?.bridgeOperation || {};
+    const completed = activity ? progress.completed : progress.completedChanges;
+    const total = activity ? progress.total : progress.totalChanges;
+    const counted = current.entrypoint !== "script" && Number.isFinite(completed) && Number.isFinite(total)
+      && total > 0 && completed >= 0 && completed <= total;
+    const working = activity ? activity.status === "working" : ["preparing", "applying", "saving", "discarding", "resolving"].includes(current.state);
+    const showProgress = counted && completed < total && (activity ? working || ["failed", "cancelled"].includes(current.state) : working);
+    const progressDescription = counted ? `${completed} / ${total} ${current.entrypoint ? "callbacks completed" : "changes"}` : "";
+    setText("progress", showProgress ? `${completed} / ${total}` : "");
+    byId("progress").setAttribute("aria-label", progressDescription);
+    byId("progress").title = progressDescription;
+    byId("progress").hidden = !byId("progress").textContent;
+    const bar = byId("activity-progress");
+    bar.hidden = !working || !counted && !activity?.indeterminate;
+    if (counted) { bar.max = total; bar.value = completed; }
+    else bar.removeAttribute("value");
+    bar.setAttribute("aria-label", activity?.label || "Current operation progress");
+    bar.setAttribute("aria-valuetext", progressDescription || activity?.label || "Working");
+    const updated = activity?.updatedAt;
+    const stamp = Number.isFinite(updated) && updated > 0 ? new Date(updated * 1000) : null;
+    setText("activity-updated", stamp && Number.isFinite(stamp.getTime()) ? `Updated ${stamp.toLocaleTimeString()}` : "");
+    byId("activity-updated").hidden = !byId("activity-updated").textContent;
     const warnings = byId("warnings"); warnings.replaceChildren();
     for (const warning of [...(report.warnings || []), ...(warningCache && warningCache.fingerprint === current.requestFingerprint ? [warningCache.value] : [])]) { const p = document.createElement("p"); p.textContent = warning; warnings.append(p); }
     if (current.state === "needs_review" && current.reviewInConversation) {

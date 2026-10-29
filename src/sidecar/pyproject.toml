@@ -23,4 +23,4 @@ where = ["."]
 include = ["glyphs_mcp_sidecar*"]
 
 [tool.setuptools.package-data]
-glyphs_mcp_sidecar = ["*.html"]
+glyphs_mcp_sidecar = ["*.html", "assets/*.png"]

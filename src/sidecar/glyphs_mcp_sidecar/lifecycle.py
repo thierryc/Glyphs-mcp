@@ -7,6 +7,7 @@ import hashlib
 import os
 import time
 from uuid import uuid4
+from .activity_feedback import operation_counts
 
 BUSY = frozenset(("preparing", "cancelling", "applying", "accepting", "discarding"))
 
@@ -37,14 +38,15 @@ def activity(job):
     state = job["status"]
     phase = job.get("phase", state) if state == "preparing" else state
     document = job.get("document") or {}
+    completed, total = operation_counts(operation)
     return {
         "jobId": job["id"],
         "document": "Compiled font comparison" if job.get("inputKind") == "compiled_fonts" else document.get("familyName") or Path(document.get("path") or "Untitled").name,
         "kind": job["request"]["kind"], "phase": phase,
         "startedAt": job.get("phaseStartedAt", job["createdAt"]),
         "finishedAt": job.get("finishedAt"),
-        "completed": operation.get("completedChanges") if state in ("applying", "accepting", "discarding", "applied", "accepted", "accept_uncertain", "discarded") else None,
-        "total": operation.get("totalChanges") if state in ("applying", "accepting", "discarding", "applied", "accepted", "accept_uncertain", "discarded") else None,
+        "completed": completed if state in ("applying", "accepting", "discarding", "applied", "accepted", "accept_uncertain", "discarded") else None,
+        "total": total if state in ("applying", "accepting", "discarding", "applied", "accepted", "accept_uncertain", "discarded") else None,
         "message": (job.get("error") or {}).get("message"),
     }
 

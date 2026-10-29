@@ -38,7 +38,8 @@ def test_v2_catalog_signatures_match_the_base_and_workflow_tools():
             continue
         if any(isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
                and d.func.attr == 'tool' for d in node.decorator_list):
-            actual[node.name] = [arg.arg for arg in node.args.args]
+            # FastMCP injects Context; it is not a client tool argument.
+            actual[node.name] = [arg.arg for arg in node.args.args if arg.arg != "ctx"]
     reference = (REPO / 'content/reference/command-set.mdx').read_text()
     reference = reference.split('## Explicit reads', 1)[0]
     documented = {}

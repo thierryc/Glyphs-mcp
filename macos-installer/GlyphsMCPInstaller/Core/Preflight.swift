@@ -1115,6 +1115,17 @@ enum ToolLocator {
 			}
 		}
 
+		// Codex can be bundled with either desktop host without a shell install.
+        // Keep explicit CLI, PATH and version-manager choices ahead of this fallback.
+        if named == "codex" {
+            for base in [home.appendingPathComponent("Applications"), URL(fileURLWithPath: "/Applications")] {
+                for app in ["Codex.app", "ChatGPT.app"] {
+                    let resources = base.appendingPathComponent(app).appendingPathComponent("Contents/Resources")
+                    candidates.append(resources.appendingPathComponent("codex").path)
+                    candidates.append(resources.appendingPathComponent("codex-cli/CodexCLI.app/Contents/MacOS/codex").path)
+                }
+            }
+        }
 		// De-dup while preserving order.
 		var seen = Set<String>()
 		for p in candidates {

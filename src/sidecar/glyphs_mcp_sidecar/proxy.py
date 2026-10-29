@@ -33,6 +33,8 @@ class AppProxyResourceManager(ProxyResourceManager):
 
 def create_proxy(target):
     proxy = FastMCP.as_proxy(target, name="Glyphs MCP")
+    from .presentation import configure_identity
+    configure_identity(proxy)
     # Narrow compatibility adapter; keep the library's tools and result forwarding.
     proxy._resource_manager = AppProxyResourceManager(client_factory=proxy.client_factory)
     preserve_ui_resource_metadata(proxy)

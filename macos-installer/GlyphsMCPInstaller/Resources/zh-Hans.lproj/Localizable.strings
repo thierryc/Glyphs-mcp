@@ -1000,5 +1000,8 @@
 "7 days" = "7 天";
 "30 days" = "30 天";
 "90 days" = "90 天";
+"The existing Glyphs MCP connection in Codex has custom or disabled settings and was preserved. Review it in Codex settings." = "Codex 中现有的 Glyphs MCP 连接使用自定义设置或已停用，因此已保留。请在 Codex 设置中检查该连接。";
+"This connection is managed in Codex. Manage or remove it in Codex settings." = "此连接由 Codex 管理。请在 Codex 设置中管理或移除该连接。";
 "%lld days" = "%lld 天";
 "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "非活动任务将移至“已完成”并标记为“已过期”。正在进行的任务和可用的恢复选项会保留，历史记录和诊断信息仍可查看。";
+"Codex settings changed during setup and were preserved. Run setup again to check the current settings." = "Codex 设置在配置过程中发生了变化，已予以保留。请重新运行配置以检查当前设置。";

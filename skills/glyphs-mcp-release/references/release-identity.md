@@ -5,11 +5,12 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current source target is product **2.4.0**, installer build **71**, stable
-channel, published. Its catalog contains twenty-one data/action tools plus
+The current source target is product **2.5.0**, installer build **72**, stable
+channel, unreleased. Its catalog contains twenty-one data/action tools plus
 the optional read-only `show_edit_workflow` display tool, with thirteen managed
 skills. `list_tasks` is passive and does not execute or resolve workflows.
-See `V2.4.0-RELEASE.md` for qualification and retained limits.
+See `V2.5.0-PREPARATION.md` for candidate scope and remaining gates. The published
+2.4.0 baseline retains its qualification in `V2.4.0-RELEASE.md`.
 
 The published stable baseline is **2.4.0/build 71**, under signed tag `v2.4.0`,
 with twenty-one data/action tools plus one optional display tool. Preserve its

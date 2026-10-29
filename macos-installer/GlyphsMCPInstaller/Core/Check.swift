@@ -126,7 +126,7 @@ public enum Check {
 		   let toml = try? String(contentsOf: tomlURL, encoding: .utf8) {
 			configExists = true
 			if let server = CodexTomlInspector.readServerConfig(toml: toml, serverName: InstallerConstants.codexServerName) {
-				if server.url == endpoint {
+				if server.url == endpoint && server.enabled != false {
 					configMatches = true
 				}
 			}
@@ -134,7 +134,7 @@ public enum Check {
 
 		let summary: String
 		let level: PreflightItem.Level
-		if configMatches {
+		if configMatches || cliConfigured {
 			summary = "Configured"
 			level = .ok
 		} else if configExists || cliConfigured {
@@ -301,9 +301,10 @@ public enum CodexTomlInspector {
 	}
 
 	public static func readServerConfig(toml: String, serverName: String) -> ServerConfig? {
-		let header = "[mcp_servers.\(serverName)]"
+		let name = NSRegularExpression.escapedPattern(for: serverName)
+        let headerPattern = "^\\s*\\[\\s*mcp_servers\\s*\\.\\s*(?:\(name)|\"\(name)\"|'\(name)')\\s*\\]\\s*(?:#.*)?$"
 		let lines = toml.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-		guard let headerIndex = lines.firstIndex(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines) == header }) else {
+		guard let headerIndex = lines.firstIndex(where: { $0.range(of: headerPattern, options: .regularExpression) != nil }) else {
 			return nil
 		}
 		let endIndex = nextHeaderIndex(lines: lines, start: headerIndex + 1) ?? lines.count
@@ -329,7 +330,7 @@ public enum CodexTomlInspector {
 	private static func nextHeaderIndex(lines: [String], start: Int) -> Int? {
 		guard start < lines.count else { return nil }
 		for i in start..<lines.count {
-			if lines[i].hasPrefix("[") {
+			if lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("[") {
 				return i
 			}
 		}
@@ -380,7 +381,7 @@ enum McpCliInspector {
 			if let data = trimmed.data(using: .utf8),
 			   let obj = try? JSONSerialization.jsonObject(with: data) {
 				if let found = findServer(in: obj, serverName: serverName) {
-					let matches = found.contains(endpointURL)
+					let matches = found == endpointURL
 					return Result(isConfigured: matches, details: "CLI: server found (\(matches ? "url matches" : "url mismatch")).")
 				}
 				return Result(isConfigured: false, details: "CLI: server not found.")
@@ -392,9 +393,10 @@ enum McpCliInspector {
 	private static func findServer(in obj: Any, serverName: String) -> String? {
 		if let dict = obj as? [String: Any] {
 			if let name = dict["name"] as? String, name == serverName {
+				if dict["enabled"] as? Bool == false { return nil }
 				if let url = dict["url"] as? String { return url }
 				if let serverUrl = dict["serverUrl"] as? String { return serverUrl }
-				return String(describing: dict)
+				return (dict["transport"] as? [String: Any])?["url"] as? String
 			}
 			for (_, v) in dict {
 				if let hit = findServer(in: v, serverName: serverName) { return hit }

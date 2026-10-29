@@ -1,14 +1,24 @@
 # Changelog
 
-## Unreleased — Path Doctor
+## 2.5.0 — in preparation, build 72
 
 - Add live read-only path diagnostics and an explicit closed-seam outline operation.
 - Preserve native stroke profiles, attributes and precision through guards and recovery.
 - Add the Glyphs Path Doctor skill, original generic regressions and native qualification.
+- Add correspondence-first Pen-point cleanup guidance and a measured, error-bounded selection helper across masters and native intermediate instances.
+- Make Path Doctor discoverable as a checked, downloadable catalogue skill on existing apps; prefer the included canonical payload when a later app bundles it.
+- Package the skill with self-contained references and its redistribution licence.
+- Advertise the Glyphs MCP icon and website through server and stdio-proxy identity, with readable workflow tool labels.
+- Reuse existing enabled Codex plugin connections; preserve custom, disabled, conflicting and freshly edited settings instead of creating a shadowing standalone connection. Discover the CLI bundled with Codex/ChatGPT desktop hosts.
+- Show measured callback progress where available, indeterminate whole-script activity, finishing phases and retained partial-failure counts. Keep notifications scoped to each request and independent of execution or recovery.
+- Use compact light/dark workflow cards with detailed source and target information behind Details; keep warnings, recovery consequences and existing action guards visible.
 - Keep fill/smoothness separate and hold conflicting profiles or unsupported references.
 - Limit repair to the qualified native host; document native Save precision limits.
 
-See `V2.5.0-PREPARATION.md`. No release is published by these changes.
+Coordinate the app, bridge, sidecar and four agent manifests at 2.5.0/build 72,
+with 13 managed skills, 22 tools, interface revision 1 and bridge protocol 1.
+This is an unreleased source candidate; see `V2.5.0-PREPARATION.md` for scope,
+recorded evidence, excluded pending work and remaining gates.
 
 ## 2.4.0 — stable release, build 71, 27 October 2026
 

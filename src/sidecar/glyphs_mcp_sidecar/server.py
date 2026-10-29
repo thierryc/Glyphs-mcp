@@ -27,6 +27,8 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
     from fastmcp import FastMCP
 
     mcp = FastMCP(name="Glyphs MCP Sidecar", version=RELEASE_VERSION)
+    from .presentation import configure_identity
+    configure_identity(mcp)
 
     @mcp.tool(name="get_status")
     async def get_status() -> dict[str, Any]:

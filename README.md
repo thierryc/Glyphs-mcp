@@ -4,6 +4,12 @@
 
 See the [2.4.0 qualification record](V2.4.0-RELEASE.md) for signed artifacts, checks and retained limits. Prior [2.3.1 qualification](V2.3.1-RELEASE.md) keeps its original scope.
 
+Development source prepares **2.5.0/build 72** with Path Doctor, measured Pen-point
+cleanup guidance, catalogue delivery fixes, safer Codex setup and compact
+workflow progress feedback. See the
+[candidate scope](V2.5.0-PREPARATION.md); the download above remains the published
+2.4.0 release.
+
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
 Glyphs MCP connects AI applications to Glyphs 4 through a small native bridge

@@ -93,6 +93,138 @@ private struct CancellableUpdateHTTPClient: UpdateHTTPClienting {
 }
 
 final class GlyphsMCPInstallerTests: XCTestCase {
+    func testCodexInspectorRecognizesQuotedAndIndentedServerSections() throws {
+        for header in ["[mcp_servers.\"glyphs-mcp-server\"]", "  [ mcp_servers . 'glyphs-mcp-server' ] # Keep comment"] {
+            let source = header + "\nurl = \"http://127.0.0.1:9680/mcp/\"\nenabled = true\n  [other]\nurl = \"https://example.invalid\"\n"
+            let config = try XCTUnwrap(CodexTomlInspector.readServerConfig(toml: source, serverName: "glyphs-mcp-server"))
+            XCTAssertEqual(config.url, "http://127.0.0.1:9680/mcp/")
+            XCTAssertEqual(config.enabled, true)
+        }
+    }
+
+    func testCancelledCodexDiscoveryDoesNotCreateStandaloneSettings() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.toml")
+        let task = Task {
+            try await CodexConfigurator(runner: ProcessRunner(), log: { _ in }, configURL: config,
+                connectionCheck: { _ in withUnsafeCurrentTask { $0?.cancel() }; return .absent }).configure()
+        }
+        do { try await task.value; XCTFail("Cancelled setup must not write configuration") }
+        catch is CancellationError { }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: config.path))
+    }
+    func testCodexDiscoveryFallsBackToTheDesktopHostsBundledCLI() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let binary = home.appendingPathComponent("Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex")
+        try FileManager.default.createDirectory(at: binary.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "#!/bin/sh\nexit 0\n".write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        XCTAssertEqual(ToolLocator.findTool(named: "codex", home: home, pathEnv: nil), binary.path)
+    }
+    func testEffectiveCodexConnectionRequiresAnEnabledExactHTTPBinding() throws {
+        let endpoint = URL(string: "http://127.0.0.1:9680/mcp/")!
+        func listing(_ enabled: Bool, _ url: String, type: String = "streamable_http") throws -> Data {
+            try JSONSerialization.data(withJSONObject: [["name": "glyphs-mcp-server", "enabled": enabled,
+                "transport": ["type": type, "url": url]]])
+        }
+        XCTAssertTrue(CodexEffectiveConnection.matches(json: try listing(true, endpoint.absoluteString), endpoint: endpoint))
+        XCTAssertFalse(CodexEffectiveConnection.matches(json: try listing(false, endpoint.absoluteString), endpoint: endpoint))
+        XCTAssertFalse(CodexEffectiveConnection.matches(json: try listing(true, endpoint.absoluteString + "other"), endpoint: endpoint))
+        XCTAssertFalse(CodexEffectiveConnection.matches(json: try listing(true, endpoint.absoluteString, type: "stdio"), endpoint: endpoint))
+        XCTAssertFalse(CodexEffectiveConnection.matches(json: Data("unsupported CLI output".utf8), endpoint: endpoint))
+    }
+
+    func testPluginConnectionReuseKeepsUserConfigByteIdentical() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.toml")
+        let original = "# Keep this comment\n[plugins.\"glyphs-mcp@glyphs-mcp\"]\nenabled = true\n"
+        try original.write(to: config, atomically: true, encoding: .utf8)
+        try await CodexConfigurator(runner: ProcessRunner(), log: { _ in }, configURL: config,
+                                   connectionCheck: { _ in .matching }).configure()
+        XCTAssertEqual(try String(contentsOf: config, encoding: .utf8), original)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path), ["config.toml"])
+    }
+
+    func testEffectiveCodexDiscoveryDistinguishesAbsenceFromConflictingSettings() throws {
+        let endpoint = URL(string: "http://127.0.0.1:9680/mcp/")!
+        XCTAssertEqual(CodexEffectiveConnection.status(json: Data("[]".utf8), endpoint: endpoint), .absent)
+        XCTAssertEqual(CodexEffectiveConnection.status(json: Data("unknown output".utf8), endpoint: endpoint), .unavailable)
+        let cases: [[[String: Any]]] = [
+            [["name": "glyphs-mcp-server", "enabled": false]],
+            [["name": "glyphs-mcp-server", "enabled": true, "transport": ["type": "stdio"]]],
+            [["name": "glyphs-mcp-server"], ["name": "glyphs-mcp-server"]]
+        ]
+        for rows in cases {
+            XCTAssertEqual(CodexEffectiveConnection.status(json: try JSONSerialization.data(withJSONObject: rows), endpoint: endpoint), .conflict)
+        }
+    }
+
+    func testConflictingPluginConnectionNeverCreatesAShadowingStandaloneEntry() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.toml")
+        do {
+            try await CodexConfigurator(runner: ProcessRunner(), log: { _ in }, configURL: config,
+                                       connectionCheck: { _ in .conflict }).configure()
+            XCTFail("Conflicting or disabled plugin connections require review")
+        } catch { }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+    }
+
+    func testCodexSettingsEditedDuringDiscoveryArePreserved() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.toml")
+        try "# Original settings\n".write(to: config, atomically: true, encoding: .utf8)
+        let edited = "[mcp_servers.glyphs-mcp-server]\nurl = \"http://127.0.0.1:9999/mcp/\"\nenabled = false\n"
+        do {
+            try await CodexConfigurator(runner: ProcessRunner(), log: { _ in }, configURL: config,
+                connectionCheck: { _ in
+                    try? edited.write(to: config, atomically: true, encoding: .utf8)
+                    return .absent
+                }).configure()
+            XCTFail("Setup must recheck settings after asynchronous discovery")
+        } catch { }
+        XCTAssertEqual(try String(contentsOf: config, encoding: .utf8), edited)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path), ["config.toml"])
+    }
+
+    func testStandaloneSetupRemainsAvailableWithoutAPluginConnection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.toml")
+        let endpoint = URL(string: "http://127.0.0.1:9680/mcp/")!
+        try await CodexConfigurator(runner: ProcessRunner(), endpointURL: endpoint, log: { _ in },
+            configURL: config, connectionCheck: { _ in .absent }).configure()
+        let server = try XCTUnwrap(CodexTomlInspector.readServerConfig(
+            toml: String(contentsOf: config, encoding: .utf8), serverName: "glyphs-mcp-server"))
+        XCTAssertEqual(server.url, endpoint.absoluteString)
+        XCTAssertEqual(server.enabled, true)
+    }
+
+    func testCodexSetupPreservesOverridesAndDisabledEntries() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = root.appendingPathComponent("config.toml")
+        let endpoint = URL(string: "http://127.0.0.1:9680/mcp/")!
+        for (url, enabled, rejected) in [(endpoint.absoluteString, true, false),
+            ("http://127.0.0.1:9999/mcp/", true, true), (endpoint.absoluteString, false, true)] {
+            let original = "[mcp_servers.glyphs-mcp-server]\nurl = \"\(url)\"\nenabled = \(enabled)\ntool_timeout_sec = 999\n# User override\n"
+            try original.write(to: config, atomically: true, encoding: .utf8)
+            do {
+                try await CodexConfigurator(runner: ProcessRunner(), endpointURL: endpoint, log: { _ in },
+                    configURL: config, connectionCheck: { _ in XCTFail("An explicit entry must not be replaced by a plugin"); return .matching }).configure()
+                XCTAssertFalse(rejected)
+            } catch { XCTAssertTrue(rejected) }
+            XCTAssertEqual(try String(contentsOf: config, encoding: .utf8), original)
+        }
+    }
 	private func runtimeIdentity(
 		for bundle: URL,
 		version: String

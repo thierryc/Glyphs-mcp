@@ -13,6 +13,7 @@ function host({initialize=true, tools=true, reject=false, deferWrites=false, def
     replaceChildren(...items){this._textContent='';this.children=items;}
     addEventListener(k,f){this.listeners[k]=f;}
     setAttribute(k,v){this[k]=v;}
+    removeAttribute(k){delete this[k];}
     getAttribute(k){return this[k]??null;}
     getBoundingClientRect(){return {left:24,top:300,bottom:342,width:100,height:42};}
     querySelectorAll(selector){return this.children.flatMap(e => [e,...(e.querySelectorAll?.('*')||[])]).filter(e => selector==='*'||selector==='button'&&e.tag==='button'||selector==='input:checked'&&e.tag==='input'&&e.checked);}

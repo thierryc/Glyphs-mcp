@@ -25,6 +25,32 @@ const resultButtons = () => {
   return s;
 };
 const cases = {
+  async activity_progress() {
+    const h=host();await tick();
+    const s=state(1,'applying',[]);
+    Object.assign(s.data,{jobId:'job_a',entrypoint:'per_target',scope:{kind:'python_script'},
+      progress:{workflowId:s.data.id,jobId:'job_a',state:'applying',status:'working',label:'Running script',
+        completed:3,total:10,indeterminate:false,updatedAt:123}});
+    deliver(h,s);await tick();
+    assert.equal(h.get('progress').textContent,'3 / 10');
+    assert.equal(h.get('progress').getAttribute('aria-label'),'3 / 10 callbacks completed');
+    assert.equal(h.get('activity-progress').value,3);
+    assert.equal(h.get('activity-progress').max,10);
+    assert(!h.get('activity-progress').hidden);
+    assert(h.get('activity-updated').textContent.startsWith('Updated '));
+    const whole=JSON.parse(JSON.stringify(s));whole.data.revision=2;whole.data.entrypoint='script';
+    Object.assign(whole.data.progress,{completed:null,total:null,indeterminate:true});
+    deliver(h,whole);await tick();
+    assert.equal(h.get('progress').textContent,'');
+    assert.equal(h.get('activity-progress').getAttribute('value'),null);
+    assert(!h.get('activity-progress').hidden);
+    const finished=state(3,'applied',[]);finished.data.jobId='job_a';
+    finished.data.progress={...s.data.progress,state:'applied',status:'finished',completed:10,indeterminate:false};
+    deliver(h,finished);await tick();assert(h.get('activity-progress').hidden);
+    const wrong=state(4,'applying',[]);wrong.data.progress={...s.data.progress,workflowId:'other_workflow'};
+    deliver(h,wrong);await tick();assert(h.get('activity-progress').hidden);
+    assert.equal(writes(h).length,0,'progress display never takes a workflow action');
+  },
   async result_buttons() {
     const h=host({deferWrites:true});await tick();deliver(h,resultButtons());await tick();
     const buttons=h.get('actions').children;

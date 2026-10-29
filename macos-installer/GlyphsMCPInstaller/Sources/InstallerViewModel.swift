@@ -63,6 +63,7 @@ final class InstallerViewModel: ObservableObject {
     private let payloadResolver = InstallerPayloadDiscovery.shared
     private var refreshTask: Task<Void, Never>?
     private var setupVisible = false
+    private var codexEffectiveEndpoint: String?
     private var phaseStartedAt: Date?
 
     func recordPresentation(_ name: String, since start: Date) {
@@ -223,6 +224,10 @@ final class InstallerViewModel: ObservableObject {
                 .map(\.title).joined(separator: ", ")
             notice = .failure("Development links were found, but their build targets are missing: \(names). Rebuild the linked development payload, then refresh Setup.")
         }
+        let endpoint = DesktopInstallation().endpoint
+        let effectiveCodex = await CodexEffectiveConnection.isConfigured(endpoint: endpoint)
+        guard !Task.isCancelled else { return }
+        codexEffectiveEndpoint = effectiveCodex ? endpoint.absoluteString : nil
         refreshConnectorDetection(resetFailures: resetFailures)
         refreshRunning()
         refreshComponentUpdates()
@@ -712,6 +717,12 @@ final class InstallerViewModel: ObservableObject {
         if operation == .remove {
             switch client {
             case .codex:
+                if codexEffectiveEndpoint == endpoint.absoluteString,
+                   CodexTomlInspector.readServerConfig(
+                       toml: (try? String(contentsOf: InstallerPaths.codexConfig, encoding: .utf8)) ?? "",
+                       serverName: InstallerConstants.codexServerName) == nil {
+                    throw InstallerError.userFacing(NSLocalizedString("This connection is managed in Codex. Manage or remove it in Codex settings.", comment: "Codex connection ownership"))
+                }
                 try ConnectorConfigurationRemover.removeCodex(endpoint: endpoint)
                 let result = try skills.removeOwnedSkills(from: payload, under: InstallerPaths.codexSkillsDir)
                 return result.preservationInformation
@@ -823,8 +834,10 @@ final class InstallerViewModel: ObservableObject {
         let endpoint = DesktopInstallation().endpoint.absoluteString
         switch client {
         case .codex:
+            if codexEffectiveEndpoint == endpoint { return true }
             guard let text = try? String(contentsOf: InstallerPaths.codexConfig, encoding: .utf8) else { return false }
-            return CodexTomlInspector.readServerConfig(toml: text, serverName: InstallerConstants.codexServerName)?.url == endpoint
+            guard let server = CodexTomlInspector.readServerConfig(toml: text, serverName: InstallerConstants.codexServerName) else { return false }
+            return server.url == endpoint && server.enabled != false
         case .claudeCode:
             guard let text = try? String(contentsOf: InstallerPaths.claudeCodeConfig, encoding: .utf8) else { return false }
             return ClaudeConfigInspector.readServerConfig(json: text, serverName: InstallerConstants.claudeCodeServerName)?.url == endpoint
