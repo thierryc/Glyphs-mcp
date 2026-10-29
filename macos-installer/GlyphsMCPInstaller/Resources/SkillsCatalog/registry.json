@@ -161,7 +161,7 @@
       "source": {
         "repository": "https://github.com/thierryc/Glyphs-mcp",
         "directory": "skills/glyphs-mcp-path-doctor",
-        "revision": "cb69216c2c20375a7542248015855e464ec01d64"
+        "revision": "a893fd64e2b8dac2c64697b62bc2c4bec492d03d"
       },
       "compatibleClients": [
         "codex",
@@ -171,7 +171,8 @@
         "claude"
       ],
       "requirements": [
-        "Glyphs 4 and Glyphs MCP with path.diagnostics.v1; seam repair additionally requires qualified outline.normalize-closed-seam.v1."
+        "Glyphs 4 and Glyphs MCP with path.diagnostics.v1 for structural diagnosis; seam repair additionally requires qualified outline.normalize-closed-seam.v1.",
+        "Interior Pen-point cleanup uses script.native.v1 and script.recovery.snapshot.v1 on disposable copies; native expansion and master/profile correspondence require qualification. Observed on Glyphs 4.2 (4202)."
       ],
       "bundled": true,
       "displayName": "Glyphs Path Doctor"
