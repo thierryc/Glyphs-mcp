@@ -7,7 +7,7 @@ metadata:
 
 # Glyphs Path Doctor
 
-Reuse the [Glyphs connection and document binding](../glyphs/SKILL.md). For a
+Reuse `$glyphs` for the [connection and document binding](https://github.com/thierryc/Glyphs-mcp/blob/main/skills/glyphs/SKILL.md). For a
 current-font request require fresh native `isCurrent` evidence; never infer it
 from document order. Inspect live data, including unsaved edits, without Save.
 

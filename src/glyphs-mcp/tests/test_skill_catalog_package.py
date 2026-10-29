@@ -28,6 +28,17 @@ def test_packaged_catalog_matches_core_skills_and_languages():
     assert checker.check()['bundledSkills'] == 13
 
 
+def test_path_doctor_download_is_self_contained_and_licensed():
+    spec = importlib.util.spec_from_file_location('validate_catalog', ROOT/'catalog-repository/scripts/validate_catalog.py')
+    validator = importlib.util.module_from_spec(spec); spec.loader.exec_module(validator)
+    folder = ROOT/'skills/glyphs-mcp-path-doctor'
+    files = {path.relative_to(folder).as_posix(): path.read_bytes() for path in folder.rglob('*')
+             if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc'}
+    assert validator.validate_files(files, 'glyphs-mcp-path-doctor')['name'] == 'glyphs-mcp-path-doctor'
+    assert files['LICENSE'] == (ROOT/'LICENSE').read_bytes()
+    assert 'scripts/pen_point_strategy.py' in files
+
+
 def test_mismatched_snapshot_is_rejected(tmp_path):
     copy_catalog_fixture(tmp_path)
     registry = tmp_path/'catalog-repository/registry.json'

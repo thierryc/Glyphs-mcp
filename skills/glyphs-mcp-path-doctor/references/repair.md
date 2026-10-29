@@ -1,6 +1,6 @@
 # Qualified seam repair
 
-Use the existing [typed outline lifecycle](../../glyphs-mcp-outlines-docs/references/path-editing.md).
+Use `$glyphs-mcp-outlines-docs` and its [typed outline lifecycle](https://github.com/thierryc/Glyphs-mcp/blob/main/skills/glyphs-mcp-outlines-docs/references/path-editing.md).
 The user must have requested the exact repair scope. Retain `compatibilityPolicy:
 preserve`; prepare one exact layer target per independently diagnosed state hash
 and include all corresponding master targets together. Native preparation checks

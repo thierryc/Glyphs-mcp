@@ -17,6 +17,43 @@ final class SkillCatalogTests: XCTestCase {
     private func files(_ text: String = "Original") -> [ProjectFile] {
         [.init(path: "SKILL.md", data: Data(("---\nname: test-skill\ndescription: A focused workflow\n---\n" + text).utf8))]
     }
+    private func canonicalSkill(bundled: Bool) -> CatalogSkill {
+        .init(id: "builtin:glyphs-mcp-path-doctor", name: "glyphs-mcp-path-doctor",
+              description: "Diagnose paths and qualify explicit repairs", author: "Glyphs MCP contributors",
+              license: "Apache-2.0", classification: .curated,
+              source: .init(repository: "https://github.com/thierryc/Glyphs-mcp",
+                            directory: "skills/glyphs-mcp-path-doctor", revision: String(repeating: "a", count: 40),
+                            archiveSHA256: bundled ? nil : String(repeating: "b", count: 64)),
+              compatibleClients: [.codex], requirements: [], bundled: bundled)
+    }
+    func testDownloadableCanonicalSkillAppearsBeforeAppIncludesIt() throws {
+        let remote = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [canonicalSkill(bundled: false)])))
+        let result = try remote.includingBundled(SkillCatalog(skills: []))
+        XCTAssertEqual(result.skills.map(\.name), ["glyphs-mcp-path-doctor"])
+        XCTAssertFalse(result.skills[0].bundled)
+    }
+    func testIncludedPayloadWinsAfterDownloadableCanonicalSkillBecomesBundled() throws {
+        let included = canonicalSkill(bundled: true)
+        var remote = canonicalSkill(bundled: false)
+        remote.source.revision = String(repeating: "c", count: 40)
+        remote.description = "Changed remote instructions"
+        let result = try SkillCatalog(skills: [remote, skill()]).includingBundled(SkillCatalog(skills: [included]))
+        XCTAssertEqual(result.skills, [included, skill()])
+        remote.source.repository = "https://github.com/thierryc/glyphs-mcp-skills"
+        let distributed = try SkillCatalog(skills: [remote]).includingBundled(SkillCatalog(skills: [included]))
+        XCTAssertEqual(distributed.skills, [included])
+    }
+    func testIncludedNamesStillRejectNoncanonicalCollisions() throws {
+        let included = canonicalSkill(bundled: true)
+        let valid = canonicalSkill(bundled: false)
+        var wrongID = valid; wrongID.id = "other/glyphs-mcp-path-doctor"
+        var wrongRepository = valid; wrongRepository.source.repository = "https://github.com/other/skills"
+        var wrongDirectory = valid; wrongDirectory.source.directory = "other/path-doctor"
+        var community = valid; community.classification = .community
+        for remote in [wrongID, wrongRepository, wrongDirectory, community] {
+            XCTAssertThrowsError(try SkillCatalog(skills: [remote]).includingBundled(SkillCatalog(skills: [included])))
+        }
+    }
     func testReadableTitlesPreserveLegacyCatalogAndReceiptCompatibility() throws {
         let legacy = skill()
         let decoded = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [legacy])))

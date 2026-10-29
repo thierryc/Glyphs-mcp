@@ -94,7 +94,7 @@ width model when the native stroke depends on easing, angle or anisotropy.
 
 Interior Pen-point cleanup is not currently a typed outline operation. For an
 explicitly authorized custom font edit, use the existing
-[native script workflow](../../glyphs/references/python-scripts.md) with
+[native script workflow](https://github.com/thierryc/Glyphs-mcp/blob/main/skills/glyphs/references/python-scripts.md) from `$glyphs` with
 `script.native.v1`, preparation v3 and `script.recovery.snapshot.v1`. It supports
 dirty/pathless fonts and pre-run whole-font memory recovery. It does not inherit
 typed selective Undo. Never bypass rejected writes, stale guards or locks.

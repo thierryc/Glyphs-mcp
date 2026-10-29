@@ -123,3 +123,16 @@ selection; it neither edits a font nor proves a global minimum or aesthetic
 quality. Native expansion, profile interpolation, overlaps, editing behavior and
 perceptual review remain separate qualification requirements. Private trials
 and their exact data remain ignored and local.
+
+## Catalogue delivery before inclusion
+
+Older apps ignore remotely advertised included skills and use their embedded
+snapshot. Path Doctor is therefore downloadable from the online catalogue with
+its canonical identity, immutable source and archive checksum until the app
+includes it. Its package is self-contained and carries its redistribution
+license; a distribution copy in the official skills repository avoids unrelated
+repository symlinks rejected by the catalogue downloader. A later app prefers
+its own included payload over that same curated
+canonical entry; unrelated same-name sources still fail rather than replace an
+included skill. Updating the catalogue does not install code or alter agent
+skills without the user's installation choice.

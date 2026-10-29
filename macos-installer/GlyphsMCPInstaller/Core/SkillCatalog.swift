@@ -112,15 +112,29 @@ public struct SkillCatalog: Codable, Sendable {
     /// Bundled entries always come from this app's snapshot, never remote metadata.
     public func includingBundled(_ bundled: Self) throws -> Self {
         let included = bundled.skills.filter(\.bundled)
-        let names = Set(included.map(\.name))
-        guard !skills.contains(where: { !$0.bundled && names.contains($0.name) }) else { throw ProjectError("A catalog skill conflicts with an included skill.") }
+        let includedByName = Dictionary(uniqueKeysWithValues: included.map { ($0.name, $0) })
+        let additional = try skills.filter { entry in
+            guard !entry.bundled else { return false }
+            guard let local = includedByName[entry.name] else { return true }
+            // A canonical skill can be downloadable before an app includes it.
+            // Once included, this app's reviewed payload remains authoritative.
+            guard entry.id == local.id,
+                  (entry.source.repository == local.source.repository ||
+                   entry.source.repository == "https://github.com/thierryc/glyphs-mcp-skills"),
+                  entry.source.directory == local.source.directory,
+                  entry.classification == .curated,
+                  entry.id == "builtin:" + entry.name else {
+                throw ProjectError("A catalog skill conflicts with an included skill.")
+            }
+            return false
+        }
         let snapshotTitles = Dictionary(uniqueKeysWithValues: bundled.skills.map { ($0.id, $0.displayName) })
-        let additional = skills.filter { !$0.bundled }.map { entry in
+        let titledAdditional = additional.map { entry in
             var entry = entry
             if entry.displayName == nil { entry.displayName = snapshotTitles[entry.id] ?? nil }
             return entry
         }
-        return Self(skills: included + additional)
+        return Self(skills: included + titledAdditional)
     }
 }
 
