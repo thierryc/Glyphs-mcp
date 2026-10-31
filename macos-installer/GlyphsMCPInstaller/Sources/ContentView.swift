@@ -101,6 +101,20 @@ struct ContentView: View {
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
         .navigationTitle(DesktopIdentity.applicationTitle)
         .modifier(DesktopSidebarToggle(columnVisibility: $columnVisibility))
+        .toolbar {
+            if #available(macOS 26.0, *) {
+                ToolbarItem(placement: .primaryAction) {
+                    DesktopServerStatusIndicator()
+                }
+                // The status pill supplies its own background. A plain button
+                // style alone does not remove the toolbar's shared background.
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .primaryAction) {
+                    DesktopServerStatusIndicator()
+                }
+            }
+        }
         .frame(minWidth: DesktopDashboardLayout.minimumWidth,
                minHeight: DesktopDashboardLayout.minimumHeight)
         .task { projects.inspect(); await projects.loadTemplates() }
@@ -155,6 +169,42 @@ struct ContentView: View {
             .foregroundStyle(selected ? Color.white : Color.primary)
             .background(selected ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 8))
             .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+private struct DesktopServerStatusIndicator: View {
+    @EnvironmentObject private var desktop: DesktopModel
+
+    private var title: String { desktop.controlProgress ?? desktop.title }
+    private var color: Color {
+        guard desktop.serviceRunning == true, !desktop.stale else { return .secondary }
+        return desktop.status?.bridge.reachable == true && !desktop.showsActivityDot ? .green : .accentColor
+    }
+
+    var body: some View {
+        Button { desktop.requestSetup() } label: {
+            HStack(spacing: 6) {
+                if desktop.controlling {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Image(systemName: desktop.statusSymbol)
+                        .foregroundStyle(color)
+                        .accessibilityHidden(true)
+                }
+                Text("MCP").fontWeight(.medium)
+                Text(LocalizedStringKey(title)).foregroundStyle(.secondary)
+            }
+            .font(.callout)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.quaternary, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("Open Setup")
+        .accessibilityLabel(Text("Glyphs MCP") + Text(": ") + Text(LocalizedStringKey(title)))
+        .accessibilityIdentifier("desktop.serverStatus")
     }
 }
 
