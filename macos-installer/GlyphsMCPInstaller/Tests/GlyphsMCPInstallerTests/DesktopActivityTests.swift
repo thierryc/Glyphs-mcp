@@ -348,9 +348,9 @@ final class DesktopTaskTests: XCTestCase {
         }
     }
     func testJobOnlyClosePromptUsesExactIdentity() throws {
-        let json = #"{"id":"job_fallback","jobId":"job_exact","title":"Run script","documentName":"LeftyNote","state":"unknown","closed":false,"createdAt":1,"updatedAt":2,"blockedBy":[],"blocking":[]}"#
+        let json = #"{"id":"job_fallback","jobId":"job_exact","title":"Run script","documentName":"Private Fixture","state":"unknown","closed":false,"createdAt":1,"updatedAt":2,"blockedBy":[],"blocking":[]}"#
         let value = try JSONDecoder().decode(DesktopTask.self, from: Data(json.utf8))
-        XCTAssertTrue(value.prompt(for: .closeTask).contains("task job_exact for LeftyNote"))
+        XCTAssertTrue(value.prompt(for: .closeTask).contains("task job_exact for Private Fixture"))
         XCTAssertNil(value.conversationURL)
         XCTAssertNotNil(value.conversationUnavailableMessage)
     }

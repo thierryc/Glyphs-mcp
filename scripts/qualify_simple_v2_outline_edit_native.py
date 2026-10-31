@@ -138,6 +138,7 @@ def main():
     class HeadlessScope:
         def manager_for(self, _layer): return None
         def finish(self, _name): return None
+        def finish_steps(self, _name): return iter(())
     def begin_without_headless_auto_group(document_id):
         native_begin(document_id); adapter._undo_managers[document_id] = HeadlessScope()
     adapter.begin_undo = begin_without_headless_auto_group

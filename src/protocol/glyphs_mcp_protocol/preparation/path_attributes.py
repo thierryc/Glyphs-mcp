@@ -79,6 +79,24 @@ def snapshot(owner):
     return clone_value(attributes(owner))
 
 
+def _native_containers(value):
+    # PyObjC can return a Python dict from an OC_PythonDictionary stored inside
+    # attributes. Glyphs' userData wrapper expects NSDictionary.allKeys instead.
+    # Construct native containers recursively; leave numbers and Pen points exact.
+    from Foundation import NSMutableArray, NSMutableDictionary
+    if isinstance(value, Mapping) or hasattr(value, 'allKeys'):
+        result = NSMutableDictionary.dictionary()
+        for key in value:
+            result.setObject_forKey_(_native_containers(value[key]), key)
+        return result
+    if isinstance(value, (list, tuple)) or type(value).__name__ in ('__NSArrayM', '__NSArrayI', 'NSArray', 'NSMutableArray', '__NSSingleObjectArrayI'):
+        result = NSMutableArray.array()
+        for item in value:
+            result.addObject_(_native_containers(item))
+        return result
+    return value
+
+
 def restore(owner, saved):
     # The wrapper formats attribute numbers. Use the qualified native selectors.
     if not hasattr(owner, 'attributes') and not saved:
@@ -86,7 +104,10 @@ def restore(owner, saved):
     methods = getattr(owner, 'pyobjc_instanceMethods', owner)
     setter = getattr(methods, 'setAttributes_', None)
     if callable(setter):
-        setter(clone_value(saved))
+        value = clone_value(saved)
+        if hasattr(owner, 'pyobjc_instanceMethods'):
+            value = _native_containers(value)
+        setter(value)
     elif isinstance(getattr(owner, 'attributes', None), dict):
         owner.attributes = clone_value(saved)  # Generic regression host only.
     else:

@@ -1,7 +1,7 @@
 # Source-bound typed-export instance IDs — 2026-10-27
 
 Typed export previously required a live GSInstance ID to exist verbatim in the
-saved source. After LeftyNote's native recovery, its clean live font had regenerated
+saved source. After Private Fixture's native recovery, its clean live font had regenerated
 instance IDs while its saved package retained the original IDs. Exact IDs returned
 by `read_entities` therefore failed in the external export worker.
 
@@ -46,33 +46,20 @@ continue through the existing guarded pipeline.
 
 ## Real MCP acceptance
 
-LeftyNote format4, Glyphs4.2/build4202, 1,844 source glyphs. Exact live IDs from
-`read_entities` successfully select all three static instances:
+On Glyphs 4.2/build 4202, exact live IDs from `read_entities` successfully
+selected all three static instances through `source-bound-slot`. OTF/WOFF2
+exports passed table, shaping and six OTS checks. The decompressed CFF, hmtx,
+cmap, GSUB, GPOS and GDEF tables matched between containers for each instance.
+Original source integrity was verified without a source Save.
 
-| Style | Requested live ID | Saved ID | Index | MCP job |
-|---|---|---|---:|---|
-| Regular | 6ABC6A6B-39AA-4367-99A2-2994013A182D | 28D31CDC-775D-492F-8D0A-AD5C38DCBDD3 | 0 | job_9c5787d4916d41419c86bfa858d47df9 |
-| Bold | 38AC4C56-A2A7-42BD-B0B1-CC9014782984 | 2EE299C2-6E21-4343-BBAD-D17129779420 | 1 | job_168bf130c799458ebcc2096e7da93603 |
-| Light | BDAB6438-2222-4981-B7A6-33D10C7A1D0A | CF799820-1903-47FC-A038-7C73E6BB353F | 2 | job_cd34bdbe17924f3db5a57e7aced624c0 |
+Detailed private instance bindings, source hashes, font inventories and export
+receipts remain in local qualification evidence. This public summary retains
+only the test method and aggregate outcomes.
 
-All three report `source-bound-slot`, export OTF/WOFF2, pass table and HarfBuzz
-`ss01` off/on checks on `lll` with unaffected control `.`, and are accepted only
-into new local private diagnostic directories. Six OTS checks pass. Each font has
-1,803 exported glyphs and the expected weight 300/400/700; decompressed CFF, hmtx,
-cmap, GSUB, GPOS and GDEF bytes match between containers for each instance.
-An initial test correctly rejected `abc` as an unaffected control: ss01 changes
-those letters too. A whitespace-only replacement was rejected by request
-validation before creating a job. The final control is absent from ss01's rules.
-
-All 1,887 original font-data files are byte-identical, hash
-`5b6c21b70d99c3b423e0fe0db0fc63d9d99c6afdc5dd5df73d940b6971237ce7`.
-The retained original document remains clean at generation21, not foreground.
-All 41 LeftyNote repository tests pass. Private receipts/binaries remain in that
-project's ignored `.release-work/typed-export-fix-20261027/` directory.
-
-These are static diagnostic exports with autoHint on and removeOverlap off. They
-do not replace LeftyNote's separately qualified release exports or establish
-variable-instance acceptance. No app release, source publication or push occurred.
+These were static diagnostic exports with autoHint on and removeOverlap off.
+They do not establish variable-instance acceptance or replace the private
+font's separately qualified production exports. No app release, source
+publication or push occurred during that trial.
 
 ## Merge into the active 2.4.0 source — 2026-10-27
 
@@ -96,6 +83,6 @@ The first desktop attempt selected Xcode's Python3.9 and failed before tests at
 the payload import. The supported-Python retry used an explicit Python3.14 path
 and fresh DerivedData; both logs remain under build/. No installer/runtime
 source workaround was introduced. The candidate app was not installed, and
-Glyphs was not restarted. The prior live LeftyNote acceptance continues to bind
+Glyphs was not restarted. The prior live Private Fixture acceptance continues to bind
 the installed sidecar `2.4.0+a08ed849364c`; it does not certify every new build71
 feature. There was no signing, release publication or push.

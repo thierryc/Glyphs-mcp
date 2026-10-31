@@ -87,6 +87,18 @@ def qualify(font,params,Glyphs):
         assert float(path.pyobjc_instanceMethods.attributes()['strokeWidth'])==native
         return native
     check('native_attribute_precision',wrapper_precision)
+    def metadata_recovery():
+        layer,path=make(True)
+        path.userData['note']='original generic path metadata'
+        path.nodes[1].userData['logicalNode']=1
+        before=doctor.path_state(path);saved=edit.capture(layer)
+        path.pyobjc_instanceMethods.setAttribute_forKey_(32.123456789,'strokeWidth')
+        edit.restore(layer,saved)
+        assert dict(path.userData)=={'note':'original generic path metadata'}
+        assert dict(path.nodes[1].userData)=={'logicalNode':1}
+        assert doctor.path_state(path)==before
+        return {'nativeMetadataReadable':True,'geometryProfilesAttributesExact':True}
+    check('native_metadata_recovery',metadata_recovery)
     def real_roundtrip():
         glyph=font.glyphs[params.get('testGlyph','a.alt2')]
         rows=[]

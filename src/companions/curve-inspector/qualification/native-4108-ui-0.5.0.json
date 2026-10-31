@@ -78,7 +78,7 @@
     }
   },
   "bundleIdentifier": "com.ap.cx.glyphs-curve-inspector",
-  "cleanup": "Four owned disposable fixtures closed; all saved baselines retained. LeftyNote reopened clean after authorized Save.",
+  "cleanup": "Four owned disposable fixtures closed; all saved baselines retained. Private Fixture reopened clean after authorized Save.",
   "companionId": "curve-inspector",
   "controllerHash": "e228b02558079e9daaffd714b512b1cf4b77a21cfdf09c18305277354d39198c",
   "date": "2026-10-10",

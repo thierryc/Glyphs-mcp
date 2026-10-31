@@ -56,12 +56,12 @@ def test_open_tasks_never_disappear_behind_history(inventory):
 
 def test_cross_font_script_blockers_are_named_both_ways(inventory):
     owner, job = task(inventory)
-    waiting, _ = task(inventory, font='LeftyNote', state='blocked_review', status='ready')
+    waiting, _ = task(inventory, font='Private Fixture', state='blocked_review', status='ready')
     inventory.edit_workflows.store.update(waiting, blockerId=job['id'])
     values = {item['id']: item for item in list_tasks(inventory)['tasks']}
     assert values[owner['id']]['blocking'] == [waiting['id']]
     assert values[waiting['id']]['blockedBy'] == [owner['id']]
-    assert values[waiting['id']]['documentName'] == 'LeftyNote'
+    assert values[waiting['id']]['documentName'] == 'Private Fixture'
     assert values[waiting['id']]['state'] == 'blocked'
 
 
@@ -167,7 +167,7 @@ def test_management_inventory_has_local_auth_and_no_mutation_route(inventory):
 @pytest.mark.parametrize('result_kind', ['script', 'historical_restore'])
 def test_restored_blocker_only_rebinds_its_own_document(inventory, same_font, result_kind):
     from glyphs_mcp_sidecar.edit_workflow import EditWorkflows
-    value, own_job = task(inventory, font='Bryan' if same_font else 'LeftyNote', state='blocked_review', status='ready')
+    value, own_job = task(inventory, font='Bryan' if same_font else 'Private Fixture', state='blocked_review', status='ready')
     owner = inventory.jobs.create({'id':'Bryan','familyName':'Bryan'}, {'kind':'python_script','options':{}})
     after = {'id':'Bryan-reloaded','familyName':'Bryan'}
     owner = inventory.jobs.update(owner['id'],status='discarded',resultKind=result_kind,
@@ -183,7 +183,7 @@ def test_restored_blocker_only_rebinds_its_own_document(inventory, same_font, re
     began=[]
     coordinator._begin=lambda request: began.append(request['document']['id'])
     coordinator._advance(value, allow_apply=False)
-    assert began == ['Bryan-reloaded' if same_font else 'LeftyNote']
+    assert began == ['Bryan-reloaded' if same_font else 'Private Fixture']
 
 
 def test_unverified_acknowledgement_never_becomes_a_success_receipt(inventory):

@@ -4,7 +4,7 @@
 
 See the [2.4.0 qualification record](V2.4.0-RELEASE.md) for signed artifacts, checks and retained limits. Prior [2.3.1 qualification](V2.3.1-RELEASE.md) keeps its original scope.
 
-Development source prepares **2.5.0/build 72** with Path Doctor, measured Pen-point
+Development source prepares **2.5.0/build 73** with Path Doctor, measured Pen-point
 cleanup guidance, catalogue delivery fixes, safer Codex setup and compact
 workflow progress feedback. See the
 [candidate scope](V2.5.0-PREPARATION.md); the download above remains the published

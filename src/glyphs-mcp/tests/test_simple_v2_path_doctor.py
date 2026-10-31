@@ -130,6 +130,34 @@ def test_unknown_native_attribute_refuses_instead_of_stringifying():
     with pytest.raises(ValueError,match='unsupported native'):doctor.path_state(path)
 
 
+def test_native_attribute_restore_builds_native_nested_metadata_containers(monkeypatch):
+    class NativeDictionary(dict):
+        @classmethod
+        def dictionary(cls): return cls()
+        def setObject_forKey_(self,value,key): self[key]=value
+    class NativeArray(list):
+        @classmethod
+        def array(cls): return cls()
+        def addObject_(self,value): self.append(value)
+    monkeypatch.setitem(sys.modules,'Foundation',NS(NSMutableDictionary=NativeDictionary,NSMutableArray=NativeArray))
+    class NativeOwner:
+        def __init__(self): self.attributes={};self.pyobjc_instanceMethods=self
+        def setAttributes_(self,value): self.attributes=value
+    owner=NativeOwner()
+    saved={'userData':{'note':'keep','nested':[{'index':2,'value':.123456789012345}]},
+           'penPoints':[PenPoint(1.0,width=32.123456789)]}
+    path_attributes.restore(owner,saved)
+    assert isinstance(owner.attributes,NativeDictionary)
+    assert isinstance(owner.attributes['userData'],NativeDictionary)
+    assert isinstance(owner.attributes['userData']['nested'],NativeArray)
+    assert isinstance(owner.attributes['userData']['nested'][0],NativeDictionary)
+    assert isinstance(owner.attributes['penPoints'],NativeArray)
+    assert owner.attributes['penPoints'][0] is not saved['penPoints'][0]
+    assert path_attributes.plain(owner.attributes)==path_attributes.plain(saved)
+    saved['userData']['nested'][0]['index']=7
+    assert owner.attributes['userData']['nested'][0]['index']==2
+
+
 def test_diagnostic_is_deterministic_and_excludes_other_surfaces():
     layer,path=fixture();glyph=NS(name='generic',layers=Collection([layer]),components=[])
     layer.components=[NS(componentName='unexpanded')]

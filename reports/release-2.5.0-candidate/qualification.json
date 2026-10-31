@@ -1,0 +1,34 @@
+{
+  "version": "2.5.0",
+  "installerBuild": 73,
+  "publicTools": 22,
+  "managedSkills": 13,
+  "interfaceRevision": 1,
+  "bridgeProtocol": 1,
+  "signedSourceSHA256": "defc7e89de777c121e0f8cb0b466e25bf78728d3cfeec3dcf52c43f15d7ba74d",
+  "signedPayloadArchiveSHA256": "b6aa7da9a851aa63191ed202fbf16cb6968793bcd83fc4911f8f24249221f624",
+  "lockedSdkFeedbackTests": {
+    "passed": 23,
+    "skipped": 0
+  },
+  "nativeOwnerFontsAccessed": false,
+  "unpublishedBuild72Superseded": true,
+  "publicDownloadVerificationPending": true,
+  "developerIdVerified": true,
+  "hardenedRuntime": true,
+  "secureTimestamps": true,
+  "appleAcceptedExpandedPayload": true,
+  "appleAcceptedApp": true,
+  "appleAcceptedDMG": true,
+  "notarizationTicketsVerified": true,
+  "gatekeeperAccepted": true,
+  "allNestedSignaturesVerified": true,
+  "signaturePreservingInstallationCopies": true,
+  "signedUpdateArchiveAndFeedVerified": true,
+  "finalMountedDMGVisualReview": true,
+  "notarySubmissions": {
+    "payload": "50071c2e-efb5-4c85-9412-64ab8df12160",
+    "app": "ce90ab2e-9e0b-48c5-b66a-29e2336b6e5f",
+    "dmg": "f439ba00-b1c8-4a95-ac8c-8c3fab27e835"
+  }
+}

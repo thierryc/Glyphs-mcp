@@ -146,7 +146,7 @@ review its report, source binding and exact manifest. Artifact jobs have no
 staged files to the authorized location; it is not permission to upload them.
 Do not save the font to “fix” an exporter error without a source-save reason.
 
-The 2026-10-27 LeftyNote test exposed live instance IDs that differed from the
+The 2026-10-27 Private Fixture test exposed live instance IDs that differed from the
 saved snapshot after native recovery. A subsequently tested sidecar fix retains
 the exact requested live ID and binds it to the immutable saved source through
 the complete ordered instance collection: names, types, export flags, outline
@@ -155,7 +155,7 @@ descriptor is unique and the complete collection matches. Changed, stale or
 ambiguous bindings fail. No source Save or ID rewrite is required.
 
 On a fixed build, inspect `report.instanceResolution`: `requestedId`, `savedId`,
-`index` and `method` (`exact-id` or `source-bound-slot`). LeftyNote's three static
+`index` and `method` (`exact-id` or `source-bound-slot`). Private Fixture's three static
 instances passed real MCP OTF/WOFF2 export, table and explicit shaping checks on
 Glyphs4.2(4202), with source hashes unchanged. This qualified local sidecar has
 runtime ID `2.4.0+a08ed849364c`; the version label 2.4.0 alone does not identify
@@ -165,7 +165,7 @@ around it. This skill does not install the patch automatically.
 
 These are diagnostic exports. The repository's explicitly bound saved-source
 worker retains its separate production qualification for precision, preparation
-and release identity. Static LeftyNote tests do not qualify variable export.
+and release identity. Static Private Fixture tests do not qualify variable export.
 
 ## Comparison plan
 
