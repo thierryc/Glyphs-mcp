@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.5.0 — in preparation, build 73
+## 2.5.0 — stable release, build 73, 31 October 2026
 
 - Add live read-only path diagnostics and an explicit closed-seam outline operation.
 - Preserve native stroke profiles, attributes and precision through guards and recovery; rebuild native metadata containers so Glyphs can read restored user data.
@@ -18,8 +18,7 @@
 
 Coordinate the app, bridge, sidecar and four agent manifests at 2.5.0/build 73,
 with 13 managed skills, 22 tools, interface revision 1 and bridge protocol 1.
-This is an unreleased source candidate; see `V2.5.0-PREPARATION.md` for scope,
-recorded evidence, excluded pending work and remaining gates.
+The universal app, DMG and signed update feed are published after frozen-source, native, signing/notarization and public-download checks. See `V2.5.0-RELEASE.md` for qualification and retained limits.
 
 ## 2.4.0 — stable release, build 71, 27 October 2026
 

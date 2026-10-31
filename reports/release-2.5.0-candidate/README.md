@@ -40,3 +40,12 @@ fixtures. Native Save can reduce arbitrary live-coordinate precision. Other
 Glyphs hosts remain diagnostic-only for seam repair. No fresh full GUI updater/VM
 matrix or physical Intel test is claimed; retained acceptance keeps its version
 scope. See the [release record](../../V2.5.0-RELEASE.md).
+
+Published 31 October 2026. The final frozen-source gate passed 3,329 Python tests (3 expected skips), 325 desktop tests, documentation and package checks. All six GitHub assets passed digest/size and anonymous-download verification. The exact signed appcast is promoted after those checks; the signed tag remains the frozen build source while main documentation advances.
+
+The canonical download checksums are the published GitHub SHA256SUMS and the
+adjacent published-release.json. The publisher regenerated the update ZIP and
+signed feed before their first upload; the final manifest records those public
+bytes. The signed tag's earlier candidate-checksum file records the prepared
+pre-publication archives. Both ZIP variants were verified against the same
+signed and stapled application.

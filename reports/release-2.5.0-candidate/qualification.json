@@ -13,7 +13,7 @@
   },
   "nativeOwnerFontsAccessed": false,
   "unpublishedBuild72Superseded": true,
-  "publicDownloadVerificationPending": true,
+  "publicDownloadVerificationPending": false,
   "developerIdVerified": true,
   "hardenedRuntime": true,
   "secureTimestamps": true,
@@ -30,5 +30,16 @@
     "payload": "50071c2e-efb5-4c85-9412-64ab8df12160",
     "app": "ce90ab2e-9e0b-48c5-b66a-29e2336b6e5f",
     "dmg": "f439ba00-b1c8-4a95-ac8c-8c3fab27e835"
-  }
+  },
+  "sourceCommit": "46bde5b3238f88968cdcb54869a2c5ee7c70b1e6",
+  "publicAssetsVerified": 6,
+  "sourceGate": {
+    "pythonPassed": 3329,
+    "pythonSkipped": 3,
+    "desktopPassed": 325,
+    "documentation": true,
+    "deterministicPayloads": true,
+    "inputSHA256": "4e94b5f914a4305f7ec865d998657723b124527c381d3b0ee228bcc4bb4f2103"
+  },
+  "signedFeedSHA256": "caf9a6986fe782678c459fca3cfbcf5e02faa0e03fe723c8718d3e98628873ac"
 }

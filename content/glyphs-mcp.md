@@ -3,11 +3,13 @@ title: Glyphs MCP v2
 slug: /
 ---
 
-Glyphs MCP **2.4.0/build 71** connects AI applications to Glyphs 4 through twenty-one data/action tools and one optional read-only card-display tool. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
+Glyphs MCP **2.5.0/build 73** connects AI applications to Glyphs 4 through twenty-one data/action tools and one optional read-only card-display tool. A small bridge handles live font access; a separate server prepares supported jobs. Already-authorized scripts run after preparation without a forced Save; recovery preserves the full pre-run font state within the current Glyphs session. Explicit preview requests still wait. Native Undo, Redo and Revert remain available.
 
-Version 2.4.0 simplifies Tasks into **Needs attention**, **Active** and **Finished**, explains blockers, queues busy requests and preserves independent font work while another font retains recovery. Configurable inactive-task expiry keeps active work, available recovery and diagnostics. Typed exports retain the intended instance after native recovery regenerates live IDs, without rewriting the font. Glyphs Hinting joins the twelve managed skills.
+Version 2.5.0 adds live Path Doctor diagnosis, qualified profile-preserving closed-seam repair, measured Pen-point cleanup guidance, catalogue refresh fixes, safer Codex setup, compact progress cards and persistent toolbar status. The managed package has thirteen skills. Native outline recovery preserves readable metadata dictionaries.
 
-The signed and notarized stable release is **2.4.0/build 71**. See [qualification and limits](reference/release-qualification.mdx). Earlier project diffs, font-package copies and optional development skills remain available.
+Version 2.4.0 introduced the **Needs attention**, **Active** and **Finished** task groups, precise blockers, queued requests and independent font work while another font retains recovery. Configurable inactive-task expiry keeps active work, available recovery and diagnostics. Typed exports retain the intended instance after native recovery regenerates live IDs, without rewriting the font. Glyphs Hinting was added to the managed package in 2.4.0.
+
+The signed and notarized stable release is **2.5.0/build 73**. See [qualification and limits](reference/release-qualification.mdx). Earlier project diffs, font-package copies and optional development skills remain available.
 
 Open Edit tabs and create independent unsaved document copies directly. Update the bridge and sidecar together through Setup. See [qualification and limits](reference/release-qualification.mdx) and [version and identity](reference/version-identity.mdx). Glyphs 3 uses the retained [v1 guide](/docs/).
 Compiled [font comparisons](workflows/font-comparison.mdx) use the optional

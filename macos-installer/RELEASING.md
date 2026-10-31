@@ -32,6 +32,15 @@ and public-download checks passed. See [2.3.1 qualification](../V2.3.1-RELEASE.m
 
 Stable **2.4.0/build 71** is signed, notarized and published with task management, expiry and source-bound typed exports. The source identity and all host manifests are coordinated. See [2.4.0 qualification](../V2.4.0-RELEASE.md) for checks and retained limits. Keep its signed tag, assets and feed bytes immutable; prepare later releases separately.
 
+## Published 2.5.0
+
+Stable **2.5.0/build 73** adds Path Doctor, measured Pen-point guidance,
+catalogue delivery, Codex identity/setup/progress, persistent toolbar status and
+native metadata recovery. The universal app, payload and DMG are signed,
+notarized and stapled. Final artifact and public-download checks passed before
+signed-feed promotion. See [2.5.0 qualification](../V2.5.0-RELEASE.md).
+Build 72 remains an unpublished superseded local candidate.
+
 ## Prerequisites
 
 Use Xcode, Git, authenticated GitHub CLI, a Python 3.14 development environment,
