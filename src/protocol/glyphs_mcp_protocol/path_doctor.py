@@ -16,9 +16,9 @@ def validate_options(value):
             or any(not isinstance(n, str) or not n for n in names) or len(set(names)) != len(names)):
         raise ProtocolError('invalid_request', 'diagnostic glyphs must be all or 1-10000 unique names')
     layers = item.get('layers', 'all_masters')
-    if layers != 'all_masters' and (not isinstance(layers, list) or not 1 <= len(layers) <= 100
+    if layers not in ('all_masters', 'all_interpolation_layers') and (not isinstance(layers, list) or not 1 <= len(layers) <= 100
             or any(not isinstance(n, str) or not n for n in layers) or len(set(layers)) != len(layers)):
-        raise ProtocolError('invalid_request', 'diagnostic layers must be all_masters or exact IDs')
+        raise ProtocolError('invalid_request', 'diagnostic layers must be all_masters, all_interpolation_layers or exact IDs')
     return {'glyphs': names, 'layers': layers}
 
 
@@ -69,4 +69,38 @@ def qualify(path, *, referenced=False):
                 reasons.append('unsupported Pen-point fields')
             if fields.get('isLocked'):
                 reasons.append('Pen point is locked')
+    return sorted(set(reasons))
+
+
+DUPLICATES = 'outline.remove-consecutive-duplicates.v1'
+
+
+def duplicate_indices(state):
+    """Interior adjacent zero LINE endpoints; never a curve or the closing seam."""
+    nodes = state['nodes']
+    return [i for i in range(1, len(nodes))
+            if nodes[i]['type'] == 'line' and nodes[i-1]['type'] != 'offcurve'
+            and (nodes[i]['x'], nodes[i]['y']) == (nodes[i-1]['x'], nodes[i-1]['y'])]
+
+
+def qualify_duplicates(state, *, referenced=False):
+    reasons = []
+    indices = duplicate_indices(state)
+    if not indices: reasons.append('no consecutive duplicate LINE endpoints')
+    if state.get('locked'): reasons.append('path is locked')
+    if referenced: reasons.append('native hint references this path')
+    if state.get('attributeState', {}).get('userData'):
+        reasons.append('path user data may contain authored references')
+    for node in state['nodes']:
+        attrs = node.get('attributeState', {})
+        if attrs.get('userData') or node.get('name'):
+            reasons.append('node metadata may contain authored references')
+        if attrs.get('attributes'):
+            reasons.append('node attributes or profiles require separate qualification')
+    for i in indices:
+        if state['nodes'][i].get('smooth', False) != state['nodes'][i-1].get('smooth', False):
+            reasons.append('duplicate connection flags conflict')
+    survivors = [n for i,n in enumerate(state['nodes']) if i not in indices]
+    if sum(n['type'] != 'offcurve' for n in survivors) < 2:
+        reasons.append('removal would leave a degenerate contour')
     return sorted(set(reasons))

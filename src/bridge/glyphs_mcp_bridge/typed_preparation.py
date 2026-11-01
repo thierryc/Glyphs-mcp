@@ -25,6 +25,9 @@ def begin(core, value, error):
     if not isinstance(value, dict) or set(value) != fields:
         raise error('invalid_request', 'native preparation fields are incomplete or unexpected')
     request = simple.validate_request(value['request'])
+    if request['kind']=='path_cleanup':
+        from .path_doctor_qualification import cleanup_available
+        if not cleanup_available():raise error('unsupported_job','path cleanup is not qualified for this native host')
     diagnostic = request['kind'] == 'path_diagnostics'
     metadata = {k: value[k] for k in fields - {'request'}}
     # Diagnostic jobs have no saved baseline. This placeholder never becomes a mutation patch.
@@ -97,6 +100,12 @@ def advance(core, operation, error):
                                 issue['proposedRepair'] = issue['repair']
                                 issue['repair'] = None
                                 issue['heldReasons'].append('native host repair qualification is incomplete')
+                    from .path_doctor_qualification import duplicate_repair_available
+                    for issue in report['issues']:
+                        if (issue.get('repair') or {}).get('op') == 'remove_consecutive_duplicate_nodes' and not duplicate_repair_available():
+                            issue['proposedRepair'] = issue.pop('repair')
+                            issue['repair'] = None
+                            issue['heldReasons'].append('duplicate repair native qualification is incomplete')
                     patch = operation['patch']  # Empty, never applicable.
                 else:
                     patch = simple.patch(operation['jobId'], dict(id=operation['documentId'], path=request['sourcePath'],

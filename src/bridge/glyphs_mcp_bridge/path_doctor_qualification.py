@@ -24,3 +24,14 @@ def repair_available():
         return all(callable(getattr(point.pyobjc_instanceMethods, k, None)) for k in PEN_FIELDS)
     except Exception:
         return False
+
+
+def duplicate_repair_available():
+    # Independently qualified with native identity retention and exact
+    # NSUndoManager Undo/Redo on 2026-11-01. See path-cleanup qualification report.
+    return repair_available()
+
+
+def cleanup_available():
+    from .outline_edit import native_remove_available
+    return duplicate_repair_available() and native_remove_available()

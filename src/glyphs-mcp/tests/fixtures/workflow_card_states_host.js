@@ -25,6 +25,27 @@ const resultButtons = () => {
   return s;
 };
 const cases = {
+  async path_doctor() {
+    const h=host({deferWrites:true});await tick();
+    const s=state(1,'diagnosed',[action('configure_cleanup','Configure Path Doctor')]);
+    s.data.scope={kind:'path_cleanup'};
+    s.data.pathDoctor={settings:{glyphs:['a'],policy:'exact',operations:['duplicates'],maxDeviation:.5,angleTolerance:2},comparison:'Changes Against Reference',report:{issueCounts:{consecutive_duplicate_nodes:2}}};
+    deliver(h,s);await tick();
+    assert.equal(h.get('path-doctor').hidden,false);
+    assert.equal(h.get('pd-tolerances').hidden,true);
+    assert.equal(h.get('pd-operations').querySelectorAll('input').length,6);
+    assert(h.get('pd-operations').querySelectorAll('input').find(i=>i.dataset.operation==='align_handles').disabled);
+    assert(h.get('pd-operations').querySelectorAll('input').find(i=>i.dataset.operation==='align_handles').parentElement.hidden);
+    h.get('pd-policy').value='bounded';h.get('pd-settings').listeners.input({target:h.get('pd-policy')});
+    assert.equal(h.get('pd-tolerances').hidden,false);
+    assert.equal(h.get('pd-operations').querySelectorAll('input').find(i=>i.dataset.operation==='align_handles').parentElement.hidden,false);
+    h.get('pd-operations').querySelectorAll('input').find(i=>i.dataset.operation==='align_handles').checked=true;
+    h.get('pd-apply').listeners.click();await tick();
+    const request=writes(h).at(-1).params.arguments;
+    assert.equal(request.expected_revision,1);assert.equal(request.cleanup_apply,true);
+    assert.deepEqual(Array.from(request.cleanup_settings.operations),['duplicates','align_handles']);
+    assert.equal(request.cleanup_settings.maxDeviation,.5);
+  },
   async activity_progress() {
     const h=host();await tick();
     const s=state(1,'applying',[]);

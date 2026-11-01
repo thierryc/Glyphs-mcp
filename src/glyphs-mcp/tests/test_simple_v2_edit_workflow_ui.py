@@ -41,7 +41,7 @@ def test_card_is_self_contained_and_accessible():
 
 
 @pytest.mark.parametrize('scenario', [
-    'checkpoint_retry_feedback', 'script_unverified_feedback',
+    'path_doctor', 'checkpoint_retry_feedback', 'script_unverified_feedback',
     'other_actions', 'form_feedback', 'status_feedback', 'uncertain_feedback',
     'keep_in_button', 'inline_pause', 'action_feedback', 'stale', 'refresh_failure', 'validation', 'external_completion', 'menu',
     'countdown_refresh', 'inspection_during_refresh', 'wrong_response', 'compact', 'focus',

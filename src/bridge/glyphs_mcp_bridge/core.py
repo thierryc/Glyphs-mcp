@@ -115,9 +115,11 @@ class BridgeCore:
             write_capabilities.append("document.edit-tab.open.v1")
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
-        from .path_doctor_qualification import repair_available
+        from .path_doctor_qualification import repair_available, duplicate_repair_available, cleanup_available
         if repair_available():
             write_capabilities.append("outline.normalize-closed-seam.v1")
+        if duplicate_repair_available():
+            write_capabilities.append("outline.remove-consecutive-duplicates.v1")
         if dimensions.available():
             write_capabilities.append("master.dimensions.edit.v1")
         actions = native_actions.available_actions()
@@ -135,6 +137,7 @@ class BridgeCore:
             job_capabilities.append(CAPABILITY)
             write_capabilities.append("kerning.edit.exact.v1")
             job_capabilities.append("path.diagnostics.v1")
+            if cleanup_available():job_capabilities.append("path.cleanup.v1")
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             "bridgeSessionId": self.bridge_session_id,
@@ -273,6 +276,11 @@ class BridgeCore:
             from .path_doctor_qualification import repair_available
             if not repair_available():
                 raise BridgeError('unsupported_change', 'seam repair is not qualified for this native host')
+        if any(op['op'] == 'remove_consecutive_duplicate_nodes'
+               for c in patch['changes'] if c['kind'] == 'outline' for op in c['operations']):
+            from .path_doctor_qualification import duplicate_repair_available
+            if not duplicate_repair_available():
+                raise BridgeError('unsupported_change', 'duplicate repair native qualification is incomplete')
         available_actions = set(native_actions.available_actions())
         requested_actions = {
             change["action"] for change in patch["changes"]

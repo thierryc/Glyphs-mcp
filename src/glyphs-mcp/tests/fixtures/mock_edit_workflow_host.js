@@ -9,14 +9,14 @@ function host({initialize=true, tools=true, reject=false, deferWrites=false, def
     constructor(tag='div') {this.tag=tag;this.children=[];this.dataset={};this.listeners={};this.style={setProperty(k,v){this[k]=v;}};this.hidden=false;this.textContent='';this.value='';}
     get textContent(){return this._textContent + this.children.map(e=>e.textContent||'').join('');}
     set textContent(value){this._textContent=String(value);this.children=[];}
-    append(...items){this.children.push(...items);}
+    append(...items){for(const item of items)if(item && typeof item === "object")item.parentElement=this;this.children.push(...items);}
     replaceChildren(...items){this._textContent='';this.children=items;}
     addEventListener(k,f){this.listeners[k]=f;}
     setAttribute(k,v){this[k]=v;}
     removeAttribute(k){delete this[k];}
     getAttribute(k){return this[k]??null;}
     getBoundingClientRect(){return {left:24,top:300,bottom:342,width:100,height:42};}
-    querySelectorAll(selector){return this.children.flatMap(e => [e,...(e.querySelectorAll?.('*')||[])]).filter(e => selector==='*'||selector==='button'&&e.tag==='button'||selector==='input:checked'&&e.tag==='input'&&e.checked);}
+    querySelectorAll(selector){return this.children.flatMap(e => [e,...(e.querySelectorAll?.('*')||[])]).filter(e => selector==='*'||selector==='button'&&e.tag==='button'||selector==='input'&&e.tag==='input'||selector==='input:checked'&&e.tag==='input'&&e.checked);}
     querySelector(selector){return this.children.find(e=>e.tag==='button') || (this.submit ||= new Element('button'));}
     focus(){document.activeElement=this;}
   }

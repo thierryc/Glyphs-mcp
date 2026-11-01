@@ -9,14 +9,14 @@ CAPABILITY = 'edit.prepare.native.v1'
 
 def eligible(request):
     kind, options = request.get('kind'), request.get('options') or {}
-    if kind in {'width_delta', 'dimensions_edit', 'kerning_edit', 'path_diagnostics'}:
+    if kind in {'width_delta', 'dimensions_edit', 'kerning_edit', 'path_diagnostics', 'path_cleanup'}:
         return True
     if kind == 'native_action':
         return options.get('action') == 'set_glyph_color' and options.get('scope') == 'glyph'
     if kind == 'outline_edit':
         targets = options.get('targets') or []
         return bool(targets) and all(t.get('operations') and all(
-            op.get('op') == 'normalize_closed_seam' or op.get('op') == 'update_nodes' and op.get('updates') and all(
+            op.get('op') in {'normalize_closed_seam', 'remove_consecutive_duplicate_nodes'} or op.get('op') == 'update_nodes' and op.get('updates') and all(
                 set(u) <= {'index', 'position', 'delta'} and ('position' in u or 'delta' in u)
                 for u in op['updates']) for op in t['operations']) for t in targets)
     return False
@@ -37,8 +37,8 @@ def validate_request(request):
     else:
         if set(request) != {'kind', 'glyphs', 'options'} or request['glyphs']:
             raise ProtocolError('invalid_request', 'unexpected typed request fields')
-        from .. import outline, native_actions, dimensions, kerning_edits, path_doctor
-        validator = {'outline_edit': outline, 'native_action': native_actions, 'dimensions_edit': dimensions, 'kerning_edit': kerning_edits, 'path_diagnostics': path_doctor}[kind]
+        from .. import outline, native_actions, dimensions, kerning_edits, path_doctor, path_cleanup
+        validator = {'outline_edit': outline, 'native_action': native_actions, 'dimensions_edit': dimensions, 'kerning_edit': kerning_edits, 'path_diagnostics': path_doctor, 'path_cleanup': path_cleanup}[kind]
         options = dict(request['options'])
         if kind == 'native_action':
             scope = options.pop('scope', None)
@@ -105,6 +105,9 @@ def width_iter(font, request):
 
 def iterator(font, request):
     validate_request(request)
+    if request['kind'] == 'path_cleanup':
+        from .path_cleanup import prepare_iter
+        return prepare_iter(font, request)
     if request['kind'] == 'path_diagnostics':
         from .path_doctor import prepare_iter
         return prepare_iter(font, request)
@@ -124,6 +127,7 @@ def summary(request, changes, report):
     kind = request['kind']
     if kind == 'width_delta':
         return 'Add {} units to {}'.format(number(request['delta']), 'selected glyphs' if request.get('glyphs') else 'all layers')
+    if kind == 'path_cleanup': return 'Path Doctor cleanup for {} layers'.format(len(changes))
     if kind == 'outline_edit': return 'Outline edits for {} layers'.format(len(report['layers']))
     if kind == 'dimensions_edit': return 'Dimensions reference edits for {} fields'.format(len(report['targets']))
     if kind == 'kerning_edit': return 'Exact kerning edits for {} pairs'.format(len(report['pairs']))

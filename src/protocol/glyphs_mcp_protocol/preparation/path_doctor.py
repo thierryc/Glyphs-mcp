@@ -119,6 +119,15 @@ def inspect_path(state, *, document_id=None, glyph, layer, path, references=Fals
     problems=profile_problems(state)
     if problems:
         issue('invalid_profiles', 'structural', 'error', problems, nodes=sorted({p['node'] for p in problems}))
+    from ..path_doctor import duplicate_indices, qualify_duplicates
+    duplicates = duplicate_indices(state)
+    if duplicates:
+        held = qualify_duplicates(state, referenced=references)
+        issue('consecutive_duplicate_nodes', 'structural', 'warning',
+              {'removedNodes': duplicates, 'geometryChange': 0}, nodes=duplicates,
+              held=held, repair=None if held else {
+                  'op': 'remove_consecutive_duplicate_nodes', 'path': path,
+                  'stateHash': path_hash(state)})
     if seam_pattern(state):
         reasons=qualify(state, referenced=references) + sorted({p['reason'] for p in problems})
         issue('redundant_closed_seam', 'structural', 'warning',
@@ -140,6 +149,19 @@ def inspect_path(state, *, document_id=None, glyph, layer, path, references=Fals
                   confidence='suspicious', nodes=[len(nodes)-1,0])
     stroke = any(k in attrs for k in ('strokeWidth','strokeHeight')) or any(
         n.get('attributeState', {}).get('attributes', {}).get('penPoints') for n in nodes)
+    if not stroke:
+        from .path_cleanup import candidates
+        from ..path_cleanup import validate_options as cleanup_options, OPERATIONS
+        settings=cleanup_options({'glyphs':[glyph],'policy':'bounded','operations':list(OPERATIONS)})
+        codes={'collinear':'redundant_line_node','near_nodes':'near_coincident_nodes',
+               'align_handles':'near_axis_handle','simplify_curves':'curve_simplification_candidate'}
+        for kind,operation in candidates(state,settings):
+            if kind not in codes:continue
+            indices=operation.get('nodes') or ([operation['node']] if 'node' in operation else [u['index'] for u in operation.get('updates',[])])
+            issue(codes[kind],'optimization_candidate','info',
+                  {'operation':kind,'defaultMaxDeviation':.5,'defaultAngleTolerance':2,
+                   'action':'Requires coordinated path_cleanup preparation and validation; this finding is not a verified repair.'},
+                  confidence='candidate',nodes=indices)
     if state['closed'] and stroke and 'fill' not in attrs:
         issue('closed_stroke_fill_unset', 'appearance', 'warning',
               {'fill': 'inherited/unset', 'action': 'inspect native appearance; set fill only under separate authorization'})
@@ -174,7 +196,12 @@ def prepare_iter(font, request, *, document_id=None):
         found=set()
         for layer in stored_layers(glyph):
             identity=str(layer.layerId)
-            if (layers=='all_masters' and identity not in master_ids) or (layers!='all_masters' and identity not in layers):
+            from .outline import _value
+            interpolation = identity in master_ids or any(bool(_value(layer, flag, False))
+                for flag in ('isSpecialLayer', 'isBraceLayer', 'isBracketLayer'))
+            if ((layers == 'all_masters' and identity not in master_ids)
+                    or (layers == 'all_interpolation_layers' and not interpolation)
+                    or (isinstance(layers, list) and identity not in layers)):
                 yield; continue
             found.add(identity); totals['layers']+=1
             totals['componentReferences']+=len(list(layer.components or []))
@@ -209,7 +236,7 @@ def prepare_iter(font, request, *, document_id=None):
                         'issueId':'pd1:'+hashlib.sha256(json.dumps([str(glyph.name),identity,index,'unsupported_path']).encode()).hexdigest()[:24]})
                 yield
             yield
-        if (master_ids if layers=='all_masters' else set(layers))-found:
+        if (master_ids if isinstance(layers, str) else set(layers))-found:
             raise ValueError('requested stored layers are missing for '+str(glyph.name))
         yield
     counts=Counter(i['code'] for i in issues)
@@ -221,3 +248,30 @@ def prepare_iter(font, request, *, document_id=None):
         'issueCounts':dict(sorted(counts.items())), 'issues':issues,
         'scanHash':'sha256:'+hashlib.sha256(json.dumps(digests,separators=(',',':')).encode()).hexdigest(),
         'limitations':['No native editing-failure causality claim.','No expanded component or historical/background audit.']}
+
+
+def remove_duplicates(layer, path, expected):
+    """Exact removal on a detached trial or a guarded recoverable live edit."""
+    from ..path_doctor import duplicate_indices, qualify_duplicates
+    from .outline import _set_nodes, _value
+    before = path_state(path)
+    if path_hash(before) != expected:
+        raise ValueError('duplicate state guard is stale')
+    validate_segments(before)
+    reasons = qualify_duplicates(before, referenced=referenced(layer, path))
+    if bool(_value(layer, 'locked', False)) or bool(_value(_value(layer, 'parent', None), 'locked', False)):
+        reasons.append('owning layer or glyph is locked')
+    if reasons: raise ValueError('duplicate repair held: ' + '; '.join(reasons))
+    removed = set(duplicate_indices(before))
+    wanted = {**before, 'nodes': [n for i,n in enumerate(before['nodes']) if i not in removed]}
+    validate_segments(wanted)
+    nodes = list(path.nodes)
+    _set_nodes(path, [n for i,n in enumerate(nodes) if i not in removed])
+    if path_state(path) != wanted:
+        raise ValueError('duplicate repair changed an unapproved invariant')
+    mapping, survivor = {}, -1
+    for i in range(len(nodes)):
+        if i not in removed: survivor += 1
+        mapping[str(i)] = survivor
+    return {'nodeMap': mapping, 'removedNodes': sorted(removed),
+            'preserved': ['real segments', 'surviving nodes and attributes', 'contour start', 'path attributes']}

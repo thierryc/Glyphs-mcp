@@ -159,6 +159,7 @@ class SidecarService:
                         + (["checkpoint_restore"] if "font.checkpoint-restore.v1" in advertised_writes else [])
                         + (['python_script'] if scripts.NATIVE in job_capabilities else [])
                         + (["path_diagnostics"] if "path.diagnostics.v1" in job_capabilities else [])
+                        + (["path_cleanup"] if "path.cleanup.v1" in job_capabilities else [])
                         + (["outline_edit"] if "outline.edit.v1" in advertised_writes else [])
                         + (["native_action"] if native_actions else [])
                         + (["dimensions_edit"] if dimensions.WRITE_CAPABILITY in advertised_writes else [])
@@ -339,6 +340,11 @@ class SidecarService:
             from .script_service import validate_capabilities
             validate_capabilities(self, request['options'], ServiceError)
             return request
+        if kind == 'path_cleanup':
+            status = self.bridge.status()
+            if 'path.cleanup.v1' not in status.get('jobCapabilities', []) or not self._native_preparation_available(request,status):
+                raise ServiceError('unsupported_job', 'path cleanup requires a qualified native bridge')
+            return request
         if kind == 'path_diagnostics':
             status = self.bridge.status()
             if 'path.diagnostics.v1' not in status.get('jobCapabilities', []) or not self._native_preparation_available(request, status):
@@ -356,6 +362,9 @@ class SidecarService:
                 raise ServiceError("unsupported_job", "exact kerning edits require a qualified native bridge; update the installation")
             if kind == "dimensions_edit" and dimensions.WRITE_CAPABILITY not in advertised:
                 raise ServiceError("unsupported_job", "Dimensions writes are not qualified by the live bridge")
+            if kind == 'outline_edit' and any(op['op'] == 'remove_consecutive_duplicate_nodes'
+                    for t in request['options']['targets'] for op in t['operations']) and 'outline.remove-consecutive-duplicates.v1' not in advertised:
+                raise ServiceError('unsupported_job', 'duplicate repair native qualification is incomplete')
             if kind == 'outline_edit' and any(op['op'] == 'normalize_closed_seam' for t in request['options']['targets'] for op in t['operations']) and 'outline.normalize-closed-seam.v1' not in advertised:
                 raise ServiceError('unsupported_job', 'qualified seam repair is not advertised by the live bridge')
             if kind == "outline_edit" and "outline.edit.v1" not in advertised:

@@ -175,13 +175,18 @@ def _mutation_report(report, path):
         "path": str(path), "claim": report["claim"],
         "layerCount" if "layers" in report else "pairCount" if "pairs" in report else "targetCount": len(rows),
         "sample": rows[:10],
-        "unavailableCount": sum(row["status"] == "unavailable" for row in rows),
+        "unavailableCount": sum(row.get("status") == "unavailable" for row in rows),
     }
     for name in ("action", "scope", "targetCount", "changedCount", "noChangeCount", "skippedCount"):
         if name in report:
             summary[name] = report[name]
     if "persistence" in report:
         summary["persistence"] = report["persistence"]
+    if report.get('kind') == 'path_cleanup':
+        for key in ('kind','settings','changedLayers','unchangedLayers','heldCount','removedNodes','validation','comparison'):
+            summary[key]=report[key]
+        summary['held']=report['held'][:20]
+        summary['heldTruncated']=len(report['held'])>20
     if report.get("kind") == "dimensions_edit":
         # At most 100 entries: never hide an overwrite behind the sample limit.
         summary["targets"] = rows

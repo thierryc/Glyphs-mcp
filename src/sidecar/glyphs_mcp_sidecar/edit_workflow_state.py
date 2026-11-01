@@ -12,7 +12,7 @@ from .saved_script import unresolved
 from .activity_feedback import workflow_progress
 
 TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed", "expired"}
-ACTIVE = {"queued", "preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
+ACTIVE = {"diagnosing", "queued", "preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
 
 
 def _store_locked(method):
@@ -168,6 +168,8 @@ MESSAGES = {
     "discarded": "Changes discarded.",
     "cancelled": "Request cancelled.",
     "no_changes": "No changes needed.",
+    "diagnosing": "Analyzing paths…",
+    "diagnosed": "Path analysis complete.",
     "failed": "We couldn’t finish this change.",
     "interrupted": "The connection was interrupted. Check the result to continue.",
 }
@@ -210,6 +212,16 @@ def offered_actions(value):
 
 def _offered_actions(value):
     state = value["state"]
+    if value['request']['kind']=='path_cleanup' and state in {'ready','needs_review','waiting_save','diagnosed','no_changes'}:
+        base=[('configure_cleanup','Configure Path Doctor')]
+        if state in {'ready','needs_review'}:base += [('apply','Apply cleanup'),('discard','Cancel preview')]
+        elif state=='waiting_save':
+            base += ([('save_continue','Save and continue')] if value['document'].get('path') else [])
+            base += [('save_as_continue','Save As…'),('manual_save',"I'll save in Glyphs"),('cancel','Cancel')]
+        else:base += [('cancel','Close Path Doctor')]
+        return base
+    if value['request']['kind']=='path_cleanup' and state=='diagnosing':
+        return [('cancel','Cancel analysis')]
     if state == 'expired':
         return []
     if state == "queued":
@@ -300,6 +312,7 @@ def presented_actions(value):
               'restore_saved_script': 'Restore'}
     if state == 'applied' and 'save_result' not in names:
         labels['save_result_as'] = 'Save'
+    if value['request']['kind']=='path_cleanup': labels['apply']='Apply cleanup'
     if state in {'ready', 'needs_review'}:
         labels['discard'] = 'Cancel preview'
     result_actions = {'finish_edit', 'finish_script', 'restore_saved_script'}
@@ -383,11 +396,20 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result['job'] = {k: v for k, v in (result.get('job') or {}).items()
                          if k in {'id', 'status', 'resultKind', 'summary'}}
     options = request.get("options") or {}
+    if request['kind']=='path_cleanup':
+        result['pathDoctor']={'settings':deepcopy(options),
+            'comparison':'View → Changes Against Reference; Edit → Comparison Reference → Last Saved. Saving advances the reference.',
+            'report':deepcopy((value.get('job') or {}).get('report'))}
     targets = options.get("targets") or options.get("changes") or options.get("pairs") or options.get("edits") or []
     targets = deepcopy(targets if isinstance(targets, dict) else targets[:100])
     result["scope"] = {"kind": request["kind"], "glyphs": request.get("glyphs", [])[:100],
                        "glyphCount": len(request.get("glyphs", [])), "masters": options.get("masters"),
                        "targets": targets}
+    if request['kind']=='path_cleanup':
+        selected=options['glyphs']
+        result['scope'].update(glyphs=selected[:100] if isinstance(selected,list) else [],
+                              glyphCount=len(selected) if isinstance(selected,list) else None,
+                              allGlyphs=selected=='all', masters='all interpolation layers')
     if request['kind'] == 'python_script' and isinstance(targets, dict) and isinstance(targets.get('glyphs'), list):
         result['scope']['targetSelectorGlyphCount'] = len(targets['glyphs'])
         result['scope']['targetsTruncated'] = len(targets['glyphs']) > 100
@@ -514,6 +536,9 @@ def public_workflow(value, *, include_review=False, include_warning=False):
                 before = 'absent' if change['before'] is None else str(change['before'])
                 after = 'remove' if change['after'] is None else str(change['after'])
                 result['text'] += '\n{} / {} · {} · {}: {} → {}'.format(change['left'], change['right'], change['master'], change['direction'], before, after)
+    if request['kind']=='path_cleanup':
+        result['text'] += '\nPath Doctor settings: ' + json.dumps(options,ensure_ascii=False)
+        result['text'] += '\n' + result['pathDoctor']['comparison']
     if request.get("glyphs"):
         result["text"] += "; glyphs: " + ", ".join(request["glyphs"][:8]) + ("…" if len(request["glyphs"]) > 8 else "")
     if options.get("masters"):
@@ -568,7 +593,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result['poll'] = False
     # Card updates must not instruct a conversational agent to poll a pending
     # user decision. Recovery actions on failed/cancelled scripts still refresh.
-    processing = (value['state'] in {'queued', 'preparing', 'applying', 'saving', 'discarding', 'resolving', 'blocked_active'}
+    processing = (value['state'] in {'diagnosing', 'queued', 'preparing', 'applying', 'saving', 'discarding', 'resolving', 'blocked_active'}
                   or value['state'] == 'ready' and value.get('mode') == 'apply')
     result['uiRefreshIntervalMs'] = 1500 if processing else 5000 if result['actions'] else 0
     # Some hosts omit structuredContent from the model's conversation. Keep the

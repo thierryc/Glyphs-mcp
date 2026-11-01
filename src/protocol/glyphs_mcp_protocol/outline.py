@@ -84,6 +84,10 @@ def validate_operation(value: Any, *, resolved: bool = False) -> dict[str, Any]:
     item = _object(value, "outline operation")
     op = item.get("op")
     common = {"op", "path"}
+    if op == "remove_consecutive_duplicate_nodes":
+        _closed(item, common | {"stateHash"}, op)
+        return {"op": op, "path": _index(item.get("path"), "duplicate path"),
+                "stateHash": _hash(item.get("stateHash"), "duplicate stateHash")}
     if op == "normalize_closed_seam":
         from .path_doctor import operation
         return operation(item)

@@ -66,6 +66,36 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
 @media(prefers-reduced-motion:reduce){button.icon-button[data-feedback-phase="working"]::before{animation:none}button[data-in-button-feedback]{transition:none;animation:none!important}button[data-in-button-feedback]::before{animation:none!important}}
 @media(max-width:400px){#action-row button:not(.icon-button){padding:5px 7px;font-size:11px}button[data-in-button-feedback]{--icon-label-gap:4px;--icon-label-padding:7px}#action-row button[data-in-button-feedback]{padding-left:var(--icon-label-padding);padding-right:var(--icon-label-padding)}}
 
+/* Path Doctor: compact task panel with explicit scope, options and results. */
+#path-doctor{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#path-doctor fieldset{border:0;border-radius:0;margin:0;padding:16px}
+#path-doctor legend{float:left;width:100%;font-size:14px;font-weight:650;letter-spacing:-.02em;padding:0;margin:0 0 14px}
+.pd-mode{clear:both;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+#path-doctor .pd-mode label{margin:0;font-size:11px;color:var(--muted)}
+#pd-policy{font:inherit;font-weight:550;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 28px 6px 9px;max-width:68%}
+#pd-operations{border-top:1px solid var(--line)}
+#pd-operations label{display:flex;align-items:center;gap:9px;margin:0;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer;line-height:1.3}
+#pd-operations input{appearance:auto;accent-color:var(--accent);width:14px;height:14px;flex:0 0 14px;margin:0;padding:0}
+#pd-operations label:has(input:checked){font-weight:550}
+.pd-note{font-size:10px;color:var(--muted);margin:10px 0 14px;display:flex;align-items:center;gap:5px}
+.pd-note::before{content:'✓';color:var(--accent);font-weight:700}
+.pd-buttons{display:flex;gap:7px;justify-content:flex-end}
+.pd-buttons button{min-height:32px;padding:6px 12px;font-size:12px;border-radius:7px}
+#pd-tolerances{padding:3px 0 10px}
+#pd-tolerances label{font-size:11px;margin:12px 0 5px}
+.pd-tolerance{display:flex;align-items:center;gap:12px}
+#pd-tolerances input[type=number]{width:76px;padding:5px 7px;font-size:12px;font-variant-numeric:tabular-nums}
+#pd-tolerances input[type=range]{min-width:0;flex:1;padding:0;accent-color:var(--accent)}
+.pd-results{padding:12px 16px;background:light-dark(#f6f8f7,#262b28);border-top:1px solid var(--line)}
+#pd-scope{font-size:10px;color:var(--muted);margin:0 0 8px}
+#pd-summary{display:flex;gap:20px;flex-wrap:wrap;margin:0}
+.pd-stat{display:flex;flex-direction:column;gap:1px;font-size:10px;color:var(--muted)}
+.pd-stat strong{font-size:17px;font-weight:600;letter-spacing:-.03em;color:var(--fg);font-variant-numeric:tabular-nums}
+#pd-review{border:0;margin:0;padding:10px 16px;font-size:10px}
+#pd-review summary{color:var(--muted);font-weight:550}
+#pd-comparison{font-size:10px;line-height:1.6;margin:8px 0 0}
+@media(max-width:340px){#path-doctor fieldset{padding:12px}.pd-results{padding:12px}#pd-summary{gap:14px}.pd-buttons button{flex:1}}
+
 </style>
 </head>
 <body>
@@ -74,6 +104,23 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
   <div class="activity-line"><p id="status" class="status" role="status" aria-live="polite" tabindex="-1">Connecting…</p><p id="progress" class="muted" role="status" aria-live="polite"></p></div>
   <progress id="activity-progress" aria-label="Current operation progress" hidden></progress>
   <p id="message"></p>
+  <section id="path-doctor" hidden aria-label="Path Doctor">
+    <fieldset id="pd-settings"><legend>Path Doctor</legend>
+      <div class="pd-mode"><label for="pd-policy">Cleanup mode</label><select id="pd-policy"><option value="exact">Exact preservation</option><option value="bounded">Bounded optimization</option></select></div>
+      <div id="pd-operations"></div>
+      <div id="pd-tolerances" hidden>
+        <label for="pd-deviation">Maximum outline deviation (font units)</label>
+        <div class="pd-tolerance"><input id="pd-deviation" type="number" min="0.001" max="10" step="0.001" value="0.5"><input id="pd-deviation-slider" aria-label="Maximum outline deviation" type="range" min="0.001" max="10" step="0.001" value="0.5"></div>
+        <label for="pd-angle">Maximum handle rotation (degrees)</label>
+        <div class="pd-tolerance"><input id="pd-angle" type="number" min="0.01" max="10" step="0.01" value="2"><input id="pd-angle-slider" aria-label="Maximum handle rotation" type="range" min="0.01" max="10" step="0.01" value="2"></div>
+      </div>
+      <p class="pd-note">Master and special-layer compatibility preserved</p>
+      <div class="pd-buttons">
+      <button id="pd-analyze" type="button">Analyze</button><button id="pd-apply" class="primary" type="button">Apply cleanup</button></div>
+    </fieldset>
+    <div class="pd-results"><p id="pd-scope"></p><div id="pd-summary" role="status"></div></div>
+    <details id="pd-review"><summary>Compare in Glyphs</summary><p id="pd-comparison" class="muted"></p></details>
+  </section>
   <div id="warnings"></div><div id="proposal"></div><div id="approvals"></div>
   <div id="action-feedback" class="actions" role="status" aria-live="polite" hidden></div>
   <span id="inline-feedback-status" class="sr-only" role="status" aria-live="polite"></span>
@@ -380,8 +427,72 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
       if (key.startsWith("--") && typeof value === "string") document.documentElement.style.setProperty(key,value);
     }
   }
+  let pdRevision = null, pdDirty = false, pdWorkflow = null;
+  const pdOperations = {duplicates:"Consecutive duplicate nodes",seams:"Closing seams",collinear:"Redundant line nodes",near_nodes:"Near-coincident nodes",align_handles:"Handle alignment",simplify_curves:"Curve simplification"};
+  function renderPathDoctor() {
+    const pd=current?.pathDoctor;byId("path-doctor").hidden=!pd;
+    if(!pd)return;
+    if(pdWorkflow!==current.id){pdWorkflow=current.id;pdRevision=null;pdDirty=false;}
+    const editable=current.actions.some(a=>a.action==="configure_cleanup");
+    byId("pd-settings").disabled=!editable||busy||reading||!verified;
+    if(pdRevision!==current.revision&&!pdDirty){
+      pdRevision=current.revision;const s=pd.settings;
+      byId("pd-policy").value=s.policy;
+      byId("pd-deviation").value=byId("pd-deviation-slider").value=s.maxDeviation;
+      byId("pd-angle").value=byId("pd-angle-slider").value=s.angleTolerance;
+      byId("pd-operations").replaceChildren();
+      for(const [key,label] of Object.entries(pdOperations)){
+        const row=document.createElement("label"),input=document.createElement("input");
+        input.type="checkbox";input.dataset.operation=key;input.checked=s.operations.includes(key);
+        row.append(input,document.createTextNode(label));byId("pd-operations").append(row);
+      }
+    }
+    const bounded=byId("pd-policy").value==="bounded";
+    byId("pd-tolerances").hidden=!bounded;
+    for(const input of byId("pd-operations").querySelectorAll("input")){
+      input.disabled=!bounded&&["near_nodes","align_handles","simplify_curves"].includes(input.dataset.operation);
+      input.parentElement.hidden=input.disabled;
+      if(input.disabled)input.checked=false;
+    }
+    const report=pd.report||{};
+    const scope=pd.settings.glyphs==="all"?"All glyphs":pd.settings.glyphs.join(", ");
+    const phase=current.state==="applied"?"changed":"prepared";
+    setText("pd-scope",`${scope} · All interpolation layers`);
+    byId("pd-summary").replaceChildren();
+    if(report.changedLayers!==undefined){
+      const number=new Intl.NumberFormat();
+      for(const [value,label] of [[report.changedLayers,phase==="changed"?"Layers changed":"Layers to change"],[report.unchangedLayers||0,"Unchanged"],[report.heldCount??(report.held||[]).length,"Held"],[report.removedNodes||0,phase==="changed"?"Nodes removed":"Nodes to remove"]]){
+        const stat=document.createElement("span"),count=document.createElement("strong");
+        stat.className="pd-stat";count.textContent=number.format(value);stat.append(count,document.createTextNode(label));byId("pd-summary").append(stat);
+      }
+    }else setText("pd-summary",report.issueCounts?JSON.stringify(report.issueCounts):"Ready to analyze");
+    setText("pd-comparison",pd.comparison);
+  }
+  byId("pd-settings").addEventListener("input",event=>{
+    pdDirty=true;
+    for(const key of ["deviation","angle"]){
+      if(event.target.id===`pd-${key}`)byId(`pd-${key}-slider`).value=event.target.value;
+      if(event.target.id===`pd-${key}-slider`)byId(`pd-${key}`).value=event.target.value;
+    }
+    renderPathDoctor();
+    for(const button of document.querySelectorAll('[data-action="apply"]'))button.disabled=true;
+  });
+  async function configurePathDoctor(apply){
+    if(busy||reading||!verified)return;
+    const control=current.actions.find(a=>a.action==="configure_cleanup");if(!control)return;
+    const prepared=apply&&!pdDirty&&current.actions.find(a=>a.action==="apply");
+    const settings={policy:byId("pd-policy").value,operations:Array.from(byId("pd-operations").querySelectorAll("input:checked")).map(i=>i.dataset.operation),maxDeviation:Number(byId("pd-deviation").value),angleTolerance:Number(byId("pd-angle").value)};
+    const args=prepared?{workflow_id:current.id,expected_revision:current.revision,action_token:prepared.token}:{workflow_id:current.id,expected_revision:current.revision,action_token:control.token,cleanup_settings:settings,cleanup_apply:apply};
+    setBusy(true);
+    try{const response=await call("respond_edit_workflow",args);pdDirty=false;pdRevision=null;if(!useResult(response,true,current.id))throw new Error("Could not confirm Path Doctor settings");}
+    catch(error){setText("error",error.message);verified=false;refreshFailed=true;}
+    finally{setBusy(false);render();schedule();}
+  }
+  byId("pd-analyze").addEventListener("click",()=>configurePathDoctor(false));
+  byId("pd-apply").addEventListener("click",()=>configurePathDoctor(true));
   function render() {
     if (!current) return;
+    renderPathDoctor();
     byId("action-descriptions").replaceChildren();
     document.documentElement.dataset.state = current.state;
     updateActionFeedback();
@@ -507,7 +618,7 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
     if (inlineFeedback && !renderActions.some(action => action.action === inlineFeedback.action)) renderActions.push(inlineFeedback.control);
     // The retained disabled icon is presentation only, never an offered action.
     if (pausedControl && !renderActions.some(action => action.action === pausedControl.control.action)) renderActions.push(pausedControl.control);
-    renderActions.forEach((action, index) => {
+    renderActions.filter(action=>action.action!=="configure_cleanup").forEach((action, index) => {
       const retainedButton = inButtonFeedback?.source === "card" && inButtonFeedback.action === action.action ? inButtonFeedback.button : null;
       const button = retainedButton || document.createElement("button"); button.type = "button"; button.textContent = action.label;
       if (!retainedButton) {
@@ -583,6 +694,7 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
     byId("fallback").hidden = toolCallsAvailable() || !current.actions.length;
     setText("fallback", current.actions.length ? (toolCallsAvailable() ? "You can also reply in the conversation: " : "Interactive controls are unavailable here. Reply in the conversation: ") + current.actions.map(a => a.label).join("; ") + "." : "");
     setText("details", pretty({scope:current.scope, blockingWorkflowId:current.blockingWorkflowId, job:current.job, receipt:current.receipt, error:current.error}));
+    if(pdDirty)for(const button of document.querySelectorAll('[data-action="apply"]'))button.disabled=true;
     updateAutoKeep();
     resize();
   }

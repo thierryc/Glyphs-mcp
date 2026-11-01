@@ -49,7 +49,7 @@ def _shape_state(layer):
         shapes = list(layer.paths) + list(_value(layer, "components", []) or [])
     result = []
     for shape in shapes:
-        if hasattr(shape, "nodes") and hasattr(shape, "closed"):
+        if type(shape).__name__ != "GSComponent" and hasattr(shape, "nodes") and hasattr(shape, "closed"):
             result.append({"kind": "path", **_path_state(shape)})
         else:
             transform = _value(shape, "transform", None)
@@ -293,7 +293,10 @@ def _apply(layer, operation):
         _insert_path(layer, index, _new_path(operation)); return operation, [], None
     path = _path(layer, index)
     inserted = []
-    if op == "normalize_closed_seam":
+    if op == "remove_consecutive_duplicate_nodes":
+        from .path_doctor import remove_duplicates
+        seam = remove_duplicates(layer, path, operation['stateHash'])
+    elif op == "normalize_closed_seam":
         from .path_doctor import normalize
         seam = normalize(layer, path, operation['stateHash'])
     elif op == "split_segment":
@@ -346,7 +349,7 @@ def _apply(layer, operation):
         return operation, inserted, None
     else: raise WorkerError("unsupported outline operation")
     _validate(path)
-    return operation, inserted, seam if op == "normalize_closed_seam" else removal if op == "remove_node" else None
+    return operation, inserted, seam if op in {"normalize_closed_seam", "remove_consecutive_duplicate_nodes"} else removal if op == "remove_node" else None
 
 
 def _glyph(font, name):
@@ -416,8 +419,8 @@ def _ordinary(font, glyph, *, stored_only=False):
 def prepare_iter(font, request, *, stored_only=False):
     options = validate_options(request.get("options"))
     if options['compatibilityPolicy'] != 'preserve' and any(
-            op['op'] == 'normalize_closed_seam' for t in options['targets'] for op in t['operations']):
-        raise WorkerError('seam normalization requires preserved master correspondence')
+            op['op'] in {'normalize_closed_seam', 'remove_consecutive_duplicate_nodes'} for t in options['targets'] for op in t['operations']):
+        raise WorkerError('exact path repair requires preserved master correspondence')
     changes, rows, expanded, edits, glyph_states = [], [], 0, {}, {}
     for target in options["targets"]:
         glyph = _glyph(font, target["glyph"])
@@ -440,7 +443,14 @@ def prepare_iter(font, request, *, stored_only=False):
             raise WorkerError("outline target selected no writable layers")
         expanded += len(selected)
         if expanded > 4096: raise WorkerError("outline job expands beyond 4,096 layer changes")
-        seam_request = any(op['op'] == 'normalize_closed_seam' for op in target['operations'])
+        seam_request = any(op['op'] in {'normalize_closed_seam', 'remove_consecutive_duplicate_nodes'} for op in target['operations'])
+        if any(op['op'] == 'remove_consecutive_duplicate_nodes' for op in target['operations']):
+            from . import stored_layers
+            if any(bool(_value(l, flag, False)) for l in stored_layers(glyph)
+                   for flag in ('isSpecialLayer', 'isBraceLayer', 'isBracketLayer')):
+                raise WorkerError('duplicate repair special-layer correspondence is not yet qualified')
+            if any(_compare(layer) != _compare(ordinary[0][1]) for _, layer in ordinary):
+                raise WorkerError('duplicate repair requires existing master correspondence')
         if seam_request:
             master_ids = {identity for identity, _ in ordinary}
             if surface != 'foreground' or any(identity not in master_ids for identity, _ in selected):

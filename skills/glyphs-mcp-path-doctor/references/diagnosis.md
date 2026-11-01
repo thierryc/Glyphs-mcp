@@ -5,7 +5,7 @@
  "options":{"glyphs":["generic"],"layers":"all_masters"}}
 ```
 
-`glyphs` accepts `all` or 1–10,000 unique names. `layers` accepts `all_masters`
+`glyphs` accepts `all` or 1–10,000 unique names. `layers` accepts `all_masters`, `all_interpolation_layers`
 or 1–100 exact stored foreground layer IDs. Prefer bounded explicit scope for
 a local question. The full-font option is a sliced live job. Follow `get_job`
 until completed/failed/cancelled; retain the same job identity after a timeout.
@@ -35,3 +35,18 @@ Findings:
 - `inactive_open_start_profiles`: preserve stored controls with no incoming segment.
 - Malformed segments or unsupported native attributes/references: explicit
   diagnostic evidence, no automatic repair.
+
+For missing nodes or handles, use [node visibility](node-visibility.md) first.
+The association-only workaround preserves nodes and does not authorize seam normalization.
+
+`all_interpolation_layers` includes ordinary masters and stored layers carrying
+native special/brace/bracket flags. Flags select diagnostic coverage only; they
+do not establish interpolation groups or qualify repairs. Background and backup
+layers remain excluded from this selector.
+
+`consecutive_duplicate_nodes` reports exact adjacent on-curve nodes separated
+by a zero-length LINE. Real curves and coincident handles do not qualify.
+The candidate preserves the earlier node and contour start. Conflicting flags,
+node attributes/profiles, locks and references hold it. This new repair remains
+unavailable until its own native apply/recovery qualification; the existing seam
+qualification does not enable it. Do not use a script to bypass that gate.

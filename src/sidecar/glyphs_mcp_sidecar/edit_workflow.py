@@ -233,6 +233,47 @@ class EditWorkflows:
             saved_script.refresh(self.service, value)
             return public_workflow(value, include_review=include_review)
 
+    def configure_cleanup(self, workflow_id, revision, token, settings, apply=False):
+        from glyphs_mcp_protocol.path_cleanup import validate_options
+        from glyphs_mcp_protocol.models import ProtocolError
+        if type(apply) is not bool:
+            raise self.error('invalid_request', 'cleanup_apply must be boolean')
+        with self.lock, self.service.lifecycle.mutation():
+            value=self._find(workflow_id)
+            signature=json.dumps(['cleanup',settings,apply],sort_keys=True)
+            used=value['usedActions'].get(str(token))
+            if used is not None:
+                if used!=signature:raise self.error('action_conflict','Cleanup action was already used with different settings')
+                return public_workflow(value)
+            if (value['request']['kind']!='path_cleanup' or revision!=value['revision']
+                    or ('configure_cleanup','Configure Path Doctor') not in offered_actions(value)
+                    or not hmac.compare_digest(action_token(value,'configure_cleanup'),str(token))):
+                raise self.error('stale_workflow_action','Refresh Path Doctor before changing settings')
+            try:
+                options=validate_options({**settings,'glyphs':value['request']['options']['glyphs'],
+                                          'layers':'all_interpolation_layers'})
+            except (ProtocolError,TypeError) as exc:
+                raise self.error('invalid_request',str(exc)) from exc
+            job=value.get('job') or {}
+            if job.get('status') not in (None,'ready','completed','failed','cancelled','discarded'):
+                raise self.error('document_busy','Resolve the existing operation before changing settings')
+            if job.get('status')=='ready':self.service.discard_job(job['id'])
+            value['usedActions'][token]=signature
+            request=dict(kind='path_cleanup',glyphs=[],options=options)
+            arguments=dict(kind='path_cleanup',delta=None,glyphs=None,options=options)
+            self._set(value,request=request,arguments=arguments,mode='apply' if apply else 'preview',
+                      job=None,jobId=None,error=None,state='starting',reviewInConversation=False)
+            if apply:
+                self._guard(value,lambda:self._begin(value))
+            else:
+                def analyze():
+                    job=self.service.start_job(value['document']['id'],kind='path_diagnostics',
+                        options={'glyphs':options['glyphs'],'layers':options['layers']})
+                    self._set(value,state='diagnosing',jobId=job['id'],job=job)
+                self._guard(value,analyze)
+            self._start_runner()
+            return public_workflow(value)
+
     def respond(self, workflow_id, expected_revision, action_token_value, *, destination=None, approved_overwrites=None, automatic=False):
         with self.store.lock:
             waiting = self._find(workflow_id)['state'] == 'queued'
@@ -318,6 +359,13 @@ class EditWorkflows:
             self._set(value, job=job, state='discarding', scriptRunAuthorized=False)
 
     def _advance(self, value, *, allow_apply=True):
+        if value['state']=='diagnosed':return
+        if value['state']=='diagnosing':
+            job=self.service.get_job(value['jobId'])
+            self._set(value,job=job)
+            if job['status']=='completed':self._set(value,state='diagnosed')
+            elif job['status'] in {'failed','cancelled'}:self._set(value,state=job['status'],error=job.get('error'))
+            return
         if value['state'] == 'queued':
             if not allow_apply:
                 return  # Reads observe Waiting; only the supervisor admits it.
@@ -454,6 +502,8 @@ class EditWorkflows:
         self._set(value, job=job)
 
     def _respond(self, value, action, destination, approved_overwrites):
+        if action=='configure_cleanup':
+            raise self.error('invalid_request','Path Doctor settings are required for this action')
         if action == 'acknowledge_restore_outcome':
             from .checkpoint_restore import acknowledge
             self._set(value, job=acknowledge(self.service,value,self.error), state='executed')
@@ -508,6 +558,9 @@ class EditWorkflows:
                     self._set(value, state="waiting_manual", receipt=receipt, error=None)
             return
         if action == "cancel":
+            if value['request']['kind']=='path_cleanup' and (value.get('job') or {}).get('resultKind')=='diagnostic' and (value.get('job') or {}).get('status')=='completed':
+                self._set(value,state='cancelled')
+                return
             if value.get("jobId"):
                 job = self.service.discard_job(value["jobId"])
                 self._set(value, job=job, state="discarding", cancelRequested=True)

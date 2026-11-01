@@ -134,3 +134,6 @@ Pen points, and clearing node-attached Pen-point fields in the Info box while
 retaining the outline node. It also documents progression and the special effect
 of a single Pen point on a closed stroke. These native controls do not establish
 that an automatic simplification is safe.
+
+For missing nodes or handles, use [node visibility](node-visibility.md) first.
+The association-only workaround preserves nodes and does not authorize seam normalization.

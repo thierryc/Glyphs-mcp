@@ -49,7 +49,7 @@ def _node_state(node):
 
 
 def _is_path(shape):
-    return hasattr(shape, "nodes") and hasattr(shape, "closed")
+    return type(shape).__name__ != "GSComponent" and hasattr(shape, "nodes") and hasattr(shape, "closed")
 
 
 def _transform(shape):
@@ -312,7 +312,10 @@ def apply_operation(layer, operation):
         _insert_path(layer, index, _new_path(operation))
         return
     path = _path(layer, index)
-    if op == "normalize_closed_seam":
+    if op == "remove_consecutive_duplicate_nodes":
+        from glyphs_mcp_protocol.preparation.path_doctor import remove_duplicates
+        remove_duplicates(layer, path, operation['stateHash'])
+    elif op == "normalize_closed_seam":
         from glyphs_mcp_protocol.preparation.path_doctor import normalize
         normalize(layer, path, operation['stateHash'])
     elif op == "split_segment":

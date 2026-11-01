@@ -51,3 +51,6 @@ diagnostic-only. Glyphs native Save can serialize coordinates at reduced precisi
 exact repair in memory does not promise lossless Save/reopen. Explain that known
 limit before a requested Save of precision-sensitive work. Do not save merely to
 finish a diagnosis or an unsaved repair.
+
+For missing nodes or handles, use [node visibility](node-visibility.md) first.
+The association-only workaround preserves nodes and does not authorize seam normalization.

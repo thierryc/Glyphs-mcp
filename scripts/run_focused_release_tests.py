@@ -49,6 +49,12 @@ def main():
     subprocess.run(['bash', 'scripts/sync_codex_plugin_skills.sh', '--check'], cwd=ROOT, check=True)
     subprocess.run([sys.executable, 'scripts/check_lean_package.py'], cwd=ROOT, check=True)
     tests = ['test_simple_v2_saved_scripts.py', 'test_simple_v2_script_snapshots.py',
+             'test_simple_v2_path_cleanup.py', 'test_simple_v2_path_doctor.py',
+             'test_simple_v2_outline_edit.py', 'test_simple_v2_edit_workflow.py',
+             'test_simple_v2_edit_workflow_ui.py', 'test_simple_v2_sidecar.py',
+             'test_simple_v2_bridge.py', 'test_simple_v2_protocol.py',
+             'test_simple_v2_exact_history.py', 'test_skill_catalog_package.py',
+             'test_simple_v2_skill_routing.py',
              'test_simple_v2_python_scripts.py', 'test_curve_repair_actions.py', 'test_curve_repair_controller.py',
              'test_simple_v2_build.py::test_build_is_deterministic_and_excludes_the_old_runtime',
              'test_simple_v2_identity.py::test_packaged_runtime_matches_manifest_then_keeps_initialization_fingerprint']

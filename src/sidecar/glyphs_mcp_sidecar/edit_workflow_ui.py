@@ -68,7 +68,7 @@ def register_edit_workflow_tools(mcp, service):
         delta: float | None = None, glyphs: list[str] | None = None, options: dict[str, Any] | None = None,
         auto_keep: bool = True, ctx: Context = None,
     ) -> ToolResult:
-        """Perform an authorized edit; reuse the connection/document_id and retain idempotency_key for retries. Typed kinds include width_delta, spacing, kerning_edit, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and closed native_action. mode=apply prepares and applies complete typed results; preview waits. Warnings/skipped targets and Dimensions overwrites retain report review. Compilation/export use start_job. Preparation never saves; typed jobs on dirty/new fonts require separately authorized Save/Save As/manual saving. Native scripts run without Save on dirty/pathless fonts. Reuse existing save authorization; prerequisite saving does not authorize saving the result.
+        """Perform an authorized edit; reuse the connection/document_id and retain idempotency_key for retries. Typed kinds include path_cleanup, width_delta, spacing, kerning_edit, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and closed native_action. mode=apply prepares and applies complete typed results; preview waits. Warnings/skipped targets and Dimensions overwrites retain report review. Compilation/export use start_job. Preparation never saves; typed jobs on dirty/new fonts require separately authorized Save/Save As/manual saving. Native scripts run without Save on dirty/pathless fonts. Reuse existing save authorization; prerequisite saving does not authorize saving the result.
 
         With edit.queue.automatic.v1, busy Glyphs accepts the request as Waiting and returns its workflow_id immediately. The supervisor resumes it when its resource is available; reuse the same workflow/key instead of submitting again. queue.automaticResume=true needs no user decision. Same-font decisions retain their owning workflow and exact blocker; unrelated recovery stays open. Preview resumes preparation only. A service restart interrupts queued requests for review; uncertain native writes are never replayed. Cancel removes a waiting request without resolving its owner.
 
@@ -109,7 +109,8 @@ def register_edit_workflow_tools(mcp, service):
     async def respond_edit_workflow(
         workflow_id: str, expected_revision: int, action_token: str,
         destination: str | None = None, approved_overwrites: list[dict[str, Any]] | None = None,
-        automatic: bool = False, ctx: Context = None,
+        automatic: bool = False, cleanup_settings: dict[str, Any] | None = None,
+        cleanup_apply: bool = False, ctx: Context = None,
     ) -> ToolResult:
         """Execute one offered action using workflow_id, expected_revision and action_token. Map conversational replies internally; users need not supply identifiers. Refresh get_edit_workflow before a later reply; use its matching revision/token. Retry the SAME token/arguments to reconcile, never substitute a new action after an uncertain outcome.
 
@@ -117,7 +118,14 @@ def register_edit_workflow_tools(mcp, service):
 
         Keep ends workflow recovery without saving; typed edits preserve native Undo. Typed Undo covers only recorded targets; Restore before run restores the whole pre-run font, including pre-existing unsaved edits, discards later edits, clears Undo and returns a fresh binding. This memory recovery is unavailable after Glyphs restarts. A clear restore request authorizes it. It never saves, reruns Python or restores external effects. Keep/Save ends the recovery offer.
 
-        Map 'wait for my answer' immediately to wait_for_answer, disabling the countdown without cancelling the edit. automatic=true is reserved for the visible connected card's successful-result Keep; never auto Run, Save, Undo, Restore or settle failed/unknown/blocked results. Timeout evidence is not human approval. Cancellation stops remaining callbacks, not a currently running invocation. Client permission dialogs still apply."""
+        Map 'wait for my answer' immediately to wait_for_answer, disabling the countdown without cancelling the edit. automatic=true is reserved for the visible connected card's successful-result Keep; never auto Run, Save, Undo, Restore or settle failed/unknown/blocked results. Timeout evidence is not human approval. Cancellation stops remaining callbacks, not a currently running invocation. Client permission dialogs still apply. Path Doctor configure_cleanup actions accept cleanup_settings and cleanup_apply; Analyze is read-only, Apply retains typed prerequisites and guards. The glyph scope cannot change."""
+        if cleanup_apply and cleanup_settings is None:
+            return result(lambda: (_ for _ in ()).throw(ServiceError('invalid_request','cleanup_apply requires cleanup_settings')))
+        if cleanup_settings is not None:
+            if destination is not None or approved_overwrites is not None or automatic:
+                return result(lambda: (_ for _ in ()).throw(ServiceError('invalid_request','Cleanup settings cannot be combined with save or overwrite arguments')))
+            return await workflow_call(lambda: result(lambda: service.edit_workflows.configure_cleanup(
+                workflow_id,expected_revision,action_token,cleanup_settings,cleanup_apply)),ctx,'Updating Path Doctor')
         return await workflow_call(lambda: result(lambda: service.edit_workflows.respond(
             workflow_id, expected_revision, action_token, destination=destination,
             approved_overwrites=approved_overwrites, automatic=automatic)), ctx, "Processing Glyphs workflow choice")

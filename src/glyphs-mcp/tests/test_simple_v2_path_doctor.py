@@ -328,3 +328,120 @@ def test_seam_repair_holds_unqualified_historical_surfaces():
         'layers':{'scope':'ids','ids':['backup']},'guards':[{'path':0,'hash':h}],
         'operations':[{'op':'normalize_closed_seam','path':0,'stateHash':h}]}]}}
     with pytest.raises(Exception,match='ordinary-master'):consume(prepare_iter(font,request))
+
+
+def duplicate_fixture():
+    layer, path = fixture(profile=False)
+    path.attributes = {}
+    path.nodes = path.nodes[:-1]
+    path.nodes.insert(2, deepcopy(path.nodes[1]))
+    path.nodes.insert(2, deepcopy(path.nodes[1]))
+    return layer, path
+
+
+def test_duplicate_run_preserves_geometry_nodes_and_recovery():
+    layer, path = duplicate_fixture()
+    before = doctor.path_state(path)
+    original = list(path.nodes)
+    snap = outline_edit.capture(layer)
+    result = doctor.remove_duplicates(layer, path, outline.path_hash(before))
+    assert path.nodes == [original[0], original[1], original[4]]
+    assert result['nodeMap'] == {'0': 0, '1': 1, '2': 1, '3': 1, '4': 2}
+    assert result['removedNodes'] == [2, 3]
+    assert not path_doctor.duplicate_indices(doctor.path_state(path))
+    outline_edit.restore(layer, snap)
+    assert doctor.path_state(path) == before
+    assert list(path.nodes) == original
+
+
+@pytest.mark.parametrize('variant', ['profile', 'flag', 'metadata', 'hint', 'lock', 'stale'])
+def test_duplicate_refusals_preserve_state(variant):
+    layer, path = duplicate_fixture()
+    guard = outline.path_hash(doctor.path_state(path))
+    if variant == 'profile': path.nodes[2].attributes['penPoints'] = [PenPoint(1.)]
+    if variant == 'flag': path.nodes[2].smooth = True
+    if variant == 'metadata': path.nodes[2].name = 'authored'
+    if variant == 'hint': layer.hints = [NS(originNode=path.nodes[2])]
+    if variant == 'lock': layer.locked = True
+    if variant == 'stale': path.nodes[1].position = (90.5, 5.625)
+    before = doctor.path_state(path)
+    if variant != 'stale': guard = outline.path_hash(before)
+    with pytest.raises(ValueError): doctor.remove_duplicates(layer, path, guard)
+    assert doctor.path_state(path) == before
+
+
+def test_coincident_handles_and_real_loop_are_not_duplicates():
+    layer, path = fixture(cubic=True, profile=False)
+    path.nodes[-2].position = (path.nodes[-3].position.x, path.nodes[-3].position.y)
+    assert path_doctor.duplicate_indices(doctor.path_state(path)) == []
+    assert path_doctor.seam_pattern(doctor.path_state(path))
+
+
+def test_duplicate_diagnostic_and_typed_contract():
+    layer, path = duplicate_fixture()
+    state = doctor.path_state(path)
+    issue = next(i for i in doctor.inspect_path(state, glyph='generic', layer='M', path=0)
+                 if i['code'] == 'consecutive_duplicate_nodes')
+    operation = outline.validate_operation(issue['repair'])
+    outline_edit.apply_operation(layer, operation)
+    assert len(path.nodes) == 3
+    assert not path_doctor.duplicate_indices(doctor.path_state(path))
+
+
+def test_duplicate_native_capability_is_not_inherited_from_seam():
+    from glyphs_mcp_bridge.path_doctor_qualification import duplicate_repair_available
+    assert duplicate_repair_available() is False
+
+
+def test_all_interpolation_diagnostics_include_specials_not_backups():
+    from glyphs_mcp_protocol.preparation import consume
+    layer, path = duplicate_fixture()
+    layers = Collection([layer])
+    for identity, flag in [('brace', 'isBraceLayer'), ('bracket', 'isBracketLayer'), ('other', 'isSpecialLayer'), ('backup', None)]:
+        extra = deepcopy(layer)
+        extra.layerId = identity
+        if flag: setattr(extra, flag, True)
+        layers.append(extra)
+    font = NS(glyphs=Collection([NS(name='generic', layers=layers)]), masters=[NS(id='M')])
+    options = path_doctor.validate_options({'glyphs': 'all', 'layers': 'all_interpolation_layers'})
+    _, report = consume(doctor.prepare_iter(font, {'options': options}))
+    assert report['coverage']['layers'] == 4
+    issues = [i for i in report['issues'] if i['code'] == 'consecutive_duplicate_nodes']
+    assert {i['target']['layer'] for i in issues} == {'M', 'brace', 'bracket', 'other'}
+    assert all(i['repair'] is None for i in issues if i['target']['layer'] != 'M')
+
+
+@pytest.mark.parametrize('closed', [False, True])
+def test_duplicate_endpoint_and_near_coincidence(closed):
+    layer, path = duplicate_fixture()
+    path.closed = closed
+    path.nodes = path.nodes[:2] + [deepcopy(path.nodes[1])]
+    before = doctor.path_state(path)
+    doctor.remove_duplicates(layer, path, outline.path_hash(before))
+    assert len(path.nodes) == 2
+    path.nodes.append(deepcopy(path.nodes[-1]))
+    path.nodes[-1].position = (path.nodes[-1].position.x + .000001, path.nodes[-1].position.y)
+    assert path_doctor.duplicate_indices(doctor.path_state(path)) == []
+
+
+def test_duplicate_preparation_requires_corresponding_masters():
+    from glyphs_mcp_protocol.preparation import consume, outline as preparation
+    layers = Collection()
+    targets = []
+    for identity in ['M0', 'M1']:
+        layer, path = duplicate_fixture()
+        layer.layerId = layer.id = identity
+        layers.append(layer)
+        guard = outline.path_hash(doctor.path_state(path))
+        targets.append({'glyph':'generic', 'referenceLayer':identity,
+                        'layers':{'scope':'ids', 'ids':[identity]},
+                        'guards':[{'path':0, 'hash':guard}],
+                        'operations':[{'op':'remove_consecutive_duplicate_nodes', 'path':0, 'stateHash':guard}]})
+    font = NS(glyphs={'generic': NS(name='generic', layers=layers)}, masters=[NS(id=l.layerId) for l in layers])
+    with pytest.raises(Exception, match='compatibility'):
+        consume(preparation.prepare_iter(font, {'options':{'targets':targets[:1]}}))
+    changes, report = consume(preparation.prepare_iter(font, {'options':{'targets':targets}}))
+    assert len(changes) == 2
+    assert not report['compatibilityChanges']
+    with pytest.raises(Exception, match='preserved master correspondence'):
+        consume(preparation.prepare_iter(font, {'options':{'targets':targets, 'compatibilityPolicy':'allow_incompatible'}}))

@@ -34,23 +34,30 @@ def plain(value):
         if not math.isfinite(value):
             raise ValueError('non-finite native attribute')
         return {'float': value.hex()}
-    if type(value).__name__ == 'GSPenPoint' or all(hasattr(value, k) for k in PEN_FIELDS):
-        fields = {k: plain(native(value, k)) for k in PEN_FIELDS}
-        method = getattr(getattr(value, 'pyobjc_instanceMethods', value), 'propertyListValueFormat_error_', None)
-        if callable(method):
-            serialized, error = method(4, None)
-            if error is not None:
-                raise ValueError('native Pen-point serialization failed')
-            fields['stored'] = plain(serialized)
-        return {'penPoint': fields}
+    if type(value).__name__ == 'GSPenPoint':
+        return _plain_pen(value)
+    if isinstance(value, (list, tuple)) or type(value).__name__ in ('__NSArrayM', '__NSArrayI', 'NSArray', 'NSMutableArray', '__NSSingleObjectArrayI'):
+        return [plain(v) for v in value]
     if isinstance(value, Mapping) or hasattr(value, 'allKeys'):
         keys = list(value.keys()) if hasattr(value, 'keys') else list(value.allKeys())
         if any(not isinstance(k, str) for k in keys):
             raise ValueError('unsupported non-string attribute key')
         return {str(k): plain(value[k]) for k in sorted(keys)}
-    if isinstance(value, (list, tuple)) or type(value).__name__ in ('__NSArrayM', '__NSArrayI', 'NSArray', 'NSMutableArray', '__NSSingleObjectArrayI'):
-        return [plain(v) for v in value]
+    if all(hasattr(value, k) for k in PEN_FIELDS):
+        return _plain_pen(value)
     raise ValueError('unsupported native attribute/reference: ' + type(value).__name__)
+
+
+
+def _plain_pen(value):
+    fields = {k: plain(native(value, k)) for k in PEN_FIELDS}
+    method = getattr(getattr(value, 'pyobjc_instanceMethods', value), 'propertyListValueFormat_error_', None)
+    if callable(method):
+        serialized, error = method(4, None)
+        if error is not None:
+            raise ValueError('native Pen-point serialization failed')
+        fields['stored'] = plain(serialized)
+    return {'penPoint': fields}
 
 
 def state(owner):

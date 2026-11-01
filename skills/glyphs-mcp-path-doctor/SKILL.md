@@ -16,6 +16,14 @@ that job. Diagnostics never apply, save, close, reload or resolve another task.
 Read [diagnosis](references/diagnosis.md) for request scope and report meanings.
 No Path Doctor top-level tool exists.
 
+For an explicitly requested cleanup pass, use [coordinated cleanup](references/cleanup.md)
+when `path.cleanup.v1` is advertised. Reuse the existing workflow card for settings
+and Changes Against Reference in Glyphs for visual review.
+
+For missing nodes or handles, first follow [node visibility](references/node-visibility.md).
+Check display settings before proposing the narrowly qualified node-preserving
+association workaround. A remaining seam finding does not authorize normalization.
+
 For crowded, misplaced or excessive Pen points, use the focused
 [Pen-point cleanup](references/pen-points.md) mode. Establish exact-preservation
 versus bounded-change intent, inspect profile correspondence independently of
