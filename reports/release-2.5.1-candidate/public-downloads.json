@@ -1,0 +1,32 @@
+[
+  {
+    "asset": "appcast.xml",
+    "size": 1349,
+    "sha256": "501a43297743b25481f64af5b7c59c6ad04776f9783663c034f5b3fbe05f69f5"
+  },
+  {
+    "asset": "Glyphs-MCP-2.5.1.dmg",
+    "size": 161311476,
+    "sha256": "16306e10ce5a03d277bb8643c3446b555cc877eee0f1fb4328e4bb2b1ed98f75"
+  },
+  {
+    "asset": "Glyphs-MCP-2.5.1.zip",
+    "size": 159098238,
+    "sha256": "a66248d11c9c35f53fa43687a8763cd2f6ea0ecab1bf9794d212e610bf9a898f"
+  },
+  {
+    "asset": "Glyphs-MCP-latest.dmg",
+    "size": 161311476,
+    "sha256": "16306e10ce5a03d277bb8643c3446b555cc877eee0f1fb4328e4bb2b1ed98f75"
+  },
+  {
+    "asset": "Glyphs.MCP.zip",
+    "size": 159098238,
+    "sha256": "a66248d11c9c35f53fa43687a8763cd2f6ea0ecab1bf9794d212e610bf9a898f"
+  },
+  {
+    "asset": "SHA256SUMS",
+    "size": 421,
+    "sha256": "615f50591e9a3d19a76f29718459629d5e1934589bdcd3986b2611a027478f9c"
+  }
+]

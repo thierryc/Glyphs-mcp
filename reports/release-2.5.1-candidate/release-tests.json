@@ -1,0 +1,22 @@
+{
+  "profile": "focused",
+  "release": {
+    "version": "2.5.1",
+    "channel": "stable",
+    "betaNumber": 0,
+    "releaseVersion": "2.5.1",
+    "tag": "v2.5.1",
+    "branch": "main",
+    "label": "2.5.1",
+    "registryURL": "https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/templates/registry.json",
+    "feedURL": "https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml",
+    "installerBuild": 74
+  },
+  "scope": {
+    "baseline": "v2.5.0",
+    "swiftImplementationUnchanged": true,
+    "dependencyInputsUnchanged": true
+  },
+  "sourceFingerprint": "341500e26a0776568c44a3e963de06fd332cddc01fb26173258b8d28ec46d034",
+  "limitations": "No full Swift suite or VM matrix; signing, notarization and final artifact verification remain mandatory."
+}
