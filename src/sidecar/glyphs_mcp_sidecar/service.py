@@ -30,6 +30,7 @@ from .script_service import mutation_guard
 from .source import SourceError, snapshot_source, source_hash
 from .worker import GlyphsCliWorker
 from . import job_preparation
+from . import health_cleanup
 
 from .job_requests import JOB_KINDS
 OUTLINE_WRITE_CAPABILITIES = ("outline.edit.v1", "outline.remove-node.v1", "outline.background.edit.v1")
@@ -95,6 +96,7 @@ class SidecarService:
                     self.jobs.release_bulk_artifacts(job["id"])
         # Load retained workflows during startup, never as a side effect of opening Tasks.
         _ = self.edit_workflows
+        self.health_cleanup = health_cleanup.HealthCleanupPolicy(self)
 
     @property
     def edit_workflows(self):
@@ -129,6 +131,7 @@ class SidecarService:
         from .font_comparison import start
         return start(self, ServiceError, baseline_files, candidate_files, options)
 
+    @health_cleanup.status
     def get_status(self) -> dict[str, Any]:
         try:
             bridge = {"reachable": True, **dict(self.bridge.status())}

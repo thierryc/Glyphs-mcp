@@ -154,6 +154,10 @@ class BridgeClient:
     def operation(self, job_id: str) -> dict[str, Any]:
         return self._post("/v1/operation", {"jobId": job_id})
 
+    def release_preview(self, job_id, document_id, bridge_session_id):
+        return self._post('/v1/preview/release', dict(jobId=job_id, documentId=document_id,
+                                                   bridgeSessionId=bridge_session_id))
+
     def discard(self, job_id: str) -> dict[str, Any]:
         return self._post("/v1/discard", {"jobId": job_id})
 

@@ -141,6 +141,7 @@ class BridgeCore:
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             "bridgeSessionId": self.bridge_session_id,
+            "previewReleaseVersion": 1,
             **IDENTITY, "host": self.host,
             "readCapabilities": list(READ_CAPABILITIES),
             "writeCapabilities": write_capabilities,

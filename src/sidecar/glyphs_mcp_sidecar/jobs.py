@@ -56,6 +56,45 @@ class JobStore:
         with self._lock:
             return sum(len(self._statuses.get(state, ())) for state in statuses)
 
+    def cleanup_records(self, limit=128):
+        """Bounded metadata only: never copy source, reports or closed history."""
+        with self._lock:
+            identities = set().union(*(self._statuses.get(state, ()) for state in
+                ('ready', 'applied', 'applying', 'preparing', 'discarding', 'accepting', 'accept_uncertain', 'interrupted')))
+            identities.update(self._unresolved)
+            for state in ('failed', 'cancelled'):
+                for key in self._statuses.get(state, ()):
+                    row = self._index[key]
+                    failure = row.get('error') or {}
+                    details = failure.get('details') or {}
+                    if (failure.get('code') in {'restoration_unverified', 'bridge_operation_lost'}
+                            or details.get('execution') == 'uncertain' or details.get('writeAttempted')
+                            or details.get('partialEditsPossible')):
+                        identities.add(key)
+            from .preview_cleanup import pending
+            identities.update(key for state in ('cancelled', 'discarded') for key in self._statuses.get(state, ())
+                              if pending(self._index[key]))
+            rows = sorted((self._index[key] for key in identities),
+                          key=lambda row: (not (row['status'] == 'ready' or pending(row)), row['createdAt']))
+            result = []
+            for row in rows[:limit]:
+                item = {key: row.get(key) for key in ('id', 'status', 'phase', 'createdAt', 'updatedAt',
+                    'finishedAt', 'resultKind', 'preparationRoute', 'nativePreviewReleased', 'inputKind')}
+                item['document'] = {key: (row.get('document') or {}).get(key) for key in ('id', 'familyName')}
+                item['request'] = {'kind': row['request']['kind']}
+                failure = row.get('error') or {}
+                item['error'] = dict(code=failure.get('code'), details={key: (failure.get('details') or {}).get(key)
+                    for key in ('execution', 'writeAttempted', 'partialEditsPossible')})
+                operation = row.get('bridgeOperation') or {}
+                item['bridgeOperation'] = {key: copy.deepcopy(operation.get(key)) for key in
+                    ('status', 'recoveryAvailable', 'restorationClosed')}
+                evidence = operation.get('scriptResult') or {}
+                item['bridgeOperation']['scriptResult'] = {key: copy.deepcopy(evidence.get(key)) for key in
+                    ('executed', 'recovery', 'beforeRunRestored', 'savedVersionRestored')}
+                item['hasSaveOrRestore'] = bool(row.get('saveRequest') or row.get('restoreRequest'))
+                result.append(item)
+            return result, len(rows)
+
     def recent(self, limit, *, exclude_statuses=()):
         with self._lock:
             selected = []

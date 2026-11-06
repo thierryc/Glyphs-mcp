@@ -170,6 +170,9 @@ class BridgeHTTPServer:
                     return owner.core.operation(str(payload.get("jobId") or ""))
                 if self.path == "/v1/discard":
                     return owner.core.discard(str(payload.get("jobId") or ""))
+                if self.path == '/v1/preview/release':
+                    from .preview_release import release
+                    return release(owner.core, payload, BridgeError)
                 if self.path == "/v1/accept":
                     return owner.core.begin_accept(
                         str(payload.get("jobId") or ""), payload.get("save")

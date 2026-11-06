@@ -199,13 +199,14 @@ def start_cleanup(service, *, interval=3600):
         next_history = 0
         while not stopped.is_set():
             try:
+                service.health_cleanup.run_once()
                 expire(service)
                 if time.monotonic() >= next_history:
                     cleanup(service)
                     next_history = time.monotonic() + interval
             except Exception:
                 logging.getLogger(__name__).info('Task maintenance postponed; retained records were left intact.')
-            if stopped.wait(min(interval, 60)):
+            if stopped.wait(min(interval, 15)):
                 break
     thread = Thread(target=run, name='glyphs-history-retention', daemon=True)
     thread.start()
