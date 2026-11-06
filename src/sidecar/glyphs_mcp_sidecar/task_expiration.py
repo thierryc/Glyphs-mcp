@@ -131,7 +131,9 @@ def expire(service, *, now=None, limit=100):
             if (job['id'] not in owned and job['status'] in {'interrupted', 'accept_uncertain', 'applied'}
                     and due(job, now=now, workflow=False, days=days)):
                 candidates.append((job, job, False))
-        if not candidates:
+        from . import preview_cleanup
+        repairs = [job for job in jobs.values() if preview_cleanup.pending(job)]
+        if not candidates and not repairs:
             return 0
         try:
             native = service.bridge.status()
@@ -140,6 +142,20 @@ def expire(service, *, now=None, limit=100):
         if not isinstance(native, dict) or type(native.get('activeOperations')) is not int or native['activeOperations'] != 0:
             return 0
         with service.lifecycle.mutation():
+            # Cancellation already revoked intent. Repair its native preview even
+            # when the workflow is closed and no inactivity deadline is due.
+            for job in repairs[:limit]:
+                try:
+                    with service._lock:
+                        if service.jobs.get(job['id']) != job:
+                            continue
+                        preview_cleanup.release(service, job, workflows.error)
+                except workflows.error as exc:
+                    if exc.code == 'preview_release_unverified':
+                        continue  # One uncertain result must not strand other previews.
+                    break
+                except Exception:
+                    break  # Retry on the next maintenance pass, preserving evidence.
             for value, job, workflow in candidates[:limit]:
                 try:
                     released = _released(service, value, job)

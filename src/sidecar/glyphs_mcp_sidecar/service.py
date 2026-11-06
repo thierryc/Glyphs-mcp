@@ -638,7 +638,10 @@ class SidecarService:
             job = self._job(job_id)
             self._require_available_operation(job)
             if job["status"] in {"discarded", "cancelled"}:
-                return self._public(job, include_preview=include_preview)
+                from . import preview_cleanup
+                if preview_cleanup.pending(job):
+                    preview_cleanup.release(self, job, ServiceError)
+                return self._public(self._job(job_id), include_preview=include_preview)
             if job["status"] in {"accepted", "accept_uncertain"}:
                 raise ServiceError(
                     "job_not_discardable",
@@ -654,7 +657,10 @@ class SidecarService:
                     cancel.set()
                 return self._public(self.jobs.update(job["id"], status="cancelling"), include_preview=include_preview)
             if job["status"] == "ready":
-                if job.get("preparationRoute") == "native":
+                if job['request']['kind'] == 'python_script':
+                    from . import preview_cleanup
+                    preview_cleanup.release(self, job, ServiceError)
+                elif job.get("preparationRoute") == "native":
                     self.bridge.discard(job["id"])
                 job = self.jobs.update(job["id"], status="discarded")
                 self.jobs.release_bulk_artifacts(job["id"])

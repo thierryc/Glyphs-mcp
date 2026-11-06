@@ -67,6 +67,7 @@ def native(tmp_path,monkeypatch):
         def reviewed_script(self,key):return saved_script.review_result(core,key,BridgeError)
         def run_script(self,request):return self.invoke(core.begin_script,request)
         def operation(self,key):return core.operation(key)
+        def discard(self,key):return self.invoke(core.discard,key)
         def finish_script(self,key):return core.finish_script(key)
         def restore_saved_script(self,request):return self.invoke(lambda r:saved_script.restore(core,r,BridgeError),request)
         def duplicate_document(self,request):

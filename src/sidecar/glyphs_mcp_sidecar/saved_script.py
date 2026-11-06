@@ -25,7 +25,7 @@ def invalidate(service, document_id=None):
 def prepare(service, job, cancel):
     doc = job['document']
     fingerprint = None  # Live state, not a saved file, is the execution baseline.
-    service.jobs.update(job['id'], phase='preparing_native')
+    service.jobs.update(job['id'], phase='preparing_native', preparationRoute='native')
     try:
         if cancel.is_set(): raise WorkerError('job cancelled')
         operation = service.bridge.review_script(dict(jobId=job['id'], documentId=doc['id'], generation=doc['generation'],
@@ -38,18 +38,18 @@ def prepare(service, job, cancel):
             failure = operation.get('error') or dict(code='job_failed', message='script preparation did not finish')
             raise BridgeClientError(failure['code'], failure['message'], failure.get('details'))
         report = service.bridge.reviewed_script(job['id'])
+        path = service.jobs.write_json(job['id'], 'report.json', report)
+        from .job_preparation import _mutation_report
+        with service._lock:
+            if cancel.is_set() or service.jobs.get(job['id'])['status'] != 'preparing':
+                raise WorkerError('job cancelled')
+            service.jobs.update(job['id'], status='ready', resultKind='script', sourceHash=fingerprint,
+                                summary=job['request']['options'].get('summary', 'Native Python script'), changeCount=None, sample=[],
+                                report=_mutation_report(report, path))
     except Exception:
         try: service.bridge.discard(job['id'])
         except Exception: pass  # Preparation is read-only; it cannot have executed Python.
         raise
-    path = service.jobs.write_json(job['id'], 'report.json', report)
-    from .job_preparation import _mutation_report
-    with service._lock:
-        if cancel.is_set() or service.jobs.get(job['id'])['status'] != 'preparing':
-            raise WorkerError('job cancelled')
-        service.jobs.update(job['id'], status='ready', resultKind='script', sourceHash=fingerprint,
-                            summary=job['request']['options'].get('summary', 'Native Python script'), changeCount=None, sample=[],
-                            report=_mutation_report(report, path))
 
 
 def execution_request(job, report, error):
