@@ -596,7 +596,8 @@
 "Replace existing skill copies with verified backups?" = "Remplacer les compétences existantes en conservant des sauvegardes vérifiées ?";
 "Replace with backup" = "Remplacer avec sauvegarde";
 "Remove this installed skill? A backup will be kept." = "Supprimer cette compétence installée ? Une sauvegarde sera conservée.";
-"Manage AI Agent Setup" = "Configurer les agents IA";
+"Included skills are installed when you set up a compatible AI agent." = "Les compétences incluses sont installées lors de la configuration d’un agent IA compatible.";
+"Open AI Agents" = "Ouvrir Agents IA";
 "Codex / Cursor (shared copy)" = "Codex / Cursor (copie partagée)";
 "Install / Update Selected" = "Installer / mettre à jour la sélection";
 "Replace with backup…" = "Remplacer avec sauvegarde…";
@@ -698,7 +699,6 @@
 "Uninstall this skill?" = "Désinstaller cette compétence ?";
 "Uninstall %@?" = "Désinstaller %@ ?";
 "Uninstall %@ connection?" = "Désinstaller la connexion %@ ?";
-"Manage included skills with your AI agent setup." = "Gérez les compétences incluses dans la configuration de votre agent IA.";
 "Choose the agent and location for this skill." = "Choisissez l’agent et l’emplacement pour cette compétence.";
 "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "Cette compétence utilise un dossier local lié. Mettre à jour installe une copie gérée ici ; Désinstaller détache le lien. Les deux conservent votre dossier d’origine.";
 "Choose an agent to uninstall this skill from" = "Choisissez l’agent pour lequel désinstaller cette compétence";

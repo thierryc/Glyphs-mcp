@@ -268,13 +268,8 @@ private struct DesktopSkillCard: View {
     let progress: String?
     let installedTargets: [LocalSkillTarget]
     let uninstall: (LocalSkillTarget) -> Void
-    let action: () -> Void
     let open: () -> Void
     private var presentation: SkillCardPresentation { .init(skill) }
-    private var actionTitle: String {
-        if skill.bundled { return installed ? "Manage" : "Install" }
-        return installed ? "Update" : "Install"
-    }
 
     var body: some View {
         DesktopCatalogCard(previewHeight: nil, detailMinimumHeight: 48) {
@@ -292,35 +287,40 @@ private struct DesktopSkillCard: View {
                 symbol: installed ? "checkmark.circle.fill" : "circle", spinning: checking || progress != nil)
             if hasUpdate { Text("Update available").font(.caption).foregroundStyle(.secondary) }
         } actions: {
-            HStack(alignment: .bottom, spacing: 8) {
-                DesktopActionRow {
-                    if let progress {
-                        DesktopActionButton(title: progress, action: {}).disabled(true)
-                    } else {
-                        if skill.bundled || !installed || hasUpdate {
-                            DesktopActionButton(title: actionTitle,
-                                symbol: !installed ? "arrow.down.to.line" : hasUpdate ? "arrow.clockwise" : nil,
-                                emphasis: installed ? .secondary : .primary, action: action)
-                                .disabled(checking)
-                                .help(LocalizedStringKey(skill.bundled ? "Manage included skills with your AI agent setup." : "Choose the agent and location for this skill."))
-                        }
-                        if !skill.bundled && installed {
-                            if installedTargets.count == 1, let target = installedTargets.first {
-                                DesktopActionButton(title: "Uninstall") { uninstall(target) }.disabled(checking)
-                            } else {
-                                Menu("Uninstall") {
-                                    ForEach(installedTargets) { target in
-                                        Button(LocalizedStringKey(target.title)) { uninstall(target) }
-                                    }
-                                }.menuStyle(.borderedButton).buttonBorderShape(.capsule).tint(.gray)
-                                    .fixedSize().disabled(checking || installedTargets.isEmpty)
-                                    .accessibilityLabel("Choose an agent to uninstall this skill from")
+            if skill.bundled {
+                DesktopActionButton(title: "Details", action: open)
+                    .accessibilityLabel("Details for " + presentation.title)
+            } else {
+                HStack(alignment: .bottom, spacing: 8) {
+                    DesktopActionRow {
+                        if let progress {
+                            DesktopActionButton(title: progress, action: {}).disabled(true)
+                        } else {
+                            if !installed || hasUpdate {
+                                DesktopActionButton(title: installed ? "Update" : "Install",
+                                    symbol: installed ? "arrow.clockwise" : "arrow.down.to.line",
+                                    emphasis: installed ? .secondary : .primary, action: open)
+                                    .disabled(checking)
+                                    .help("Choose the agent and location for this skill.")
+                            }
+                            if installed {
+                                if installedTargets.count == 1, let target = installedTargets.first {
+                                    DesktopActionButton(title: "Uninstall") { uninstall(target) }.disabled(checking)
+                                } else {
+                                    Menu("Uninstall") {
+                                        ForEach(installedTargets) { target in
+                                            Button(LocalizedStringKey(target.title)) { uninstall(target) }
+                                        }
+                                    }.menuStyle(.borderedButton).buttonBorderShape(.capsule).tint(.gray)
+                                        .fixedSize().disabled(checking || installedTargets.isEmpty)
+                                        .accessibilityLabel("Choose an agent to uninstall this skill from")
+                                }
                             }
                         }
                     }
+                    Button("Details", action: open).buttonStyle(.link).font(.caption).fixedSize()
+                        .accessibilityLabel("Details for " + presentation.title)
                 }
-                Button("Details", action: open).buttonStyle(.link).font(.caption).fixedSize()
-                    .accessibilityLabel("Details for " + presentation.title)
             }
         } footer: {
             EmptyView()
@@ -374,7 +374,6 @@ struct DesktopSkillsView: View {
                             progress: model.activeSkillID == skill.id ? (model.activeOperation == .remove ? "Uninstalling…" : model.activeOperation?.progressLabel) : nil,
                             installedTargets: LocalSkillTarget.allCases.filter { $0.supports(skill) && model.observations[skill.id]?[$0]?.isInstalled == true },
                             uninstall: { cardRemoval = CardRemoval(skill: skill, target: $0) },
-                            action: { if skill.bundled { manageAgents() } else { model.inspect(skill) } },
                             open: { model.inspect(skill) })
                             .disabled(model.busy)
                     }
@@ -457,8 +456,11 @@ struct DesktopSkillsView: View {
             if skill.bundled {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Included with Glyphs MCP").font(.headline)
-                    Text("Manage this skill with your AI agent setup.").foregroundStyle(.secondary)
-                    Button("Manage AI Agent Setup") { model.selected = nil; manageAgents() }
+                    Text("Included skills are installed when you set up a compatible AI agent.").foregroundStyle(.secondary)
+                    Button("Open AI Agents") {
+                        model.selected = nil
+                        manageAgents()
+                    }
                         .disabled(model.busy || installer.operationsBusy)
                     ForEach(model.bundledObservations[skill.id] ?? [], id: \.self) {
                         Text($0).foregroundStyle(.secondary).textSelection(.enabled)

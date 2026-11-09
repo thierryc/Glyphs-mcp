@@ -596,7 +596,8 @@
 "Replace existing skill copies with verified backups?" = "替换现有技能副本并保留经过验证的备份？";
 "Replace with backup" = "备份后替换";
 "Remove this installed skill? A backup will be kept." = "移除此已安装的技能？将保留备份。";
-"Manage AI Agent Setup" = "管理 AI 智能体设置";
+"Included skills are installed when you set up a compatible AI agent." = "配置兼容的 AI 智能体时会安装随附的技能。";
+"Open AI Agents" = "打开 AI 智能体";
 "Codex / Cursor (shared copy)" = "Codex / Cursor（共享副本）";
 "Install / Update Selected" = "安装/更新所选项";
 "Replace with backup…" = "备份后替换…";
@@ -698,7 +699,6 @@
 "Uninstall this skill?" = "卸载此技能？";
 "Uninstall %@?" = "卸载 %@？";
 "Uninstall %@ connection?" = "卸载 %@ 连接？";
-"Manage included skills with your AI agent setup." = "在 AI 代理设置中管理内置技能。";
 "Choose the agent and location for this skill." = "为此技能选择代理和位置。";
 "This skill uses a linked local folder. Update installs a managed copy here; Uninstall detaches the link. Both keep your original folder." = "此技能使用链接的本地文件夹。更新将在此处安装托管副本；卸载会断开链接。两者均保留原始文件夹。";
 "Choose an agent to uninstall this skill from" = "选择要卸载此技能的代理";
