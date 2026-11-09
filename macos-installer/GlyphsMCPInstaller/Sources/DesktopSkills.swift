@@ -633,6 +633,10 @@ private struct SkillDetailsSheet: View {
             VStack(alignment: .leading, spacing: 3) {
                 path(copy.status.path)
                 versionStatus(copy.status)
+                if copy.placement == .cursorPlugin {
+                    Text("Installed via the Glyphs MCP plugin")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 let others = copy.placement.agents.filter { $0 != agent }.map(\.title)
                 if !others.isEmpty {
                     Text("Also visible in \(others.joined(separator: ", "))").font(.caption).foregroundStyle(.secondary)
