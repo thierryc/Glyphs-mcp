@@ -1,0 +1,101 @@
+{
+  "observedAt": "2026-11-05T20:27:58.461319+00:00",
+  "architecture": "arm64",
+  "release": {
+    "version": "2.6.0",
+    "releaseVersion": "2.6.0",
+    "channel": "stable",
+    "betaNumber": 0,
+    "installerBuild": 75
+  },
+  "bridgeSessionId": "5b9aa1c3b3ff49e18a65ed5935185fad",
+  "sidecarCodeHash": "sha256:6171dce224b27eaf7ef696775cecb61701829ba2c3e46b7186f40503c154dae5",
+  "bridgeCodeHash": "sha256:08372b95c366b8119807eb43a429435a5082a4e8eda85e85cf70c0ec2ed56de7",
+  "installedAndLoadedIdentitiesMatch": true,
+  "installedAppMatchesVerifiedReceipt": true,
+  "agentPackage": {
+    "name": "glyphs-mcp",
+    "releaseVersion": "2.6.0",
+    "schemaVersion": 1,
+    "skillsDigest": "sha256:6396eb59db2bd3ef8f8d28a4f8e8f562154ac64f44dcf8515c6c7549707f9888",
+    "version": "2.6.0"
+  },
+  "health": {
+    "version": 1,
+    "available": true,
+    "bridgeSessionId": "5b9aa1c3b3ff49e18a65ed5935185fad",
+    "revision": 107,
+    "observedAt": 1793910472.405526,
+    "signals": {
+      "documents": {
+        "observedAt": 1793910422.3048809,
+        "available": true,
+        "fontCount": 0,
+        "unsavedCount": 0,
+        "editTabCount": 0,
+        "inspectedFonts": 0,
+        "complete": true,
+        "ageSeconds": 50.10029633299564,
+        "stale": false
+      },
+      "pressure": {
+        "observedAt": 1793909090.2282932,
+        "available": false,
+        "value": "unknown",
+        "subscriptionActive": true,
+        "ageSeconds": 1382.1899105829943,
+        "stale": false
+      },
+      "footprint": {
+        "observedAt": 1793910459.456497,
+        "available": true,
+        "bytes": 219808920,
+        "processId": 89786,
+        "processStarted": 4381042381323,
+        "sampleCount": 60,
+        "growthBytes": 94027896,
+        "ageSeconds": 12.94893862499157,
+        "stale": false
+      },
+      "dispatch": {
+        "observedAt": 1793910427.696748,
+        "available": true,
+        "schedulingSeconds": 0.002921417006291449,
+        "ageSeconds": 44.70846741698915,
+        "stale": false,
+        "pendingSeconds": 0
+      }
+    },
+    "state": "normal",
+    "reasons": [],
+    "recommendedActions": [],
+    "admission": {
+      "deferExpensiveWork": false,
+      "retryAfterSeconds": 0
+    },
+    "fontWarningThreshold": 8,
+    "workload": {
+      "activeOperations": 0,
+      "retainedRecovery": 0
+    }
+  },
+  "statusLatency": {
+    "bridge": {
+      "requests": 100,
+      "clients": 4,
+      "p95Milliseconds": 6.423540995456278,
+      "maxMilliseconds": 214.15991598041728
+    },
+    "sidecar": {
+      "requests": 100,
+      "clients": 4,
+      "p95Milliseconds": 7.642291020601988,
+      "maxMilliseconds": 8.97304099635221
+    }
+  },
+  "companionClosedTest": false,
+  "nativeSmoke": "Disposable font created, identical retry reused original document, close succeeded without save or discard; no fonts remain open.",
+  "port": 9680,
+  "autoStart": true,
+  "limits": "Readiness smoke only. Blocked-scheduler native acceptance, injected pressure, full soak, clean installation, and signed upgrade gates remain unperformed."
+}

@@ -9,7 +9,12 @@
   preserving queued intent, idempotency and recovery.
 - Add companion health details and a shared configurable soft font warning.
 - Keep status reads independent of native execution and job reconciliation.
+- Fit selected polygon outlines to editable curves with a measured error limit and coordinated master edits in Path Doctor.
+- Release eligible abandoned preview reservations so later tasks can proceed. Keep recovery available for edits that may have run.
+- Install skills for all compatible agents, for one agent, or for a project. Check the installed version from the skill dialog.
+- Confirm the configured MCP endpoint before enabling Copy URL in Glyphs. Keep the port field in desktop Settings in sync while preserving edits in progress.
 
+See the [2.6.0 candidate release notes](V2.6.0-RELEASE.md) for compatibility and qualification.
 
 ## 2.5.0 — stable release, build 73, 31 October 2026
 

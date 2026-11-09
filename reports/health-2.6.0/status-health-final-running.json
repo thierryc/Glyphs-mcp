@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "sidecarVersion": "2.6.0",
+  "sidecarCodeHash": "sha256:4130ffb300f20673e311fc973ea71bfb5c6079dadcc69434b3c08fce269cc2e1",
+  "bridgeVersion": "2.6.0",
+  "bridgeCodeHash": "sha256:08372b95c366b8119807eb43a429435a5082a4e8eda85e85cf70c0ec2ed56de7",
+  "bridgeSessionId": "abef485d00dc4f458ef53fc582311f4f",
+  "bridgeReachable": true,
+  "healthAvailable": true,
+  "healthState": "caution",
+  "healthRevision": 179,
+  "statusObservation": {
+    "ageSeconds": 0.048171458998695016,
+    "stale": false
+  }
+}

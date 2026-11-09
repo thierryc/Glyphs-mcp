@@ -1,16 +1,15 @@
 # Glyphs MCP agent plugin
 
 This optional repository plugin connects Codex/ChatGPT, Claude Code, Cursor,
-and GitHub Copilot CLI to the Glyphs MCP server at
-`http://127.0.0.1:9680/mcp/`. Version 2.5.0 bundles the general Glyphs launcher
-and eleven additional managed skills, including reviewed workspace scripting,
-and reusable development, for every host.
+and GitHub Copilot CLI to Glyphs MCP. The default local MCP URL is
+`http://127.0.0.1:9680/mcp/`. For a custom port, use **Edit → Glyphs MCP
+Server… → Copy URL** in Glyphs. The 2.6.0 candidate bundles 14 managed skills
+for each host, including the general Glyphs launcher and Small and Petite Caps.
 
 Host-native manifests live under `.codex-plugin/`, `.claude-plugin/`,
 `.cursor-plugin/`, and `.github/plugin/`. They all reference this package's
-single `skills/` directory and `.mcp.json`. Skills inherit the package version;
-the coordinated bridge and sidecar product version is 2.5.0. Internal Python
-package versions remain 0.1.0; they are separate from release identity.
+single `skills/` directory and `.mcp.json`. Use the package that matches the
+installed bridge and sidecar. Stable 2.5.1 bundles 13 managed skills.
 Glyphs 3 uses the separate pinned 1.11.0 bundle and skills.
 
 Glyphs remains the editor. The native bridge panel displays its status and a

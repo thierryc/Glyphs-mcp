@@ -5,10 +5,12 @@ title: Start and stop the server
 Open **Edit → Glyphs MCP Server…** in Glyphs. The command is available even with no font open.
 
 - **Start** connects the native bridge and starts the external MCP server.
-- **Stop** stops the server and its Glyphs connection. Stop is refused during an active native write; external preparation is cancelled on shutdown.
+- **Stop** stops the MCP server. Finish active work and resolve pending recovery before stopping it.
 - The automatic-start setting controls the external server at the next login.
 
-The bridge is application-wide. Opening another document does not undo a manual Stop, and closing one document does not stop the shared service.
+The internal Glyphs bridge stays available when the MCP server is stopped.
+It is shared across documents, so opening or closing a font does not change
+whether the MCP server is running.
 
 ## MCP port
 

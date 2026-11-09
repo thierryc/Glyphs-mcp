@@ -1,0 +1,12 @@
+{
+  "removedOwnedTemporaryPayloads": [
+    "health-payload-a",
+    "health-payload-b",
+    "health-final-payload-a",
+    "health-final-payload-b",
+    "health-startup-payload-a",
+    "health-startup-payload-b",
+    "health-qualified-payload-a",
+    "health-qualified-payload-b"
+  ]
+}

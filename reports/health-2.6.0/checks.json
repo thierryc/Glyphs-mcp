@@ -1,0 +1,36 @@
+{
+  "version": "2.6.0",
+  "installerBuild": 75,
+  "python": {
+    "passed": 3458,
+    "skipped": 3,
+    "seconds": 291.32,
+    "log": "build/release-test-run.XZxBEB/python.log",
+    "fullMatrix": true
+  },
+  "desktop": {
+    "passed": 327,
+    "log": "build/release-test-run.XZxBEB/desktop.log"
+  },
+  "documentation": true,
+  "managedSkills": 14,
+  "publicTools": 22,
+  "deterministicPayloads": true,
+  "privateRuntimes": [
+    "arm64",
+    "x86_64 (Rosetta)"
+  ],
+  "installedAndLoadedCandidateVerified": true,
+  "nativeJobRegressionVerified": false,
+  "realOneHourSoak": false,
+  "cleanInstallAndUpgradeVerified": false,
+  "signed": false,
+  "notarized": false,
+  "published": false,
+  "serialReleaseGate": {
+    "passed": true,
+    "seconds": 477,
+    "log": "build/health-status-fix-frozen-release-gate.log"
+  },
+  "statusHealthPerformanceVerified": true
+}

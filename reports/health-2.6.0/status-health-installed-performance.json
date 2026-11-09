@@ -1,0 +1,155 @@
+{
+  "observedAt": "2026-11-05T22:11:23.711316+00:00",
+  "clients": 4,
+  "scope": "Installed passive HTTP status and health; no native mutation or pressure injection.",
+  "p95GateMilliseconds": 100,
+  "endpoints": {
+    "bridge": {
+      "requests": 100,
+      "errors": 0,
+      "firstError": null,
+      "p95Milliseconds": 24.175208003725857,
+      "maxMilliseconds": 34.96254200581461,
+      "version": "2.6.0",
+      "codeHash": "sha256:08372b95c366b8119807eb43a429435a5082a4e8eda85e85cf70c0ec2ed56de7",
+      "health": {
+        "version": 1,
+        "available": true,
+        "bridgeSessionId": "abef485d00dc4f458ef53fc582311f4f",
+        "revision": 45,
+        "observedAt": 1793916683.896523,
+        "signals": {
+          "documents": {
+            "observedAt": 1793916051.9595368,
+            "available": true,
+            "fontCount": 0,
+            "unsavedCount": 0,
+            "editTabCount": 0,
+            "inspectedFonts": 0,
+            "complete": true,
+            "ageSeconds": 631.9350404170109,
+            "stale": false
+          },
+          "pressure": {
+            "observedAt": 1793916116.052727,
+            "available": true,
+            "value": "warning",
+            "subscriptionActive": true,
+            "ageSeconds": 567.8420374999987,
+            "stale": false
+          },
+          "footprint": {
+            "observedAt": 1793916669.496455,
+            "available": true,
+            "bytes": 124765192,
+            "processId": 1567,
+            "processStarted": 4548175767587,
+            "sampleCount": 42,
+            "growthBytes": 15040560,
+            "ageSeconds": 14.400021209003171,
+            "stale": false
+          },
+          "dispatch": {
+            "available": false,
+            "pendingSeconds": 0
+          }
+        },
+        "state": "caution",
+        "reasons": [
+          "memory_pressure_warning"
+        ],
+        "recommendedActions": [
+          "reuse_open_documents",
+          "process_sequentially",
+          "avoid_unnecessary_tabs"
+        ],
+        "admission": {
+          "deferExpensiveWork": false,
+          "retryAfterSeconds": 0
+        },
+        "fontWarningThreshold": 8,
+        "workload": {
+          "activeOperations": 0,
+          "retainedRecovery": 0
+        }
+      },
+      "passed": true
+    },
+    "companion": {
+      "requests": 100,
+      "errors": 0,
+      "firstError": null,
+      "p95Milliseconds": 31.017250003060326,
+      "maxMilliseconds": 53.763375006383285,
+      "version": "2.6.0",
+      "codeHash": "sha256:4130ffb300f20673e311fc973ea71bfb5c6079dadcc69434b3c08fce269cc2e1",
+      "health": {
+        "version": 1,
+        "available": true,
+        "bridgeSessionId": "abef485d00dc4f458ef53fc582311f4f",
+        "revision": 45,
+        "observedAt": 1793916683.969146,
+        "signals": {
+          "documents": {
+            "observedAt": 1793916051.9595368,
+            "available": true,
+            "fontCount": 0,
+            "unsavedCount": 0,
+            "editTabCount": 0,
+            "inspectedFonts": 0,
+            "complete": true,
+            "ageSeconds": 632.2830595000123,
+            "stale": false
+          },
+          "pressure": {
+            "observedAt": 1793916116.052727,
+            "available": true,
+            "value": "warning",
+            "subscriptionActive": true,
+            "ageSeconds": 568.1900565830001,
+            "stale": false
+          },
+          "footprint": {
+            "observedAt": 1793916669.496455,
+            "available": true,
+            "bytes": 124765192,
+            "processId": 1567,
+            "processStarted": 4548175767587,
+            "sampleCount": 42,
+            "growthBytes": 15040560,
+            "ageSeconds": 14.748040292004589,
+            "stale": false
+          },
+          "dispatch": {
+            "available": false,
+            "pendingSeconds": 0,
+            "ageSeconds": 0.27539758299826644,
+            "stale": false
+          }
+        },
+        "state": "caution",
+        "reasons": [
+          "memory_pressure_warning"
+        ],
+        "recommendedActions": [
+          "reuse_open_documents",
+          "process_sequentially",
+          "avoid_unnecessary_tabs"
+        ],
+        "admission": {
+          "deferExpensiveWork": false,
+          "retryAfterSeconds": 0
+        },
+        "fontWarningThreshold": 8,
+        "workload": {
+          "activeOperations": 0,
+          "retainedRecovery": 0
+        },
+        "cacheAgeSeconds": 0.27539758299826644
+      },
+      "passed": true
+    }
+  },
+  "matchingBridgeSession": true,
+  "passed": true
+}

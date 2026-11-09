@@ -1,0 +1,31 @@
+{
+  "version": "2.6.0",
+  "build": "75",
+  "assets": [
+    "ClaudeCodeLogo",
+    "ClaudeLogo",
+    "CodexLogo",
+    "CursorLogo",
+    "GitHubMark",
+    "GlyphsMCPMenu"
+  ],
+  "beztrace": {
+    "version": "0.2.1",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+    "engineSHA256": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9"
+  },
+  "pierre": {
+    "version": "1.2.4",
+    "commit": "c2249d7890de957a96480711152d90a06fa1222b",
+    "bundleSHA256": "85b2d3baee782ee0d225540c6fd4af4ffdc7cfc4c6e4e3ae5d7cc0f3053feb14",
+    "resources": {
+      "pierre-diffs-bundle.js": "ca23ab86d10ad5262fcd986790c626e5f13e0317369bbb95a0543b84be6394a2",
+      "pierre-diffs-edit-bundle.js": "6c19dea9fc1a55330fda299a1900407cb39766e4c43dd807fa7798c16f519965"
+    }
+  },
+  "appSHA256": "99caad6de3d124db16e5941da6e0e49774f30d66c3ae30741d8fcc97d016dfd5"
+}

@@ -1,0 +1,9 @@
+{
+  "scope": "isolated source transport; not loaded Glyphs",
+  "requests": 100,
+  "clients": 4,
+  "bridgeHTTPP95Milliseconds": 13.01595801487565,
+  "sidecarCachedP95Milliseconds": 0.048999994760379195,
+  "nativeCallbacks": 0,
+  "passed": true
+}

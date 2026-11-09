@@ -1,0 +1,22 @@
+{
+  "scope": "Read-only baseline; installed runtime was not replaced or restarted.",
+  "release": {
+    "version": "2.5.1",
+    "releaseVersion": "2.5.1",
+    "channel": "stable",
+    "betaNumber": 0,
+    "installerBuild": 74
+  },
+  "sidecarCodeHash": "sha256:88304202adb7120ecfc83313d6fc88f63a9de12174bb54791f1b34f5b28c681d",
+  "bridge": {
+    "reachable": false,
+    "error": {
+      "code": "glyphs_busy",
+      "message": "Queued Glyphs call cancelled",
+      "details": {
+        "execution": "cancelled"
+      }
+    }
+  },
+  "activeCount": 1
+}

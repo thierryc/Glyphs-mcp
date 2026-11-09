@@ -1,0 +1,10 @@
+{
+  "previousProcessId": 89423,
+  "previousSidecarHash": "sha256:6171dce224b27eaf7ef696775cecb61701829ba2c3e46b7186f40503c154dae5",
+  "newSidecarHash": "sha256:4130ffb300f20673e311fc973ea71bfb5c6079dadcc69434b3c08fce269cc2e1",
+  "bridgeSessionId": "abef485d00dc4f458ef53fc582311f4f",
+  "glyphsRelaunched": false,
+  "activeOperationsAtRepair": 0,
+  "transaction": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/transaction-4nvo1z6l",
+  "reason": "Captured Python thread dump confirmed history/intake deadlock; safe control reservation was blocked by that deadlock."
+}

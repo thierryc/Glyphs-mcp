@@ -8,14 +8,13 @@ Opening an existing native font uses `open_document` and the shipped
 `glyphs/references/font-opening.md` guidance. It requires a coordinated bridge
 and sidecar with `document.open.v1`; it does not require a saved baseline or script.
 
-The package at `plugins/glyphs-mcp` contains manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. All four source manifests use version `2.5.0` and share the same skills. The published 2.5.0 package matches the coordinated 2.5.0 runtime. Current v2 Setup configures Codex and Claude Code with MCP plus managed skills, configures Claude Desktop's MCP entry, and installs the complete local Cursor bundle at `~/.cursor/plugins/local/glyphs-mcp`. GitHub Copilot CLI remains a package-supported host without a v2 Setup card.
+The source package at `plugins/glyphs-mcp` has **2.6.0** manifests for **Codex**, **Claude Code**, **Cursor**, and **GitHub Copilot CLI**. Setup configures Codex and Claude Code with MCP and managed skills, configures Claude Desktop's MCP entry, and installs the Cursor bundle at `~/.cursor/plugins/local/glyphs-mcp`. GitHub Copilot CLI uses the agent package directly.
 
 The agent plugin is optional for using the twenty-one data/action tools and optional card-display tool; a manual MCP
 connection can use the same server catalog. **Install All** nevertheless
 includes all four supported Setup connectors by default, even if a host is not
-detected. Use the matching 2.5.0 package with the released 2.5.0 runtime. Published 2.4.0
-packages remain matched to the released 2.4.0 runtime. Published 2.0.0
-packages remain matched to the released 2.0.0 runtime.
+detected. Use the published 2.5.1 package with the stable 2.5.1 runtime and the
+local 2.6.0 package with the 2.6.0 candidate.
 Configuration patching creates backups, preserves unrelated entries and custom
 options, and changes only Glyphs MCP. Cursor update and removal require an
 installer-owned bundle whose version and hash still match its receipt; modified
@@ -25,7 +24,8 @@ your runtime before using its workflow instructions. Use the matching local pack
 
 ## Included skills
 
-The current `skills/manifest.json` contains **fourteen managed skills**.
+The table describes the **14 managed skills** in the 2.6.0 candidate.
+Stable 2.5.1 bundles 13 skills. Small and Petite Caps joins the bundle in 2.6.0.
 
 | Skill | Use |
 | --- | --- |
@@ -82,17 +82,18 @@ the same operations and status with the complete Setup overview.
 Included means shipped with this app; it is separate from installation status.
 Compact text cards show each workflow’s goal and whether it is included, installed
 or available. Open Details for client copies, instructions, source and licensing.
-Included skills link to AI Agent Setup; additional skills offer installation,
-explicit updates and removal from their detail view.
+Open **Details** for any skill. **All agents** installs missing copies across
+your projects, **By agent** manages individual copies, and **One project**
+installs for all compatible local agents in a chosen folder. Use **Manage plugin**
+for copies supplied by a plugin.
 There is no global on/off switch: skill discovery belongs to each client and does
 not enable or disable the corresponding MCP tools.
 
 Supplemental Codex/Cursor skills share `~/.agents/skills`; existing copies in
 `~/.codex/skills` or `~/.cursor/skills` are detected and updated in their actual
-location. Claude Code uses
-`~/.claude/skills`. Choose Project scope and select a folder to install into
-`.agents/skills` or `.claude/skills` inside that project. Installation does not
-commit project files or alter existing bundled-skill locations.
+location. Claude Code uses `~/.claude/skills`. In **One project**, choose a
+folder to install into `.agents/skills` or `.claude/skills` for the compatible
+agents. Project installation leaves global copies in place.
 
 **Import from GitHub** accepts a public repository URL with separate directory
 and optional revision fields. It resolves an immutable commit, lets you choose
@@ -100,13 +101,12 @@ from multiple skills and keeps the import personal and unreviewed. Inspect its
 instructions, file list, license and dependencies before installation. Private
 repository authentication and Gist import are not included in this release.
 
-Updates apply only when selected. Details offers Install/Update and Remove for
-each supported agent. Edited or unmanaged copies require explicit confirmation
-and a backup before replacement or removal. Linked folders are labelled: Update
-replaces only the link with a managed copy after confirmation; Remove detaches
-the link. Both preserve its external source folder. Competing copies in other
-Codex/Cursor locations are preserved. Backups stay outside skill discovery with
-exact restoration paths. Supplemental receipts are independent of bundled Setup receipts.
+A circled check shows that the installed files match the bundled version or
+pinned catalog revision. **Reinstall** stays available for a matching copy.
+**Update** is highlighted when a managed copy differs from the available
+package. Locally edited or unverified copies require confirmation and a backup
+before replacement or removal. When a copy is linked, the action changes only
+the link and preserves its source folder. Find backup paths under **Advanced**.
 
 **Export ZIP** produces a complete skill folder for guided upload to ChatGPT or
 Claude where account permissions allow. Export is not installation. Upload and

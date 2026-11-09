@@ -1,0 +1,19 @@
+{
+  "version": "2.6.0",
+  "installerBuild": 75,
+  "sourceSHA256": "1171ca2edcfcbe8992a410b87b9a551fdc1d0fcd9f16a9994c6c66dd1aab9c1e",
+  "appSHA256": "0f0ed6b521cb8f7a89a6e13e64a43883e3d960d026c7ef413994e4f83c2e04c9",
+  "leanIdentity": "sha256:2af55f7a1929718b7dc668480fba07dd11fa90e7452290585132df9dbf49a0e5",
+  "sidecarCodeHash": "sha256:4130ffb300f20673e311fc973ea71bfb5c6079dadcc69434b3c08fce269cc2e1",
+  "bridgeCodeHash": "sha256:08372b95c366b8119807eb43a429435a5082a4e8eda85e85cf70c0ec2ed56de7",
+  "appPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/dist/local/Glyphs MCP.app",
+  "installedApp": "/Applications/Glyphs MCP.app",
+  "receiptPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/dist/local/build-receipt.json",
+  "scope": "Unsigned local candidate with installed/native readiness and status/health correction verified; full feature release acceptance remains pending.",
+  "serialReleaseGatePassed": true,
+  "releaseGate": "build/release-test-run.XZxBEB",
+  "pythonTestsPassed": 3458,
+  "signed": false,
+  "notarized": false,
+  "publishable": false
+}

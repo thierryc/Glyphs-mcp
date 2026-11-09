@@ -9,7 +9,7 @@ The download below remains the existing 2.5.x distribution.
 
 The server status stays visible in the top-right toolbar across views. Native outline recovery preserves readable metadata alongside stroke profiles and attributes.
 
-See the [2.5.0 qualification record](V2.5.0-RELEASE.md) for signed artifacts, checks and retained limits. Prior [2.4.0 qualification](V2.4.0-RELEASE.md) keeps its original scope.
+See the candidate changes and the stable release qualification. [2.6.0 candidate notes](V2.6.0-RELEASE.md) · [2.5.1 release record](V2.5.1-RELEASE.md)
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 

@@ -1,0 +1,12 @@
+{
+  "version": "2.6.0",
+  "installerBuild": 75,
+  "sourceSHA256": "a510b45c16f306e57d9993c33c967bb9c3bcf23689aa954cb6105cb4837bdad0",
+  "appSHA256": "99caad6de3d124db16e5941da6e0e49774f30d66c3ae30741d8fcc97d016dfd5",
+  "leanIdentity": "sha256:8a79a111b6e3fb6d43c36497ef69664e751ec27580eb27de266e1ecd00000e5b",
+  "appPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/dist/local/Glyphs MCP.app",
+  "receiptPath": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/dist/local/build-receipt.json",
+  "scope": "Unsigned local candidate; installed/runtime native acceptance not performed.",
+  "serialReleaseGatePassed": true,
+  "releaseGate": "build/release-test-run.dBI5eY"
+}

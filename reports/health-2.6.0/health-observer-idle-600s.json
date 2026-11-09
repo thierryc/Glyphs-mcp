@@ -1,0 +1,71 @@
+{
+  "scope": "isolated observer; not loaded-Glyphs/native-job qualification",
+  "durationSeconds": 600.0021954169788,
+  "cpuSeconds": 0.077795,
+  "cpuPercentOneCore": 0.012965785891155853,
+  "snapshotP95Seconds": 4.583998816087842e-06,
+  "samples": 40,
+  "pendingNativeCallbacks": 0,
+  "health": {
+    "version": 1,
+    "available": true,
+    "bridgeSessionId": "isolated-benchmark",
+    "revision": 43,
+    "observedAt": 1793895377.44048,
+    "signals": {
+      "documents": {
+        "observedAt": 1793894777.431375,
+        "available": true,
+        "fontCount": 0,
+        "unsavedCount": 0,
+        "editTabCount": 0,
+        "complete": true,
+        "ageSeconds": 600.0070252500009,
+        "stale": false
+      },
+      "pressure": {
+        "observedAt": 1793895266.583492,
+        "available": true,
+        "value": "warning",
+        "subscriptionActive": true,
+        "ageSeconds": 110.85659875001875,
+        "stale": false
+      },
+      "footprint": {
+        "observedAt": 1793895364.557596,
+        "available": true,
+        "bytes": 17465848,
+        "processId": 67238,
+        "processStarted": 4037645099894,
+        "sampleCount": 40,
+        "growthBytes": -540672,
+        "ageSeconds": 12.882837458018912,
+        "stale": false
+      },
+      "dispatch": {
+        "available": false,
+        "pendingSeconds": 0
+      }
+    },
+    "state": "caution",
+    "reasons": [
+      "memory_pressure_warning"
+    ],
+    "recommendedActions": [
+      "reuse_open_documents",
+      "process_sequentially",
+      "avoid_unnecessary_tabs"
+    ],
+    "admission": {
+      "deferExpensiveWork": false,
+      "retryAfterSeconds": 0
+    },
+    "fontWarningThreshold": 8
+  },
+  "gates": {
+    "fullIdleDuration": true,
+    "cpu": true,
+    "cachedLatency": true,
+    "noIdleNativeCallbacks": true
+  }
+}
