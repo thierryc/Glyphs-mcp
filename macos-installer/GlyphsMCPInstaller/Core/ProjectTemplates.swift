@@ -94,7 +94,13 @@ public enum ProjectFiles {
             throw ProjectError("The template contains an unsafe path.")
         }
     }
-    public static func read(_ source: URL, maximumBytes: Int = 64 * 1024 * 1024) throws -> [ProjectFile] {
+    static func isPythonCache(_ path: String, isDirectory: Bool) -> Bool {
+        path.split(separator: "/").contains("__pycache__")
+            || (!isDirectory && (path.hasSuffix(".pyc") || path.hasSuffix(".pyo")))
+    }
+
+    public static func read(_ source: URL, maximumBytes: Int = 64 * 1024 * 1024,
+                            excludingPythonCaches: Bool = false) throws -> [ProjectFile] {
         let fm = FileManager.default
         let keys: Set<URLResourceKey> = [.isSymbolicLinkKey, .isDirectoryKey, .isRegularFileKey, .fileSizeKey]
         let root = try source.resourceValues(forKeys: keys)
@@ -107,6 +113,11 @@ public enum ProjectFiles {
         var files: [ProjectFile] = []; var bytes = 0
         while let url = enumerator.nextObject() as? URL {
             if [".git", ".DS_Store"].contains(url.lastPathComponent) { enumerator.skipDescendants(); continue }
+            if excludingPythonCaches,
+               Self.isPythonCache(url.lastPathComponent, isDirectory: url.hasDirectoryPath) {
+                enumerator.skipDescendants()
+                continue
+            }
             let normalized = url.resolvingSymlinksInPath().standardizedFileURL.path
             guard normalized.hasPrefix(canonical.path + "/") else { throw ProjectError("The template contains an unsafe path.") }
             let path = String(normalized.dropFirst(canonical.path.count + 1))

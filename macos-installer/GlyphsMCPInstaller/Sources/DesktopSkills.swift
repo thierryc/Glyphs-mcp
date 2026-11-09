@@ -605,23 +605,32 @@ private struct SkillDetailsSheet: View {
             sectionHeading("By agent", subtitle: "Use in every project for the agent you choose.")
             if let scope = model.global[skill.id] {
                 ForEach(scope.agents) { agent in
-                    let installed = scope.installed(for: agent)
-                    if installed.isEmpty {
-                        if let proposed = scope.missing(for: [agent]).first {
-                            agentRow(agent, copy: proposed)
-                        }
-                    } else {
-                        ForEach(installed) { copy in agentRow(agent, copy: copy) }
-                    }
+                    agentSection(agent, scope: scope)
                 }
             }
         }
     }
 
-    private func agentRow(_ agent: SkillClient, copy: SkillCopy) -> some View {
+    private func agentSection(_ agent: SkillClient, scope: SkillScopeStatus) -> some View {
+        let copies = scope.managedCopies(for: agent)
+        return VStack(alignment: .leading, spacing: 3) {
+            Text(agent.title).font(.body.weight(.medium)).accessibilityAddTraits(.isHeader)
+            if !copies.isEmpty {
+                ForEach(copies) { copy in agentCopy(agent, copy: copy) }
+            } else if let proposed = scope.missing(for: [agent]).first {
+                agentCopy(agent, copy: proposed)
+            } else {
+                Text("Available through a shared installation")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 3)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func agentCopy(_ agent: SkillClient, copy: SkillCopy) -> some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(agent.title).font(.body.weight(.medium))
                 path(copy.status.path)
                 versionStatus(copy.status)
                 let others = copy.placement.agents.filter { $0 != agent }.map(\.title)
@@ -648,8 +657,6 @@ private struct SkillDetailsSheet: View {
                 }
             }
         }
-        .padding(.vertical, 3)
-        .accessibilityElement(children: .contain)
     }
 
     private var oneProject: some View {

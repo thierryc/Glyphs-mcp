@@ -54,24 +54,37 @@ final class SkillCatalogTests: XCTestCase {
         XCTAssertNil(edited.status.verifiedVersion)
     }
 
-    func testLinkedFolderOnlyGetsCheckWhenItsContentsMatch() throws {
+    func testLinkedFolderIgnoresPythonCachesButDetectsSourceEdits() throws {
         let installer = SupplementalSkillInstaller(home: temporary)
         let item = skill()
-        let version = SkillPackageVersion(label: "Revision aaaaaaaa", files: files())
+        let script = Data("print('original')".utf8)
+        let authored = files() + [
+            ProjectFile(path: "scripts", data: nil),
+            ProjectFile(path: "scripts/tool.py", data: script)
+        ]
+        let version = SkillPackageVersion(label: "Revision aaaaaaaa", files: authored)
         let source = temporary.appendingPathComponent("source", isDirectory: true)
         let root = temporary.appendingPathComponent(SkillPlacement.shared.rawValue, isDirectory: true)
         try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let file = source.appendingPathComponent("SKILL.md")
         try XCTUnwrap(files().first?.data).write(to: file)
+        let cache = source.appendingPathComponent("scripts/__pycache__", isDirectory: true)
+        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+        let sourceScript = source.appendingPathComponent("scripts/tool.py")
+        try script.write(to: sourceScript)
+        try Data([1]).write(to: cache.appendingPathComponent("tool.cpython-314.pyc"))
+        try Data([2]).write(to: source.appendingPathComponent("scripts/tool.pyc"))
+        try Data([3]).write(to: source.appendingPathComponent("scripts/tool.pyo"))
         let link = root.appendingPathComponent(item.name)
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: source)
 
         let current = try XCTUnwrap(installer.scopeStatus(item, package: version).installed(for: .codex).first)
         XCTAssertEqual(current.status.state, .linked)
         XCTAssertEqual(current.status.verifiedVersion, version.label)
-        XCTAssertEqual(installer.apply(.reinstall, to: [current], skill: item, files: files()).failures.count, 1)
-        try XCTUnwrap(files("Local changes").first?.data).write(to: file)
+        XCTAssertEqual(installer.apply(.reinstall, to: [current], skill: item, files: authored).failures.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: cache.appendingPathComponent("tool.cpython-314.pyc").path))
+        try Data("print('changed')".utf8).write(to: sourceScript)
         let edited = try XCTUnwrap(installer.scopeStatus(item, package: version).installed(for: .codex).first)
         XCTAssertEqual(edited.status.state, .linked)
         XCTAssertNil(edited.status.verifiedVersion)
@@ -124,6 +137,31 @@ final class SkillCatalogTests: XCTestCase {
         let plugin = try XCTUnwrap(scope.installed(for: .cursor).last)
         XCTAssertEqual(installer.apply(.remove, to: [plugin], skill: item, files: [], replace: true).failures.count, 1)
         XCTAssertTrue(FileManager.default.fileExists(atPath: plugin.status.path))
+    }
+
+    func testAgentManagementListsEachCopyUnderItsOwner() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        func createCopy(_ placement: SkillPlacement) throws {
+            let folder = temporary.appendingPathComponent(placement.rawValue).appendingPathComponent(item.name)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try XCTUnwrap(files().first?.data).write(to: folder.appendingPathComponent("SKILL.md"))
+        }
+        try createCopy(.codex)
+        try createCopy(.claudeCode)
+
+        let inherited = installer.scopeStatus(item)
+        XCTAssertEqual(inherited.installed(for: .cursor).map(\.placement), [.codex, .claudeCode])
+        XCTAssertTrue(inherited.managedCopies(for: .cursor).isEmpty)
+        XCTAssertTrue(inherited.missing(for: [.cursor]).isEmpty)
+
+        try createCopy(.cursorPlugin)
+        let withPlugin = installer.scopeStatus(item)
+        XCTAssertEqual(withPlugin.managedCopies(for: .codex).map(\.placement), [.codex])
+        XCTAssertEqual(withPlugin.managedCopies(for: .claudeCode).map(\.placement), [.claudeCode])
+        XCTAssertEqual(withPlugin.managedCopies(for: .cursor).map(\.placement), [.cursorPlugin])
+        XCTAssertTrue(try XCTUnwrap(withPlugin.managedCopies(for: .cursor).first).status.path
+            .hasSuffix(".cursor/plugins/local/glyphs-mcp/skills/test-skill"))
     }
 
     func testProjectInstallCanRetryOnlyMissingDestinations() throws {
