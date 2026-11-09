@@ -102,6 +102,31 @@
       "displayName": "Glyphs Italic First Pass"
     },
     {
+      "id": "builtin:glyphs-mcp-small-caps",
+      "name": "glyphs-mcp-small-caps",
+      "description": "Derive editable Latin small and petite capitals from uppercase in Glyphs 4, with pilot approval, protected human corrections and native proof review.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0; supporting resources retain their original licenses",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-small-caps",
+        "revision": "fcbdaaaf4c1f647611ffa56934b2441305d57b4b"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true,
+      "displayName": "Glyphs Small and Petite Caps"
+    },
+    {
       "id": "builtin:glyphs-mcp-master-compatibility",
       "name": "glyphs-mcp-master-compatibility",
       "description": "Review master-layer correspondence and prepare consistent contour start nodes.",

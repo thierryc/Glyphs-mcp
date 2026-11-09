@@ -23,7 +23,8 @@ def check_label(value):
     words = value.split()
     if (not value.startswith('Glyphs ') or len(words) < 2 or value != ' '.join(words)
             or len(value) > 40 or '-' in value or any(ord(c) < 32 for c in value)
-            or any(word[0].islower() or word[0].isdigit() for word in words[1:])):
+            or any((word[0].islower() and not (word == 'and' and 0 < index < len(words)-1))
+                   or word[0].isdigit() for index, word in enumerate(words[1:], 1))):
         raise ValueError(f'Use a short Glyphs display title with spaces: {value!r}')
 
 

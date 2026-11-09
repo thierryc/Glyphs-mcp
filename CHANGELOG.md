@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.0 — Unreleased
+
+- Add Glyphs Small and Petite Caps to derive editable Latin caps from uppercase with a reviewed pilot.
+- Keep bundled skill details in Skills and offer an explicit link to AI Agents for setup.
+
 ## 2.5.0 — stable release, build 73, 31 October 2026
 
 - Add live read-only path diagnostics and an explicit closed-seam outline operation.

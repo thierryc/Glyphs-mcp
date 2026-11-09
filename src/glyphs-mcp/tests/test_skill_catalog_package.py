@@ -25,7 +25,14 @@ def copy_catalog_fixture(destination):
 
 
 def test_packaged_catalog_matches_core_skills_and_languages():
-    assert checker.check()['bundledSkills'] == 13
+    assert checker.check()['bundledSkills'] == 14
+
+
+def test_catalog_titles_allow_internal_and_but_preserve_capitalized_names():
+    from sync_skill_catalog_metadata import check_label
+    check_label('Glyphs Small and Petite Caps')
+    for invalid in ('Glyphs small and Petite Caps', 'Glyphs Small and', 'glyphs Small Caps'):
+        with pytest.raises(ValueError): check_label(invalid)
 
 
 def test_path_doctor_download_is_self_contained_and_licensed():

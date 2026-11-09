@@ -25,6 +25,8 @@ save/discard handling and resolves no pending jobs.
 
 ## Optional workflows
 
+- To derive Latin small or petite capitals from uppercase with a reviewed pilot, use [Small and Petite Caps](../glyphs-mcp-small-caps/SKILL.md).
+
 - For structural path diagnosis and profile-preserving seam repair, use [Path Doctor](../glyphs-mcp-path-doctor/SKILL.md).
 
 - For spacing, respacing, sidebearings or widths, use [Glyphs Spacing](../glyphs-mcp-spacing/SKILL.md). Applying existing metrics keys is a separate native command from computing reference-based suggestions.

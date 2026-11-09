@@ -163,7 +163,8 @@ def validate(root=ROOT, fetch=False):
                 title = interface.get('display_name', '')
                 if (not isinstance(title, str) or not title.startswith('Glyphs ') or len(title) > 40 or '-' in title
                         or len(title.split()) < 2 or title != ' '.join(title.split())
-                        or any(word[0].islower() or word[0].isdigit() for word in title.split()[1:])):
+                        or any((word[0].islower() and not (word == 'and' and 0 < index < len(title.split())-1))
+                               or word[0].isdigit() for index, word in enumerate(title.split()[1:], 1))):
                     raise ValueError('Use a short Glyphs display title with spaces')
                 if '\n# ' + title + '\n' not in files['SKILL.md'].decode():
                     raise ValueError('Skill heading differs from UI title')

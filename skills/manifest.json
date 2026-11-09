@@ -18,6 +18,10 @@
       "surface": "glyphs-mcp-v2"
     },
     {
+      "name": "glyphs-mcp-small-caps",
+      "surface": "glyphs-mcp-v2"
+    },
+    {
       "name": "glyphs-mcp-master-compatibility",
       "surface": "glyphs-mcp-v2"
     },
