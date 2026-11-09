@@ -17,15 +17,94 @@ public enum LocalSkillTarget: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+public enum SkillPlacement: String, CaseIterable, Sendable {
+    case shared = ".agents/skills"
+    case codex = ".codex/skills"
+    case claudeCode = ".claude/skills"
+    case cursor = ".cursor/skills"
+    case cursorPlugin = ".cursor/plugins/local/glyphs-mcp/skills"
+
+    public static let localAgents: [SkillClient] = [.codex, .claudeCode, .cursor]
+
+    public var agents: [SkillClient] {
+        switch self {
+        case .shared, .codex: return [.codex, .cursor]
+        case .claudeCode: return [.claudeCode, .cursor]
+        case .cursor, .cursorPlugin: return [.cursor]
+        }
+    }
+
+    fileprivate static func preferred(for agent: SkillClient) -> Self {
+        switch agent {
+        case .codex: return .shared
+        case .claudeCode: return .claudeCode
+        default: return .cursor
+        }
+    }
+}
+
+public struct SkillCopy: Identifiable, Sendable {
+    public let placement: SkillPlacement
+    public let root: URL
+    public let status: SkillInstallationStatus
+    fileprivate let identity: String?
+    public var id: String { status.path }
+}
+
+public struct SkillScopeStatus: Sendable {
+    public let agents: [SkillClient]
+    public let copies: [SkillCopy]
+
+    public func installed(for agent: SkillClient) -> [SkillCopy] {
+        copies.filter { $0.placement.agents.contains(agent) && $0.status.isInstalled }
+    }
+
+    public func missing(for requested: [SkillClient]) -> [SkillCopy] {
+        var covered = Set(agents.filter { !installed(for: $0).isEmpty })
+        var targets: [SkillCopy] = []
+        for agent in agents where requested.contains(agent) && !covered.contains(agent) {
+            let placement = SkillPlacement.preferred(for: agent)
+            guard let target = copies.first(where: { $0.placement == placement }) else { continue }
+            targets.append(target)
+            covered.formUnion(placement.agents)
+        }
+        return targets
+    }
+}
+
+public enum SkillCopyOperation: Equatable, Sendable {
+    case install, reinstall, update, remove
+}
+
+public struct SkillBatchResult: Sendable {
+    public var completed: [String] = []
+    public var failures: [String] = []
+}
+
+public struct SkillPackageVersion: Sendable {
+    public let label: String
+    fileprivate let hash: String
+
+    public init(label: String, files: [ProjectFile]) {
+        self.label = label
+        self.hash = SupplementalSkillInstaller.hash(files)
+    }
+}
+
 public struct SupplementalSkillReceipt: Codable, Equatable, Sendable {
     public var skill: CatalogSkill
     public var contentSHA256: String
+    var removed: Bool? = nil
+    var packageVersion: String? = nil
 }
 
 public struct SkillInstallationStatus: Sendable {
-    public enum State: String, Sendable { case notInstalled, installed, updateAvailable, modified, unowned, linked }
+    public enum State: String, Sendable { case notInstalled, installed, updateAvailable, modified, unowned, linked, blocked }
     public let state: State
     public let path: String
+    public var verifiedVersion: String? = nil
+    public var installedVersion: String? = nil
+    public var availableVersion: String? = nil
     public var title: String {
         switch state {
         case .notInstalled: return "Not installed"
@@ -34,9 +113,10 @@ public struct SkillInstallationStatus: Sendable {
         case .modified: return "Installed · locally modified"
         case .unowned: return "Installed · existing copy"
         case .linked: return "Installed · linked folder"
+        case .blocked: return "Folder needs review"
         }
     }
-    public var isInstalled: Bool { state != .notInstalled }
+    public var isInstalled: Bool { state != .notInstalled && state != .blocked }
     public var requiresBackupConfirmation: Bool { state == .modified || state == .unowned }
 }
 
@@ -105,7 +185,80 @@ public struct SupplementalSkillInstaller {
         }
         return receipts
     }
-    public func installed(in root: URL) throws -> [SupplementalSkillReceipt] { try Self.receipts(root).values.sorted { $0.skill.name < $1.skill.name } }
+    public func installed(in root: URL) throws -> [SupplementalSkillReceipt] {
+        try Self.receipts(root).values.filter { $0.removed != true }.sorted { $0.skill.name < $1.skill.name }
+    }
+
+    func hasDirectChoice(_ name: String, root: URL) throws -> Bool {
+        try Self.receipts(root)[name]?.skill.id == "builtin:" + name
+    }
+
+    public func scopeStatus(_ skill: CatalogSkill, project: URL? = nil, package: SkillPackageVersion? = nil) -> SkillScopeStatus {
+        let base = project ?? home
+        let agents = SkillPlacement.localAgents.filter { skill.compatibleClients.contains($0) }
+        let copies = SkillPlacement.allCases.compactMap { placement -> SkillCopy? in
+            if placement == .cursorPlugin && project != nil { return nil }
+            let root = base.appendingPathComponent(placement.rawValue, isDirectory: true)
+            let destination = root.appendingPathComponent(skill.name)
+            let fingerprint = try? Self.identity(destination)
+            var current = status(skill, root: root, package: package, fingerprint: fingerprint)
+            if Self.exists(destination) {
+                let instructions = destination.appendingPathComponent("SKILL.md")
+                let size = try? instructions.resourceValues(forKeys: [.fileSizeKey]).fileSize
+                let name = size.flatMap { $0 <= 1_000_000 ? try? Data(contentsOf: instructions) : nil }
+                    .flatMap { try? SkillMetadata.parse($0).name }
+                if name != skill.name || fingerprint == nil {
+                    current = .init(state: .blocked, path: destination.path)
+                }
+            }
+            return .init(placement: placement, root: root, status: current, identity: fingerprint)
+        }
+        return .init(agents: agents, copies: copies)
+    }
+
+    public func apply(_ operation: SkillCopyOperation, to targets: [SkillCopy], skill: CatalogSkill,
+                      files: [ProjectFile], project: URL? = nil, replace: Bool = false,
+                      package: SkillPackageVersion? = nil) -> SkillBatchResult {
+        var result = SkillBatchResult()
+        if let project {
+            do {
+                try Self.regularAncestors(project)
+                guard try project.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
+                    throw ProjectError("Choose an existing project folder.")
+                }
+            } catch {
+                result.failures.append(error.localizedDescription)
+                return result
+            }
+        }
+        var visited = Set<String>()
+        for target in targets where visited.insert(target.id).inserted {
+            do {
+                guard target.placement != .cursorPlugin,
+                      target.placement.agents.contains(where: { skill.compatibleClients.contains($0) }),
+                      target.root == (project ?? home).appendingPathComponent(target.placement.rawValue, isDirectory: true),
+                      target.status.state != .blocked else {
+                    throw ProjectError("Review the existing folder before continuing.")
+                }
+                switch operation {
+                case .install, .reinstall, .update:
+                    if operation == .install {
+                        let current = scopeStatus(skill, project: project)
+                        let requested = current.agents.filter { target.placement.agents.contains($0) }
+                        if current.missing(for: requested).isEmpty { continue }
+                    }
+                    result.completed.append(try install(skill, files: files, root: target.root, project: project,
+                        replace: replace, replaceLink: replace, reviewed: target, packageVersion: package?.label))
+                case .remove:
+                    result.completed.append(try remove(skill, root: target.root, preserveExisting: replace,
+                        reviewed: target, rememberRemoval: project == nil))
+                }
+            } catch {
+                result.failures.append(target.status.path + ": " + error.localizedDescription)
+            }
+        }
+        return result
+    }
     /// Use the same location for discovery and actions. Older agent-specific
     /// installations must not look absent merely because the shared root is empty.
     public func installationRoot(_ skill: CatalogSkill, target: LocalSkillTarget, project: URL? = nil) -> URL {
@@ -116,17 +269,58 @@ public struct SupplementalSkillInstaller {
         status(skill, root: installationRoot(skill, target: target, project: project))
     }
     public func status(_ skill: CatalogSkill, root: URL) -> SkillInstallationStatus {
-        let destination = root.appendingPathComponent(skill.name)
-        guard Self.exists(destination) else { return .init(state: .notInstalled, path: destination.path) }
-        if (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true {
-            return .init(state: .linked, path: destination.path)
-        }
-        guard let receipt = try? Self.receipts(root)[skill.name], receipt.skill.id == skill.id else {
-            return .init(state: .unowned, path: destination.path)
-        }
-        guard let hash = try? Self.identity(destination), hash == receipt.contentSHA256 else { return .init(state: .modified, path: destination.path) }
-        return .init(state: receipt.skill.source == skill.source ? .installed : .updateAvailable, path: destination.path)
+        status(skill, root: root, package: nil, fingerprint: nil)
     }
+
+    private func status(_ skill: CatalogSkill, root: URL, package: SkillPackageVersion?, fingerprint: String?) -> SkillInstallationStatus {
+        let destination = root.appendingPathComponent(skill.name)
+        let path = destination.path
+        guard Self.exists(destination) else { return .init(state: .notInstalled, path: path) }
+        let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
+        let hash = linked
+            ? package.flatMap { _ in try? Self.identity(destination.resolvingSymlinksInPath()) }
+            : fingerprint ?? (try? Self.identity(destination))
+        let verified = package.flatMap { $0.hash == hash ? $0.label : nil }
+        if linked {
+            return .init(state: .linked, path: path, verifiedVersion: verified, availableVersion: package?.label)
+        }
+        if let receipt = try? Self.receipts(root)[skill.name], receipt.skill.id == skill.id {
+            guard receipt.removed != true, let hash, hash == receipt.contentSHA256 else {
+                return .init(state: .modified, path: path, verifiedVersion: verified, availableVersion: package?.label)
+            }
+            let current = package.map { $0.hash == hash }
+                ?? (skill.bundled || receipt.skill.source == skill.source)
+            let installedVersion = receipt.packageVersion
+                ?? (receipt.skill.bundled ? nil : "Revision " + receipt.skill.source.revision.prefix(8))
+            return .init(state: current ? .installed : .updateAvailable, path: path,
+                         verifiedVersion: verified, installedVersion: installedVersion, availableVersion: package?.label)
+        }
+        if skill.bundled, legacyOwns(skill.name, destination: destination, root: root) {
+            return .init(state: package.map { $0.hash == hash } ?? true ? .installed : .updateAvailable,
+                         path: path, verifiedVersion: verified, availableVersion: package?.label)
+        }
+        return .init(state: .unowned, path: path, verifiedVersion: verified, availableVersion: package?.label)
+    }
+
+    private func legacyOwns(_ name: String, destination: URL, root: URL) -> Bool {
+        guard [SkillPlacement.codex, .claudeCode].contains(where: {
+            root.path == home.appendingPathComponent($0.rawValue).path
+        }) else { return false }
+        let ledger = root.appendingPathComponent(".glyphs-mcp-skills.json")
+        guard (try? ledger.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == false,
+              let data = try? Data(contentsOf: ledger), data.count < 2_000_000,
+              let receipt = try? JSONDecoder().decode([String: String].self, from: data)[name],
+              let identity = try? InstallerPayloadManifestResolver.treeIdentity(destination) else { return false }
+        return identity == receipt
+    }
+
+    private func canManage(_ skill: CatalogSkill, reviewed: SkillCopy?) -> Bool {
+        if skill.bundled {
+            return reviewed != nil && bundledNames.contains(skill.name) && skill.id == "builtin:" + skill.name
+        }
+        return !bundledNames.contains(skill.name)
+    }
+
     public func recover(root: URL) throws {
         guard Self.exists(root.appendingPathComponent(Self.journalName)) else { return }
         try locked(root) { try recoverLocked(root) }
@@ -183,8 +377,13 @@ public struct SupplementalSkillInstaller {
         try FileManager.default.removeItem(at: stage)
     }
     public func install(_ skill: CatalogSkill, files: [ProjectFile], root: URL, project: URL? = nil, replace: Bool = false, replaceLink: Bool = false) throws -> String {
-        guard !skill.bundled, !bundledNames.contains(skill.name) else { throw ProjectError("Included skills are managed through AI Agents.") }
-        _ = try SkillMetadata.validate(files, expectedName: skill.name)
+        try install(skill, files: files, root: root, project: project, replace: replace, replaceLink: replaceLink, reviewed: nil, packageVersion: nil)
+    }
+
+    private func install(_ skill: CatalogSkill, files: [ProjectFile], root: URL, project: URL?,
+                         replace: Bool, replaceLink: Bool, reviewed: SkillCopy?, packageVersion: String?) throws -> String {
+        guard canManage(skill, reviewed: reviewed) else { throw ProjectError("This bundled skill needs its verified app payload.") }
+        _ = try SkillMetadata.validate(files, expectedName: skill.name, bundled: skill.bundled)
         return try locked(root) {
             try recoverLocked(root)
             let destination = root.appendingPathComponent(skill.name)
@@ -193,9 +392,10 @@ public struct SupplementalSkillInstaller {
             let oldHash = Self.exists(destination) ? try Self.identity(destination) : nil
             let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
             guard !linked || replace && replaceLink else { throw ProjectError("This is a linked skill. Confirm replacing the link with a managed copy; its original folder will be kept.") }
-            let owned = !linked && previous[skill.name]?.skill.id == skill.id && previous[skill.name]?.contentSHA256 == oldHash
+            if let reviewed, reviewed.identity != oldHash { throw ProjectError("The skill changed. Review the current copy and try again.") }
+            let owned = !linked && owns(skill, receipts: previous, hash: oldHash, destination: destination, root: root)
             guard oldHash == nil || owned || replace else { throw ProjectError("Existing skill is edited or unmanaged. Review it, then choose Replace with backup.") }
-            try checkCollisions(skill, root: root, project: project)
+            if reviewed == nil { try checkCollisions(skill, root: root, project: project) }
             let stage = root.appendingPathComponent(".skill-stage-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: false)
             defer { try? FileManager.default.removeItem(at: stage) }
@@ -208,7 +408,8 @@ public struct SupplementalSkillInstaller {
             }
             guard try Self.identity(stage) == hash else { throw ProjectError("Staged skill verification failed.") }
             let backup = try oldHash.map { _ in try self.backup(destination, root: root) }
-            var next = previous; next[skill.name] = .init(skill: skill, contentSHA256: hash)
+            var next = previous
+            next[skill.name] = .init(skill: skill, contentSHA256: hash, packageVersion: packageVersion)
             let journal = Journal(name: skill.name, newHash: hash, oldHash: oldHash, backup: backup?.path, stage: stage.lastPathComponent, previous: previous, next: next)
             try JSONEncoder().encode(journal).write(to: root.appendingPathComponent(Self.journalName), options: .atomic)
             do {
@@ -223,19 +424,31 @@ public struct SupplementalSkillInstaller {
         }
     }
     public func remove(_ skill: CatalogSkill, root: URL, preserveExisting: Bool = false) throws -> String {
-        guard SkillMetadata.validName(skill.name), !skill.bundled, !bundledNames.contains(skill.name) else { throw ProjectError("Included skills are managed through AI Agents.") }
+        try remove(skill, root: root, preserveExisting: preserveExisting, reviewed: nil, rememberRemoval: false)
+    }
+
+    private func remove(_ skill: CatalogSkill, root: URL, preserveExisting: Bool, reviewed: SkillCopy?,
+                        rememberRemoval: Bool) throws -> String {
+        guard SkillMetadata.validName(skill.name), canManage(skill, reviewed: reviewed) else {
+            throw ProjectError("This skill cannot be removed from this location.")
+        }
         return try locked(root) {
             try recoverLocked(root)
             let destination = root.appendingPathComponent(skill.name)
             var next = try Self.receipts(root); let previous = next
             let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
             let oldHash = try Self.identity(destination)
-            let owned = !linked && next[skill.name]?.skill.id == skill.id && next[skill.name]?.contentSHA256 == oldHash
+            if let reviewed, reviewed.identity != oldHash { throw ProjectError("The skill changed. Review the current copy and try again.") }
+            let owned = !linked && owns(skill, receipts: previous, hash: oldHash, destination: destination, root: root)
             guard owned || preserveExisting else {
                 throw ProjectError("The skill is modified or unmanaged and was preserved.")
             }
             let backup = try backup(destination, root: root)
-            next.removeValue(forKey: skill.name)
+            if rememberRemoval && skill.bundled {
+                next[skill.name] = .init(skill: skill, contentSHA256: oldHash, removed: true)
+            } else {
+                next.removeValue(forKey: skill.name)
+            }
             let stage = root.appendingPathComponent(".skill-remove-" + UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: stage) }
             let journal = Journal(name: skill.name, newHash: nil, oldHash: oldHash, backup: backup.path, stage: stage.lastPathComponent, previous: previous, next: next)
@@ -249,6 +462,14 @@ public struct SupplementalSkillInstaller {
             return (linked ? "Removed link: " : "Removed: ") + destination.path + (linked ? "\nOriginal folder preserved." : "") + "\nBackup: " + backup.path
         }
     }
+    private func owns(_ skill: CatalogSkill, receipts: [String: SupplementalSkillReceipt], hash: String?,
+                      destination: URL, root: URL) -> Bool {
+        if let receipt = receipts[skill.name] {
+            return receipt.skill.id == skill.id && receipt.removed != true && receipt.contentSHA256 == hash
+        }
+        return skill.bundled && legacyOwns(skill.name, destination: destination, root: root)
+    }
+
     private func backup(_ source: URL, root: URL) throws -> URL {
         let parent = root.deletingLastPathComponent().appendingPathComponent("glyphs-mcp-skill-backups/catalog/" + UUID().uuidString)
         try Self.regularAncestors(parent)

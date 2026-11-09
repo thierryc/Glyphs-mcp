@@ -385,11 +385,20 @@ public struct AgentSkillBundleInstaller {
         var ownership = previous
         var result = SkillInstallationResult()
 
+        let directSkills = SupplementalSkillInstaller()
+        // A direct Codex installation may live in the shared user directory.
+        let sharedRoot = destRoot.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent(SkillPlacement.shared.rawValue, isDirectory: true)
+        let directRoots = destRoot.deletingLastPathComponent().lastPathComponent == ".codex"
+            ? [destRoot, sharedRoot] : [destRoot]
+
 		for skillDir in managedSkills {
-            // Opting out leaves existing copies and ownership receipts untouched.
-            if !includeDevelopmentSkills && Self.developmentSkillNames.contains(skillDir.lastPathComponent) { continue }
-			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
             let name = skillDir.lastPathComponent
+            // Setup refreshes its own copies. Skills owns direct copies and explicit removals.
+            if try directRoots.contains(where: { try directSkills.hasDirectChoice(name, root: $0) }) { continue }
+            // Opting out leaves existing copies and ownership receipts untouched.
+            if !includeDevelopmentSkills && Self.developmentSkillNames.contains(name) { continue }
+			let dest = destRoot.appendingPathComponent(name, isDirectory: true)
             let sourceIdentity = try InstallerPayloadManifestResolver.treeIdentity(skillDir)
             let currentIdentity = try? InstallerPayloadManifestResolver.treeIdentity(dest)
             if itemExists(at: dest) {
@@ -496,8 +505,10 @@ public struct AgentSkillBundleInstaller {
         var ownership = (try? Data(contentsOf: ownershipURL))
             .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
         var result = SkillInstallationResult()
+        let directSkills = SupplementalSkillInstaller()
         for source in payload.managedSkillDirectories() {
             let name = source.lastPathComponent
+            if try directSkills.hasDirectChoice(name, root: destRoot) { continue }
             let destination = destRoot.appendingPathComponent(name, isDirectory: true)
             guard itemExists(at: destination) else {
                 ownership.removeValue(forKey: name)

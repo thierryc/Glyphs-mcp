@@ -146,32 +146,43 @@ public struct SkillMetadata: Equatable, Sendable {
     }
     /// UI labels are optional and never replace the stable SKILL.md identifier.
     public static func displayName(in files: [ProjectFile]) throws -> String? {
+        guard let title = try interfaceValue("display_name", in: files) else { return nil }
+        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 80,
+              !title.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else {
+            throw ProjectError("Invalid skill display name.")
+        }
+        return title
+    }
+
+    public static func examplePrompt(in files: [ProjectFile]) -> String? {
+        guard let value = try? interfaceValue("default_prompt", in: files), !value.isEmpty,
+              value.count <= 500, !value.contains(where: \.isNewline) else { return nil }
+        return value
+    }
+
+    private static func interfaceValue(_ key: String, in files: [ProjectFile]) throws -> String? {
         guard let data = files.first(where: { $0.path == "agents/openai.yaml" })?.data else { return nil }
         guard data.count <= 100_000, let text = String(data: data, encoding: .utf8) else { throw ProjectError("Skill UI metadata must be bounded UTF-8 text.") }
         var inInterface = false
-        var title: String?
+        var value: String?
         for line in text.components(separatedBy: .newlines) {
             if line.isEmpty || line.trimmingCharacters(in: .whitespaces).hasPrefix("#") { continue }
             if line.first?.isWhitespace != true { inInterface = line == "interface:"; continue }
             let field = line.trimmingCharacters(in: .whitespaces)
-            guard inInterface, field.hasPrefix("display_name:") else { continue }
-            guard title == nil else { throw ProjectError("Duplicate skill display name.") }
-            let raw = String(field.dropFirst("display_name:".count)).trimmingCharacters(in: .whitespaces)
+            guard inInterface, field.hasPrefix(key + ":") else { continue }
+            guard value == nil else { throw ProjectError("Duplicate skill UI metadata field.") }
+            let raw = String(field.dropFirst(key.count + 1)).trimmingCharacters(in: .whitespaces)
             if raw.hasPrefix("\"") {
-                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(raw.utf8)) else { throw ProjectError("Invalid quoted skill display name.") }
-                title = decoded
+                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(raw.utf8)) else { throw ProjectError("Invalid quoted skill UI metadata.") }
+                value = decoded
             } else if raw.hasPrefix("'"), raw.hasSuffix("'"), raw.count >= 2 {
-                title = String(raw.dropFirst().dropLast()).replacingOccurrences(of: "''", with: "'")
+                value = String(raw.dropFirst().dropLast()).replacingOccurrences(of: "''", with: "'")
             } else {
-                guard !raw.hasPrefix("!"), !raw.hasPrefix("&"), !raw.hasPrefix("*"), !raw.hasPrefix("["), !raw.hasPrefix("{"), !raw.hasPrefix("|"), !raw.hasPrefix(">") else { throw ProjectError("Use a plain or quoted skill display name.") }
-                title = raw.components(separatedBy: " #").first?.trimmingCharacters(in: .whitespaces)
+                guard !raw.hasPrefix("!"), !raw.hasPrefix("&"), !raw.hasPrefix("*"), !raw.hasPrefix("["), !raw.hasPrefix("{"), !raw.hasPrefix("|"), !raw.hasPrefix(">") else { throw ProjectError("Use plain or quoted skill UI metadata.") }
+                value = raw.components(separatedBy: " #").first?.trimmingCharacters(in: .whitespaces)
             }
         }
-        if let title {
-            guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 80,
-                  !title.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else { throw ProjectError("Invalid skill display name.") }
-        }
-        return title
+        return value
     }
     /// Reads the standard required fields without evaluating YAML tags or programs.
     public static func parse(_ data: Data) throws -> Self {

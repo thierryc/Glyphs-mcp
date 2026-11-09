@@ -26,6 +26,178 @@ final class SkillCatalogTests: XCTestCase {
                             archiveSHA256: bundled ? nil : String(repeating: "b", count: 64)),
               compatibleClients: [.codex], requirements: [], bundled: bundled)
     }
+    func testVersionVerificationDistinguishesCurrentOutdatedAndEditedCopies() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let original = SkillPackageVersion(label: "Revision aaaaaaaa", files: files())
+        let initial = installer.scopeStatus(item)
+        let target = initial.missing(for: [.codex])
+        XCTAssertTrue(installer.apply(.install, to: target, skill: item, files: files(), package: original).failures.isEmpty)
+
+        let current = try XCTUnwrap(installer.scopeStatus(item, package: original).installed(for: .codex).first)
+        XCTAssertEqual(current.status.verifiedVersion, original.label)
+        XCTAssertEqual(installer.apply(.reinstall, to: [current], skill: item, files: files(), package: original).completed.count, 1)
+
+        let updated = skill("c")
+        let newFiles = files("Updated")
+        let latest = SkillPackageVersion(label: "Revision cccccccc", files: newFiles)
+        let outdated = try XCTUnwrap(installer.scopeStatus(updated, package: latest).installed(for: .codex).first)
+        XCTAssertEqual(outdated.status.state, .updateAvailable)
+        XCTAssertNil(outdated.status.verifiedVersion)
+        XCTAssertEqual(outdated.status.installedVersion, original.label)
+        XCTAssertEqual(outdated.status.availableVersion, latest.label)
+
+        let file = URL(fileURLWithPath: current.status.path).appendingPathComponent("SKILL.md")
+        try XCTUnwrap(files("Local changes").first?.data).write(to: file)
+        let edited = try XCTUnwrap(installer.scopeStatus(updated, package: latest).installed(for: .codex).first)
+        XCTAssertEqual(edited.status.state, .modified)
+        XCTAssertNil(edited.status.verifiedVersion)
+    }
+
+    func testLinkedFolderOnlyGetsCheckWhenItsContentsMatch() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let version = SkillPackageVersion(label: "Revision aaaaaaaa", files: files())
+        let source = temporary.appendingPathComponent("source", isDirectory: true)
+        let root = temporary.appendingPathComponent(SkillPlacement.shared.rawValue, isDirectory: true)
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = source.appendingPathComponent("SKILL.md")
+        try XCTUnwrap(files().first?.data).write(to: file)
+        let link = root.appendingPathComponent(item.name)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: source)
+
+        let current = try XCTUnwrap(installer.scopeStatus(item, package: version).installed(for: .codex).first)
+        XCTAssertEqual(current.status.state, .linked)
+        XCTAssertEqual(current.status.verifiedVersion, version.label)
+        XCTAssertEqual(installer.apply(.reinstall, to: [current], skill: item, files: files()).failures.count, 1)
+        try XCTUnwrap(files("Local changes").first?.data).write(to: file)
+        let edited = try XCTUnwrap(installer.scopeStatus(item, package: version).installed(for: .codex).first)
+        XCTAssertEqual(edited.status.state, .linked)
+        XCTAssertNil(edited.status.verifiedVersion)
+        XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: link.path), source.path)
+    }
+
+    func testProjectInstallCoversEveryLocalAgentAndKeepsGlobalCopy() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let project = temporary.appendingPathComponent("project", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+
+        let global = installer.scopeStatus(item)
+        let codex = global.missing(for: [.codex])
+        XCTAssertEqual(codex.map(\.placement), [.shared])
+        XCTAssertTrue(installer.apply(.install, to: codex, skill: item, files: files()).failures.isEmpty)
+
+        let before = installer.scopeStatus(item, project: project)
+        let targets = before.missing(for: before.agents)
+        XCTAssertEqual(targets.map(\.placement), [.shared, .claudeCode])
+        let result = installer.apply(.install, to: targets, skill: item, files: files(), project: project)
+        XCTAssertEqual(result.completed.count, 2)
+        XCTAssertTrue(result.failures.isEmpty)
+        let after = installer.scopeStatus(item, project: project)
+        XCTAssertTrue(after.missing(for: after.agents).isEmpty)
+        XCTAssertEqual(after.installed(for: .cursor).map(\.placement), [.shared, .claudeCode])
+
+        let copies = after.copies.filter { $0.status.isInstalled }
+        let removed = installer.apply(.remove, to: copies, skill: item, files: [], project: project)
+        XCTAssertEqual(removed.completed.count, 2)
+        XCTAssertTrue(removed.failures.isEmpty)
+        XCTAssertTrue(installer.scopeStatus(item, project: project).installed(for: .codex).isEmpty)
+        XCTAssertEqual(installer.scopeStatus(item).installed(for: .codex).map(\.placement), [.shared])
+    }
+
+    func testAgentInstallReusesLegacyAndPluginLocations() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let initial = installer.scopeStatus(item)
+        XCTAssertEqual(initial.missing(for: [.cursor]).map(\.placement), [.cursor])
+        for placement in [SkillPlacement.codex, .cursorPlugin] {
+            let folder = temporary.appendingPathComponent(placement.rawValue).appendingPathComponent(item.name)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try XCTUnwrap(files().first?.data).write(to: folder.appendingPathComponent("SKILL.md"))
+        }
+        let scope = installer.scopeStatus(item)
+        XCTAssertEqual(scope.installed(for: .codex).map(\.placement), [.codex])
+        XCTAssertEqual(scope.installed(for: .cursor).map(\.placement), [.codex, .cursorPlugin])
+        XCTAssertEqual(scope.missing(for: scope.agents).map(\.placement), [.claudeCode])
+        let plugin = try XCTUnwrap(scope.installed(for: .cursor).last)
+        XCTAssertEqual(installer.apply(.remove, to: [plugin], skill: item, files: [], replace: true).failures.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: plugin.status.path))
+    }
+
+    func testProjectInstallCanRetryOnlyMissingDestinations() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let project = temporary.appendingPathComponent("project", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let blocked = project.appendingPathComponent(".claude")
+        try FileManager.default.createSymbolicLink(at: blocked, withDestinationURL: temporary)
+        let initial = installer.scopeStatus(item, project: project)
+        let partial = installer.apply(.install, to: initial.missing(for: initial.agents),
+                                      skill: item, files: files(), project: project)
+        XCTAssertEqual(partial.completed.count, 1)
+        XCTAssertEqual(partial.failures.count, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: temporary.appendingPathComponent("skills").path))
+
+        try FileManager.default.removeItem(at: blocked)
+        let current = installer.scopeStatus(item, project: project)
+        let missing = current.missing(for: current.agents)
+        XCTAssertEqual(missing.map(\.placement), [.claudeCode])
+        let retried = installer.apply(.install, to: missing, skill: item, files: files(), project: project)
+        XCTAssertEqual(retried.completed.count, 1)
+        XCTAssertTrue(retried.failures.isEmpty)
+    }
+
+    func testBundledLegacyRemovalSurvivesSetupAndExplicitReinstall() throws {
+        let item = canonicalSkill(bundled: true)
+        let package = [ProjectFile(path: "SKILL.md", data: Data(
+            "---\nname: \(item.name)\ndescription: A focused workflow\n---\nInspect outlines.".utf8))]
+        let source = temporary.appendingPathComponent("payload-skills", isDirectory: true)
+        let bundled = source.appendingPathComponent(item.name, isDirectory: true)
+        try FileManager.default.createDirectory(at: bundled, withIntermediateDirectories: true)
+        try XCTUnwrap(package.first?.data).write(to: bundled.appendingPathComponent("SKILL.md"))
+        try JSONSerialization.data(withJSONObject: ["schemaVersion": 1, "managedSkills": [
+            ["name": item.name, "surface": "glyphs-mcp-v2"]
+        ]]).write(to: source.appendingPathComponent("manifest.json"))
+        let payload = InstallerPayload(payloadDir: temporary, pluginBundle: temporary, requirementsTxt: temporary, skillsDir: source)
+        let root = temporary.appendingPathComponent(".codex/skills", isDirectory: true)
+        let setup = AgentSkillBundleInstaller(log: { _ in })
+        let direct = SupplementalSkillInstaller(home: temporary, bundledNames: [item.name])
+
+        XCTAssertEqual(try setup.installManagedSkills(from: payload, to: root, clientName: "Codex",
+                                                     overwriteExisting: false).entries.first?.outcome, .installed)
+        let version = SkillPackageVersion(label: "2.6.0", files: package)
+        let oldCopy = try XCTUnwrap(direct.scopeStatus(item, package: version).installed(for: .codex).first)
+        XCTAssertEqual(oldCopy.status.state, .installed)
+        XCTAssertEqual(oldCopy.status.verifiedVersion, "2.6.0")
+        XCTAssertEqual(direct.apply(.remove, to: [oldCopy], skill: item, files: []).completed.count, 1)
+        XCTAssertTrue(try setup.installManagedSkills(from: payload, to: root, clientName: "Codex",
+                                                     overwriteExisting: true).entries.isEmpty)
+        XCTAssertTrue(direct.scopeStatus(item).installed(for: .codex).isEmpty)
+
+        let absent = direct.scopeStatus(item)
+        let installed = direct.apply(.install, to: absent.missing(for: [.codex]), skill: item, files: package)
+        XCTAssertEqual(installed.completed.count, 1)
+        XCTAssertTrue(installed.failures.isEmpty)
+        XCTAssertEqual(direct.scopeStatus(item).installed(for: .codex).map(\.placement), [.shared])
+        XCTAssertTrue(try setup.installManagedSkills(from: payload, to: root, clientName: "Codex",
+                                                     overwriteExisting: false).entries.isEmpty)
+    }
+
+    func testRemovalRejectsAChangedCopyAfterConfirmation() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let initial = installer.scopeStatus(item)
+        XCTAssertTrue(installer.apply(.install, to: initial.missing(for: [.codex]), skill: item, files: files()).failures.isEmpty)
+        let copy = try XCTUnwrap(installer.scopeStatus(item).installed(for: .codex).first)
+        let file = URL(fileURLWithPath: copy.status.path).appendingPathComponent("SKILL.md")
+        let changed = try XCTUnwrap(files("New user edit").first?.data)
+        try changed.write(to: file)
+        XCTAssertEqual(installer.apply(.remove, to: [copy], skill: item, files: [], replace: true).failures.count, 1)
+        XCTAssertEqual(try Data(contentsOf: file), changed)
+    }
+
     func testDownloadableCanonicalSkillAppearsBeforeAppIncludesIt() throws {
         let remote = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [canonicalSkill(bundled: false)])))
         let result = try remote.includingBundled(SkillCatalog(skills: []))
