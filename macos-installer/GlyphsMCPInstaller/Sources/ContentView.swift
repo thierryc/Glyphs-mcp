@@ -24,6 +24,7 @@ struct ContentView: View {
     @StateObject private var skills = DesktopSkillsModel()
     @AppStorage("projectsExpanded") private var projectsExpanded = true
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var agentToReveal: InstallerClientKind?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -90,8 +91,14 @@ struct ContentView: View {
             case .setup: DesktopSetup { projects.select($0) }
             case .tasks: DesktopTasksView()
             case .companions: DesktopFocusedSetup(section: .companions) { projects.select(.setup) }
-            case .agents: DesktopFocusedSetup(section: .agents) { projects.select(.setup) }
-            case .skills: DesktopSkillsView(model: skills, installer: installer, project: projects.navigation.lastProject) { projects.select(.agents) }
+            case .agents:
+                DesktopFocusedSetup(section: .agents, agentToReveal: agentToReveal) { projects.select(.setup) }
+                    .onDisappear { agentToReveal = nil }
+            case .skills:
+                DesktopSkillsView(model: skills, installer: installer, projects: projects) {
+                    agentToReveal = .cursor
+                    projects.select(.agents)
+                }
             case .templates: DesktopProjectCatalog(model: projects)
             case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
             }
@@ -141,12 +148,23 @@ struct ContentView: View {
     private func projectRow(_ path: String) -> some View {
         let selected = projects.selectedProject == path
         let name = projects.navigation.name(for: path)
+        let folderAvailable = projects.folderExists(path)
         return HStack(spacing: 4) {
             Button { projects.select(.project(path)) } label: {
-                Label(name, systemImage: "folder").lineLimit(1).truncationMode(.middle)
-                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+                HStack(spacing: 6) {
+                    Label(name, systemImage: "folder").lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: 0)
+                    if !folderAvailable {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption).foregroundStyle(.orange)
+                            .accessibilityHidden(true)
+                    }
+                }
+                    .padding(.vertical, 8)
                     .contentShape(Rectangle())
-            }.buttonStyle(.plain).help(path)
+            }.buttonStyle(.plain)
+                .help(folderAvailable ? Text(path) : Text("Project folder unavailable\n\(path)"))
+                .accessibilityValue(folderAvailable ? Text("") : Text("Project folder unavailable"))
                 .accessibilityAddTraits(selected ? .isSelected : [])
             Menu { DesktopProjectMenuActions(model: projects, path: path) } label: {
                 Image(systemName: "ellipsis").frame(width: 22, height: 24).contentShape(Rectangle())

@@ -64,6 +64,13 @@ author, license, `classification` (`community` for submissions), pinned `source`
 `compatibleClients`, `requirements`, and `bundled: false`. The ID should be
 `<author>/<skill-name>` and must remain stable when a revision changes.
 
+Use `compatibleClients` for the agents the skill is intended to work with and
+optional `testedClients` for the subset you actually exercised. Untested agents
+can still install and manage the skill. An optional `version` such as `1`, `2.1`
+or `3.2.1` is the skill's own release number. The pinned revision and checksum
+still identify the exact files. Users can share successful tests and issues
+through the skill's GitHub feedback link.
+
 For example, compute an external archive checksum without executing its files:
 
 ```sh

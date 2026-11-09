@@ -367,8 +367,14 @@
         "archiveSHA256": "635cc7afbb605d00240c6b536526457c8670ff3d132ea06518f3776e72ceac4f"
       },
       "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode"
+      ],
+      "testedClients": [
         "codex"
       ],
+      "version": "1.0",
       "requirements": [
         "macOS, Glyphs 4 and Glyphs MCP v2 advertising script.native.v1. Native evidence recorded on Glyphs 4.1.1 build 4108.",
         "One internal axis, two ordinary masters and compatible closed line/cubic paths. Native qualification of the one-run repair entry mode and source-residual policy remains pending."

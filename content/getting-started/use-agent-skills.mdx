@@ -81,19 +81,30 @@ the same operations and status with the complete Setup overview.
 
 Included means shipped with this app; it is separate from installation status.
 Compact text cards show each workflow’s goal and whether it is included, installed
-or available. Open Details for client copies, instructions, source and licensing.
-Open **Details** for any skill. **All agents** installs missing copies across
-your projects, **By agent** manages individual copies, and **One project**
-installs for all compatible local agents in a chosen folder. Use **Manage plugin**
-for copies supplied by a plugin.
+or available. Open **Details** for installation options, instructions, source
+and licensing.
+
+- **Default for all projects** installs, updates or removes the copies available
+  across projects on this Mac.
+- **By agent** manages individual skill copies. When a copy comes with the
+  Glyphs MCP plugin for Cursor, **Open AI Agents** takes you to the controls
+  for updating or removing the whole plugin.
+- **Project copies** shows the folders where this skill is installed locally,
+  with update and remove controls for each copy. Use **Install in a project…**
+  or **Install in another project…** to add a copy for all compatible local
+  agents in the folder you choose. Agents with a Mac-wide copy can use it in
+  any project. If you use that copy, remove redundant project copies to avoid
+  keeping different versions. An orange warning marks an unavailable folder
+  in **My Project** and beside any skill copy previously found there.
+
 There is no global on/off switch: skill discovery belongs to each client and does
 not enable or disable the corresponding MCP tools.
 
 Supplemental Codex/Cursor skills share `~/.agents/skills`; existing copies in
 `~/.codex/skills` or `~/.cursor/skills` are detected and updated in their actual
-location. Claude Code uses `~/.claude/skills`. In **One project**, choose a
-folder to install into `.agents/skills` or `.claude/skills` for the compatible
-agents. Project installation leaves global copies in place.
+location. Claude Code uses `~/.claude/skills`. Project copies live inside the
+chosen folder, typically in `.agents/skills` or `.claude/skills`. Changes to
+the default and to each project copy are independent.
 
 **Import from GitHub** accepts a public repository URL with separate directory
 and optional revision fields. It resolves an immutable commit, lets you choose
@@ -101,8 +112,12 @@ from multiple skills and keeps the import personal and unreviewed. Inspect its
 instructions, file list, license and dependencies before installation. Private
 repository authentication and Gist import are not included in this release.
 
-A circled check shows that the installed files match the bundled version or
-pinned catalog revision. **Reinstall** stays available for a matching copy.
+A circled check shows that the installed files match the available package.
+Skills with their own version number show it beside the check. The Git revision
+is available under **Advanced**. A **Tested with** note names the agents used
+for testing. Compatible agents can still install and manage the skill.
+For community skills, **Share feedback on GitHub** lets you report problems or
+tell the contributor what worked. **Reinstall** stays available for a matching copy.
 **Update** is highlighted when a managed copy differs from the available
 package. Locally edited or unverified copies require confirmation and a backup
 before replacement or removal. When a copy is linked, the action changes only

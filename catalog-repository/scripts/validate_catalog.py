@@ -130,6 +130,8 @@ def validate(root=ROOT, fetch=False):
         if entry['id'] in ids or entry['name'] in names:
             raise ValueError('Duplicate skill ID/name')
         ids.add(entry['id']); names.add(entry['name'])
+        if not set(entry.get('testedClients', [])).issubset(entry['compatibleClients']):
+            raise ValueError('Tested agents must be listed as compatible')
         source = entry['source']
         if source['directory'] != '.':
             relative(source['directory'])

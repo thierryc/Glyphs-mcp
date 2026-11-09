@@ -3,7 +3,6 @@
 ## 2.6.0 — Unreleased
 
 - Add Glyphs Small and Petite Caps to derive editable Latin caps from uppercase with a reviewed pilot.
-- Keep bundled skill details in Skills and offer an explicit link to AI Agents for setup.
 - Add passive Glyphs Health snapshots and automatic agent advisories.
 - Defer new expensive work under critical pressure or delayed native dispatch,
   preserving queued intent, idempotency and recovery.
@@ -11,7 +10,9 @@
 - Keep status reads independent of native execution and job reconciliation.
 - Fit selected polygon outlines to editable curves with a measured error limit and coordinated master edits in Path Doctor.
 - Release eligible abandoned preview reservations so later tasks can proceed. Keep recovery available for edits that may have run.
-- Install skills for all compatible agents, for one agent, or for a project. Check the installed version from the skill dialog.
+- Manage Skills copies across projects, by agent, or in a specific project. Show verified versions and highlight available updates.
+- List only local project copies in Skills, with visible update and remove actions. Flag unavailable project folders in Skills and My Project.
+- Explain which skills come with the Cursor plugin and link to its controls in AI Agents. Show independent catalog versions, tested agents and GitHub feedback links.
 - Confirm the configured MCP endpoint before enabling Copy URL in Glyphs. Keep the port field in desktop Settings in sync while preserving edits in progress.
 
 See the [2.6.0 candidate release notes](V2.6.0-RELEASE.md) for compatibility and qualification.

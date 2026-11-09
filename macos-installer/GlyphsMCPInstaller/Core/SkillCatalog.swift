@@ -57,16 +57,34 @@ public struct CatalogSkill: Codable, Equatable, Identifiable, Sendable {
     public var classification: Classification
     public var source: SkillSource
     public var compatibleClients: [SkillClient]
+    public var testedClients: [SkillClient]?
+    public var version: String?
     public var requirements: [String]
     public var bundled: Bool
     public init(id: String, name: String, description: String, author: String, license: String,
-                classification: Classification, source: SkillSource, compatibleClients: [SkillClient], requirements: [String], bundled: Bool = false, displayName: String? = nil) {
+                classification: Classification, source: SkillSource, compatibleClients: [SkillClient], requirements: [String],
+                bundled: Bool = false, displayName: String? = nil, testedClients: [SkillClient]? = nil, version: String? = nil) {
         self.id = id; self.name = name; self.description = description; self.author = author; self.license = license
         self.displayName = displayName
+        self.testedClients = testedClients
+        self.version = version
         self.classification = classification; self.source = source; self.compatibleClients = compatibleClients
         self.requirements = requirements; self.bundled = bundled
     }
     public var title: String { displayName ?? name.replacingOccurrences(of: "-", with: " ").capitalized }
+    public var feedbackURL: URL? {
+        guard classification == .community, !bundled, let repository = source.repositoryURL,
+              var url = URLComponents(url: repository.appendingPathComponent("issues/new"), resolvingAgainstBaseURL: false)
+        else { return nil }
+        url.queryItems = [URLQueryItem(name: "title", value: "Feedback on " + title)]
+        return url.url
+    }
+
+    fileprivate static func validVersion(_ version: String) -> Bool {
+        version.count <= 32
+            && version.range(of: #"^[0-9]+(?:\.[0-9]+){0,2}\z"#, options: .regularExpression) != nil
+    }
+
     public var categoryTitle: String {
         if bundled { return "Included with Glyphs MCP" }
         switch classification { case .curated: return "Curated"; case .community: return "Community"; case .imported: return "Unreviewed import" }
@@ -101,6 +119,13 @@ public struct SkillCatalog: Codable, Sendable {
                   entry.bundled || entry.source.archiveSHA256.map(SkillSource.isHash) == true else {
                 throw ProjectError("A skill needs valid metadata, compatibility, a pinned public source and checksum.")
             }
+            if let tested = entry.testedClients,
+               tested.isEmpty || Set(tested).count != tested.count || !Set(tested).isSubset(of: Set(entry.compatibleClients)) {
+                throw ProjectError("Tested agents must be listed as compatible.")
+            }
+            if let version = entry.version, !CatalogSkill.validVersion(version) {
+                throw ProjectError("Invalid skill version. Use a version such as 1, 2.1 or 3.2.1.")
+            }
             if entry.source.directory != "." { try ProjectFiles.validateRelativePath(entry.source.directory) }
             if entry.bundled {
                 guard entry.id == "builtin:" + entry.name, entry.source.repository == "https://github.com/thierryc/Glyphs-mcp",
@@ -128,13 +153,24 @@ public struct SkillCatalog: Codable, Sendable {
             }
             return false
         }
-        let snapshotTitles = Dictionary(uniqueKeysWithValues: bundled.skills.map { ($0.id, $0.displayName) })
-        let titledAdditional = additional.map { entry in
+        let snapshots = Dictionary(uniqueKeysWithValues: bundled.skills.map { ($0.id, $0) })
+        let updatedAdditional = additional.map { entry in
             var entry = entry
-            if entry.displayName == nil { entry.displayName = snapshotTitles[entry.id] ?? nil }
+            guard let snapshot = snapshots[entry.id] else { return entry }
+            if entry.displayName == nil { entry.displayName = snapshot.displayName }
+            guard entry.source == snapshot.source, entry.name == snapshot.name else { return entry }
+            if entry.version == nil { entry.version = snapshot.version }
+            if entry.testedClients == nil, let tested = snapshot.testedClients {
+                // Older catalogs put the tested agents in the compatibility list.
+                // Apply the reviewed correction only to the identical pinned package.
+                if Set(entry.compatibleClients) == Set(tested) {
+                    entry.compatibleClients = snapshot.compatibleClients
+                }
+                if Set(tested).isSubset(of: Set(entry.compatibleClients)) { entry.testedClients = tested }
+            }
             return entry
         }
-        return Self(skills: included + titledAdditional)
+        return Self(skills: included + updatedAdditional)
     }
 }
 

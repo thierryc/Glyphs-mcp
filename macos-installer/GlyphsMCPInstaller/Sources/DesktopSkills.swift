@@ -18,9 +18,10 @@ final class DesktopSkillsModel: ObservableObject {
     @Published var search = ""
     @Published var category = "All"
     @Published var client: SkillClient?
-    @Published private(set) var projectURL: URL?
     @Published private(set) var global: [String: SkillScopeStatus] = [:]
-    @Published private(set) var projectScopes: [String: SkillScopeStatus] = [:]
+    @Published private(set) var projectScopes: [URL: [String: SkillScopeStatus]] = [:]
+    private var projectFolders: [URL] = []
+    private weak var projects: DesktopProjectsModel?
     private var packageVersion: SkillPackageVersion?
     private let store = SkillStore()
     var pendingInspection: CatalogSkill?
@@ -38,9 +39,20 @@ final class DesktopSkillsModel: ObservableObject {
         }.sorted { ($0.bundled ? 0 : 1, $0.title) < ($1.bundled ? 0 : 1, $1.title) }
     }
     func isInstalled(_ skill: CatalogSkill) -> Bool {
-        [global[skill.id], projectScopes[skill.id]].compactMap { $0 }.contains { scope in
-            scope.agents.contains { !scope.installed(for: $0).isEmpty }
+        hasGlobalInstallation(skill) || projectScopes.values.contains { scopes in
+            scopes[skill.id]?.editableCopies.isEmpty == false
         }
+    }
+
+    private var projectSkillInstallations: [String: Set<String>] {
+        Dictionary(uniqueKeysWithValues: projectScopes.map { folder, scopes in
+            (folder.path, Set(scopes.keys.filter { scopes[$0]?.editableCopies.isEmpty == false }))
+        })
+    }
+
+    func hasUpdate(_ skill: CatalogSkill) -> Bool {
+        let scopes = [global[skill.id]].compactMap { $0 } + projectScopes.values.compactMap { $0[skill.id] }
+        return scopes.contains { $0.editableCopies.contains { $0.status.state == .updateAvailable } }
     }
 
     func hasGlobalInstallation(_ skill: CatalogSkill) -> Bool {
@@ -69,7 +81,7 @@ final class DesktopSkillsModel: ObservableObject {
         scanning = true
         let catalog = catalogEntries
         let imports = importEntries
-        let project = projectURL
+        let folders = projectFolders
         let selected = selected
         let packageVersion = packageVersion
         let service = installer
@@ -77,9 +89,17 @@ final class DesktopSkillsModel: ObservableObject {
             let (entries, scopes, projectScopes, warning) = await Task.detached(priority: .userInitiated) {
                 var entries = catalog
                 var warning = ""
-                let roots = [service.home, project].compactMap { $0 }.flatMap { base in
-                    SkillPlacement.allCases.filter { $0 != .cursorPlugin }.map { base.appendingPathComponent($0.rawValue) }
-                }
+                let placements = SkillPlacement.allCases.filter { $0 != .cursorPlugin }
+                let projectRoots = Dictionary(uniqueKeysWithValues: folders.compactMap { folder -> (URL, [URL])? in
+                    var isDirectory: ObjCBool = false
+                    guard FileManager.default.fileExists(atPath: folder.path, isDirectory: &isDirectory),
+                          isDirectory.boolValue else {
+                        return nil
+                    }
+                    return (folder, placements.map { folder.appendingPathComponent($0.rawValue) })
+                })
+                let roots = placements.map { service.home.appendingPathComponent($0.rawValue) }
+                    + projectRoots.values.flatMap { $0 }
                 for entry in imports where !entries.contains(where: { $0.id == entry.id || $0.name == entry.name }) {
                     entries.append(entry)
                 }
@@ -99,33 +119,37 @@ final class DesktopSkillsModel: ObservableObject {
                 let scopes = Dictionary(uniqueKeysWithValues: entries.map { skill in
                     (skill.id, service.scopeStatus(skill, package: skill.id == selected?.id ? packageVersion : nil))
                 })
-                let projectScopes = project.map { folder in
-                    Dictionary(uniqueKeysWithValues: entries.map { skill in
-                        (skill.id, service.scopeStatus(skill, project: folder, package: skill.id == selected?.id ? packageVersion : nil))
+                let projectScopes = projectRoots.map { folder, roots in
+                    let present = Set(roots.flatMap { (try? FileManager.default.contentsOfDirectory(atPath: $0.path)) ?? [] })
+                    let candidates = entries.filter { present.contains($0.name) }
+                    let statuses = Dictionary(uniqueKeysWithValues: candidates.map { skill in
+                        (skill.id, service.scopeStatus(skill, project: folder,
+                                                       package: skill.id == selected?.id ? packageVersion : nil))
                     })
-                } ?? [:]
-                return (entries, scopes, projectScopes, warning)
+                    return (folder, statuses)
+                }
+                return (entries, scopes, Dictionary(uniqueKeysWithValues: projectScopes), warning)
             }.value
             guard generation == scanGeneration else { return }
             skills = entries
             global = scopes
             self.projectScopes = projectScopes
+            projects?.recordProjectSkillInstallations(projectSkillInstallations)
             if !warning.isEmpty { operationDetails = warning }
             scanning = false
         }
     }
 
-    func prepareProject(lastProject: String?) {
-        guard !Self.isProjectFolder(projectURL) else { return }
-        projectURL = lastProject.map { URL(fileURLWithPath: $0, isDirectory: true) }.flatMap {
-            Self.isProjectFolder($0) ? $0 : nil
-        }
-        projectScopes = [:]
+    func prepareProjects(_ projects: DesktopProjectsModel) {
+        self.projects = projects
+        var seen = Set<URL>()
+        projectFolders = projects.navigation.skillProjects
+            .map { URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL }
+            .filter { seen.insert($0).inserted }
     }
 
-    func inspect(_ skill: CatalogSkill, lastProject: String?) {
+    func inspect(_ skill: CatalogSkill) {
         guard !busy else { return }
-        prepareProject(lastProject: lastProject)
         selected = skill
         files = []
         packageVersion = nil
@@ -148,10 +172,9 @@ final class DesktopSkillsModel: ObservableObject {
                     bundledRoot = nil
                 }
                 let package = try await store.files(skill, bundledRoot: bundledRoot)
-                let label = skill.bundled
-                    ? (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? DesktopIdentity.versionLabel)
-                    : "Revision " + skill.source.revision.prefix(8)
-                packageVersion = try await ProjectFiles.perform { SkillPackageVersion(label: label, files: package) }
+                packageVersion = try await ProjectFiles.perform {
+                    SkillPackageVersion(label: skill.version, files: package)
+                }
                 files = package
                 message = ""
             } catch {
@@ -168,27 +191,11 @@ final class DesktopSkillsModel: ObservableObject {
         guard !catalogEntries.contains(where: { $0.name == skill.name && $0.id != skill.id }) else { throw ProjectError("This name belongs to a catalog skill. Use its reviewed entry instead.") }
         try await store.remember(skill); importEntries = try await store.imports(); rescan(); pendingInspection = skill
     }
-    private static func isProjectFolder(_ url: URL?) -> Bool {
-        guard let url else { return false }
-        return (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
-    }
-
-    func chooseProject() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = projectURL
-        if panel.runModal() == .OK {
-            projectURL = panel.url
-            projectScopes = [:]
-            rescan()
-        }
-    }
-
-    func change(_ operation: SkillCopyOperation, targets: [SkillCopy], project: URL? = nil,
-                using owner: InstallerViewModel, confirmed: Bool = false) {
-        guard !scanning, let skill = selected, !targets.isEmpty, operation == .remove || !files.isEmpty else { return }
+    func change(_ operation: SkillCopyOperation, targets: [SkillCopy]? = nil, project: URL? = nil,
+                using owner: InstallerViewModel, confirmed: Bool = false, forAgent agent: SkillClient? = nil) {
+        guard !scanning, let skill = selected,
+              targets.map({ !$0.isEmpty }) ?? (operation == .install && project != nil),
+              operation == .remove || !files.isEmpty else { return }
         let package = files
         let packageVersion = packageVersion
         let service = installer
@@ -202,9 +209,20 @@ final class DesktopSkillsModel: ObservableObject {
         case .remove: (setupOperation, title, success) = (.remove, "Uninstalling skill…", "Skill uninstalled.")
         }
         run(owner, title: title, skillID: skill.id, setupOperation: setupOperation) {
-            let result = try await ProjectFiles.perform {
-                service.apply(operation, to: targets, skill: skill, files: package, project: project,
-                              replace: confirmed, package: packageVersion)
+            let (result, count) = try await ProjectFiles.perform {
+                let destinations: [SkillCopy]
+                if let targets {
+                    destinations = targets
+                } else {
+                    let scope = service.scopeStatus(skill, project: project, package: packageVersion)
+                    guard !scope.agents.isEmpty else {
+                        throw ProjectError("Choose a project folder outside your default skill location.")
+                    }
+                    destinations = scope.missing(for: scope.agents)
+                }
+                let result = service.apply(operation, to: destinations, skill: skill, files: package, project: project,
+                                           replace: confirmed, package: packageVersion, forAgent: agent)
+                return (result, destinations.count)
             }
             let details = (result.completed + result.failures).joined(separator: "\n")
             if result.failures.isEmpty {
@@ -213,7 +231,7 @@ final class DesktopSkillsModel: ObservableObject {
             if result.completed.isEmpty {
                 return ("No locations changed. See Advanced for details.", details, true)
             }
-            return ("Changed \(result.completed.count) of \(targets.count) locations. See Advanced for details.", details, true)
+            return ("Changed \(result.completed.count) of \(count) locations. See Advanced for details.", details, true)
         }
     }
 
@@ -277,20 +295,28 @@ final class DesktopSkillsModel: ObservableObject {
 struct DesktopFocusedSetup: View {
     @EnvironmentObject private var installer: InstallerViewModel
     let section: InstallationView.Section
+    var agentToReveal: InstallerClientKind? = nil
     let showSetup: () -> Void
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Text(LocalizedStringKey(section == .companions ? "Companion Plugins" : "AI Agents")).font(.largeTitle.bold())
-                Text(LocalizedStringKey(section == .companions ? "Manage optional Glyphs plugins. The bundled inspectors require the Glyphs MCP bridge." : "Configure each AI agent independently. Download the client application separately when needed."))
-                    .foregroundStyle(.secondary)
-                Button("Open Setup", action: showSetup)
-                if section == .companions && installer.running {
-                    DesktopComponentPreparation()
+        ScrollViewReader { scroll in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text(LocalizedStringKey(section == .companions ? "Companion Plugins" : "AI Agents")).font(.largeTitle.bold())
+                    Text(LocalizedStringKey(section == .companions ? "Manage optional Glyphs plugins. The bundled inspectors require the Glyphs MCP bridge." : "Configure each AI agent independently. Download the client application separately when needed."))
+                        .foregroundStyle(.secondary)
+                    Button("Open Setup", action: showSetup)
+                    if section == .companions && installer.running {
+                        DesktopComponentPreparation()
+                    }
+                    InstallationView(section: section)
                 }
-                InstallationView(section: section)
-            }.padding(DesktopSetupLayout.contentPadding).frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)
+                .padding(DesktopSetupLayout.contentPadding)
+                .frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
+            }
+            .onAppear {
+                if let agentToReveal { scroll.scrollTo(agentToReveal, anchor: .top) }
+            }
         }
     }
 }
@@ -379,14 +405,15 @@ private struct DesktopSkillCard: View {
 struct DesktopSkillsView: View {
     @ObservedObject var model: DesktopSkillsModel
     @ObservedObject var installer: InstallerViewModel
-    let project: String?
+    @ObservedObject var projects: DesktopProjectsModel
+    private var navigation: DesktopProjectNavigation { projects.navigation }
     let manageAgents: () -> Void
     @State private var showingImport = false
     @State private var initialSection: String?
 
     private func open(_ skill: CatalogSkill, showAgentActions: Bool = false) {
         initialSection = showAgentActions ? (model.hasGlobalInstallation(skill) ? "agents" : "project") : nil
-        model.inspect(skill, lastProject: project)
+        model.inspect(skill)
     }
 
     var body: some View {
@@ -414,9 +441,7 @@ struct DesktopSkillsView: View {
                 SetupCardGrid {
                     ForEach(model.filtered) { skill in
                         DesktopSkillCard(skill: skill, installed: model.isInstalled(skill),
-                            hasUpdate: [model.global[skill.id], model.projectScopes[skill.id]].compactMap { $0 }.contains { scope in
-                                scope.copies.contains { $0.status.state == .updateAvailable }
-                            },
+                            hasUpdate: model.hasUpdate(skill),
                             checking: model.scanning,
                             progress: model.activeSkillID == skill.id ? (model.activeOperation == .remove ? "Uninstalling…" : model.activeOperation?.progressLabel) : nil,
                             reviewRemoval: { open(skill, showAgentActions: true) },
@@ -429,8 +454,12 @@ struct DesktopSkillsView: View {
                 .frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading).frame(maxWidth: .infinity)
         }
         .task {
-            model.prepareProject(lastProject: project)
+            model.prepareProjects(projects)
             if model.skills.isEmpty { model.load() } else { model.rescan() }
+        }
+        .onChange(of: navigation.skillProjects) { _, _ in
+            model.prepareProjects(projects)
+            model.rescan()
         }
         .onChange(of: installer.busy) { _, busy in if !busy { model.rescan() } }
         .sheet(isPresented: $showingImport, onDismiss: {
@@ -440,7 +469,8 @@ struct DesktopSkillsView: View {
             }
         }) { SkillImportSheet(model: model) }
         .sheet(item: $model.selected) { skill in
-            SkillDetailsSheet(skill: skill, model: model, installer: installer, initialSection: initialSection) {
+            SkillDetailsSheet(skill: skill, model: model, installer: installer, initialSection: initialSection,
+                              projects: projects) {
                 model.selected = nil
                 manageAgents()
             }
@@ -453,10 +483,13 @@ private struct SkillDetailsSheet: View {
     @ObservedObject var model: DesktopSkillsModel
     @ObservedObject var installer: InstallerViewModel
     let initialSection: String?
+    @ObservedObject var projects: DesktopProjectsModel
+    private var navigation: DesktopProjectNavigation { projects.navigation }
     let managePlugin: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var confirmation: Confirmation?
     @State private var previewPath = "SKILL.md"
+    @State private var projectFilter = ""
 
     private struct Confirmation {
         let operation: SkillCopyOperation
@@ -465,18 +498,25 @@ private struct SkillDetailsSheet: View {
 
         var actionTitle: String {
             switch operation {
-            case .remove: return "Uninstall"
+            case .remove: return project == nil ? "Uninstall" : "Remove from project"
             case .reinstall: return "Reinstall"
             case .update: return targets.contains { $0.status.state == .updateAvailable } ? "Update" : "Replace"
             case .install: return "Install"
             }
         }
 
+        var title: LocalizedStringKey {
+            if operation == .remove, let project {
+                return "Remove the skill from \(project.lastPathComponent)?"
+            }
+            return "\(actionTitle) this skill?"
+        }
+
         var message: String {
             let agents = SkillPlacement.localAgents.filter { agent in
                 targets.contains { $0.placement.agents.contains(agent) }
             }.map(\.title).joined(separator: ", ")
-            let scope = project.map { "in \($0.lastPathComponent)" } ?? "across your projects"
+            let scope = project.map { "in \($0.lastPathComponent)" } ?? "in the default locations"
             let paths = targets.map { ($0.status.path as NSString).abbreviatingWithTildeInPath }.joined(separator: "\n")
             let link = targets.contains { $0.status.state == .linked }
                 ? "\nThe link will change. Its original folder stays in place." : ""
@@ -500,14 +540,24 @@ private struct SkillDetailsSheet: View {
                         Divider()
                         byAgent.id("agents")
                         Divider()
-                        oneProject.id("project")
+                        projectsSection.id("project")
                         Divider()
+                        if let url = skill.feedbackURL {
+                            VStack(alignment: .leading, spacing: 4) {
+                                DesktopTextLink("Share feedback on GitHub", destination: url)
+                                Text("Tell the contributor what worked or report a problem.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Divider()
+                        }
                         advanced
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 24).padding(.vertical, 16)
                 }
-                .onAppear { if let initialSection { scroll.scrollTo(initialSection, anchor: .top) } }
+                .onAppear {
+                    if let initialSection { scroll.scrollTo(initialSection, anchor: .top) }
+                }
             }
             Divider()
             footer.padding(.horizontal, 24).padding(.vertical, 14)
@@ -515,7 +565,7 @@ private struct SkillDetailsSheet: View {
         .frame(minWidth: 560, idealWidth: 700, minHeight: 460, idealHeight: 680)
         .background(Color(nsColor: .textBackgroundColor))
         .interactiveDismissDisabled(model.busy || installer.operationsBusy)
-        .confirmationDialog(LocalizedStringKey("\(confirmation?.actionTitle ?? "") this skill?"),
+        .confirmationDialog(confirmation?.title ?? "Confirm skill change",
                             isPresented: Binding(get: { confirmation != nil }, set: { if !$0 { confirmation = nil } }),
                             titleVisibility: .visible, presenting: confirmation) { request in
             Button(LocalizedStringKey(request.actionTitle),
@@ -545,6 +595,14 @@ private struct SkillDetailsSheet: View {
             VStack(alignment: .leading, spacing: 7) {
                 Text(LocalizedStringKey(presentation.title)).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Text(LocalizedStringKey(presentation.goal)).foregroundStyle(.secondary)
+                if let tested = skill.testedClients {
+                    let names = tested.map(\.title).joined(separator: ", ")
+                    if Set(tested) == Set(skill.compatibleClients) {
+                        Text("Tested with \(names)").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("Tested with \(names) only").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 8) {
                         Text("Find it in your agent").foregroundStyle(.secondary)
@@ -582,20 +640,19 @@ private struct SkillDetailsSheet: View {
 
     private var allAgents: some View {
         let scope = model.global[skill.id]
-        let agents = scope?.agents ?? SkillPlacement.localAgents.filter { skill.compatibleClients.contains($0) }
-        let targets = scope?.missing(for: agents) ?? []
-        let hasInstall = scope?.copies.contains { $0.status.isInstalled } == true
-        return HStack(alignment: .top, spacing: 16) {
-            sectionHeading("All agents", subtitle: "Use in every project on this Mac. Keeps existing installations.")
-            Spacer()
-            if agents.isEmpty {
-                Text("No compatible local agents").foregroundStyle(.secondary)
-            } else if targets.isEmpty && scope != nil {
-                Text("Installed for all").foregroundStyle(.secondary)
-            } else {
-                DesktopActionButton(title: hasInstall ? "Install remaining" : "Install for all", emphasis: .primary) {
-                    model.change(.install, targets: targets, using: installer)
-                }.disabled(!canInstall || targets.isEmpty)
+        return VStack(alignment: .leading, spacing: 8) {
+            sectionHeading("Default for all projects", subtitle: "Make this skill available across projects on this Mac.")
+            if let scope {
+                if scope.agents.isEmpty {
+                    Text("No compatible local agents").foregroundStyle(.secondary)
+                } else {
+                    DesktopActionRow { scopeActions(scope, project: nil) }
+                    if scope.copies.contains(where: { $0.placement == .cursorPlugin && $0.status.isInstalled })
+                        && scope.agents.contains(.cursor) {
+                        Text("The copy included in the Cursor plugin is managed in AI Agents.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
             }
         }
     }
@@ -613,19 +670,43 @@ private struct SkillDetailsSheet: View {
 
     private func agentSection(_ agent: SkillClient, scope: SkillScopeStatus) -> some View {
         let copies = scope.managedCopies(for: agent)
+        let pluginCopy = copies.first { $0.placement == .cursorPlugin }
         return VStack(alignment: .leading, spacing: 3) {
             Text(agent.title).font(.body.weight(.medium)).accessibilityAddTraits(.isHeader)
             if !copies.isEmpty {
-                ForEach(copies) { copy in agentCopy(agent, copy: copy) }
-            } else if let proposed = scope.missing(for: [agent]).first {
+                if let pluginCopy { cursorPluginCopy(pluginCopy) }
+                ForEach(copies.filter { $0.placement != .cursorPlugin }) { copy in
+                    VStack(alignment: .leading, spacing: 3) {
+                        if pluginCopy != nil {
+                            Text("Separate skill copy").font(.caption.weight(.medium))
+                        }
+                        agentCopy(agent, copy: copy)
+                    }
+                }
+            } else if let proposed = scope.installTarget(for: agent) {
+                if !scope.installed(for: agent).isEmpty {
+                    Text("Also available through a shared installation")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 agentCopy(agent, copy: proposed)
-            } else {
-                Text("Available through a shared installation")
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 3)
         .accessibilityElement(children: .contain)
+    }
+
+    private func cursorPluginCopy(_ copy: SkillCopy) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Included in the Glyphs MCP plugin for Cursor").font(.callout.weight(.medium))
+            Text("To update or remove this copy, manage the whole plugin in AI Agents.")
+                .font(.callout).foregroundStyle(.secondary)
+            versionStatus(copy.status)
+            path(copy.status.path)
+            DesktopActionButton(title: "Open AI Agents", action: managePlugin)
+                .disabled(unavailable)
+                .accessibilityHint("Opens the Cursor plugin controls")
+        }
+        .padding(.bottom, 5)
     }
 
     private func agentCopy(_ agent: SkillClient, copy: SkillCopy) -> some View {
@@ -633,10 +714,6 @@ private struct SkillDetailsSheet: View {
             VStack(alignment: .leading, spacing: 3) {
                 path(copy.status.path)
                 versionStatus(copy.status)
-                if copy.placement == .cursorPlugin {
-                    Text("Installed via the Glyphs MCP plugin")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
                 let others = copy.placement.agents.filter { $0 != agent }.map(\.title)
                 if !others.isEmpty {
                     Text("Also visible in \(others.joined(separator: ", "))").font(.caption).foregroundStyle(.secondary)
@@ -644,11 +721,9 @@ private struct SkillDetailsSheet: View {
             }
             Spacer(minLength: 0)
             SkillDialogActions {
-                if copy.placement == .cursorPlugin {
-                    DesktopActionButton(title: "Manage plugin", action: managePlugin).disabled(unavailable)
-                } else if copy.status.state == .notInstalled {
+                if copy.status.state == .notInstalled {
                     DesktopActionButton(title: "Install") {
-                        model.change(.install, targets: [copy], using: installer)
+                        model.change(.install, targets: [copy], using: installer, forAgent: agent)
                     }.disabled(!canInstall).accessibilityLabel("Install for \(agent.title)")
                 } else if copy.status.isInstalled {
                     let action = versionAction(for: [copy])
@@ -663,57 +738,120 @@ private struct SkillDetailsSheet: View {
         }
     }
 
-    private var oneProject: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeading("One project", subtitle: "Available to all compatible agents in this project.")
-            if let project = model.projectURL {
-                let scope = model.projectScopes[skill.id]
-                let missing = scope.map { $0.missing(for: $0.agents) } ?? []
-                let installed = scope?.copies.filter { copy in
-                    copy.status.isInstalled && copy.placement.agents.contains { skill.compatibleClients.contains($0) }
-                } ?? []
-                let updates = installed.filter { $0.status.state == .updateAvailable }
-                let verified = installed.filter { $0.status.verifiedVersion != nil }
-                let versionTargets = !updates.isEmpty ? updates : (!verified.isEmpty ? verified : installed)
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 10) {
-                            Label(project.lastPathComponent, systemImage: "folder").font(.body.weight(.medium))
-                            Button("Change…", action: model.chooseProject).disabled(unavailable)
-                        }
-                        path(project.path)
-                        ForEach(installed + missing) { copy in
-                            path(copy.status.path, relativeTo: project)
-                            versionStatus(copy.status)
-                        }
-                        if !installed.isEmpty && missing.isEmpty {
-                            Text("Installed in this project").font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    SkillDialogActions {
-                        if !missing.isEmpty {
-                            DesktopActionButton(title: "Install in project") {
-                                model.change(.install, targets: missing, project: project, using: installer)
-                            }.disabled(!canInstall)
-                        }
-                        if !versionTargets.isEmpty {
-                            let action = versionAction(for: versionTargets)
-                            let title = action.title == "Replace…" ? "Replace in project…" : action.title + " in project"
-                            DesktopActionButton(title: title, emphasis: action.emphasis) {
-                                changeVersion(action.operation, copies: versionTargets, project: project)
-                            }.disabled(!canInstall)
-                        }
-                        if !installed.isEmpty {
-                            DesktopActionButton(title: "Uninstall from project…") {
-                                confirmation = .init(operation: .remove, targets: installed, project: project)
-                            }.disabled(unavailable)
-                        }
+    private var projectsSection: some View {
+        let global = model.global[skill.id]
+        let agents = global?.agents ?? []
+        let globalAgents = Set(agents.filter { global?.installed(for: $0).isEmpty == false })
+        let copies = model.projectScopes.compactMapValues { scopes -> SkillScopeStatus? in
+            guard let scope = scopes[skill.id], !scope.editableCopies.isEmpty else { return nil }
+            return scope
+        }
+        let folders = navigation.skillProjects
+            .map { URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL }
+            .filter { folder in
+                copies[folder] != nil ||
+                    (!model.scanning && model.projectScopes[folder] == nil
+                     && navigation.lastKnownSkillInstallation(skill.id, in: folder.path))
+            }
+        let filter = projectFilter.trimmingCharacters(in: .whitespacesAndNewlines)
+        let matches = folders.filter { folder in
+            filter.isEmpty || navigation.name(for: folder.path).localizedCaseInsensitiveContains(filter)
+                || folder.path.localizedCaseInsensitiveContains(filter)
+        }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                sectionHeading("Project copies", subtitle: "Manage copies installed in individual project folders.")
+                Spacer()
+                DesktopActionButton(title: folders.isEmpty ? "Install in a project…" : "Install in another project…",
+                                    emphasis: .primary, action: installInProject)
+                    .disabled(!canInstall || agents.isEmpty)
+            }
+            if !globalAgents.isEmpty {
+                Text("Agents with a Mac-wide copy can use it in any project without a project copy.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            if folders.isEmpty {
+                Text(model.scanning ? "Checking for project copies…" : "No project copies installed.")
+                    .font(.callout).foregroundStyle(.secondary)
+            } else {
+                if folders.count > 1 || !projectFilter.isEmpty {
+                    TextField("Search installed projects", text: $projectFilter).textFieldStyle(.roundedBorder)
+                }
+                if matches.isEmpty {
+                    Text("No matching project copies.").font(.callout).foregroundStyle(.secondary)
+                }
+                ForEach(matches, id: \.self) { folder in
+                    Divider()
+                    projectRow(folder, scope: copies[folder], globalAgents: globalAgents)
+                }
+            }
+        }
+    }
+
+    private func projectRow(_ folder: URL, scope: SkillScopeStatus?, globalAgents: Set<SkillClient>) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(navigation.name(for: folder.path))
+                    .font(.body.weight(.medium)).accessibilityAddTraits(.isHeader)
+                path(folder.path)
+            }
+            if let scope {
+                let projectAgents = scope.agents.filter { !scope.installed(for: $0).isEmpty }
+                ForEach(scope.editableCopies) { copy in
+                    VStack(alignment: .leading, spacing: 3) {
+                        path(copy.status.path, relativeTo: folder)
+                        versionStatus(copy.status)
                     }
                 }
+                if projectAgents.allSatisfy(globalAgents.contains) {
+                    Text("Remove the project copy if you use the Mac-wide copy. This avoids keeping two versions.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                DesktopActionRow { scopeActions(scope, project: folder) }
             } else {
-                Button("Choose folder…", action: model.chooseProject).disabled(unavailable)
+                Label("Project folder unavailable", systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout).foregroundStyle(.orange)
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 3)
+    }
+
+    private func installInProject() {
+        let panel = DesktopProjectsModel.folderPanel("Choose Project Folder")
+        panel.canCreateDirectories = false
+        panel.directoryURL = navigation.lastProject.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        panel.prompt = "Install"
+        panel.message = "Choose a folder to install this skill for all compatible agents in that project."
+        if panel.runModal() == .OK, let chosen = panel.url {
+            projectFilter = ""
+            projects.rememberSkillProject(chosen)
+            model.change(.install, project: chosen.standardizedFileURL, using: installer)
+        }
+    }
+
+    @ViewBuilder private func scopeActions(_ scope: SkillScopeStatus, project: URL?) -> some View {
+        let installed = scope.editableCopies
+        let missing = scope.missing(for: scope.agents)
+        let updates = installed.filter { $0.status.state == .updateAvailable }
+        let versionTargets = updates.isEmpty ? installed : updates
+        if !missing.isEmpty {
+            DesktopActionButton(title: project == nil ? "Install default" : "Install in project", emphasis: .primary) {
+                model.change(.install, targets: missing, project: project, using: installer)
+            }.disabled(!canInstall)
+        }
+        if !versionTargets.isEmpty {
+            let action = versionAction(for: versionTargets)
+            let suffix = project == nil ? " default" : " in project"
+            let title = action.title == "Replace…" ? "Replace" + suffix + "…" : action.title + suffix
+            DesktopActionButton(title: title, emphasis: action.emphasis) {
+                changeVersion(action.operation, copies: versionTargets, project: project)
+            }.disabled(!canInstall)
+        }
+        if !installed.isEmpty {
+            DesktopActionButton(title: project == nil ? "Remove default…" : "Remove from project…") {
+                confirmation = .init(operation: .remove, targets: installed, project: project)
+            }.disabled(unavailable)
         }
     }
 
@@ -721,6 +859,7 @@ private struct SkillDetailsSheet: View {
         DisclosureGroup("Advanced") {
             VStack(alignment: .leading, spacing: 10) {
                 Text(skill.author + " · " + skill.license)
+                if let version = skill.version { Text("Version \(version)") }
                 Text("Revision: \(skill.source.revision)").textSelection(.enabled)
                 ForEach(skill.requirements, id: \.self) { Text($0) }
                 if let url = skill.source.browseURL { DesktopTextLink("View source", destination: url) }
@@ -766,9 +905,15 @@ private struct SkillDetailsSheet: View {
         DisclosureGroup("Read instructions") {
             VStack(alignment: .leading, spacing: 8) {
                 DisclosureGroup("Skill files") {
-                    ForEach(model.files.filter { $0.data != nil }, id: \.path) { file in
-                        Button(file.path) { previewPath = file.path }.buttonStyle(.link)
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(model.files.filter { $0.data != nil }, id: \.path) { file in
+                            Button { previewPath = file.path } label: {
+                                Text(file.path).multilineTextAlignment(.leading)
+                            }
+                            .buttonStyle(.link)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Text(previewPath).font(.caption).foregroundStyle(.secondary)
                 if let data = model.files.first(where: { $0.path == previewPath })?.data,
@@ -802,19 +947,28 @@ private struct SkillDetailsSheet: View {
     }
 
     @ViewBuilder private func versionStatus(_ status: SkillInstallationStatus) -> some View {
-        if let version = status.verifiedVersion {
-            Label(version, systemImage: "checkmark.circle")
-                .font(.caption).foregroundStyle(.secondary)
-                .accessibilityLabel("\(version), up to date")
+        if status.matchesPackage == true {
+            Label {
+                if let version = status.availableVersion { Text("Version \(version)") }
+                else { Text("Up to date") }
+            } icon: {
+                Image(systemName: "checkmark.circle")
+            }
+            .font(.caption).foregroundStyle(.secondary)
+            .accessibilityLabel(status.availableVersion.map { Text("Version \($0), up to date") } ?? Text("Up to date"))
             if status.state == .linked {
                 Text("Linked folder").font(.caption).foregroundStyle(.secondary)
             }
-        } else if status.state == .updateAvailable, let version = status.availableVersion {
-            Text(status.installedVersion.map { "\($0) · Update to \(version)" } ?? "Update to \(version)")
-                .font(.caption).foregroundStyle(.secondary)
+        } else if status.state == .updateAvailable {
+            if let version = status.availableVersion {
+                Text(status.installedVersion.map { "\($0) · Update to \(version)" } ?? "Update to \(version)")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("Update available").font(.caption).foregroundStyle(.secondary)
+            }
         } else if status.state != .notInstalled {
             Text(LocalizedStringKey(status.title)).font(.caption).foregroundStyle(.secondary)
-            if status.isInstalled && status.availableVersion != nil {
+            if status.isInstalled && status.matchesPackage == false {
                 Text("Version unverified").font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -824,7 +978,7 @@ private struct SkillDetailsSheet: View {
         if copies.contains(where: { $0.status.state == .updateAvailable }) {
             return (.update, "Update", .primary)
         }
-        if copies.allSatisfy({ $0.status.verifiedVersion != nil || $0.status.state == .installed }) {
+        if copies.allSatisfy({ $0.status.matchesPackage == true || $0.status.state == .installed }) {
             return (.reinstall, "Reinstall", .secondary)
         }
         return (.update, "Replace…", .secondary)

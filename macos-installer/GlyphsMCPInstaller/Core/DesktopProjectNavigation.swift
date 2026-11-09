@@ -12,6 +12,8 @@ public struct DesktopProjectNavigation: Equatable {
     public private(set) var lastProject: String?
     public private(set) var destination: DesktopDestination
     private var names: [String: String]
+    private var legacySkillFolders: Set<String>
+    private var projectSkillInstallations: [String: Set<String>]
     public var selectedProject: String? {
         if case .project(let path) = destination { return path }
         return nil
@@ -20,7 +22,15 @@ public struct DesktopProjectNavigation: Equatable {
     /// Present projects by their displayed names while retaining `recent` as
     /// the persistence and eviction order.
     public var alphabetizedProjects: [String] {
-        recent.sorted { left, right in
+        alphabetized(recent)
+    }
+
+    public var skillProjects: [String] {
+        alphabetized(Set(recent).union(legacySkillFolders).union(projectSkillInstallations.keys))
+    }
+
+    private func alphabetized(_ paths: some Sequence<String>) -> [String] {
+        paths.sorted { left, right in
             switch name(for: left).localizedStandardCompare(name(for: right)) {
             case .orderedAscending:
                 return true
@@ -41,6 +51,10 @@ public struct DesktopProjectNavigation: Equatable {
         recent = restored
         names = (defaults.dictionary(forKey: "projectDisplayNames") as? [String: String] ?? [:])
             .filter { restored.contains($0.key) && !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        legacySkillFolders = Set((defaults.stringArray(forKey: "skillProjectFolders") ?? [])
+            .filter { $0.hasPrefix("/") }.map { URL(fileURLWithPath: $0).standardizedFileURL.path })
+        let remembered = defaults.dictionary(forKey: "projectSkillInstallations") as? [String: [String]] ?? [:]
+        projectSkillInstallations = remembered.filter { $0.key.hasPrefix("/") && !$0.value.isEmpty }.mapValues(Set.init)
         let stored = defaults.string(forKey: "lastSelectedProject")
         lastProject = stored.flatMap { restored.contains($0) ? $0 : nil } ?? restored.first
         destination = hasInstallation ? lastProject.map(DesktopDestination.project) ?? .setup : .setup
@@ -50,17 +64,34 @@ public struct DesktopProjectNavigation: Equatable {
         destination = value ?? lastProject.map(DesktopDestination.project) ?? .templates
         if case .project(let path) = destination {
             let path = URL(fileURLWithPath: path).standardizedFileURL.path
-            recent.removeAll { $0 == path }
-            recent.insert(path, at: 0)
-            recent = Array(recent.prefix(12))
-            names = names.filter { recent.contains($0.key) }
-            lastProject = path
+            rememberProject(URL(fileURLWithPath: path, isDirectory: true))
             destination = .project(path)
         }
     }
 
+    /// Remember a folder selected in the skill manager without leaving Skills.
+    public mutating func rememberProject(_ folder: URL) {
+        let path = folder.standardizedFileURL.path
+        recent.removeAll { $0 == path }
+        recent.insert(path, at: 0)
+        recent = Array(recent.prefix(12))
+        names = names.filter { recent.contains($0.key) }
+        lastProject = path
+    }
+
     public func name(for path: String) -> String {
         names[path] ?? URL(fileURLWithPath: path).lastPathComponent
+    }
+
+    public func lastKnownSkillInstallation(_ skillID: String, in projectPath: String) -> Bool {
+        projectSkillInstallations[projectPath]?.contains(skillID) == true
+    }
+
+    /// Each scan reports accessible folders only. Preserve the last known copies of offline projects.
+    public mutating func recordProjectSkillInstallations(_ installations: [String: Set<String>]) {
+        for (path, skillIDs) in installations {
+            projectSkillInstallations[path] = skillIDs.isEmpty ? nil : skillIDs
+        }
     }
 
     /// Forget only the app's registration; project files are never removed.
@@ -96,6 +127,7 @@ public struct DesktopProjectNavigation: Equatable {
         defaults.set(recent, forKey: "recentProjects")
         defaults.set(lastProject, forKey: "lastSelectedProject")
         defaults.set(names, forKey: "projectDisplayNames")
+        defaults.set(projectSkillInstallations.mapValues { $0.sorted() }, forKey: "projectSkillInstallations")
     }
 }
 

@@ -28,22 +28,29 @@ final class SkillCatalogTests: XCTestCase {
     }
     func testVersionVerificationDistinguishesCurrentOutdatedAndEditedCopies() throws {
         let installer = SupplementalSkillInstaller(home: temporary)
-        let item = skill()
-        let original = SkillPackageVersion(label: "Revision aaaaaaaa", files: files())
+        var item = skill()
+        item.version = "1"
+        let original = SkillPackageVersion(label: item.version, files: files())
         let initial = installer.scopeStatus(item)
         let target = initial.missing(for: [.codex])
         XCTAssertTrue(installer.apply(.install, to: target, skill: item, files: files(), package: original).failures.isEmpty)
 
         let current = try XCTUnwrap(installer.scopeStatus(item, package: original).installed(for: .codex).first)
-        XCTAssertEqual(current.status.verifiedVersion, original.label)
+        XCTAssertEqual(current.status.matchesPackage, true)
+        XCTAssertEqual(current.status.availableVersion, "1")
+        let unversioned = try XCTUnwrap(installer.scopeStatus(item, package: .init(label: nil, files: files()))
+            .installed(for: .codex).first)
+        XCTAssertEqual(unversioned.status.matchesPackage, true)
+        XCTAssertNil(unversioned.status.availableVersion)
         XCTAssertEqual(installer.apply(.reinstall, to: [current], skill: item, files: files(), package: original).completed.count, 1)
 
-        let updated = skill("c")
+        var updated = skill("c")
+        updated.version = "1.1.1"
         let newFiles = files("Updated")
-        let latest = SkillPackageVersion(label: "Revision cccccccc", files: newFiles)
+        let latest = SkillPackageVersion(label: updated.version, files: newFiles)
         let outdated = try XCTUnwrap(installer.scopeStatus(updated, package: latest).installed(for: .codex).first)
         XCTAssertEqual(outdated.status.state, .updateAvailable)
-        XCTAssertNil(outdated.status.verifiedVersion)
+        XCTAssertEqual(outdated.status.matchesPackage, false)
         XCTAssertEqual(outdated.status.installedVersion, original.label)
         XCTAssertEqual(outdated.status.availableVersion, latest.label)
 
@@ -51,7 +58,7 @@ final class SkillCatalogTests: XCTestCase {
         try XCTUnwrap(files("Local changes").first?.data).write(to: file)
         let edited = try XCTUnwrap(installer.scopeStatus(updated, package: latest).installed(for: .codex).first)
         XCTAssertEqual(edited.status.state, .modified)
-        XCTAssertNil(edited.status.verifiedVersion)
+        XCTAssertEqual(edited.status.matchesPackage, false)
     }
 
     func testLinkedFolderIgnoresPythonCachesButDetectsSourceEdits() throws {
@@ -62,7 +69,7 @@ final class SkillCatalogTests: XCTestCase {
             ProjectFile(path: "scripts", data: nil),
             ProjectFile(path: "scripts/tool.py", data: script)
         ]
-        let version = SkillPackageVersion(label: "Revision aaaaaaaa", files: authored)
+        let version = SkillPackageVersion(label: "1.0", files: authored)
         let source = temporary.appendingPathComponent("source", isDirectory: true)
         let root = temporary.appendingPathComponent(SkillPlacement.shared.rawValue, isDirectory: true)
         try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
@@ -81,13 +88,14 @@ final class SkillCatalogTests: XCTestCase {
 
         let current = try XCTUnwrap(installer.scopeStatus(item, package: version).installed(for: .codex).first)
         XCTAssertEqual(current.status.state, .linked)
-        XCTAssertEqual(current.status.verifiedVersion, version.label)
+        XCTAssertEqual(current.status.matchesPackage, true)
+        XCTAssertEqual(current.status.availableVersion, version.label)
         XCTAssertEqual(installer.apply(.reinstall, to: [current], skill: item, files: authored).failures.count, 1)
         XCTAssertTrue(FileManager.default.fileExists(atPath: cache.appendingPathComponent("tool.cpython-314.pyc").path))
         try Data("print('changed')".utf8).write(to: sourceScript)
         let edited = try XCTUnwrap(installer.scopeStatus(item, package: version).installed(for: .codex).first)
         XCTAssertEqual(edited.status.state, .linked)
-        XCTAssertNil(edited.status.verifiedVersion)
+        XCTAssertEqual(edited.status.matchesPackage, false)
         XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: link.path), source.path)
     }
 
@@ -139,6 +147,46 @@ final class SkillCatalogTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: plugin.status.path))
     }
 
+    func testDefaultAndTwoProjectCopiesCanBeUpdatedAndRemovedIndependently() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let first = temporary.appendingPathComponent("first", isDirectory: true)
+        let second = temporary.appendingPathComponent("second", isDirectory: true)
+        for project in [first, second] {
+            try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        }
+        for scope in [nil, first, second] {
+            let status = installer.scopeStatus(item, project: scope)
+            let installed = installer.apply(.install, to: status.missing(for: status.agents),
+                                            skill: item, files: files(), project: scope)
+            XCTAssertEqual(installed.completed.count, 2)
+            XCTAssertTrue(installed.failures.isEmpty)
+        }
+        let next = skill("c")
+        let updated = installer.apply(.update, to: installer.scopeStatus(next, project: first).editableCopies,
+                                      skill: next, files: files("New"), project: first)
+        XCTAssertEqual(updated.completed.count, 2)
+        XCTAssertTrue(updated.failures.isEmpty)
+        XCTAssertTrue(installer.scopeStatus(next, project: first).editableCopies.allSatisfy { $0.status.state == .installed })
+
+        let defaults = installer.scopeStatus(next).editableCopies
+        XCTAssertTrue(defaults.allSatisfy { $0.status.state == .updateAvailable })
+        let updatedDefaults = installer.apply(.update, to: defaults, skill: next, files: files("New"))
+        XCTAssertEqual(updatedDefaults.completed.count, 2)
+        XCTAssertTrue(updatedDefaults.failures.isEmpty)
+        XCTAssertTrue(installer.scopeStatus(next, project: second).editableCopies.allSatisfy { $0.status.state == .updateAvailable })
+
+        let defaultCopies = installer.scopeStatus(next).editableCopies
+        XCTAssertTrue(installer.scopeStatus(item, project: temporary).editableCopies.isEmpty)
+        XCTAssertFalse(installer.apply(.remove, to: defaultCopies, skill: next, files: [], project: temporary).failures.isEmpty)
+        let removed = installer.apply(.remove, to: defaultCopies, skill: next, files: [])
+        XCTAssertEqual(removed.completed.count, 2)
+        XCTAssertTrue(removed.failures.isEmpty)
+        XCTAssertTrue(installer.scopeStatus(next).editableCopies.isEmpty)
+        XCTAssertEqual(installer.scopeStatus(next, project: first).editableCopies.count, 2)
+        XCTAssertEqual(installer.scopeStatus(item, project: second).editableCopies.count, 2)
+    }
+
     func testAgentManagementListsEachCopyUnderItsOwner() throws {
         let installer = SupplementalSkillInstaller(home: temporary)
         let item = skill()
@@ -157,11 +205,38 @@ final class SkillCatalogTests: XCTestCase {
 
         try createCopy(.cursorPlugin)
         let withPlugin = installer.scopeStatus(item)
+        XCTAssertEqual(withPlugin.editableCopies.map(\.placement), [.codex, .claudeCode])
         XCTAssertEqual(withPlugin.managedCopies(for: .codex).map(\.placement), [.codex])
         XCTAssertEqual(withPlugin.managedCopies(for: .claudeCode).map(\.placement), [.claudeCode])
         XCTAssertEqual(withPlugin.managedCopies(for: .cursor).map(\.placement), [.cursorPlugin])
         XCTAssertTrue(try XCTUnwrap(withPlugin.managedCopies(for: .cursor).first).status.path
             .hasSuffix(".cursor/plugins/local/glyphs-mcp/skills/test-skill"))
+    }
+
+    func testCursorInstallAndUpdateRemainAvailableWithAnInheritedCodexCopy() throws {
+        let installer = SupplementalSkillInstaller(home: temporary)
+        var item = skill()
+        item.testedClients = [.codex]
+        let initial = installer.scopeStatus(item)
+        let codex = try XCTUnwrap(initial.installTarget(for: .codex))
+        XCTAssertEqual(installer.apply(.install, to: [codex], skill: item, files: files(), forAgent: .codex).completed.count, 1)
+
+        let shared = installer.scopeStatus(item)
+        XCTAssertEqual(shared.installed(for: .cursor).map(\.placement), [.shared])
+        XCTAssertTrue(shared.missing(for: [.cursor]).isEmpty)
+        let cursor = try XCTUnwrap(shared.installTarget(for: .cursor))
+        XCTAssertEqual(cursor.placement, .cursor)
+        XCTAssertEqual(installer.apply(.install, to: [cursor], skill: item, files: files(), forAgent: .cursor).completed.count, 1)
+        XCTAssertNil(installer.scopeStatus(item).installTarget(for: .cursor))
+
+        let next = skill("c")
+        let cursorCopy = try XCTUnwrap(installer.scopeStatus(next).managedCopies(for: .cursor).first)
+        XCTAssertEqual(cursorCopy.status.state, .updateAvailable)
+        XCTAssertEqual(installer.apply(.update, to: [cursorCopy], skill: next, files: files("New")).completed.count, 1)
+        let updated = try XCTUnwrap(installer.scopeStatus(next).managedCopies(for: .cursor).first)
+        XCTAssertEqual(updated.status.state, .installed)
+        XCTAssertEqual(installer.apply(.remove, to: [updated], skill: next, files: []).completed.count, 1)
+        XCTAssertEqual(installer.scopeStatus(item).managedCopies(for: .codex).map(\.placement), [.shared])
     }
 
     func testProjectInstallCanRetryOnlyMissingDestinations() throws {
@@ -208,7 +283,8 @@ final class SkillCatalogTests: XCTestCase {
         let version = SkillPackageVersion(label: "2.6.0", files: package)
         let oldCopy = try XCTUnwrap(direct.scopeStatus(item, package: version).installed(for: .codex).first)
         XCTAssertEqual(oldCopy.status.state, .installed)
-        XCTAssertEqual(oldCopy.status.verifiedVersion, "2.6.0")
+        XCTAssertEqual(oldCopy.status.matchesPackage, true)
+        XCTAssertEqual(oldCopy.status.availableVersion, "2.6.0")
         XCTAssertEqual(direct.apply(.remove, to: [oldCopy], skill: item, files: []).completed.count, 1)
         XCTAssertTrue(try setup.installManagedSkills(from: payload, to: root, clientName: "Codex",
                                                      overwriteExisting: true).entries.isEmpty)
@@ -282,6 +358,45 @@ final class SkillCatalogTests: XCTestCase {
             XCTAssertThrowsError(try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [labeled]))))
         }
     }
+    func testReviewedMetadataRepairsLegacyCompatibilityOnlyForTheSamePackage() throws {
+        var legacy = skill()
+        legacy.compatibleClients = [.codex]
+        var reviewed = legacy
+        reviewed.compatibleClients = [.codex, .cursor, .claudeCode]
+        reviewed.testedClients = [.codex]
+        reviewed.version = "1.0"
+        let snapshot = SkillCatalog(skills: [reviewed])
+
+        let merged = try SkillCatalog(skills: [legacy]).includingBundled(snapshot)
+        XCTAssertEqual(merged.skills, [reviewed])
+        var newRevision = legacy
+        newRevision.source.revision = String(repeating: "d", count: 40)
+        XCTAssertEqual(try SkillCatalog(skills: [newRevision]).includingBundled(snapshot).skills, [newRevision])
+        var explicit = legacy
+        explicit.testedClients = [.codex]
+        XCTAssertEqual(try SkillCatalog(skills: [explicit]).includingBundled(snapshot).skills.first?.compatibleClients, [.codex])
+    }
+
+    func testCatalogAcceptsIndependentVersionsAndValidatesTestedAgents() throws {
+        var entry = skill()
+        entry.testedClients = [.codex]
+        for version in ["1", "3.2", "3.1.1"] {
+            entry.version = version
+            let decoded = try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [entry])))
+            XCTAssertEqual(decoded.skills.first?.version, version)
+            XCTAssertEqual(decoded.skills.first?.testedClients, [.codex])
+        }
+        let feedback = try XCTUnwrap(entry.feedbackURL)
+        XCTAssertEqual(feedback.path, "/test/skills/issues/new")
+        XCTAssertEqual(URLComponents(url: feedback, resolvingAgainstBaseURL: false)?.queryItems?.first?.value,
+                       "Feedback on Test Skill")
+        entry.version = "Revision abcd"
+        XCTAssertThrowsError(try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [entry]))))
+        entry.version = "1.0"
+        entry.testedClients = [.chatgpt]
+        XCTAssertThrowsError(try SkillCatalog.decode(JSONEncoder().encode(SkillCatalog(skills: [entry]))))
+    }
+
     func testImportReadsOptionalUINameWithoutChangingInvocationIdentifier() throws {
         let ui = ProjectFile(path: "agents/openai.yaml", data: Data("interface:\n  display_name: \"Glyphs Project Brief\"\npolicy:\n  allow_implicit_invocation: false\n".utf8))
         XCTAssertEqual(try SkillMetadata.displayName(in: files() + [ui]), "Glyphs Project Brief")

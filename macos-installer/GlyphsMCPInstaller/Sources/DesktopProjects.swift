@@ -140,6 +140,17 @@ final class DesktopProjectsModel: ObservableObject {
         select(.project(url.standardizedFileURL.path))
         defaults.set(true, forKey: "projectsExpanded")
     }
+    func rememberSkillProject(_ folder: URL) {
+        navigation.rememberProject(folder)
+        navigation.save(to: defaults)
+    }
+    func recordProjectSkillInstallations(_ installations: [String: Set<String>]) {
+        var updated = navigation
+        updated.recordProjectSkillInstallations(installations)
+        guard updated != navigation else { return }
+        navigation = updated
+        navigation.save(to: defaults)
+    }
     func edit(_ path: String) { editing = DesktopProjectEditing(id: path) }
     func remove(_ path: String) {
         let previous = selectedProject

@@ -40,6 +40,22 @@ final class DesktopProjectNavigationTests: XCTestCase {
         XCTAssertEqual(state.alphabetizedProjects, ["/Fonts/Middle", "/Fonts/Zulu", "/Fonts/Alpha"])
     }
 
+    func testRememberingAnotherSkillFolderKeepsSkillsOpenAndRetainsBothProjects() {
+        let preferences = defaults()
+        var state = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+        state.select(.project("/Fonts/Alpha"))
+        state.select(.skills)
+
+        state.rememberProject(URL(fileURLWithPath: "/Fonts/Beta", isDirectory: true))
+        state.save(to: preferences)
+
+        XCTAssertEqual(state.destination, .skills)
+        XCTAssertEqual(state.recent, ["/Fonts/Beta", "/Fonts/Alpha"])
+        let restored = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+        XCTAssertEqual(restored.recent, state.recent)
+        XCTAssertEqual(restored.selectedProject, "/Fonts/Beta")
+    }
+
     func testTemplatesHeaderIsExplicitAndDoesNotClearRememberedProject() {
         let preferences = defaults()
         var state = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
@@ -53,6 +69,39 @@ final class DesktopProjectNavigationTests: XCTestCase {
         XCTAssertNil(state.selectedProject)
         state.select(nil)
         XCTAssertEqual(state.selectedProject, "/Fonts/Alpha")
+    }
+
+    func testProjectsWithSkillsSurviveRecentProjectEvictionAndRelaunch() {
+        let preferences = defaults()
+        var state = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+        let folders = (0..<15).map { URL(fileURLWithPath: "/Fonts/Project-\($0)", isDirectory: true) }
+        for folder in folders {
+            state.rememberProject(folder)
+            state.recordProjectSkillInstallations([folder.path: ["path-doctor"]])
+        }
+        state.save(to: preferences)
+
+        let restored = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+        XCTAssertEqual(restored.recent.count, 12)
+        XCTAssertEqual(Set(restored.skillProjects), Set(folders.map(\.path)))
+        XCTAssertEqual(restored.lastProject, folders.last?.path)
+    }
+
+    func testOfflineProjectKeepsItsLastKnownSkillUntilAReadableScanClearsIt() {
+        let preferences = defaults()
+        let offline = "/Fonts/Offline"
+        let available = "/Fonts/Available"
+        var state = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+        state.recordProjectSkillInstallations([offline: ["path-doctor"], available: ["dekink"]])
+        state.recordProjectSkillInstallations([available: []])
+        state.save(to: preferences)
+
+        var restored = DesktopProjectNavigation(defaults: preferences, hasInstallation: true)
+        XCTAssertTrue(restored.lastKnownSkillInstallation("path-doctor", in: offline))
+        XCTAssertFalse(restored.lastKnownSkillInstallation("dekink", in: offline))
+        XCTAssertFalse(restored.lastKnownSkillInstallation("dekink", in: available))
+        restored.recordProjectSkillInstallations([offline: []])
+        XCTAssertTrue(restored.skillProjects.isEmpty)
     }
 
     func testNoSelectionShowsTemplatesWithoutInventingAProject() {

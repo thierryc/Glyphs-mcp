@@ -65,6 +65,13 @@ public struct SkillScopeStatus: Sendable {
     public let agents: [SkillClient]
     public let copies: [SkillCopy]
 
+    public var editableCopies: [SkillCopy] {
+        copies.filter { copy in
+            copy.placement != .cursorPlugin && copy.status.isInstalled
+                && copy.placement.agents.contains(where: agents.contains)
+        }
+    }
+
     public func installed(for agent: SkillClient) -> [SkillCopy] {
         copies.filter { $0.placement.agents.contains(agent) && $0.status.isInstalled }
     }
@@ -72,6 +79,11 @@ public struct SkillScopeStatus: Sendable {
     // Agent discovery may overlap, but manage each installation under its owner once.
     public func managedCopies(for agent: SkillClient) -> [SkillCopy] {
         installed(for: agent).filter { $0.placement.owner(in: agents) == agent }
+    }
+
+    public func installTarget(for agent: SkillClient) -> SkillCopy? {
+        guard agents.contains(agent), managedCopies(for: agent).isEmpty else { return nil }
+        return copies.first { $0.placement == SkillPlacement.preferred(for: agent) }
     }
 
     public func missing(for requested: [SkillClient]) -> [SkillCopy] {
@@ -97,11 +109,11 @@ public struct SkillBatchResult: Sendable {
 }
 
 public struct SkillPackageVersion: Sendable {
-    public let label: String
+    public let label: String?
     fileprivate let hash: String
     fileprivate let linkedHash: String
 
-    public init(label: String, files: [ProjectFile]) {
+    public init(label: String?, files: [ProjectFile]) {
         self.label = label
         self.hash = SupplementalSkillInstaller.hash(files)
         let authored = files.filter { !ProjectFiles.isPythonCache($0.path, isDirectory: $0.data == nil) }
@@ -120,7 +132,7 @@ public struct SkillInstallationStatus: Sendable {
     public enum State: String, Sendable { case notInstalled, installed, updateAvailable, modified, unowned, linked, blocked }
     public let state: State
     public let path: String
-    public var verifiedVersion: String? = nil
+    public var matchesPackage: Bool? = nil
     public var installedVersion: String? = nil
     public var availableVersion: String? = nil
     public var title: String {
@@ -212,6 +224,7 @@ public struct SupplementalSkillInstaller {
     }
 
     public func scopeStatus(_ skill: CatalogSkill, project: URL? = nil, package: SkillPackageVersion? = nil) -> SkillScopeStatus {
+        if let project, isDefaultFolder(project) { return .init(agents: [], copies: []) }
         let base = project ?? home
         let agents = SkillPlacement.localAgents.filter { skill.compatibleClients.contains($0) }
         let copies = SkillPlacement.allCases.compactMap { placement -> SkillCopy? in
@@ -236,10 +249,13 @@ public struct SupplementalSkillInstaller {
 
     public func apply(_ operation: SkillCopyOperation, to targets: [SkillCopy], skill: CatalogSkill,
                       files: [ProjectFile], project: URL? = nil, replace: Bool = false,
-                      package: SkillPackageVersion? = nil) -> SkillBatchResult {
+                      package: SkillPackageVersion? = nil, forAgent agent: SkillClient? = nil) -> SkillBatchResult {
         var result = SkillBatchResult()
         if let project {
             do {
+                guard !isDefaultFolder(project) else {
+                    throw ProjectError("Use the default controls to manage skills in your home folder.")
+                }
                 try Self.regularAncestors(project)
                 guard try project.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
                     throw ProjectError("Choose an existing project folder.")
@@ -262,8 +278,12 @@ public struct SupplementalSkillInstaller {
                 case .install, .reinstall, .update:
                     if operation == .install {
                         let current = scopeStatus(skill, project: project)
-                        let requested = current.agents.filter { target.placement.agents.contains($0) }
-                        if current.missing(for: requested).isEmpty { continue }
+                        if let agent {
+                            guard current.installTarget(for: agent)?.id == target.id else { continue }
+                        } else {
+                            let requested = current.agents.filter { target.placement.agents.contains($0) }
+                            if current.missing(for: requested).isEmpty { continue }
+                        }
                     }
                     result.completed.append(try install(skill, files: files, root: target.root, project: project,
                         replace: replace, replaceLink: replace, reviewed: target, packageVersion: package?.label))
@@ -276,6 +296,10 @@ public struct SupplementalSkillInstaller {
             }
         }
         return result
+    }
+
+    private func isDefaultFolder(_ folder: URL) -> Bool {
+        folder.resolvingSymlinksInPath().path == home.resolvingSymlinksInPath().path
     }
     /// Use the same location for discovery and actions. Older agent-specific
     /// installations must not look absent merely because the shared root is empty.
@@ -297,31 +321,30 @@ public struct SupplementalSkillInstaller {
         let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
         if linked {
             // Version comparison ignores generated bytecode. Link and ownership checks remain exact.
-            let verified = package.flatMap { package -> String? in
-                guard let files = try? ProjectFiles.read(destination.resolvingSymlinksInPath(), excludingPythonCaches: true),
-                      Self.hash(files) == package.linkedHash else { return nil }
-                return package.label
+            let verified = package.map { package in
+                guard let files = try? ProjectFiles.read(destination.resolvingSymlinksInPath(), excludingPythonCaches: true)
+                else { return false }
+                return Self.hash(files) == package.linkedHash
             }
-            return .init(state: .linked, path: path, verifiedVersion: verified, availableVersion: package?.label)
+            return .init(state: .linked, path: path, matchesPackage: verified, availableVersion: package?.label)
         }
         let hash = fingerprint ?? (try? Self.identity(destination))
-        let verified = package.flatMap { $0.hash == hash ? $0.label : nil }
+        let verified = package.map { $0.hash == hash }
         if let receipt = try? Self.receipts(root)[skill.name], receipt.skill.id == skill.id {
             guard receipt.removed != true, let hash, hash == receipt.contentSHA256 else {
-                return .init(state: .modified, path: path, verifiedVersion: verified, availableVersion: package?.label)
+                return .init(state: .modified, path: path, matchesPackage: verified, availableVersion: package?.label)
             }
             let current = package.map { $0.hash == hash }
                 ?? (skill.bundled || receipt.skill.source == skill.source)
-            let installedVersion = receipt.packageVersion
-                ?? (receipt.skill.bundled ? nil : "Revision " + receipt.skill.source.revision.prefix(8))
+            let installedVersion = receipt.skill.version
             return .init(state: current ? .installed : .updateAvailable, path: path,
-                         verifiedVersion: verified, installedVersion: installedVersion, availableVersion: package?.label)
+                         matchesPackage: verified, installedVersion: installedVersion, availableVersion: package?.label)
         }
         if skill.bundled, legacyOwns(skill.name, destination: destination, root: root) {
             return .init(state: package.map { $0.hash == hash } ?? true ? .installed : .updateAvailable,
-                         path: path, verifiedVersion: verified, availableVersion: package?.label)
+                         path: path, matchesPackage: verified, availableVersion: package?.label)
         }
-        return .init(state: .unowned, path: path, verifiedVersion: verified, availableVersion: package?.label)
+        return .init(state: .unowned, path: path, matchesPackage: verified, availableVersion: package?.label)
     }
 
     private func legacyOwns(_ name: String, destination: URL, root: URL) -> Bool {

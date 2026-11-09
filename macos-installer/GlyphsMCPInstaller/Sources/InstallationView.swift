@@ -121,6 +121,7 @@ struct InstallationView: View {
                         remove: { pendingRemoval = .connector(client) },
                         retry: { model.retryConnector(client) }
                     )
+                    .id(client)
                 }
             }
         }
