@@ -58,6 +58,12 @@ def register_edit_workflow_tools(mcp, service):
             payload = {"ok": False, "error": exc.as_dict()}
             text = exc.message
             content = [TextContent(type="text", text=text)]
+        from .health import feedback
+        feedback(service, payload)
+        if payload.get('health'):
+            import json
+            content.append(TextContent(type='text', text=payload['health']['text']))
+            content.append(TextContent(type='text', text=json.dumps({'health': payload['health']}, separators=(',', ':'))))
         return ToolResult(content=content, structured_content=payload)
 
     @mcp.tool(name="start_edit_workflow", title="Start Glyphs edit",
@@ -68,7 +74,7 @@ def register_edit_workflow_tools(mcp, service):
         delta: float | None = None, glyphs: list[str] | None = None, options: dict[str, Any] | None = None,
         auto_keep: bool = True, ctx: Context = None,
     ) -> ToolResult:
-        """Perform an authorized edit; reuse the connection/document_id and retain idempotency_key for retries. Typed kinds include path_cleanup, width_delta, spacing, kerning_edit, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and closed native_action. mode=apply prepares and applies complete typed results; preview waits. Warnings/skipped targets and Dimensions overwrites retain report review. Compilation/export use start_job. Preparation never saves; typed jobs on dirty/new fonts require separately authorized Save/Save As/manual saving. Native scripts run without Save on dirty/pathless fonts. Reuse existing save authorization; prerequisite saving does not authorize saving the result.
+        """Perform an authorized edit; reuse the connection/document_id and retain idempotency_key for retries. Typed kinds include path_cleanup, path_fitting (explicit polygon reconstruction requiring path.fit-curves.v1 and outline.fit-polygon.v1), width_delta, spacing, kerning_edit, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and closed native_action. mode=apply prepares and applies complete typed results; preview waits. Warnings/skipped targets and Dimensions overwrites retain report review. Compilation/export use start_job. Preparation never saves; typed jobs on dirty/new fonts require separately authorized Save/Save As/manual saving. Native scripts run without Save on dirty/pathless fonts. Reuse existing save authorization; prerequisite saving does not authorize saving the result.
 
         With edit.queue.automatic.v1, busy Glyphs accepts the request as Waiting and returns its workflow_id immediately. The supervisor resumes it when its resource is available; reuse the same workflow/key instead of submitting again. queue.automaticResume=true needs no user decision. Same-font decisions retain their owning workflow and exact blocker; unrelated recovery stays open. Preview resumes preparation only. A service restart interrupts queued requests for review; uncertain native writes are never replayed. Cancel removes a waiting request without resolving its owner.
 

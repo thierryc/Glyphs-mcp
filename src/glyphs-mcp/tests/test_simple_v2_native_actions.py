@@ -395,10 +395,12 @@ def test_sidecar_filters_unknown_actions_and_gates_job_kind(tmp_path):
         documents=lambda: [document],
     )
     service = SidecarService(bridge, jobs=JobStore(tmp_path), worker=NS(status=lambda: {"available": True}))
+    service.status_cache.refresh()
     status = service.get_status()
     assert status["nativeActions"] == ["add_extremes", "update_metrics"]
     assert "native_action" in status["jobKinds"] and "native.action.v1" in status["writeCapabilities"]
     bridge.status = lambda: {"writeCapabilities": [], "nativeActions": ["update_metrics"]}
+    service.status_cache.refresh()
     status = service.get_status()
     assert status["nativeActions"] == [] and "native_action" not in status["jobKinds"]
     with pytest.raises(ServiceError, match="not advertised"):
@@ -426,10 +428,14 @@ def test_bridge_apply_native_undo_redo_and_discard_are_exact(monkeypatch):
 def test_bridge_status_advertises_native_action_only_with_a_qualified_action(monkeypatch):
     core = BridgeCore(NS(), lambda _callback: None)
     monkeypatch.setattr("glyphs_mcp_bridge.core.native_actions.available_actions", lambda: [])
+    core.refresh_capabilities()
     assert "native.action.v1" not in core.status()["writeCapabilities"]
+    core.refresh_capabilities()
     assert core.status()["nativeActions"] == []
     monkeypatch.setattr("glyphs_mcp_bridge.core.native_actions.available_actions", lambda: ["update_metrics"])
+    core.refresh_capabilities()
     assert "native.action.v1" in core.status()["writeCapabilities"]
+    core.refresh_capabilities()
     assert core.status()["nativeActions"] == ["update_metrics"]
 
 

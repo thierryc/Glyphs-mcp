@@ -44,6 +44,7 @@ def run(service, job_id, workflow_id, error):
     job = service._job(job_id)
     if job.get('resultKind') != 'script' or job['status'] != 'ready':
         raise error('job_not_ready', 'script review is not ready')
+    service.admit_expensive()
     for other in execution_blockers(service, job_id, document_id=job['document']['id'], refresh=True):
         if other['id'] != job_id:
             owner = protection(other)
@@ -67,7 +68,7 @@ def run(service, job_id, workflow_id, error):
         # Only a confirmed preflight refusal can return to the queue. A lost
         # response keeps the native attempt protected and is never replayed.
         certain = isinstance(exc, BridgeClientError) and exc.details.get('execution') != 'uncertain'
-        service.jobs.update(job_id, status=('ready' if exc.code == 'document_busy' else 'failed') if certain else 'applying', error=service._error(exc).as_dict())
+        service.jobs.update(job_id, status=('ready' if exc.code in {'document_busy', 'resource_pressure'} else 'failed') if certain else 'applying', error=service._error(exc).as_dict())
         raise service._error(exc) from exc
     return service._public(service.jobs.update(job_id, status='applying', bridgeOperation=operation))
 
@@ -126,6 +127,10 @@ def mutation_guard(method):
                         continue
                     if job['request']['kind'] not in {'python_script', 'checkpoint_restore'}:
                         continue
+                    if method.__name__ == 'open_edit_tab':
+                        from glyphs_mcp_protocol.task_conflicts import proof_conflicts
+                        if not proof_conflicts(job, document_id):
+                            continue
                     if scoped:
                         owner = protection(job)
                         diagnostic = method.__name__ == 'start_job' and kwargs.get('kind') in {'feature_compile', 'font_export', 'path_diagnostics'}

@@ -4,7 +4,23 @@ import json
 
 from glyphs_mcp_protocol import ProtocolError
 from glyphs_mcp_protocol import edit_tabs as contract
-from .document_closing import guard, write
+from .document_closing import write
+
+
+def guard(service, document, error_type):
+    from glyphs_mcp_protocol.task_conflicts import proof_conflicts, protection
+    from .jobs import JobStore
+    from . import saving
+    from pathlib import Path
+    for job in JobStore(service.jobs.root).records():
+        owner = job.get('document') or {}
+        # Also protect records retained by another sidecar for the same source.
+        same_path = (owner.get('path') and document.get('path') and
+                     saving._same_path(Path(owner['path']), Path(document['path'])))
+        identity = owner.get('id') if same_path else document['id']
+        if proof_conflicts(job, identity):
+            raise error_type('document_busy', 'Resolve active or uncertain work before opening a proof',
+                             details={'jobId': job['id'], 'status': job['status'], 'blocker': protection(job)})
 
 
 def open_edit_tab(service, error_type, document_id, idempotency_key, text=None, glyphs=None, master_id=None):

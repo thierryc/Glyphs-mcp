@@ -55,6 +55,7 @@ def test_activity_tracks_preparation_without_scanning_font_artifacts(tmp_path):
     job = value.start_job("doc_1", kind="width_delta", delta=8)
     assert entered.wait(3)
     try:
+        value.status_cache.refresh()
         status = value.get_status()
         assert status["controlProtocol"] == 1
         assert status["activity"]["activeCount"] == 1
@@ -70,6 +71,7 @@ def test_activity_tracks_preparation_without_scanning_font_artifacts(tmp_path):
         finish.set()
     ready = wait_for(value, job["id"], "ready")
     assert ready["activity"]["phase"] == "ready"
+    value.status_cache.refresh()
     assert value.get_status()["activity"]["activeCount"] == 0
 
 
@@ -143,6 +145,9 @@ def test_applying_progress_reconciles_before_reserving(tmp_path):
     job = value.start_job("doc_1", kind="width_delta", delta=8)
     wait_for(value, job["id"], "ready")
     value.apply_job(job["id"])
+    value.status_cache.refresh()
+    value.lifecycle.reconcile()  # Explicit supervisor work; passive status never reconciles.
+    value.status_cache.refresh()
     activity = value.get_status()["activity"]["jobs"][0]
     assert activity["completed"] == 1 and activity["total"] == 1
     assert activity["phase"] == "applying"
@@ -236,6 +241,7 @@ def test_acknowledged_lost_operation_is_interrupted_without_replay(tmp_path, sta
     assert "crash" not in result["error"]["message"].lower()
     assert result["activity"]["completed"] is None and result["activity"]["total"] is None
     assert result["activity"]["finishedAt"] is not None
+    value.status_cache.refresh()
     assert value.get_status()["activity"]["activeCount"] == 0
     state_bytes = (value.jobs.path(job["id"]) / "state.json").read_bytes()
     assert value.get_job(job["id"], include_preview=False) == result

@@ -8,6 +8,9 @@ from __future__ import annotations
 import heapq
 import math
 
+MAX_MEASUREMENT_POINTS = 65536
+MAX_TOPOLOGY_CELLS = 8192
+
 
 def _distance2(p, a, b):
     dx, dy = b[0]-a[0], b[1]-a[1]
@@ -16,9 +19,12 @@ def _distance2(p, a, b):
     return (p[0]-a[0]-t*dx)**2+(p[1]-a[1]-t*dy)**2
 
 
-def _curve(points, flatness, step, depth=0):
+def _curve(points, flatness, step, depth=0, remaining=None):
+    if remaining is None: remaining=[MAX_MEASUREMENT_POINTS-1]
     a, b, c, d = points
     if max(_distance2(b, a, d), _distance2(c, a, d)) <= flatness**2 and math.dist(a, d) <= step:
+        remaining[0]-=1
+        if remaining[0]<0:raise ValueError('measurement exceeds the 65,536-point work limit; hold the proposal')
         return [a, d]
     if depth >= 28:
         raise ValueError('curve sampling did not converge; hold the proposal')
@@ -26,7 +32,7 @@ def _curve(points, flatness, step, depth=0):
     abc = tuple((x+y)/2 for x,y in zip(ab,bc))
     bcd = tuple((x+y)/2 for x,y in zip(bc,cd))
     middle = tuple((x+y)/2 for x,y in zip(abc,bcd))
-    return _curve((a,ab,abc,middle),flatness,step,depth+1)[:-1]+_curve((middle,bcd,cd,d),flatness,step,depth+1)
+    return _curve((a,ab,abc,middle),flatness,step,depth+1,remaining)[:-1]+_curve((middle,bcd,cd,d),flatness,step,depth+1,remaining)
 
 
 def flatten(path, *, flatness=.002, step=.25):
@@ -35,7 +41,7 @@ def flatten(path, *, flatness=.002, step=.25):
     nodes=path['nodes']; on=[i for i,n in enumerate(nodes) if n['type']!='offcurve']
     if len(on)<2:
         raise ValueError('unsupported outline')
-    result=[]
+    result=[];remaining=[MAX_MEASUREMENT_POINTS-1]
     ends=on if path['closed'] else on[1:]
     for end in ends:
         indices=[end]; cursor=(end-1)%len(nodes)
@@ -47,9 +53,11 @@ def flatten(path, *, flatness=.002, step=.25):
         if not all(math.isfinite(v) for p in points for v in p): raise ValueError('non-finite outline')
         if len(points)==2 and nodes[end]['type']=='line':
             a,b=points; count=max(1,math.ceil(math.dist(a,b)/step))
+            remaining[0]-=count
+            if remaining[0]<0:raise ValueError('measurement exceeds the 65,536-point work limit; hold the proposal')
             sampled=[tuple(x+(y-x)*i/count for x,y in zip(a,b)) for i in range(count+1)]
         elif len(points)==4 and nodes[end]['type']=='curve':
-            sampled=_curve(points,flatness,step)
+            sampled=_curve(points,flatness,step,remaining=remaining)
         else: raise ValueError('only native expanded line/cubic outlines are qualified')
         result.extend(sampled if not result else sampled[1:])
     return result
@@ -57,11 +65,16 @@ def flatten(path, *, flatness=.002, step=.25):
 
 def topology_cells(path, flatness):
     """Monotone Bézier pieces whose control hulls enclose the entire curve."""
+    remaining=[MAX_TOPOLOGY_CELLS]
+    def reserve():
+        remaining[0]-=1
+        if remaining[0]<0:raise ValueError('topology subdivision exceeds its work limit; hold the proposal')
     def split(points,depth=0):
         a,b,c,d=points;dx,dy=d[0]-a[0],d[1]-a[1];length=dx*dx+dy*dy
         projections=[(p[0]-a[0])*dx+(p[1]-a[1])*dy for p in points]
         monotone=length>0 and all(x<=y for x,y in zip(projections,projections[1:]))
-        if monotone and max(_distance2(b,a,d),_distance2(c,a,d))<=flatness**2:return [points]
+        if monotone and max(_distance2(b,a,d),_distance2(c,a,d))<=flatness**2:
+            reserve();return [points]
         if depth>=24:raise ValueError('unresolved curve monotonicity')
         ab,bc,cd=[tuple((x+y)/2 for x,y in zip(p,q)) for p,q in ((a,b),(b,c),(c,d))]
         abc=tuple((x+y)/2 for x,y in zip(ab,bc));bcd=tuple((x+y)/2 for x,y in zip(bc,cd))
@@ -76,7 +89,7 @@ def topology_cells(path, flatness):
         indices.append(cursor);indices.reverse()
         points=tuple((float(nodes[i]['x']),float(nodes[i]['y'])) for i in indices)
         if len(points)==2 and nodes[end]['type']=='line':
-            if points[0]!=points[1]:result.append(points)
+            if points[0]!=points[1]:reserve();result.append(points)
         elif len(points)==4 and nodes[end]['type']=='curve':result.extend(split(points))
         else:raise ValueError('unsupported topology segment')
     if len(result)<2:raise ValueError('degenerate outline')

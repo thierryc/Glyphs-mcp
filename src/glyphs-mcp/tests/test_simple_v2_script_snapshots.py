@@ -156,6 +156,42 @@ def test_keep_releases_native_snapshot(native):
     assert 'scriptSnapshot' not in op and not op['scriptResult']['recovery']['available']
 
 
+def test_proof_keeps_snapshot_and_restore_still_checks_freshness(native, monkeypatch):
+    host, core, bridge, service, add = native
+    font, identity = add()
+    def new_tab(self, content=''):
+        tab = NS(content=content, masterIndex=0)
+        self.tabs.append(tab); self.currentTab=tab
+        return tab
+    monkeypatch.setattr(type(font), 'newTab', new_tab, raising=False)
+    monkeypatch.setitem(sys.modules, 'AppKit', NS(NSApplication=NS(sharedApplication=lambda:
+        NS(activateIgnoringOtherApps_=lambda flag: None))))
+    font.selectedFontMaster=font.masters[0]
+    bridge.open_edit_tab=lambda request: bridge.invoke(core.open_edit_tab,request)
+    core.refresh_capabilities()
+    service.status_cache.refresh()
+    result=run(service,identity)
+    op=core._operations[result['jobId']]
+    snapshot=op['scriptSnapshot']
+    before=core.adapter.document_state(identity)
+    proof=service.open_edit_tab(identity,'proof-with-recovery',text='A')
+    assert proof['created'] and op['scriptSnapshot'] is snapshot
+    assert op['scriptResult']['recovery']['available']
+    assert core.adapter.document_state(identity)==before
+    assert service.open_edit_tab(identity,'proof-with-recovery',text='A')['tabId']==proof['tabId']
+    assert len(font.tabs)==1
+    # A later human edit must not make an old restoration request current.
+    font.glyphs['A'].width=888; font.userData['later']=42; font.parent.updateChangeCount_(0)
+    with pytest.raises(BridgeError,match='changed'):
+        saved_script.restore(core,dict(jobId=result['jobId'],generation=before['generation'],
+            sourceHash=op['scriptResult']['recovery']['snapshotId']),BridgeError)
+    refreshed=service.edit_workflows.get(result['id'])
+    restored=choose(service,refreshed,'restore_saved_script')
+    assert restored['state']=='discarded'
+    assert host.font.glyphs['A'].width==610 and host.font.userData=={'unsaved':7}
+    assert not op.get('scriptSnapshot')
+
+
 def test_external_source_change_restores_as_dirty_without_overwriting(native,tmp_path):
     host,_,_,service,add=native;source=tmp_path/'S.glyphs';source.write_text('before')
     _,identity=add(False,str(source));value=run(service,identity);source.write_text('external')

@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 from desktop_release_identity import load
+from test_selection import changed_paths, select_tests
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,9 +59,14 @@ def main():
              'test_simple_v2_python_scripts.py', 'test_curve_repair_actions.py', 'test_curve_repair_controller.py',
              'test_simple_v2_build.py::test_build_is_deterministic_and_excludes_the_old_runtime',
              'test_simple_v2_identity.py::test_packaged_runtime_matches_manifest_then_keeps_initialization_fingerprint']
-    subprocess.run([sys.executable, '-m', 'pytest', '-q', *['src/glyphs-mcp/tests/' + p for p in tests]], cwd=ROOT, check=True)
+    # Retain the qualified baseline checks, then add coverage for every changed
+    # input. Unknown/shared inputs broaden the suite rather than silently omitting
+    # newly introduced features such as health and history contention.
+    selection = select_tests(ROOT, changed_paths(ROOT, args.base_ref))
+    tests = selection['tests'] if selection['allPython'] else sorted(set(['src/glyphs-mcp/tests/' + p for p in tests] + selection['tests']))
+    subprocess.run([sys.executable, '-m', 'pytest', '-q', *tests, '--performance-gates'], cwd=ROOT, check=True)
     from release_test_inputs import fingerprint
-    report = {'profile': 'focused', 'release': release, 'scope': scope, 'sourceFingerprint': fingerprint(ROOT),
+    report = {'profile': 'focused', 'release': release, 'scope': scope, 'testSelection': selection, 'sourceFingerprint': fingerprint(ROOT),
               'limitations': 'No full Swift suite or VM matrix; signing, notarization and final artifact verification remain mandatory.'}
     (ROOT / 'build/focused-release-tests.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report))

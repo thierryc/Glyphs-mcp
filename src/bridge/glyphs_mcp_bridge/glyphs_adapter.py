@@ -117,6 +117,24 @@ class GlyphsAdapter:
                      familyName=str(_value(font, "familyName", "Untitled") or "Untitled"))
                 for font in self._fonts()]
 
+    def health_inventory(self):
+        """Bounded window metadata only; no glyphs, layers, outlines, or tab text."""
+        fonts = _value(self.glyphs, 'fonts', [])
+        count = len(fonts)
+        dirty = tabs = inspected = unknown_dirty = 0
+        import time
+        deadline = time.perf_counter() + .002
+        for index in range(min(count, 128)):
+            if time.perf_counter() >= deadline: break
+            font = fonts[index]
+            state = self._dirty(font)
+            dirty += state is True
+            unknown_dirty += state is None
+            tabs += len(_value(font, 'tabs', []))
+            inspected += 1
+        return dict(fontCount=count, unsavedCount=dirty, editTabCount=tabs,
+                    inspectedFonts=inspected, complete=count == inspected and not unknown_dirty)
+
     def document_state(self, document_id: str) -> dict[str, Any]:
         return self._document_state(self._font(document_id))
 

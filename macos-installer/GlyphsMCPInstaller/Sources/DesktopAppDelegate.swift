@@ -19,6 +19,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private var statusItem: NSStatusItem?
     private lazy var statusMenu = makeStatusMenu()
     private enum StatusMenuRow: Int {
+        case health = 109
         case summary = 1, mcp, glyphs, tasks, notice, recovery, server, quit
     }
     private var taskObservation: AnyCancellable?
@@ -288,7 +289,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         menu.delegate = self
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         menu.addItem(.sectionHeader(title: "Glyphs MCP \(version)".trimmingCharacters(in: .whitespaces)))
-        for row in [StatusMenuRow.summary, .mcp, .glyphs] {
+        for row in [StatusMenuRow.summary, .mcp, .glyphs, .health] {
             let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
             item.tag = row.rawValue
             item.isEnabled = false
@@ -331,6 +332,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         let connected = desktop.serviceRunning == true && !desktop.stale
         item(.mcp)?.title = "MCP: " + localized(connected ? "Connected" : desktop.serviceRunning == false ? "Stopped" : "Unavailable")
         item(.glyphs)?.title = "Glyphs 4: " + localized(desktop.glyphsRunning ? "Running" : "Not running")
+        item(.health)?.title = localized("Glyphs Health") + ": " + localized(desktop.stale ? "Health observation stale" : desktop.status?.health?.title ?? "Health unavailable")
         for (row, available) in [(StatusMenuRow.mcp, connected), (.glyphs, desktop.glyphsRunning)] {
             let configuration = NSImage.SymbolConfiguration(paletteColors: [available ? .systemGreen : .secondaryLabelColor])
             let image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
@@ -396,6 +398,8 @@ struct DesktopSettings: View {
     @State private var port = ""
     @State private var taskExpiryDays = 1
     @State private var taskExpiryError = ""
+    @State private var fontWarningThreshold = 8
+    @State private var healthPolicyError = ""
     var body: some View {
         Form {
             Section("Desktop") {
@@ -420,6 +424,13 @@ struct DesktopSettings: View {
                 Button("Check for Updates…", action: updates.check).disabled(!updates.canCheck)
                 if !updates.message.isEmpty { Text(updates.message).font(.caption).foregroundStyle(.secondary) }
             }
+            Section("Glyphs Health") {
+                Stepper("Warn at \(fontWarningThreshold) open fonts", value: Binding(
+                    get: { fontWarningThreshold }, set: setFontWarningThreshold), in: 1...128)
+                Text("This is a warning threshold. Font count alone never blocks work. Agents defer new expensive work under critical pressure.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if !healthPolicyError.isEmpty { Text(healthPolicyError).font(.caption).foregroundStyle(.secondary) }
+            }
             Section("Tasks") {
                 Picker("Expire inactive tasks after", selection: Binding(get: { taskExpiryDays }, set: setTaskExpiry)) {
                     Text("1 day").tag(1)
@@ -437,6 +448,8 @@ struct DesktopSettings: View {
             port = String(desktop.installation.port)
             do { taskExpiryDays = try DesktopTaskExpiryPolicy.read(under: desktop.installation.root).inactivityDays }
             catch { taskExpiryError = error.localizedDescription }
+            do { fontWarningThreshold = try DesktopGlyphsHealthPolicy.read(under: desktop.installation.root).fontWarningThreshold }
+            catch { healthPolicyError = error.localizedDescription }
         }
         .task { await desktop.refresh() }
     }
@@ -453,5 +466,12 @@ struct DesktopSettings: View {
             taskExpiryDays = days
             taskExpiryError = ""
         } catch { taskExpiryError = error.localizedDescription }
+    }
+    private func setFontWarningThreshold(_ count: Int) {
+        do {
+            try DesktopGlyphsHealthPolicy(fontWarningThreshold: count).write(under: desktop.installation.root)
+            fontWarningThreshold = count
+            healthPolicyError = ""
+        } catch { healthPolicyError = error.localizedDescription }
     }
 }

@@ -55,6 +55,8 @@ def import_document(core, value, error_type):
             if operation["request"] != request:
                 raise error_type("importing_conflict", "The Import key belongs to another request")
         else:
+            if not any(document_opening.matches(value_of_path(font), request['path']) for font in core.adapter._fonts()):
+                core.admit_expensive()
             if not document_opening.available(core.adapter):
                 raise error_type("unsupported_capability", "Native font import is unavailable")
             if len(core._imports) >= document_opening.MAX_OPENINGS:
@@ -83,3 +85,7 @@ def import_document(core, value, error_type):
 
 def value_of_font(core, document_id):
     return value(core.adapter._font(document_id), "familyName", "Untitled") or "Untitled"
+
+
+def value_of_path(font):
+    return value(font, 'filepath', None)

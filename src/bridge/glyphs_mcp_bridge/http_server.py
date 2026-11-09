@@ -80,7 +80,12 @@ class BridgeHTTPServer:
                     payload = json.loads(self.rfile.read(size) or b"{}")
                     if not isinstance(payload, dict):
                         raise ValueError("JSON root must be an object")
-                    result = owner.main_thread.call(lambda: self._route(payload))
+                    if self.path == '/v1/status':
+                        if owner.core.paused:
+                            raise BridgeError('server_stopped', 'the Glyphs MCP server is stopped')
+                        result = owner.core.status()
+                    else:
+                        result = owner.main_thread.call(lambda: self._route(payload))
                     self._reply(200, {"ok": True, "data": result})
                 except BridgeError as exc:
                     self._reply(409, {"ok": False, "error": exc.as_dict()})
@@ -112,6 +117,13 @@ class BridgeHTTPServer:
                     self._reply(500, {"ok": False, "error": {"code": "bridge_failed", "message": str(exc) or exc.__class__.__name__}})
 
             def _route(self, payload: dict[str, Any]) -> Any:
+                try:
+                    return self._native_route(payload)
+                finally:
+                    if self.path.startswith('/v1/documents/'):
+                        owner.core.health.invalidate_documents()
+
+            def _native_route(self, payload: dict[str, Any]) -> Any:
                 if owner.core.paused:
                     raise BridgeError("server_stopped", "the Glyphs MCP server is stopped")
                 if self.path == "/v1/status":

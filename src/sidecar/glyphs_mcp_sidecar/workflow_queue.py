@@ -16,6 +16,22 @@ from .saved_script import unresolved
 MAX_QUEUED = 128
 
 
+def defer_health(workflows, value, details):
+    from glyphs_mcp_protocol.health import advisory
+    notice = advisory(details.get('health')) or dict(text='Glyphs is reducing load.', reasons=[])
+    fields = dict(healthWait=notice, queueRetryAt=time.time() + 15,
+                  queuedAt=value.get('queuedAt') or time.time())
+    action = value.get('dispatchAction')
+    if action:
+        fields.update(queuedAction=action,
+                      scriptRunAuthorized=action == 'run_script' or value.get('scriptRunAuthorized', False))
+    if value['state'] != 'queued':
+        workflows._set(value, state='queued', error=None, **fields)
+    else:
+        # Observation/retry metadata does not invalidate an offered action token.
+        workflows.store.update(value, advance_revision=False, **fields)
+
+
 def validate_intake(workflows, kind, key, mode, delta, glyphs, options, auto_keep):
     if type(auto_keep) is not bool:
         raise workflows.error('invalid_request', 'auto_keep must be true or false.')
@@ -115,6 +131,7 @@ def advance(workflows, value):
         return
     if value.get('queueRetryAt', 0) > time.time():
         return
+    workflows.service.admit_expensive()
     predecessor = workflows.store.records.get(value.get('queuePredecessorId'))
     if predecessor:
         for transition in predecessor.get('documentRebindings') or []:
@@ -147,7 +164,7 @@ def advance(workflows, value):
         workflows._advance(value, allow_apply=False)
         return
     workflows._set(value, queuePredecessorId=None, blockingWorkflowId=None,
-                   blockerId=None, blocker=None, job=None, queueAdmitting=True)
+                   blockerId=None, blocker=None, job=None, queueAdmitting=True, healthWait=None)
     try:
         workflows._begin(value)
     finally:

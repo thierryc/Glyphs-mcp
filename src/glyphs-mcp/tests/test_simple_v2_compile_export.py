@@ -423,8 +423,10 @@ def test_bridge_status_exposes_live_compile_only_when_qualified(monkeypatch):
 
     core = BridgeCore(NS(), lambda callback: callback())
     monkeypatch.setattr("glyphs_mcp_bridge.core.feature_compile.available", lambda: False)
+    core.refresh_capabilities()
     assert "feature.compile.live.v1" not in core.status()["jobCapabilities"]
     monkeypatch.setattr("glyphs_mcp_bridge.core.feature_compile.available", lambda: True)
+    core.refresh_capabilities()
     assert set(core.status()["jobCapabilities"]) == {"feature.compile.live.v1", "tasks.document-recovery.v1"}
 
 

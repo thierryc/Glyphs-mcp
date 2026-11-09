@@ -24,7 +24,7 @@ def test_identity_table_matches_release_source_protocol_and_inventory(tmp_path):
     bridge = SimpleNamespace(status=lambda: {
         'writeCapabilities': ['font.checkpoint-restore.v1', 'outline.edit.v1',
                               'native.action.v1', dimensions.WRITE_CAPABILITY,
-                              'kerning.edit.exact.v1'],
+                              'kerning.edit.exact.v1', 'outline.fit-polygon.v1'],
         'jobCapabilities': list(JOB_CAPABILITIES),
         'nativeActions': list(NATIVE_ACTIONS),
     })

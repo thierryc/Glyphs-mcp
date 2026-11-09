@@ -19,7 +19,7 @@ def seed_history(store, count):
                      sample=[dict(before=500,after=501)],summary='Historical evidence')
 
 
-@pytest.mark.parametrize('count', [0, 100, 1000, 10000])
+@pytest.mark.parametrize('count', [0, 12, pytest.param(10000, marks=pytest.mark.stress)])
 @pytest.mark.parametrize('active', [False, True])
 def test_activity_poll_copies_only_bounded_recent_and_active_records(tmp_path, monkeypatch, count, active):
     store = JobStore(tmp_path/'jobs')

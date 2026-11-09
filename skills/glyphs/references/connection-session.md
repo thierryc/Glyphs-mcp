@@ -1,5 +1,15 @@
 # Verify a connection when needed
 
+Initial `get_status` also supplies cached health. With `health.snapshot.v1`,
+inspect each signal's availability, age and completeness; with
+`health.admission.v1`, the server may defer new expensive work. `statusReady=false`
+with `bridge.checking` means discovery is still pending: wait for the reported
+retry delay before checking the same connection, rather than diagnosing missing
+capabilities as an installation defect. Health reads never force native probes.
+Retain verified capabilities separately from changing health observations.
+Follow tool advisories and [health guidance](health.md); do not poll status before
+each action. Absent health support means protection unavailable, not healthy.
+
 Inspect the tool catalog of the **specific MCP connection** when this connection has not yet been verified, before its first server call. Keep the connection identifier and
 configured endpoint with the result; never merge catalogs from simultaneous
 connections or infer an interface from the host app name or skill location.
@@ -74,3 +84,12 @@ plugin's `glyphs-mcp-agent.json`; it is not proof that this conversation loaded
 those files. Refresh the existing local plugin through the supported client
 installer, then reload the client and verify its catalog. Keep one intended
 connection. Never repair a stale package by manually editing its cache.
+
+## Native filter identities
+
+With `filters.inventory.v1`, `get_status.nativeFilters` reports `available`,
+`items` and `truncated`; each item has `className`, `displayName` and nullable
+`version`. Unavailable discovery includes an explicit error. No font is required.
+The inventory is bounded to 256 entries and reads existing objects only; it never
+instantiates or executes filters. Installed presence does not establish a callable
+adapter or qualify its geometry. Older runtimes omit this additive inventory.

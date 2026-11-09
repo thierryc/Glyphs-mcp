@@ -1,4 +1,9 @@
-# Glyphs MCP Desktop 2.5.0
+# Glyphs MCP Desktop 2.6.0 candidate
+
+Unpublished build 75 adds [Glyphs Health and workload protection](docs/glyphs-health.md):
+passive status, automatic agent advisories, a soft font budget and guarded
+deferral of new expensive work. See [candidate qualification](V2.6.0-PREPARATION.md).
+The download below remains the existing 2.5.x distribution.
 
 **Stable · desktop build 74 · Glyphs 4.** [Download 2.5.1](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.5.1). Path Doctor adds coordinated duplicate-node cleanup, bounded outline optimization, and a compact card for native apply-and-compare review.
 

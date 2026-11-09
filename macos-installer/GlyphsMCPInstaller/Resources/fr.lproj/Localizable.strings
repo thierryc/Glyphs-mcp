@@ -1005,3 +1005,36 @@
 "%lld days" = "%lld jours";
 "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "Les tâches inactives passent dans Terminées avec le statut Expirée. Les tâches en cours et les options de récupération disponibles sont conservées. L’historique et les diagnostics restent accessibles.";
 "Codex settings changed during setup and were preserved. Run setup again to check the current settings." = "Les réglages Codex ont changé pendant la configuration et ont été conservés. Relancez la configuration pour vérifier les réglages actuels.";
+
+/* Glyphs Health */
+"Checking Glyphs" = "Vérification de Glyphs";
+"Collecting health evidence…" = "Collecte des données de santé…";
+"Glyphs Health" = "Santé de Glyphs";
+"No slowdown detected" = "Aucun ralentissement détecté";
+"Reduce load" = "Réduire la charge";
+"New heavy work paused" = "Nouvelles opérations lourdes en attente";
+"Health unknown" = "État de santé inconnu";
+"Health unavailable" = "Santé indisponible";
+"Health observation stale" = "Observation de santé ancienne";
+"Agents defer new expensive work and retry later. Existing work and recovery are preserved." = "Les agents reportent les nouvelles opérations lourdes et réessaient plus tard. Les travaux en cours et la récupération sont préservés.";
+"Agents reuse open fonts, process files sequentially, and avoid unnecessary tabs." = "Les agents réutilisent les fontes ouvertes, traitent les fichiers un par un et évitent les onglets inutiles.";
+"Agents follow health advisories returned by tools." = "Les agents suivent les recommandations de santé renvoyées par les outils.";
+"Open-font warning threshold reached" = "Seuil d’avertissement des fontes ouvertes atteint";
+"System memory pressure elevated" = "Pression mémoire du système élevée";
+"System memory pressure critical" = "Pression mémoire du système critique";
+"Native response delayed" = "Réponse native retardée";
+"Waiting for sustained recovery" = "En attente d’une amélioration durable";
+"Health evidence incomplete" = "Données de santé incomplètes";
+"Open fonts: %lld" = "Fontes ouvertes : %lld";
+"Unsaved fonts: %lld" = "Fontes non enregistrées : %lld";
+"Edit tabs: %lld" = "Onglets de dessin : %lld";
+"Document counts are partial." = "Les nombres de documents sont partiels.";
+"Glyphs memory" = "Mémoire de Glyphs";
+"Memory change" = "Évolution de la mémoire";
+"Memory observation is stale." = "L’observation de la mémoire est ancienne.";
+"System memory pressure is unknown." = "La pression mémoire du système est inconnue.";
+"What agents will do" = "Comportement des agents";
+"Observed" = "Observé";
+"Health protection is unavailable. Update bridge and sidecar together to enable it." = "La protection de santé est indisponible. Mettez à jour le pont et le serveur ensemble pour l’activer.";
+"Warn at %lld open fonts" = "Avertir à partir de %lld fontes ouvertes";
+"This is a warning threshold. Font count alone never blocks work. Agents defer new expensive work under critical pressure." = "Il s’agit d’un seuil d’avertissement. Le nombre de fontes seul ne bloque jamais le travail. Les agents reportent les nouvelles opérations lourdes en cas de pression critique.";

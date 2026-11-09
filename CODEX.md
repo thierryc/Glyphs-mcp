@@ -37,8 +37,30 @@ source-line budgets. Consolidate proven duplication; do not split code merely
 to meet a file-length target. Preserve useful algorithms and external analysis/
 export processing. Companion drawing callbacks only draw.
 
-Run focused pytest checks, then scripts/run_python_tests.sh --pytest, native
-installer tests, deterministic builds, docs/skills checks and git diff --check.
+For development, run `python scripts/dev_checks.py --dry-run` to inspect the
+conservative changed-file selection, then the default fast profile. It includes
+staged, unstaged and untracked inputs and follows shared test-helper imports.
+Unknown inputs broaden coverage. `--scope health` (or another listed scope) is
+an explicitly partial check; it does not qualify every change in a dirty tree.
+Use `--profile component` for affected integration/native/docs checks and
+`--profile full` for complete functional checks. Review per-lane timing and
+JUnit evidence under `build/dev-checks/`; no development result is a release
+qualification receipt. An empty collection or changed inputs cannot pass.
+
+Use `--profile performance --scope health` for the strict latency gates;
+functional liveness and deadlock assertions also run without those timing gates.
+Large-capacity stress tests remain in performance and release runs. The Python
+dependency installation matrix remains opt-in through the existing release
+gate. `scripts/run_desktop_checks.sh` runs the incremental core test scheme;
+`--app` also compiles views with content-verified unsigned development payload
+reuse. These outputs stay under `build/` and are never install candidates.
+
+Before release, run `python scripts/dev_checks.py --profile release`: this keeps
+the complete Python/dependency/stress/performance matrix, clean native app
+build, independent deterministic payload builds, and docs/skills qualification.
+Keep this source frozen while checks run. Generated reports belong under
+`build/`; copy reviewed qualification evidence into `reports/` only afterward.
+Finish changed-component work with `git diff --check`.
 Use an authorized disposable font for native acceptance, verify the original
 source hash, and report baseline and loaded responsiveness separately. A
 200 ms HTTP sample is diagnostic, not an automatic release rejection.

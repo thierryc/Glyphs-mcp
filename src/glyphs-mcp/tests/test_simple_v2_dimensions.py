@@ -181,11 +181,14 @@ def test_read_requires_bounded_exact_masters(font):
 def test_negotiation_and_old_bridge_refusal(font):
     bridge = NS(status=lambda: {'writeCapabilities': []}, documents=lambda: [{'id': 'd', 'path': font.filepath, 'dirty': False, 'generation': 0}])
     service = SidecarService(bridge, worker=NS(status=lambda: {'available': True}))
+    service.status_cache.refresh()
     assert 'dimensions_edit' not in service.get_status()['jobKinds']
     with pytest.raises(ServiceError) as exc: service.start_job('d', kind='dimensions_edit', options={'changes': [entry()]})
     assert exc.value.code == 'unsupported_job'
     bridge.status = lambda: {'writeCapabilities': [d.WRITE_CAPABILITY], 'readCapabilities': [d.READ_CAPABILITY]}
+    service.status_cache.refresh()
     assert 'dimensions_edit' in service.get_status()['jobKinds']
+    service.status_cache.refresh()
     assert d.READ_CAPABILITY in service.get_status()['readCapabilities']
 
 

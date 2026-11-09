@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-path-doctor
-description: Diagnose Glyphs paths and Pen-point distribution, preserve master correspondence, and perform explicitly requested qualified seam repairs or measured stroke-profile cleanup.
+description: Diagnose Glyphs outline quality and Pen-point distribution, coordinate measured cleanup, and explicitly reconstruct polygons as curves while preserving master correspondence.
 metadata:
   surface: glyphs-mcp-v2
 ---
@@ -19,6 +19,19 @@ No Path Doctor top-level tool exists.
 For an explicitly requested cleanup pass, use [coordinated cleanup](references/cleanup.md)
 when `path.cleanup.v1` is advertised. Reuse the existing workflow card for settings
 and Changes Against Reference in Glyphs for visual review.
+
+For a polygon drawn with excessive straight-line nodes, use the separate
+[polygon reconstruction](references/polygon-fitting.md) mode when
+`path.fit-curves.v1` and `outline.fit-polygon.v1` are advertised. It requires
+explicit reconstruction intent and exact paths; ordinary cleanup preserves
+corners and does not enable fitting. Keep selected landmarks and intentional
+corners, review the measured deviation and corresponding interpolation layers,
+and never relax the budget silently. Square-node flags alone are not defects.
+
+For direction, extrema, overlaps, zero handles, G2 harmony or handle balance,
+follow [quality review and routing](references/path-quality.md). Path Doctor
+reports evidence and delegates existing native actions, Curve Inspector and
+De-kink workflows; the skill contains no alternate repair algorithms.
 
 For missing nodes or handles, first follow [node visibility](references/node-visibility.md).
 Check display settings before proposing the narrowly qualified node-preserving

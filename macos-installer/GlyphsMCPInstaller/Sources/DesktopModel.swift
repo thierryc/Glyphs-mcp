@@ -14,6 +14,13 @@ final class DesktopModel: ObservableObject {
     var controlling: Bool { controlAction != nil }
     var controlProgress: String? { DesktopDiagnostics.controlProgress(controlAction) }
     var statusSymbol: String { DesktopDiagnostics.statusSymbol(running: serviceRunning, stale: stale, status: status) }
+    var statusColor: Color {
+        switch DesktopDiagnostics.statusTone(running: serviceRunning, stale: stale, status: status) {
+        case .ready: return .green
+        case .active: return .accentColor
+        case .unavailable: return .secondary
+        }
+    }
     var activityNotice: String? {
         guard stale else { return nil }
         return serviceRunning == false ? "Last result from before the server stopped." : "Activity unavailable · showing the last observation"
@@ -210,7 +217,7 @@ final class DesktopModel: ObservableObject {
                 }
                 status = observed
             }
-            lastObserved = Date(); stale = false; serviceRunning = true
+            lastObserved = Date(); stale = observed.statusObservation?.stale ?? false; serviceRunning = true
             await refreshTasks()
             // Development links are mutable by design and use a lightweight
             // receipt without immutable payload fingerprints. Their explicit
@@ -225,7 +232,7 @@ final class DesktopModel: ObservableObject {
             guard !Task.isCancelled, !controlling else { return }
             tasksStale = tasksObservedAt != nil
             tasksNotice = NSLocalizedString("Tasks are unavailable. Try again when the server is connected.", comment: "Task inventory error")
-            stale = status != nil
+            stale = true
             if let observed = try? await serviceAction("status"), let data = observed["data"] as? [String: Any] {
                 serviceRunning = data["processRunning"] as? Bool ?? data["running"] as? Bool
             } else { serviceRunning = nil }

@@ -20,6 +20,7 @@ class CocoaMainThread:
         self._call_later = AppHelper.callLater
         self.timeout = max(0.1, float(timeout))
         self.yield_seconds = max(0.001, min(float(yield_seconds), 0.02))
+        self.health = None
 
     def schedule(self, callback: Callable[[], None]) -> None:
         # An immediate callAfter chain can monopolize Cocoa's run loop even
@@ -32,9 +33,13 @@ class CocoaMainThread:
         lock = Lock()
         state = "pending"
         outcome: dict[str, Any] = {}
+        health = getattr(self, 'health', None)
+        token = health.queued() if health else None
 
         def execute() -> None:
             nonlocal state
+            if health:
+                health.serviced(token)
             with lock:
                 if state != "pending":
                     return
@@ -48,11 +53,16 @@ class CocoaMainThread:
                     state = "completed"
                     done.set()
 
-        self.schedule(execute)
+        try:
+            self.schedule(execute)
+        except Exception:
+            if health: health.serviced(token)
+            raise
         done.wait(self.timeout)
         with lock:
             if state == "pending":
                 state = "cancelled"
+                if health: health.serviced(token)
             if state != "completed":
                 raise DispatchTimeout("cancelled" if state == "cancelled" else "uncertain")
         if "error" in outcome:

@@ -12,11 +12,11 @@ def register_routes(mcp, service, token):
         supplied = request.headers.get("authorization", "")
         return peer in ("127.0.0.1", "::1") and hmac.compare_digest(supplied.encode(), ("Bearer " + token).encode())
 
-    async def respond(request, callback):
+    async def respond(request, callback, *, passive=False):
         if not authorized(request):
             return JSONResponse({"ok": False, "error": {"code": "unauthorized", "message": "Local authentication is required."}}, status_code=403)
         try:
-            data = await asyncio.to_thread(callback)
+            data = callback() if passive else await asyncio.to_thread(callback)
             return JSONResponse({"ok": True, "data": data}, headers={"Cache-Control": "no-store"})
         except Exception as error:
             details = error.as_dict() if callable(getattr(error, "as_dict", None)) else {
@@ -25,7 +25,7 @@ def register_routes(mcp, service, token):
 
     @mcp.custom_route("/internal/status", methods=["GET"])
     async def status(request):
-        return await respond(request, service.get_status)
+        return await respond(request, service.get_status, passive=True)
 
     @mcp.custom_route("/internal/tasks", methods=["GET"])
     async def tasks(request):

@@ -296,6 +296,9 @@ def _apply(layer, operation):
     if op == "remove_consecutive_duplicate_nodes":
         from .path_doctor import remove_duplicates
         seam = remove_duplicates(layer, path, operation['stateHash'])
+    elif op == 'fit_polygon':
+        from .polygon_edit import apply
+        apply(layer, path, operation)
     elif op == "normalize_closed_seam":
         from .path_doctor import normalize
         seam = normalize(layer, path, operation['stateHash'])

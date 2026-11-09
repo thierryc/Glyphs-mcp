@@ -3,6 +3,34 @@ import XCTest
 @testable import GlyphsMCPInstallerCore
 
 final class DesktopActivityTests: XCTestCase {
+    func testHealthStatesAndPartialSignalsDecodeWithoutChangingConnection() throws {
+        let checking = try JSONDecoder().decode(DesktopServerStatus.self, from: Data(#"{"sidecarVersion":"2.6.0","bridge":{"reachable":false,"checking":true},"worker":{"available":false}}"#.utf8))
+        XCTAssertEqual(checking.title, "Checking Glyphs")
+        for (state, title) in [("normal", "No slowdown detected"), ("caution", "Reduce load"),
+                               ("paused", "New heavy work paused"), ("unknown", "Health unknown")] {
+            let object: [String: Any] = ["version": 1, "available": true, "state": state,
+                "bridgeSessionId": "session", "revision": 9,
+                "signals": ["documents": ["available": true, "fontCount": 8, "complete": false]]]
+            let health = try JSONDecoder().decode(DesktopGlyphsHealth.self, from: JSONSerialization.data(withJSONObject: object))
+            XCTAssertEqual(health.title, title)
+            XCTAssertEqual(health.signals?["documents"]?.complete, false)
+            XCTAssertEqual(health.revision, 9)
+        }
+        let unavailable = try JSONDecoder().decode(DesktopGlyphsHealth.self, from: Data(#"{"version":1,"available":false,"state":"unknown"}"#.utf8))
+        XCTAssertEqual(unavailable.title, "Health unavailable")
+    }
+
+    func testHealthPolicyRoundTripValidationAndMissingDefault() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertEqual(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold, 8)
+        try DesktopGlyphsHealthPolicy(fontWarningThreshold: 12).write(under: root)
+        XCTAssertEqual(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold, 12)
+        XCTAssertThrowsError(try DesktopGlyphsHealthPolicy(fontWarningThreshold: 0).write(under: root))
+        XCTAssertThrowsError(try DesktopGlyphsHealthPolicy(fontWarningThreshold: 129).write(under: root))
+        try Data(#"{"version":99,"fontWarningThreshold":12}"#.utf8).write(to: DesktopGlyphsHealthPolicy.file(under: root))
+        XCTAssertThrowsError(try DesktopGlyphsHealthPolicy.read(under: root))
+    }
     private func job(_ id: String, _ phase: String, message: String? = nil) -> DesktopActivity {
         DesktopActivity(jobId: id, document: "Test", kind: "spacing", phase: phase,
             startedAt: 10, finishedAt: nil, completed: nil, total: nil, message: message)

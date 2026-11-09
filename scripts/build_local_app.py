@@ -49,7 +49,7 @@ def build():
         command = ['xcodebuild', 'build', '-project', str(ROOT / 'macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj'),
                    '-scheme', 'GlyphsMCPInstaller', '-configuration', 'Debug', '-destination', 'platform=macOS',
                    '-derivedDataPath', str(derived), 'CODE_SIGNING_ALLOWED=NO', 'CODE_SIGNING_REQUIRED=NO']
-        environment = dict(os.environ, PYTHON_BIN=sys.executable)
+        environment = dict(os.environ, PYTHON_BIN=sys.executable, GMCP_DEVELOPMENT_PAYLOAD_CACHE='0')
         print(f'Building in fresh directory: {derived}\nBuild log: {log}', flush=True)
         with log.open('w') as stream:
             subprocess.run(command, cwd=ROOT, env=environment, stdout=stream, stderr=subprocess.STDOUT, check=True)

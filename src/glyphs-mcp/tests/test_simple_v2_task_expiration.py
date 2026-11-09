@@ -18,9 +18,9 @@ DAY = 86400
 
 def aged_job(service, *, age=2 * DAY, status='interrupted', kind='width_delta'):
     job = service.jobs.create({'id': 'old-font', 'familyName': 'Old font'}, {'kind': kind})
+    timestamp = time.time() - age
     job.update(status=status, resultKind='script' if kind == 'python_script' else 'mutation',
-               createdAt=time.time() - age, updatedAt=time.time() - age,
-               finishedAt=time.time() - age,
+               createdAt=timestamp, updatedAt=timestamp, finishedAt=timestamp,
                error={'code': 'bridge_operation_lost', 'message': 'Earlier outcome is unknown.'})
     service.jobs._write(job)
     return deepcopy(job)

@@ -16,7 +16,7 @@ from glyphs_mcp_protocol import (
     validate_patch,
 )
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
-from glyphs_mcp_protocol import dimensions, scripts
+from glyphs_mcp_protocol import dimensions, scripts, health as health_contract
 
 from .checkpoint_git import CheckpointError
 from . import checkpoints, checkpoint_restore
@@ -55,7 +55,8 @@ class ServiceError(RuntimeError):
 
 
 class SidecarService:
-    def __init__(self, bridge: Any, *, jobs: JobStore | None = None, worker: Any | None = None, comparison_worker: Any | None = None) -> None:
+    def __init__(self, bridge: Any, *, jobs: JobStore | None = None, worker: Any | None = None, comparison_worker: Any | None = None,
+                 initialize_status: bool = True) -> None:
         self.bridge = bridge
         self.jobs = jobs or JobStore()
         self.worker = worker or GlyphsCliWorker()
@@ -97,6 +98,13 @@ class SidecarService:
         # Load retained workflows during startup, never as a side effect of opening Tasks.
         _ = self.edit_workflows
         self.health_cleanup = health_cleanup.HealthCleanupPolicy(self)
+        from .health import StatusCache
+        self.status_cache = StatusCache(self._collect_status)
+        if initialize_status:
+            self.status_cache.refresh()
+        else:
+            # Production starts its listener with complete, explicitly pending metadata.
+            self.status_cache.value = self._collect_status(bridge_status={'reachable': False, 'checking': True, 'retryAfterSeconds': 1})
 
     @property
     def edit_workflows(self):
@@ -113,6 +121,7 @@ class SidecarService:
         return self.lifecycle.release(reservation_id)
 
     def close(self):
+        self.status_cache.close()
         if hasattr(self, "_edit_workflows"):
             self._edit_workflows.close()
         # Release external preparation processes during a native Stop action.
@@ -129,12 +138,36 @@ class SidecarService:
     @mutation
     def compare_fonts(self, baseline_files, candidate_files, options=None):
         from .font_comparison import start
+        self.admit_expensive()
         return start(self, ServiceError, baseline_files, candidate_files, options)
 
     @health_cleanup.status
     def get_status(self) -> dict[str, Any]:
+        return self.status_cache.snapshot()
+
+    def admit_expensive(self):
+        from glyphs_mcp_protocol import health
+        cached = self.get_status()
+        # Legacy bridges are not polled merely to discover unsupported protection.
+        if health.ADMISSION not in cached.get('healthCapabilities', []):
+            return
+        if (not cached.get('bridge', {}).get('reachable') and
+                cached.get('health', {}).get('admission', {}).get('deferExpensiveWork')):
+            raise ServiceError('resource_pressure', 'Last observed resource pressure has not been cleared. Wait for fresh health evidence.',
+                               details=health.refusal(cached['health']))
         try:
-            bridge = {"reachable": True, **dict(self.bridge.status())}
+            native = self.bridge.status()
+        except Exception as exc:
+            raise self._error(exc) from exc
+        self.status_cache.observe_health(native)
+        value = native.get('health') or health.unavailable()
+        if value.get('admission', {}).get('deferExpensiveWork'):
+            raise ServiceError('resource_pressure', 'Glyphs is reducing load. Defer new expensive work and retry after 15 seconds.',
+                               details=health.refusal(value))
+
+    def _collect_status(self, *, bridge_status=None) -> dict[str, Any]:
+        try:
+            bridge = dict(bridge_status) if bridge_status is not None else {"reachable": True, **dict(self.bridge.status())}
             from glyphs_mcp_protocol.task_conflicts import CAPABILITY
             self._task_scoped_recovery = CAPABILITY in bridge.get("jobCapabilities", [])
             self._task_bridge_session = bridge.get("bridgeSessionId")
@@ -142,7 +175,11 @@ class SidecarService:
             self._task_scoped_recovery = False
             bridge = {"reachable": False, "error": self._error(exc).as_dict()}
         status = getattr(self.worker, "status", None)
-        worker = status() if callable(status) else {"available": True, "kind": "injected"}
+        try:
+            worker = status() if callable(status) else {"available": True, "kind": "injected"}
+        except Exception as exc:
+            # Optional external tooling must not prevent native workflows or startup.
+            worker = {'available': False, 'error': {'code': 'worker_unavailable', 'message': str(exc)}}
         comparison = self.comparison_worker.status()
         advertised_writes = bridge.get("writeCapabilities") or []
         job_capabilities = sorted(set(
@@ -163,6 +200,8 @@ class SidecarService:
                         + (['python_script'] if scripts.NATIVE in job_capabilities else [])
                         + (["path_diagnostics"] if "path.diagnostics.v1" in job_capabilities else [])
                         + (["path_cleanup"] if "path.cleanup.v1" in job_capabilities else [])
+                        + (["path_fitting"] if "path.fit-curves.v1" in job_capabilities
+                           and "outline.fit-polygon.v1" in advertised_writes else [])
                         + (["outline_edit"] if "outline.edit.v1" in advertised_writes else [])
                         + (["native_action"] if native_actions else [])
                         + (["dimensions_edit"] if dimensions.WRITE_CAPABILITY in advertised_writes else [])
@@ -179,15 +218,20 @@ class SidecarService:
                         ) else []),
             "readCapabilities": [name for name in READ_CAPABILITIES
                                  if name in (bridge.get("readCapabilities") or [])],
-            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, "outline.normalize-closed-seam.v1", NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.duplicate.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1", "document.edit-tab.open.v1")
+            "writeCapabilities": [name for name in (*OUTLINE_WRITE_CAPABILITIES, "outline.normalize-closed-seam.v1", "outline.fit-polygon.v1", NATIVE_WRITE_CAPABILITY, dimensions.WRITE_CAPABILITY, "kerning.edit.exact.v1", "font.checkpoint-restore.v1", "document.create.v1", "document.duplicate.v1", "document.open.v1", "document.import.v1", "document.close.v1", "document.activate.v1", "document.edit-tab.open.v1", "document.edit-tab.review.v1")
                                   if name in advertised_writes and (name != NATIVE_WRITE_CAPABILITY or native_actions)],
             "nativeActions": native_actions,
+            **({"nativeFilters": bridge["nativeFilters"]} if "filters.inventory.v1" in
+               (bridge.get("readCapabilities") or []) and "nativeFilters" in bridge else {}),
             "jobCapabilities": job_capabilities,
             "comparisonWorker": comparison,
             "comparisonCapabilities": comparison.get("jobCapabilities", []),
             "tools": list(TOOL_NAMES),
             "agentPackage": AGENT_PACKAGE,
             "bridge": bridge,
+            "healthCapabilities": bridge.get('healthCapabilities', []),
+            "health": bridge.get('health') or health_contract.unavailable(),
+            "statusReady": bool(bridge.get('reachable')),
             "worker": worker,
             "controlProtocol": 1,
             "workflowCapabilities": ["edit.queue.automatic.v1", "edit.workflow.v1", "script.apply-authorized.v1", "font.checkpoints.v1"],
@@ -294,6 +338,7 @@ class SidecarService:
         options: dict[str, Any] | None = None,
         _workflow: bool = False,
     ) -> dict[str, Any]:
+        self.admit_expensive()
         if kind == 'checkpoint_restore':
             return checkpoint_restore.prepare(self, self._document(document_id), self.validate_job_request(kind, delta, glyphs, options))
         if kind == 'python_script' and not _workflow:
@@ -342,6 +387,13 @@ class SidecarService:
         if kind == 'python_script':
             from .script_service import validate_capabilities
             validate_capabilities(self, request['options'], ServiceError)
+            return request
+        if kind == 'path_fitting':
+            status = self.bridge.status()
+            if ('path.fit-curves.v1' not in status.get('jobCapabilities', [])
+                    or 'outline.fit-polygon.v1' not in status.get('writeCapabilities', [])
+                    or not self._native_preparation_available(request,status)):
+                raise ServiceError('unsupported_job', 'polygon fitting requires a qualified native bridge')
             return request
         if kind == 'path_cleanup':
             status = self.bridge.status()
@@ -555,6 +607,7 @@ class SidecarService:
             return self.get_job(job_id, include_preview=include_preview)
         if job["status"] != "ready":
             raise ServiceError("job_not_ready", "the job is not ready to apply")
+        self.admit_expensive()
         document = self._document(job["document"]["id"])
         if document.get("path") != job["document"].get("path"):
             raise ServiceError("stale_document", "the document path changed while the job was prepared")

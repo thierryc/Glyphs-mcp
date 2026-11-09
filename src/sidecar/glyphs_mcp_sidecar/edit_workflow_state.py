@@ -313,6 +313,7 @@ def presented_actions(value):
     if state == 'applied' and 'save_result' not in names:
         labels['save_result_as'] = 'Save'
     if value['request']['kind']=='path_cleanup': labels['apply']='Apply cleanup'
+    if value['request']['kind']=='path_fitting': labels['apply']='Apply curve fitting'
     if state in {'ready', 'needs_review'}:
         labels['discard'] = 'Cancel preview'
     result_actions = {'finish_edit', 'finish_script', 'restore_saved_script'}
@@ -396,8 +397,8 @@ def public_workflow(value, *, include_review=False, include_warning=False):
         result['job'] = {k: v for k, v in (result.get('job') or {}).items()
                          if k in {'id', 'status', 'resultKind', 'summary'}}
     options = request.get("options") or {}
-    if request['kind']=='path_cleanup':
-        result['pathDoctor']={'settings':deepcopy(options),
+    if request['kind'] in ('path_cleanup','path_fitting'):
+        result['pathDoctor']={'mode':request['kind'], 'settings':deepcopy(options),
             'comparison':'View → Changes Against Reference; Edit → Comparison Reference → Last Saved. Saving advances the reference.',
             'report':deepcopy((value.get('job') or {}).get('report'))}
     targets = options.get("targets") or options.get("changes") or options.get("pairs") or options.get("edits") or []
@@ -505,6 +506,9 @@ def public_workflow(value, *, include_review=False, include_warning=False):
                         if value.get('mode') == 'preview' and not value.get('queuedAction') else
                         'This task will continue automatically when Glyphs is ready.')
         result['message'] = 'Waiting for Glyphs. ' + continuation
+        if value.get('healthWait'):
+            result['queue'].update(reason='resource_pressure', retryAfterSeconds=15)
+            result['message'] += '\n' + value['healthWait']['text']
         if value.get('blocker'):
             from glyphs_mcp_protocol.task_conflicts import describe
             result['message'] += '\n' + describe(value['blocker'])
@@ -536,7 +540,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
                 before = 'absent' if change['before'] is None else str(change['before'])
                 after = 'remove' if change['after'] is None else str(change['after'])
                 result['text'] += '\n{} / {} · {} · {}: {} → {}'.format(change['left'], change['right'], change['master'], change['direction'], before, after)
-    if request['kind']=='path_cleanup':
+    if request['kind'] in ('path_cleanup','path_fitting'):
         result['text'] += '\nPath Doctor settings: ' + json.dumps(options,ensure_ascii=False)
         result['text'] += '\n' + result['pathDoctor']['comparison']
     if request.get("glyphs"):

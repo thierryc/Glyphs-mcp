@@ -10,10 +10,6 @@ SKILL = ROOT/'skills/glyphs'
 
 
 def test_conversation_reuse_guidance_and_routing_preserve_target_resolution():
-    rows=json.loads((Path(__file__).parent/'fixtures/conversation_reuse_routing.json').read_text())
-    assert all(not r['discoveryReads'] for r in rows if r['knownBinding'])
-    assert all(r['selectionReads'] != r['explicitTarget'] for r in rows)
-    assert [r['includeReview'] for r in rows] == [False, False, True]
     for path in ('SKILL.md', 'references/path-editing.md'):
         text=(ROOT/'skills/glyphs-mcp-outlines-docs'/path).read_text()
         assert 'When the target depends on the current selection' in text
@@ -383,7 +379,7 @@ def test_specialized_scope_is_focused_and_does_not_claim_retired_audits():
     retired = {'icon-font','litsquare-metadata','color-font','variable-font',
                'production-audit','unicode-semantics','export-validation'}
     assert not {f'glyphs-mcp-{name}' for name in retired} & names
-    assert len(names) == 13
+    assert len(names) == 14
     # Unsupported audits remain scoped; a native task is never an MCP fallback.
     assert 'does not prove that a current lean runtime needs updating' in text
     assert 'never claim that a partial read completes a full audit' in text

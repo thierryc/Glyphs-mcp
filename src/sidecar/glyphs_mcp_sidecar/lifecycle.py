@@ -59,6 +59,7 @@ class ServiceLifecycle:
         self.pending = 0
         self.reservation = None
         self.control_lock = None
+        self._activity_snapshot = {"jobs": [], "activeCount": 0, "moreCount": 0}
 
     def _external_control_active(self):
         if self.control_lock is None:
@@ -82,11 +83,14 @@ class ServiceLifecycle:
             if self.reservation or self._external_control_active():
                 raise self.error("service_reserved", "The service is reserved for a settings or installation change.")
             self.pending += 1
+        cache = getattr(self.service, 'status_cache', None)
+        if cache: cache.wake.set()
         try:
             yield
         finally:
             with self.service._lock:
                 self.pending -= 1
+            if cache: cache.wake.set()
 
     def reconcile(self):
         for job in self.service.jobs.select({'applying', 'accepting', 'discarding'}):
@@ -98,11 +102,19 @@ class ServiceLifecycle:
                 pass
 
     def snapshot(self):
-        self.reconcile()
-        active = self.service.jobs.select(BUSY)
-        selected = active[:10] + self.service.jobs.recent(max(0, 5-len(active)), exclude_statuses=BUSY)
-        return {"jobs": [activity(job) for job in selected], "activeCount": len(active),
-                "moreCount": max(0, len(active) - 10)}
+        # Activity is optional evidence. A busy job store must not prevent a
+        # freshly collected bridge/health snapshot from being published.
+        lock = self.service.jobs._lock
+        if not lock.acquire(blocking=False):
+            return {**self._activity_snapshot, "stale": True}
+        try:
+            active = self.service.jobs.select(BUSY)
+            selected = active[:10] + self.service.jobs.recent(max(0, 5-len(active)), exclude_statuses=BUSY)
+            self._activity_snapshot = {"jobs": [activity(job) for job in selected], "activeCount": len(active),
+                                       "moreCount": max(0, len(active) - 10)}
+            return self._activity_snapshot
+        finally:
+            lock.release()
 
     def reserve(self):
         self.reconcile()

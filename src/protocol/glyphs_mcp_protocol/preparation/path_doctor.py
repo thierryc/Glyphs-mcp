@@ -101,20 +101,28 @@ def normalize(layer, path, expected):
                           'path order', 'smoothness', 'fill explicitness', 'profiles and inherited defaults']}
 
 
+def finding(state, *, document_id=None, glyph, layer, path, code, classification,
+            severity, evidence, confidence='definite', nodes=None, repair=None, held=None):
+    stable = json.dumps([glyph, layer, path, code, nodes or []], separators=(',', ':'))
+    return {'issueId':'pd1:' + hashlib.sha256(stable.encode()).hexdigest()[:24],
+        'code':code, 'target':{'document':document_id,'glyph':glyph,'layer':layer,
+                             'surface':'foreground','path':path,'nodes':nodes or []},
+        'classification':classification,'severity':severity,'confidence':confidence,
+        'evidence':evidence,'stateHash':path_hash(state),'repair':repair,'heldReasons':held or []}
+
+
 def inspect_path(state, *, document_id=None, glyph, layer, path, references=False):
-    target = {'document': document_id, 'glyph': glyph, 'layer': layer, 'surface': 'foreground', 'path': path}
     issues = []
     def issue(code, classification, severity, evidence, confidence='definite', nodes=None, repair=None, held=None):
-        address = {**target, 'nodes': nodes or []}
-        stable = json.dumps([glyph, layer, path, code, nodes or []], separators=(',', ':'))
-        issues.append({'issueId': 'pd1:' + hashlib.sha256(stable.encode()).hexdigest()[:24],
-            'code': code, 'target': address, 'classification': classification, 'severity': severity,
-            'confidence': confidence, 'evidence': evidence, 'stateHash': path_hash(state),
-            'repair': repair, 'heldReasons': held or []})
+        issues.append(finding(state,document_id=document_id,glyph=glyph,layer=layer,path=path,
+            code=code,classification=classification,severity=severity,evidence=evidence,
+            confidence=confidence,nodes=nodes,repair=repair,held=held))
     try: validate_segments(state)
     except (ValueError, RuntimeError) as exc:
         issue('malformed_segments', 'structural', 'error', str(exc))
         return issues
+    from ..path_quality import path_findings
+    for diagnostic in path_findings(state): issue(*diagnostic)
     nodes=state['nodes']; attrs=state.get('attributeState', {}).get('attributes', {})
     problems=profile_problems(state)
     if problems:
@@ -205,6 +213,7 @@ def prepare_iter(font, request, *, document_id=None):
                 yield; continue
             found.add(identity); totals['layers']+=1
             totals['componentReferences']+=len(list(layer.components or []))
+            layer_states=[]
             for index,path in enumerate(layer.paths):
                 totals['paths']+=1
                 try:
@@ -216,6 +225,8 @@ def prepare_iter(font, request, *, document_id=None):
                     totals['closedStrokePaths']+=int(stroke and state['closed'])
                     findings = inspect_path(state, document_id=document_id, glyph=str(glyph.name),
                         layer=identity,path=index,references=referenced(layer,path))
+                    if not any(f['code']=='malformed_segments' for f in findings):
+                        layer_states.append((index,state))
                     from .outline import _value
                     held = []
                     if identity not in master_ids:
@@ -235,19 +246,28 @@ def prepare_iter(font, request, *, document_id=None):
                         'classification':'unsupported','repair':None,'heldReasons':[str(exc)],'evidence':str(exc),
                         'issueId':'pd1:'+hashlib.sha256(json.dumps([str(glyph.name),identity,index,'unsupported_path']).encode()).hexdigest()[:24]})
                 yield
+            from ..path_quality import layer_findings
+            for index,diagnostic in layer_findings(layer_states,upm=float(_value(font,'upm',1000)),width=float(_value(layer,'width',0))):
+                code,classification,severity,evidence,confidence,nodes=diagnostic
+                issues.append(finding(dict(layer_states)[index],document_id=document_id,glyph=str(glyph.name),
+                    layer=identity,path=index,code=code,classification=classification,severity=severity,
+                    evidence=evidence,confidence=confidence,nodes=nodes))
+                yield
             yield
         if (master_ids if isinstance(layers, str) else set(layers))-found:
             raise ValueError('requested stored layers are missing for '+str(glyph.name))
         yield
     counts=Counter(i['code'] for i in issues)
-    return [], {'claim':'Read-only live Path Doctor structural evidence; no repair, cleanup or save.',
+    return [], {'claim':'Read-only live Path Doctor structural and quality evidence; no repair, cleanup or save.',
         'scope':{'surface':'foreground','layers':layers,'glyphs':names,'backgrounds':False,
                  'historicalLayers':False,'componentsExpanded':False},
-        'coverage':{**dict(totals),'complete':not totals['unsupportedPaths'],
+        'coverage':{**dict(totals),'complete':not totals['unsupportedPaths'] and not any(i['classification']=='unsupported' for i in issues),
                     'consistency':'sliced live scan; caller must guard generation; not an atomic native snapshot'},
         'issueCounts':dict(sorted(counts.items())), 'issues':issues,
         'scanHash':'sha256:'+hashlib.sha256(json.dumps(digests,separators=(',',':')).encode()).hexdigest(),
-        'limitations':['No native editing-failure causality claim.','No expanded component or historical/background audit.']}
+        'limitations':['No native editing-failure causality claim.','No expanded component or historical/background audit.',
+            'Quality findings are candidates, not verified repairs; stroke/Pen profiles retain their separate workflow.',
+            'Source overlap inspection does not certify detached overlap-removal debris or export behavior.']}
 
 
 def remove_duplicates(layer, path, expected):

@@ -149,6 +149,9 @@ def _tasks(service):
                 candidates = [jobs[value['blockerId']]]
         task['blockingJobIds'] = [j['id'] for j in candidates]
         task['blockers'] = []
+        if value.get('healthWait') and value.get('state') == 'queued':
+            task['blockers'].append(dict(scope='session', reason='resource_pressure', wait='automatic',
+                jobId=None, documentId=task['documentId'], message=value['healthWait']['text']))
         for candidate in candidates:
             owner = protection(candidate)
             if owner:

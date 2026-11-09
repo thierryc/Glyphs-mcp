@@ -7,7 +7,7 @@ JOB_KINDS = ("width_delta", "spacing", "kerning_collision", "start_nodes", "slan
 
 
 def validate(kind, delta, glyphs, options, ServiceError):
-    available = list(JOB_KINDS) + ["outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit", "path_diagnostics", "path_cleanup"]
+    available = list(JOB_KINDS) + ["outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit", "path_diagnostics", "path_cleanup", "path_fitting"]
     if str(kind) not in available:
         raise ServiceError("unsupported_job", "supported jobs: " + ", ".join(available))
     if kind == "width_delta" and (isinstance(delta, bool) or not isinstance(delta, (int, float)) or not math.isfinite(float(delta)) or delta == 0):
@@ -19,7 +19,7 @@ def validate(kind, delta, glyphs, options, ServiceError):
         names = [str(value).strip() for value in glyphs]
         if any(not value for value in names) or len(names) != len(set(names)):
             raise ServiceError("invalid_request", "glyph names must be non-empty and unique")
-    if kind in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit", "path_diagnostics", "path_cleanup"):
+    if kind in ("spacing", "kerning_collision", "start_nodes", "slant", "outline_edit", "native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit", "path_diagnostics", "path_cleanup", "path_fitting"):
         from .spacing import validate_options as spacing_options
         from .collision import validate_options as collision_options
         from .start_node_job import validate_options as start_options
@@ -27,6 +27,7 @@ def validate(kind, delta, glyphs, options, ServiceError):
         from glyphs_mcp_protocol.outline import validate_options as outline_options
         from glyphs_mcp_protocol.path_doctor import validate_options as path_diagnostic_options
         from glyphs_mcp_protocol.path_cleanup import validate_options as path_cleanup_options
+        from glyphs_mcp_protocol.path_fitting import validate_options as path_fitting_options
         from glyphs_mcp_protocol.native_actions import validate_options as native_action_options
         from glyphs_mcp_protocol.compile_export import (
             validate_compile_options, validate_export_options,
@@ -44,6 +45,7 @@ def validate(kind, delta, glyphs, options, ServiceError):
             "kerning_edit": kerning_edits.validate_options,
             "path_diagnostics": path_diagnostic_options,
             "path_cleanup": path_cleanup_options,
+            "path_fitting": path_fitting_options,
             "python_script": scripts.validate_options,
         }[kind]
         try:
@@ -55,7 +57,7 @@ def validate(kind, delta, glyphs, options, ServiceError):
                 raise ValueError("start_nodes requires 1-100 explicit glyphs")
             if kind == "outline_edit" and names:
                 raise ValueError("outline_edit selects glyphs inside options.targets")
-            if kind in ("native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit", "path_diagnostics", "path_cleanup") and glyphs is not None:
+            if kind in ("native_action", "feature_compile", "font_export", "dimensions_edit", "python_script", "kerning_edit", "path_diagnostics", "path_cleanup", "path_fitting") and glyphs is not None:
                 raise ValueError(f"{kind} does not use top-level glyphs")
             return {"kind": kind, "glyphs": names, "options": validate_options({} if options is None else options)}
         except ProtocolError as error:

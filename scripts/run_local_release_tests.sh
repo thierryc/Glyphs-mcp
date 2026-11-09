@@ -22,6 +22,7 @@ if [[ ! -x "$python_bin" ]]; then
   exit 1
 fi
 export PYTHON_BIN="$python_bin"
+export GMCP_DEVELOPMENT_PAYLOAD_CACHE=0
 
 if [[ "${1:-}" == "--focused" ]]; then
   shift
@@ -103,7 +104,7 @@ diff -qr "$payload_a" "$payload_b"
 # Python suite stays serial internally: its shared-service fixtures are not
 # automatically safe for pytest worker sharding.
 python_checks() {
-  GLYPHS_MCP_FULL_PYTHON_MATRIX=1 PYTHON_BIN="$python_bin" scripts/run_python_tests.sh --pytest
+  GLYPHS_MCP_FULL_PYTHON_MATRIX=1 PYTHON_BIN="$python_bin" scripts/run_python_tests.sh --pytest --performance-gates src/glyphs-mcp/tests
 }
 documentation_checks() { (cd website && npm run build); }
 desktop_checks() {

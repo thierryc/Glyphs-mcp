@@ -2,6 +2,44 @@
 
 Status: next-version implementation and qualification, no release publication.
 
+## Quality review and explicit polygon fitting
+
+`path_diagnostics` also reports bounded stored line/cubic quality evidence:
+zero handles, forward tangent-triangle overshoot, interior extrema, inflections,
+stationary points, asymmetric handle distribution, tiny/distant contours and
+advisory winding/nesting. Intersections and uncertain clearance produce review
+findings, not direction repairs. Stroke/Pen conventions remain separate;
+unsupported quadratics or quality limits make coverage explicitly incomplete.
+
+`path_fitting` is a separate reconstruction job, never a cleanup default. It
+requires explicit glyph/path targets and `path.fit-curves.v1` plus
+`outline.fit-polygon.v1`. The pure fitter coordinates corresponding source
+landmarks and subdivisions, preserving source node 0, selected landmarks and
+geometric/explicit corners. Positive constrained least-squares handles propose
+cubics; Bernstein difference hulls bound each polyline/cubic span continuously.
+Straight sections remain lines across the family. Every layer must reduce total
+stored points, counting handles. The default budget is 0.5 font units and is
+never relaxed after refusal.
+
+Native preparation materializes proposed nodes on detached copies, certifies
+whole-layer nesting and cumulative boundary error, and invokes the existing
+interpolation-family sample validator. Native grid effects can hold a fit that
+passed the pure span bound. The internal `fit_polygon` operation retains the
+native path and surviving node identities, uses a full path-state guard, and
+preserves path attributes/order/direction. Direct `outline_edit` intake refuses
+this operation; coordinated preparation owns reconstruction. Existing snapshots,
+Undo/Redo, apply/discard, saved baselines and save authorization are unchanged.
+
+The existing workflow card shows fitting scope, before/after point counts and
+held families. Its cleanup controls are hidden in fitting mode. G2 and balancing
+delegate to Curve Inspector; HOI kinks delegate to De-kink. Direction, extrema
+and overlap commands remain existing explicit native actions. No companion
+engine is copied into the skill or enabled implicitly after fitting.
+
+See `reports/path-fitting-20261104.md` for candidate native qualification and
+the unverified live-workflow/export boundaries. Capabilities are independently
+host-gated to Glyphs 4.2 build 4202.
+
 Path Doctor is a workflow, not another editing service. It uses `start_job` /
 `get_job` for `path_diagnostics` and the existing `outline_edit` operations for
 `normalize_closed_seam`. No top-level MCP tool is added. Native preparation runs

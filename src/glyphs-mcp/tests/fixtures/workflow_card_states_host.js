@@ -25,6 +25,24 @@ const resultButtons = () => {
   return s;
 };
 const cases = {
+  async path_fitting() {
+    const h=host({deferWrites:true});await tick();
+    const s=payload();s.data.scope={kind:'path_fitting'};
+    s.data.actions[0].label='Apply curve fitting';
+    s.data.pathDoctor={mode:'path_fitting',settings:{targets:[{glyph:'infinity',paths:[{path:0}]}],maxDeviation:.5},
+      comparison:'Changes Against Reference',report:{beforeNodes:128,afterNodes:36,changedLayers:2,heldCount:0,maximumBoundaryError:.32}};
+    deliver(h,s);await tick();
+    assert.equal(h.get('path-doctor').hidden,false);
+    assert.equal(h.get('pd-settings').hidden,true,'cleanup controls cannot enable reconstruction');
+    assert(h.get('pd-summary').textContent.includes('128 → 36 points'));
+    assert(h.get('pd-summary').textContent.includes('Measured bound 0.320 units'));
+    assert.equal(writes(h).length,0,'preview does not reconstruct automatically');
+    h.click('apply');await tick();
+    const args=writes(h).at(-1).params.arguments;
+    assert.equal(args.action_token,'token-apply');
+    assert.equal(args.cleanup_settings,undefined);
+    assert.equal(args.cleanup_apply,undefined);
+  },
   async path_doctor() {
     const h=host({deferWrites:true});await tick();
     const s=state(1,'diagnosed',[action('configure_cleanup','Configure Path Doctor')]);

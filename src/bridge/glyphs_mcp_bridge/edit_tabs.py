@@ -5,9 +5,17 @@ from uuid import uuid4
 from glyphs_mcp_protocol import ProtocolError
 from glyphs_mcp_protocol import edit_tabs as contract
 from .context import value
-from .document_lifecycle import guard
 
 MAX_OPENINGS = 1024
+
+
+def guard(core, document_id, error_type):
+    from glyphs_mcp_protocol.task_conflicts import proof_conflicts, protection
+    for item in (*core._operations.values(), *core._saves.values()):
+        if proof_conflicts(item, document_id):
+            raise error_type('document_busy', 'Resolve active or uncertain work before opening a proof',
+                             details={'jobId': item.get('jobId'), 'status': item['status'],
+                                      'blocker': protection(item)})
 
 
 def available():

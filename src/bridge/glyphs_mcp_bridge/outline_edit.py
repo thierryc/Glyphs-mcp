@@ -315,6 +315,9 @@ def apply_operation(layer, operation):
     if op == "remove_consecutive_duplicate_nodes":
         from glyphs_mcp_protocol.preparation.path_doctor import remove_duplicates
         remove_duplicates(layer, path, operation['stateHash'])
+    elif op == 'fit_polygon':
+        from glyphs_mcp_protocol.preparation.polygon_edit import apply
+        apply(layer, path, operation)
     elif op == "normalize_closed_seam":
         from glyphs_mcp_protocol.preparation.path_doctor import normalize
         normalize(layer, path, operation['stateHash'])

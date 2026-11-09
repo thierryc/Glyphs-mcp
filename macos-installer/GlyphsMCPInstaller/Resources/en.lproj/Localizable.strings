@@ -994,3 +994,36 @@
 "%lld days" = "%lld days";
 "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available.";
 "Codex settings changed during setup and were preserved. Run setup again to check the current settings." = "Codex settings changed during setup and were preserved. Run setup again to check the current settings.";
+
+/* Glyphs Health */
+"Checking Glyphs" = "Checking Glyphs";
+"Collecting health evidence…" = "Collecting health evidence…";
+"Glyphs Health" = "Glyphs Health";
+"No slowdown detected" = "No slowdown detected";
+"Reduce load" = "Reduce load";
+"New heavy work paused" = "New heavy work paused";
+"Health unknown" = "Health unknown";
+"Health unavailable" = "Health unavailable";
+"Health observation stale" = "Health observation stale";
+"Agents defer new expensive work and retry later. Existing work and recovery are preserved." = "Agents defer new expensive work and retry later. Existing work and recovery are preserved.";
+"Agents reuse open fonts, process files sequentially, and avoid unnecessary tabs." = "Agents reuse open fonts, process files sequentially, and avoid unnecessary tabs.";
+"Agents follow health advisories returned by tools." = "Agents follow health advisories returned by tools.";
+"Open-font warning threshold reached" = "Open-font warning threshold reached";
+"System memory pressure elevated" = "System memory pressure elevated";
+"System memory pressure critical" = "System memory pressure critical";
+"Native response delayed" = "Native response delayed";
+"Waiting for sustained recovery" = "Waiting for sustained recovery";
+"Health evidence incomplete" = "Health evidence incomplete";
+"Open fonts: %lld" = "Open fonts: %lld";
+"Unsaved fonts: %lld" = "Unsaved fonts: %lld";
+"Edit tabs: %lld" = "Edit tabs: %lld";
+"Document counts are partial." = "Document counts are partial.";
+"Glyphs memory" = "Glyphs memory";
+"Memory change" = "Memory change";
+"Memory observation is stale." = "Memory observation is stale.";
+"System memory pressure is unknown." = "System memory pressure is unknown.";
+"What agents will do" = "What agents will do";
+"Observed" = "Observed";
+"Health protection is unavailable. Update bridge and sidecar together to enable it." = "Health protection is unavailable. Update bridge and sidecar together to enable it.";
+"Warn at %lld open fonts" = "Warn at %lld open fonts";
+"This is a warning threshold. Font count alone never blocks work. Agents defer new expensive work under critical pressure." = "This is a warning threshold. Font count alone never blocks work. Agents defer new expensive work under critical pressure.";

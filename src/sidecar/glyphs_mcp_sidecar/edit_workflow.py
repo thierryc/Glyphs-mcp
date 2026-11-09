@@ -85,6 +85,9 @@ class EditWorkflows:
             saved_script.invalidate(self.service)
             error = self.service._error(exc).as_dict()
             details = error.get("details") or {}
+            if error['code'] == 'resource_pressure' and details.get('execution') == 'not_started':
+                workflow_queue.defer_health(self, value, details)
+                return
             if (not value.get('jobId') and not value.get('saveRequest') and
                     value['state'] in {'starting', 'queued', 'preparing'} and
                     error['code'] in {'bridge_unavailable', 'bridge_timeout', 'bridge_failed'}):
@@ -130,6 +133,15 @@ class EditWorkflows:
             return workflow_queue.enqueue(self, document_id, arguments, request, mode, idempotency_key, auto_keep)
         try:
             from .script_service import execution_blockers
+            try:
+                self.service.admit_expensive()
+            except Exception as exc:
+                if getattr(exc, 'code', None) != 'resource_pressure': raise
+                queued = workflow_queue.enqueue(self, document_id, arguments, request, mode, idempotency_key, auto_keep)
+                with self.store.lock:
+                    value = self._find(queued['id'])
+                    workflow_queue.defer_health(self, value, exc.details)
+                    return public_workflow(deepcopy(value))
             busy = execution_blockers(self.service, document_id=document_id, exclusive=kind == 'python_script')
             peers = workflow_queue.pending_peers(self, document_id)
             if busy or any(p['state'] == 'queued' or not p.get('jobId') for p in peers):
@@ -341,6 +353,7 @@ class EditWorkflows:
         self._set(value, document=document, documentRebindings=transitions)
 
     def _begin(self, value):
+        self.service.admit_expensive()
         document = self._document(value, allow_path_change=True)
         self.service.validate_job_request(**value["arguments"])
         with self.store.lock:
@@ -372,6 +385,8 @@ class EditWorkflows:
             from .task_expiration import stop_old_queued_intent
             if stop_old_queued_intent(self, value):
                 return
+            if not value.get('cancelRequested') and value.get('queueRetryAt', 0) > time.time():
+                return
             if not value.get('jobId'):
                 return workflow_queue.advance(self, value)
             if value.get('cancelRequested'):
@@ -385,7 +400,8 @@ class EditWorkflows:
             with self.store.lock:
                 if value.get('cancelRequested'):
                     return  # The next supervisor visit performs read-only cleanup.
-                self._set(value, state='preparing', blocker=None, blockerId=None)
+                self.service.admit_expensive()
+                self._set(value, state='preparing', blocker=None, blockerId=None, healthWait=None)
         if value.get("blockerId"):
             # Public jobs omit document bindings. The retained dispatch request
             # identifies the pre-reload owner even when restoration changed the
@@ -438,6 +454,13 @@ class EditWorkflows:
             return
         job = self.service.get_job(value["jobId"])
         self._set(value, job=job)
+        failure = job.get('error') or {}
+        if (value['state'] == 'preparing' and job['status'] == 'failed'
+                and failure.get('code') == 'resource_pressure'
+                and (failure.get('details') or {}).get('execution') == 'not_started'):
+            self._set(value, jobId=None, job=None)
+            workflow_queue.defer_health(self, value, failure['details'])
+            return
         if (value['state'] == 'preparing' and job['status'] == 'failed' and
                 (job.get('error') or {}).get('code') == 'document_busy' and
                 ((job.get('error') or {}).get('details') or {}).get('execution') != 'uncertain' and

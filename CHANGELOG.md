@@ -4,6 +4,12 @@
 
 - Add Glyphs Small and Petite Caps to derive editable Latin caps from uppercase with a reviewed pilot.
 - Keep bundled skill details in Skills and offer an explicit link to AI Agents for setup.
+- Add passive Glyphs Health snapshots and automatic agent advisories.
+- Defer new expensive work under critical pressure or delayed native dispatch,
+  preserving queued intent, idempotency and recovery.
+- Add companion health details and a shared configurable soft font warning.
+- Keep status reads independent of native execution and job reconciliation.
+
 
 ## 2.5.0 — stable release, build 73, 31 October 2026
 

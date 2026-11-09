@@ -35,3 +35,19 @@ def duplicate_repair_available():
 def cleanup_available():
     from .outline_edit import native_remove_available
     return duplicate_repair_available() and native_remove_available()
+
+
+def fitting_available():
+    # Independent plugin-free native family/apply/recovery and NSUndoManager
+    # qualification: reports/path-fitting-20261104.md. Do not inherit future
+    # seam host changes as evidence for polygon reconstruction.
+    try:
+        from .identity import host_identity
+        host=host_identity()
+        if tuple(str(host.get(k)) for k in ('identifier','version','build')) != ('com.GeorgSeifert.Glyphs4','4.2','4202'):
+            return False
+        from GlyphsApp import GSNode,GSPath
+        return all(callable(getattr(owner.pyobjc_instanceMethods,k,None))
+                   for owner in (GSNode(),GSPath()) for k in ('attributes','setAttributes_'))
+    except Exception:
+        return False

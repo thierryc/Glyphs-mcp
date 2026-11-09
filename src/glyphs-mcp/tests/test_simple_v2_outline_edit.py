@@ -283,8 +283,10 @@ def test_remove_node_job_requires_its_negotiated_bridge_capability(tmp_path):
 def test_bridge_advertises_native_remove_only_when_selector_is_available(monkeypatch):
     core = BridgeCore(NS(), lambda _callback: None)
     monkeypatch.setattr("glyphs_mcp_bridge.core.outline_edit.native_remove_available", lambda: False)
+    core.refresh_capabilities()
     assert core.status()["writeCapabilities"] == ["outline.edit.v1", "outline.background.edit.v1"]
     monkeypatch.setattr("glyphs_mcp_bridge.core.outline_edit.native_remove_available", lambda: True)
+    core.refresh_capabilities()
     assert core.status()["writeCapabilities"] == ["outline.edit.v1", "outline.background.edit.v1", "outline.remove-node.v1"]
 
 
@@ -469,10 +471,12 @@ def test_background_capabilities_are_negotiated_by_sidecar(tmp_path):
     bridge = NS(status=lambda: {"readCapabilities": ["outline.background.read.v1"],
                                 "writeCapabilities": ["outline.edit.v1", "outline.background.edit.v1"]})
     service = SidecarService(bridge, jobs=JobStore(tmp_path), worker=NS(status=lambda: {"available": True}))
+    service.status_cache.refresh()
     status = service.get_status()
     assert "outline.background.read.v1" in status["readCapabilities"]
     assert "outline.background.edit.v1" in status["writeCapabilities"]
     bridge.status = lambda: {"writeCapabilities": ["outline.edit.v1"]}
+    service.status_cache.refresh()
     status = service.get_status()
     assert "outline.background.read.v1" not in status["readCapabilities"]
     assert "outline.background.edit.v1" not in status["writeCapabilities"]

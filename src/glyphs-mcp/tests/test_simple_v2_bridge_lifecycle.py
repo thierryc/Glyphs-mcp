@@ -64,7 +64,8 @@ def host(monkeypatch):
     monkeypatch.setattr(lifecycle, "load_or_create_token", lambda: "test-token")
     monkeypatch.setattr(lifecycle, "CocoaMainThread", lambda: SimpleNamespace(schedule=lambda f: None))
     monkeypatch.setattr(lifecycle, "GlyphsAdapter", lambda glyphs: SimpleNamespace(note_change=lambda _: None))
-    monkeypatch.setattr(lifecycle, "BridgeCore", lambda *args: SimpleNamespace(companions=object(), status=lambda: {"activeOperations": 0}))
+    monkeypatch.setattr(lifecycle, "BridgeCore", lambda *args: SimpleNamespace(companions=object(), status=lambda: {"activeOperations": 0}, active_operations=lambda: 0,
+        health=SimpleNamespace(start=lambda *a, **k: None, close=lambda: None, invalidate_documents=lambda _: None)))
     monkeypatch.setattr(lifecycle, "BridgeHTTPServer", Server)
     monkeypatch.setattr(lifecycle, "attach_registry", registries.append)
     monkeypatch.setattr(lifecycle, "detach_registry", lambda registry: registries.remove(registry) if registry in registries else None)
@@ -117,7 +118,8 @@ def test_multiple_palettes_and_menu_starts_preserve_one_bridge_and_job_state(hos
     assert len(host.glyphs.menu["edit"]) == 1
     assert item.title == "Glyphs MCP Server…"
     assert host.commands == ["status"]
-    assert len(host.servers) == len(host.callbacks) == len(host.registries) == 1
+    assert len(host.servers) == len(host.registries) == 1
+    assert len(host.callbacks) == 2
     assert host.runtime.core is core
     assert core.pending_job == "keep this reversible operation"
     assert host.runtime.ready
@@ -152,7 +154,7 @@ def test_closing_another_palette_keeps_bridge_and_menu_owner_alive(host):
     assert host.runtime.ready
     assert len(host.runtime.palettes.allObjects()) == 0
     assert host.runtime.menu_target is not None
-    assert len(host.callbacks) == 1
+    assert len(host.callbacks) == 2
 
 
 def test_menu_is_available_without_any_document_palette(host):

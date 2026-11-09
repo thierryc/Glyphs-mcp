@@ -70,12 +70,17 @@ public struct DesktopActivitySummary {
 }
 
 public struct DesktopServerStatus: Decodable, Equatable {
+    public struct Observation: Decodable, Equatable {
+        public let stale: Bool
+        public let ageSeconds: Double?
+    }
     public struct Bridge: Decodable, Equatable {
         public let reachable: Bool
         public let activeOperations: Int?
         public var bridgeVersion: String? = nil
         public var codeHash: String? = nil
         public var runtimeId: String? = nil
+        public var checking: Bool? = nil
     }
     public struct Worker: Decodable, Equatable {
         public struct Execution: Decodable, Equatable, Identifiable {
@@ -94,6 +99,8 @@ public struct DesktopServerStatus: Decodable, Equatable {
     public let controlProtocol: Int?
     public var codeHash: String? = nil
     public var runtimeId: String? = nil
+    public var health: DesktopGlyphsHealth? = nil
+    public var statusObservation: Observation? = nil
     public func identityIssues(expectedSidecar: String?, expectedBridge: String?) -> [String] {
         func check(_ component: String, _ expected: String?, _ reported: String?, _ recovery: String) -> String? {
             guard let expected, let reported,
@@ -115,7 +122,7 @@ public struct DesktopServerStatus: Decodable, Equatable {
     }
     public var summary: DesktopActivitySummary { DesktopActivitySummary(jobs: activity?.jobs ?? [], activeCount: activity?.activeCount ?? 0) }
     public func showsActivityDot(stale: Bool, running: Bool?) -> Bool { !stale && running == true && isBusy }
-    public var title: String { isBusy ? "Working" : bridge.reachable ? "Ready" : "Waiting for Glyphs" }
+    public var title: String { bridge.checking == true ? "Checking Glyphs" : isBusy ? "Working" : bridge.reachable ? "Ready" : "Waiting for Glyphs" }
     public var workerTitle: String {
         if !worker.available { return "Worker unavailable" }
         if worker.executions?.contains(where: { $0.phase == "running" }) == true { return "Glyphs worker running" }
@@ -123,11 +130,82 @@ public struct DesktopServerStatus: Decodable, Equatable {
     }
 }
 
+/// Additive health evidence. Missing fields from older bridges remain unavailable.
+public struct DesktopGlyphsHealth: Decodable, Equatable {
+    public struct Signal: Decodable, Equatable {
+        public let available: Bool?
+        public let observedAt: TimeInterval?
+        public let stale: Bool?
+        public let complete: Bool?
+        public let fontCount: Int?
+        public let unsavedCount: Int?
+        public let editTabCount: Int?
+        public let bytes: Int64?
+        public let growthBytes: Int64?
+        public let value: String?
+        public let pendingSeconds: Double?
+        public let schedulingSeconds: Double?
+    }
+    public let version: Int?
+    public let available: Bool?
+    public let bridgeSessionId: String?
+    public let revision: Int?
+    public let state: String
+    public let signals: [String: Signal]?
+    public let reasons: [String]?
+    public var title: String {
+        guard available == true, version == 1 else { return "Health unavailable" }
+        switch state {
+        case "normal": return "No slowdown detected"
+        case "caution": return "Reduce load"
+        case "paused": return "New heavy work paused"
+        default: return "Health unknown"
+        }
+    }
+    public var agentGuidance: String {
+        switch state {
+        case "paused": return "Agents defer new expensive work and retry later. Existing work and recovery are preserved."
+        case "caution": return "Agents reuse open fonts, process files sequentially, and avoid unnecessary tabs."
+        default: return "Agents follow health advisories returned by tools."
+        }
+    }
+    public static func reasonLabel(_ reason: String) -> String {
+        switch reason {
+        case "font_budget_reached": return "Open-font warning threshold reached"
+        case "memory_pressure_warning": return "System memory pressure elevated"
+        case "memory_pressure_critical": return "System memory pressure critical"
+        case "native_dispatch_slow", "native_dispatch_delayed": return "Native response delayed"
+        case "recovering": return "Waiting for sustained recovery"
+        default: return "Health evidence incomplete"
+        }
+    }
+}
+
+public struct DesktopGlyphsHealthPolicy: Codable, Equatable {
+    public var version = 1
+    public var fontWarningThreshold = 8
+    public init(fontWarningThreshold: Int = 8) { self.fontWarningThreshold = fontWarningThreshold }
+    public static func file(under root: URL) -> URL { root.appendingPathComponent("jobs/health-policy.json") }
+    public static func read(under root: URL) throws -> Self {
+        let file = file(under: root)
+        guard FileManager.default.fileExists(atPath: file.path) else { return Self() }
+        let policy = try JSONDecoder().decode(Self.self, from: Data(contentsOf: file))
+        guard policy.version == 1, (1...128).contains(policy.fontWarningThreshold) else { throw CocoaError(.coderReadCorrupt) }
+        return policy
+    }
+    public func write(under root: URL) throws {
+        guard version == 1, (1...128).contains(fontWarningThreshold) else { throw CocoaError(.coderInvalidValue) }
+        let file = Self.file(under: root)
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(self).write(to: file, options: .atomic)
+    }
+}
+
 public enum DesktopStatusRequest {
     public static func make(port: Int, token: String) -> URLRequest {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/internal/status")!)
-        // Status waits for the Glyphs bridge, whose own timeout is 15 seconds.
-        // Let the sidecar finish that check and return its reachability result.
+        // Current sidecars return a passive cache immediately. Retain the
+        // compatibility timeout for older installed sidecars.
         request.timeoutInterval = 20
         request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
         request.cachePolicy = .reloadIgnoringLocalCacheData
@@ -136,6 +214,14 @@ public enum DesktopStatusRequest {
 }
 
 public enum DesktopDiagnostics {
+    public enum StatusTone { case ready, active, unavailable }
+
+    public static func statusTone(running: Bool?, stale: Bool, status: DesktopServerStatus?) -> StatusTone {
+        guard running == true, !stale else { return .unavailable }
+        guard let status, status.bridge.reachable, status.bridge.checking != true, !status.isBusy else { return .active }
+        return .ready
+    }
+
     public static func serverTitle(
         hasServer: Bool,
         running: Bool?,

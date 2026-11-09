@@ -106,6 +106,7 @@ def prepare_external(service, job_id, cancel):
             from .saved_script import prepare
             prepare(service, job, cancel)
             return
+        service.admit_expensive()
         source_path, fingerprint = snapshot_source(
             Path(job["document"]["path"]), service.jobs.path(job_id)
         )
@@ -118,6 +119,7 @@ def prepare_external(service, job_id, cancel):
             worker_request["_instanceBinding"] = capture(
                 service, job["document"], worker_request["options"]["instanceId"], fingerprint
             )
+        service.admit_expensive()
         prepared = service.worker.prepare(
             service.jobs.path(job_id), job["document"], worker_request,
             source_path, fingerprint, cancel,
@@ -182,9 +184,12 @@ def _mutation_report(report, path):
             summary[name] = report[name]
     if "persistence" in report:
         summary["persistence"] = report["persistence"]
-    if report.get('kind') == 'path_cleanup':
+    if report.get('kind') in ('path_cleanup', 'path_fitting'):
         for key in ('kind','settings','changedLayers','unchangedLayers','heldCount','removedNodes','validation','comparison'):
             summary[key]=report[key]
+        if report.get('kind') == 'path_fitting':
+            summary.update(beforeNodes=report['beforeNodes'], afterNodes=report['afterNodes'],
+                           maximumBoundaryError=report['maximumBoundaryError'])
         summary['held']=report['held'][:20]
         summary['heldTruncated']=len(report['held'])>20
     if report.get("kind") == "dimensions_edit":
@@ -203,7 +208,8 @@ def _fail(service, job_id, cancel, exc):
         cancelled = cancel.is_set() or str(exc) == "job cancelled"
         service.jobs.update(
             job_id, status="cancelled" if cancelled else "failed",
-            error={"code": "cancelled" if cancelled else getattr(exc, 'code', 'job_failed'), "message": str(exc)},
+            error={"code": "cancelled" if cancelled else getattr(exc, 'code', 'job_failed'), "message": str(exc),
+                   "details": dict(getattr(exc, 'details', {}))},
         )
 
 

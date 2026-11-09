@@ -140,9 +140,9 @@ final class DesktopTests: XCTestCase {
             alreadyShown: false, interactive: true, busy: false, otherDialog: false))
     }
 
-    func testSlowHealthyStatusResponseSurvivesTheOldThreeSecondDeadline() async throws {
+    func testStatusRequestPreservesLegacyDeadlineAndDecodesHealthyResponse() async throws {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [SlowStatusURLProtocol.self]
+        configuration.protocolClasses = [HealthyStatusURLProtocol.self]
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
         let request = DesktopStatusRequest.make(port: 9680, token: "test-token")
@@ -313,6 +313,26 @@ final class DesktopTests: XCTestCase {
         XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: false, stale: true, status: status), "stop.circle")
         XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: nil, stale: true, status: status), "exclamationmark.circle")
         XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: nil, stale: false, status: nil), "circle")
+        XCTAssertEqual(DesktopDiagnostics.statusTone(running: true, stale: false, status: status), .ready)
+        XCTAssertEqual(DesktopDiagnostics.statusTone(running: true, stale: true, status: status), .unavailable)
+        XCTAssertEqual(DesktopDiagnostics.statusTone(running: false, stale: false, status: status), .unavailable)
+        XCTAssertEqual(DesktopDiagnostics.statusTone(running: true, stale: false, status: nil), .active)
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(hasServer: true, running: true,
+            status: nil, hasNotice: true, stale: true), "Status unavailable")
+    }
+
+    func testHealthWarningAndRecoveredStatusKeepConnectionPresentationIndependent() throws {
+        let observed = try JSONDecoder().decode(DesktopServerStatus.self, from: Data(#"{"sidecarVersion":"2.6.0","bridge":{"reachable":true},"worker":{"available":true},"health":{"version":1,"available":true,"state":"caution","reasons":["memory_pressure_warning"]}}"#.utf8))
+        XCTAssertEqual(observed.health?.title, "Reduce load")
+        XCTAssertEqual(DesktopDiagnostics.serverTitle(hasServer: true, running: true,
+            status: observed, hasNotice: false), "Ready")
+        XCTAssertEqual(DesktopDiagnostics.statusTone(running: true, stale: false, status: observed), .ready)
+        XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: true, stale: true, status: observed), "exclamationmark.circle")
+        XCTAssertEqual(DesktopDiagnostics.statusTone(running: true, stale: true, status: observed), .unavailable)
+        // A subsequent fresh response restores readiness without changing the
+        // independent pressure warning or requiring a process restart.
+        XCTAssertEqual(DesktopDiagnostics.statusSymbol(running: true, stale: false, status: observed), "checkmark.circle.fill")
+        XCTAssertEqual(observed.health?.state, "caution")
     }
 
     func testComponentCheckboxesCoverEveryInstalledAndSelectedCombination() {
@@ -539,8 +559,8 @@ final class DesktopTests: XCTestCase {
 }
 
 
-/// Reproduce a healthy bridge response arriving after Setup's old deadline.
-private final class SlowStatusURLProtocol: URLProtocol {
+/// Decode a healthy response; timeout compatibility is asserted on the request.
+private final class HealthyStatusURLProtocol: URLProtocol {
     private var reply: DispatchWorkItem?
     override class func canInit(with request: URLRequest) -> Bool {
         request.url?.path == "/internal/status"
@@ -557,7 +577,7 @@ private final class SlowStatusURLProtocol: URLProtocol {
             self.client?.urlProtocolDidFinishLoading(self)
         }
         reply = work
-        DispatchQueue.global().asyncAfter(deadline: .now() + 3.5, execute: work)
+        DispatchQueue.global().async(execute: work)
     }
     override func stopLoading() { reply?.cancel(); reply = nil }
 }

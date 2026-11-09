@@ -72,6 +72,38 @@ class BridgeCore:
         self.bridge_session_id = uuid4().hex
         self._lock = RLock()
         self.paused = False
+        from .health import HealthMonitor
+        self.health = HealthMonitor(self.bridge_session_id)
+        # Native discovery happens here, on the creating main thread, not on readers.
+        self._capability_snapshot = self._discover_status()
+
+    def status(self) -> dict[str, Any]:
+        result = copy.deepcopy(self._capability_snapshot)
+        result['bridgeSessionId'] = self.bridge_session_id
+        result['previewReleaseVersion'] = 1
+        # Copy registry membership under the GIL; never wait for the native operation lock.
+        operations = self._operations.copy()
+        saves = self._saves.copy()
+        active = sum(item['status'] in ACTIVE for item in operations.values())
+        active += sum(item['status'] == 'saving' for item in saves.values())
+        result.update(activity='busy' if active else 'ready', activeOperations=active,
+                      health=self.health.snapshot(), healthCapabilities=['health.snapshot.v1', 'health.admission.v1'])
+        result['companions'] = self.companions.list()
+        result['health']['workload'] = dict(activeOperations=active,
+            retainedRecovery=sum(bool(item.get('resolved') or item.get('scriptResult', {}).get('recovery'))
+                                 for item in operations.values()))
+        return result
+
+    def refresh_capabilities(self):
+        """Explicit native lifecycle refresh; caller must be on the main thread."""
+        self._capability_snapshot = self._discover_status()
+
+    def active_operations(self):
+        return (sum(item['status'] in ACTIVE for item in self._operations.copy().values())
+                + sum(item['status'] == 'saving' for item in self._saves.copy().values()))
+
+    def admit_expensive(self):
+        self.health.admit(BridgeError)
 
     @staticmethod
     def _same_value(observed: Any, expected: Any, *, normalized: bool = False) -> bool:
@@ -90,7 +122,7 @@ class BridgeCore:
             resolved["after"] = live_before + (float(after) - float(before))
         return resolved
 
-    def status(self) -> dict[str, Any]:
+    def _discover_status(self) -> dict[str, Any]:
         with self._lock:
             active = sum(item["status"] in ACTIVE for item in self._operations.values())
             active += sum(item["status"] == "saving" for item in self._saves.values())
@@ -113,13 +145,16 @@ class BridgeCore:
         from . import edit_tabs
         if edit_tabs.available():
             write_capabilities.append("document.edit-tab.open.v1")
+            write_capabilities.append("document.edit-tab.review.v1")
         if outline_edit.native_remove_available():
             write_capabilities.append("outline.remove-node.v1")
-        from .path_doctor_qualification import repair_available, duplicate_repair_available, cleanup_available
+        from .path_doctor_qualification import repair_available, duplicate_repair_available, cleanup_available, fitting_available
         if repair_available():
             write_capabilities.append("outline.normalize-closed-seam.v1")
         if duplicate_repair_available():
             write_capabilities.append("outline.remove-consecutive-duplicates.v1")
+        if fitting_available():
+            write_capabilities.append("outline.fit-polygon.v1")
         if dimensions.available():
             write_capabilities.append("master.dimensions.edit.v1")
         actions = native_actions.available_actions()
@@ -138,14 +173,16 @@ class BridgeCore:
             write_capabilities.append("kerning.edit.exact.v1")
             job_capabilities.append("path.diagnostics.v1")
             if cleanup_available():job_capabilities.append("path.cleanup.v1")
+            if fitting_available():job_capabilities.append("path.fit-curves.v1")
+        from . import native_filters
         return {
             "protocol": PROTOCOL_VERSION, "bridgeVersion": VERSION,
             "bridgeSessionId": self.bridge_session_id,
-            "previewReleaseVersion": 1,
             **IDENTITY, "host": self.host,
             "readCapabilities": list(READ_CAPABILITIES),
             "writeCapabilities": write_capabilities,
             "nativeActions": actions,
+            "nativeFilters": native_filters.inventory(),
             "jobCapabilities": job_capabilities,
             "scriptPreparationVersion": scripts.PREPARATION_VERSION,
             "activity": "busy" if active else "ready", "activeOperations": active,
@@ -211,6 +248,7 @@ class BridgeCore:
         if state.get("generation") != value.get("generation"):
             raise BridgeError("stale_document", "the document changed before live compilation")
         try:
+            self.admit_expensive()
             return self.adapter.compile_features(document_id)
         except BridgeError:
             raise
@@ -282,6 +320,10 @@ class BridgeCore:
             from .path_doctor_qualification import duplicate_repair_available
             if not duplicate_repair_available():
                 raise BridgeError('unsupported_change', 'duplicate repair native qualification is incomplete')
+        if any(op['op'] == 'fit_polygon' for c in patch['changes'] if c['kind'] == 'outline' for op in c['operations']):
+            from .path_doctor_qualification import fitting_available
+            if not fitting_available():
+                raise BridgeError('unsupported_change', 'polygon fitting native qualification is incomplete')
         available_actions = set(native_actions.available_actions())
         requested_actions = {
             change["action"] for change in patch["changes"]
@@ -305,6 +347,7 @@ class BridgeCore:
                 if not (existing.get("prepared") and existing["status"] == "ready"):
                     return self._public(existing)
             self._check_owner(patch["documentId"], ignore_job_id=job_id)
+        self.admit_expensive()
         state = self.adapter.document_state(patch["documentId"])
         if state.get("path") != patch["sourcePath"]:
             raise BridgeError("stale_document", "the document path changed before application")

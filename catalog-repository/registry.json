@@ -179,7 +179,7 @@
     {
       "id": "builtin:glyphs-mcp-path-doctor",
       "name": "glyphs-mcp-path-doctor",
-      "description": "Diagnose Glyphs paths and Pen-point distribution, preserve master correspondence, and perform explicitly requested qualified seam repairs or measured stroke-profile cleanup.",
+      "description": "Diagnose Glyphs outline quality and Pen-point distribution, coordinate measured cleanup, and explicitly reconstruct polygons as curves while preserving master correspondence.",
       "author": "Glyphs MCP contributors",
       "license": "Apache-2.0; supporting resources retain their original licenses",
       "classification": "curated",

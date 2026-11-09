@@ -110,15 +110,18 @@ def test_outline_job_is_advertised_only_with_matching_bridge_capability(tmp_path
     bridge = SimpleNamespace(status=lambda: {'protocol': 1, 'writeCapabilities': ['outline.edit.v1']})
     service = SidecarService(bridge, jobs=JobStore(tmp_path),
                              worker=SimpleNamespace(status=lambda: {'available': True}))
+    service.status_cache.refresh()
     status = service.get_status()
     assert status['writeCapabilities'] == ['outline.edit.v1']
     assert status['jobKinds'] == [*JOB_KINDS, 'outline_edit']
     bridge.status = lambda: {'protocol': 1, 'writeCapabilities': [
         'outline.edit.v1', 'outline.remove-node.v1']}
+    service.status_cache.refresh()
     status = service.get_status()
     assert status['writeCapabilities'] == ['outline.edit.v1', 'outline.remove-node.v1']
     assert status['jobKinds'] == [*JOB_KINDS, 'outline_edit']
     bridge.status = lambda: {'protocol': 1}
+    service.status_cache.refresh()
     status = service.get_status()
     assert status['writeCapabilities'] == [] and status['jobKinds'] == list(JOB_KINDS)
 

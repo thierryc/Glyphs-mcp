@@ -135,10 +135,13 @@ def test_page_fields_and_parameters_are_explicit():
 
 def test_only_reachable_advertised_bridge_capabilities_reach_sidecar_status(tmp_path):
     value, bridge, _ = service(tmp_path)
+    value.status_cache.refresh()
     assert value.get_status()["readCapabilities"] == []
     bridge.status = lambda: {"protocol": 1, "readCapabilities": list(READ_CAPABILITIES)}
+    value.status_cache.refresh()
     assert value.get_status()["readCapabilities"] == list(READ_CAPABILITIES)
     def unavailable():
         raise ConnectionError("stopped")
     bridge.status = unavailable
+    value.status_cache.refresh()
     assert value.get_status()["readCapabilities"] == []

@@ -26,6 +26,11 @@ for live evidence without identifying that different source and its limitations.
 
 Findings:
 
+Additional line/cubic quality findings and their existing repair routes are
+described in [quality review](path-quality.md). These report evidence without
+authorizing smoothing or supplying an automatic repair. Partial quality coverage
+is explicit even when structural inspection succeeds.
+
 - `redundant_closed_seam`: the specific automatic zero closing line. Its effect
   on a reported native editing failure remains unproven until reproduced.
 - `closed_stroke_fill_unset`: inherited/unset fill may affect native appearance;

@@ -259,7 +259,7 @@ def test_discarded_ready_job_removes_bulk_artifacts_but_keeps_state(tmp_path: Pa
 
 
 @pytest.mark.parametrize("shutdown", [False, True])
-def test_discard_or_shutdown_cancels_external_preparation_and_cleans_its_copy(tmp_path: Path, shutdown: bool) -> None:
+def test_discard_or_shutdown_cancels_external_preparation_and_cleans_its_copy(tmp_path: Path, shutdown: bool, monkeypatch) -> None:
     entered = Event()
 
     class BlockingWorker(FakeWorker):
@@ -275,6 +275,13 @@ def test_discard_or_shutdown_cancels_external_preparation_and_cleans_its_copy(tm
     value = SidecarService(
         bridge, jobs=JobStore(tmp_path / "jobs"), worker=BlockingWorker()
     )
+    from glyphs_mcp_sidecar import job_preparation
+    finished = Event()
+    original_finish = job_preparation._finish
+    def completed(owner, identity):
+        original_finish(owner, identity)
+        if owner is value: finished.set()
+    monkeypatch.setattr(job_preparation, '_finish', completed)
     job_id = value.start_job("doc_1", kind="width_delta", delta=8)["id"]
     assert entered.wait(1)
     if shutdown:
@@ -283,6 +290,9 @@ def test_discard_or_shutdown_cancels_external_preparation_and_cleans_its_copy(tm
     else:
         assert value.discard_job(job_id)["status"] == "cancelling"
     wait_for(value, job_id, "cancelled")
+    # Terminal status is published before the worker's finally/cleanup finishes.
+    # Synchronize with that boundary; keep the exact artifact-cleanup assertion.
+    assert finished.wait(2)
     assert [item.name for item in value.jobs.path(job_id).iterdir()] == ["state.json"]
 
 
@@ -438,10 +448,12 @@ def test_selection_capability_is_negotiated_without_fallback(tmp_path):
     value, bridge, _ = service(tmp_path)
     try:
         bridge.status = lambda: {'protocol': 1, 'readCapabilities': ['selection.context.v1', 'unknown.future']}
+        value.status_cache.refresh()  # Discovery is a background/lifecycle operation, not a status read.
         status = value.get_status()
         assert status['readCapabilities'] == ['selection.context.v1']
         assert tuple(status['tools']) == TOOL_NAMES
         bridge.status = lambda: {'protocol': 1, 'readCapabilities': ['selection.nodes.native.v1']}
+        value.status_cache.refresh()
         assert 'selection.context.v1' not in value.get_status()['readCapabilities']
         # The dictionary/fields pass through the existing route, with no extra
         # status request, alternate selector or synthesis of missing evidence.

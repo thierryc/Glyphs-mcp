@@ -84,6 +84,33 @@ def validate_operation(value: Any, *, resolved: bool = False) -> dict[str, Any]:
     item = _object(value, "outline operation")
     op = item.get("op")
     common = {"op", "path"}
+    if op == "fit_polygon":
+        from .path_fitting import indices, MAX_SEGMENTS
+        _closed(item, common | {'stateHash', 'segments', 'cornerNodes', 'maxDeviation'}, op)
+        segments = item.get('segments')
+        if not isinstance(segments, list) or not 2 <= len(segments) <= MAX_SEGMENTS:
+            raise ProtocolError('invalid_request', 'fit_polygon requires 2-256 ordered segments')
+        output = []
+        for raw in segments:
+            segment = _object(raw, 'fitted segment')
+            if set(segment) != {'startNode', 'endNode', 'controls'}:
+                raise ProtocolError('invalid_request', 'fitted segment fields are incomplete or unexpected')
+            controls = segment['controls']
+            if not isinstance(controls, list) or len(controls) not in (0, 2):
+                raise ProtocolError('invalid_request', 'fitted segment needs zero or two handles')
+            points = []
+            for control in controls:
+                if not isinstance(control, dict) or set(control) != {'x', 'y'}:
+                    raise ProtocolError('invalid_request', 'fitted handle requires x and y')
+                points.append({k: _number(control[k], 'fitted handle '+k) for k in ('x','y')})
+            output.append({'startNode': _index(segment['startNode'], 'fitted start'),
+                           'endNode': _index(segment['endNode'], 'fitted end'), 'controls': points})
+        deviation = _number(item.get('maxDeviation'), 'maximum deviation')
+        if not 0 < deviation <= 10:
+            raise ProtocolError('invalid_request', 'fitting deviation must be in (0,10]')
+        return {'op': op, 'path': _index(item.get('path'), 'fitted path'),
+                'stateHash': _hash(item.get('stateHash'), 'fitting stateHash'), 'segments': output,
+                'cornerNodes': indices(item.get('cornerNodes'), 'fitted corners'), 'maxDeviation': deviation}
     if op == "remove_consecutive_duplicate_nodes":
         _closed(item, common | {"stateHash"}, op)
         return {"op": op, "path": _index(item.get("path"), "duplicate path"),
@@ -272,6 +299,8 @@ def validate_options(value: Any) -> dict[str, Any]:
         if not isinstance(operations, list) or not operations or total + len(operations) > MAX_OPERATIONS:
             raise ProtocolError("invalid_request", "outline job must contain 1-256 operations")
         total += len(operations)
+        if any(isinstance(op, dict) and op.get('op') == 'fit_polygon' for op in operations):
+            raise ProtocolError('invalid_request', 'fit_polygon is prepared through coordinated path_fitting jobs')
         normalized_targets.append({"glyph": _text(target["glyph"], "glyph"),
                                    **({"surface": validate_surface(target["surface"])} if "surface" in target else {}),
                                    "layers": normalized_layers,

@@ -76,7 +76,10 @@ def change(service, action, records, *, now=None):
         raise ValueError('Invalid history request.')
     now = time.time() if now is None else now
     from .task_inventory import _tasks
-    with service.edit_workflows.lock, service._script_dispatch_lock, service._lock, service.jobs._lock:
+    workflows = service.edit_workflows
+    # Intake holds the workflow store before consulting jobs. Never retain the
+    # job/service locks while waiting for that store (including inside _tasks).
+    with workflows.lock, service._script_dispatch_lock, workflows.store.lock, service._lock, service.jobs._lock:
         tasks = {task['id']: task for task in _tasks(service)}
         with service.lifecycle.mutation(), _ledger(service) as (data, path):
             entries = data['entries']
@@ -151,7 +154,8 @@ def cleanup(service, *, now=None):
     if not math.isfinite(now):
         return 0
     from .task_inventory import _tasks
-    with service.edit_workflows.lock, service._script_dispatch_lock, service._lock, service.jobs._lock:
+    workflows = service.edit_workflows
+    with workflows.lock, service._script_dispatch_lock, workflows.store.lock, service._lock, service.jobs._lock:
         if (service.lifecycle.pending or service._cancellations or service.jobs.count(BUSY)
                 or service.jobs.select(set(), include_unresolved=True)):
             return 0

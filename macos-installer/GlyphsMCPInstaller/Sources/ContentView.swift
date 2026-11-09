@@ -176,10 +176,6 @@ private struct DesktopServerStatusIndicator: View {
     @EnvironmentObject private var desktop: DesktopModel
 
     private var title: String { desktop.controlProgress ?? desktop.title }
-    private var color: Color {
-        guard desktop.serviceRunning == true, !desktop.stale else { return .secondary }
-        return desktop.status?.bridge.reachable == true && !desktop.showsActivityDot ? .green : .accentColor
-    }
 
     var body: some View {
         Button { desktop.requestSetup() } label: {
@@ -188,7 +184,7 @@ private struct DesktopServerStatusIndicator: View {
                     ProgressView().controlSize(.small)
                 } else {
                     Image(systemName: desktop.statusSymbol)
-                        .foregroundStyle(color)
+                        .foregroundStyle(desktop.statusColor)
                         .accessibilityHidden(true)
                 }
                 Text("MCP").fontWeight(.medium)
@@ -257,7 +253,7 @@ struct DesktopSetup: View {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Image(systemName: desktop.statusSymbol)
-                                .foregroundStyle(desktop.stale ? Color.secondary : Color.accentColor).font(.title2)
+                                .foregroundStyle(desktop.statusColor).font(.title2)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(LocalizedStringKey(desktop.title)).font(.title2.weight(.semibold))
                                 Text("MCP port \(String(desktop.installation.port))").foregroundStyle(.secondary)
@@ -278,6 +274,7 @@ struct DesktopSetup: View {
                         if desktop.status?.worker.available == false {
                             Text("Glyphs worker unavailable").font(.caption).foregroundStyle(.secondary)
                         }
+                        DesktopGlyphsHealthView(health: desktop.status?.health, stale: desktop.stale, checking: desktop.status?.bridge.checking == true)
                     }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 if installer.application != nil {

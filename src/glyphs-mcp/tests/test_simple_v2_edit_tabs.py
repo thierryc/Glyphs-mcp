@@ -182,7 +182,7 @@ def test_partial_native_failure_is_retained_and_not_replayed(setup, failure, att
     assert len(font.tabs) == int(attached)
 
 
-@pytest.mark.parametrize("state", sorted(OWNING_STATUSES - {"saving", "saved", "rolling_back"}))
+@pytest.mark.parametrize("state", sorted(OWNING_STATUSES - {"applied"}))
 def test_pending_sidecar_jobs_block_context_changes(setup, state):
     host, core, _, service, add = setup
     _, identity = add()
@@ -190,6 +190,53 @@ def test_pending_sidecar_jobs_block_context_changes(setup, state):
     service.jobs.update(job["id"], status=state)
     with pytest.raises(ServiceError) as exc: service.open_edit_tab(identity, "one")
     assert exc.value.code == "document_busy" and not host.openings
+
+
+@pytest.mark.parametrize('script', [False, True])
+def test_proof_retains_stopped_recovery_but_close_and_edits_remain_protected(setup, script):
+    from glyphs_mcp_bridge.document_lifecycle import guard as close_guard
+    host, core, _, service, add = setup
+    font, identity = add()
+    kind = 'python_script' if script else 'width_delta'
+    job = service.jobs.create(core.adapter.document_state(identity), {'kind': kind})
+    snapshot = object()
+    operation = dict(jobId=job['id'], documentId=identity, status='applied',
+                     scriptSnapshot=snapshot if script else None,
+                     scriptResult={'executed': True, 'recovery': {'available': True}})
+    if script: operation['scriptRequest'] = {'sourcePath': None}
+    core._operations[job['id']] = operation
+    service.jobs.update(job['id'], status='applied', bridgeOperation={
+        k: v for k, v in operation.items() if k != 'scriptSnapshot'})
+    before = core.adapter.document_state(identity)
+    first = service.open_edit_tab(identity, 'proof', glyphs=['A'])
+    assert service.open_edit_tab(identity, 'proof', glyphs=['A']) == first
+    assert len(font.tabs) == 1 and operation['status'] == 'applied'
+    assert operation['scriptSnapshot'] is (snapshot if script else None)
+    assert service.jobs.get(job['id'])['status'] == 'applied'
+    assert core.adapter.document_state(identity) == before
+    with pytest.raises(BridgeError) as exc: close_guard(core, identity, BridgeError)
+    assert exc.value.code == 'document_busy'
+    if script:
+        with pytest.raises(BridgeError): core._check_owner(identity)
+    # UI access does not suppress real native geometry/edit generation changes.
+    font.glyphs['A'].layers['M2'].width = 625
+    font.parent.changeCount += 1
+    assert core.adapter.document_state(identity)['generation'] == before['generation'] + 1
+
+
+@pytest.mark.parametrize('status,error', [('accept_uncertain', None),
+    ('interrupted', {'code': 'bridge_operation_lost'}),
+    ('failed', {'code': 'restoration_unverified'})])
+def test_unknown_script_outcomes_block_proof_in_other_documents(setup, status, error):
+    host, core, _, service, add = setup
+    _, identity = add(); _, other = add()
+    job = service.jobs.create(core.adapter.document_state(identity), {'kind': 'python_script'})
+    operation = dict(jobId=job['id'], documentId=identity, status=status,
+                     scriptRequest={'sourcePath': None}, error=error)
+    core._operations[job['id']] = operation
+    service.jobs.update(job['id'], status=status, error=error, bridgeOperation=operation)
+    with pytest.raises(ServiceError): service.open_edit_tab(other, 'proof')
+    assert not host.openings
 
 
 def test_native_ownership_paused_capabilities_and_session_guards(setup, monkeypatch):
@@ -234,6 +281,8 @@ def test_headless_host_does_not_advertise_editor_action(setup):
     host, core, _, service, add = setup
     _, identity = add()
     del host.documentController
+    core.refresh_capabilities()
+    service.status_cache.refresh()
     assert contract.CAPABILITY not in core.status()["writeCapabilities"]
     assert contract.CAPABILITY not in service.get_status()["writeCapabilities"]
     with pytest.raises(ServiceError) as exc: service.open_edit_tab(identity, "one")

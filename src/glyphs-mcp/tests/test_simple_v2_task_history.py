@@ -158,6 +158,51 @@ def test_concurrent_restore_and_expiry_are_atomic(typed_env):
     assert all('summary' not in entry for entry in ledger(service).values())
 
 
+@pytest.mark.parametrize('maintenance', ['change', 'cleanup'])
+def test_history_waits_for_intake_store_without_holding_job_or_service_locks(typed_env, maintenance):
+    """Reproduce the live history/intake inversion with a deterministic barrier."""
+    from threading import Thread, current_thread
+    service, *_ = typed_env
+    identity, _ = closed(typed_env)
+    request = record(service, identity)
+    task_history.change(service, 'clear', [request], now=START)
+    workflows = service.edit_workflows
+    original = workflows.store.lock
+    waiting, errors = Event(), []
+
+    class ObservedLock:
+        def __enter__(self):
+            if current_thread().name == 'history-lock-regression': waiting.set()
+            original.acquire()
+            return self
+        def __exit__(self, *_): original.release()
+
+    workflows.store.lock = ObservedLock()
+    def maintain():
+        try:
+            if maintenance == 'cleanup': task_history.cleanup(service, now=START + 31*DAY)
+            else: task_history.change(service, 'clear', [request], now=START)
+        except BaseException as error: errors.append(error)
+
+    thread = Thread(target=maintain, name='history-lock-regression', daemon=True)
+    try:
+        with original:
+            thread.start()
+            assert waiting.wait(2)
+            # Intake owns the store and needs these locks to finish. Maintenance
+            # must be waiting before acquiring either one, including on cleanup.
+            acquired = []
+            for lock in (service._lock, service.jobs._lock):
+                available = lock.acquire(blocking=False)
+                acquired.append(available)
+                if available: lock.release()
+        thread.join(timeout=3)
+        assert acquired == [True, True]
+        assert not thread.is_alive() and not errors
+    finally:
+        workflows.store.lock = original
+
+
 def test_failed_atomic_replace_retains_summary_and_is_retryable(typed_env, monkeypatch):
     service, *_ = typed_env
     identity, _ = closed(typed_env)

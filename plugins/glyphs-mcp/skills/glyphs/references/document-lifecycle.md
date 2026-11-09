@@ -1,5 +1,13 @@
 # Import, activate, open Edit tabs and close fonts
 
+Follow [Glyphs Health](health.md) feedback during document operations. Reuse an
+already-open source and avoid unnecessary copies/tabs. A `resource_pressure`
+refusal with `execution:not_started` opens nothing and never runs later by itself.
+Wait for `retryAfterSeconds`, then retry the same intended request and retained
+key. An uncertain outcome still needs its existing reconciliation, never a new
+key. Do not close another font, save, discard edits or end recovery to make room
+without the corresponding user authorization.
+
 Require the tool and its matching `document.import.v1`, `document.activate.v1`
 `document.edit-tab.open.v1` or `document.close.v1` write capability on this connection. Missing capabilities
 need a coordinated bridge/sidecar update, not an edit-script fallback.
@@ -59,7 +67,11 @@ never recreates the original tab. `edit_tab_outcome_unknown` requires inspecting
 and reconciling the original result, including after bridge restarts; never retry
 with a new key blindly. IDs for tabs are session-local and are receipts only;
 listing, editing, closing tabs and special-layer targeting are not exposed.
-Pending owning jobs block this UI-context change; resolve their existing lifecycle.
+With `document.edit-tab.review.v1`, known stopped edits retain recovery while
+proof tabs open. Active, prepared or uncertain work still blocks opening. Opening
+does not accept an edit, release recovery or suppress later manual-edit guards.
+Without this capability resolve the existing lifecycle; explain that Keep ends
+recovery before suggesting it. Closing retains its stricter owning-job guard.
 
 Close only when the user's task authorizes closing that font. Use
 `close_document(document_id, idempotency_key, unsaved_changes="refuse")` by

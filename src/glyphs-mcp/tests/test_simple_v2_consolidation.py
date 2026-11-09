@@ -53,10 +53,12 @@ def test_script_negotiation_keeps_one_execution_capability(tmp_path):
     service = SidecarService(SimpleNamespace(status=lambda: {'protocol': 1, 'jobCapabilities': advertised}),
                              jobs=JobStore(tmp_path), worker=SimpleNamespace(status=lambda: {'available': False}))
     try:
+        service.status_cache.refresh()
         status = service.get_status()
         assert [x for x in status['jobCapabilities'] if x.startswith('script.')] == ['script.native.v1']
         assert 'python_script' in status['jobKinds']
         advertised.remove('script.native.v1')
+        service.status_cache.refresh()
         assert 'python_script' not in service.get_status()['jobKinds']
     finally:
         service.close()

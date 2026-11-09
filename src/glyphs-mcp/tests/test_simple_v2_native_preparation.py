@@ -11,6 +11,7 @@ from glyphs_mcp_bridge.core import BridgeError
 
 def enable(bridge):
     bridge.adapter._font=lambda doc:SimpleNamespace(glyphs=[SimpleNamespace(name='A',layers=[SimpleNamespace(layerId='M1', width=bridge.adapter.value)])])
+    bridge.core.refresh_capabilities()
     bridge.status=bridge.core.status
     bridge.prepare_typed=lambda r:bridge.call(typed_preparation.begin,bridge.core,r,BridgeError)
     bridge.prepared_typed=lambda j:bridge.call(typed_preparation.result,bridge.core,j,BridgeError)
@@ -48,6 +49,7 @@ def test_typed_preparation_never_prunes_another_fonts_recovery(env):
 def test_typed_edit_and_keep_proceed_while_another_font_retains_partial_recovery(env):
     service, bridge, _, _ = env
     enable(bridge)
+    service.status_cache.refresh()  # Explicitly negotiate the changed native fixture.
     job = service.jobs.create({'id': 'other-font', 'familyName': 'Other'}, {'kind': 'python_script'})
     operation = dict(jobId=job['id'], documentId='other-font', status='failed',
                      scriptRequest={'options': {}}, scriptResult={'executed': True}, scriptSnapshot=object())

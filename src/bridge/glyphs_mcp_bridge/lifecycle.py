@@ -27,6 +27,7 @@ class BridgeLifecycle:
         self.startup_error = None
         self.port = None
         self.callback_registered = False
+        self.health_callbacks = []
         self.palettes = None
         self.menu_item = None
         # Cocoa menu targets are not retained. Keep the application-wide
@@ -52,11 +53,25 @@ class BridgeLifecycle:
                 main = CocoaMainThread()
                 self.adapter = GlyphsAdapter(glyphs)
                 self.core = BridgeCore(self.adapter, main.schedule)
+                main.health = self.core.health
+                from pathlib import Path
+                policy = Path.home() / 'Library/Application Support/Glyphs MCP/lean-v2/jobs/health-policy.json'
+                self.core.health.start(self.adapter, main.schedule,
+                    self.core.active_operations, policy_path=policy)
                 self.server = BridgeHTTPServer(self.core, main, token=token, port=port)
                 self.server.start()
                 self.port = self.server.address[1]
                 glyphs.addCallback(self.adapter.note_change, update_event)
+                glyphs.addCallback(self.core.health.invalidate_documents, update_event)
                 self.callback_registered = True
+                import GlyphsApp
+                for name in ('DOCUMENTOPENED', 'DOCUMENTDIDCLOSE', 'DOCUMENTWASSAVED', 'TABDIDOPEN', 'TABWILLCLOSE'):
+                    event = getattr(GlyphsApp, name, None)
+                    if event is not None:
+                        def changed(sender, monitor=self.core.health):
+                            monitor.invalidate_documents(sender)
+                        glyphs.addCallback(changed, event)
+                        self.health_callbacks.append(changed)
                 attach_registry(self.core.companions)
                 self.startup_error = None
             except Exception as exc:
@@ -80,10 +95,15 @@ class BridgeLifecycle:
         self.refresh()
 
     def _shutdown(self, glyphs) -> None:
+        for callback in self.health_callbacks:
+            glyphs.removeCallback(callback)
+        self.health_callbacks.clear()
         if self.callback_registered:
             glyphs.removeCallback(self.adapter.note_change)
+            glyphs.removeCallback(self.core.health.invalidate_documents)
         self.callback_registered = False
         if self.core is not None:
+            self.core.health.close()
             detach_registry(self.core.companions)
         server = self.server
         self.server = None

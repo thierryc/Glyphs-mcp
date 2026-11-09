@@ -29,17 +29,22 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
     mcp = FastMCP(name="Glyphs MCP Sidecar", version=RELEASE_VERSION)
     from .presentation import configure_identity
     configure_identity(mcp)
+    cache = getattr(service, 'status_cache', None)
+    if cache is not None: cache.start()
+    from .health import feedback
     def result(callback):
-        from .health_cleanup import feedback
-        return feedback(service, _result(callback))
+        from .health_cleanup import feedback as cleanup_feedback
+        return cleanup_feedback(service, feedback(service, _result(callback)))
 
     @mcp.tool(name="get_status")
     async def get_status() -> dict[str, Any]:
-        """Return sidecar, worker and bridge availability, negotiated read/write/jobCapabilities, job kinds, and the filtered closed nativeActions catalog.
+        """Return sidecar, worker and bridge availability, negotiated read/write/jobCapabilities, job kinds, the filtered closed nativeActions catalog, and optional read-only nativeFilters inventory (filters.inventory.v1). Filter presence does not qualify execution. Cached health.snapshot.v1 reports load and freshness; follow health advisories and retryAfterSeconds without polling before every action. statusReady=false with bridge.checking means startup is still checking, not an unsupported installation.
 
         health.cleanupCandidates is a bounded background observation, not permission to clear tasks. Check cleanupObservation age/session and each candidate's automatic/blockedBy fields. Only idle unapplied previews are released automatically under the cleanup policy. Applied edits and uncertain outcomes retain recovery; inspect their existing workflow before an authorized decision. Reading status never performs cleanup.
         """
-        return await asyncio.to_thread(result, service.get_status)
+        # A bounded cache copy needs no worker. Keep status available even when
+        # every execution worker is waiting for native work or a job lock.
+        return result(service.get_status)
 
     @mcp.tool(name="list_tasks", annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False})
     async def list_tasks(cursor: int = 0, limit: int = 50) -> dict[str, Any]:
@@ -80,7 +85,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
     @mcp.tool(name="open_edit_tab")
     async def open_edit_tab(document_id: str, idempotency_key: str, text: str | None = None,
                       glyphs: list[str] | None = None, master_id: str | None = None) -> dict[str, Any]:
-        """Open and activate a new Edit tab in an exact live font, including dirty or pathless fonts, without Save, scripts or edit jobs. Requires document.edit-tab.open.v1. Supply text (up to 4096 Unicode characters, with native /glyphName syntax) OR 1-100 exact glyph names in display order; omit both for a blank tab. Repeated glyphs are preserved. Optional master_id is an exact native master ID; otherwise retain the current master. Missing glyph/master layers reject before opening. Preserve existing tabs and font geometry; never saves or resolves jobs. Pending jobs owning the document block the action. Return documentId, session-local tabId, bridgeSessionId, masterId and creation/activation receipt. Retain a fresh idempotency_key per intended tab; retry identical arguments after lost responses. Changed arguments conflict, closed tabs are not recreated, and a bridge restart or partial failure requires outcome reconciliation. Tab listing/editing/closing and special layers are not supported by this tool."""
+        """Open and activate a new Edit tab in an exact live font, including dirty or pathless fonts, without Save, scripts or edit jobs. Requires document.edit-tab.open.v1. Supply text (up to 4096 Unicode characters, with native /glyphName syntax) OR 1-100 exact glyph names in display order; omit both for a blank tab. Repeated glyphs are preserved. Optional master_id is an exact native master ID; otherwise retain the current master. Missing glyph/master layers reject before opening. Preserve existing tabs and font geometry; never saves or resolves jobs. With document.edit-tab.review.v1, stopped known edits may retain recovery while proof tabs open; active, prepared or uncertain work blocks the action. Opening never accepts an edit. Return documentId, session-local tabId, bridgeSessionId, masterId and creation/activation receipt. Retain a fresh idempotency_key per intended tab; retry identical arguments after lost responses. Changed arguments conflict, closed tabs are not recreated, and a bridge restart or partial failure requires outcome reconciliation. Tab listing/editing/closing and special layers are not supported by this tool."""
         return await asyncio.to_thread(result, lambda: service.open_edit_tab(document_id, idempotency_key, text, glyphs, master_id))
 
     @mcp.tool(name="close_document")
@@ -115,7 +120,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         glyphs: list[str] | None = None,
         options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Prepare a low-level job without applying or saving. Prefer start_edit_workflow for conversation edits. path_diagnostics requires path.diagnostics.v1 and options={glyphs:all|names,layers:all_masters|all_interpolation_layers|ids}; it reads live dirty/pathless fonts, completes as diagnostic and never applies or saves. path_cleanup requires path.cleanup.v1; options select glyphs, all_interpolation_layers, exact/bounded policy and operations, with maxDeviation=0.5 and angleTolerance=2 defaults. Qualified normalize_closed_seam uses outline_edit and outline.normalize-closed-seam.v1 with full stateHash guards. Typed kinds: width_delta (delta and optional glyphs), spacing, kerning_edit, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and native_action. Use negotiated jobCapabilities for feature_compile diagnostic or font_export artifact jobs; analysis/export retain external processing. python_script requires script.native.v1 and start_edit_workflow; it cannot start here.
+        """Prepare a low-level job without applying or saving. Prefer start_edit_workflow for conversation edits. path_diagnostics requires path.diagnostics.v1 and options={glyphs:all|names,layers:all_masters|all_interpolation_layers|ids}; it reads live dirty/pathless fonts, completes as diagnostic and never applies or saves. path_cleanup requires path.cleanup.v1; options select glyphs, all_interpolation_layers, exact/bounded policy and operations, with maxDeviation=0.5 and angleTolerance=2 defaults. path_fitting requires path.fit-curves.v1 and outline.fit-polygon.v1; options={targets:[{glyph,paths:[{path,keepNodes?,cornerNodes?}]}],layers:all_interpolation_layers,maxDeviation:0.5,cornerAngle:45}. It explicitly reconstructs closed filled LINE polygons, preserves selected landmarks/corners and validates corresponding layers; ordinary cleanup never enables fitting. Qualified normalize_closed_seam uses outline_edit and outline.normalize-closed-seam.v1 with full stateHash guards. Typed kinds: width_delta (delta and optional glyphs), spacing, kerning_edit, kerning_collision, start_nodes, slant, outline_edit, dimensions_edit and native_action. Use negotiated jobCapabilities for feature_compile diagnostic or font_export artifact jobs; analysis/export retain external processing. python_script requires script.native.v1 and start_edit_workflow; it cannot start here.
 
         Use typed options and exact targets. outline_edit supports surface:background only with outline.background.edit.v1; layer/reference IDs identify owning foregrounds. native_action uses only get_status.nativeActions: e.g. options={action:set_glyph_color,arguments:{color:orange},targets:[{glyph:A}]}; color:none clears. dimensions_edit requires master.dimensions.edit.v1 and options.changes of 1-100 {master,key,value} entries (number or null to clear), without delta/glyphs. Inspect full report.targets/requiredOverwrites; existing-value overwrites or clears require conversational approval.
 
@@ -196,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         BridgeClient(args.bridge, token),
         jobs=JobStore(args.jobs or Path.home() / "Library/Application Support/Glyphs MCP/lean-v2/jobs"),
         worker=GlyphsCliWorker(executable=args.glyphs_cli, app=args.glyphs_app),
+        initialize_status=False,
     )
     service.lifecycle.control_lock = Path.home() / "Library/Application Support/Glyphs MCP/.control.lock"
     server = create_server(service, control_token=token)

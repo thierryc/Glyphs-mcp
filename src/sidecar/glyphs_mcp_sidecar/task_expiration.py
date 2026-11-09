@@ -113,7 +113,7 @@ def expire(service, *, now=None, limit=100):
         return 0
     count = 0
     try:
-        with service._lock, workflows.store.lock:
+        with workflows.store.lock, service._lock:
             if service.lifecycle.pending or service._cancellations or service.jobs.count(BUSY):
                 return 0
             values = deepcopy(list(workflows.store.records.values()))
@@ -163,7 +163,7 @@ def expire(service, *, now=None, limit=100):
                     break  # Do not hold up dispatch by retrying a disconnected bridge per task.
                 if not released:
                     continue
-                with service._lock, workflows.store.lock, service.jobs._lock:
+                with workflows.store.lock, service._lock, service.jobs._lock:
                     if (service.lifecycle.pending != 1 or service._cancellations or service.jobs.count(BUSY)
                             or workflow and workflows._find(value['id']) != value
                             or job and service.jobs.get(job['id']) != job):

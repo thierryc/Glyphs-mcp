@@ -79,6 +79,7 @@ def create(core, value, error_type):
             return public(core, previous, error_type)
         if len(core._creations) >= MAX_CREATIONS:
             raise error_type("creation_limit_reached", "This bridge session reached its font creation limit")
+        core.admit_expensive()
         operation = {"request": request, "result": None, "error": None, "font": None}
         core._creations[request["creationId"]] = operation
         try:

@@ -455,7 +455,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				AA0000000000000000000019 /* PBXTargetDependency */,
 				AA00000000000000000000D5 /* PBXTargetDependency */,
 			);
 			name = GlyphsMCPInstallerTests;
@@ -585,7 +584,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nREPO_ROOT=\"$PROJECT_DIR/../..\"\nPYTHON_BIN=\"${PYTHON_BIN:-python3}\"\n\n\"$PYTHON_BIN\" \"$REPO_ROOT/scripts/build_installer_payload.py\" \\\n  --output-root \"$PAYLOAD_DIR\" \\\n  --allow-outside-worktree\n\n# Sign every generated plug-in loader only in signing-enabled builds. The\n# Release exporter later signs and seals all nested bundles from the deepest\n# bundle outward. Local closure builds pass CODE_SIGNING_ALLOWED=NO and must\n# remain genuinely unsigned.\nif [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then\n  echo \"Code signing disabled; leaving payload plug-in executables unsigned.\"\nelse\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  while IFS= read -r -d '' PLUGIN_BIN; do\n    if [ -n \"${SIGN_ID:-}\" ]; then\n      echo \"Signing payload plug-in executable with: $SIGN_ID\"\n      /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n      /usr/bin/codesign --verify --verbose=2 \"$PLUGIN_BIN\"\n    else\n      echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n    fi\n  done < <(/usr/bin/find \"$PAYLOAD_DIR/Plugins\" -type f -path '*/Contents/MacOS/plugin' -print0)\nfi\n\n: > \"$PAYLOAD_DIR/.payload-stamp\"\necho \"Target-aware payload staged at: $PAYLOAD_DIR\"\n";
+			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nREPO_ROOT=\"$PROJECT_DIR/../..\"\nPYTHON_BIN=\"${PYTHON_BIN:-python3}\"\n\nif [ \"${GMCP_DEVELOPMENT_PAYLOAD_CACHE:-0}\" = \"1\" ] && [ \"$CONFIGURATION\" = \"Debug\" ] && [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then\n  \"$PYTHON_BIN\" \"$REPO_ROOT/scripts/stage_development_payload.py\" --output \"$PAYLOAD_DIR\"\nelse\n  \"$PYTHON_BIN\" \"$REPO_ROOT/scripts/build_installer_payload.py\" \\\n  --output-root \"$PAYLOAD_DIR\" \\\n  --allow-outside-worktree\nfi\n\n# Sign every generated plug-in loader only in signing-enabled builds. The\n# Release exporter later signs and seals all nested bundles from the deepest\n# bundle outward. Local closure builds pass CODE_SIGNING_ALLOWED=NO and must\n# remain genuinely unsigned.\nif [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then\n  echo \"Code signing disabled; leaving payload plug-in executables unsigned.\"\nelse\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  while IFS= read -r -d '' PLUGIN_BIN; do\n    if [ -n \"${SIGN_ID:-}\" ]; then\n      echo \"Signing payload plug-in executable with: $SIGN_ID\"\n      /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n      /usr/bin/codesign --verify --verbose=2 \"$PLUGIN_BIN\"\n    else\n      echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n    fi\n  done < <(/usr/bin/find \"$PAYLOAD_DIR/Plugins\" -type f -path '*/Contents/MacOS/plugin' -print0)\nfi\n\n: > \"$PAYLOAD_DIR/.payload-stamp\"\necho \"Target-aware payload staged at: $PAYLOAD_DIR\"\n";
 		};
 		BE7000000000000000000003 /* Restore Verified Beztrace */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -854,7 +853,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -868,7 +867,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.5.1;
+				MARKETING_VERSION = 2.6.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";
@@ -890,7 +889,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -904,7 +903,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.5.1;
+				MARKETING_VERSION = 2.6.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";

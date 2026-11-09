@@ -28,6 +28,9 @@ def begin(core, value, error):
     if request['kind']=='path_cleanup':
         from .path_doctor_qualification import cleanup_available
         if not cleanup_available():raise error('unsupported_job','path cleanup is not qualified for this native host')
+    if request['kind']=='path_fitting':
+        from .path_doctor_qualification import fitting_available
+        if not fitting_available():raise error('unsupported_job','polygon fitting is not qualified for this native host')
     diagnostic = request['kind'] == 'path_diagnostics'
     metadata = {k: value[k] for k in fields - {'request'}}
     # Diagnostic jobs have no saved baseline. This placeholder never becomes a mutation patch.
@@ -40,6 +43,7 @@ def begin(core, value, error):
             if old.get('prepareRequest') != value:
                 raise error('job_conflict', 'this job ID already belongs to another operation')
             return core._public(old)
+        core.admit_expensive()
         if diagnostic:
             # Read-only scans coexist with stopped recovery; never interleave a write.
             for op in core._operations.values():

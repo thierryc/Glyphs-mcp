@@ -27,7 +27,7 @@ Glyphs MCP **2.4.0** provides twenty-one data/action tools plus the optional `sh
 | `start_edit_workflow` | `document_id`, `kind`, `idempotency_key`, optional `mode`, `delta`, `glyphs`, `options`, `auto_keep` (default true) | Retain a requested edit; successful edit cards may Keep after 30 seconds. Honor “wait for my answer” with `auto_keep=false`. |
 | `get_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Read authoritative state, revision, linked job evidence, offered actions and text guidance without opening a card. |
 | `show_edit_workflow` | `workflow_id`, optional `include_review` (default false) | Open an optional card for useful visual review, reports, live controls or recovery. Reuse it across stages; do not open cards for routine chat outcomes. |
-| `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false) | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. |
+| `respond_edit_workflow` | `workflow_id`, `expected_revision`, `action_token`, optional `destination`, `approved_overwrites`, `automatic` (card only, default false), `cleanup_settings`, `cleanup_apply` | Execute one offered action with duplicate protection. `wait_for_answer` disables automatic Keep; `automatic=true` permits only Keep after success. Cleanup controls retain the existing revision-bound Path Doctor workflow. |
 
 ## Find an open task
 
@@ -176,6 +176,36 @@ and reconcile existing operations on request, without replaying a save or edit.
 Uncertain execution offers outcome checking rather than a blind retry. Native
 source/target guards, Undo, discard and recovery remain authoritative.
 
+## Path Doctor quality and polygon reconstruction
+
+`path_diagnostics` reads live foreground paths without Save. Alongside structural
+findings, it reports bounded line/cubic quality candidates: zero handles, handle
+triangle violations, interior extrema, inflections, stationary curves, handle
+imbalance, tiny/distant contours and winding/nesting review. These findings do
+not apply repairs. Unsupported quality coverage is explicit.
+
+For explicitly requested polygon reconstruction, use
+`start_edit_workflow(kind="path_fitting", ...)`, requiring `path.fit-curves.v1`
+and `outline.fit-polygon.v1`. Example options:
+
+```json
+{"targets":[{"glyph":"infinity","paths":[{"path":0,"keepNodes":[],"cornerNodes":[]}]}],"layers":"all_interpolation_layers","maxDeviation":0.5,"cornerAngle":45}
+```
+
+The job fits closed filled LINE polygons with 4–512 nodes. It preserves the
+contour start, selected landmarks and protected corners; corresponding
+interpolation families share segmentation. Each layer must reduce stored points,
+including handles, and pass cumulative geometry/topology and native sample
+checks. The existing workflow card reports before/after counts, measured bounds
+and held families. Preview/apply, saved-baseline prerequisites, selective Undo
+and separately authorized Save retain their existing meanings.
+
+Ordinary `path_cleanup` never enables reconstruction. G2 harmony and handle
+balancing retain the shared Curve Inspector route; interpolation kinks retain
+De-kink. Direction correction, extrema insertion and overlap operations remain
+explicit existing native actions. Native correction changes starts and shape
+order as well as winding; explicitly include applicable special layers.
+
 ## Dimensions reference notes
 
 With `master.dimensions.read.v1`, request `dimensions` on 1–4 exact master
@@ -226,8 +256,9 @@ Use a fresh key for each intended tab. Identical retries return the original
 receipt, without creating or reactivating another tab. Changed arguments return
 `edit_tab_conflict`; a closed tab returns `edit_tab_closed`. Bridge restarts,
 unreadable journals and attempted native failures return `edit_tab_outcome_unknown`
-and require outcome reconciliation. Pending jobs owning the document block the
-action. Tab listing, editing, closing and special layers remain outside the tool.
+and require outcome reconciliation. With `document.edit-tab.review.v1`, stopped known edits may retain recovery
+while proof tabs open. Active, prepared or uncertain work still blocks opening.
+Opening does not accept edits; closing retains its stricter protections. Tab listing, editing, closing and special layers remain outside the tool.
 
 Native tab opening is qualified on Glyphs 4.1.1 build 4108 with disposable
 imported and pathless fonts: blank/text/glyph-list tabs, retries, visible proof,
@@ -843,3 +874,31 @@ runtime's availability; Glyphs may be closed. Inputs, options, limits, snapshot
 verification, cancellation and create-only report publication are described in
 [Compare compiled fonts](../workflows/font-comparison.mdx). File-bound comparison
 jobs cannot be applied and do not use `start_job` or document save checks.
+
+## Native filter discovery
+
+With `filters.inventory.v1`, `get_status.nativeFilters` reads existing native
+filter identities without a font or execution. It reports `available`, `items`,
+`truncated`, and an error when unavailable. Items contain `className`,
+`displayName` and nullable `version`; at most 256 are returned. Without the negotiated capability, this additive inventory is omitted. Installed presence does not qualify an execution
+adapter; no generic filter executor or RMX command is added.
+
+## Glyphs Health (2.6.0 candidate)
+
+`get_status` reports cached `health` and negotiated `healthCapabilities`
+(`health.snapshot.v1`, `health.admission.v1`). Status reads never force a native
+probe or reconcile jobs. Signal availability, age and completeness are explicit;
+capability validity and changing health are separate. Relevant responses may add
+a top-level health advisory without changing `data` shapes. Follow its guidance
+and retry timing instead of polling status before each operation.
+
+Open-font count is a configurable soft warning, never a blocking condition by
+itself. Under critical memory pressure or sustained native dispatch delay, new
+expensive work is deferred. Workflows retain their existing waiting queue and
+authorization. Direct tools return `resource_pressure` with
+`execution:not_started` and `retryAfterSeconds`; retry the same request/key.
+Existing execution, saving, cancellation and recovery retain their original
+semantics. Missing health support does not imply protection.
+
+See the repository’s Glyphs Health architecture and 2.6.0 preparation record for
+the current qualification scope. No public tool or protocol revision is added.

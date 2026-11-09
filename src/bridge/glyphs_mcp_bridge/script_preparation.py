@@ -55,6 +55,7 @@ def begin(core, request, error):
             if old.get('scriptReviewRequest') != request:
                 raise error('job_conflict', 'script preparation ID belongs to another request')
             return core._public(old)
+        core.admit_expensive()
         core._check_owner(request['documentId'])
         state = core.adapter.document_state(request['documentId'])
         op = dict(jobId=identity, documentId=request['documentId'], status='preparing', prepared=True,

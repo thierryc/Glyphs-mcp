@@ -39,6 +39,7 @@ def duplicate(core, supplied, error):
         if not available():
             raise error('unsupported_capability', 'Native document duplication is unavailable')
         guard(core, request['documentId'], error)
+        core.admit_expensive()
         source = core.adapter._font(request['documentId'])
         before = core.adapter.document_state(request['documentId'])
         if len(core._duplications) >= 1024:

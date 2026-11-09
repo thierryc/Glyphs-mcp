@@ -99,9 +99,22 @@ def topology(states, tolerance):
     """Certify simple, separate contours using enclosing Bézier control hulls."""
     from ..path_measurements import topology_cells, separated_hulls
     contours=[topology_cells(s,tolerance) for s in states]
-    cells=[(j,i,cell) for j,contour in enumerate(contours) for i,cell in enumerate(contour)]
-    for index,(j,i,left) in enumerate(cells):
-        for k,h,right in cells[index+1:]:
+    def box(cell):
+        return (min(p[0] for p in cell),min(p[1] for p in cell),
+                max(p[0] for p in cell),max(p[1] for p in cell))
+    cells=[(j,i,cell,box(cell)) for j,contour in enumerate(contours) for i,cell in enumerate(contour)]
+    # Sweep control-hull bounds on x. A box separation is a valid convex-hull
+    # certificate; only overlapping boxes need the more expensive projections.
+    epsilon=max(1.,*(abs(v) for _,_,_,bounds in cells for v in bounds))*1e-12
+    active=[]
+    for ordinal,right_entry in sorted(enumerate(cells),key=lambda entry:entry[1][3][0]):
+        rb=right_entry[3]
+        active=[entry for entry in active if entry[1][3][2]+epsilon>=rb[0]]
+        for old,left_entry in active:
+            lb=left_entry[3]
+            if lb[3]+epsilon<rb[1] or rb[3]+epsilon<lb[1]:continue
+            first,second=(left_entry,right_entry) if old<ordinal else (right_entry,left_entry)
+            j,i,left,_=first;k,h,right,_=second
             adjacent=j==k and (h==i+1 or i==0 and h==len(contours[j])-1)
             if adjacent:
                 a,b=(right,left) if i==0 and h==len(contours[j])-1 else (left,right)
@@ -109,6 +122,7 @@ def topology(states, tolerance):
                     raise ValueError('intersection or ambiguous adjacent contour clearance')
             elif not separated_hulls(left,right):
                 raise ValueError('intersection or ambiguous contour clearance')
+        active.append((ordinal,right_entry))
     loops=[flatten(s,flatness=tolerance,step=max(.25,tolerance*16)) for s in states]
     def inside(p, loop):
         x,y=p;hit=False

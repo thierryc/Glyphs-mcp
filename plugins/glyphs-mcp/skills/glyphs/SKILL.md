@@ -54,6 +54,14 @@ restart, changed endpoint, contradictory evidence or a request for current healt
 Missing private capabilities mean the installation needs updating: update the
 bridge, sidecar and skills together. Do not maintain fallback workflows.
 
+At initial `get_status`, inspect health as well as capabilities. Follow automatic
+health advisories in tool responses; do not check status before every action.
+Refresh health after a resource refusal or before substantial work after a pause
+longer than five minutes. Respect retry timing, retain request identities, reuse
+open fonts, process files sequentially under pressure, and avoid unnecessary new
+tabs. Health freshness is independent of session-scoped capability validity.
+See [Glyphs Health](references/health.md) for deferral and recovery semantics.
+
 Call `list_documents` only when the intended document has no valid retained ID,
 after `document_not_found` or a known bridge/Glyphs restart, or to resolve an
 explicit target change. Never silently substitute another open font. A missing

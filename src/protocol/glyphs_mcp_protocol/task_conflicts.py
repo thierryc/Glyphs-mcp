@@ -63,6 +63,21 @@ def conflicts(record, document_id, *, exclusive=False):
                            or exclusive and owner['live'] and owner['reason'] == 'operation'))
 
 
+def proof_conflicts(record, document_id):
+    """Proof UI may inspect stopped edits without releasing their recovery.
+
+    This exception belongs only to proof opening, never editing or closing.
+    Keep conservative legacy statuses protected even without owner evidence.
+    """
+    from .document_closing import OWNING_STATUSES
+    owner = protection(record)
+    if owner and conflicts(record, document_id):
+        return owner['reason'] != 'recovery'
+    document = record.get('document') or {}
+    same = (document.get('id') or record.get('documentId')) == document_id
+    return same and record.get('status') in OWNING_STATUSES - {'applied'}
+
+
 def describe(owner):
     name = owner['documentName']
     if owner['reason'] == 'queued_request':

@@ -46,6 +46,7 @@ def product_area(nodeid: str) -> str:
             "beta",
             "bump_version",
             "desktop",
+            "development_workflow",
             "h2_setup",
             "install_cli",
             "plugin_manager",

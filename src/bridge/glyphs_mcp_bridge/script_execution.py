@@ -32,6 +32,7 @@ def begin(core, request, error):
         if (any(reviewed[k] != request[k] for k in ('documentId', 'sourcePath', 'options'))
                 or old['preparedReport']['manifest'] != request['manifest']):
             raise error('job_conflict', 'script execution differs from the prepared request')
+    core.admit_expensive()
     core._check_owner(request['documentId'], ignore_job_id=identity)
     from glyphs_mcp_protocol.task_conflicts import conflicts, protection, describe, retained
     for other in list(core._operations.values()) + list(core._saves.values()):

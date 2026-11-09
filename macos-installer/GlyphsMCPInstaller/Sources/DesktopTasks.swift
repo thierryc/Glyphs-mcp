@@ -21,6 +21,7 @@ struct DesktopHealthStatus: View {
             row("MCP", value: desktop.serviceRunning == true && !desktop.stale ? "Connected" : desktop.serviceRunning == false ? "Stopped" : "Unavailable",
                 available: desktop.serviceRunning == true && !desktop.stale)
             row("Glyphs 4", value: desktop.glyphsRunning ? "Running" : "Not running", available: desktop.glyphsRunning)
+            DesktopGlyphsHealthView(health: desktop.status?.health, stale: desktop.stale, checking: desktop.status?.bridge.checking == true)
         }.font(.caption).accessibilityElement(children: .contain)
     }
     private func row(_ name: String, value: String, available: Bool) -> some View {
@@ -31,6 +32,72 @@ struct DesktopHealthStatus: View {
             Spacer()
             Text(LocalizedStringKey(value)).foregroundStyle(.secondary)
         }.accessibilityElement(children: .combine)
+    }
+}
+
+struct DesktopGlyphsHealthView: View {
+    let health: DesktopGlyphsHealth?
+    let stale: Bool
+    var checking = false
+    @State private var expanded = false
+    var body: some View {
+        DisclosureGroup(isExpanded: $expanded) {
+            VStack(alignment: .leading, spacing: 8) {
+                if stale { Text("Showing the last observation.").foregroundStyle(.secondary) }
+                if checking {
+                    Text("Collecting health evidence…").foregroundStyle(.secondary)
+                } else if let health, health.available == true, health.version == 1 {
+                    ForEach(health.reasons ?? [], id: \.self) { reason in
+                        Text(LocalizedStringKey(DesktopGlyphsHealth.reasonLabel(reason)))
+                    }
+                    if let documents = health.signals?["documents"], documents.available == true {
+                        if let count = documents.fontCount { Text("Open fonts: \(count)") }
+                        if let count = documents.unsavedCount { Text("Unsaved fonts: \(count)") }
+                        if let count = documents.editTabCount { Text("Edit tabs: \(count)") }
+                        if documents.complete == false { Text("Document counts are partial.").foregroundStyle(.secondary) }
+                        observation(documents.observedAt)
+                    }
+                    if let footprint = health.signals?["footprint"], footprint.available == true, let bytes = footprint.bytes {
+                        HStack {
+                            Text("Glyphs memory")
+                            Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .memory))
+                        }
+                        if let growth = footprint.growthBytes {
+                            HStack {
+                                Text("Memory change")
+                                Text(ByteCountFormatter.string(fromByteCount: growth, countStyle: .memory))
+                            }
+                        }
+                        if footprint.stale == true { Text("Memory observation is stale.").foregroundStyle(.secondary) }
+                        observation(footprint.observedAt)
+                    }
+                    if health.signals?["pressure"]?.available != true {
+                        Text("System memory pressure is unknown.").foregroundStyle(.secondary)
+                    }
+                    Text("What agents will do").fontWeight(.medium)
+                    Text(LocalizedStringKey(health.agentGuidance)).foregroundStyle(.secondary)
+                } else {
+                    Text("Health protection is unavailable. Update bridge and sidecar together to enable it.")
+                        .foregroundStyle(.secondary)
+                }
+            }.font(.caption).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Glyphs Health").fontWeight(.medium)
+                Text(LocalizedStringKey(checking ? "Checking Glyphs" : stale ? "Health observation stale" : health?.title ?? "Health unavailable"))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityIdentifier("desktop.glyphsHealth")
+        .accessibilityElement(children: .contain)
+    }
+    @ViewBuilder private func observation(_ time: TimeInterval?) -> some View {
+        if let time {
+            HStack {
+                Text("Observed")
+                Text(Date(timeIntervalSince1970: time), style: .relative)
+            }.foregroundStyle(.secondary)
+        }
     }
 }
 

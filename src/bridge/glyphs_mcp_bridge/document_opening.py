@@ -90,6 +90,9 @@ def open_document(core, value, error_type):
             raise error_type("unsupported_capability", "Native document opening is unavailable")
         if len(core._openings) >= MAX_OPENINGS:
             raise error_type("opening_limit_reached", "This bridge session reached its document opening limit")
+        from .context import value as native_value
+        if not any(matches(native_value(font, 'filepath', None), request['path']) for font in core.adapter._fonts()):
+            core.admit_expensive()
         operation = {"request": request, "result": None, "error": None, "font": None, "attempted": False}
         core._openings[request["openId"]] = operation
         try:
