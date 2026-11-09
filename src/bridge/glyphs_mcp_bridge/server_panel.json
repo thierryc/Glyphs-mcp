@@ -160,7 +160,7 @@
         210,
         22
       ],
-      "text": "MCP server port",
+      "text": "MCP port",
       "size": 12,
       "properties": {
         "setEditable_": false,
@@ -178,11 +178,11 @@
         72,
         24
       ],
-      "text": "9680",
+      "text": "",
       "size": 13,
       "action": "applyPort_",
       "properties": {
-        "setAccessibilityLabel_": "MCP server port"
+        "setAccessibilityLabel_": "MCP port"
       }
     },
     {
@@ -209,7 +209,7 @@
         384,
         22
       ],
-      "text": "http://127.0.0.1:9680/mcp/",
+      "text": "",
       "size": 12,
       "color": "secondaryLabelColor",
       "properties": {
@@ -221,6 +221,7 @@
     },
     {
       "kind": "button",
+      "id": "copy",
       "frame": [
         434,
         177,

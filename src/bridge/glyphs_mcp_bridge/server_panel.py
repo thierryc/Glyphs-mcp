@@ -31,7 +31,8 @@ class GlyphsMCPServerPlugin(GeneralPlugin):
         self._data = {}
         self._rendered = None
         self._notice = ""
-        self._last_port = "9680"
+        self._status_error = ""
+        self._last_port = ""
 
     @objc.python_method
     def start(self):
@@ -48,12 +49,17 @@ class GlyphsMCPServerPlugin(GeneralPlugin):
     def showSettings_(self, sender):
         if self.window is None:
             self._build_window()
+        elif not self.window.isVisible() and self._action is None:
+            self._data = {}
+            self._status_error = self._notice = ""
+            self._render()
         self.window.makeKeyAndOrderFront_(None)
         self._run("status")
 
     @objc.python_method
     def _build_window(self):
         self.window = self._create_window("server_panel.json")
+        self._render()
 
     @objc.python_method
     def _schedule_welcome(self):
@@ -130,7 +136,8 @@ class GlyphsMCPServerPlugin(GeneralPlugin):
         self._operate("stop" if self._data.get("running") else "start")
 
     def applyPort_(self, sender):
-        self._operate("port", self._port.stringValue().strip())
+        if self._data:
+            self._operate("port", self._port.stringValue().strip())
 
     @objc.python_method
     def _operate(self, action, *args):
@@ -158,9 +165,16 @@ class GlyphsMCPServerPlugin(GeneralPlugin):
         AK.NSWorkspace.sharedWorkspace().openURL_(NSURL.fileURLWithPath_(str(Path.home() / "Library/Logs/Glyphs MCP")))
 
     def copyURL_(self, sender):
+        url = self._copyable_url()
+        if not url:
+            return
         board = AK.NSPasteboard.generalPasteboard()
         board.clearContents()
-        board.setString_forType_(self._url.stringValue(), AK.NSPasteboardTypeString)
+        board.setString_forType_(url, AK.NSPasteboardTypeString)
+
+    @objc.python_method
+    def _copyable_url(self):
+        return self._data.get("url") if self._action != "port" else None
 
     @objc.python_method
     def _run(self, action, *args):
@@ -196,10 +210,19 @@ class GlyphsMCPServerPlugin(GeneralPlugin):
         self._action = None
         if result["ok"]:
             self._data = result["data"]
+            self._status_error = ""
+            if action == "port":
+                self._port.setStringValue_(str(self._data["port"]))
             if action != "status":
                 self._notice = "Port updated. Use the new URL in your AI connections." if action == "port" else ""
         else:
-            self._notice = result.get("error", "Server unavailable")
+            error = result.get("error", "Server unavailable")
+            if action == "status":
+                self._status_error = error
+            else:
+                self._notice = error
+            if action in ("status", "port"):
+                self._data = {}
         self._render()
         if not self._scheduled:
             self._scheduled = True
@@ -207,23 +230,35 @@ class GlyphsMCPServerPlugin(GeneralPlugin):
 
     @objc.python_method
     def _render(self):
-        state = (self._data, runtime.ready, self._action, self._notice)
+        state = (self._data, runtime.ready, self._action, self._notice, self._status_error)
         if state == self._rendered:
             return
         self._rendered = state
         running = self._data.get("running", False)
-        self._status.setStringValue_("●  " + ("Running" if running else "Stopped" if self._data else "Checking connection…"))
+        unavailable = not self._data and bool(self._status_error or self._notice)
+        if self._data:
+            status = "Running" if running else "Stopped"
+        else:
+            status = "Unavailable" if unavailable else "Checking connection…"
+        self._status.setStringValue_("●  " + status)
         self._status.setTextColor_(AK.NSColor.systemGreenColor() if running else AK.NSColor.secondaryLabelColor())
         self._bridge.setStringValue_("Connected to Glyphs" if runtime.ready else "Glyphs connection stopped")
         self._toggle.setTitle_("Stop Server" if running else "Start Server")
-        self._url.setStringValue_(self._data.get("url", "http://127.0.0.1:9680/mcp/"))
-        if self._port.stringValue() == self._last_port:
-            self._port.setStringValue_(str(self._data.get("port", 9680)))
-        self._last_port = str(self._data.get("port", 9680))
+        url = self._copyable_url()
+        self._url.setStringValue_(url or ("MCP URL unavailable" if unavailable else "Checking MCP URL…"))
+        self._url.setSelectable_(bool(url))
+        self._copy.setEnabled_(bool(url))
+        port = str(self._data.get("port", ""))
+        editor = self._port.currentEditor()
+        draft = editor.string() if editor is not None else self._port.stringValue()
+        if draft == self._last_port and draft != port:
+            self._port.setStringValue_(port)
+        self._last_port = port
         self._auto.setState_(bool(self._data.get("autoStart", False)))
-        for control in (self._toggle, self._auto, self._apply, self._port):
-            control.setEnabled_(self._action is None)
-        self._message.setStringValue_(self._notice or "Changing the port restarts a running server. Update your AI connections to use the new URL.")
+        for control in (self._toggle, self._auto, self._apply):
+            control.setEnabled_(bool(self._data) and self._action is None)
+        self._port.setEnabled_(self._action is None)
+        self._message.setStringValue_(self._status_error or self._notice or "Changing the port restarts a running server. Update your AI connections to use the new URL.")
 
     @objc.python_method
     def _poll(self):

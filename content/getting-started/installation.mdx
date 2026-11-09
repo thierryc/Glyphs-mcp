@@ -80,9 +80,9 @@ component and connection status, update individual cards, open Glyphs and
 refresh detection there. **Project** manages local folders and templates. The
 menu-bar popover shares Setup's activity and service controls.
 
-Open **Edit → Glyphs MCP Server…** in Glyphs for native server status and the
-configured MCP port. The visible endpoint is normally
-`http://127.0.0.1:9680/mcp/`; the private bridge uses port 9681 internally.
+The default local MCP URL is `http://127.0.0.1:9680/mcp/`. In Glyphs, open
+**Edit → Glyphs MCP Server…** to check the server status and use **Copy URL** to
+get the configured endpoint for your MCP client.
 Use `get_status` to compare sidecar and bridge identities with the installation
 receipt; [version and identity](../reference/version-identity.mdx) explains the
 product and protocol fields.

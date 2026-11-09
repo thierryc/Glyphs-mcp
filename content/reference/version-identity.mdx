@@ -96,8 +96,8 @@ hash of in-memory code, and changed installed files do not prove that the runnin
 process loaded them. Missing identity is unavailable evidence; differing expected
 and reported component hashes require investigation. Do not fabricate a match.
 
-The MCP endpoint remains `http://127.0.0.1:9680/mcp/` by default. Use the configured
-endpoint and **Edit → Glyphs MCP Server…** in the intended host. Verifying identity
+The default local MCP URL is `http://127.0.0.1:9680/mcp/`. Use **Edit → Glyphs MCP
+Server… → Copy URL** in the intended Glyphs app to get the configured endpoint. Verifying identity
 needs no document discovery or Save. Dirty-font state is unrelated to interface
 identification. During font work, retain the connection's known document ID and
 read fresh data; rediscover after stale-ID rejection or a known host/bridge restart.

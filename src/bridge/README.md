@@ -41,8 +41,8 @@ stays stopped. Invalid, reserved, or occupied ports are rejected before shutdown
 and restart failures restore the previous configuration. Updates preserve the
 chosen port. After a port change, update the URL in the MCP client.
 
-Status polls never disable controls or rewrite unchanged content; stale replies
-cannot overwrite an action, and typed port values survive refreshes. The footer
+The panel enables Copy URL after the configured endpoint is confirmed. Typed
+port values survive refreshes, and stale replies cannot overwrite an action. The footer
 credits Thierry Charbonnel and links to GitHub and project sponsorship. It shows
 the project version from the plugin manifest and the bridge version separately.
 

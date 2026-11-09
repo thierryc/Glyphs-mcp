@@ -187,6 +187,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
                     .desktopDesign().frame(height: 740))
             window.center()
             settingsWindow = window
+        } else {
+            Task { await desktop.refresh() }
         }
         NSApp.setActivationPolicy(.regular)
         settingsWindow?.makeKeyAndOrderFront(nil)
@@ -395,11 +397,13 @@ struct DesktopSettings: View {
     @AppStorage(DesktopIdentity.showMenuBarKey) private var showMenuBar = true
     @State private var loginEnabled = SMAppService.mainApp.status == .enabled
     @State private var loginError = ""
-    @State private var port = ""
+    @State private var portDraft: String?
     @State private var taskExpiryDays = 1
     @State private var taskExpiryError = ""
     @State private var fontWarningThreshold = 8
     @State private var healthPolicyError = ""
+    private var configuredPort: String { String(desktop.installation.port) }
+
     var body: some View {
         Form {
             Section("Desktop") {
@@ -412,8 +416,12 @@ struct DesktopSettings: View {
                 Toggle("Start the MCP server at login", isOn: Binding(get: { desktop.installation.autoStart }, set: { desktop.control($0 ? "auto-on" : "auto-off") }))
                     .disabled(desktop.controlling || !desktop.installation.hasServer)
                 HStack {
-                    TextField("MCP port", text: $port).frame(width: 160)
-                    Button("Apply Port") { desktop.control("port", value: port) }.disabled(!desktop.canChangeSettings)
+                    TextField("MCP port", text: Binding(
+                        get: { portDraft ?? configuredPort },
+                        set: { portDraft = $0 == configuredPort ? nil : $0 }
+                    )).frame(width: 160)
+                    Button("Apply Port") { desktop.control("port", value: portDraft ?? configuredPort) }
+                        .disabled(!desktop.canChangeSettings)
                 }
                 Text("Finish the current font task before changing the MCP port. Update your AI connections to use the new port.").font(.caption).foregroundStyle(.secondary)
                 if !desktop.notice.isEmpty { Text(desktop.notice).font(.callout).foregroundStyle(.secondary) }
@@ -445,11 +453,13 @@ struct DesktopSettings: View {
             }
         }.formStyle(.grouped).frame(width: 500).padding()
         .onAppear {
-            port = String(desktop.installation.port)
             do { taskExpiryDays = try DesktopTaskExpiryPolicy.read(under: desktop.installation.root).inactivityDays }
             catch { taskExpiryError = error.localizedDescription }
             do { fontWarningThreshold = try DesktopGlyphsHealthPolicy.read(under: desktop.installation.root).fontWarningThreshold }
             catch { healthPolicyError = error.localizedDescription }
+        }
+        .onChange(of: desktop.installation.port) { _, port in
+            if let portDraft, Int(portDraft) == port { self.portDraft = nil }
         }
         .task { await desktop.refresh() }
     }

@@ -16,7 +16,7 @@ Configuration backs up existing settings and preserves unrelated entries. Modifi
 ## HTTP connection
 
 1. Start the server through **Edit → Glyphs MCP Server…**.
-2. Copy its MCP URL. The default is `http://127.0.0.1:9680/mcp/`.
+2. Click **Copy URL** to get the configured endpoint. The default local MCP URL is `http://127.0.0.1:9680/mcp/`.
 3. Add that URL to a local client that supports **Streamable HTTP MCP**, or use the installer's supported connection option.
 4. Refresh the client's tools and call `get_status`, then `list_documents`.
 
@@ -29,7 +29,7 @@ The 2.2.0 catalog exposes twenty-one data/action tools: `get_status`, `list_task
 comparison runtime has its own capability; the tool's presence does not mean
 that runtime is installed.
 
-The bridge port 9681 is internal and is not an MCP endpoint. The loopback URL refers to this Mac: a remote cloud client cannot reach it directly. This guide does not configure a public tunnel.
+The local MCP URL connects an AI application running on the same Mac. The internal Glyphs bridge connects the MCP server to Glyphs.
 
 ## Optional agent plugin
 
@@ -52,7 +52,7 @@ your connection, with text replies if the interactive card is unavailable.
 
 ## After a change
 
-If you change the MCP port, update the client's connection. After installing new native bundles, restart Glyphs. After changing an agent package, refresh the client according to its own settings. Keep one intended server per MCP port and avoid duplicate connections to the same server.
+If you change the MCP port, use **Edit → Glyphs MCP Server… → Copy URL** and update the client's connection. After installing new native bundles, restart Glyphs. After changing an agent package, refresh the client according to its own settings. Keep one intended server per MCP port and avoid duplicate connections to the same server.
 
 The current stable release and matching agent package are `2.2.0`. `get_status.agentPackage` gives the
 expected version and skills digest; compare it with the installed package's

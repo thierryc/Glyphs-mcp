@@ -15,12 +15,12 @@ Start with `get_status` and the status in **Edit → Glyphs MCP Server…**. The
 | Symptom | Check or action |
 | --- | --- |
 | No server menu after installation | Confirm the component and selected Glyphs application, then restart Glyphs to load the new bundle. |
-| Extension shows Ready but the client cannot connect | Use the server window's MCP URL, normally port 9680. |
+| Glyphs MCP Bridge shows Ready but the client cannot connect | Ready describes the internal connection to Glyphs. Check that the MCP server is running and use **Edit → Glyphs MCP Server… → Copy URL** to get the configured client endpoint. |
 | Skill requests `apiMajor == 2` | Identify its exact path and the selected connection. An obsolete private skill does not imply a stale lean server; see [skill conflicts](use-agent-skills.mdx#preserved-conflicts-and-retired-private-skills). |
 | Client shows v1 tools | Check for an old server, duplicate connection or outdated agent package. Refresh the intended v2 connection. |
 | Scripting preflight fails | Follow the [Glyphs Python setup steps](installation.mdx#install-glyphs-and-python-first). Install the official module and relaunch Glyphs. Check the selected application and detected Python; choose a custom framework in Settings → Addons only if you intend to use one. Save work, quit all Glyphs 4 copies, and retry. |
 | Worker unavailable | Open the Setup log window. The managed private runtime and CLI must match this Mac and the selected Glyphs application. |
-| Port change rejected | Choose an available port other than the reserved bridge port, then update the client URL after applying it. |
+| Port change rejected | Choose a free port that the app accepts. After applying it, use **Copy URL** to update your client. |
 | Git reference unavailable | Install or repair system Git, or use Last Saved or Font File. Verify repository, revision and font path. |
 | No reference commands available | Open and save a font first. Unsaved fonts and no-font windows intentionally disable these commands. |
 | Inspector does not appear | Confirm it is installed and enabled in View, and select an editable layer. Inspectors do not require an MCP client. |

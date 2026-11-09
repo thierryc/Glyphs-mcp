@@ -5,6 +5,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 from weakref import WeakSet
 
 import pytest
@@ -86,10 +87,27 @@ def host(monkeypatch):
     panel_spec = importlib.util.spec_from_file_location("glyphs_mcp_bridge.test_server_panel", REPO / "src/bridge/glyphs_mcp_bridge/server_panel.py")
     panel = importlib.util.module_from_spec(panel_spec)
     panel_spec.loader.exec_module(panel)
-    def build_window(self):
-        self.window = SimpleNamespace(makeKeyAndOrderFront_=lambda _: None)
-    monkeypatch.setattr(panel.GlyphsMCPServerPlugin, "_build_window", build_window)
-    monkeypatch.setattr(panel.GlyphsMCPServerPlugin, "_run", lambda self, action: commands.append(action))
+    board = Mock()
+    appkit.NSPasteboard = SimpleNamespace(generalPasteboard=lambda: board)
+    appkit.NSPasteboardTypeString = "string"
+    appkit.NSColor = Mock()
+    panel.AppHelper = Mock()
+    monkeypatch.setattr(panel, "Thread", lambda *, args, **_:
+                        SimpleNamespace(start=lambda: commands.append(args[1])))
+
+    def create_window(self, filename):
+        for name in ("status", "bridge", "toggle", "url", "copy", "port", "auto", "apply", "message"):
+            setattr(self, "_" + name, Mock())
+        self._port.stringValue.return_value = ""
+        self._port.currentEditor.return_value = None
+
+        def set_port(value):
+            self._port.stringValue.return_value = value
+
+        self._port.setStringValue_.side_effect = set_port
+        return SimpleNamespace(makeKeyAndOrderFront_=lambda _: None, isVisible=lambda: True)
+
+    monkeypatch.setattr(panel.GlyphsMCPServerPlugin, "_create_window", create_window)
     control = panel.GlyphsMCPServerPlugin()
     control.settings()
     monkeypatch.setattr(control, "_schedule_welcome", lambda: None)
@@ -101,7 +119,76 @@ def host(monkeypatch):
 
     return SimpleNamespace(runtime=runtime, glyphs=glyphs, palette=palette,
                            servers=servers, callbacks=callbacks, registries=registries, control=control, commands=commands,
-                           refreshed=refreshed, server_class=Server)
+                           refreshed=refreshed, server_class=Server, board=board)
+
+
+def finish_status(control, action, port):
+    url = f"http://127.0.0.1:{port}/mcp/"
+    control._finish(control._serial, action, {
+        "ok": True, "data": {"running": True, "port": port, "url": url},
+    })
+    return url
+
+
+@pytest.mark.parametrize("port", [9680, 9790])
+def test_panel_copies_only_a_confirmed_client_url(host, port):
+    control = host.control
+    control.showSettings_(None)
+    control._url.setStringValue_.assert_called_with("Checking MCP URL…")
+    control._copy.setEnabled_.assert_called_with(False)
+    assert control._port.stringValue() == ""
+    control.copyURL_(None)
+    host.board.clearContents.assert_not_called()
+
+    control._finish(control._serial, "status", {"ok": False, "error": "Status lookup failed"})
+    control._url.setStringValue_.assert_called_with("MCP URL unavailable")
+    control._copy.setEnabled_.assert_called_with(False)
+    control._poll()
+    url = finish_status(control, "status", port)
+    control._url.setStringValue_.assert_called_with(url)
+    control._copy.setEnabled_.assert_called_with(True)
+    assert control._port.stringValue() == str(port)
+    control.copyURL_(None)
+    host.board.setString_forType_.assert_called_once_with(url, "string")
+
+    control.window.isVisible = lambda: False
+    control.showSettings_(None)
+    control._url.setStringValue_.assert_called_with("Checking MCP URL…")
+    control._copy.setEnabled_.assert_called_with(False)
+
+
+def test_polling_preserves_live_port_edit_and_apply_confirms_new_url(host):
+    control = host.control
+    control.showSettings_(None)
+    finish_status(control, "status", 9680)
+    # AppKit's field editor holds uncommitted input separately from the field value.
+    control._port.currentEditor.return_value = SimpleNamespace(string=lambda: "9870")
+    control._port.setStringValue_.reset_mock()
+    control._poll()
+    control._finish(control._serial, "status", {"ok": False, "error": "Status lookup failed"})
+    control._port.setEnabled_.assert_called_with(True)
+    control.applyPort_(None)
+    assert host.commands[-1] == "status"
+    control._poll()
+    finish_status(control, "status", 9790)
+    control._port.setStringValue_.assert_not_called()
+
+    control._port.currentEditor.return_value = None
+    control._port.setStringValue_("9870")
+    control._poll()
+    old_status_serial = control._serial
+    control.applyPort_(None)
+    assert host.commands[-1] == "port"
+    control._copy.setEnabled_.assert_called_with(False)
+    control.copyURL_(None)
+    host.board.clearContents.assert_not_called()
+
+    url = finish_status(control, "port", 9870)
+    control._finish(old_status_serial, "status", {"ok": False, "error": "Obsolete status failure"})
+    assert control._port.stringValue() == "9870"
+    control._copy.setEnabled_.assert_called_with(True)
+    control.copyURL_(None)
+    host.board.setString_forType_.assert_called_once_with(url, "string")
 
 
 def test_multiple_palettes_and_menu_starts_preserve_one_bridge_and_job_state(host):

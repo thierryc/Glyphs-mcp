@@ -10,9 +10,9 @@ Open **Edit → Glyphs MCP Server…** in Glyphs. The command is available even 
 
 The bridge is application-wide. Opening another document does not undo a manual Stop, and closing one document does not stop the shared service.
 
-## Ports
+## MCP port
 
-The default MCP URL is `http://127.0.0.1:9680/mcp/`. Copy it from the server window into your client. Port **9681** belongs to the private bridge connection and is hidden from the Glyphs interface. The extension panel simply shows **Ready**.
+The default local MCP URL is `http://127.0.0.1:9680/mcp/`. Use **Edit → Glyphs MCP Server… → Copy URL** to get the configured endpoint for your MCP client. The **Glyphs MCP Bridge** palette shows the state of the internal connection between the server and Glyphs.
 
 To change the MCP port, edit it in the server window and apply the setting. A running server restarts; a stopped server stays stopped. Invalid, reserved or occupied ports are rejected before shutdown. Update the client URL after a successful change.
 
