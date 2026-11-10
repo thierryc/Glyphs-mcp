@@ -1,9 +1,8 @@
-# Glyphs Health (2.6.0 candidate)
+# Glyphs Health
 
 Glyphs Health supplies shared evidence to the companion and agents, with
 admission protection at MCP operation boundaries. It works with the companion
-closed. This document describes source behaviour, not completed native release
-qualification. See [candidate gates](../V2.6.0-PREPARATION.md).
+closed. See the [2.6.0 release qualification](../V2.6.0-RELEASE.md) for the tested scope.
 
 ## Passive observation
 

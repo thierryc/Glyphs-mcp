@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.6.0 — Unreleased
+## 2.6.0 — stable release, build 76, 9 November 2026
 
 - Add Glyphs Small and Petite Caps to derive editable Latin caps from uppercase with a reviewed pilot.
 - Add passive Glyphs Health snapshots and automatic agent advisories.
@@ -10,12 +10,13 @@
 - Keep status reads independent of native execution and job reconciliation.
 - Fit selected polygon outlines to editable curves with a measured error limit and coordinated master edits in Path Doctor.
 - Release eligible abandoned preview reservations so later tasks can proceed. Keep recovery available for edits that may have run.
+- Move stopped tasks to Finished when pending work, native ownership and usable recovery have ended. Preserve the recorded outcome and show any action that still needs attention.
 - Manage Skills copies across projects, by agent, or in a specific project. Show verified versions and highlight available updates.
 - List only local project copies in Skills, with visible update and remove actions. Flag unavailable project folders in Skills and My Project.
 - Explain which skills come with the Cursor plugin and link to its controls in AI Agents. Show independent catalog versions, tested agents and GitHub feedback links.
 - Confirm the configured MCP endpoint before enabling Copy URL in Glyphs. Keep the port field in desktop Settings in sync while preserving edits in progress.
 
-See the [2.6.0 candidate release notes](V2.6.0-RELEASE.md) for compatibility and qualification.
+See the [2.6.0 release notes](V2.6.0-RELEASE.md) for compatibility and qualification.
 
 ## 2.5.0 — stable release, build 73, 31 October 2026
 

@@ -11,12 +11,8 @@ and its pinned Glyphs 3 skills remain separate.
 
 The release helper `scripts/desktop_release_identity.py` reads `release.json`
 and the Xcode project. The managed skill inventory comes from
-`skills/manifest.json`. Stable 2.5.1/build 74 is published.
-The skill/job inventory below includes its additions; update the bridge and
-sidecar together because installed 2.4.0 runtimes do not gain them automatically.
-The source candidate below is 2.6.0/build 76 and is unpublished.
-Its planned tag is `v2.6.0`; that tag and its assets have not been published:
-planned archive names are `Glyphs-MCP-2.6.0.dmg` and `Glyphs-MCP-2.6.0.zip`.
+`skills/manifest.json`. The current stable release is 2.6.0/build 76.
+Update the bridge and sidecar together to get the advertised capabilities.
 
 | Item | Value |
 | --- | --- |
@@ -34,11 +30,13 @@ planned archive names are `Glyphs-MCP-2.6.0.dmg` and `Glyphs-MCP-2.6.0.zip`.
 | Desktop payload targets | `Glyphs 4 only` |
 | Separate pinned v1 release | `1.11.0` |
 
-The release uses signed tag `v2.5.1` and verified archive names
-`Glyphs-MCP-2.5.1.dmg` and `Glyphs-MCP-2.5.1.zip`. Its stable feed URL is
+The release uses signed tag `v2.6.0` and verified archive names
+`Glyphs-MCP-2.6.0.dmg` and `Glyphs-MCP-2.6.0.zip`. Its stable feed URL is
 `https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/appcast.xml`.
-All six public assets were checked before promotion of the exact signed feed.
-See [2.5.1 qualification](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.5.1-RELEASE.md).
+All six public assets matched the local files before signed-feed promotion.
+See [2.6.0 qualification](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.6.0-RELEASE.md).
+
+Earlier stable **2.5.1/build 74** is available under signed tag `v2.5.1`. See [2.5.1 qualification](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.5.1-RELEASE.md).
 
 Earlier stable **2.4.0/build 71** is published under signed tag `v2.4.0`, with verified archives `Glyphs-MCP-2.4.0.dmg` and `Glyphs-MCP-2.4.0.zip`. The task-management update adds `tasks.document-recovery.v1` and `edit.queue.automatic.v1` while keeping interface revision 1, bridge protocol 1 and 22 tools.
 
