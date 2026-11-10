@@ -531,6 +531,7 @@ button[data-in-button-feedback][data-feedback-phase="fading"]{opacity:0;animatio
     byId("targets").hidden = !byId("targets").textContent;
     const [heading] = (current.message || "Checking your changes…").split("\n");
     const [, ...guidance] = (display.message || "").split("\n");
+    if (display.remainingWork) guidance.push(display.remainingWork);
     setText("status", heading);
     setText("full-guidance", guidance.join("\n"));
     const visibleGuidance = guidance.map(line => line.startsWith("Keep ends this workflow’s selective Undo offer") ? "Saving includes the whole font." : line);

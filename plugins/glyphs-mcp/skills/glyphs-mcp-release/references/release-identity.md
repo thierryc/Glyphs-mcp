@@ -5,7 +5,7 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current source identity is product **2.6.0**, installer build **75**,
+The current source identity is product **2.6.0**, installer build **76**,
 stable channel. Its catalog contains twenty-one data/action tools plus
 the optional read-only `show_edit_workflow` display tool, with fourteen managed
 skills. `list_tasks` is passive and does not execute or resolve workflows.

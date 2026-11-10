@@ -299,10 +299,34 @@ final class DesktopTaskTests: XCTestCase {
         let unknown = try task(state: "unknown")
         XCTAssertEqual(unknown.taskGroup, "attention")
         XCTAssertNil(unknown.blockers)
+        XCTAssertNil(unknown.remainingWork)
         XCTAssertFalse(unknown.recoveryAvailable)
         XCTAssertEqual(unknown.taskActionLabel, "Check result…")
         XCTAssertEqual(try task(closed: true).taskGroup, "finished")
         XCTAssertEqual(try task(state: "running").taskGroup, "active")
+    }
+
+    func testUnverifiedOutcomeAndRemainingWorkAreIndependent() throws {
+        var payload: [String: Any] = ["id": "edit_export", "title": "Vector export", "documentName": "Icons",
+            "state": "unknown", "taskStatus": "needs_attention", "closed": false, "createdAt": 1, "updatedAt": 2,
+            "outcome": "unverified", "outcomeLabel": "Unverified", "blockedBy": [], "blocking": [],
+            "message": "Queued Glyphs call cancelled", "remainingWork": "Reconnect to Glyphs to check recovery."]
+        func decode() throws -> DesktopTask {
+            try JSONDecoder().decode(DesktopTask.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let attention = try decode()
+        XCTAssertEqual(attention.taskGroup, "attention")
+        XCTAssertEqual(attention.remainingWork, "Reconnect to Glyphs to check recovery.")
+        XCTAssertEqual(attention.outcomeLabel, "Unverified")
+
+        payload["taskStatus"] = "finished"
+        payload["closed"] = true
+        payload["remainingWork"] = NSNull()
+        let finished = try decode()
+        XCTAssertEqual(finished.taskGroup, "finished")
+        XCTAssertEqual(finished.rowStatusLabel, "Unverified")
+        XCTAssertEqual(finished.message, attention.message)
+        XCTAssertNil(finished.remainingWork)
     }
 
     func testArchiveIsAnOrphanInterruptedActionAndRetainsUnverifiedOutcome() throws {
@@ -367,9 +391,10 @@ final class DesktopTaskTests: XCTestCase {
             XCTAssertEqual(value.prompt(for: .review), value.copyRequest)
             let prompt = value.prompt(for: .closeTask)
             XCTAssertTrue(prompt.contains("task edit_a for Bryan: Run script"))
-            XCTAssertTrue(prompt.contains("Retrieve its current state and blockers"))
+            XCTAssertTrue(prompt.contains("Retrieve its current state, recorded outcome, and any work it blocks or depends on"))
+            XCTAssertTrue(prompt.contains("Explain what remains and who can act"))
             XCTAssertTrue(prompt.contains("If running, explain cancellation limits"))
-            XCTAssertTrue(prompt.contains("Show only currently available actions and wait for my choice"))
+            XCTAssertTrue(prompt.contains("Wait for my choice only if a decision is required"))
             XCTAssertTrue(prompt.contains("Do not rerun the script or automatically cancel, save, restore, or close"))
             XCTAssertNotEqual(prompt, value.copyRequest)
             XCTAssertFalse(value.closed)

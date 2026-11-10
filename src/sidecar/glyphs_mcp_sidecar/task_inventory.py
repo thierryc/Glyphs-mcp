@@ -10,9 +10,10 @@ import re
 import time
 from threading import RLock
 
-from .edit_workflow_state import TERMINAL, action_support_text
-from .saved_script import unresolved
-from glyphs_mcp_protocol.task_conflicts import protection, conflicts, describe
+from .edit_workflow_state import TERMINAL, action_support_text, remaining_work
+from .saved_script import stopped_outcome, unresolved
+from .preview_cleanup import failed_dispatch_pending
+from glyphs_mcp_protocol.task_conflicts import protection, conflicts, describe, stopped_script_released
 
 _ORIGIN_LOCK = RLock()
 
@@ -45,6 +46,8 @@ def _state(value, job, workflow):
     if value.get('blockerId'):
         return 'blocked', False
     if state == 'queued':
+        return 'waiting', False
+    if failed_dispatch_pending(job) or job.get('previewReleasePending'):
         return 'waiting', False
     if job.get('status') == 'accept_uncertain':
         return 'unknown', False
@@ -173,7 +176,7 @@ def _tasks(service):
             archived = marker(service, job, values)
             if archived:
                 task.update(state='archived', closed=True, outcome='unverified', supportText=RECEIPT,
-                            updatedAt=archived['archivedAt'])
+                        updatedAt=archived['archivedAt'], remainingWork=None)
             task['historyRevision'] = _history_revision(job, archived)
             tasks.append(task)
     by_job = {task['jobId']: task for task in tasks if task.get('jobId')}
@@ -190,6 +193,8 @@ def _tasks(service):
         if task['blockers'] and task['message'] and task['message'].startswith('Waiting for Glyphs.'):
             task['message'] = None  # The precise blocker below supplies the explanation.
         task['taskStatus'] = _task_status(task, task['blockers'])
+        if task['blockers']:
+            task['remainingWork'] = None  # The blocker card names the dependency and next step.
     by_id = {task['id']: task for task in tasks}
     for task in tasks:
         for identity in task['blockedBy']:
@@ -206,8 +211,6 @@ def _task_status(task, blockers):
         return 'working'
     if task['state'] == 'waiting':
         return 'waiting'
-    if task.get('outcomeLabel') == 'Partial changes may remain':
-        return 'needs_attention'
     if task['closed'] or task.get('outcome') == 'applied' and task['state'] == 'needs_decision' and not task.get('message'):
         return 'finished'
     return 'needs_attention'
@@ -218,15 +221,19 @@ def _outcome(value, job, workflow):
     if state == 'expired':
         previous = (value.get('expiration') or {}).get('previousState')
         evidence = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
-        if evidence.get('executed') and not evidence.get('executionSucceeded'):
-            return 'Partial changes may remain'
+        if evidence.get('executed'):
+            return 'Unverified' if evidence.get('executionSucceeded') else 'Partial changes may remain'
         return 'Outcome unknown' if previous in {'uncertain', 'interrupted', 'accept_uncertain'} else None
     if job.get('outcome') == 'unverified':
         return 'Unverified'
     owner = protection(job)
     if owner and owner['reason'] == 'outcome_unknown':
         return 'Outcome unknown'
-    if unresolved(job) or ((job.get('error') or {}).get('details') or {}).get('recovery', {}).get('complete') is False:
+    stopped = stopped_outcome(job) or job.get('outcome')
+    if stopped == 'unverified':
+        return 'Unverified'
+    if (stopped == 'partial' or unresolved(job)
+            or ((job.get('error') or {}).get('details') or {}).get('recovery', {}).get('complete') is False):
         return 'Partial changes may remain'
     if state == 'completed' and job.get('resultKind') == 'diagnostic' and (job.get('report') or {}).get('success') is False:
         return 'Issues found'
@@ -245,7 +252,9 @@ def _recovery(value, job, bridge_session=None):
         return 'none'
     operation = job.get('bridgeOperation') or {}
     evidence = operation.get('scriptResult') or {}
-    recovery = evidence.get('recovery') or value.get('savedVersion') or {}
+    recovery = value.get('savedVersion') or evidence.get('recovery') or {}
+    if job.get('resultKind') == 'script' and stopped_script_released(job):
+        return 'unavailable'
     if operation.get('restorationClosed') or job.get('status') in {'completed', 'accepted', 'discarded'}:
         return 'ended'
     if (job.get('error') or {}).get('code') in {'bridge_operation_lost', 'restoration_unverified'}:
@@ -269,7 +278,7 @@ def _project(value, job, state, closed, workflow, *, bridge_session=None):
         message = expiration.get('message', 'Task expired after inactivity. The recorded outcome was retained.')
         if error.get('message'):
             message += '\n' + error['message']
-    if workflow and state == 'waiting':
+    if workflow and value.get('state') == 'queued':
         message = ('Cancelling this waiting request. It will not run.' if value.get('cancelRequested') else
                    'Waiting for Glyphs. This task will continue automatically when Glyphs is ready.')
     if ((error.get('details') or {}).get('recovery') or {}).get('complete') is False:
@@ -283,6 +292,10 @@ def _project(value, job, state, closed, workflow, *, bridge_session=None):
         warning = warning.get('message') or 'The Git checkpoint failed; the font save succeeded.'
     if isinstance(checkpoint, dict) and checkpoint.get('status') == 'failed' and not warning:
         warning = 'The Git checkpoint failed; the font save succeeded.'
+    recovery = _recovery(value, job, bridge_session)
+    outcome = value.get('state') if workflow else job.get('status')
+    if closed and state != 'expired':
+        outcome = stopped_outcome(job) or job.get('outcome') or outcome
     return dict(id=value['id'], workflowId=value['id'] if workflow else None,
                 jobId=value.get('jobId') if workflow else value['id'], title=_label(request),
                 documentName=document.get('familyName') or Path(document.get('path') or 'Untitled').name,
@@ -291,8 +304,9 @@ def _project(value, job, state, closed, workflow, *, bridge_session=None):
                 updatedAt=expiration.get('inactiveSince') or value.get('updatedAt', value.get('createdAt', 0)),
                 expiredAt=expiration.get('expiredAt'),
                 saveStatus=('unsaved' if document.get('dirty') else 'saved') if value.get('documentStateConfirmed') and type(document.get('dirty')) is bool else 'unknown',
-                message=message, supportText=action_support_text(dict(value, job=job)) if workflow and closed else None, outcome=value.get('state') if workflow else job.get('status'),
-                recoveryStatus=_recovery(value, job, bridge_session), outcomeLabel=_outcome(value, job, workflow),
+                message=message, supportText=action_support_text(dict(value, job=job)) if workflow and closed else None, outcome=outcome,
+                recoveryStatus=recovery, outcomeLabel=_outcome(value, job, workflow),
+                remainingWork=None if closed else remaining_work(value, job, recovery_status=recovery),
                 checkpointWarning=warning,
                 progress=job.get('bridgeOperation', {}).get('completedChanges'),
                 total=job.get('bridgeOperation', {}).get('totalChanges'))

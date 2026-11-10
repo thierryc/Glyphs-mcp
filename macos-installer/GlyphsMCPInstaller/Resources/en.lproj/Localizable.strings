@@ -961,6 +961,7 @@
 "Waiting" = "Waiting";
 "Recovery available" = "Recovery available";
 "Recovery available in this Glyphs session" = "Recovery available in this Glyphs session";
+"Remaining work" = "Remaining work";
 "View blocking task" = "View blocking task";
 "Task actions…" = "Task actions…";
 "Check result…" = "Check result…";

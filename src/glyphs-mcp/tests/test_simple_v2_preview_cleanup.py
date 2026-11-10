@@ -44,6 +44,44 @@ def test_cancel_script_preview_releases_bridge_and_next_script_can_run(preview):
     assert second['state'] == 'applied' and font.glyphs['A'].width == 620
 
 
+def test_cancelled_run_dispatch_leaves_a_cancellable_preview(preview, monkeypatch):
+    from glyphs_mcp_sidecar.task_inventory import list_tasks
+    font, identity, core, bridge, service, value = preview
+    original = bridge.run_script
+
+    def cancelled(_):
+        raise BridgeClientError('glyphs_busy', 'Queued Glyphs call cancelled', {'execution': 'cancelled'})
+
+    monkeypatch.setattr(bridge, 'run_script', cancelled)
+    stopped = choose(service, value, 'run_script')
+    item = list_tasks(service)['tasks'][0]
+    assert not item['closed'] and item['taskStatus'] == 'needs_attention'
+    assert 'Cancel' in item['remainingWork']
+    assert service.jobs.get(value['jobId'])['status'] == core.operation(value['jobId'])['status'] == 'ready'
+    assert 'cancel' in {action['action'] for action in stopped['actions']}
+    wait(service, choose(service, stopped, 'cancel'), 'cancelled')
+    assert font.glyphs['A'].width == 610
+    monkeypatch.setattr(bridge, 'run_script', original)
+    assert run(service, identity, key='after-cancelled-dispatch')['state'] == 'applied'
+
+
+def test_legacy_cancelled_dispatch_finishes_after_its_preview_is_released(preview):
+    from glyphs_mcp_sidecar.task_inventory import list_tasks
+    font, _, core, _, service, value = preview
+    error = {'code': 'glyphs_busy', 'message': 'Queued Glyphs call cancelled', 'details': {'execution': 'cancelled'}}
+    job = service.jobs.update(value['jobId'], status='failed', error=error)
+    workflow = service.edit_workflows.store.records[value['id']]
+    service.edit_workflows.store.update(workflow, state='failed', job=service._public(job), error=error)
+    item = list_tasks(service)['tasks'][0]
+    assert not item['closed'] and item['taskStatus'] == 'waiting' and 'unused script preview' in item['remainingWork']
+    task_expiration.expire(service)
+    item = list_tasks(service)['tasks'][0]
+    assert item['closed'] and item['taskStatus'] == 'finished' and item['outcome'] == 'failed'
+    assert item['message'] == error['message'] and item['remainingWork'] is None
+    assert core.operation(value['jobId'])['status'] == 'cancelled' and font.glyphs['A'].width == 610
+    assert service.edit_workflows.get(value['id'])['remainingWork'] is None
+
+
 def test_ready_script_without_native_route_still_releases_preview(preview):
     _, _, core, _, service, value = preview
     job = service.jobs.get(value['jobId'])

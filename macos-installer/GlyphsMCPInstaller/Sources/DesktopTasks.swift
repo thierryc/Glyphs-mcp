@@ -327,6 +327,13 @@ struct DesktopTasksView: View {
                 Label("Recovery available in this Glyphs session", systemImage: "arrow.uturn.backward")
                     .font(.callout).foregroundStyle(.secondary)
             }
+            if let remaining = task.remainingWork {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Remaining work").font(.callout.weight(.semibold))
+                        .accessibilityAddTraits(.isHeader)
+                    Text(remaining).textSelection(.enabled)
+                }
+            }
             if task.closed, let support = task.supportText { Text(support).textSelection(.enabled) }
             if let message = task.message {
                 Text(message).foregroundStyle(.secondary).lineSpacing(3).textSelection(.enabled)

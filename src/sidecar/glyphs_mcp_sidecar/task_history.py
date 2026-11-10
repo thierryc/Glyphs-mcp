@@ -127,7 +127,9 @@ def _safe(service, task, jobs):
     except Exception:
         return False
     # A failed/cancelled native result may still own partial-change recovery.
-    return isinstance(operation, dict) and operation.get('status') in {'saved', 'accepted', 'completed', 'discarded'}
+    from glyphs_mcp_protocol.task_conflicts import stopped_script_released
+    return isinstance(operation, dict) and (operation.get('status') in {'saved', 'accepted', 'completed', 'discarded'}
+        or job.get('resultKind') == 'script' and stopped_script_released(job, operation))
 
 
 def _fresh(service, task, jobs, revision):
@@ -203,6 +205,7 @@ def start_cleanup(service, *, interval=3600):
         next_history = 0
         while not stopped.is_set():
             try:
+                service.edit_workflows.reconcile_stopped()
                 service.health_cleanup.run_once()
                 expire(service)
                 if time.monotonic() >= next_history:

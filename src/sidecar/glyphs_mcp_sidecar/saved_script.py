@@ -2,6 +2,7 @@
 from pathlib import Path
 import time
 from glyphs_mcp_protocol import ProtocolError, scripts
+from glyphs_mcp_protocol.task_conflicts import STOPPED_SCRIPT, stopped_script_released
 from .source import source_hash
 from .worker import WorkerError
 
@@ -11,8 +12,42 @@ BASELINE_MEMO_SECONDS = 5.0
 def unresolved(job):
     if job.get('resultKind') == 'historical_restore' and job.get('status') in {'failed','interrupted'}:
         return bool((job.get('error') or {}).get('details', {}).get('writeAttempted') or job.get('restoreRequest'))
-    return (job.get('resultKind') == 'script' and job.get('status') in {'failed', 'cancelled'}
-            and bool(((job.get('bridgeOperation') or {}).get('scriptResult') or {}).get('executed')))
+    return (job.get('resultKind') == 'script' and job.get('status') in STOPPED_SCRIPT
+            and bool(((job.get('bridgeOperation') or {}).get('scriptResult') or {}).get('executed'))
+            and not stopped_script_released(job))
+
+
+def stopped_outcome(job):
+    if job.get('resultKind') == 'script' and job.get('status') in STOPPED_SCRIPT:
+        evidence = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
+        if evidence.get('executed'):
+            return 'unverified' if evidence.get('executionSucceeded') else 'partial'
+    return None
+
+
+def lost_stopped_session(job):
+    """Return the old session only when Python and wrapper cleanup had stopped."""
+    error = job.get('error') or {}
+    details = error.get('details') or {}
+    operation = job.get('bridgeOperation') or {}
+    evidence = operation.get('scriptResult') or {}
+    recovery = evidence.get('recovery') or {}
+    native_error = operation.get('error') or {}
+    native_details = native_error.get('details') or {}
+    if (job.get('resultKind') == 'script' and job.get('status') == 'interrupted'
+            and error.get('code') == 'bridge_operation_lost'
+            and details.get('previousStatus') == operation.get('status')
+            and operation.get('status') in STOPPED_SCRIPT | {'applied'}
+            and not (job.get('saveRequest') or job.get('restoreRequest') or operation.get('nativeSave'))
+            and not (details.get('writeAttempted') or native_details.get('writeAttempted')
+                     or details.get('execution') == 'uncertain' or native_details.get('execution') == 'uncertain'
+                     or native_error.get('code') == 'restoration_unverified' or native_details.get('cleanup'))
+            and operation.get('jobId') == job.get('id')
+            and operation.get('documentId') == (job.get('document') or {}).get('id')
+            and evidence.get('executed') is True and recovery.get('kind') == 'memory_snapshot'
+            and recovery.get('survivesRestart') is False):
+        return recovery.get('bridgeSessionId')
+    return None
 
 
 def invalidate(service, document_id=None):
@@ -68,7 +103,7 @@ def refresh(service, workflow):
         return
     job = workflow.get('job') or {}
     executed = ((job.get('bridgeOperation') or {}).get('scriptResult') or {}).get('executed')
-    if workflow['state'] in {'saved', 'executed', 'discarded'}:
+    if workflow['state'] in {'saved', 'executed', 'discarded'} or stopped_script_released(job):
         service.edit_workflows.baseline_memos.pop(workflow['id'], None)
         service.edit_workflows._set(workflow, savedVersion=None)
         return

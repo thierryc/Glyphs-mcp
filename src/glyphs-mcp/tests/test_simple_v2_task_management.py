@@ -276,13 +276,13 @@ def test_diagnostic_findings_are_a_finished_result_with_no_recovery(inventory):
     assert item['recoveryStatus'] == 'none' and not item['blockers']
 
 
-def test_incomplete_typed_recovery_remains_visible_for_review(inventory):
+def test_incomplete_typed_recovery_stays_visible_in_finished_history(inventory):
     job = inventory.jobs.create({'id': 'A'}, {'kind': 'width_delta'})
     inventory.jobs.update(job['id'], status='failed', resultKind='mutation',
         error={'code': 'native_write_failed', 'message': 'A target could not be restored',
                'details': {'recovery': {'complete': False, 'remaining': 1}}})
     item = tasks(inventory)[job['id']]
-    assert item['taskStatus'] == 'needs_attention'
+    assert item['taskStatus'] == 'finished' and item['remainingWork'] is None
     assert item['outcomeLabel'] == 'Partial changes may remain'
     assert 'Automatic recovery was incomplete' in item['message']
     assert item['closed']  # Native work stopped; this warning does not take a new lock.

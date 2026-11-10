@@ -48,9 +48,13 @@ Active contains **Working** and **Waiting** tasks. Waiting means another
 operation must finish automatically; a required decision belongs in Needs
 attention. Finished shows a separate outcome (including cancellation or failure).
 Successful scripts say Script finished, not that their intended edits were verified.
-Incomplete typed recovery also stays in Needs attention for inspection even when
-the stopped job is closed; it retains its diagnostics without inventing a new lock
-or offering unavailable recovery actions.
+Failed or cancelled scripts move to Finished when the native bridge confirms
+there is no work or recovery left for that operation. History keeps the error
+and distinguishes unverified results from possible partial changes. When a
+reservation or an outcome check remains, **Remaining work** explains the next
+step. The background check reconciles the existing native operation and task record.
+Incomplete typed recovery remains visible as a warning in Finished when the
+stopped job has no recovery action. Its diagnostics are available for inspection.
 
 Completion and recovery are separate. A finished result can retain **Recovery
 available** while its workflow remains open (`closed=false`). It stays in the

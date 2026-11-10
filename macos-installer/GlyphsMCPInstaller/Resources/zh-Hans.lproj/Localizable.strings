@@ -972,6 +972,7 @@
 "Waiting" = "等待中";
 "Recovery available" = "可恢复";
 "Recovery available in this Glyphs session" = "可在此 Glyphs 会话中恢复";
+"Remaining work" = "剩余工作";
 "View blocking task" = "查看阻塞任务";
 "Task actions…" = "任务操作…";
 "Check result…" = "检查结果…";

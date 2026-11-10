@@ -88,6 +88,7 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
     public let taskStatus: String?
     public let recoveryStatus: String?
     public let outcomeLabel: String?
+    public let remainingWork: String?
     public let blockers: [Blocker]?
     public let expiredAt: TimeInterval?
 
@@ -167,13 +168,13 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
         return """
         Help me close Glyphs MCP task \(workflowId ?? jobId ?? id) for \(documentName): \(title).
 
-        Retrieve its current state and blockers. Explain its existing cancellation and recovery choices, including any Keep, Save, Undo, or Restore decision required. If running, explain cancellation limits. Show only currently available actions and wait for my choice.
+        Retrieve its current state, recorded outcome, and any work it blocks or depends on. Explain what remains and who can act. If running, explain cancellation limits. Show only currently available actions. Wait for my choice only if a decision is required.
 
         Do not rerun the script or automatically cancel, save, restore, or close the task. Keep all workflow decisions in this conversation.
         """
     }
     public var copyRequest: String {
-        "Review Glyphs MCP task \(workflowId ?? jobId ?? id) for \(documentName): \(title). Retrieve its current state and blockers, then show the existing available choices in this conversation. Do not repeat the script or automatically save, restore, or close the task."
+        "Review Glyphs MCP task \(workflowId ?? jobId ?? id) for \(documentName): \(title). Report its current state, recorded outcome, and any remaining work or decisions in this conversation. Do not repeat the script or automatically save, restore, or close the task."
     }
 }
 
