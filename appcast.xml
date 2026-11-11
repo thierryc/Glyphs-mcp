@@ -5,15 +5,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <title>Glyphs MCP Desktop</title>
     <link>https://github.com/thierryc/Glyphs-mcp</link>
     <item>
-      <title>Glyphs MCP 2.6.0</title>
-      <sparkle:version>76</sparkle:version>
-      <sparkle:shortVersionString>2.6.0</sparkle:shortVersionString>
+      <title>Glyphs MCP 2.7.0</title>
+      <sparkle:version>91</sparkle:version>
+      <sparkle:shortVersionString>2.7.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <description>The desktop application manages components, sidecar activity and local font projects. Component migration is a separate installation step.</description>
-      <enclosure url="https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/Glyphs-MCP-2.6.0.zip" sparkle:edSignature="lwHWvx0c6qVZ58D48ZfD7O9cNCTV5argiQG9HkQkDeBYDoWhvdOhMGS6eacjT+3Vsaeun85fGUE/d33OMSEEDQ==" length="159384128" type="application/octet-stream"></enclosure>
+      <enclosure url="https://github.com/thierryc/Glyphs-mcp/releases/download/v2.7.0/Glyphs-MCP-2.7.0.zip" sparkle:edSignature="rzdNl7o7qqQf6s+Chaeb+pXbuhkV1vlReAhRqNwRb2rOlMqrivebahU+r3KDwE0Np0qOoYnuIs6+awEDZDIVDg==" length="159471838" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: BWglQsqeewglxZHQxucn1DGt1FLih4F34q/wcgA8wec+zf4FggLnOAffEgz+eNNWr5T6CtNslbJN1FPb6mU/Cg==
+edSignature: QqKgXF8kpn+gg5g2X6ZRpu/fEanFTzPzh54oUSJ2PdnYuLK1LNJ9xyf1BUnRFZbkWL3q95iOduxA8/g82oaKCQ==
 length: 1205
 -->

@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.7.0 — Unreleased
+## 2.7.0 — stable release, build 91, 10 November 2026
 
 - Group health readings in Setup and copy them as Markdown from Setup or the macOS menu bar.
 - Narrow the desktop sidebar and add a Notes-style header with Liquid Glass controls and softer shadows on macOS 26.
@@ -10,7 +10,7 @@
 - Use green for light and moderate footprints, orange for heavy footprints, and red for critical pressure or severe response delays.
 - Reduce space around the Tasks list and show recorded task outcomes and remaining decisions. Release stopped-script reservations only after terminal bridge evidence confirms recovery is no longer pending.
 
-See the [2.7.0 candidate release notes](V2.7.0-RELEASE.md).
+See the [2.7.0 release notes](V2.7.0-RELEASE.md).
 
 ## 2.6.0 — stable release, build 76, 9 November 2026
 

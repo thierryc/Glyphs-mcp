@@ -3,7 +3,7 @@
 Glyphs Health supplies shared evidence to the companion and agents, with
 admission protection at MCP operation boundaries. It works with the companion
 closed. The companion layout and Markdown report changes are described in the
-[2.7.0 candidate notes](../V2.7.0-RELEASE.md).
+[2.7.0 release notes](../V2.7.0-RELEASE.md).
 
 ## Passive observation
 
