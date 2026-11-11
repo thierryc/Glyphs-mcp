@@ -42,9 +42,31 @@ def monitor():
 @pytest.mark.parametrize('count,state', [(0, 'normal'), (7, 'normal'), (8, 'caution'), (128, 'caution')])
 def test_font_budget_never_blocks(count, state):
     value, _ = monitor()
+    value.budget = 8
     value.record('documents', available=True, fontCount=count, complete=True)
     assert value.snapshot()['state'] == state
     value.admit(BridgeError)
+
+
+def test_default_font_count_is_context_without_an_override():
+    value, _ = monitor()
+    value.record('documents', available=True, fontCount=16)
+    snapshot = value.snapshot()
+    assert snapshot['state'] == 'normal'
+    assert snapshot['fontWarningThreshold'] is None
+
+
+def test_footprint_trend_uses_only_recent_monotonic_samples():
+    value, clock = monitor()
+    for seconds, size in ((0, 100), (20, 200), (140, 300)):
+        clock.value = 100 + seconds
+        value.observe_footprint(dict(bytes=size), clock())
+    footprint = value.snapshot()['signals']['footprint']
+    assert footprint['growthBytes'] == 100
+    assert footprint['growthWindowSeconds'] == 120
+    clock.advance(121)
+    value.observe_footprint(dict(bytes=400), clock())
+    assert 'growthBytes' not in value.snapshot()['signals']['footprint']
 
 
 @pytest.mark.parametrize('budget', [0, 129, True, 8.0, '8', None])
@@ -294,8 +316,29 @@ def test_advisory_is_outside_data_and_is_model_visible():
     original = deepcopy(payload['data'])
     feedback(service, payload)
     assert payload['data'] == original
-    assert 'process files sequentially' in payload['health']['text']
+    assert 'Routine edits can continue' in payload['health']['text']
+    assert 'process_sequentially' not in payload['health']['recommendedActions']
     assert not contract.advisory(contract.unavailable())
+
+
+@pytest.mark.parametrize('work,phrase', [
+    ('routine', 'Routine edits can continue'),
+    ('document', 'Reuse open fonts'),
+    ('export', 'Run exports or feature compiles one at a time'),
+    ('snapshot', 'Run one whole-font snapshot or restore at a time'),
+    ('comparison', 'Run one font comparison at a time'),
+])
+def test_pressure_guidance_matches_the_work_without_changing_admission(work, phrase):
+    value, _ = monitor()
+    value.record('pressure', available=True, value='warning')
+    service = NS(get_status=lambda: dict(health=value.snapshot()))
+    result = feedback(service, dict(ok=True, data={}), work=work)['health']
+    assert phrase in result['text']
+    assert not result['admission']['deferExpensiveWork']
+    value.record('pressure', available=True, value='critical')
+    result = feedback(service, dict(ok=True, data={}), work=work)['health']
+    assert result['recommendedActions'] == ['defer_expensive_work']
+    assert result['admission']['deferExpensiveWork']
 
 
 def test_bounded_pending_dispatch_tracker():

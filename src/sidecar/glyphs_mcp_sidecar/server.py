@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from glyphs_mcp_protocol import TOOL_NAMES, load_or_create_token
+from glyphs_mcp_protocol.health import job_work
 
 from .bridge_client import BridgeClient
 from .jobs import JobStore
@@ -32,9 +33,9 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
     cache = getattr(service, 'status_cache', None)
     if cache is not None: cache.start()
     from .health import feedback
-    def result(callback):
+    def result(callback, *, work='routine'):
         from .health_cleanup import feedback as cleanup_feedback
-        return cleanup_feedback(service, feedback(service, _result(callback)))
+        return cleanup_feedback(service, feedback(service, _result(callback), work=work))
 
     @mcp.tool(name="get_status")
     async def get_status() -> dict[str, Any]:
@@ -44,7 +45,7 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         """
         # A bounded cache copy needs no worker. Keep status available even when
         # every execution worker is waiting for native work or a job lock.
-        return result(service.get_status)
+        return result(service.get_status, work='overview')
 
     @mcp.tool(name="list_tasks", annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False})
     async def list_tasks(cursor: int = 0, limit: int = 50) -> dict[str, Any]:
@@ -60,22 +61,22 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
     @mcp.tool(name="create_document")
     async def create_document(family_name: str, idempotency_key: str, units_per_em: int = 1000) -> dict[str, Any]:
         """With font-creation authorization, create and open a new unsaved Glyphs font with one Regular master and one Regular instance; no existing document is required. Requires document.create.v1. family_name is 1-255 characters; units_per_em is an integer from 16 to 16384 (default 1000). Return its id for subsequent reads/edits/save_document, plus native masterIds and instanceIds. Creation never saves. Save As uses save_document with separate existing/explicit save authorization and a new absolute .glyphs or .glyphspackage destination. Retain a fresh idempotency_key per intended font and retry exactly the same arguments after a timeout. A reused key with different arguments conflicts; a closed created document is not recreated. After a bridge restart, creation_outcome_unknown requires reconciliation of the original font rather than another creation request. No saved baseline or edit workflow is required."""
-        return await asyncio.to_thread(result, lambda: service.create_document(family_name, idempotency_key, units_per_em))
+        return await asyncio.to_thread(result, lambda: service.create_document(family_name, idempotency_key, units_per_em), work='document')
 
     @mcp.tool(name="duplicate_document")
     async def duplicate_document(document_id: str, idempotency_key: str, family_name: str | None = None) -> dict[str, Any]:
         """With duplication authorization, copy the exact live font including unsaved edits into a new pathless document. Requires document.duplicate.v1; never Save or alter the original. Optional family_name renames only the copy. Return its id for edits, proof tabs and separately authorized Save As. Preserve one key per intended copy; identical retries reuse it, changed arguments conflict, closed copies are not recreated, and bridge restarts require reconciliation. Pending jobs owning the source must be resolved first."""
-        return await asyncio.to_thread(result, lambda: service.duplicate_document(document_id, idempotency_key, family_name))
+        return await asyncio.to_thread(result, lambda: service.duplicate_document(document_id, idempotency_key, family_name), work='document')
 
     @mcp.tool(name="open_document")
     async def open_document(path: str, idempotency_key: str) -> dict[str, Any]:
         """With file-opening authorization, open an existing absolute local .glyphs file or .glyphspackage folder in Glyphs 4. Requires document.open.v1; no existing document, saved baseline or script is needed. Reuse an already-open source without reloading, saving, discarding unsaved edits or duplicating its document. Return its id, path, familyName, dirty, generation, alreadyOpen, openId and bridgeSessionId; retain id for subsequent reads/edits/save_document. Opening never saves or closes another font. Use a fresh retained idempotency_key per intended Open and retry identical arguments after a timeout. A changed path conflicts; a closed result is not reopened by a retry. After a bridge restart, opening_outcome_unknown requires reconciling the original document. Missing paths and non-native formats reject; binary/UFO import is separate. A partial native failure may return documentId in error details; inspect it without repeating Open."""
-        return await asyncio.to_thread(result, lambda: service.open_document(path, idempotency_key))
+        return await asyncio.to_thread(result, lambda: service.open_document(path, idempotency_key), work='document')
 
     @mcp.tool(name="import_document")
     async def import_document(path: str, idempotency_key: str) -> dict[str, Any]:
         """Import an absolute local .ufo folder, .otf file or .ttf file through Glyphs. No open font is required. Reuse the same key after lost responses; never replay an uncertain import with a new key. Import never saves or overwrites its source. Compiled fonts are view-only until Save As to a new .glyphs/.glyphspackage source, and can lose hinting or OpenType tables. Use the returned exact document ID."""
-        return await asyncio.to_thread(result, lambda: service.import_document(path, idempotency_key))
+        return await asyncio.to_thread(result, lambda: service.import_document(path, idempotency_key), work='document')
 
     @mcp.tool(name="activate_document")
     async def activate_document(document_id: str) -> dict[str, Any]:
@@ -128,13 +129,13 @@ def create_server(service: SidecarService, *, control_token: str | None = None) 
         return await asyncio.to_thread(result,
             lambda: service.start_job(
                 document_id, kind=kind, delta=delta, glyphs=glyphs, options=options
-            )
+            ), work=job_work(kind)
         )
 
     @mcp.tool(name="compare_fonts")
     async def compare_fonts(baseline_files: list[str], candidate_files: list[str], options: dict[str, Any] | None = None) -> dict[str, Any]:
         """Compare explicit local static/variable TTF files with the optional managed Diffenator runtime. Requires font.compare.diffenator.v1 in get_status.comparisonCapabilities. No live Glyphs document or Save is required. Each list contains 1-32 absolute existing TTF paths. options: styles=instances (default), masters or cross_product; filterStyles=style regex; userWordlist=absolute .txt/.csv file. Inputs are privately snapshotted and hashed. Return a job ID; use get_job for stages/HTML entry point, discard_job for cancellation and accept_job with a new destination directory to publish the report. Comparison never applies changes or saves fonts. Completion is not a judgement that differences are acceptable."""
-        return await asyncio.to_thread(result, lambda: service.compare_fonts(baseline_files, candidate_files, options))
+        return await asyncio.to_thread(result, lambda: service.compare_fonts(baseline_files, candidate_files, options), work='comparison')
 
     @mcp.tool(name="get_job")
     async def get_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:

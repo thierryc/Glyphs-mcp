@@ -440,8 +440,10 @@ struct DesktopProjectWorkspace: View {
             HStack(spacing: 10) {
                 Image(systemName: "folder.fill").font(.system(size: 26)).foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(model.navigation.name(for: path)).font(.title2.weight(.semibold))
-                        .lineLimit(1).truncationMode(.middle)
+                    if #unavailable(macOS 26.0) {
+                        Text(model.navigation.name(for: path)).font(.title2.weight(.semibold))
+                            .lineLimit(1).truncationMode(.middle)
+                    }
                     Text((path as NSString).abbreviatingWithTildeInPath)
                         .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
@@ -459,6 +461,8 @@ struct DesktopProjectWorkspace: View {
             }
             .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
             .help("More project actions").accessibilityLabel("More project actions")
-        }.padding(.horizontal, 20).padding(.vertical, 14)
+        }
+        .padding(.horizontal, DesktopDashboardLayout.pagePadding)
+        .padding(.vertical, 12)
     }
 }

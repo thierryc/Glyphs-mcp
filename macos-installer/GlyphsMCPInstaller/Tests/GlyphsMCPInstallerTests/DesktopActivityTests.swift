@@ -23,13 +23,45 @@ final class DesktopActivityTests: XCTestCase {
     func testHealthPolicyRoundTripValidationAndMissingDefault() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        XCTAssertEqual(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold, 8)
+        XCTAssertNil(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold)
         try DesktopGlyphsHealthPolicy(fontWarningThreshold: 12).write(under: root)
         XCTAssertEqual(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold, 12)
+        try DesktopGlyphsHealthPolicy().write(under: root)
+        XCTAssertNil(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold)
+        try DesktopGlyphsHealthPolicy().write(under: root)
         XCTAssertThrowsError(try DesktopGlyphsHealthPolicy(fontWarningThreshold: 0).write(under: root))
         XCTAssertThrowsError(try DesktopGlyphsHealthPolicy(fontWarningThreshold: 129).write(under: root))
         try Data(#"{"version":99,"fontWarningThreshold":12}"#.utf8).write(to: DesktopGlyphsHealthPolicy.file(under: root))
         XCTAssertThrowsError(try DesktopGlyphsHealthPolicy.read(under: root))
+    }
+
+    func testSystemPressureAndGlyphsReadinessAreIndependent() throws {
+        let health = try JSONDecoder().decode(DesktopGlyphsHealth.self, from: Data(#"""
+        {
+            "version": 1, "available": true, "state": "caution",
+            "reasons": ["memory_pressure_warning"],
+            "signals": {
+                "pressure": {"available": true, "value": "warning"},
+                "dispatch": {"available": true, "ageSeconds": 18, "schedulingSeconds": 0.003},
+                "footprint": {"available": true, "bytes": 312475648, "growthBytes": 100, "growthWindowSeconds": 115}
+            }
+        }
+        """#.utf8))
+        XCTAssertEqual(health.readinessTitle, "Glyphs is responsive")
+        XCTAssertEqual(health.pressureTitle, "Mac memory pressure is elevated")
+        XCTAssertTrue(health.agentGuidance.hasPrefix("Continue routine edits."))
+        XCTAssertEqual(health.signals?["footprint"]?.growthWindowSeconds, 115)
+    }
+
+    func testGlyphsFootprintBandsScaleWithInstalledMemory() throws {
+        let gib: UInt64 = 1 << 30
+        let moderateOn32 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: Int64(3 * gib), installedMemory: 32 * gib))
+        let heavyOn16 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: Int64(3 * gib), installedMemory: 16 * gib))
+        let lightOn32 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: 709_900_000, installedMemory: 32 * gib))
+        XCTAssertEqual(moderateOn32.level, .moderate)
+        XCTAssertEqual(heavyOn16.level, .heavy)
+        XCTAssertEqual(lightOn32.level, .light)
+        XCTAssertNil(DesktopGlyphsFootprint(bytes: 1, installedMemory: 0))
     }
     private func job(_ id: String, _ phase: String, message: String? = nil) -> DesktopActivity {
         DesktopActivity(jobId: id, document: "Test", kind: "spacing", phase: phase,

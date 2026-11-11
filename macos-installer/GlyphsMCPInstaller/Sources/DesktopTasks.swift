@@ -14,14 +14,13 @@ struct DesktopTaskBadge: View {
     }
 }
 
-struct DesktopHealthStatus: View {
+struct DesktopConnectionStatus: View {
     @EnvironmentObject private var desktop: DesktopModel
     var body: some View {
-        VStack(spacing: 8) {
+        HStack(spacing: 16) {
             row("MCP", value: desktop.serviceRunning == true && !desktop.stale ? "Connected" : desktop.serviceRunning == false ? "Stopped" : "Unavailable",
                 available: desktop.serviceRunning == true && !desktop.stale)
             row("Glyphs 4", value: desktop.glyphsRunning ? "Running" : "Not running", available: desktop.glyphsRunning)
-            DesktopGlyphsHealthView(health: desktop.status?.health, stale: desktop.stale, checking: desktop.status?.bridge.checking == true)
         }.font(.caption).accessibilityElement(children: .contain)
     }
     private func row(_ name: String, value: String, available: Bool) -> some View {
@@ -29,75 +28,349 @@ struct DesktopHealthStatus: View {
             Image(systemName: "circle.fill").font(.system(size: 7))
                 .foregroundStyle(available ? Color.green : Color.secondary).accessibilityHidden(true)
             Text(LocalizedStringKey(name))
-            Spacer()
             Text(LocalizedStringKey(value)).foregroundStyle(.secondary)
         }.accessibilityElement(children: .combine)
     }
 }
 
 struct DesktopGlyphsHealthView: View {
-    let health: DesktopGlyphsHealth?
-    let stale: Bool
-    var checking = false
+    let report: DesktopGlyphsHealthReport
     @State private var expanded = false
+    @State private var copiedAt: Date?
+
     var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
-            VStack(alignment: .leading, spacing: 8) {
-                if stale { Text("Showing the last observation.").foregroundStyle(.secondary) }
-                if checking {
-                    Text("Collecting health evidence…").foregroundStyle(.secondary)
-                } else if let health, health.available == true, health.version == 1 {
-                    ForEach(health.reasons ?? [], id: \.self) { reason in
-                        Text(LocalizedStringKey(DesktopGlyphsHealth.reasonLabel(reason)))
-                    }
-                    if let documents = health.signals?["documents"], documents.available == true {
-                        if let count = documents.fontCount { Text("Open fonts: \(count)") }
-                        if let count = documents.unsavedCount { Text("Unsaved fonts: \(count)") }
-                        if let count = documents.editTabCount { Text("Edit tabs: \(count)") }
-                        if documents.complete == false { Text("Document counts are partial.").foregroundStyle(.secondary) }
-                        observation(documents.observedAt)
-                    }
-                    if let footprint = health.signals?["footprint"], footprint.available == true, let bytes = footprint.bytes {
-                        HStack {
-                            Text("Glyphs memory")
-                            Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .memory))
-                        }
-                        if let growth = footprint.growthBytes {
-                            HStack {
-                                Text("Memory change")
-                                Text(ByteCountFormatter.string(fromByteCount: growth, countStyle: .memory))
-                            }
-                        }
-                        if footprint.stale == true { Text("Memory observation is stale.").foregroundStyle(.secondary) }
-                        observation(footprint.observedAt)
-                    }
-                    if health.signals?["pressure"]?.available != true {
-                        Text("System memory pressure is unknown.").foregroundStyle(.secondary)
-                    }
-                    Text("What agents will do").fontWeight(.medium)
-                    Text(LocalizedStringKey(health.agentGuidance)).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Glyphs Health").font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button {
+                    var transaction = Transaction(animation: nil)
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { expanded.toggle() }
+                } label: {
+                    Label(LocalizedStringKey(expanded ? "Hide details" : "Show details"),
+                          systemImage: expanded ? "chevron.up" : "chevron.down")
+                }
+                .controlSize(.small)
+                .accessibilityIdentifier("desktop.glyphsHealth.details")
+                Button {
+                    copiedAt = report.copyToPasteboard() ? .now : nil
+                } label: {
+                    Label("Copy report as Markdown", systemImage: copiedAt == nil ? "doc.on.doc" : "checkmark")
+                        .labelStyle(.iconOnly).frame(width: 16, height: 16)
+                }
+                .buttonStyle(DesktopSecondaryButtonStyle()).controlSize(.small)
+                .help(LocalizedStringKey(copiedAt == nil ? "Copy report as Markdown" : "Copied"))
+                .accessibilityValue(Text(LocalizedStringKey(copiedAt == nil ? "" : "Copied")))
+                .accessibilityIdentifier("desktop.glyphsHealth.copyReport")
+                .task(id: copiedAt) {
+                    guard copiedAt != nil else { return }
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    copiedAt = nil
+                }
+            }
+
+            if let health = report.availableHealth {
+                Text(LocalizedStringKey(report.stale ? "Showing the last observation." : health.readinessTitle))
+                    .font(.callout.weight(.semibold))
+                if let footprint = report.footprintIndicator {
+                    healthIndicator(footprint.title, symbol: footprint.symbol, color: Color(nsColor: footprint.color))
+                }
+                if report.pressureValue == "critical" {
+                    healthIndicator(health.pressureTitle, symbol: "exclamationmark.triangle.fill", color: .red)
                 } else {
-                    Text("Health protection is unavailable. Update bridge and sidecar together to enable it.")
+                    Text(LocalizedStringKey(health.pressureTitle)).foregroundStyle(.secondary)
+                }
+                if report.hasSevereDelay {
+                    healthIndicator("New heavy work paused", symbol: "pause.circle.fill", color: .red)
+                } else if health.state == "paused" {
+                    Text("New heavy work paused").fontWeight(.semibold)
+                }
+                ForEach(report.additionalReasons, id: \.self) { reason in
+                    Text(LocalizedStringKey(DesktopGlyphsHealth.reasonLabel(reason)))
+                        .font(.callout.weight(.semibold))
+                }
+                if !expanded, !report.stale {
+                    Text(LocalizedStringKey(health.agentGuidance))
                         .foregroundStyle(.secondary)
                 }
-            }.font(.caption).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
-        } label: {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Glyphs Health").fontWeight(.medium)
-                Text(LocalizedStringKey(checking ? "Checking Glyphs" : stale ? "Health observation stale" : health?.title ?? "Health unavailable"))
-                    .foregroundStyle(.secondary)
+            } else {
+                Text(LocalizedStringKey(report.statusTitle)).foregroundStyle(.secondary)
+            }
+
+            if expanded {
+                Divider()
+                if let health = report.availableHealth {
+                    DesktopGlyphsHealthDetails(health: health)
+                } else {
+                    Text(LocalizedStringKey(report.unavailableDetail)).foregroundStyle(.secondary)
+                }
             }
         }
-        .accessibilityIdentifier("desktop.glyphsHealth")
+        .font(.caption)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("desktop.glyphsHealth")
     }
-    @ViewBuilder private func observation(_ time: TimeInterval?) -> some View {
-        if let time {
-            HStack {
-                Text("Observed")
-                Text(Date(timeIntervalSince1970: time), style: .relative)
-            }.foregroundStyle(.secondary)
+
+    private func healthIndicator(_ title: String, symbol: String, color: Color) -> some View {
+        Label {
+            Text(LocalizedStringKey(title))
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(color).accessibilityHidden(true)
         }
+    }
+}
+
+struct DesktopGlyphsHealthReport {
+    let health: DesktopGlyphsHealth?
+    let stale: Bool
+    let checking: Bool
+
+    var availableHealth: DesktopGlyphsHealth? {
+        guard !checking, let health, health.available == true, health.version == 1 else { return nil }
+        return health
+    }
+
+    var pressureValue: String? {
+        guard !stale, let pressure = availableHealth?.signals?["pressure"], pressure.available == true else { return nil }
+        return pressure.value
+    }
+
+    var hasSevereDelay: Bool {
+        !stale && availableHealth?.reasons?.contains("native_dispatch_delayed") == true
+    }
+
+    var footprintLevel: DesktopGlyphsFootprint.Level? {
+        guard !stale, let signal = availableHealth?.signals?["footprint"],
+              signal.available == true, signal.stale != true, let bytes = signal.bytes else { return nil }
+        return DesktopGlyphsFootprint(bytes: bytes, installedMemory: ProcessInfo.processInfo.physicalMemory)?.level
+    }
+
+    var footprintIndicator: (title: String, symbol: String, color: NSColor)? {
+        guard let level = footprintLevel else { return nil }
+        if level == .heavy { return (level.title, "exclamationmark.triangle.fill", .systemOrange) }
+        return (level.title, "checkmark.circle.fill", .systemGreen)
+    }
+
+    var additionalReasons: [String] {
+        (availableHealth?.reasons ?? []).filter {
+            $0 != "memory_pressure_warning" && $0 != "memory_pressure_critical"
+                && $0 != "native_dispatch_slow" && $0 != "native_dispatch_delayed"
+        }
+    }
+
+    var statusTitle: String {
+        if checking { return "Checking Glyphs" }
+        if stale { return "Health observation stale" }
+        guard let health = availableHealth else { return "Health unavailable" }
+        if health.state == "paused" { return health.title }
+        if health.readinessTitle == "Native response delayed" { return health.readinessTitle }
+        if footprintLevel == .heavy { return DesktopGlyphsFootprint.Level.heavy.title }
+        if pressureValue == "warning" || pressureValue == "critical" { return health.pressureTitle }
+        if let reason = additionalReasons.first { return DesktopGlyphsHealth.reasonLabel(reason) }
+        return health.readinessTitle
+    }
+
+    var unavailableDetail: String {
+        checking ? "Collecting health evidence…"
+            : "Health protection is unavailable. Update bridge and sidecar together to enable it."
+    }
+
+    @MainActor @discardableResult
+    func copyToPasteboard() -> Bool {
+        let markdown = markdownReport()
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        return pasteboard.setString(markdown, forType: .string)
+    }
+
+    private func markdownReport() -> String {
+        func label(_ key: String) -> String {
+            NSLocalizedString(key, comment: "Glyphs Health Markdown report")
+        }
+
+        var lines = ["# \(label("Glyphs Health"))", ""]
+        guard let health = availableHealth else {
+            lines += ["**\(label("Status")):** \(label(statusTitle))", "", label(unavailableDetail), ""]
+            return lines.joined(separator: "\n")
+        }
+
+        lines += ["- \(label(stale ? "Showing the last observation." : health.readinessTitle))",
+                  "- \(label(health.pressureTitle))"]
+        if health.state == "paused" { lines.append("- \(label("New heavy work paused"))") }
+        if let pressure = health.signals?["pressure"], pressure.available == true, let time = pressure.observedAt {
+            lines.append("- \(label("Last pressure report")): \(Date(timeIntervalSince1970: time).ISO8601Format())")
+        }
+        lines += additionalReasons.map { "- \(label(DesktopGlyphsHealth.reasonLabel($0)))" }
+
+        if let documents = health.signals?["documents"], documents.available == true {
+            lines += ["", "## \(label("Open documents"))", ""]
+            if let time = documents.observedAt {
+                lines.append("- \(label("Checked at")): \(Date(timeIntervalSince1970: time).ISO8601Format())")
+            }
+            if let count = documents.fontCount { lines.append("- \(label("Open fonts")): \(count)") }
+            if let count = documents.unsavedCount { lines.append("- \(label("Fonts with unsaved changes")): \(count)") }
+            if let count = documents.editTabCount { lines.append("- \(label("Edit tabs")): \(count)") }
+            if documents.complete == false { lines.append("- \(label("Some details could not be checked."))") }
+        }
+        if let footprint = health.signals?["footprint"], footprint.available == true, let bytes = footprint.bytes {
+            lines += ["", "## \(label("Glyphs memory"))", ""]
+            if let time = footprint.observedAt {
+                lines.append("- \(label("Sampled at")): \(Date(timeIntervalSince1970: time).ISO8601Format())")
+            }
+            lines.append("- \(label("Glyphs footprint")): \(formatHealthMemory(bytes))")
+            if let share = formatHealthMemoryShare(bytes) {
+                lines.append("- \(label("Share of installed RAM")): \(share)")
+            }
+            if let level = footprintLevel { lines.append("- \(label(level.title))") }
+            if let growth = footprint.growthBytes {
+                lines.append("- \(healthGrowthLabel(footprint)): \(formatHealthMemory(growth, signed: true))")
+            }
+            if footprint.stale == true { lines.append("- \(label("Memory observation is stale."))") }
+        }
+        if !stale {
+            lines += ["", "## \(label("Agent guidance"))", "", label(health.agentGuidance), ""]
+        }
+        return lines.joined(separator: "\n")
+    }
+}
+
+private func formatHealthMemory(_ bytes: Int64, signed: Bool = false) -> String {
+    let value = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .memory)
+    return signed && bytes > 0 ? "+\(value)" : value
+}
+
+private func formatHealthMemoryShare(_ bytes: Int64) -> String? {
+    guard let footprint = DesktopGlyphsFootprint(bytes: bytes, installedMemory: ProcessInfo.processInfo.physicalMemory)
+    else { return nil }
+    let fraction = footprint.fraction
+    let percent = fraction > 0 && fraction < 0.01
+        ? NSLocalizedString("Less than 1%", comment: "Small share of installed RAM")
+        : fraction.formatted(.percent.precision(.fractionLength(0...1)))
+    return String.localizedStringWithFormat(
+        NSLocalizedString("%@ of %@", comment: "Memory share and total installed RAM"),
+        percent, formatHealthMemory(footprint.installedBytes)
+    )
+}
+
+private func healthGrowthLabel(_ footprint: DesktopGlyphsHealth.Signal) -> String {
+    if let seconds = footprint.growthWindowSeconds {
+        return String.localizedStringWithFormat(
+            NSLocalizedString("Change over %lld sec", comment: "Glyphs footprint trend interval"), Int64(seconds)
+        )
+    }
+    return NSLocalizedString("Change across recent samples", comment: "Glyphs footprint trend from an older bridge")
+}
+
+private struct DesktopGlyphsHealthDetails: View {
+    let health: DesktopGlyphsHealth
+
+    var body: some View {
+        let documents = health.signals?["documents"]
+        let footprint = health.signals?["footprint"]
+        let hasDocuments = documents?.available == true
+        let hasMemory = footprint?.available == true && footprint?.bytes != nil
+
+        VStack(alignment: .leading, spacing: 12) {
+            if hasDocuments || hasMemory {
+                LazyVGrid(columns: [
+                    GridItem(hasDocuments && hasMemory ? .adaptive(minimum: 280) : .flexible(),
+                             spacing: 12, alignment: .topLeading)
+                ], spacing: 12) {
+                    if hasDocuments, let documents { documentGroup(documents) }
+                    if hasMemory, let footprint, let bytes = footprint.bytes { memoryGroup(footprint, bytes: bytes) }
+                }
+            }
+            if let pressure = health.signals?["pressure"], pressure.available == true, let time = pressure.observedAt {
+                Text("Last pressure report \(Text(Date(timeIntervalSince1970: time), style: .relative)) ago")
+                    .foregroundStyle(.secondary)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Agent guidance").fontWeight(.semibold)
+                    .accessibilityAddTraits(.isHeader)
+                Text(LocalizedStringKey(health.agentGuidance)).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func documentGroup(_ documents: DesktopGlyphsHealth.Signal) -> some View {
+        let checked = documents.observedAt.map {
+            Text("Checked \(Text(Date(timeIntervalSince1970: $0), style: .relative)) ago")
+        }
+        return group("Open documents", observation: checked) {
+            if let count = documents.fontCount {
+                metric("Open fonts", value: Text(count, format: .number))
+            }
+            if let count = documents.unsavedCount {
+                metric("Fonts with unsaved changes", value: documents.complete == false
+                    ? Text("\(count) found") : Text(count, format: .number))
+            }
+            if let count = documents.editTabCount {
+                metric("Edit tabs", value: documents.complete == false
+                    ? Text("\(count) counted") : Text(count, format: .number))
+            }
+            if documents.complete == false {
+                Text("Some details could not be checked.").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func memoryGroup(_ footprint: DesktopGlyphsHealth.Signal, bytes: Int64) -> some View {
+        let sampled = footprint.observedAt.map {
+            Text("Sampled \(Text(Date(timeIntervalSince1970: $0), style: .relative)) ago")
+        }
+        return group("Glyphs memory", observation: sampled) {
+            metric("Glyphs footprint", value: Text(formatHealthMemory(bytes)))
+            if let share = formatHealthMemoryShare(bytes) {
+                metric("Share of installed RAM", value: Text(share))
+            }
+            if let growth = footprint.growthBytes {
+                metric(LocalizedStringKey(healthGrowthLabel(footprint)), value: Text(formatHealthMemory(growth, signed: true)))
+            }
+            if footprint.stale == true {
+                Text("Memory observation is stale.").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func group<Content: View>(
+        _ title: LocalizedStringKey, observation: Text?, @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            let heading = Text(title).fontWeight(.semibold).accessibilityAddTraits(.isHeader)
+            if let observation {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline) {
+                        heading
+                        Spacer(minLength: 8)
+                        observation.foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        heading
+                        observation.foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                heading
+            }
+            Divider()
+            content()
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func metric(_ title: LocalizedStringKey, value: Text) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(title)
+            Spacer(minLength: 0)
+            value.monospacedDigit().fixedSize(horizontal: true, vertical: false)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -167,6 +440,7 @@ struct DesktopTasksView: View {
                             }
                         }
                         .listStyle(.inset)
+                        .contentMargins(.top, DesktopDashboardLayout.pageTopPadding - 8, for: .scrollContent)
                         .focused($taskListFocused)
                         .scrollContentBackground(.hidden)
                         .background(Color(nsColor: .controlBackgroundColor))
@@ -178,7 +452,8 @@ struct DesktopTasksView: View {
                         if let task {
                             details(task)
                                 .frame(maxWidth: 720, alignment: .leading)
-                                .padding(.horizontal, 28).padding(.vertical, 20)
+                                .padding([.horizontal, .bottom], DesktopDashboardLayout.pagePadding)
+                                .padding(.top, DesktopDashboardLayout.pageTopPadding)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             ContentUnavailableView("Select a Task", systemImage: "list.bullet")
@@ -191,7 +466,8 @@ struct DesktopTasksView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .padding(.horizontal, DesktopSetupLayout.contentPadding)
+        .padding(.leading, 16)
+        .padding(.trailing, DesktopDashboardLayout.pagePadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { desktop.setVisible("tasks", true) }
         .onDisappear { desktop.setVisible("tasks", false) }

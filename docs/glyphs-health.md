@@ -2,7 +2,8 @@
 
 Glyphs Health supplies shared evidence to the companion and agents, with
 admission protection at MCP operation boundaries. It works with the companion
-closed. See the [2.6.0 release qualification](../V2.6.0-RELEASE.md) for the tested scope.
+closed. The companion layout and Markdown report changes are described in the
+[2.7.0 candidate notes](../V2.7.0-RELEASE.md).
 
 ## Passive observation
 
@@ -10,8 +11,13 @@ There is one resource observer per bridge process. Public Darwin APIs collect
 physical footprint and deliver memory-pressure notifications outside the main
 thread. Pressure starts unknown; missing notifications never establish normal
 pressure. No private sysctl, subprocess, full-font scan, copy or outline hash is
-used. History retains at most 60 footprint samples. Footprint/growth is
-informational, not a refusal threshold.
+used. History retains at most 60 footprint samples. The companion shows Glyphs'
+footprint as a share of installed RAM. The growth reading uses an observed
+interval of 90 to 120 seconds and shows its actual duration. Both are context
+for the separate macOS pressure and Glyphs responsiveness readings.
+The companion uses green below 15% of installed RAM and orange for a heavy
+footprint at 15% or more. Below 5% is labeled light and 5% to below 15% is
+labeled moderate. Red indicates critical macOS pressure or severe Glyphs delay.
 
 Native inventory inspects at most 128 open fonts within a 2 ms metadata budget;
 counts of dirty documents and Edit tabs can therefore be partial. Font count
@@ -57,13 +63,16 @@ it does not diagnose a frozen Glyphs application.
 
 ## Admission and recovery
 
-Eight open fonts triggers a soft warning by default. Settings → Glyphs Health
-changes the installation-wide warning threshold (1–128) without restarting.
+Settings → Glyphs Health can enable an installation-wide open-font warning
+(1–128) without restarting. Font count is context when the preference is off.
 The atomic `jobs/health-policy.json` uses version 1 and `fontWarningThreshold`.
 An invalid policy retains the last valid threshold and exposes unavailable
-policy evidence. Removing the file restores the default.
+policy evidence. Turning the preference off removes the override.
 
 OS warning pressure or a pending native dispatch over 2 seconds yields caution.
+Under elevated system pressure, routine edits can continue. Tool advisories
+recommend running large document opens, imports, exports, comparisons or
+whole-font snapshots one at a time, according to the requested work.
 Critical pressure or a pending dispatch over 10 seconds pauses new expensive
 work. Resume requires 30 seconds without the triggering condition and resolution
 of native dispatch delay. Losing the pressure observer cannot clear a known

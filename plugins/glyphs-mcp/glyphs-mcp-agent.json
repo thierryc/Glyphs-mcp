@@ -1,7 +1,7 @@
 {
   "name": "glyphs-mcp",
-  "releaseVersion": "2.6.0",
+  "releaseVersion": "2.7.0",
   "schemaVersion": 1,
-  "skillsDigest": "sha256:4f16648c2d7c81f9d678ed70b337eb147f1c0cd50574c55ad447f2a2ed1829aa",
-  "version": "2.6.0"
+  "skillsDigest": "sha256:13e80299a8ce928f64889b0d30281042d242c8bfe5c994f1ae776e8179d17b99",
+  "version": "2.7.0"
 }

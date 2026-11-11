@@ -10,9 +10,11 @@ five minutes. Do not poll status before every action. Capabilities remain
 session-scoped while health observations age independently. Missing, stale or
 partial signals are unavailable evidence; they never establish a healthy Mac.
 
-Normal: continue within the requested scope. Caution: reuse open documents,
-process batch inputs sequentially and avoid unnecessary new tabs or font copies.
-Paused: defer new expensive work, respect `retryAfterSeconds`, and explain the
+Continue within the requested scope when Glyphs responds normally. Under elevated
+system memory pressure, continue routine work and follow the tool's guidance for
+large imports, exports, comparisons or whole-font snapshots. When Glyphs is slow
+to respond, wait for the current operation before starting another.
+When admission is paused, defer new expensive work, respect `retryAfterSeconds`, and explain the
 meaningful delay once. An open-font warning threshold alone never blocks work.
 The server owns thresholds and recovery timing; do not reproduce them in scripts.
 

@@ -13,6 +13,9 @@ final class DesktopModel: ObservableObject {
     @Published private(set) var controlAction: String?
     var controlling: Bool { controlAction != nil }
     var controlProgress: String? { DesktopDiagnostics.controlProgress(controlAction) }
+    var healthReport: DesktopGlyphsHealthReport {
+        DesktopGlyphsHealthReport(health: status?.health, stale: stale, checking: status?.bridge.checking == true)
+    }
     var statusSymbol: String { DesktopDiagnostics.statusSymbol(running: serviceRunning, stale: stale, status: status) }
     var statusColor: Color {
         switch DesktopDiagnostics.statusTone(running: serviceRunning, stale: stale, status: status) {

@@ -300,8 +300,11 @@ struct DesktopFocusedSetup: View {
     var body: some View {
         ScrollViewReader { scroll in
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    Text(LocalizedStringKey(section == .companions ? "Companion Plugins" : "AI Agents")).font(.largeTitle.bold())
+                VStack(alignment: .leading, spacing: DesktopDashboardLayout.sectionSpacing) {
+                    if #unavailable(macOS 26.0) {
+                        Text(LocalizedStringKey(section == .companions ? "Companion Plugins" : "AI Agents"))
+                            .font(.largeTitle.bold())
+                    }
                     Text(LocalizedStringKey(section == .companions ? "Manage optional Glyphs plugins. The bundled inspectors require the Glyphs MCP bridge." : "Configure each AI agent independently. Download the client application separately when needed."))
                         .foregroundStyle(.secondary)
                     Button("Open Setup", action: showSetup)
@@ -310,9 +313,7 @@ struct DesktopFocusedSetup: View {
                     }
                     InstallationView(section: section)
                 }
-                .padding(DesktopSetupLayout.contentPadding)
-                .frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)
-                .frame(maxWidth: .infinity)
+                .modifier(DesktopDashboardPageLayout())
             }
             .onAppear {
                 if let agentToReveal { scroll.scrollTo(agentToReveal, anchor: .top) }
@@ -418,9 +419,12 @@ struct DesktopSkillsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: DesktopDashboardLayout.sectionSpacing) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Skills").font(.largeTitle.bold()); Spacer()
+                    if #unavailable(macOS 26.0) {
+                        Text("Skills").font(.largeTitle.bold())
+                        Spacer()
+                    }
                     Button("Refresh") { model.load(refresh: true) }.disabled(model.busy)
                     Button("Add from GitHub…") { showingImport = true }.disabled(model.busy || installer.operationsBusy)
                     DesktopTextLink("Contribute", destination: SkillCatalog.contributionURL)
@@ -450,8 +454,8 @@ struct DesktopSkillsView: View {
                     }
                 }
                 if model.filtered.isEmpty && !model.busy && !model.scanning { Text("No matching skills.").foregroundStyle(.secondary) }
-            }.padding(DesktopSetupLayout.contentPadding)
-                .frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading).frame(maxWidth: .infinity)
+            }
+            .modifier(DesktopDashboardPageLayout())
         }
         .task {
             model.prepareProjects(projects)

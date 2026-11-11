@@ -1,8 +1,12 @@
-# Glyphs MCP Desktop 2.6.0
+# Glyphs MCP Desktop 2.7.0 candidate
 
-**Stable · desktop build 76 · Glyphs 4.** [Download 2.6.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0)
+Local build 91 redesigns the Glyphs Health card in Setup, adds Markdown report
+copying to Setup and the menu bar, and introduces a Notes-style macOS 26 header.
+See the [2.7.0 candidate notes](V2.7.0-RELEASE.md).
 
-[Glyphs Health](docs/glyphs-health.md) shows editor load and defers expensive work during critical pressure. Stopped tasks move to Finished when native work and recovery end, and retain their recorded outcome. The release also adds Small and Petite Caps, polygon fitting in Path Doctor, and clearer Skills management. [Release notes and qualification](V2.6.0-RELEASE.md)
+**Stable · desktop build 76 · Glyphs 4.** [Download 2.6.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0).
+This release adds [Glyphs Health and workload protection](docs/glyphs-health.md),
+including passive status, automatic agent advisories and a soft font budget.
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
@@ -109,7 +113,7 @@ the original beta guides and plans are preserved in the [v2.0.0 source tag](http
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The published disk image is `Glyphs-MCP-2.6.0.dmg`.
+in [macos-installer/README.md](macos-installer/README.md). The stable disk image is available from the [published release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0).
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 For the next development cycle, see [proposed priorities](docs/maintenance/next-evolution.md) and [Anotherplanet/AP.CX page updates](docs/maintenance/site-updates-2.0.4.md).

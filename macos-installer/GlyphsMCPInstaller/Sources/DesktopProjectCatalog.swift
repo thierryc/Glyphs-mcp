@@ -21,47 +21,45 @@ struct DesktopProjectActions: View {
 struct DesktopProjectCatalog: View {
     @ObservedObject var model: DesktopProjectsModel
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 32) {
-                    VStack(spacing: 16) {
-                        Image(systemName: "folder.badge.plus")
-                            .font(.system(size: 42, weight: .regular)).symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(Color.accentColor).frame(width: 82, height: 82)
-                            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                        Text("Start your next font project")
-                            .font(.system(size: 32, weight: .bold)).multilineTextAlignment(.center)
-                        Text("Choose a template or open a folder. Keep your font sources, proofs, and exports in one place.")
-                            .font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                            .lineSpacing(3).frame(maxWidth: 470)
-                        HStack(spacing: 12) {
-                            Button(action: model.chooseProject) { Label("Open Project…", systemImage: "folder") }
-                                .buttonStyle(DesktopSecondaryButtonStyle())
-                            Button { model.create() } label: { Label("New Project…", systemImage: "plus") }
-                                .buttonStyle(.borderedProminent)
-                        }.controlSize(.large).padding(.top, 4)
-                    }.frame(maxWidth: .infinity)
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Templates").font(.title3.bold())
-                            Spacer()
-                            Button(action: model.refreshTemplates) { Label("Refresh", systemImage: "arrow.clockwise") }
-                                .disabled(model.loadingTemplates).help("Refresh the template catalog")
-                            Button(action: model.chooseTemplate) { Label("Add Local Template…", systemImage: "plus") }
-                                .help("Add a local template folder")
+        ScrollView {
+            VStack(spacing: DesktopDashboardLayout.sectionSpacing) {
+                VStack(spacing: 16) {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.system(size: 42, weight: .regular)).symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Color.accentColor).frame(width: 82, height: 82)
+                        .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    Text("Start your next font project")
+                        .font(.system(size: 32, weight: .bold)).multilineTextAlignment(.center)
+                    Text("Choose a template or open a folder. Keep your font sources, proofs, and exports in one place.")
+                        .font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        .lineSpacing(3).frame(maxWidth: 470)
+                    HStack(spacing: 12) {
+                        Button(action: model.chooseProject) { Label("Open Project…", systemImage: "folder") }
+                            .buttonStyle(DesktopSecondaryButtonStyle())
+                        Button { model.create() } label: { Label("New Project…", systemImage: "plus") }
+                            .buttonStyle(.borderedProminent)
+                    }.controlSize(.large).padding(.top, 4)
+                }.frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("Templates").font(.title3.bold())
+                        Spacer()
+                        Button(action: model.refreshTemplates) { Label("Refresh", systemImage: "arrow.clockwise") }
+                            .disabled(model.loadingTemplates).help("Refresh the template catalog")
+                        Button(action: model.chooseTemplate) { Label("Add Local Template…", systemImage: "plus") }
+                            .help("Add a local template folder")
+                    }
+                    if !model.message.isEmpty {
+                        Label(model.message, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.orange)
+                    }
+                    SetupCardGrid {
+                        ForEach(model.templateCatalog) { entry in
+                            DesktopTemplateCard(model: model, entry: entry)
                         }
-                        if !model.message.isEmpty {
-                            Label(model.message, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.orange)
-                        }
-                        SetupCardGrid {
-                            ForEach(model.templateCatalog) { entry in
-                                DesktopTemplateCard(model: model, entry: entry)
-                            }
-                        }
-                    }.frame(maxWidth: 760)
-                }.padding(36).frame(maxWidth: 850).frame(maxWidth: .infinity)
-                    .frame(minHeight: geometry.size.height, alignment: .center)
+                    }
+                }
             }
+            .modifier(DesktopDashboardPageLayout())
         }
     }
 }

@@ -284,10 +284,10 @@ def test_desktop_layout_minimums_keep_navigation_and_diff_controls_visible():
     delegate = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopAppDelegate.swift').read_text()
     git_workspace = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
     assert 'static let minimumWidth: CGFloat = 1_040' in content
-    assert 'static let sidebarMinimumWidth: CGFloat = 220' in content
+    assert 'static let sidebarMinimumWidth: CGFloat = 190' in content
     assert '.frame(maxWidth: .infinity, alignment: .leading)' in content
-    assert 'static let contentMaximumWidth: CGFloat = 850' in content
-    assert '.frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)' in content
+    assert 'static let pageMaximumWidth: CGFloat = 850' in content
+    assert '.frame(maxWidth: DesktopDashboardLayout.pageMaximumWidth, alignment: .leading)' in content
     assert '.frame(maxWidth: .infinity, alignment: .center)' in content
     assert '.frame(maxWidth: .infinity, maxHeight: .infinity)' in content
     assert 'window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth' in delegate

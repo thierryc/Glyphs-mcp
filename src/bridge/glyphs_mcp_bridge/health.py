@@ -16,7 +16,7 @@ class HealthMonitor:
         self.observed_mono = {}
         self.history = deque(maxlen=60)
         self.revision = 0
-        self.budget = contract.DEFAULT_FONT_BUDGET
+        self.budget = None
         self.was_paused, self.recovered_at = False, None
         self.pending = {}
         self.observation_pending = False
@@ -100,6 +100,17 @@ class HealthMonitor:
         except Exception as exc:
             self.record('documents', available=False, complete=False, error=str(exc))
 
+    def observe_footprint(self, value, now):
+        self.history.append((now, value['bytes']))
+        baseline_time, baseline_bytes = next(
+            sample for sample in self.history if now - sample[0] <= contract.GROWTH_WINDOW_SECONDS
+        )
+        span = now - baseline_time
+        if span >= 90:
+            value = dict(value, growthBytes=value['bytes'] - baseline_bytes,
+                         growthWindowSeconds=int(span))
+        self.record('footprint', available=True, **value, sampleCount=len(self.history))
+
     def start(self, adapter, schedule, active, *, resources_factory=None, policy_path=None):
         if self.thread is not None:
             return
@@ -135,10 +146,7 @@ class HealthMonitor:
                 if now >= next_sample:
                     if self.resources:
                         try:
-                            value = self.resources.footprint()
-                            self.history.append(dict(at=self.wall(), **value))
-                            self.record('footprint', available=True, **value,
-                                sampleCount=len(self.history), growthBytes=value['bytes'] - self.history[0]['bytes'])
+                            self.observe_footprint(self.resources.footprint(), now)
                         except Exception as exc:
                             self.record('footprint', available=False, error=str(exc))
                     if policy_path:
@@ -153,7 +161,7 @@ class HealthMonitor:
                                 self.budget = contract.font_budget(value['fontWarningThreshold'])
                             self.record('policy', available=True)
                         except FileNotFoundError:
-                            with self.lock: self.budget = contract.DEFAULT_FONT_BUDGET
+                            with self.lock: self.budget = None
                         except Exception as exc:
                             self.record('policy', available=False, error=str(exc))
                     next_sample = now + interval

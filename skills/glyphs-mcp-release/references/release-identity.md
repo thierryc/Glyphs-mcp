@@ -5,7 +5,7 @@ Work from the intended lean desktop checkout. Read `release.json`, run
 `skills/manifest.json` and the candidate manifest. Do not infer source, installed
 or signed-release identity from each other.
 
-The current source identity is product **2.6.0**, installer build **76**,
+The current source identity is product **2.7.0**, installer build **91**,
 stable channel. Its catalog contains twenty-one data/action tools plus
 the optional read-only `show_edit_workflow` display tool, with fourteen managed
 skills. `list_tasks` is passive and does not execute or resolve workflows.
@@ -14,10 +14,9 @@ See `V2.5.0-RELEASE.md` for the earlier qualification and publication status, an
 `V2.5.0-PREPARATION.md` for the historical preparation scope. The previous
 2.4.0 baseline retains its qualification in `V2.4.0-RELEASE.md`.
 
-The published stable baseline is **2.4.0/build 71**, under signed tag `v2.4.0`,
-with twenty-one data/action tools plus one optional display tool. Preserve its
-signed feeds and assets. Its signing, notarization, installation and public
-availability are recorded in `V2.4.0-RELEASE.md`; historical evidence retains its original artifact scope.
+The published stable baseline is **2.6.0/build 76**, under tag `v2.6.0`.
+Preserve its published feeds and assets. See `V2.7.0-RELEASE.md` for the local
+candidate and the scope of its verification.
 The current development catalog has up to 16
 capability-gated job kinds. The earlier **2.0.4/build 61** baseline retains twenty MCP tools and up to 13 capability-gated job kinds. Sidecar and bridge product versions are coordinated; their code hashes
 normally differ. The lean interface is `glyphs-mcp-sidecar`, interface revision

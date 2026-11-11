@@ -2,7 +2,7 @@
 title: The v2 tools
 ---
 
-Glyphs MCP **2.4.0** provides twenty-one data/action tools plus the optional `show_edit_workflow` display tool, including save-free `open_edit_tab` and `duplicate_document`. Desktop build **71**, coordinated sidecar/bridge product version `2.4.0`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent component identities and advertised capabilities; see [version and identity](version-identity.mdx).
+Glyphs MCP **2.7.0** provides twenty-one data/action tools plus the optional `show_edit_workflow` display tool, including save-free `open_edit_tab` and `duplicate_document`. Desktop build **91**, coordinated sidecar/bridge product version `2.7.0`, lean interface revision `1` and bridge protocol `1` identify different parts of the release. The negotiated MCP transport version is separate. Inspect `get_status` for independent component identities and advertised capabilities; see [version and identity](version-identity.mdx).
 
 | Tool | Arguments | Purpose |
 | --- | --- | --- |
@@ -883,7 +883,7 @@ filter identities without a font or execution. It reports `available`, `items`,
 `displayName` and nullable `version`; at most 256 are returned. Without the negotiated capability, this additive inventory is omitted. Installed presence does not qualify an execution
 adapter; no generic filter executor or RMX command is added.
 
-## Glyphs Health (2.6.0)
+## Glyphs Health
 
 `get_status` reports cached `health` and negotiated `healthCapabilities`
 (`health.snapshot.v1`, `health.admission.v1`). Status reads never force a native
@@ -900,5 +900,5 @@ authorization. Direct tools return `resource_pressure` with
 Existing execution, saving, cancellation and recovery retain their original
 semantics. Missing health support does not imply protection.
 
-See the repository’s Glyphs Health architecture and 2.6.0 release record for
+See the repository’s Glyphs Health architecture and 2.7.0 candidate record for
 the current qualification scope. No public tool or protocol revision is added.

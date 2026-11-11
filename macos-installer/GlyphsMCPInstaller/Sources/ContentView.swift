@@ -7,14 +7,27 @@ enum DesktopDashboardLayout {
     static let initialHeight: CGFloat = 780
     static let minimumWidth: CGFloat = 1_040
     static let minimumHeight: CGFloat = 600
-    static let sidebarMinimumWidth: CGFloat = 220
-    static let sidebarIdealWidth: CGFloat = 250
-    static let sidebarMaximumWidth: CGFloat = 320
+    static let sidebarMinimumWidth: CGFloat = 190
+    static let sidebarIdealWidth: CGFloat = 210
+    static let sidebarMaximumWidth: CGFloat = 240
+    static let pageMaximumWidth: CGFloat = 850
+    static let pagePadding: CGFloat = 32
+    static let sectionSpacing: CGFloat = 24
+
+    static var pageTopPadding: CGFloat {
+        if #available(macOS 26.0, *) { return 12 }
+        return pagePadding
+    }
 }
 
-enum DesktopSetupLayout {
-    static let contentMaximumWidth: CGFloat = 850
-    static let contentPadding: CGFloat = 32
+struct DesktopDashboardPageLayout: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding([.horizontal, .bottom], DesktopDashboardLayout.pagePadding)
+            .padding(.top, DesktopDashboardLayout.pageTopPadding)
+            .frame(maxWidth: DesktopDashboardLayout.pageMaximumWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
 }
 
 struct ContentView: View {
@@ -25,6 +38,21 @@ struct ContentView: View {
     @AppStorage("projectsExpanded") private var projectsExpanded = true
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var agentToReveal: InstallerClientKind?
+
+    private var dashboardTitle: Text {
+        if #available(macOS 26.0, *) {
+            switch projects.navigation.destination {
+            case .setup: return Text("Setup")
+            case .tasks: return Text("Tasks")
+            case .companions: return Text("Companion Plugins")
+            case .agents: return Text("AI Agents")
+            case .skills: return Text("Skills")
+            case .templates: return Text("Project")
+            case .project(let path): return Text(verbatim: projects.navigation.name(for: path))
+            }
+        }
+        return Text(verbatim: DesktopIdentity.applicationTitle)
+    }
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -71,13 +99,10 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .clipped()
-                VStack(spacing: 4) {
-                    DesktopHealthStatus().padding(.horizontal).padding(.top, 12)
-                    Button { desktop.showWelcome() } label: {
-                        Label("Welcome & Support", systemImage: "heart.circle").lineLimit(1)
-                            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-                    }.buttonStyle(.plain).padding()
-                }
+                Button { desktop.showWelcome() } label: {
+                    Label("Welcome & Support", systemImage: "heart.circle").lineLimit(1)
+                        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                }.buttonStyle(.plain).padding()
             }
             .modifier(DesktopSidebarToolbarDefaults())
             .frame(minWidth: DesktopDashboardLayout.sidebarMinimumWidth)
@@ -87,41 +112,18 @@ struct ContentView: View {
                 max: DesktopDashboardLayout.sidebarMaximumWidth
             )
         } detail: {
-            switch projects.navigation.destination {
-            case .setup: DesktopSetup { projects.select($0) }
-            case .tasks: DesktopTasksView()
-            case .companions: DesktopFocusedSetup(section: .companions) { projects.select(.setup) }
-            case .agents:
-                DesktopFocusedSetup(section: .agents, agentToReveal: agentToReveal) { projects.select(.setup) }
-                    .onDisappear { agentToReveal = nil }
-            case .skills:
-                DesktopSkillsView(model: skills, installer: installer, projects: projects) {
-                    agentToReveal = .cursor
-                    projects.select(.agents)
+            dashboardDetail
+                .overlay {
+                    if #available(macOS 26.0, *) {
+                        DesktopDashboardHeaderBackdrop()
+                    }
                 }
-            case .templates: DesktopProjectCatalog(model: projects)
-            case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
-            }
         }
         .onAppear { handleSetupRequest(); handleTasksRequest() }
         .onChange(of: desktop.tasksRequested) { _, _ in handleTasksRequest() }
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
-        .navigationTitle(DesktopIdentity.applicationTitle)
-        .modifier(DesktopSidebarToggle(columnVisibility: $columnVisibility))
-        .toolbar {
-            if #available(macOS 26.0, *) {
-                ToolbarItem(placement: .primaryAction) {
-                    DesktopServerStatusIndicator()
-                }
-                // The status pill supplies its own background. A plain button
-                // style alone does not remove the toolbar's shared background.
-                .sharedBackgroundVisibility(.hidden)
-            } else {
-                ToolbarItem(placement: .primaryAction) {
-                    DesktopServerStatusIndicator()
-                }
-            }
-        }
+        .navigationTitle(dashboardTitle)
+        .modifier(DesktopDashboardChrome(columnVisibility: $columnVisibility))
         .frame(minWidth: DesktopDashboardLayout.minimumWidth,
                minHeight: DesktopDashboardLayout.minimumHeight)
         .task { projects.inspect(); await projects.loadTemplates() }
@@ -130,6 +132,24 @@ struct ContentView: View {
         }
         .sheet(item: $projects.editing) { editing in
             DesktopProjectSettings(model: projects, path: editing.id)
+        }
+    }
+
+    @ViewBuilder private var dashboardDetail: some View {
+        switch projects.navigation.destination {
+        case .setup: DesktopSetup { projects.select($0) }
+        case .tasks: DesktopTasksView()
+        case .companions: DesktopFocusedSetup(section: .companions) { projects.select(.setup) }
+        case .agents:
+            DesktopFocusedSetup(section: .agents, agentToReveal: agentToReveal) { projects.select(.setup) }
+                .onDisappear { agentToReveal = nil }
+        case .skills:
+            DesktopSkillsView(model: skills, installer: installer, projects: projects) {
+                agentToReveal = .cursor
+                projects.select(.agents)
+            }
+        case .templates: DesktopProjectCatalog(model: projects)
+        case .project(let path): DesktopProjectWorkspace(model: projects, path: path)
         }
     }
 
@@ -195,53 +215,184 @@ private struct DesktopServerStatusIndicator: View {
 
     private var title: String { desktop.controlProgress ?? desktop.title }
 
-    var body: some View {
-        Button { desktop.requestSetup() } label: {
-            HStack(spacing: 6) {
-                if desktop.controlling {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Image(systemName: desktop.statusSymbol)
-                        .foregroundStyle(desktop.statusColor)
-                        .accessibilityHidden(true)
-                }
-                Text("MCP").fontWeight(.medium)
-                Text(LocalizedStringKey(title)).foregroundStyle(.secondary)
-            }
-            .font(.callout)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(.quaternary, in: Capsule())
+    private var healthNotice: (title: String, symbol: String, color: Color)? {
+        let report = desktop.healthReport
+        guard !report.stale, let health = report.availableHealth else { return nil }
+        if report.pressureValue == "critical" || report.hasSevereDelay {
+            return (report.statusTitle, "pause.circle.fill", .red)
         }
-        .buttonStyle(.plain)
+        if report.footprintLevel == .heavy {
+            return (DesktopGlyphsFootprint.Level.heavy.title, "exclamationmark.triangle.fill", .orange)
+        }
+        switch health.state {
+        case "caution": return (report.statusTitle, "info.circle", .secondary)
+        case "paused": return (report.statusTitle, "pause.circle.fill", .secondary)
+        default: return nil
+        }
+    }
+
+    private var accessibilityTitle: String {
+        let serverStatus = NSLocalizedString(title, comment: "Server status")
+        let server = "Glyphs MCP: \(serverStatus)"
+        guard let healthNotice else { return server }
+        let health = NSLocalizedString("Glyphs Health", comment: "Health status title")
+        let healthStatus = NSLocalizedString(healthNotice.title, comment: "Health status")
+        return "\(server), \(health): \(healthStatus)"
+    }
+
+    var body: some View {
+        Group {
+            if #available(macOS 26.0, *) {
+                statusButton.buttonStyle(DesktopHeaderGlassStyle(horizontalPadding: 14))
+            } else {
+                statusButton.buttonStyle(.plain)
+            }
+        }
         .help("Open Setup")
-        .accessibilityLabel(Text("Glyphs MCP") + Text(": ") + Text(LocalizedStringKey(title)))
+        .accessibilityLabel(Text(verbatim: accessibilityTitle))
         .accessibilityIdentifier("desktop.serverStatus")
+    }
+
+    private var statusButton: some View {
+        Button { desktop.requestSetup() } label: {
+            if #available(macOS 26.0, *) {
+                statusLabel
+            } else {
+                statusLabel
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.quaternary, in: Capsule())
+            }
+        }
+    }
+
+    private var statusLabel: some View {
+        HStack(spacing: 6) {
+            if desktop.controlling {
+                ProgressView().controlSize(.small)
+            } else {
+                Image(systemName: desktop.statusSymbol)
+                    .foregroundStyle(desktop.statusColor)
+                    .accessibilityHidden(true)
+            }
+            Text("MCP").fontWeight(.medium)
+            Text(LocalizedStringKey(title)).foregroundStyle(.secondary)
+            if let healthNotice {
+                Divider().frame(height: 12).accessibilityHidden(true)
+                Image(systemName: healthNotice.symbol)
+                    .foregroundStyle(healthNotice.color)
+                    .accessibilityHidden(true)
+            }
+        }
+        .font(.callout)
+        .lineLimit(1)
+        .fixedSize()
     }
 }
 
-private struct DesktopSidebarToggle: ViewModifier {
+@available(macOS 26.0, *)
+struct DesktopDashboardActions: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            DesktopTroubleshootingButton()
+                .buttonStyle(DesktopHeaderGlassStyle(horizontalPadding: 0))
+            DesktopServerStatusIndicator()
+        }
+        .padding(.trailing, 10)
+        .fixedSize()
+    }
+}
+
+@available(macOS 26.0, *)
+private struct DesktopHeaderGlassStyle: ButtonStyle {
+    let horizontalPadding: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, horizontalPadding)
+            .frame(minWidth: 28, minHeight: 28)
+            .background {
+                Color.clear
+                    .glassEffect(.regular, in: Capsule())
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.07), radius: 2, y: 1)
+            }
+            .contentShape(Capsule())
+            .opacity(configuration.isPressed ? 0.8 : 1)
+    }
+}
+
+private struct DesktopTroubleshootingButton: View {
+    @EnvironmentObject private var installer: InstallerViewModel
+
+    var body: some View {
+        Button { installer.showTroubleshootingLogs?() } label: {
+            Label("Open Troubleshooting Logs", systemImage: "doc.text.magnifyingglass")
+                .labelStyle(.iconOnly)
+        }
+        .help("Open Troubleshooting Logs")
+    }
+}
+
+private struct DesktopDashboardChrome: ViewModifier {
     @Binding var columnVisibility: NavigationSplitViewVisibility
 
     @ViewBuilder func body(content: Content) -> some View {
-        content.toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
-                } label: {
-                    Label(LocalizedStringKey(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar"), systemImage: "sidebar.left")
+        if #available(macOS 26.0, *) {
+            content
+                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        } else {
+            content.toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+                    } label: {
+                        Label(LocalizedStringKey(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar"), systemImage: "sidebar.left")
+                    }
+                    .help(LocalizedStringKey(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar"))
                 }
-                .help(LocalizedStringKey(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar"))
+                ToolbarItem(placement: .primaryAction) {
+                    DesktopServerStatusIndicator()
+                }
             }
         }
+    }
+}
+
+private struct DesktopDashboardHeaderBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    private var surface: Color {
+        colorScheme == .light ? .white : Color(nsColor: .windowBackgroundColor)
+    }
+
+    var body: some View {
+        ZStack {
+            if !reduceTransparency {
+                Rectangle().fill(.regularMaterial)
+            }
+            LinearGradient(colors: [surface, surface.opacity(reduceTransparency ? 1 : 0.88)],
+                           startPoint: .top, endPoint: .bottom)
+        }
+        .frame(height: 64)
+        .mask {
+            LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(.container, edges: .top)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
 private struct DesktopSidebarToolbarDefaults: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
-        content.toolbar(removing: .sidebarToggle)
+        if #available(macOS 26.0, *) {
+            content
+        } else {
+            content.toolbar(removing: .sidebarToggle)
+        }
     }
 }
 
@@ -252,19 +403,13 @@ struct DesktopSetup: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: DesktopDashboardLayout.sectionSpacing) {
+                if #unavailable(macOS 26.0) {
+                    HStack(alignment: .firstTextBaseline) {
                         Text("Setup").font(.largeTitle.bold())
-                        Text("Install and manage Glyphs MCP from one place.").foregroundStyle(.secondary)
+                        Spacer()
+                        DesktopTroubleshootingButton().buttonStyle(.borderless)
                     }
-                    Spacer()
-                    Button { installer.showTroubleshootingLogs?() } label: {
-                        Image(systemName: "doc.text.magnifyingglass")
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Open Troubleshooting Logs")
-                    .help("Open Troubleshooting Logs")
                 }
                 DesktopInitializationStatus()
                 GroupBox {
@@ -279,6 +424,7 @@ struct DesktopSetup: View {
                             Spacer()
                             DesktopServerButton()
                         }
+                        DesktopConnectionStatus()
                         if !desktop.notice.isEmpty { Text(desktop.notice).font(.callout).foregroundStyle(.secondary) }
                         if desktop.needsGlyphsRecovery {
                             Text("Bring Glyphs to the front and finish any startup, trial or plug-in dialogs. Then return here and choose Refresh. If there is no pending dialog, open Troubleshooting Logs.")
@@ -292,8 +438,10 @@ struct DesktopSetup: View {
                         if desktop.status?.worker.available == false {
                             Text("Glyphs worker unavailable").font(.caption).foregroundStyle(.secondary)
                         }
-                        DesktopGlyphsHealthView(health: desktop.status?.health, stale: desktop.stale, checking: desktop.status?.bridge.checking == true)
                     }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                DesktopCard {
+                    DesktopGlyphsHealthView(report: desktop.healthReport)
                 }
                 if installer.application != nil {
                     DesktopPythonSetup()
@@ -319,9 +467,7 @@ struct DesktopSetup: View {
                     .font(.callout).foregroundStyle(.secondary)
                 InstallationView()
             }
-            .padding(DesktopSetupLayout.contentPadding)
-            .frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .modifier(DesktopDashboardPageLayout())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { desktop.setVisible("setup", true); installer.setSetupVisible(true) }

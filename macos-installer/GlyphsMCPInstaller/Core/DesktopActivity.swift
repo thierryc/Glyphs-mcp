@@ -135,6 +135,7 @@ public struct DesktopGlyphsHealth: Decodable, Equatable {
     public struct Signal: Decodable, Equatable {
         public let available: Bool?
         public let observedAt: TimeInterval?
+        public let ageSeconds: Double?
         public let stale: Bool?
         public let complete: Bool?
         public let fontCount: Int?
@@ -142,6 +143,7 @@ public struct DesktopGlyphsHealth: Decodable, Equatable {
         public let editTabCount: Int?
         public let bytes: Int64?
         public let growthBytes: Int64?
+        public let growthWindowSeconds: Int?
         public let value: String?
         public let pendingSeconds: Double?
         public let schedulingSeconds: Double?
@@ -153,6 +155,30 @@ public struct DesktopGlyphsHealth: Decodable, Equatable {
     public let state: String
     public let signals: [String: Signal]?
     public let reasons: [String]?
+    public var pressureTitle: String {
+        guard let pressure = signals?["pressure"], pressure.available == true else {
+            return "System memory pressure is unknown."
+        }
+        switch pressure.value {
+        case "normal": return "Mac memory pressure is normal"
+        case "warning": return "Mac memory pressure is elevated"
+        case "critical": return "Mac memory pressure is critical"
+        default: return "System memory pressure is unknown."
+        }
+    }
+    public var readinessTitle: String {
+        if reasons?.contains(where: { $0 == "native_dispatch_slow" || $0 == "native_dispatch_delayed" }) == true {
+            return "Native response delayed"
+        }
+        guard let dispatch = signals?["dispatch"], dispatch.available == true, dispatch.stale != true,
+              let duration = dispatch.schedulingSeconds, (0...2).contains(duration) else {
+            return "Glyphs responsiveness unconfirmed"
+        }
+        let elapsed = dispatch.observedAt.map { Date().timeIntervalSince1970 - $0 }
+        let age = max(dispatch.ageSeconds ?? 0, elapsed ?? 0)
+        return (dispatch.ageSeconds != nil || elapsed != nil) && age <= 60
+            ? "Glyphs is responsive" : "Last Glyphs response was timely"
+    }
     public var title: String {
         guard available == true, version == 1 else { return "Health unavailable" }
         switch state {
@@ -163,11 +189,19 @@ public struct DesktopGlyphsHealth: Decodable, Equatable {
         }
     }
     public var agentGuidance: String {
-        switch state {
-        case "paused": return "Agents defer new expensive work and retry later. Existing work and recovery are preserved."
-        case "caution": return "Agents reuse open fonts, process files sequentially, and avoid unnecessary tabs."
-        default: return "Agents follow health advisories returned by tools."
+        if state == "paused" {
+            return "Agents defer new expensive work and retry later. Existing work and recovery are preserved."
         }
+        if reasons?.contains("native_dispatch_slow") == true {
+            return "Wait for the current operation before starting another."
+        }
+        if reasons?.contains("memory_pressure_warning") == true {
+            return "Continue routine edits. Run large imports, exports, comparisons and whole-font snapshots one at a time."
+        }
+        if reasons?.contains("font_budget_reached") == true {
+            return "Reuse open fonts when possible."
+        }
+        return "Agents follow health advisories returned by tools."
     }
     public static func reasonLabel(_ reason: String) -> String {
         switch reason {
@@ -181,21 +215,58 @@ public struct DesktopGlyphsHealth: Decodable, Equatable {
     }
 }
 
+public struct DesktopGlyphsFootprint {
+    public enum Level: Equatable {
+        case light, moderate, heavy
+
+        public var title: String {
+            switch self {
+            case .light: return "Light Glyphs footprint"
+            case .moderate: return "Moderate Glyphs footprint"
+            case .heavy: return "Heavy Glyphs footprint"
+            }
+        }
+    }
+
+    public let installedBytes: Int64
+    public let fraction: Double
+
+    public init?(bytes: Int64, installedMemory: UInt64) {
+        guard bytes >= 0, installedMemory > 0, let installedBytes = Int64(exactly: installedMemory) else { return nil }
+        self.installedBytes = installedBytes
+        fraction = Double(bytes) / Double(installedBytes)
+    }
+
+    public var level: Level {
+        // These bands describe Glyphs' share of RAM. macOS supplies the pressure signal separately.
+        if fraction < 0.05 { return .light }
+        if fraction < 0.15 { return .moderate }
+        return .heavy
+    }
+}
+
 public struct DesktopGlyphsHealthPolicy: Codable, Equatable {
     public var version = 1
-    public var fontWarningThreshold = 8
-    public init(fontWarningThreshold: Int = 8) { self.fontWarningThreshold = fontWarningThreshold }
+    public var fontWarningThreshold: Int?
+    public init(fontWarningThreshold: Int? = nil) { self.fontWarningThreshold = fontWarningThreshold }
     public static func file(under root: URL) -> URL { root.appendingPathComponent("jobs/health-policy.json") }
     public static func read(under root: URL) throws -> Self {
         let file = file(under: root)
         guard FileManager.default.fileExists(atPath: file.path) else { return Self() }
         let policy = try JSONDecoder().decode(Self.self, from: Data(contentsOf: file))
-        guard policy.version == 1, (1...128).contains(policy.fontWarningThreshold) else { throw CocoaError(.coderReadCorrupt) }
+        guard policy.version == 1, let threshold = policy.fontWarningThreshold, (1...128).contains(threshold)
+        else { throw CocoaError(.coderReadCorrupt) }
         return policy
     }
     public func write(under root: URL) throws {
-        guard version == 1, (1...128).contains(fontWarningThreshold) else { throw CocoaError(.coderInvalidValue) }
+        guard version == 1 else { throw CocoaError(.coderInvalidValue) }
         let file = Self.file(under: root)
+        guard let fontWarningThreshold else {
+            do { try FileManager.default.removeItem(at: file) }
+            catch let error as CocoaError where error.code == .fileNoSuchFile { }
+            return
+        }
+        guard (1...128).contains(fontWarningThreshold) else { throw CocoaError(.coderInvalidValue) }
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try JSONEncoder().encode(self).write(to: file, options: .atomic)
     }

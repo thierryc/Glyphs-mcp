@@ -2,6 +2,22 @@
 title: Release qualification and known limits
 ---
 
+## 2.7.0 candidate
+
+The source candidate targets **2.7.0/build 91** for Glyphs 4 with 22 tools
+and 14 managed skills. The full local gate passed 3,549 Python tests (3 skipped),
+346 desktop tests, deterministic payload comparison, documentation and offline
+startup of both private runtimes. The universal app, payload and DMG are signed,
+notarized and stapled. Final artifact checks passed Developer ID, Gatekeeper,
+nested seals, mounted-image contents, Sparkle signatures and checksums. Both
+signed private runtimes passed offline startup; Intel used Rosetta. The exact
+signed build 76 → 91 Sparkle update and component migration passed in a macOS
+26.6.2 arm64 VM. Both Markdown copy actions and the three-dot menu passed.
+Live document access, cancelled quit and installer rollback passed in the
+`Glyphs-November` VM with Glyphs 4.1.1/build 4108. Cancelling quit kept unsaved
+edits and required **Start Server** to reconnect MCP. Detached native edit,
+cancellation and recovery checks passed on disposable fonts. [Candidate notes](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.7.0-RELEASE.md)
+
 ## Published 2.6.0
 
 Stable **2.6.0/build 76** is signed, notarized and published under `v2.6.0`. It provides 22 MCP tools and 14 managed skills for Glyphs 4. The full source gate passed 3,542 Python tests with three skips, 344 desktop tests, documentation and deterministic package checks.
