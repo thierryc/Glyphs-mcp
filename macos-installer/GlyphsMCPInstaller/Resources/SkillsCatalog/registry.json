@@ -104,7 +104,7 @@
     {
       "id": "builtin:glyphs-mcp-small-caps",
       "name": "glyphs-mcp-small-caps",
-      "description": "Derive editable Latin small and petite capitals from uppercase in Glyphs 4, with pilot approval, protected human corrections and native proof review.",
+      "description": "Create, continue, refine and audit Latin small and petite capitals in Glyphs 4, with pilot approval, protected human corrections and native proof review.",
       "author": "Glyphs MCP contributors",
       "license": "Apache-2.0; supporting resources retain their original licenses",
       "classification": "curated",

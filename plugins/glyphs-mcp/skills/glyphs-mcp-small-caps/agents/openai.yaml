@@ -1,7 +1,7 @@
 interface:
   display_name: "Glyphs Small and Petite Caps"
-  short_description: "Derive capitals with pilot review and protected human edits"
-  default_prompt: "Use $glyphs-mcp-small-caps to derive editable small and petite capitals from these uppercase glyphs, review a pilot with me, and preserve my corrections."
+  short_description: "Create, continue, refine or audit small and petite capitals"
+  default_prompt: "Use $glyphs-mcp-small-caps to create, continue, refine or audit these small and petite capitals as requested. Inspect the current state, preserve my corrections, and obtain pilot approval before expansion."
 
 policy:
   allow_implicit_invocation: true

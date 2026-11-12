@@ -8,7 +8,8 @@ Set `auto_keep=false` while waiting for designer review. No saved source is need
 
 ## Closed request
 
-`run_caps(font, params, api=None)` supports `inspect`, `construct`, `verify`.
+`run_caps(font, params, api=None)` supports only `inspect`, `construct`, `verify`.
+Create, continue, refine and audit are workflow modes, not accepted `stage` values.
 Importing it has no side effects or Glyphs dependency. Example initial inspection:
 
 ```json
@@ -24,20 +25,24 @@ Importing it has no side effects or Glyphs dependency. Example initial inspectio
 ```
 
 These numbers illustrate the interface, not design defaults. `height`, offsets and
-tracking use font units; `scaleX` is a positive factor. Choose all settings through
-the pilot. Vertical scale is `(height - 2*offsetY) / capHeight`, with `offsetY`
-translation restoring a flat baseline after symmetric offset. Existing source
-overshoot follows the transform; read the measured overshoot and refine optically.
-Tracking adds space to both sides. Width includes horizontal offset and tracking.
+tracking use font units; `scaleX` is a positive factor. Supply all settings for
+each constructed set/master. The agent resolves the petite x-height default or
+approved override into an explicit `height`; the helper does not choose that
+default. Review settings through the pilot within the recorded design constraints.
+See [transform and measurement limits](#transform-and-measurement-limits).
 
 Rows accept `source`, `kind` (`sc` or `pc`) and optional exact `destination` ending
-in that suffix. Automatic naming uses native character metadata, not lowercase
-string operations on glyph names. Dotted I and sharp S have explicit mappings;
+in that suffix. `.smcp`/`.pcap` destinations are not accepted, even when explicit.
+This restriction and the requirement for existing source glyphs apply to every
+stage. For audits of other names or sets without usable sources, use ordinary
+reads; do not rename glyphs or fabricate source mappings. Automatic naming uses
+native character metadata, not lowercase string operations on glyph names.
+Dotted I and sharp S have explicit mappings;
 ambiguous names/alternates need a designer-reviewed destination. Alternate names
 receive no Unicode assignments.
 
-Supply the inspection's `identity` and complete `guards` as `expected` for
-construction. The helper checks the font family/UPM/master metrics, source and
+For construction, supply the inspection's `identity` as `identity` and its complete
+`guards` as `expected`. The helper checks the font family/UPM/master metrics, source and
 destination foregrounds, anchors, widths/keys and recursive component dependencies.
 The outer job also binds the exact document. This is a defined geometry projection,
 not a cryptographic guarantee of unchanged full-font metadata.
@@ -59,14 +64,59 @@ anchor placement and optical distance require review.
 
 The helper copies requested foreground master layers only. New base hints, metrics
 keys, backgrounds, guides and annotations are cleared; the source remains intact.
-Existing derived glyphs are never regenerated, even with matching fingerprints.
-Use explicit local outline corrections for authorized revisions. Partial master
-coverage needs completion before export; native default layers are not finished
-masters. The helper does not copy uppercase kerning or create features.
+Existing derived glyphs are never regenerated, even with matching fingerprints;
+construction also cannot fill missing or unfinished masters of an existing glyph.
+Use explicit local outline corrections or separately scoped completion for
+authorized revisions. Partial master coverage needs completion before export;
+native default layers are not finished masters. The helper does not copy uppercase
+kerning or create features.
 
-For `verify`, provide the last `resultGuards` as `expected`; `changedSinceReview`
-identifies manual/source changes. It does not certify aesthetics or feature behavior.
-Reinspect after accepting manual changes before further construction.
+For `verify`, provide the matching `identity` and last `resultGuards` as `expected`;
+`changedSinceReview` compares those recorded fingerprints with current state. It
+does not certify aesthetics or feature behavior. Without suitable prior evidence,
+use fresh inspection and report unavailable historical comparisons. Reinspect
+after accepting manual changes before further construction. An audit needs no
+construction, duplicate or edit job; ordinary reads can supply its evidence.
+
+## Transform and measurement limits
+
+For outline sources the helper uses
+`scaleY = (height - 2*offsetY) / master.capHeight`, translates vertically by
+`offsetY`, then applies the qualified offset when either offset is nonzero. The
+intended flat height and baseline assume source alignment at `capHeight` and zero,
+and symmetric vertical expansion matching the offset. Inspect measured source
+alignment and actual offset results before relying on those assumptions. There
+is no measured-source-height, baseline, arbitrary vertical-scale or regional
+compensation parameter. Do not alter global metrics to make the transform fit.
+Resolve discrepancies through the [design procedure](design.md#height-and-weight-compensation)
+and a separately scoped correction with recovery or designer handoff.
+
+Existing source overshoot follows the transform and still needs optical review.
+Tracking adds space to both sides; advance width includes horizontal offset and
+tracking. Inspect actual ink bounds and sidebearings after compensation. Base
+anchors are transformed with the copied layer; composite anchors are generated
+after native alignment. Neither establishes approved mark placement automatically.
+
+`construct` checks detached candidates internally, then attaches them in the same
+call. It does not offer a detached-preview stage or a human review pause before
+attachment. Qualify detached copies separately before construction and review
+the resulting pilot before expansion.
+
+Reported bounds cover the full layer. `topOvershoot` is its top bound minus the
+supplied height and `bottomOvershoot` is the negative bottom bound; these fields
+do not isolate base alignment, optical overshoot, accents, tails or descenders.
+Supply the intended height when using those comparisons; without it the reporting
+code uses zero. Read back native coordinates at documented operation-appropriate
+precision and measure relevant regions independently. Numeric agreement alone
+does not establish optical acceptance.
+
+`mastersCompatible` compares ordered path closure/node-type sequences and component
+names in the requested masters. It does not establish semantic node correspondence,
+contour starts/directions or intermediate shape quality. Inspect those separately.
+`changesVerified` records construction completion or agreement with supplied
+verification fingerprints; it is not design acceptance. `interpolationVerified`
+and `featureBehaviorVerified` remain false: this helper performs neither sampled
+interpolation checks nor feature verification. Record external evidence separately.
 
 ## Offset Curve qualification
 
@@ -74,6 +124,8 @@ Zero offsets are always a clearly identified scale-only candidate. Nonzero offse
 require `offsetQualification` containing the exact string `build` and
 `adapter:"layer-filter-keep"`. This records agent-observed qualification, not
 an authenticated approval or an executable capability supplied by inventory.
+This is the implemented adapter; no Core Offset Curve class-selector adapter is
+provided by this helper.
 
 Before supplying it, on a disposable fixture in that same Glyphs build:
 
@@ -81,11 +133,17 @@ Before supplying it, on a disposable fixture in that same Glyphs build:
 2. Confirm the layer-local `filter` method. Do not instantiate arbitrary classes
    or use font-wide `processFont_withArguments_` to approximate master targeting.
 3. Apply `filter(layer, False, {0:dx, 1:dy, 2:0, 3:0.5, 4:'keep'})` to a copy.
-4. Verify flat height/stems, curved counters and joins, exact node types/order,
-   fractional coordinates, source preservation and every requested master.
+4. Verify actual horizontal/vertical gains, flat height, baseline, stems, curved
+   counters and joins, contour order/starts/directions and semantic correspondence,
+   exact node types/order and fractional coordinates in every requested master.
+   Confirm that testing copies preserved source fingerprints; nominal offsets
+   and a Keep Compatible setting do not prove these properties.
 5. Record measured results, host build and limits. Presence or a successful return
    alone does not qualify this adapter. The helper additionally rejects topology
-   changes before attaching candidates.
+   changes detectable by its structural comparison before attaching candidates.
+
+If correspondence changes despite Keep Compatible, retain the pilot for designer
+adjustment; do not accept that candidate or retry speculative corrections.
 
 If unsupported or inaccurate, stop automation and open the exact native target:
 **Filter → Offset Curve**, set reviewed Horizontal/Vertical values, turn **Make
