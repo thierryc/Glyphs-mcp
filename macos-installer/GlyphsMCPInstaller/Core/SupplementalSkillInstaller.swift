@@ -121,6 +121,54 @@ public struct SkillPackageVersion: Sendable {
     }
 }
 
+/// Read the verified app payload once per catalog load, independently of selection.
+public struct BundledSkillPackages: Sendable {
+    public private(set) var versions: [String: SkillPackageVersion] = [:]
+    public private(set) var failures: [String] = []
+
+    public init(skills: [CatalogSkill], directories: [URL]) {
+        for skill in skills where skill.bundled {
+            do {
+                guard let directory = directories.first(where: { $0.lastPathComponent == skill.name }) else {
+                    throw ProjectError("This skill is missing from the app’s verified payload.")
+                }
+                let files = try ProjectFiles.read(directory)
+                _ = try SkillMetadata.validate(files, expectedName: skill.name, bundled: true)
+                versions[skill.id] = SkillPackageVersion(label: skill.version, files: files)
+            } catch {
+                failures.append(skill.title + ": " + error.localizedDescription)
+            }
+        }
+    }
+}
+
+/// The same content comparison drives cards, the overview count and project copies.
+public struct SkillOverview: Sendable {
+    public let global: [String: SkillScopeStatus]
+    public let projects: [URL: [String: SkillScopeStatus]]
+    public var updateIDs: Set<String> {
+        Set(([global] + Array(projects.values)).flatMap { scopes in
+            scopes.compactMap { id, scope in
+                scope.editableCopies.contains { $0.status.state == .updateAvailable } ? id : nil
+            }
+        })
+    }
+
+    public init(skills: [CatalogSkill], installer: SupplementalSkillInstaller,
+                packages: [String: SkillPackageVersion], projectRoots: [URL: [URL]]) {
+        global = Dictionary(uniqueKeysWithValues: skills.map { skill in
+            (skill.id, installer.scopeStatus(skill, package: packages[skill.id]))
+        })
+        projects = Dictionary(uniqueKeysWithValues: projectRoots.map { folder, roots in
+            let present = Set(roots.flatMap { (try? FileManager.default.contentsOfDirectory(atPath: $0.path)) ?? [] })
+            let scopes = Dictionary(uniqueKeysWithValues: skills.filter { present.contains($0.name) }.map { skill in
+                (skill.id, installer.scopeStatus(skill, project: folder, package: packages[skill.id]))
+            })
+            return (folder, scopes)
+        })
+    }
+}
+
 public struct SupplementalSkillReceipt: Codable, Equatable, Sendable {
     public var skill: CatalogSkill
     public var contentSHA256: String

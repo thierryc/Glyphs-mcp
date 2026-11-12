@@ -150,6 +150,8 @@ public enum ComponentUpdatePolicy {
 }
 
 public enum ComponentUpdateReminder {
+    public static let dismissalTitle = "Dismiss This Reminder"
+    public static let dismissalExplanation = "This reminder appears once per app version and build for this installation. Dismissing it does not schedule another reminder; available updates remain in Setup."
     public static func title(needsServerUpdate: Bool) -> String {
         needsServerUpdate ? "A new version of the MCP server in Glyphs is available." : "Updates for your Glyphs plugins are available."
     }

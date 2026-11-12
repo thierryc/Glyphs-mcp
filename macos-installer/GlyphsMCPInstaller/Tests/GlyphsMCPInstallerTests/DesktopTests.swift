@@ -34,6 +34,10 @@ final class DesktopTests: XCTestCase {
     }
 
     func testComponentReminderExplainsTheServerUpdateAndNamesTheCorrectCard() {
+        XCTAssertEqual(ComponentUpdateReminder.dismissalTitle, "Dismiss This Reminder")
+        XCTAssertTrue(ComponentUpdateReminder.dismissalExplanation.contains("once per app version and build"))
+        XCTAssertTrue(ComponentUpdateReminder.dismissalExplanation.contains("does not schedule another reminder"))
+        XCTAssertTrue(ComponentUpdateReminder.dismissalExplanation.contains("available updates remain in Setup"))
         XCTAssertEqual(ComponentUpdateReminder.title(needsServerUpdate: true), "A new version of the MCP server in Glyphs is available.")
         XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("click Update on the Glyphs MCP card"))
         XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("\n\n"))
@@ -134,7 +138,7 @@ final class DesktopTests: XCTestCase {
         XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "68", root: root))
         XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.3.0", build: "67", root: root))
         XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root.appendingPathComponent("other")))
-        // Later is tracked separately; the card still reports Update available.
+        // Dismissing this reminder does not clear the card's Update available status.
         XCTAssertTrue(statuses["mcp"]!.needsUpdate)
         XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: ["beztrace-glyphs": .updateAvailable],
             alreadyShown: false, interactive: true, busy: false, otherDialog: false))

@@ -46,7 +46,8 @@ struct ContentView: View {
                             .accessibilityAddTraits(projects.navigation.destination == .tasks ? .isSelected : [])
                         sidebarItem("Companion Plugins", icon: "puzzlepiece.extension", destination: .companions)
                         sidebarItem("AI Agents", icon: "sparkles", destination: .agents)
-                        sidebarItem("Skills", icon: "books.vertical", destination: .skills)
+                        sidebarItem("Skills", icon: "books.vertical", destination: .skills,
+                                    updateCount: skills.updateIDs.count)
                         sidebarItem("Project", icon: "folder.badge.plus", destination: .templates)
                         HStack(spacing: 6) {
                             Button { projectsExpanded.toggle() } label: {
@@ -106,6 +107,11 @@ struct ContentView: View {
         .onAppear { handleSetupRequest(); handleTasksRequest() }
         .onChange(of: desktop.tasksRequested) { _, _ in handleTasksRequest() }
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
+        .onChange(of: projects.navigation.skillProjects) { _, _ in
+            skills.prepareProjects(projects)
+            skills.rescan()
+        }
+        .onChange(of: installer.busy) { _, busy in if !busy { skills.rescan() } }
         .navigationTitle(DesktopIdentity.applicationTitle)
         .modifier(DesktopSidebarToggle(columnVisibility: $columnVisibility))
         .toolbar {
@@ -124,7 +130,12 @@ struct ContentView: View {
         }
         .frame(minWidth: DesktopDashboardLayout.minimumWidth,
                minHeight: DesktopDashboardLayout.minimumHeight)
-        .task { projects.inspect(); await projects.loadTemplates() }
+        .task {
+            projects.inspect()
+            skills.prepareProjects(projects)
+            skills.load()
+            await projects.loadTemplates()
+        }
         .sheet(item: $projects.creation) { creation in
             DesktopProjectWizard(model: projects, template: creation.template, previewFirst: creation.previewFirst)
         }
@@ -176,10 +187,20 @@ struct ContentView: View {
             .contextMenu { DesktopProjectMenuActions(model: projects, path: path) }
     }
 
-    private func sidebarItem(_ title: String, icon: String, destination: DesktopDestination) -> some View {
+    private func sidebarItem(_ title: String, icon: String, destination: DesktopDestination,
+                             updateCount: Int = 0) -> some View {
         let selected = projects.navigation.destination == destination
         return Button { projects.select(destination) } label: {
-            Label(LocalizedStringKey(title), systemImage: icon).lineLimit(1).truncationMode(.middle)
+            HStack {
+                Label(LocalizedStringKey(title), systemImage: icon).lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 0)
+                if updateCount > 0 {
+                    Text(updateCount, format: .number).font(.caption.monospacedDigit().weight(.semibold))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Color.primary.opacity(0.12), in: Capsule())
+                        .accessibilityHidden(true)
+                }
+            }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10).padding(.vertical, 8)
                 .contentShape(Rectangle())
@@ -187,6 +208,7 @@ struct ContentView: View {
             .foregroundStyle(selected ? Color.white : Color.primary)
             .background(selected ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 8))
             .accessibilityAddTraits(selected ? .isSelected : [])
+            .accessibilityValue(updateCount > 0 ? Text("Skills with updates: \(updateCount)") : Text(""))
     }
 }
 

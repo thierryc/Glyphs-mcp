@@ -155,10 +155,11 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         alert.alertStyle = .informational
         alert.messageText = NSLocalizedString(ComponentUpdateReminder.title(needsServerUpdate: needsServerUpdate), comment: "Component update reminder headline")
         alert.informativeText = NSLocalizedString(ComponentUpdateReminder.message(needsServerUpdate: needsServerUpdate), comment: "Component update reminder guidance")
-        // Give the headline and two short paragraphs room while retaining native alert behavior.
+            + "\n\n" + NSLocalizedString(ComponentUpdateReminder.dismissalExplanation, comment: "Once-per-build reminder behavior")
+        // Give the update and dismissal guidance room while retaining native alert behavior.
         alert.accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 0))
         alert.addButton(withTitle: NSLocalizedString("Open Setup", comment: "Component update reminder action"))
-        alert.addButton(withTitle: NSLocalizedString("Later", comment: "Component update reminder action"))
+        alert.addButton(withTitle: NSLocalizedString(ComponentUpdateReminder.dismissalTitle, comment: "Component update reminder action"))
         alert.beginSheetModal(for: dashboard) { [weak self] response in
             if response == .alertFirstButtonReturn {
                 self?.desktop.requestSetup()

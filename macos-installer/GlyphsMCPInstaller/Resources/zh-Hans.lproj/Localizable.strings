@@ -1005,3 +1005,13 @@
 "%lld days" = "%lld 天";
 "Inactive tasks move to Finished as Expired. Work in progress and available recovery are kept. History and diagnostics remain available." = "非活动任务将移至“已完成”并标记为“已过期”。正在进行的任务和可用的恢复选项会保留，历史记录和诊断信息仍可查看。";
 "Codex settings changed during setup and were preserved. Run setup again to check the current settings." = "Codex 设置在配置过程中发生了变化，已予以保留。请重新运行配置以检查当前设置。";
+
+/* Skill update discovery and reminder dismissal. */
+"Dismiss This Reminder" = "关闭此提醒";
+"This reminder appears once per app version and build for this installation. Dismissing it does not schedule another reminder; available updates remain in Setup." = "对于此安装，每个应用版本和构建只显示一次此提醒。关闭后不会安排再次提醒；可用更新仍会显示在“设置”中。";
+"Skill updates available" = "有可用技能更新";
+"Skills with updates: %lld" = "有更新的技能：%lld";
+"Review skill updates separately from Glyphs component updates." = "技能更新与 Glyphs 组件更新分开审核。";
+"Review Skill Updates" = "查看技能更新";
+"Updates" = "更新";
+"Some skill updates could not be checked. Refresh to try again." = "无法检查部分技能更新。请刷新后重试。";

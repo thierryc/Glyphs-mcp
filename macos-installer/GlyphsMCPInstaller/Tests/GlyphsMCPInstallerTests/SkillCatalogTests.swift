@@ -26,6 +26,105 @@ final class SkillCatalogTests: XCTestCase {
                             archiveSHA256: bundled ? nil : String(repeating: "b", count: 64)),
               compatibleClients: [.codex], requirements: [], bundled: bundled)
     }
+    private func bundledFiles(_ skill: CatalogSkill, _ text: String) -> [ProjectFile] {
+        [.init(path: "SKILL.md", data: Data("---\nname: \(skill.name)\ndescription: A focused workflow\n---\n\(text)".utf8))]
+    }
+
+    private func writeBundled(_ skill: CatalogSkill, _ text: String) throws -> URL {
+        let folder = temporary.appendingPathComponent("payload/" + skill.name)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try XCTUnwrap(bundledFiles(skill, text).first?.data).write(to: folder.appendingPathComponent("SKILL.md"))
+        return folder
+    }
+
+    func testBundledOverviewFindsAllContentUpdatesWithoutSelectionAndClearsAfterUpdating() throws {
+        var first = canonicalSkill(bundled: true)
+        first.version = "1.0"
+        var second = first
+        second.id = "builtin:glyphs-mcp-second"
+        second.name = "glyphs-mcp-second"
+        let entries = [first, second]
+        let service = SupplementalSkillInstaller(home: temporary, bundledNames: Set(entries.map(\.name)))
+        let project = temporary.appendingPathComponent("project")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let roots = [project: [project.appendingPathComponent(SkillPlacement.shared.rawValue)]]
+        let original = bundledFiles(first, "Original")
+        XCTAssertTrue(service.apply(.install, to: service.scopeStatus(first).missing(for: [.codex]),
+            skill: first, files: original).failures.isEmpty)
+        for entry in entries {
+            XCTAssertTrue(service.apply(.install, to: service.scopeStatus(entry, project: project).missing(for: [.codex]),
+                skill: entry, files: bundledFiles(entry, "Original"), project: project).failures.isEmpty)
+        }
+        // Only content changes: labels and source revisions remain identical.
+        let directories = try entries.map { try writeBundled($0, "Updated") }
+        let packages = BundledSkillPackages(skills: entries, directories: directories)
+        XCTAssertTrue(packages.failures.isEmpty)
+        func scan() -> SkillOverview {
+            SkillOverview(skills: entries, installer: service, packages: packages.versions, projectRoots: roots)
+        }
+        let before = scan()
+        XCTAssertEqual(before.updateIDs, Set(entries.map(\.id)))
+        XCTAssertEqual(before.global[first.id]?.installed(for: .codex).first?.status.state, .updateAvailable)
+        XCTAssertTrue(before.global[second.id]!.editableCopies.isEmpty)
+        XCTAssertEqual(before.projects[project]?[second.id]?.installed(for: .codex).first?.status.state, .updateAvailable)
+        let originalPath = try XCTUnwrap(before.global[first.id]?.installed(for: .codex).first?.status.path)
+        XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: originalPath).appendingPathComponent("SKILL.md")), original[0].data)
+        XCTAssertTrue(service.apply(.update, to: before.global[first.id]!.editableCopies, skill: first,
+            files: bundledFiles(first, "Updated"), package: packages.versions[first.id]).failures.isEmpty)
+        XCTAssertEqual(scan().updateIDs.count, 2, "The first skill still has an outdated project copy")
+        for entry in entries {
+            XCTAssertTrue(service.apply(.update, to: scan().projects[project]![entry.id]!.editableCopies,
+                skill: entry, files: bundledFiles(entry, "Updated"), project: project,
+                package: packages.versions[entry.id]).failures.isEmpty)
+        }
+        XCTAssertTrue(scan().updateIDs.isEmpty)
+    }
+
+    func testBundledPackageFailureDoesNotHideOtherUpdatesOrClaimVerification() throws {
+        let first = canonicalSkill(bundled: true)
+        var missing = first
+        missing.name = "glyphs-mcp-missing"; missing.id = "builtin:" + missing.name
+        var invalid = first
+        invalid.name = "glyphs-mcp-invalid"; invalid.id = "builtin:" + invalid.name
+        let entries = [first, missing, invalid]
+        let validFolder = try writeBundled(first, "Updated")
+        let invalidFolder = try writeBundled(invalid, "Invalid")
+        try Data("Invalid metadata".utf8).write(to: invalidFolder.appendingPathComponent("SKILL.md"))
+        let packages = BundledSkillPackages(skills: entries + [skill()], directories: [validFolder, invalidFolder])
+        XCTAssertEqual(Set(packages.versions.keys), [first.id])
+        XCTAssertEqual(packages.failures.count, 2)
+        let service = SupplementalSkillInstaller(home: temporary, bundledNames: Set(entries.map(\.name)))
+        for entry in entries {
+            XCTAssertTrue(service.apply(.install, to: service.scopeStatus(entry).missing(for: [.codex]),
+                skill: entry, files: bundledFiles(entry, "Original")).failures.isEmpty)
+        }
+        let overview = SkillOverview(skills: entries, installer: service, packages: packages.versions, projectRoots: [:])
+        XCTAssertEqual(overview.updateIDs, [first.id])
+        XCTAssertNil(overview.global[missing.id]?.installed(for: .codex).first?.status.matchesPackage)
+        XCTAssertNil(overview.global[invalid.id]?.installed(for: .codex).first?.status.matchesPackage)
+    }
+
+    func testOverviewDoesNotOfferNormalUpdatesForProtectedCopies() throws {
+        let entry = canonicalSkill(bundled: true)
+        let service = SupplementalSkillInstaller(home: temporary, bundledNames: [entry.name])
+        XCTAssertTrue(service.apply(.install, to: service.scopeStatus(entry).missing(for: [.codex]),
+            skill: entry, files: bundledFiles(entry, "Original")).failures.isEmpty)
+        let installed = try XCTUnwrap(service.scopeStatus(entry).installed(for: .codex).first)
+        try XCTUnwrap(bundledFiles(entry, "Manual correction").first?.data)
+            .write(to: URL(fileURLWithPath: installed.status.path).appendingPathComponent("SKILL.md"))
+        let linkedSource = try writeBundled(entry, "Linked original")
+        let linkRoot = temporary.appendingPathComponent(SkillPlacement.codex.rawValue)
+        try FileManager.default.createDirectory(at: linkRoot, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: linkRoot.appendingPathComponent(entry.name), withDestinationURL: linkedSource)
+        let packages = [entry.id: SkillPackageVersion(label: nil, files: bundledFiles(entry, "Updated"))]
+        let overview = SkillOverview(skills: [entry], installer: service, packages: packages, projectRoots: [:])
+        XCTAssertTrue(overview.updateIDs.isEmpty)
+        XCTAssertEqual(Set(overview.global[entry.id]!.editableCopies.map { $0.status.state.rawValue }), ["modified", "linked"])
+        XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: installed.status.path).appendingPathComponent("SKILL.md")),
+                       bundledFiles(entry, "Manual correction")[0].data)
+        XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: linkRoot.appendingPathComponent(entry.name).path), linkedSource.path)
+    }
+
     func testVersionVerificationDistinguishesCurrentOutdatedAndEditedCopies() throws {
         let installer = SupplementalSkillInstaller(home: temporary)
         var item = skill()

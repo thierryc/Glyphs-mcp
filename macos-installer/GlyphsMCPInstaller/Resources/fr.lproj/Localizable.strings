@@ -1038,3 +1038,13 @@
 "Health protection is unavailable. Update bridge and sidecar together to enable it." = "La protection de santé est indisponible. Mettez à jour le pont et le serveur ensemble pour l’activer.";
 "Warn at %lld open fonts" = "Avertir à partir de %lld fontes ouvertes";
 "This is a warning threshold. Font count alone never blocks work. Agents defer new expensive work under critical pressure." = "Il s’agit d’un seuil d’avertissement. Le nombre de fontes seul ne bloque jamais le travail. Les agents reportent les nouvelles opérations lourdes en cas de pression critique.";
+
+/* Skill update discovery and reminder dismissal. */
+"Dismiss This Reminder" = "Fermer ce rappel";
+"This reminder appears once per app version and build for this installation. Dismissing it does not schedule another reminder; available updates remain in Setup." = "Ce rappel apparaît une seule fois par version et build de l’application pour cette installation. Le fermer ne programme pas de nouveau rappel ; les mises à jour disponibles restent dans Configuration.";
+"Skill updates available" = "Mises à jour de compétences disponibles";
+"Skills with updates: %lld" = "Compétences à mettre à jour : %lld";
+"Review skill updates separately from Glyphs component updates." = "Examinez les mises à jour des compétences séparément de celles des composants Glyphs.";
+"Review Skill Updates" = "Examiner les mises à jour des compétences";
+"Updates" = "Mises à jour";
+"Some skill updates could not be checked. Refresh to try again." = "Certaines mises à jour de compétences n’ont pas pu être vérifiées. Actualisez pour réessayer.";

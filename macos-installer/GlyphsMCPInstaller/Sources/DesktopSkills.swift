@@ -20,9 +20,12 @@ final class DesktopSkillsModel: ObservableObject {
     @Published var client: SkillClient?
     @Published private(set) var global: [String: SkillScopeStatus] = [:]
     @Published private(set) var projectScopes: [URL: [String: SkillScopeStatus]] = [:]
+    @Published private(set) var updateIDs: Set<String> = []
+    @Published private(set) var updateCheckMessage = ""
     private var projectFolders: [URL] = []
     private weak var projects: DesktopProjectsModel?
     private var packageVersion: SkillPackageVersion?
+    private var bundledPackages: [String: SkillPackageVersion] = [:]
     private let store = SkillStore()
     var pendingInspection: CatalogSkill?
     private var snapshot: Data?
@@ -35,7 +38,7 @@ final class DesktopSkillsModel: ObservableObject {
         skills.filter { skill in
             (search.isEmpty || (skill.title + " " + skill.name + " " + skill.description + " " + skill.author).localizedCaseInsensitiveContains(search)) &&
             (client == nil || skill.compatibleClients.contains(client!)) &&
-            (category == "All" || category == "Included" && skill.bundled || category == "Additional" && !skill.bundled || category == "Installed" && isInstalled(skill))
+            (category == "All" || category == "Included" && skill.bundled || category == "Additional" && !skill.bundled || category == "Installed" && isInstalled(skill) || category == "Updates" && hasUpdate(skill))
         }.sorted { ($0.bundled ? 0 : 1, $0.title) < ($1.bundled ? 0 : 1, $1.title) }
     }
     func isInstalled(_ skill: CatalogSkill) -> Bool {
@@ -51,8 +54,7 @@ final class DesktopSkillsModel: ObservableObject {
     }
 
     func hasUpdate(_ skill: CatalogSkill) -> Bool {
-        let scopes = [global[skill.id]].compactMap { $0 } + projectScopes.values.compactMap { $0[skill.id] }
-        return scopes.contains { $0.editableCopies.contains { $0.status.state == .updateAvailable } }
+        updateIDs.contains(skill.id)
     }
 
     func hasGlobalInstallation(_ skill: CatalogSkill) -> Bool {
@@ -70,23 +72,52 @@ final class DesktopSkillsModel: ObservableObject {
                 }
                 catalogEntries = try await store.catalog(snapshot: snapshot!, refresh: refresh).skills
                 importEntries = try await store.imports()
+                await loadBundledPackages()
                 rescan()
                 catalogMessage = refresh ? "Skills catalog refreshed." : ""
             } catch { catalogMessage = error.localizedDescription }
         }
     }
+
+    private func loadBundledPackages() async {
+        bundledPackages = [:]
+        updateCheckMessage = ""
+        do {
+            let payload = try await InstallerPayloadDiscovery.shared.resolve { try InstallerPayload.resolve() }
+            let directories = payload.managedSkillDirectories()
+            let entries = catalogEntries
+            let result = await Task.detached(priority: .utility) {
+                BundledSkillPackages(skills: entries, directories: directories)
+            }.value
+            bundledPackages = result.versions
+            if !result.failures.isEmpty {
+                updateCheckMessage = "Some skill updates could not be checked. Refresh to try again."
+                operationDetails = result.failures.joined(separator: "\n")
+            }
+        } catch {
+            updateCheckMessage = "Some skill updates could not be checked. Refresh to try again."
+            operationDetails = error.localizedDescription
+        }
+    }
+
     func rescan() {
+        // Setup/project notifications can arrive before the initial catalog load.
+        // An empty scan must not erase remembered project skill installations.
+        guard !catalogEntries.isEmpty else { return }
         scanGeneration += 1
         let generation = scanGeneration
         scanning = true
         let catalog = catalogEntries
         let imports = importEntries
         let folders = projectFolders
-        let selected = selected
-        let packageVersion = packageVersion
+        var packages = bundledPackages
+        if let selected, !selected.bundled, let packageVersion {
+            packages[selected.id] = packageVersion
+        }
+        let availablePackages = packages
         let service = installer
         Task {
-            let (entries, scopes, projectScopes, warning) = await Task.detached(priority: .userInitiated) {
+            let (entries, overview, warning) = await Task.detached(priority: .userInitiated) {
                 var entries = catalog
                 var warning = ""
                 let placements = SkillPlacement.allCases.filter { $0 != .cursorPlugin }
@@ -116,24 +147,15 @@ final class DesktopSkillsModel: ObservableObject {
                         warning = error.localizedDescription
                     }
                 }
-                let scopes = Dictionary(uniqueKeysWithValues: entries.map { skill in
-                    (skill.id, service.scopeStatus(skill, package: skill.id == selected?.id ? packageVersion : nil))
-                })
-                let projectScopes = projectRoots.map { folder, roots in
-                    let present = Set(roots.flatMap { (try? FileManager.default.contentsOfDirectory(atPath: $0.path)) ?? [] })
-                    let candidates = entries.filter { present.contains($0.name) }
-                    let statuses = Dictionary(uniqueKeysWithValues: candidates.map { skill in
-                        (skill.id, service.scopeStatus(skill, project: folder,
-                                                       package: skill.id == selected?.id ? packageVersion : nil))
-                    })
-                    return (folder, statuses)
-                }
-                return (entries, scopes, Dictionary(uniqueKeysWithValues: projectScopes), warning)
+                let overview = SkillOverview(skills: entries, installer: service,
+                    packages: availablePackages, projectRoots: projectRoots)
+                return (entries, overview, warning)
             }.value
             guard generation == scanGeneration else { return }
             skills = entries
-            global = scopes
-            self.projectScopes = projectScopes
+            global = overview.global
+            projectScopes = overview.projects
+            updateIDs = overview.updateIDs
             projects?.recordProjectSkillInstallations(projectSkillInstallations)
             if !warning.isEmpty { operationDetails = warning }
             scanning = false
@@ -426,10 +448,29 @@ struct DesktopSkillsView: View {
                     DesktopTextLink("Contribute", destination: SkillCatalog.contributionURL)
                 }
                 Text("Find a workflow for your next font task.").foregroundStyle(.secondary)
+                if !model.updateIDs.isEmpty {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("Skill updates available", systemImage: "arrow.down.circle")
+                                .font(.headline)
+                            Text("Skills with updates: \(model.updateIDs.count)")
+                            Text("Review skill updates separately from Glyphs component updates.")
+                                .font(.callout).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Review Skill Updates") {
+                            model.category = "Updates"
+                            model.search = ""
+                            model.client = nil
+                        }
+                    }
+                    .padding()
+                    .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                }
                 HStack(spacing: 14) {
                     TextField("Search skills", text: $model.search).textFieldStyle(.roundedBorder)
                     Picker("Show", selection: $model.category) {
-                        ForEach(["All", "Included", "Additional", "Installed"], id: \.self) { Text(LocalizedStringKey($0)).tag($0) }
+                        ForEach(["All", "Included", "Additional", "Installed", "Updates"], id: \.self) { Text(LocalizedStringKey($0)).tag($0) }
                     }.frame(maxWidth: 180)
                     Picker("Agent", selection: $model.client) {
                         Text("All agents").tag(Optional<SkillClient>.none)
@@ -438,6 +479,9 @@ struct DesktopSkillsView: View {
                 }
                 if (model.busy || model.scanning) && model.selected == nil { ProgressView().controlSize(.small) }
                 if !model.catalogMessage.isEmpty { Text(LocalizedStringKey(model.catalogMessage)).font(.callout) }
+                if !model.updateCheckMessage.isEmpty {
+                    Text(LocalizedStringKey(model.updateCheckMessage)).font(.callout).foregroundStyle(.secondary)
+                }
                 SetupCardGrid {
                     ForEach(model.filtered) { skill in
                         DesktopSkillCard(skill: skill, installed: model.isInstalled(skill),
@@ -457,11 +501,6 @@ struct DesktopSkillsView: View {
             model.prepareProjects(projects)
             if model.skills.isEmpty { model.load() } else { model.rescan() }
         }
-        .onChange(of: navigation.skillProjects) { _, _ in
-            model.prepareProjects(projects)
-            model.rescan()
-        }
-        .onChange(of: installer.busy) { _, busy in if !busy { model.rescan() } }
         .sheet(isPresented: $showingImport, onDismiss: {
             if let skill = model.pendingInspection {
                 model.pendingInspection = nil
