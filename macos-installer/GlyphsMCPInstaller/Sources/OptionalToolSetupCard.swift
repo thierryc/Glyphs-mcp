@@ -28,7 +28,7 @@ struct OptionalToolSetupCard: View {
         } detail: {
             Text(LocalizedStringKey(detail))
         } status: {
-            DesktopStatus(title: active ? progressTitle : state?.label ?? "Checking optional setup…",
+            DesktopStatus(title: active ? progressTitle : state?.presentationLabel() ?? "Checking optional setup…",
                 tone: active ? (lastAction == "remove" ? .neutral : .progress) : state?.installed == true ? .installed : .neutral,
                 symbol: state?.installed == true ? "checkmark.circle.fill" : "circle", spinning: active || state == nil)
             if let error = installer.optionalErrors[id] {

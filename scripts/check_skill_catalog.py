@@ -6,6 +6,7 @@ import re
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sync_skill_catalog_metadata import synchronize
+from check_desktop_localizations import LOCALES
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,7 +30,7 @@ def check(root=ROOT):
             raise ValueError('Catalog revisions must be immutable commits')
         if entry['bundled'] and entry['license'].split(';', 1)[0].strip() != bundled_license:
             raise ValueError('Catalog bundled license differs from the agent plugin: '+entry['name'])
-    for language in ('en', 'fr', 'zh-Hans'):
+    for language in LOCALES:
         text = (root/f'macos-installer/GlyphsMCPInstaller/Resources/{language}.lproj/Localizable.strings').read_text()
         for label in ('Companion Plugins', 'AI Agents', 'Skills', 'Import from GitHub…', 'Contribute a Skill', 'Replace with backup'):
             if '"'+label+'" =' not in text:

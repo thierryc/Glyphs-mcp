@@ -10,6 +10,7 @@ from .bridge_client import BridgeClientError
 from .preview_cleanup import pending
 from .task_expiration import inactivity_days, last_activity
 from glyphs_mcp_protocol.task_conflicts import protection
+from glyphs_mcp_protocol.health import advisory
 
 CAPABILITY = 'health.cleanup.v1'
 PRESSURE_REASONS = {'memory_pressure_warning', 'memory_pressure_critical',
@@ -37,12 +38,14 @@ def feedback(service, payload):
     except Exception:
         return payload  # Optional health feedback cannot turn a completed action into failure.
     if value.get('state') in {'caution', 'paused'}:
-        notice = payload.setdefault('health', {key: deepcopy(value.get(key)) for key in
-            ('version', 'bridgeSessionId', 'state', 'reasons', 'admission')})
+        notice = payload.get('health') or advisory(value)
+        if notice is None:
+            return payload
+        payload['health'] = notice
         for key in ('cleanupCandidates', 'cleanupObservation', 'cleanupPolicy', 'cleanupRecentActions'):
             if key in value:
                 notice[key] = deepcopy(value[key])
-        notice['text'] = notice.get('text', 'Glyphs Health: reduce load.') + (
+        notice['text'] += (
             ' Cleanup candidates are advisory; only abandoned unapplied previews may be released automatically.'
             ' Applied edits and uncertain work retain recovery.')
     return payload

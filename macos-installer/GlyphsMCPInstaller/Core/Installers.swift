@@ -102,51 +102,47 @@ public struct RuntimeProbeExecutor {
 		)
 		let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
 		guard stderr.isEmpty else {
-			throw InstallerError.userFacing(
-				"Python environment check wrote unexpected error output: \(stderr)"
+			throw InstallerError.localized("Python environment check wrote unexpected error output: \(stderr)"
 			)
 		}
 
 		let stdout = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
 		guard let data = stdout.data(using: .utf8) else {
-			throw InstallerError.userFacing("Python environment check returned unreadable output.")
+			throw InstallerError.localized("Python environment check returned unreadable output.")
 		}
 		let document: RuntimeProbeDocument
 		do {
 			document = try JSONDecoder().decode(RuntimeProbeDocument.self, from: data)
 		} catch {
-			throw InstallerError.userFacing(
-				"Python environment check returned malformed JSON: \(error.localizedDescription)"
+			throw InstallerError.localized("Python environment check returned malformed JSON: \(error.localizedDescription)"
 			)
 		}
 		log("Python environment diagnostic JSON:\n\(stdout)")
 
 		guard document.schemaVersion == Self.schemaVersion else {
-			throw InstallerError.userFacing(
-				"Python environment check returned unsupported schema \(document.schemaVersion)."
+			throw InstallerError.localized("Python environment check returned unsupported schema \(document.schemaVersion)."
 			)
 		}
 		guard document.mode == mode.rawValue else {
-			throw InstallerError.userFacing("Python environment check returned the wrong mode.")
+			throw InstallerError.localized("Python environment check returned the wrong mode.")
 		}
 		let validStatuses = Set(["ok", "incomplete", "incompatible", "error"])
 		guard validStatuses.contains(document.status) else {
-			throw InstallerError.userFacing("Python environment check returned an invalid overall status.")
+			throw InstallerError.localized("Python environment check returned an invalid overall status.")
 		}
 		guard document.blocking == ["incompatible", "error"].contains(document.status) else {
-			throw InstallerError.userFacing("Python environment check returned an inconsistent status.")
+			throw InstallerError.localized("Python environment check returned an inconsistent status.")
 		}
 		guard mode != .postinstall || document.status != "incomplete" else {
-			throw InstallerError.userFacing("Post-install Python environment check was incomplete.")
+			throw InstallerError.localized("Post-install Python environment check was incomplete.")
 		}
 		let expectedExitCodes: Set<Int32> = document.blocking ? [2] : [0]
 		guard expectedExitCodes.contains(result.exitCode) else {
-			throw InstallerError.userFacing(
-				"Python environment check exited unexpectedly (status \(result.exitCode))."
+			throw InstallerError.localized("Python environment check exited unexpectedly (status \(result.exitCode))."
 			)
 		}
 		if document.blocking {
-			throw InstallerError.userFacing(Self.failureMessage(document, mode: mode))
+			throw RuntimeProbeFailure(document: document, mode: mode)
 		}
 		return document
 	}
@@ -155,16 +151,30 @@ public struct RuntimeProbeExecutor {
 		_ document: RuntimeProbeDocument,
 		mode: Mode
 	) -> String {
+		failureMessage(document, mode: mode, bundle: nil, locale: .current)
+	}
+
+	fileprivate static func failureMessage(
+		_ document: RuntimeProbeDocument,
+		mode: Mode,
+		bundle: Bundle?,
+		locale: Locale
+	) -> String {
+		func display(_ message: AppMessage) -> String {
+			guard let bundle else { return message.diagnostic }
+			return message.localized(bundle: bundle, locale: locale)
+		}
+
 		let details = document.issues
 			.filter(\.blocking)
 			.map { issue in
-				issue.file.map { "\(issue.message)\nFile: \($0)" } ?? issue.message
+				issue.file.map { issue.message + "\n" + display("File: \($0)") } ?? issue.message
 			}
 			.joined(separator: "\n")
 		let summary = details.isEmpty
-			? "The Python environment could not be verified."
+			? display("The Python environment could not be verified.")
 			: details
-		let boundary = mode == .preinstall
+		let boundary: AppMessage = mode == .preinstall
 			? "Installation stopped before changing dependencies or the plug-in."
 			: "Post-install verification failed, so installation will not be reported as successful."
 		let codes = Set(document.issues.filter(\.blocking).map(\.code))
@@ -172,17 +182,25 @@ public struct RuntimeProbeExecutor {
 		let location: Set<String> = ["symlink_escape", "unexpected_origin"]
 		let imports: Set<String> = ["missing_module", "import_failure"]
 		let categoryCount = [native, location, imports].filter { !codes.isDisjoint(with: $0) }.count
-		let headline: String
+		let headline: AppMessage
 		if categoryCount == 1, !codes.isDisjoint(with: native) { headline = "Native compatibility failure." }
 		else if categoryCount == 1, !codes.isDisjoint(with: location) { headline = "Dependency-location verification failure." }
 		else if categoryCount == 1, !codes.isDisjoint(with: imports) { headline = "Dependency import failure." }
 		else { headline = "Python environment verification failure." }
-		return """
-\(headline)
-Glyphs uses Python \(document.runtime.version) at \(document.runtime.executable).
-\(summary)
-\(boundary) Do not delete shared packages. Confirm that Glyphs and the installer use the same Python. Correct escaping symlinks; reinstall unexpected or native-incompatible packages using the reported primary root and selected interpreter. Lower-priority duplicate warnings normally require no action. See the Glyphs MCP troubleshooting guide.
-"""
+		let runtime = display("Glyphs uses Python \(document.runtime.version) at \(document.runtime.executable).")
+		let guidance = display("Do not delete shared packages. Confirm that Glyphs and the installer use the same Python. Correct escaping symlinks; reinstall unexpected or native-incompatible packages using the reported primary root and selected interpreter. Lower-priority duplicate warnings normally require no action. See the Glyphs MCP troubleshooting guide.")
+		return [display(headline), runtime, summary, display(boundary) + " " + guidance].joined(separator: "\n")
+	}
+}
+
+struct RuntimeProbeFailure: LocalizedError {
+	let document: RuntimeProbeDocument
+	let mode: RuntimeProbeExecutor.Mode
+
+	var errorDescription: String? { RuntimeProbeExecutor.failureMessage(document, mode: mode) }
+
+	func presentationDescription(bundle: Bundle, locale: Locale) -> String {
+		RuntimeProbeExecutor.failureMessage(document, mode: mode, bundle: bundle, locale: locale)
 	}
 }
 
@@ -255,7 +273,7 @@ public struct DepsInstaller {
 		pathPlan: RuntimeProbeDocument.PathPlan? = nil
 	) async throws {
 		guard let pathPlan else {
-			throw InstallerError.userFacing("Python environment preflight omitted the runtime path plan.")
+			throw InstallerError.localized("Python environment preflight omitted the runtime path plan.")
 		}
 		let target = URL(fileURLWithPath: pathPlan.primaryRoot, isDirectory: true)
 		if pathPlan.installMode == "target" {
@@ -290,7 +308,7 @@ public struct DepsInstaller {
 		case .custom(let python3):
 			let ver = runner.runSync(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"]).trimmingCharacters(in: .whitespacesAndNewlines)
 			if !VersionGate.isSupported(version: ver) {
-				throw InstallerError.userFacing("Selected Python \(ver) is not supported. Please use 3.11–3.14.")
+				throw InstallerError.localized("Selected Python \(ver) is not supported. Please use 3.11–3.14.")
 			}
 			if try await canReuseInstalledDependencies(
 				python: python3,
@@ -440,7 +458,7 @@ print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
 			allowUserSite: allowUserSite
 		)
 		guard document.pathPlan == expectedPathPlan else {
-			throw InstallerError.userFacing("Runtime path plan changed between preflight and post-install verification.")
+			throw InstallerError.localized("Runtime path plan changed between preflight and post-install verification.")
 		}
 	}
 
@@ -565,7 +583,7 @@ public struct PluginInstaller {
 			try fm.copyItem(at: srcBundle, to: staged)
 			let stagedSignature = try verifier.verify(staged)
 			guard stagedSignature == sourceSignature else {
-				throw InstallerError.userFacing("The staged plug-in signature changed during copy.")
+				throw InstallerError.localized("The staged plug-in signature changed during copy.")
 			}
 
 			if hadExisting {
@@ -580,7 +598,7 @@ public struct PluginInstaller {
 
 			let installedSignature = try verifier.verify(dest)
 			guard installedSignature == sourceSignature else {
-				throw InstallerError.userFacing("The installed plug-in signature does not match the trusted payload.")
+				throw InstallerError.localized("The installed plug-in signature does not match the trusted payload.")
 			}
 
 			if movedExistingToBackup {
@@ -599,8 +617,7 @@ public struct PluginInstaller {
 				do {
 					try fm.moveItem(at: backup, to: dest)
 				} catch {
-					throw InstallerError.userFacing(
-						"Plug-in installation failed and the previous plug-in could not be restored: \(error.localizedDescription)"
+					throw InstallerError.localized("Plug-in installation failed and the previous plug-in could not be restored: \(error.localizedDescription)"
 					)
 				}
 			}
@@ -648,17 +665,17 @@ public struct PluginExecutableVerifier {
 	public static let live = PluginExecutableVerifier { bundleURL in
 		let executable = bundleURL.appendingPathComponent("Contents/MacOS/plugin")
 		guard FileManager.default.fileExists(atPath: executable.path) else {
-			throw InstallerError.userFacing("Trusted plug-in executable is missing: \(executable.path)")
+			throw InstallerError.localized("Trusted plug-in executable is missing: \(executable.path)")
 		}
 
 		_ = try runCodesign(arguments: ["--verify", "--deep", "--strict", "--verbose=2", bundleURL.path], executable: executable)
 		let details = try runCodesign(arguments: ["-d", "--verbose=4", executable.path], executable: executable)
 		let fields = parseDetails(details)
 		guard let cdHash = fields["CDHash"], !cdHash.isEmpty else {
-			throw InstallerError.userFacing("Trusted plug-in signature has no CDHash.")
+			throw InstallerError.localized("Trusted plug-in signature has no CDHash.")
 		}
 		guard fields["TeamIdentifier"] == expectedTeamIdentifier else {
-			throw InstallerError.userFacing("Trusted plug-in is not signed by the expected developer team.")
+			throw InstallerError.localized("Trusted plug-in is not signed by the expected developer team.")
 		}
 		let authority = details
 			.split(separator: "\n")
@@ -667,17 +684,17 @@ public struct PluginExecutableVerifier {
 			.dropFirst("Authority=".count)
 			.description ?? ""
 		guard authority.hasPrefix("Developer ID Application:") || authority.hasPrefix("Apple Development:") else {
-			throw InstallerError.userFacing("Trusted plug-in has an unexpected signing authority.")
+			throw InstallerError.localized("Trusted plug-in has an unexpected signing authority.")
 		}
 		let runtime = details.range(of: #"flags=.*\(runtime\)"#, options: .regularExpression) != nil
 		guard runtime else {
-			throw InstallerError.userFacing("Trusted plug-in signature is missing the hardened runtime.")
+			throw InstallerError.localized("Trusted plug-in signature is missing the hardened runtime.")
 		}
 		let timestamped = details
 			.split(separator: "\n")
 			.contains(where: { $0.hasPrefix("Timestamp=") })
 		guard timestamped else {
-			throw InstallerError.userFacing("Trusted plug-in signature is missing a secure timestamp.")
+			throw InstallerError.localized("Trusted plug-in signature is missing a secure timestamp.")
 		}
 		if authority.hasPrefix("Developer ID Application:") {
 			_ = try runCommand(
@@ -687,7 +704,7 @@ public struct PluginExecutableVerifier {
 			)
 			let ticket = bundleURL.appendingPathComponent("Contents/CodeResources")
 			guard FileManager.default.fileExists(atPath: ticket.path) else {
-				throw InstallerError.userFacing("Trusted plug-in is missing its stapled notarization ticket.")
+				throw InstallerError.localized("Trusted plug-in is missing its stapled notarization ticket.")
 			}
 		}
 		return PluginExecutableSignature(
@@ -740,7 +757,7 @@ public struct PluginExecutableVerifier {
 				let details = output.trimmingCharacters(in: .whitespacesAndNewlines)
 				let tool = URL(fileURLWithPath: executablePath).lastPathComponent
 				let message = details.isEmpty ? "\(tool) exited with \(process.terminationStatus)" : details
-				throw InstallerError.userFacing("Plug-in security verification failed for \(subject.path): \(message)")
+				throw InstallerError.localized("Plug-in security verification failed for \(subject.path): \(message)")
 			}
 			return output
 		} catch {
@@ -748,7 +765,7 @@ public struct PluginExecutableVerifier {
 				throw installerError
 			}
 			let tool = URL(fileURLWithPath: executablePath).lastPathComponent
-			throw InstallerError.userFacing("Could not run \(tool) for \(subject.path): \(error.localizedDescription)")
+			throw InstallerError.localized("Could not run \(tool) for \(subject.path): \(error.localizedDescription)")
 		}
 	}
 }

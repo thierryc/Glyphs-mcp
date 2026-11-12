@@ -15,7 +15,7 @@ def copy_catalog_fixture(destination):
              'plugins/glyphs-mcp/.codex-plugin/plugin.json',
              'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json']
     files += [f'macos-installer/GlyphsMCPInstaller/Resources/{language}.lproj/Localizable.strings'
-              for language in ('en', 'fr', 'zh-Hans')]
+              for language in checker.LOCALES]
     for skill in json.loads((ROOT/'skills/manifest.json').read_text())['managedSkills']:
         files += [f'skills/{skill["name"]}/SKILL.md', f'skills/{skill["name"]}/agents/openai.yaml']
     for relative in files:

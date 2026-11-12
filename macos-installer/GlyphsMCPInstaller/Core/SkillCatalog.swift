@@ -98,16 +98,16 @@ public struct SkillCatalog: Codable, Sendable {
     public static let remoteURL = URL(string: "https://raw.githubusercontent.com/thierryc/glyphs-mcp-skills/main/registry.json")!
     public static let contributionURL = URL(string: "https://github.com/thierryc/glyphs-mcp-skills/blob/main/CONTRIBUTING.md")!
     public static func decode(_ data: Data, allowImports: Bool = false) throws -> Self {
-        guard data.count <= 512_000 else { throw ProjectError("The skills catalog is too large.") }
+        guard data.count <= 512_000 else { throw ProjectError(localized: "The skills catalog is too large.") }
         let value = try JSONDecoder().decode(Self.self, from: data)
         guard value.schemaVersion == 1, value.skills.count <= 500,
               Set(value.skills.map(\.id)).count == value.skills.count,
-              Set(value.skills.map { $0.name.lowercased() }).count == value.skills.count else { throw ProjectError("Invalid skills catalog.") }
+              Set(value.skills.map { $0.name.lowercased() }).count == value.skills.count else { throw ProjectError(localized: "Invalid skills catalog.") }
         for entry in value.skills {
             if let title = entry.displayName {
                 guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 80,
                       !title.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else {
-                    throw ProjectError("Invalid skill display name.")
+                    throw ProjectError(localized: "Invalid skill display name.")
                 }
             }
             guard SkillMetadata.validName(entry.name), !entry.id.isEmpty, entry.id.count <= 160,
@@ -117,19 +117,19 @@ public struct SkillCatalog: Codable, Sendable {
                   Set(entry.compatibleClients).count == entry.compatibleClients.count,
                   allowImports || entry.classification != .imported,
                   entry.bundled || entry.source.archiveSHA256.map(SkillSource.isHash) == true else {
-                throw ProjectError("A skill needs valid metadata, compatibility, a pinned public source and checksum.")
+                throw ProjectError(localized: "A skill needs valid metadata, compatibility, a pinned public source and checksum.")
             }
             if let tested = entry.testedClients,
                tested.isEmpty || Set(tested).count != tested.count || !Set(tested).isSubset(of: Set(entry.compatibleClients)) {
-                throw ProjectError("Tested agents must be listed as compatible.")
+                throw ProjectError(localized: "Tested agents must be listed as compatible.")
             }
             if let version = entry.version, !CatalogSkill.validVersion(version) {
-                throw ProjectError("Invalid skill version. Use a version such as 1, 2.1 or 3.2.1.")
+                throw ProjectError(localized: "Invalid skill version. Use a version such as 1, 2.1 or 3.2.1.")
             }
             if entry.source.directory != "." { try ProjectFiles.validateRelativePath(entry.source.directory) }
             if entry.bundled {
                 guard entry.id == "builtin:" + entry.name, entry.source.repository == "https://github.com/thierryc/Glyphs-mcp",
-                      entry.source.directory == "skills/" + entry.name else { throw ProjectError("Invalid included skill.") }
+                      entry.source.directory == "skills/" + entry.name else { throw ProjectError(localized: "Invalid included skill.") }
             }
         }
         return value
@@ -149,7 +149,7 @@ public struct SkillCatalog: Codable, Sendable {
                   entry.source.directory == local.source.directory,
                   entry.classification == .curated,
                   entry.id == "builtin:" + entry.name else {
-                throw ProjectError("A catalog skill conflicts with an included skill.")
+                throw ProjectError(localized: "A catalog skill conflicts with an included skill.")
             }
             return false
         }
@@ -185,7 +185,7 @@ public struct SkillMetadata: Equatable, Sendable {
         guard let title = try interfaceValue("display_name", in: files) else { return nil }
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 80,
               !title.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else {
-            throw ProjectError("Invalid skill display name.")
+            throw ProjectError(localized: "Invalid skill display name.")
         }
         return title
     }
@@ -198,7 +198,7 @@ public struct SkillMetadata: Equatable, Sendable {
 
     private static func interfaceValue(_ key: String, in files: [ProjectFile]) throws -> String? {
         guard let data = files.first(where: { $0.path == "agents/openai.yaml" })?.data else { return nil }
-        guard data.count <= 100_000, let text = String(data: data, encoding: .utf8) else { throw ProjectError("Skill UI metadata must be bounded UTF-8 text.") }
+        guard data.count <= 100_000, let text = String(data: data, encoding: .utf8) else { throw ProjectError(localized: "Skill UI metadata must be bounded UTF-8 text.") }
         var inInterface = false
         var value: String?
         for line in text.components(separatedBy: .newlines) {
@@ -206,15 +206,15 @@ public struct SkillMetadata: Equatable, Sendable {
             if line.first?.isWhitespace != true { inInterface = line == "interface:"; continue }
             let field = line.trimmingCharacters(in: .whitespaces)
             guard inInterface, field.hasPrefix(key + ":") else { continue }
-            guard value == nil else { throw ProjectError("Duplicate skill UI metadata field.") }
+            guard value == nil else { throw ProjectError(localized: "Duplicate skill UI metadata field.") }
             let raw = String(field.dropFirst(key.count + 1)).trimmingCharacters(in: .whitespaces)
             if raw.hasPrefix("\"") {
-                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(raw.utf8)) else { throw ProjectError("Invalid quoted skill UI metadata.") }
+                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(raw.utf8)) else { throw ProjectError(localized: "Invalid quoted skill UI metadata.") }
                 value = decoded
             } else if raw.hasPrefix("'"), raw.hasSuffix("'"), raw.count >= 2 {
                 value = String(raw.dropFirst().dropLast()).replacingOccurrences(of: "''", with: "'")
             } else {
-                guard !raw.hasPrefix("!"), !raw.hasPrefix("&"), !raw.hasPrefix("*"), !raw.hasPrefix("["), !raw.hasPrefix("{"), !raw.hasPrefix("|"), !raw.hasPrefix(">") else { throw ProjectError("Use plain or quoted skill UI metadata.") }
+                guard !raw.hasPrefix("!"), !raw.hasPrefix("&"), !raw.hasPrefix("*"), !raw.hasPrefix("["), !raw.hasPrefix("{"), !raw.hasPrefix("|"), !raw.hasPrefix(">") else { throw ProjectError(localized: "Use plain or quoted skill UI metadata.") }
                 value = raw.components(separatedBy: " #").first?.trimmingCharacters(in: .whitespaces)
             }
         }
@@ -222,9 +222,9 @@ public struct SkillMetadata: Equatable, Sendable {
     }
     /// Reads the standard required fields without evaluating YAML tags or programs.
     public static func parse(_ data: Data) throws -> Self {
-        guard data.count <= 1_000_000, let text = String(data: data, encoding: .utf8) else { throw ProjectError("SKILL.md must be bounded UTF-8 text.") }
+        guard data.count <= 1_000_000, let text = String(data: data, encoding: .utf8) else { throw ProjectError(localized: "SKILL.md must be bounded UTF-8 text.") }
         let lines = text.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n")
-        guard lines.first == "---", let end = lines.dropFirst().firstIndex(of: "---") else { throw ProjectError("SKILL.md needs YAML frontmatter.") }
+        guard lines.first == "---", let end = lines.dropFirst().firstIndex(of: "---") else { throw ProjectError(localized: "SKILL.md needs YAML frontmatter.") }
         var fields: [String: String] = [:]
         var index = 1
         while index < end {
@@ -232,7 +232,7 @@ public struct SkillMetadata: Equatable, Sendable {
             if line.first?.isWhitespace == true || line.hasPrefix("#") || line.isEmpty { continue }
             guard let colon = line.firstIndex(of: ":") else { continue }
             let key = String(line[..<colon]); guard key == "name" || key == "description" else { continue }
-            guard fields[key] == nil else { throw ProjectError("Duplicate skill metadata field.") }
+            guard fields[key] == nil else { throw ProjectError(localized: "Duplicate skill metadata field.") }
             var value = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
             if [">", ">-", "|", "|-", ">+", "|+"].contains(value) {
                 let separator = value.hasPrefix(">") ? " " : "\n"
@@ -242,32 +242,32 @@ public struct SkillMetadata: Equatable, Sendable {
                 }
                 value = chunks.joined(separator: separator).trimmingCharacters(in: .whitespacesAndNewlines)
             } else if value.hasPrefix("\"") {
-                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(value.utf8)) else { throw ProjectError("Invalid quoted skill metadata.") }
+                guard let decoded = try? JSONDecoder().decode(String.self, from: Data(value.utf8)) else { throw ProjectError(localized: "Invalid quoted skill metadata.") }
                 value = decoded
             } else if value.hasPrefix("'") {
-                guard value.hasSuffix("'"), value.count >= 2 else { throw ProjectError("Invalid quoted skill metadata.") }
+                guard value.hasSuffix("'"), value.count >= 2 else { throw ProjectError(localized: "Invalid quoted skill metadata.") }
                 value = String(value.dropFirst().dropLast()).replacingOccurrences(of: "''", with: "'")
             } else {
                 guard !value.hasPrefix("!"), !value.hasPrefix("&"), !value.hasPrefix("*"), !value.hasPrefix("["), !value.hasPrefix("{") else {
-                    throw ProjectError("Use plain or quoted name and description metadata.")
+                    throw ProjectError(localized: "Use plain or quoted name and description metadata.")
                 }
                 if let comment = value.range(of: " #") { value = String(value[..<comment.lowerBound]) }
             }
             fields[key] = value
         }
         guard let name = fields["name"], validName(name), let description = fields["description"], !description.isEmpty, description.count <= 1024 else {
-            throw ProjectError("SKILL.md needs a valid name and description.")
+            throw ProjectError(localized: "SKILL.md needs a valid name and description.")
         }
         return .init(name: name, description: description)
     }
     public static func validate(_ files: [ProjectFile], expectedName: String? = nil, bundled: Bool = false) throws -> Self {
-        guard let data = files.first(where: { $0.path == "SKILL.md" })?.data else { throw ProjectError("The folder is missing SKILL.md.") }
+        guard let data = files.first(where: { $0.path == "SKILL.md" })?.data else { throw ProjectError(localized: "The folder is missing SKILL.md.") }
         let metadata = try parse(data)
-        guard expectedName == nil || expectedName == metadata.name else { throw ProjectError("The skill name differs from its catalog entry.") }
+        guard expectedName == nil || expectedName == metadata.name else { throw ProjectError(localized: "The skill name differs from its catalog entry.") }
         var paths = Set<String>()
         for file in files {
             try ProjectFiles.validateRelativePath(file.path)
-            guard paths.insert(file.path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw ProjectError("Duplicate skill paths.") }
+            guard paths.insert(file.path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw ProjectError(localized: "Duplicate skill paths.") }
         }
         if !bundled {
             let links = try NSRegularExpression(pattern: #"\]\(([^\s)]+)(?:\s+[^)]*)?\)"#)
@@ -279,18 +279,18 @@ public struct SkillMetadata: Equatable, Sendable {
                     if link.hasPrefix("#") || URL(string: link)?.scheme != nil { continue }
                     var path = String(link.split(separator: "#", maxSplits: 1)[0]).removingPercentEncoding ?? link
                     if path.hasPrefix("./") { path = String(path.dropFirst(2)) }
-                    guard !path.hasPrefix("/"), !path.contains("\\") else { throw ProjectError("Unsafe skill reference.") }
+                    guard !path.hasPrefix("/"), !path.contains("\\") else { throw ProjectError(localized: "Unsafe skill reference.") }
                     var parts = (file.path as NSString).deletingLastPathComponent.split(separator: "/").map(String.init)
                     for component in path.split(separator: "/", omittingEmptySubsequences: false) {
                         if component == "." { continue }
                         if component == ".." {
-                            guard !parts.isEmpty else { throw ProjectError("A reference leaves the skill folder.") }
+                            guard !parts.isEmpty else { throw ProjectError(localized: "A reference leaves the skill folder.") }
                             parts.removeLast()
                         } else { parts.append(String(component)) }
                     }
                     let relative = parts.joined(separator: "/")
                     try ProjectFiles.validateRelativePath(relative)
-                    guard files.contains(where: { $0.path == relative }) else { throw ProjectError("Missing referenced skill file: " + relative) }
+                    guard files.contains(where: { $0.path == relative }) else { throw ProjectError(localized: "Missing referenced skill file: \(relative)") }
                 }
             }
         }

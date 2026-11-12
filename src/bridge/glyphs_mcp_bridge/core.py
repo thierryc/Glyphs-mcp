@@ -14,6 +14,7 @@ from glyphs_mcp_protocol import PROTOCOL_VERSION, ProtocolError, validate_patch
 from glyphs_mcp_protocol.native_actions import MAX_JOB_STATE_BYTES
 from glyphs_mcp_protocol import scripts
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
+from glyphs_mcp_protocol.task_conflicts import stopped_script_released, stopped_without_pending_writes
 
 from . import cleanup, dimensions, feature_compile, native_actions, outline_edit, saving
 from .companions import CompanionRegistry
@@ -473,6 +474,14 @@ class BridgeCore:
             operation = self._operations.get(str(job_id))
             if operation is None:
                 raise BridgeError("job_not_found", "the bridge does not know this job")
+            if (operation.get('scriptStage') == 'done' and operation.get('scriptSnapshot') is not None
+                    and stopped_without_pending_writes(operation, operation)):
+                try:
+                    self.adapter.document_state(operation['documentId'])
+                except BridgeError as exc:
+                    if exc.code == 'document_not_found':
+                        from .script_snapshot import release
+                        release(operation)  # The original document binding has been retired.
             return self._public(operation)
 
     def _run_chunk(self, job_id: str) -> None:
@@ -664,7 +673,9 @@ class BridgeCore:
             "scriptResult": copy.deepcopy(operation.get("scriptResult")),
             "receipt": copy.deepcopy(operation.get("receipt")),
             "restorationClosed": bool(operation.get("restorationClosed")),
-            "recoveryAvailable": (bool((operation.get('scriptResult') or {}).get('recovery', {}).get('available'))
+            "stoppedReleased": bool(operation.get('scriptRequest') and stopped_script_released(operation)),
+            "recoveryAvailable": (bool(operation.get('scriptSnapshot') is not None or
+                                       (operation.get('scriptResult') or {}).get('recovery', {}).get('available'))
                                   if operation.get('scriptRequest') else
                                   bool(operation.get('resolved') and operation['status'] == 'applied'
                                        and not operation.get('restorationClosed'))),

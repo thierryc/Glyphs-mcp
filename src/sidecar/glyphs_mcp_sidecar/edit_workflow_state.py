@@ -8,8 +8,10 @@ from pathlib import Path
 import time
 from uuid import uuid4
 from glyphs_mcp_protocol import scripts
-from .saved_script import unresolved
+from glyphs_mcp_protocol.task_conflicts import STOPPED_SCRIPT, stopped_script_released
+from .saved_script import stopped_outcome, unresolved
 from .activity_feedback import workflow_progress
+from .preview_cleanup import failed_dispatch_pending
 
 TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed", "expired"}
 ACTIVE = {"diagnosing", "queued", "preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
@@ -251,7 +253,7 @@ def _offered_actions(value):
             path = value['document'].get('path') or ''
             save = ('save_result', 'Save font') if path.lower().endswith(('.glyphs', '.glyphspackage')) else ('save_result_as', 'Save As…')
             return [('finish_script', 'Keep changes without saving'), save] + restore
-        if state in {'failed', 'cancelled'} and executed:
+        if state in STOPPED_SCRIPT and executed and not stopped_script_released(job):
             return [('finish_script', 'Keep changes without saving')] + restore
         if state == 'executed':
             return []
@@ -293,6 +295,43 @@ def current_save_status(value):
             'Current save status could not be confirmed.')
 
 
+def remaining_work(value, job, *, recovery_status=None):
+    state = value.get('state', job.get('status'))
+    if state == 'expired' or value.get('blockerId'):
+        return None
+    if job.get('previewReleasePending') or failed_dispatch_pending(job):
+        return 'Glyphs MCP is waiting to release the unused script preview.'
+    error = value.get('error') or job.get('error') or {}
+    if state in {'uncertain', 'interrupted', 'accept_uncertain'} or error.get('code') == 'restoration_unverified':
+        return 'Check the existing result in Glyphs before trying again.'
+    if state in STOPPED_SCRIPT and (job.get('hasPendingWrites') or job.get('saveRequest') or job.get('restoreRequest')):
+        return 'Check whether the pending save or restore completed in Glyphs.'
+    if state in STOPPED_SCRIPT and unresolved(job) and job.get('resultKind') == 'script':
+        if recovery_status == 'available' or recovery_status is None and (value.get('savedVersion') or {}).get('available'):
+            return 'Inspect the result in Glyphs, then choose whether to restore the pre-run font or keep the current font without saving.'
+        if recovery_status == 'unknown' or recovery_status is None and value.get('savedVersion') is None:
+            return 'Check whether the original font still has usable recovery in Glyphs.'
+        return 'Check the original font and recovery in Glyphs. If Restore is still unavailable, Keep releases the script’s reservation without saving.'
+    if ((error.get('details') or {}).get('recovery') or {}).get('complete') is False:
+        return 'Inspect the affected glyphs in Glyphs. Automatic recovery was incomplete.'
+    if state == 'failed' and job.get('status') == 'ready':
+        return 'Retry the baseline and apply, or cancel the pending preview.' if str(error.get('code', '')).startswith('checkpoint_') else 'Cancel the pending preview.'
+    if state == 'failed' and job.get('status') in {'applied', 'accepting', 'accepted'}:
+        return 'Check the native result and available recovery in Glyphs.'
+    if recovery_status is not None:
+        if state == 'ready' and job.get('resultKind') == 'artifact':
+            return 'Review the verified report and choose a destination to publish the files.'
+        return {
+            'waiting_run': 'Review the script and choose Run or Cancel.',
+            'waiting_save': 'Choose whether to save the font and continue.',
+            'waiting_manual': 'Save the font in Glyphs, then choose Check and continue.',
+            'ready': 'Review the preview and choose whether to apply or discard it.',
+            'needs_review': 'Review the warnings and decide whether to apply the preview.',
+            'outdated': 'Prepare the request again using the current font, or cancel it.',
+        }.get(state)
+    return None
+
+
 def presented_actions(value):
     """Presentation only: never widen the lifecycle's offered actions."""
     offered = offered_actions(value)
@@ -327,7 +366,9 @@ def presented_actions(value):
         item = dict(action=name, label=labels.get(name, label), token=action_token(value, name),
                     requiresDestination=name in {'save_as_continue', 'save_result_as'}, presentation=placement)
         if name in {'finish_edit', 'finish_script'}:
-            item['tooltip'] = 'Keep current changes in Glyphs without saving. Close this task and end its recovery option.'
+            item['tooltip'] = ('Close this task and release its reservation without saving the font.'
+                               if state in STOPPED_SCRIPT and 'restore_saved_script' not in names else
+                               'Keep current changes in Glyphs without saving. Close this task and end its recovery option.')
         elif name in {'save_result', 'save_result_as'}:
             item['tooltip'] = ('Choose a new destination and save the whole font, including other unsaved edits. '
                                if name == 'save_result_as' else
@@ -358,9 +399,13 @@ def action_support_text(value):
     job = value.get('job') or {}
     operation = job.get('bridgeOperation') or {}
     evidence = operation.get('scriptResult') or {}
+    if state == 'executed' and job.get('stoppedStatus'):
+        return 'Task closed without saving. The recorded script outcome was retained.'
     if not value.get('blockerId'):
         names = {name for name, _ in offered_actions(value)}
         if names.intersection({'finish_edit', 'finish_script'}):
+            if state in STOPPED_SCRIPT and 'restore_saved_script' not in names:
+                return 'Keep releases this task’s reservation without saving the font.'
             return ('Choosing Keep or Save closes this task and ends its temporary recovery option.'
                     if names.intersection({'save_result', 'save_result_as'}) else
                     'Choosing Keep closes this task without saving and ends its temporary recovery option.')
@@ -449,6 +494,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
             result['warning'] = scripts.WARNING
     result['progress'] = workflow_progress(value)
     result['actions'] = presented_actions(value)
+    result['remainingWork'] = remaining_work(value, value.get('job') or {})
     if support := action_support_text(value):
         result['actionSupportText'] = support
     result["message"] = MESSAGES.get(value["state"], "Checking your changes…")
@@ -472,11 +518,23 @@ def public_workflow(value, *, include_review=False, include_warning=False):
             'interrupted': 'Result not confirmed. Check the existing result; do not replay the script.',
         }
         result['message'] = messages.get(value['state'], result['message'])
-        if value['state'] in {'failed', 'cancelled'} and evidence.get('executed'):
-            result['message'] = 'Script stopped. Partial edits may remain; inspect the font before keeping or restoring them.'
+        job = value.get('job') or {}
+        stopped = None
+        if not value.get('blockerId'):
+            if value['state'] in STOPPED_SCRIPT:
+                stopped = stopped_outcome(job)
+            elif value['state'] == 'executed' and job.get('stoppedStatus'):
+                stopped = job.get('outcome')
+        if stopped:
+            result['outcome'] = stopped
+            result['closed'] = bool(job.get('stoppedStatus') or stopped_script_released(job))
+            result['message'] = ('Python returned successfully. The intended result is unverified.' if stopped == 'unverified'
+                                 else 'Script stopped. Partial edits may remain.')
+            if result['closed']:
+                result['message'] += ' Task closed.'
         if evidence.get('executed'):
             result['verification'] = 'Intended changes have not been verified by the wrapper.'
-        if (value.get('job') or {}).get('outcome') == 'unverified':
+        if job.get('outcome') == 'unverified' and not job.get('stoppedStatus'):
             result['message'] = 'Unknown script outcome acknowledged. Execution remains unverified; no code was replayed.'
     if request['kind'] == 'checkpoint_restore':
         if (value.get('job') or {}).get('outcome') == 'unverified' or unresolved(value.get('job') or {}):
@@ -583,14 +641,18 @@ def public_workflow(value, *, include_review=False, include_warning=False):
             result['text'] += '\n' + item['label'] + ': ' + item['tooltip']
     if result.get('actionSupportText'):
         result['text'] += '\n' + result['actionSupportText']
+    if result['remainingWork']:
+        result['text'] += '\nRemaining work\n' + result['remainingWork']
     if result.get('autoKeep', {}).get('action'):
         result['text'] += '\nIn an active card, Keep changes without saving is selected after 30 seconds. This ends this workflow’s recovery offer. Choose or say “Wait for my answer” to disable it. Text-only clients keep this choice manual.'
     elif value.get('autoKeepEnabled') is False and value['state'] == 'applied':
         result['text'] += '\nAutomatic Keep is off; waiting for your answer.'
     elif any(item['presentation'] == 'auto_keep' for item in result['actions']):
         result['text'] += '\nTurn off automatic Keep: say “Wait for my answer”. Text-only clients keep choices manual.'
-    if value.get("error"):
-        result["text"] += "\nDetails: " + str(value["error"].get("message", ""))
+    job = value.get('job') or {}
+    diagnostic = value.get('error') or (job.get('error') if job.get('stoppedStatus') else None)
+    if diagnostic:
+        result['text'] += '\nDetails: ' + str(diagnostic.get('message', ''))
     result["poll"] = (value["state"] in ACTIVE and (value["state"] != "uncertain" or bool(value.get("jobId")))
                       or value["state"] == "ready" and value.get("mode") == "apply")
     if (value.get('blocker') or {}).get('wait') in {'decision', 'check'}:
@@ -599,7 +661,7 @@ def public_workflow(value, *, include_review=False, include_warning=False):
     # user decision. Recovery actions on failed/cancelled scripts still refresh.
     processing = (value['state'] in {'diagnosing', 'queued', 'preparing', 'applying', 'saving', 'discarding', 'resolving', 'blocked_active'}
                   or value['state'] == 'ready' and value.get('mode') == 'apply')
-    result['uiRefreshIntervalMs'] = 1500 if processing else 5000 if result['actions'] else 0
+    result['uiRefreshIntervalMs'] = 1500 if processing else 5000 if result['actions'] or job.get('previewReleasePending') else 0
     # Some hosts omit structuredContent from the model's conversation. Keep the
     # same bounded control reference in tool text and App context updates.
     result["modelContext"] = json.dumps({

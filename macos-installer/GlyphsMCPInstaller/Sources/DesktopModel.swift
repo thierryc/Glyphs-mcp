@@ -13,6 +13,9 @@ final class DesktopModel: ObservableObject {
     @Published private(set) var controlAction: String?
     var controlling: Bool { controlAction != nil }
     var controlProgress: String? { DesktopDiagnostics.controlProgress(controlAction) }
+    var healthReport: DesktopGlyphsHealthReport {
+        DesktopGlyphsHealthReport(health: status?.health, stale: stale, checking: status?.bridge.checking == true)
+    }
     var statusSymbol: String { DesktopDiagnostics.statusSymbol(running: serviceRunning, stale: stale, status: status) }
     var statusColor: Color {
         switch DesktopDiagnostics.statusTone(running: serviceRunning, stale: stale, status: status) {
@@ -45,9 +48,9 @@ final class DesktopModel: ObservableObject {
     private lazy var taskReadState = DesktopTaskReadState(defaults: .standard, namespace: installation.root.path)
     private lazy var taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: installation.root.path)
     var visibleTasks: [DesktopTask] { tasks.filter { taskHistoryState.isVisible($0) } }
+    var activeTasks: [DesktopTask] { tasks.filter { $0.taskGroup == "active" && taskHistoryState.isVisible($0) } }
     var canClearTaskHistory: Bool { taskIndex.contains { $0.closed && taskHistoryState.isVisible($0) } }
     var hasClearedTaskHistory: Bool { !taskHistoryState.clearedIDs.isEmpty }
-    var unreadTaskCount: Int { taskIndex.filter { taskHistoryState.isVisible($0) && taskReadState.isUnread($0) }.count }
     func clearClosedTaskHistory() {
         objectWillChange.send()
         taskHistoryState.clearClosed(taskIndex)
@@ -207,7 +210,7 @@ final class DesktopModel: ObservableObject {
             }
             let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             guard object?["ok"] as? Bool == true, let payload = object?["data"] else {
-                throw InstallerError.userFacing("The server could not report its current activity.")
+                throw InstallerError.localized("The server could not report its current activity.")
             }
             let observed = try JSONDecoder().decode(DesktopServerStatus.self, from: JSONSerialization.data(withJSONObject: payload))
             if observed != status {
@@ -226,7 +229,7 @@ final class DesktopModel: ObservableObject {
             notice = installation.isDevelopmentLinked ? "" : observed.identityIssues(
                 expectedSidecar: installation.expectedSidecarHash,
                 expectedBridge: installation.expectedBridgeHash
-            ).joined(separator: "\n")
+            ).map { AppLocalization.text($0) }.joined(separator: "\n")
         } catch is CancellationError {
         } catch {
             guard !Task.isCancelled, !controlling else { return }
@@ -319,10 +322,10 @@ final class DesktopModel: ObservableObject {
     func taskRecovery(_ task: DesktopTask, choice: DesktopTaskRecovery.Action? = nil,
                       revision: Int? = nil) async throws -> DesktopTaskRecovery {
         guard let identity = task.workflowId ?? task.jobId else {
-            throw InstallerError.userFacing("This task could not be identified. Refresh Tasks before choosing.")
+            throw InstallerError.localized("This task could not be identified. Refresh Tasks before choosing.")
         }
         guard installation.hasServer, !controlling else {
-            throw InstallerError.userFacing("Connect to the server before using Recovery Options.")
+            throw InstallerError.localized("Connect to the server before using Recovery Options.")
         }
         let root = installation.root
         let identityKey = task.workflowId == nil ? "job_id" : "workflow_id"
@@ -341,7 +344,7 @@ final class DesktopModel: ObservableObject {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard root == installation.root, !Task.isCancelled else { throw CancellationError() }
         if (response as? HTTPURLResponse)?.statusCode == 404 {
-            throw InstallerError.userFacing("Update the sidecar to use Recovery Options. You can still review this task in your agent.")
+            throw InstallerError.localized("Update the sidecar to use Recovery Options. You can still review this task in your agent.")
         }
         struct Failure: Decodable { let message: String }
         struct Envelope: Decodable { let ok: Bool; let data: DesktopTaskRecovery?; let error: Failure? }
@@ -356,7 +359,7 @@ final class DesktopModel: ObservableObject {
     }
 
     private func serviceAction(_ action: String, value: String? = nil) async throws -> [String: Any] {
-        guard let python = installation.python else { throw InstallerError.userFacing("The MCP server is not installed.") }
+        guard let python = installation.python else { throw InstallerError.localized("The MCP server is not installed.") }
         var args = ["-I", "-B", installation.root.appendingPathComponent("sidecar/control.py").path, action]
         if let value { args.append(value) }
         let result = try await runner.runCapturing(executable: python, args: args, timeout: 35)
@@ -368,7 +371,7 @@ final class DesktopModel: ObservableObject {
     }
 
     func stopForInstallation() async throws {
-        guard !controlling else { throw InstallerError.userFacing("A service control is already in progress.") }
+        guard !controlling else { throw InstallerError.localized("A service control is already in progress.") }
         await refresh()
         guard installation.hasServer, serviceRunning != false else { return }
         guard canControl else { throw InstallerError.userFacing(!stale && status?.isBusy == true ? "Wait for the current font task to finish before closing Glyphs." : "The MCP server could not be stopped safely. Open Glyphs and finish any pending dialogs, then Refresh Setup. If it still fails, check the troubleshooting logs before changing components.") }
@@ -388,7 +391,7 @@ final class DesktopModel: ObservableObject {
                 serviceRunning = data?["processRunning"] as? Bool ?? data?["running"] as? Bool
                 if action == "stop" { stale = status != nil }
                 installation = DesktopInstallation()
-            } catch { notice = error.localizedDescription; remember(notice); controlAction = nil; return }
+            } catch { notice = error.presentationDescription(); remember(notice); controlAction = nil; return }
             controlAction = nil
             if action != "stop" { await refresh() }
         }

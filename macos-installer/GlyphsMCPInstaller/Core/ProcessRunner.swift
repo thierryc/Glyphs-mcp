@@ -1,10 +1,32 @@
 import Foundation
 
+public struct ProcessTimeoutError: LocalizedError, Sendable {
+	public let duration: TimeInterval
+	public let executable: String
+	public var errorDescription: String? {
+		let text = duration.rounded() == duration ? "\(Int(duration)) seconds" : String(format: "%.1f seconds", duration)
+		return "Command timed out after \(text): \(executable)."
+	}
+}
+
+public enum ProcessCommandError: LocalizedError, Sendable {
+    case noResult(executable: String)
+    case failed(status: Int32, executable: String, arguments: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .noResult(let executable): return "Command did not return a result: \(executable)"
+        case .failed(let status, let executable, let arguments):
+            return "Command failed (\(status)): \(executable) \(arguments)"
+        }
+    }
+}
+
 private final class ProcessTimeout {
 	private let lock = NSLock()
 	private var expired = false
 	let error: Error
-	init(_ message: String) { error = InstallerError.userFacing(message) }
+	init(duration: TimeInterval, executable: String) { error = ProcessTimeoutError(duration: duration, executable: executable) }
 	func expire() { lock.lock(); expired = true; lock.unlock() }
 	func check() throws {
 		lock.lock(); let value = expired; lock.unlock()
@@ -127,7 +149,7 @@ public final class ProcessRunner {
         onFailureOutput: (@Sendable (Result) -> Void)? = nil
 	) async throws -> Result {
 		if Task.isCancelled { throw CancellationError() }
-		let deadline = ProcessTimeout("Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent).")
+		let deadline = ProcessTimeout(duration: timeout, executable: executable.lastPathComponent)
 		let outputLimit = ProcessOutputLimit(maximumStandardOutputBytes)
 
 		let proc = Process()
@@ -183,7 +205,7 @@ public final class ProcessRunner {
 					}
 					defer { group.cancelAll() }
 					guard let first = try await group.next() else {
-						throw InstallerError.userFacing("Command did not return a result: \(executable.lastPathComponent)")
+						throw ProcessCommandError.noResult(executable: executable.lastPathComponent)
 					}
 					return first
 				}
@@ -219,7 +241,7 @@ public final class ProcessRunner {
 		onLine: @escaping (String) -> Void
 	) async throws {
 		if Task.isCancelled { throw CancellationError() }
-		let deadline = ProcessTimeout("Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent).")
+		let deadline = ProcessTimeout(duration: timeout, executable: executable.lastPathComponent)
 
 		let proc = Process()
 		proc.executableURL = executable
@@ -287,7 +309,7 @@ public final class ProcessRunner {
 
 					defer { group.cancelAll() }
 					guard let first = try await group.next() else {
-						throw InstallerError.userFacing("Command did not return a result: \(executable.lastPathComponent)")
+						throw ProcessCommandError.noResult(executable: executable.lastPathComponent)
 					}
 					return first
 				}
@@ -311,14 +333,8 @@ public final class ProcessRunner {
 		if Task.isCancelled { throw CancellationError() }
 
 		if status != 0 {
-			throw InstallerError.userFacing("Command failed (\(status)): \(executable.lastPathComponent) \(args.joined(separator: " "))")
+			throw ProcessCommandError.failed(status: status, executable: executable.lastPathComponent, arguments: args.joined(separator: " "))
 		}
 	}
 
-	private static func timeoutDescription(_ timeout: TimeInterval) -> String {
-		if timeout.rounded() == timeout {
-			return "\(Int(timeout)) seconds"
-		}
-		return String(format: "%.1f seconds", timeout)
-	}
 }

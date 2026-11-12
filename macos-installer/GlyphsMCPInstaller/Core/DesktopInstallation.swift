@@ -31,14 +31,14 @@ public enum ComponentUpdatePolicy {
     public static func stableContentIdentity(_ bundle: URL, nativeCodeHashes: [String]) throws -> String {
         guard !nativeCodeHashes.isEmpty,
               let enumerator = FileManager.default.enumerator(atPath: bundle.path) else {
-            throw InstallerError.userFacing("Component content is unavailable.")
+            throw InstallerError.localized("Component content is unavailable.")
         }
         var entries: [(String, URL)] = []
         while let relative = enumerator.nextObject() as? String {
             let url = bundle.appendingPathComponent(relative)
             let parts = relative.split(separator: "/").map(String.init)
             let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .isDirectoryKey])
-            guard values.isSymbolicLink != true else { throw InstallerError.userFacing("Component link cannot be verified.") }
+            guard values.isSymbolicLink != true else { throw InstallerError.localized("Component link cannot be verified.") }
             if parts.contains("_CodeSignature") || parts.contains("__pycache__") {
                 if values.isDirectory == true { enumerator.skipDescendants() }
                 continue
@@ -50,7 +50,7 @@ public enum ComponentUpdatePolicy {
             }
         }
         guard entries.contains(where: { $0.0 == "Contents/Info.plist" }) else {
-            throw InstallerError.userFacing("Component metadata is unavailable.")
+            throw InstallerError.localized("Component metadata is unavailable.")
         }
         var digest = SHA256()
         for code in nativeCodeHashes.sorted() { digest.update(data: Data((code + "\0").utf8)) }
@@ -67,13 +67,13 @@ public enum ComponentUpdatePolicy {
     private static func nativeCodeHashes(_ bundle: URL) throws -> [String] {
         let runner = ProcessRunner(), tool = URL(fileURLWithPath: "/usr/bin/codesign")
         guard runner.runSyncWithStderr(executable: tool, args: ["--verify", "--deep", "--strict", bundle.path]).exitCode == 0 else {
-            throw InstallerError.userFacing("Component signature cannot be verified.")
+            throw InstallerError.localized("Component signature cannot be verified.")
         }
         return try ["arm64", "x86_64"].map { architecture in
             let result = runner.runSyncWithStderr(executable: tool, args: ["-d", "--verbose=4", "--arch", architecture, bundle.path])
             guard result.exitCode == 0, let line = result.stderr.split(separator: "\n").first(where: { $0.hasPrefix("CDHash=") }),
                   line.dropFirst(7).range(of: "^[0-9a-f]{40,64}$", options: .regularExpression) != nil else {
-                throw InstallerError.userFacing("Component code identity cannot be verified.")
+                throw InstallerError.localized("Component code identity cannot be verified.")
             }
             return architecture + ":" + line.dropFirst(7)
         }
@@ -294,14 +294,19 @@ public enum SetupQueueItem: Equatable, Sendable {
 }
 
 public enum SetupQueuePolicy {
+    public static func bulkConnectors(detected: Set<InstallerClientKind>) -> [InstallerClientKind] {
+        InstallerClientKind.allCases.filter { $0 != .antigravity || detected.contains($0) }
+    }
+
     public static func bulkPlan(
         installedComponents: Set<String>,
-        installedConnectors: Set<InstallerClientKind>
+        installedConnectors: Set<InstallerClientKind>,
+        detectedConnectors: Set<InstallerClientKind> = []
     ) -> [SetupQueueItem] {
         let components = DesktopComponent.all.map {
             SetupQueueItem.component($0.id, installedComponents.contains($0.id) ? .update : .install)
         }
-        let connectors = InstallerClientKind.allCases.map {
+        let connectors = bulkConnectors(detected: detectedConnectors).map {
             SetupQueueItem.connector($0, installedConnectors.contains($0) ? .update : .install)
         }
         return components + connectors

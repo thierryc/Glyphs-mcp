@@ -99,10 +99,13 @@ class StatusCache:
         if self.thread: self.thread.join(timeout=2)
 
 
-def feedback(service, payload):
+def feedback(service, payload, *, work='overview'):
     status = getattr(service, 'get_status', None)
     value = (payload.get('error') or {}).get('details', {}).get('health') or (status().get('health') if status else None)
-    notice = contract.advisory(value)
+    data = payload.get('data')
+    if work == 'document' and isinstance(data, dict) and data.get('alreadyOpen') is True:
+        work = 'routine'
+    notice = contract.advisory(value, work=work)
     if notice:
         payload['health'] = notice
     return payload

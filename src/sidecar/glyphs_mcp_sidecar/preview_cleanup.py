@@ -2,8 +2,18 @@
 from .bridge_client import BridgeClientError
 
 
+def failed_dispatch_pending(job):
+    """Older sidecars recorded a cancelled Run dispatch as a failed job."""
+    details = (job.get('error') or {}).get('details') or {}
+    return (job.get('status') == 'failed' and job.get('request', {}).get('kind') == 'python_script'
+            and job.get('resultKind') == 'script'
+            and details.get('execution') == 'cancelled'
+            and not ((job.get('bridgeOperation') or {}).get('scriptResult') or {}).get('executed')
+            and not job.get('nativePreviewReleased'))
+
+
 def pending(job):
-    return (job.get('request', {}).get('kind') == 'python_script'
+    return failed_dispatch_pending(job) or (job.get('request', {}).get('kind') == 'python_script'
             and job.get('phase') == 'preparing_native'
             and job.get('status') in {'discarded', 'cancelled'}
             and not job.get('nativePreviewReleased'))

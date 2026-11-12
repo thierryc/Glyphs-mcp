@@ -19,7 +19,7 @@ extension DesktopProjectsModel {
                 fontSources = sources
             } catch {
                 guard !Task.isCancelled, generation == fontSourcesGeneration else { return }
-                fontSourcesError = error.localizedDescription
+                fontSourcesError = error.presentationDescription()
             }
             if generation == fontSourcesGeneration { loadingFontSources = false }
         }
@@ -43,7 +43,7 @@ extension DesktopProjectsModel {
                 if selectedProject == project { refreshFontSources(); inspect() }
             } catch is CancellationError {
                 packageCopySource = nil
-            } catch { packageCopyError = error.localizedDescription }
+            } catch { packageCopyError = error.presentationDescription() }
             copyingSource = nil; packageCopyTask = nil
         }
     }
@@ -142,7 +142,7 @@ struct DesktopPackageCopySheet: View {
     private var running: Bool { model.copyingSource != nil }
     private var nameError: String? {
         do { _ = try FontPackageCopyService.destination(source: source.url, name: name); return nil }
-        catch { return error.localizedDescription }
+        catch { return error.presentationDescription() }
     }
 
     init(model: DesktopProjectsModel, source: ProjectFontSource) {

@@ -115,7 +115,7 @@ public struct URLSessionHTTPClient: HTTPClienting {
 		req.timeoutInterval = timeout
 		let (data, response) = try await URLSession.shared.data(for: req)
 		guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-			throw InstallerError.userFacing("GitHub could not be reached. Try checking again later.")
+			throw InstallerError.localized("GitHub could not be reached. Try checking again later.")
 		}
 		return data
 	}
@@ -152,19 +152,19 @@ public struct GitHubPublishedRelease: Decodable, Equatable {
 		let matches = assets.filter { $0.name == name }
 		guard matches.count == 1, let asset = matches.first else {
 			if matches.isEmpty {
-				throw InstallerError.userFacing("Published release \(tagName) is missing \(name).")
+				throw InstallerError.localized("Published release \(tagName) is missing \(name).")
 			}
-			throw InstallerError.userFacing("Published release \(tagName) contains duplicate \(name) assets.")
+			throw InstallerError.localized("Published release \(tagName) contains duplicate \(name) assets.")
 		}
 		guard asset.browserDownloadURL.scheme == "https",
 			  asset.browserDownloadURL.host == "github.com" else {
-			throw InstallerError.userFacing("Published release \(tagName) has an untrusted download URL for \(name).")
+			throw InstallerError.localized("Published release \(tagName) has an untrusted download URL for \(name).")
 		}
 		guard asset.browserDownloadURL.path == "/thierryc/Glyphs-mcp/releases/download/\(tagName)/\(name)" else {
-			throw InstallerError.userFacing("Published release \(tagName) has an unexpected download path for \(name).")
+			throw InstallerError.localized("Published release \(tagName) has an unexpected download path for \(name).")
 		}
 		guard asset.browserDownloadURL.lastPathComponent == name else {
-			throw InstallerError.userFacing("Published release \(tagName) is missing \(name).")
+			throw InstallerError.localized("Published release \(tagName) is missing \(name).")
 		}
 		return asset
 	}
@@ -181,13 +181,13 @@ public enum GitHubReleaseResolver {
 		do {
 			release = try JSONDecoder().decode(GitHubPublishedRelease.self, from: data)
 		} catch {
-			throw InstallerError.userFacing("GitHub release metadata could not be parsed.")
+			throw InstallerError.localized("GitHub release metadata could not be parsed.")
 		}
 		guard !release.draft, !release.prerelease else {
-			throw InstallerError.userFacing("GitHub returned a draft or prerelease instead of a published stable release.")
+			throw InstallerError.localized("GitHub returned a draft or prerelease instead of a published stable release.")
 		}
 		guard release.tagName.range(of: #"^v[0-9]+\.[0-9]+\.[0-9]+$"#, options: .regularExpression) != nil else {
-			throw InstallerError.userFacing("Published release tag is not a valid numeric version.")
+			throw InstallerError.localized("Published release tag is not a valid numeric version.")
 		}
 		return release
 	}

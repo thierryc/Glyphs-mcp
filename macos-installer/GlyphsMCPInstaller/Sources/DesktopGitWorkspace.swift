@@ -90,9 +90,9 @@ struct DesktopGitWorkspace: View {
                 Button(action: model.inspect) { Label("Working changes", systemImage: "chevron.left") }
                     .help("Return to the project’s working changes")
                 Spacer(minLength: 8)
-                Text(context.checkpoint.dateLabel + " → Latest checkpoint")
+                Text("\(context.checkpoint.dateLabel) → Latest checkpoint")
                     .font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                    .help(context.checkpoint.helpText + "\nLatest checkpoint revision: " + context.after)
+                    .help(Text("\(context.checkpoint.helpText)\nLatest checkpoint revision: \(context.after)"))
             } else if let git = model.git {
                 Label(git.branch, systemImage: "arrow.triangle.branch")
                     .font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
@@ -184,8 +184,8 @@ struct DesktopGitWorkspace: View {
 
     private func fileCountLabel(_ git: GitObservation) -> String {
         let count = model.historicalComparison?.totalCount ?? git.changes.count
-        let text = "\(count) changed file\(count == 1 ? "" : "s")"
-        return model.checkpointNextOffset == nil ? text : text + " · \(git.changes.count) loaded"
+        let text = AppLocalization.count("%lld changed files", count)
+        return model.checkpointNextOffset == nil ? text : AppLocalization.format("%@ · %lld loaded", text, Int64(git.changes.count))
     }
 
     private var detail: some View {
@@ -261,7 +261,7 @@ struct DesktopGitWorkspace: View {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 5) {
                 Text("Visual preview unavailable").font(.headline)
-                Text(glyphErrorCategory + " The Text diff remains available.")
+                Text("\(AppLocalization.text(glyphErrorCategory)) The Text diff remains available.")
                     .font(.caption).foregroundStyle(.secondary)
                 DisclosureGroup("Technical details", isExpanded: $showGlyphErrorDetails) {
                     Text(model.glyphMessage).font(.caption.monospaced()).foregroundStyle(.secondary)
@@ -308,7 +308,7 @@ struct DesktopGitWorkspace: View {
 
     private var glyphModePicker: some View {
         Picker("Preview", selection: glyphModeSelection) {
-            ForEach(DesktopGlyphDiffMode.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(DesktopGlyphDiffMode.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
@@ -401,8 +401,7 @@ struct DesktopGitWorkspace: View {
             Image(systemName: "info.circle.fill").foregroundStyle(.blue)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Large file — showing changed sections only").font(.headline)
-                Text(sizeSummary(oldSize: oldSize, newSize: newSize)
-                     + "; full-file previews are limited to 2 MB per side.")
+                Text("\(sizeSummary(oldSize: oldSize, newSize: newSize)); full-file previews are limited to 2 MB per side.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
@@ -413,12 +412,12 @@ struct DesktopGitWorkspace: View {
     }
 
     private func textUnavailable(title: String, message: String) -> some View {
-        ContentUnavailableView(title, systemImage: "doc.questionmark", description: Text(message))
+        ContentUnavailableView(LocalizedStringKey(title), systemImage: "doc.questionmark", description: Text(message))
     }
 
     private func unavailableTitle(_ reason: GitTextPreviewUnavailableReason) -> String {
-        if case .oversizedPatch = reason { return "Text diff too large" }
-        return "Text diff unavailable"
+        if case .oversizedPatch = reason { return AppLocalization.message("Text diff too large") }
+        return AppLocalization.message("Text diff unavailable")
     }
 
     private func unavailableMessage(
@@ -428,27 +427,27 @@ struct DesktopGitWorkspace: View {
     ) -> String {
         switch reason {
         case .oversizedPatch(let limit, let observedAtLeast):
-            return "The changed sections exceed the \(bytes(limit)) preview limit (capture stopped after \(bytes(observedAtLeast))); \(sizeSummary(oldSize: oldSize, newSize: newSize)). Open the file in your editor to review the complete change."
+            return AppLocalization.message("The changed sections exceed the \(bytes(limit)) preview limit (capture stopped after \(bytes(observedAtLeast))); \(sizeSummary(oldSize: oldSize, newSize: newSize)). Open the file in your editor to review the complete change.")
         case .binary:
-            return "This file is binary and cannot be shown as a text diff. Open it in your editor to review it."
+            return AppLocalization.message("This file is binary and cannot be shown as a text diff. Open it in your editor to review it.")
         case .invalidUTF8:
-            return "This file is not valid UTF-8 and cannot be shown safely as text. Open it in your editor to review it."
+            return AppLocalization.message("This file is not valid UTF-8 and cannot be shown safely as text. Open it in your editor to review it.")
         case .symbolicLink:
-            return "Symbolic links are shown only as file status and are never followed."
+            return AppLocalization.message("Symbolic links are shown only as file status and are never followed.")
         case .noTextualChanges:
-            return "Git reported no renderable text changes for this file."
+            return AppLocalization.message("Git reported no renderable text changes for this file.")
         case .timeout:
-            return "Git timed out while preparing the bounded preview. Open the file in your editor to review it."
+            return AppLocalization.message("Git timed out while preparing the bounded preview. Open the file in your editor to review it.")
         case .git(let message):
-            return "Git could not prepare a bounded preview: \(message) Open the file in your editor to review it."
+            return AppLocalization.message("Git could not prepare a bounded preview: \(message) Open the file in your editor to review it.")
         }
     }
 
     private func sizeSummary(oldSize: Int?, newSize: Int?) -> String {
-        if oldSize == newSize, let size = oldSize { return "The file is \(bytes(size))" }
-        let old = oldSize.map(bytes) ?? "unknown"
-        let new = newSize.map(bytes) ?? "unknown"
-        return "The original file is \(old) and the current file is \(new)"
+        if oldSize == newSize, let size = oldSize { return AppLocalization.message("The file is \(bytes(size))") }
+        let old = oldSize.map(bytes) ?? AppLocalization.text("unknown")
+        let new = newSize.map(bytes) ?? AppLocalization.text("unknown")
+        return AppLocalization.message("The original file is \(old) and the current file is \(new)")
     }
 
     private func bytes(_ value: Int) -> String {
@@ -480,7 +479,7 @@ struct DesktopGitWorkspace: View {
             viewportRequest = .init(id: viewportRequest.id + 1, target: .restore)
         })) {
             ForEach(document.layers) { pair in
-                Text(pair.label + (pair.changed ? "" : " · unchanged")).tag(pair.id)
+                Text(pair.changed ? pair.label : AppLocalization.format("%@ · unchanged", pair.label)).tag(pair.id)
             }
         }
         .frame(minWidth: 140, idealWidth: 175, maxWidth: 190)
@@ -580,10 +579,10 @@ struct DesktopGitWorkspace: View {
     private func legendSwatch(color: Color, label: String) -> some View {
         HStack(spacing: 4) {
             RoundedRectangle(cornerRadius: 1.5).fill(color).frame(width: 12, height: 3)
-            Text(label).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(label)).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label) glyph outline")
+        .accessibilityLabel("\(AppLocalization.text(label)) glyph outline")
     }
 
     private func selectedPair(_ document: GlyphDiffDocument) -> GlyphLayerPair? {
@@ -642,7 +641,7 @@ struct DesktopGitWorkspace: View {
     }
 
     private func statusBadge(_ change: GitObservation.Change) -> some View {
-        Text(change.statusLabel).font(.caption.monospaced().weight(.bold)).foregroundStyle(statusColor(change.kind))
+        Text(LocalizedStringKey(change.statusLabel)).font(.caption.monospaced().weight(.bold)).foregroundStyle(statusColor(change.kind))
             .frame(minWidth: 16).accessibilityLabel("Status \(change.kind.rawValue)")
     }
 
@@ -1425,10 +1424,10 @@ private struct DiffLoadingView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.large)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.headline)
             ZStack {
-                Text(messages[messageIndex])
+                Text(LocalizedStringKey(messages[messageIndex]))
                     .id(messageIndex)
                     .transition(reduceMotion ? .identity : .opacity)
             }
@@ -1440,7 +1439,7 @@ private struct DiffLoadingView: View {
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityStatus)
+        .accessibilityLabel(LocalizedStringKey(accessibilityStatus))
         .task {
             guard messages.count > 1 else { return }
             while !Task.isCancelled {

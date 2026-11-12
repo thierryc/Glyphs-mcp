@@ -10,6 +10,7 @@ import re
 import subprocess
 
 from desktop_release_identity import load
+from check_desktop_localizations import verify_bundle as verify_localizations
 
 ROOT = Path(__file__).resolve().parents[1]
 BEZTRACE_VERSION = '0.2.1'
@@ -137,6 +138,7 @@ def verify(app, root=ROOT):
     for name in ('GlyphsMCPInstallerCore', 'Sparkle'):
         if not (app / 'Contents/Frameworks' / (name + '.framework') / name).is_file():
             raise ValueError(f'Missing linked framework: {name}')
+    localizations = verify_localizations(app, root)
     validate_embedded_payload(app)
     skills_snapshot = app / 'Contents/Resources/SkillsCatalog/registry.json'
     expected_snapshot = root / 'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json'
@@ -168,6 +170,7 @@ def verify(app, root=ROOT):
         raise ValueError('Missing compiled assets: ' + ', '.join(sorted(missing)))
     return {'version': info['CFBundleShortVersionString'], 'build': info['CFBundleVersion'],
             'assets': sorted(required),
+            'localizations': localizations,
             'beztrace': beztrace,
             'pierre': {'version': pierre_lock['version'], 'commit': pierre_lock['commit'],
                        'bundleSHA256': tree_digest(pierre_bundle), 'resources': pierre_hashes},

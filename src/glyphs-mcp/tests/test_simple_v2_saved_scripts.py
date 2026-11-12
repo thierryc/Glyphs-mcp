@@ -275,10 +275,12 @@ def test_partial_failure_can_keep_without_restoring_or_rerunning(env):
     value=wait(service,choose(service,value,'run_script'),'applied')
     identity=value['jobId'];bridge.ops[identity]['status']='failed'
     bridge.ops[identity]['error']={'code':'script_failed','message':'partial failure'}
+    bridge.ops[identity]['scriptResult']['executionSucceeded']=False
     value=service.edit_workflows.get(value['id'])
     assert value['state']=='failed' and 'Partial edits' in value['text']
     value=choose(service,value,'finish_script')
     assert value['state']=='executed' and value['savedVersion'] is None
+    assert value['job']['outcome']=='partial' and value['job']['stoppedStatus']=='failed'
     assert len(bridge.runs)==1 and not bridge.restores and bridge.adapter.dirty
 
 
@@ -353,7 +355,7 @@ def test_partial_script_blocks_next_task_until_keep(env,status):
     b=wait(service,start(service,'after-partial'),'blocked_review')
     assert b['blockingWorkflowId']==a['id'] and len(bridge.reviews)==1
     kept=choose(service,a,'finish_script')
-    assert kept['actionSupportText']=='Changes kept. No save was performed. Task closed; recovery ended.'
+    assert kept['actionSupportText']=='Task closed without saving. The recorded script outcome was retained.'
     wait(service,b,'waiting_run')
     assert len(bridge.runs)==1
 

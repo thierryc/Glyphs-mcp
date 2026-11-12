@@ -58,12 +58,12 @@ public struct TemplateRegistry: Codable {
         return .init(schemaVersion: schemaVersion, templates: [entry] + templates.filter { $0.id != entry.id })
     }
     public static func decode(_ data: Data) throws -> Self {
-        guard data.count < 256_000 else { throw ProjectError("The template registry is too large.") }
+        guard data.count < 256_000 else { throw ProjectError(localized: "The template registry is too large.") }
         let value = try JSONDecoder().decode(Self.self, from: data)
         guard value.schemaVersion == 1, value.templates.count <= 100,
-              Set(value.templates.map(\.id)).count == value.templates.count else { throw ProjectError("Invalid template registry.") }
+              Set(value.templates.map(\.id)).count == value.templates.count else { throw ProjectError(localized: "Invalid template registry.") }
         for template in value.templates {
-            guard template.isBundled || template.archiveURL != nil else { throw ProjectError("A template needs a public repository, pinned revision and checksum.") }
+            guard template.isBundled || template.archiveURL != nil else { throw ProjectError(localized: "A template needs a public repository, pinned revision and checksum.") }
             if template.templateDirectory != "." { try ProjectFiles.validateRelativePath(template.templateDirectory) }
         }
         return value
@@ -72,7 +72,9 @@ public struct TemplateRegistry: Codable {
 
 public struct ProjectError: LocalizedError {
     public let message: String
-    public init(_ message: String) { self.message = message }
+    public let presentation: AppMessage?
+    public init(_ message: String) { self.message = message; presentation = nil }
+    public init(localized message: AppMessage) { self.message = message.diagnostic; presentation = message }
     public var errorDescription: String? { message }
 }
 
@@ -91,7 +93,7 @@ public enum ProjectFiles {
         guard !path.isEmpty, !path.hasPrefix("/"), !path.contains("\\"),
               !path.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }),
               !path.split(separator: "/", omittingEmptySubsequences: false).contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }) else {
-            throw ProjectError("The template contains an unsafe path.")
+            throw ProjectError(localized: "The template contains an unsafe path.")
         }
     }
     static func isPythonCache(_ path: String, isDirectory: Bool) -> Bool {
@@ -104,11 +106,11 @@ public enum ProjectFiles {
         let fm = FileManager.default
         let keys: Set<URLResourceKey> = [.isSymbolicLinkKey, .isDirectoryKey, .isRegularFileKey, .fileSizeKey]
         let root = try source.resourceValues(forKeys: keys)
-        guard root.isDirectory == true, root.isSymbolicLink != true else { throw ProjectError("Choose a regular template folder.") }
+        guard root.isDirectory == true, root.isSymbolicLink != true else { throw ProjectError(localized: "Choose a regular template folder.") }
         let canonical = source.resolvingSymlinksInPath().standardizedFileURL
         var enumerationError: Error?
         guard let enumerator = fm.enumerator(at: canonical, includingPropertiesForKeys: Array(keys), errorHandler: { _, error in enumerationError = error; return false }) else {
-            throw ProjectError("The template folder could not be read.")
+            throw ProjectError(localized: "The template folder could not be read.")
         }
         var files: [ProjectFile] = []; var bytes = 0
         while let url = enumerator.nextObject() as? URL {
@@ -119,15 +121,15 @@ public enum ProjectFiles {
                 continue
             }
             let normalized = url.resolvingSymlinksInPath().standardizedFileURL.path
-            guard normalized.hasPrefix(canonical.path + "/") else { throw ProjectError("The template contains an unsafe path.") }
+            guard normalized.hasPrefix(canonical.path + "/") else { throw ProjectError(localized: "The template contains an unsafe path.") }
             let path = String(normalized.dropFirst(canonical.path.count + 1))
             try validateRelativePath(path)
             let values = try url.resourceValues(forKeys: keys)
-            guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else { throw ProjectError("Templates cannot contain links or special files.") }
-            guard files.count < 10_000, bytes + (values.fileSize ?? 0) <= maximumBytes else { throw ProjectError("The template is too large.") }
+            guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else { throw ProjectError(localized: "Templates cannot contain links or special files.") }
+            guard files.count < 10_000, bytes + (values.fileSize ?? 0) <= maximumBytes else { throw ProjectError(localized: "The template is too large.") }
             let data = values.isDirectory == true ? nil : try Data(contentsOf: url)
             bytes += data?.count ?? 0
-            guard bytes <= maximumBytes else { throw ProjectError("The template is too large.") }
+            guard bytes <= maximumBytes else { throw ProjectError(localized: "The template is too large.") }
             files.append(ProjectFile(path: path, data: data))
         }
         if let enumerationError { throw enumerationError }
@@ -149,15 +151,15 @@ public enum ProjectFiles {
     public static func create(_ files: [ProjectFile], in parent: URL, name: String, endpoint: URL, initializeGit: Bool = false) throws -> URL {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         try validateRelativePath(name)
-        guard !name.contains("/"), !name.hasPrefix("."), name.utf8.count <= 200 else { throw ProjectError("Use a project name without path separators or a leading dot.") }
+        guard !name.contains("/"), !name.hasPrefix("."), name.utf8.count <= 200 else { throw ProjectError(localized: "Use a project name without path separators or a leading dot.") }
         let target = parent.appendingPathComponent(name, isDirectory: true)
         let fm = FileManager.default
-        guard !fm.fileExists(atPath: target.path) else { throw ProjectError("A folder with this name already exists. Choose another name.") }
+        guard !fm.fileExists(atPath: target.path) else { throw ProjectError(localized: "A folder with this name already exists. Choose another name.") }
         if initializeGit {
             var ancestor = parent.standardizedFileURL
             while ancestor.path != "/" {
                 if fm.fileExists(atPath: ancestor.appendingPathComponent(".git").path) {
-                    throw ProjectError("Choose a location outside an existing Git repository for this new Git project.")
+                    throw ProjectError(localized: "Choose a location outside an existing Git repository for this new Git project.")
                 }
                 ancestor.deleteLastPathComponent()
             }
@@ -169,7 +171,7 @@ public enum ProjectFiles {
         for file in files {
             try Task.checkCancellation()
             try validateRelativePath(file.path)
-            guard paths.insert(file.path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw ProjectError("The template contains duplicate file names.") }
+            guard paths.insert(file.path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw ProjectError(localized: "The template contains duplicate file names.") }
             let destination = stage.appendingPathComponent(file.path)
             if let data = file.data {
                 try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -182,12 +184,15 @@ public enum ProjectFiles {
             let result = ProcessRunner().runSyncWithStderr(executable: URL(fileURLWithPath: "/usr/bin/git"),
                 args: ["-C", stage.path, "init", "--template=", "-b", "main"],
                 environment: ["PATH": "/usr/bin:/bin", "HOME": fm.homeDirectoryForCurrentUser.path])
-            guard result.exitCode == 0 else { throw ProjectError("Git initialization failed: " + String(result.stderr.prefix(1000))) }
+            guard result.exitCode == 0 else {
+                throw ProjectError(localized: "Git initialization failed: \(result.stderr.prefix(1000))")
+            }
         }
         // Atomic exclusive rename closes the name-collision race. Never replace
         // or remove an existing project, including after failed creation.
         guard renameatx_np(AT_FDCWD, stage.path, AT_FDCWD, target.path, UInt32(RENAME_EXCL)) == 0 else {
-            throw ProjectError("The project could not be created at this location: " + String(cString: strerror(errno)))
+            let reason = String(cString: strerror(errno))
+            throw ProjectError(localized: "The project could not be created at this location: \(reason)")
         }
         return target
     }

@@ -68,7 +68,8 @@ def test_cross_font_script_blockers_are_named_both_ways(inventory):
 @pytest.mark.parametrize('status', ['failed', 'cancelled'])
 def test_executed_partial_failures_remain_open(inventory, status):
     value, job = task(inventory, state=status, status=status)
-    inventory.jobs.update(job['id'], bridgeOperation={'scriptResult': {'executed': True, 'executionSucceeded': False}})
+    inventory.jobs.update(job['id'], bridgeOperation={'status': status, 'recoveryAvailable': False,
+                                                    'scriptResult': {'executed': True, 'executionSucceeded': False}})
     item = list_tasks(inventory)['tasks'][0]
     assert not item['closed'] and item['state'] == 'needs_decision'
 

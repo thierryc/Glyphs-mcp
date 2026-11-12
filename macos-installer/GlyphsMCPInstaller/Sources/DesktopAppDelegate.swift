@@ -19,8 +19,8 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private var statusItem: NSStatusItem?
     private lazy var statusMenu = makeStatusMenu()
     private enum StatusMenuRow: Int {
-        case health = 109
-        case summary = 1, mcp, glyphs, tasks, notice, recovery, server, quit
+        case footprint = 110
+        case mcp = 2, glyphs, tasks, notice, recovery, server, quit
     }
     private var taskObservation: AnyCancellable?
     private var taskMenuTracking: NSObjectProtocol?
@@ -95,10 +95,15 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         showDashboard()
     }
 
+    private var activeTaskBadge: NSMenuItemBadge? {
+        let count = desktop.activeTasks.count
+        return count > 0 ? NSMenuItemBadge(count: count) : nil
+    }
+
     private func taskMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: NSLocalizedString("Show Tasks", comment: "Task navigation"), action: #selector(showTasks), keyEquivalent: "")
         item.target = self
-        if desktop.unreadTaskCount > 0 { item.badge = .newItems(count: desktop.unreadTaskCount) }
+        item.badge = activeTaskBadge
         return item
     }
     private func updateTaskMenuBadge() {
@@ -106,7 +111,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         // rather than retaining an item from an earlier menu generation.
         guard let menu = NSApp.mainMenu?.items.first?.submenu,
               let item = menu.items.first(where: { $0.title == NSLocalizedString("Show Tasks", comment: "Task navigation") }) else { return }
-        item.badge = desktop.unreadTaskCount > 0 ? .newItems(count: desktop.unreadTaskCount) : nil
+        item.badge = activeTaskBadge
     }
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()
@@ -123,6 +128,10 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0,
                 width: DesktopDashboardLayout.initialWidth, height: DesktopDashboardLayout.initialHeight),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+            if #available(macOS 26.0, *) {
+                window.styleMask.insert(.fullSizeContentView)
+                window.titlebarAppearsTransparent = true
+            }
             window.title = DesktopIdentity.applicationTitle
             window.identifier = NSUserInterfaceItemIdentifier("glyphs-mcp-dashboard")
             window.setFrameAutosaveName("Glyphs MCP Dashboard")
@@ -130,8 +139,10 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
                                            height: DesktopDashboardLayout.minimumHeight)
             window.isReleasedWhenClosed = false; window.delegate = self
             window.contentViewController = NSHostingController(rootView: ContentView().environmentObject(installer).environmentObject(desktop).desktopDesign())
-            // Use one window-wide separator instead of automatic per-column styles.
-            window.titlebarSeparatorStyle = .line
+            window.titlebarSeparatorStyle = .none
+            if #available(macOS 26.0, *) {
+                addDashboardActions(to: window)
+            }
             window.center(); dashboard = window
         }
         NSApp.setActivationPolicy(.regular)
@@ -140,6 +151,23 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         NSApp.activate(ignoringOtherApps: true)
         desktop.setDashboardVisible(true)
         presentComponentUpdateReminder()
+    }
+
+    @available(macOS 26.0, *)
+    private func addDashboardActions(to window: NSWindow) {
+        let accessory = NSTitlebarAccessoryViewController()
+        accessory.layoutAttribute = .trailing
+        let actions = DesktopDashboardActions()
+            .environmentObject(installer)
+            .environmentObject(desktop)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { [weak accessory] width in
+                guard let view = accessory?.view, width > 0, view.frame.width != width else { return }
+                view.setFrameSize(NSSize(width: width, height: view.frame.height))
+            }
+        let hostingView = NSHostingView(rootView: actions)
+        hostingView.setFrameSize(hostingView.fittingSize)
+        accessory.view = hostingView
+        window.addTitlebarAccessoryViewController(accessory)
     }
 
     private func presentComponentUpdateReminder() {
@@ -290,23 +318,6 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         let menu = NSMenu()
         menu.autoenablesItems = false
         menu.delegate = self
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-        menu.addItem(.sectionHeader(title: "Glyphs MCP \(version)".trimmingCharacters(in: .whitespaces)))
-        for row in [StatusMenuRow.summary, .mcp, .glyphs, .health] {
-            let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-            item.tag = row.rawValue
-            item.isEnabled = false
-            menu.addItem(item)
-        }
-        menu.addItem(.separator())
-        let tasks = taskMenuItem()
-        tasks.tag = StatusMenuRow.tasks.rawValue
-        tasks.image = NSImage(systemSymbolName: "list.bullet", accessibilityDescription: nil)
-        menu.addItem(tasks)
-        let notice = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        notice.tag = StatusMenuRow.notice.rawValue
-        notice.isEnabled = false
-        menu.addItem(notice)
         func action(_ title: String, _ selector: Selector, symbol: String,
                     row: StatusMenuRow? = nil, key: String = "") {
             let item = NSMenuItem(title: NSLocalizedString(title, comment: "Status menu action"),
@@ -316,6 +327,24 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
             if let row { item.tag = row.rawValue }
             menu.addItem(item)
         }
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        menu.addItem(.sectionHeader(title: "Glyphs MCP \(version)".trimmingCharacters(in: .whitespaces)))
+        for row in [StatusMenuRow.mcp, .glyphs, .footprint] {
+            let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+            item.tag = row.rawValue
+            item.isEnabled = false
+            menu.addItem(item)
+        }
+        action("Copy Health Report", #selector(copyHealthReportFromMenu), symbol: "doc.on.doc")
+        menu.addItem(.separator())
+        let tasks = taskMenuItem()
+        tasks.tag = StatusMenuRow.tasks.rawValue
+        tasks.image = NSImage(systemSymbolName: "list.bullet", accessibilityDescription: nil)
+        menu.addItem(tasks)
+        let notice = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        notice.tag = StatusMenuRow.notice.rawValue
+        notice.isEnabled = false
+        menu.addItem(notice)
         action("Check Glyphs in Setup", #selector(openSetupFromMenu), symbol: "exclamationmark.triangle", row: .recovery)
         menu.addItem(.separator())
         action("Stop Server", #selector(toggleServerFromMenu), symbol: "stop.circle", row: .server)
@@ -330,21 +359,36 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private func updateStatusMenu() {
         func item(_ row: StatusMenuRow) -> NSMenuItem? { statusMenu.item(withTag: row.rawValue) }
         func localized(_ text: String) -> String { NSLocalizedString(text, comment: "Server status") }
-        item(.summary)?.title = localized(desktop.title)
-        item(.summary)?.image = NSImage(systemSymbolName: desktop.statusSymbol, accessibilityDescription: nil)
-        let connected = desktop.serviceRunning == true && !desktop.stale
-        item(.mcp)?.title = "MCP: " + localized(connected ? "Connected" : desktop.serviceRunning == false ? "Stopped" : "Unavailable")
-        item(.glyphs)?.title = "Glyphs 4: " + localized(desktop.glyphsRunning ? "Running" : "Not running")
-        item(.health)?.title = localized("Glyphs Health") + ": " + localized(desktop.stale ? "Health observation stale" : desktop.status?.health?.title ?? "Health unavailable")
-        for (row, available) in [(StatusMenuRow.mcp, connected), (.glyphs, desktop.glyphsRunning)] {
-            let configuration = NSImage.SymbolConfiguration(paletteColors: [available ? .systemGreen : .secondaryLabelColor])
-            let image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
+        func statusImage(_ symbol: String, color: NSColor) -> NSImage? {
+            let configuration = NSImage.SymbolConfiguration(paletteColors: [color])
+            let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
                 .withSymbolConfiguration(configuration)
             image?.isTemplate = false
-            item(row)?.image = image
+            return image
         }
-        item(.tasks)?.badge = desktop.unreadTaskCount > 0 ? .newItems(count: desktop.unreadTaskCount) : nil
-        item(.notice)?.title = desktop.notice
+        let connected = desktop.serviceRunning == true && !desktop.stale
+        item(.mcp)?.title = AppLocalization.format("MCP: %@", localized(connected ? "Connected" : desktop.serviceRunning == false ? "Stopped" : "Unavailable"))
+        item(.glyphs)?.title = AppLocalization.format("Glyphs 4: %@", localized(desktop.glyphsRunning ? "Running" : "Not running"))
+        for (row, available) in [(StatusMenuRow.mcp, connected), (.glyphs, desktop.glyphsRunning)] {
+            item(row)?.image = statusImage("circle.fill", color: available ? .systemGreen : .secondaryLabelColor)
+        }
+        let report = desktop.healthReport
+        let health = report.stale ? nil : report.availableHealth
+        let paused = report.hasSevereDelay || health?.state == "paused"
+        let footprint = report.footprintIndicator
+        if paused {
+            item(.footprint)?.title = localized("New heavy work paused")
+            let critical = report.hasSevereDelay || report.pressureValue == "critical"
+            item(.footprint)?.image = statusImage("circle.fill", color: critical ? .systemRed : .systemOrange)
+        } else if let footprint {
+            item(.footprint)?.title = localized(footprint.title)
+            item(.footprint)?.image = statusImage("circle.fill", color: footprint.color)
+        } else {
+            item(.footprint)?.title = localized(health?.readinessTitle ?? report.statusTitle)
+            item(.footprint)?.image = statusImage("circle.fill", color: .secondaryLabelColor)
+        }
+        item(.tasks)?.badge = activeTaskBadge
+        item(.notice)?.title = AppLocalization.text(desktop.notice)
         item(.notice)?.isHidden = desktop.notice.isEmpty
         item(.recovery)?.isHidden = !desktop.needsGlyphsRecovery
         let starts = desktop.serviceRunning == false
@@ -367,6 +411,7 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         desktop.setVisible("statusMenu", false)
     }
     @objc private func openSetupFromMenu() { desktop.requestSetup(); showDashboard() }
+    @objc private func copyHealthReportFromMenu() { desktop.healthReport.copyToPasteboard() }
     @objc private func toggleServerFromMenu() {
         guard desktop.canChangeSettings else { return }
         desktop.control(desktop.serviceRunning == false ? "start" : "stop")
@@ -402,6 +447,7 @@ struct DesktopSettings: View {
     @State private var taskExpiryDays = 1
     @State private var taskExpiryError = ""
     @State private var fontWarningThreshold = 8
+    @State private var fontWarningEnabled = false
     @State private var healthPolicyError = ""
     private var configuredPort: String { String(desktop.installation.port) }
 
@@ -434,9 +480,14 @@ struct DesktopSettings: View {
                 if !updates.message.isEmpty { Text(updates.message).font(.caption).foregroundStyle(.secondary) }
             }
             Section("Glyphs Health") {
+                Toggle("Warn about open-font count", isOn: Binding(
+                    get: { fontWarningEnabled },
+                    set: { setFontWarningThreshold($0 ? fontWarningThreshold : nil) }
+                ))
                 Stepper("Warn at \(fontWarningThreshold) open fonts", value: Binding(
-                    get: { fontWarningThreshold }, set: setFontWarningThreshold), in: 1...128)
-                Text("This is a warning threshold. Font count alone never blocks work. Agents defer new expensive work under critical pressure.")
+                    get: { fontWarningThreshold }, set: { setFontWarningThreshold($0) }), in: 1...128)
+                    .disabled(!fontWarningEnabled)
+                Text("Use an open-font warning if it helps with your workflow. macOS reports system memory pressure separately.")
                     .font(.caption).foregroundStyle(.secondary)
                 if !healthPolicyError.isEmpty { Text(healthPolicyError).font(.caption).foregroundStyle(.secondary) }
             }
@@ -455,9 +506,13 @@ struct DesktopSettings: View {
         }.formStyle(.grouped).frame(width: 500).padding()
         .onAppear {
             do { taskExpiryDays = try DesktopTaskExpiryPolicy.read(under: desktop.installation.root).inactivityDays }
-            catch { taskExpiryError = error.localizedDescription }
-            do { fontWarningThreshold = try DesktopGlyphsHealthPolicy.read(under: desktop.installation.root).fontWarningThreshold }
-            catch { healthPolicyError = error.localizedDescription }
+            catch { taskExpiryError = error.presentationDescription() }
+            do {
+                let policy = try DesktopGlyphsHealthPolicy.read(under: desktop.installation.root)
+                fontWarningEnabled = policy.fontWarningThreshold != nil
+                if let threshold = policy.fontWarningThreshold { fontWarningThreshold = threshold }
+            }
+            catch { healthPolicyError = error.presentationDescription() }
         }
         .onChange(of: desktop.installation.port) { _, port in
             if let portDraft, Int(portDraft) == port { self.portDraft = nil }
@@ -469,20 +524,21 @@ struct DesktopSettings: View {
             if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
             loginEnabled = SMAppService.mainApp.status == .enabled
             loginError = SMAppService.mainApp.status == .requiresApproval ? "Allow Glyphs MCP in System Settings → Login Items." : ""
-        } catch { loginError = error.localizedDescription }
+        } catch { loginError = error.presentationDescription() }
     }
     private func setTaskExpiry(_ days: Int) {
         do {
             try DesktopTaskExpiryPolicy(inactivityDays: days).write(under: desktop.installation.root)
             taskExpiryDays = days
             taskExpiryError = ""
-        } catch { taskExpiryError = error.localizedDescription }
+        } catch { taskExpiryError = error.presentationDescription() }
     }
-    private func setFontWarningThreshold(_ count: Int) {
+    private func setFontWarningThreshold(_ count: Int?) {
         do {
             try DesktopGlyphsHealthPolicy(fontWarningThreshold: count).write(under: desktop.installation.root)
-            fontWarningThreshold = count
+            fontWarningEnabled = count != nil
+            if let count { fontWarningThreshold = count }
             healthPolicyError = ""
-        } catch { healthPolicyError = error.localizedDescription }
+        } catch { healthPolicyError = error.presentationDescription() }
     }
 }

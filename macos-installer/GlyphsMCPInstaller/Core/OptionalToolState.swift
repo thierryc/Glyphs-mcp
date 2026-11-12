@@ -15,15 +15,34 @@ public struct OptionalToolState: Decodable, Identifiable {
         state == "unmanaged" || state == "development_link" || state == "conflict"
     }
     public var label: String {
-        if state == "development_link" { return "Development link preserved" }
-        if state == "unmanaged" { return "Separate installation preserved" }
-        if state == "conflict" { return "Modified installation preserved" }
-        if installed {
-            let revision = version.map { " · " + $0 } ?? ""
-            let buildLabel = build.map { " (build " + $0 + ")" } ?? ""
-            return "Installed" + revision + buildLabel + (state == "restart_required" ? " · Restart required" : id == "beztrace-glyphs" && loadedVerified != true ? " · Loading unverified" : "")
+        label(bundle: nil, locale: .current)
+    }
+
+    public func presentationLabel(bundle: Bundle = .main, locale: Locale = .current) -> String {
+        label(bundle: bundle, locale: locale)
+    }
+
+    private func label(bundle: Bundle?, locale: Locale) -> String {
+        func display(_ message: AppMessage) -> String {
+            guard let bundle else { return message.diagnostic }
+            return message.localized(bundle: bundle, locale: locale)
         }
-        if available { return "Not installed" }
-        return distributionQualified == true ? "Unavailable on this Mac" : "Awaiting release qualification"
+
+        if state == "development_link" { return display("Development link preserved") }
+        if state == "unmanaged" { return display("Separate installation preserved") }
+        if state == "conflict" { return display("Modified installation preserved") }
+        if installed {
+            var title = display("Installed")
+            if let version { title = display("\(title) · \(version)") }
+            if let build { title = display("\(title) (build \(build))") }
+            if state == "restart_required" {
+                title = display("\(title) · \(display("Restart required"))")
+            } else if id == "beztrace-glyphs" && loadedVerified != true {
+                title = display("\(title) · \(display("Loading unverified"))")
+            }
+            return title
+        }
+        if available { return display("Not installed") }
+        return distributionQualified == true ? display("Unavailable on this Mac") : display("Awaiting release qualification")
     }
 }

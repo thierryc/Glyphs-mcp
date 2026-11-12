@@ -108,6 +108,7 @@ python_checks() {
 }
 documentation_checks() { (cd website && npm run build); }
 desktop_checks() {
+  "$python_bin" scripts/check_desktop_localizations.py || return $?
   "$xcodebuild_bin" test \
     -project "$project" \
     -scheme "$scheme" \
@@ -116,7 +117,8 @@ desktop_checks() {
     -derivedDataPath "$derived_data" \
     -jobs "${GMCP_XCODE_JOBS:-4}" \
     CODE_SIGNING_ALLOWED=NO \
-    CODE_SIGNING_REQUIRED=NO || return $?
+    CODE_SIGNING_REQUIRED=NO SWIFT_EMIT_LOC_STRINGS=YES || return $?
+  "$python_bin" scripts/check_desktop_localizations.py --extracted "$derived_data/Build/Intermediates.noindex" || return $?
   # The scheme builds the app for testing. Verify those exact bytes, rather than
   # invoking build again and rerunning the unconditional Copy Payload phase.
   "$python_bin" scripts/verify_desktop_app.py "$derived_data/Build/Products/Debug/Glyphs MCP.app"

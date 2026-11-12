@@ -15,7 +15,7 @@ public actor TemplateStore {
     public func registry(bundle: Bundle = .main) throws -> TemplateRegistry {
         let cached = root.appendingPathComponent("registry.json")
         if let data = try? Data(contentsOf: cached), let registry = try? TemplateRegistry.decode(data) { return registry.includingBuiltIns() }
-        guard let bundled = bundle.url(forResource: "registry", withExtension: "json", subdirectory: "Templates") else { throw ProjectError("The bundled template registry is missing.") }
+        guard let bundled = bundle.url(forResource: "registry", withExtension: "json", subdirectory: "Templates") else { throw ProjectError(localized: "The bundled template registry is missing.") }
         return try TemplateRegistry.decode(Data(contentsOf: bundled)).includingBuiltIns()
     }
     public func refreshRegistry() async throws -> TemplateRegistry {
@@ -28,11 +28,11 @@ public actor TemplateStore {
     public func files(_ template: ProjectTemplate) async throws -> [ProjectFile] {
         if template.isBundled {
             guard let folder = Bundle.main.url(forResource: "font-git-checkpoints", withExtension: nil, subdirectory: "Templates") else {
-                throw ProjectError("The bundled checkpoint template is missing.")
+                throw ProjectError(localized: "The bundled checkpoint template is missing.")
             }
             return try ProjectFiles.read(folder)
         }
-        guard let remote = template.archiveURL else { throw ProjectError("The template registry entry is invalid.") }
+        guard let remote = template.archiveURL else { throw ProjectError(localized: "The template registry entry is invalid.") }
         if template.templateDirectory != "." { try ProjectFiles.validateRelativePath(template.templateDirectory) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let cached = root.appendingPathComponent(template.archiveSHA256 + ".zip")
@@ -40,7 +40,7 @@ public actor TemplateStore {
         if let data = try? Data(contentsOf: cached), Self.checksum(data) == template.archiveSHA256 { archive = data }
         else {
             archive = try await download(remote, maximumBytes: 20 * 1024 * 1024)
-            guard Self.checksum(archive) == template.archiveSHA256 else { throw ProjectError("The template download does not match its pinned checksum.") }
+            guard Self.checksum(archive) == template.archiveSHA256 else { throw ProjectError(localized: "The template download does not match its pinned checksum.") }
             _ = try TemplateArchive.validate(archive)
             try Task.checkCancellation()
             try archive.write(to: cached, options: .atomic)
@@ -50,7 +50,7 @@ public actor TemplateStore {
         try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: false)
         defer { try? FileManager.default.removeItem(at: temporary) }
         let result = try await runner.runCapturing(executable: URL(fileURLWithPath: "/usr/bin/ditto"), args: ["-x", "-k", cached.path, temporary.path], timeout: 30)
-        guard result.exitCode == 0 else { throw ProjectError("The template archive could not be expanded.") }
+        guard result.exitCode == 0 else { throw ProjectError(localized: "The template archive could not be expanded.") }
         let base = temporary.appendingPathComponent(folder)
         let source = template.templateDirectory == "." ? base : base.appendingPathComponent(template.templateDirectory)
         // Never execute template programs or copy a repository's Git database.
@@ -62,10 +62,10 @@ public actor TemplateStore {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200,
               response.url?.scheme == "https", response.url?.host == url.host,
-              response.expectedContentLength <= maximumBytes else { throw ProjectError("The template download is unavailable or too large.") }
+              response.expectedContentLength <= maximumBytes else { throw ProjectError(localized: "The template download is unavailable or too large.") }
         var data = Data()
         for try await byte in bytes {
-            guard data.count < maximumBytes else { throw ProjectError("The template download is too large.") }
+            guard data.count < maximumBytes else { throw ProjectError(localized: "The template download is too large.") }
             data.append(byte)
         }
         try Task.checkCancellation()

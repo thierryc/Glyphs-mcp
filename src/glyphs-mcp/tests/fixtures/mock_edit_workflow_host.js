@@ -244,6 +244,7 @@ if (require.main === module) (async()=>{
    for (const payload of JSON.parse(fs.readFileSync(process.argv[3],'utf8'))) {
      deliver(wording,payload);await tick();
      const data=payload.data, [heading,...guidance]=data.message.split('\n');
+     if(data.remainingWork) guidance.push(data.remainingWork);
      assert.equal(wording.get('status').textContent,heading);
      assert.equal(wording.get('full-guidance').textContent,guidance.join('\n'));
      if(data.state==='applied') {

@@ -23,6 +23,16 @@ public struct DesktopTemplateEntry: Identifiable {
         case .local: return "Local"
         }
     }
+    public var presentationName: String {
+        if case .starter = choice { return AppLocalization.text(name) }
+        return name
+    }
+    public var presentationDescription: String {
+        switch choice {
+        case .starter, .local: return AppLocalization.text(description)
+        case .registry: return description
+        }
+    }
     public var localURL: URL? {
         guard case .local(let path) = choice else { return nil }
         return URL(fileURLWithPath: path).standardizedFileURL

@@ -198,7 +198,7 @@ public struct ClaudeCodeConfigurator {
 		mcpServers[InstallerConstants.claudeCodeServerName] = server
 		root["mcpServers"] = mcpServers
 
-		try ClaudeConfigurationOwnership.write(root: root, managedEntry: ["type": "http", "url": endpointURL.absoluteString],
+		try JSONConnectorOwnership.write(root: root, managedEntry: ["type": "http", "url": endpointURL.absoluteString],
             client: .claudeCode, serverName: InstallerConstants.claudeCodeServerName, to: url)
 		log("Wrote: \(url.path)")
 	}
@@ -254,17 +254,17 @@ public struct ClaudeDesktopConfigurator {
 		mcpServers[InstallerConstants.claudeDesktopServerName] = server
 		root["mcpServers"] = mcpServers
 
-		try ClaudeConfigurationOwnership.write(root: root, managedEntry: managedEntry,
+		try JSONConnectorOwnership.write(root: root, managedEntry: managedEntry,
             client: .claudeDesktop, serverName: InstallerConstants.claudeDesktopServerName, to: url)
 		log("Wrote: \(url.path)")
 	}
 }
 
-// MARK: - Claude configuration ownership
+// MARK: - JSON connection ownership
 
 // The receipt describes only fields written by the installer, never user fields
 // retained by the configurator. Installing again must not adopt those fields.
-enum ClaudeConfigurationOwnership {
+enum JSONConnectorOwnership {
     private struct Receipt: Codable {
         var schemaVersion = 1
         var owner = "glyphs-mcp-installer"
@@ -374,7 +374,7 @@ public struct AgentSkillBundleInstaller {
 	) throws -> SkillInstallationResult {
 		let managedSkills = payload.managedSkillDirectories()
 		guard !managedSkills.isEmpty else {
-			throw InstallerError.userFacing("Installer payload does not contain Glyphs MCP skills.")
+			throw InstallerError.localized("Installer payload does not contain Glyphs MCP skills.")
 		}
 
 		let fm = FileManager.default
@@ -400,28 +400,29 @@ public struct AgentSkillBundleInstaller {
             if !includeDevelopmentSkills && Self.developmentSkillNames.contains(name) { continue }
 			let dest = destRoot.appendingPathComponent(name, isDirectory: true)
             let sourceIdentity = try InstallerPayloadManifestResolver.treeIdentity(skillDir)
-            let currentIdentity = try? InstallerPayloadManifestResolver.treeIdentity(dest)
-            if itemExists(at: dest) {
-                if currentIdentity == sourceIdentity {
-                    // Identical contents do not grant ownership of an unowned skill.
-                    if overwriteExisting || previous[name] == currentIdentity { ownership[name] = sourceIdentity }
-                    result.entries.append(.init(name: name, path: dest.path, outcome: .current))
-                    continue
-                }
-                if overwriteExisting || currentIdentity != nil && previous[name] == currentIdentity {
-					_ = try backupSkill(dest)
-					try fm.removeItem(at: dest)
-				} else {
-					result.entries.append(.init(name: name, path: dest.path, outcome: .preservedConflict,
-                        compatibilityIssue: retiredInterfaceIssue(source: skillDir, destination: dest)))
-					continue
-				}
-			}
+            let currentIdentity = managedSkillIdentity(at: dest)
+            let exists = itemExists(at: dest)
+            if exists, currentIdentity == sourceIdentity {
+                // Identical contents do not grant ownership of an unowned skill.
+                if overwriteExisting || previous[name] == currentIdentity { ownership[name] = sourceIdentity }
+                result.entries.append(.init(name: name, path: dest.path, outcome: .current))
+                continue
+            }
+            if exists, !overwriteExisting, currentIdentity == nil || previous[name] != currentIdentity {
+                result.entries.append(.init(name: name, path: dest.path, outcome: .preservedConflict,
+                    compatibilityIssue: retiredInterfaceIssue(source: skillDir, destination: dest)))
+                continue
+            }
 
-			try fm.copyItem(at: skillDir, to: dest)
-			ownership[name] = sourceIdentity
-			result.entries.append(.init(name: name, path: dest.path, outcome: .installed))
-		}
+            // Commit each completed skill so Retry retains ownership of earlier copies.
+            var updated = ownership
+            updated[name] = sourceIdentity
+            try replaceManagedSkill(from: skillDir, to: dest, replacing: exists,
+                                    sourceIdentity: sourceIdentity, receipt: JSONEncoder().encode(updated),
+                                    ownershipURL: ownershipURL)
+            ownership = updated
+            result.entries.append(.init(name: name, path: dest.path, outcome: .installed))
+        }
 
         // Retirement uses the existing hash ledger and explicit replacement action.
         // Legacy markers alone cannot establish that a skill was not user-modified.
@@ -429,7 +430,7 @@ public struct AgentSkillBundleInstaller {
         do {
             for dest in retiredSkillDestinations(from: payload, under: destRoot) {
                 let name = dest.lastPathComponent
-                let identity = try? InstallerPayloadManifestResolver.treeIdentity(dest)
+                let identity = managedSkillIdentity(at: dest)
                 guard overwriteExisting || identity != nil && previous[name] == identity else {
                     result.entries.append(.init(name: name, path: dest.path, outcome: .preservedConflict,
                         compatibilityIssue: "Obsolete Glyphs instructions absent from this payload. Replacement archives this folder outside skill discovery; it does not add feature support."))
@@ -452,10 +453,10 @@ public struct AgentSkillBundleInstaller {
                     }
                     guard try InstallerPayloadManifestResolver.treeIdentity(item.destination)
                         == InstallerPayloadManifestResolver.treeIdentity(item.backup) else {
-                        throw InstallerError.userFacing("Retired skill restoration differs from its backup.")
+                        throw InstallerError.localized("Retired skill restoration differs from its backup.")
                     }
                 } catch let restoreError {
-                    throw InstallerError.userFacing("Skill retirement failed: \(error.localizedDescription). Restore \(item.destination.path) from \(item.backup.path): \(restoreError.localizedDescription)")
+                    throw InstallerError.localized("Skill retirement failed: \(error.localizedDescription). Restore \(item.destination.path) from \(item.backup.path): \(restoreError.localizedDescription)")
                 }
             }
             throw error
@@ -463,6 +464,45 @@ public struct AgentSkillBundleInstaller {
         log("Glyphs MCP skills for \(clientName):\n" + result.summary)
         return result
 	}
+
+    private func managedSkillIdentity(at url: URL) -> String? {
+        guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
+              values.isDirectory == true, values.isSymbolicLink != true else { return nil }
+        return try? InstallerPayloadManifestResolver.treeIdentity(url)
+    }
+
+    private func replaceManagedSkill(from source: URL, to destination: URL, replacing: Bool,
+                                     sourceIdentity: String, receipt: Data, ownershipURL: URL) throws {
+        let fm = FileManager.default
+        let staged = destination.deletingLastPathComponent()
+            .appendingPathComponent(".glyphs-mcp-stage-" + UUID().uuidString, isDirectory: true)
+        defer { try? fm.removeItem(at: staged) }
+        try fm.copyItem(at: source, to: staged)
+        guard managedSkillIdentity(at: staged) == sourceIdentity else {
+            throw InstallerError.localized("The staged Glyphs skill failed its integrity check.")
+        }
+
+        let backup = replacing ? try backupSkill(destination) : nil
+        if replacing { try fm.removeItem(at: destination) }
+        var installed = false
+        do {
+            try fm.moveItem(at: staged, to: destination)
+            installed = true
+            try FileIO.writeAtomically(receipt, to: ownershipURL)
+        } catch {
+            if installed, managedSkillIdentity(at: destination) == sourceIdentity {
+                try? fm.removeItem(at: destination)
+            }
+            if let backup, !itemExists(at: destination) {
+                do {
+                    try fm.copyItem(at: backup, to: destination)
+                } catch let restoreError {
+                    throw InstallerError.localized("Skill update failed: \(error.localizedDescription). Restore \(destination.path) from \(backup.path): \(restoreError.localizedDescription)")
+                }
+            }
+            throw error
+        }
+    }
 
     /// A sibling of the discovery root, never a selectable skill directory.
     static func skillBackupRoot(for discoveryRoot: URL) -> URL {
@@ -481,7 +521,7 @@ public struct AgentSkillBundleInstaller {
         try FileIO.writeAtomically(try JSONEncoder().encode(record), to: root.appendingPathComponent("backup.json"))
         try FileManager.default.copyItem(at: source, to: destination)
         guard try InstallerPayloadManifestResolver.treeIdentity(destination) == identity else {
-            throw InstallerError.userFacing("Skill backup verification failed: \(destination.path)")
+            throw InstallerError.localized("Skill backup verification failed: \(destination.path)")
         }
         log("Skill backup: \(source.path) → \(destination.path)")
         return destination
@@ -515,7 +555,7 @@ public struct AgentSkillBundleInstaller {
                 continue
             }
             guard let ownedIdentity = ownership[name],
-                  let currentIdentity = try? InstallerPayloadManifestResolver.treeIdentity(destination),
+                  let currentIdentity = managedSkillIdentity(at: destination),
                   currentIdentity == ownedIdentity else {
                 result.entries.append(.init(name: name, path: destination.path, outcome: .preservedConflict,
                     compatibilityIssue: "This managed skill is modified or unowned and was preserved."))
@@ -654,14 +694,14 @@ public struct CursorPluginInstaller {
     @discardableResult
     public func installOrUpdate() throws -> URL? {
         guard recognizedPlugin(at: source) else {
-            throw InstallerError.userFacing("The packaged Cursor plug-in is not recognized.")
+            throw InstallerError.localized("The packaged Cursor plug-in is not recognized.")
         }
         let sourceIdentity = try InstallerPayloadManifestResolver.treeIdentity(source)
         guard sourceIdentity == expectedIdentity else {
-            throw InstallerError.userFacing("The packaged Cursor plug-in failed its integrity check.")
+            throw InstallerError.localized("The packaged Cursor plug-in failed its integrity check.")
         }
         guard manifestVersion(at: source) == version else {
-            throw InstallerError.userFacing("The packaged Cursor plug-in version does not match the installer.")
+            throw InstallerError.localized("The packaged Cursor plug-in version does not match the installer.")
         }
 
         let existing = itemExists(destination)
@@ -678,7 +718,7 @@ public struct CursorPluginInstaller {
             if itemExists(stage) { try? fileManager.removeItem(at: stage) }
         }
         guard try InstallerPayloadManifestResolver.treeIdentity(stage) == sourceIdentity else {
-            throw InstallerError.userFacing("The staged Cursor plug-in failed its integrity check.")
+            throw InstallerError.localized("The staged Cursor plug-in failed its integrity check.")
         }
 
         let backup = existing ? try verifiedBackup(of: destination) : nil
@@ -729,7 +769,7 @@ public struct CursorPluginInstaller {
         try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
         try fileManager.copyItem(at: source, to: backup)
         guard try InstallerPayloadManifestResolver.treeIdentity(backup) == identity else {
-            throw InstallerError.userFacing("Cursor plug-in backup verification failed.")
+            throw InstallerError.localized("Cursor plug-in backup verification failed.")
         }
         return backup
     }
@@ -776,7 +816,7 @@ public enum ConnectorConfigurationRemover {
             serverName: InstallerConstants.codexServerName,
             endpoint: endpoint.absoluteString
         ) else {
-            throw InstallerError.userFacing("The Codex Glyphs MCP entry is modified and was preserved.")
+            throw InstallerError.localized("The Codex Glyphs MCP entry is modified and was preserved.")
         }
         _ = try FileIO.backupIfExists(url)
         try FileIO.writeUTF8Atomically(updated, to: url)
@@ -800,18 +840,18 @@ public enum ConnectorConfigurationRemover {
         case .claudeDesktop:
             let args = server["args"] as? [String] ?? []
             endpointMatches = args.last == endpoint.absoluteString
-        case .codex, .cursor:
+        case .codex, .cursor, .antigravity:
             endpointMatches = false
         }
         guard endpointMatches,
-              ClaudeConfigurationOwnership.matches(server, client: client, serverName: serverName, at: url) else {
-            throw InstallerError.userFacing("The \(client.displayName) Glyphs MCP entry is modified or unowned and was preserved. Use Update to establish installer ownership; custom fields remain protected.")
+              JSONConnectorOwnership.matches(server, client: client, serverName: serverName, at: url) else {
+            throw InstallerError.localized("The \(client.displayName) Glyphs MCP entry is modified or unowned and was preserved. Use Update to establish installer ownership; custom fields remain protected.")
         }
         servers.removeValue(forKey: serverName)
         root["mcpServers"] = servers
         _ = try FileIO.backupIfExists(url)
         try JsonConfig.writeJSON(root, to: url)
-        try FileManager.default.removeItem(at: ClaudeConfigurationOwnership.receiptURL(for: url))
+        try FileManager.default.removeItem(at: JSONConnectorOwnership.receiptURL(for: url))
     }
 }
 
@@ -961,7 +1001,7 @@ enum JsonConfig {
 			let obj = try JSONSerialization.jsonObject(with: data)
 			return ((obj as? [String: Any]) ?? [:], data)
 		} catch {
-			throw InstallerError.userFacing("Failed to parse JSON: \(url.path)")
+			throw InstallerError.localized("Failed to parse JSON: \(url.path)")
 		}
 	}
 

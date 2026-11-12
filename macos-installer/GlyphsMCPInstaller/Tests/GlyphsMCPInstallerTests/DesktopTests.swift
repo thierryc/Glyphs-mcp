@@ -585,3 +585,318 @@ private final class HealthyStatusURLProtocol: URLProtocol {
     }
     override func stopLoading() { reply?.cancel(); reply = nil }
 }
+
+final class DesktopLocalizationTests: XCTestCase {
+    private let languages = ["en", "fr", "zh-Hans", "de", "es", "pt-BR"]
+
+    private func resources(_ language: String) throws -> Bundle {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        return try XCTUnwrap(Bundle(url: root.appendingPathComponent("Resources/\(language).lproj")))
+    }
+
+    func testEveryLanguageResolvesAppTextAndUnknownKeysFallBack() throws {
+        for language in languages {
+            let bundle = try resources(language)
+            XCTAssertFalse(AppLocalization.text("Show Window", bundle: bundle).isEmpty)
+            if language != "en" { XCTAssertNotEqual(AppLocalization.text("Cancel", bundle: bundle), "Cancel") }
+            XCTAssertEqual(AppLocalization.text("an-unknown-key", bundle: bundle), "an-unknown-key")
+        }
+    }
+
+    func testStructuredErrorTranslatesWithoutChangingDiagnosticOrArguments() throws {
+        let path = "/tmp/100%/échantillon.glyphs"
+        let detail = "RAW_EXTERNAL_ERROR 42"
+        let error = InstallerError.localized("Could not verify \(path): \(detail)")
+        XCTAssertEqual(error.localizedDescription, "Could not verify \(path): \(detail)")
+        for language in languages {
+            let translated = error.presentationDescription(bundle: try resources(language), locale: Locale(identifier: language))
+            XCTAssertTrue(translated.contains(path))
+            XCTAssertTrue(translated.contains(detail))
+            if language != "en" { XCTAssertNotEqual(translated, error.localizedDescription) }
+        }
+        let project = ProjectError(localized: "The template folder could not be read.")
+        XCTAssertEqual(project.localizedDescription, "The template folder could not be read.")
+        XCTAssertNotEqual(project.presentationDescription(bundle: try resources("fr")), project.localizedDescription)
+    }
+
+    func testPercentInInterpolatedDiagnosticIsNotAFormatArgument() {
+        let value = "font%name"
+        let message: AppMessage = "100% of \(value)"
+        XCTAssertEqual(message.diagnostic, "100% of font%name")
+        XCTAssertEqual(message.localized(), message.diagnostic)
+    }
+
+    func testPluralResourcesHandleZeroOneAndMultipleCounts() throws {
+        for language in languages {
+            let bundle = try resources(language)
+            let locale = Locale(identifier: language)
+            for key in ["%lld days", "%lld active tasks", "%lld changed files", "Warn at %lld open fonts"] {
+                for count in [0, 1, 2, 21] {
+                    let value = AppLocalization.count(key, count, bundle: bundle, locale: locale)
+                    XCTAssertFalse(value.contains("%"), "\(language): \(value)")
+                    XCTAssertTrue(value.contains(String(count)), "\(language): \(value)")
+                }
+            }
+        }
+        XCTAssertEqual(AppLocalization.count("%lld days", 1, bundle: try resources("en")), "1 day")
+        XCTAssertEqual(AppLocalization.count("%lld days", 2, bundle: try resources("en")), "2 days")
+    }
+
+    func testLanguagePreferencesAndEnglishFallback() {
+        XCTAssertEqual(Bundle.preferredLocalizations(from: languages, forPreferences: ["pt-BR", "en"]).first, "pt-BR")
+        XCTAssertEqual(Bundle.preferredLocalizations(from: languages, forPreferences: ["fr-CA", "en"]).first, "fr")
+        XCTAssertEqual(Bundle.preferredLocalizations(from: languages, forPreferences: ["es-MX", "en"]).first, "es")
+        XCTAssertEqual(Bundle.preferredLocalizations(from: languages, forPreferences: ["zz-ZZ"]).first, "en")
+    }
+
+    func testExternalDiagnosticsAreNotTranslatedAndTimeoutIsTyped() throws {
+        let external = NSError(domain: "external", code: 7, userInfo: [NSLocalizedDescriptionKey: "unmodified external detail"])
+        XCTAssertEqual(external.presentationDescription(bundle: try resources("de")), "unmodified external detail")
+        let timeout = ProcessTimeoutError(duration: 2, executable: "git")
+        XCTAssertEqual(timeout.localizedDescription, "Command timed out after 2 seconds: git.")
+        XCTAssertNotEqual(timeout.presentationDescription(bundle: try resources("de")), timeout.localizedDescription)
+        let german = timeout.presentationDescription(bundle: try resources("de"), locale: Locale(identifier: "de"))
+        XCTAssertTrue(german.contains("Sekunden"))
+        XCTAssertFalse(german.contains("seconds"))
+    }
+}
+
+final class AntigravityConnectorTests: XCTestCase {
+    private let files = FileManager.default
+    private let endpoint = URL(string: "http://127.0.0.1:9680/mcp/")!
+
+    func testDesktopDetectionAndBulkSetupForEitherOrBothApps() {
+        let app = "com.google.antigravity"
+        let ide = "com.google.antigravity-ide"
+        for installed in [[], [app], [ide], [app, ide]] {
+            let detected = AntigravityConnector.isDetected { bundleID in
+                installed.contains(bundleID) ? URL(fileURLWithPath: "/Applications/Test.app") : nil
+            }
+            XCTAssertEqual(detected, !installed.isEmpty)
+            let plan = SetupQueuePolicy.bulkPlan(
+                installedComponents: [], installedConnectors: [],
+                detectedConnectors: detected ? [.antigravity] : []
+            )
+            XCTAssertEqual(plan.filter { $0 == .connector(.antigravity, .install) }.count, detected ? 1 : 0)
+        }
+        let update = SetupQueuePolicy.bulkPlan(
+            installedComponents: [], installedConnectors: [.antigravity], detectedConnectors: [.antigravity]
+        )
+        XCTAssertTrue(update.contains(.connector(.antigravity, .update)))
+    }
+
+    func testFreshSetupRepeatedSetupPortChangeAndOwnedRemoval() throws {
+        try withHome { home, connector in
+            XCTAssertEqual(connector.connectionStatus(), .missing)
+            XCTAssertFalse(try connector.configureConnection())
+            XCTAssertEqual(connector.connectionStatus(), .configured)
+            XCTAssertTrue(connector.hasOwnershipReceipt)
+            let original = try Data(contentsOf: connector.configURL)
+            XCTAssertFalse(try connector.configureConnection())
+            XCTAssertEqual(try Data(contentsOf: connector.configURL), original)
+            XCTAssertTrue(try backups(for: connector).isEmpty)
+            let initial = try servers(for: connector)
+            XCTAssertEqual(Set(initial.keys), ["glyphs-mcp"])
+            XCTAssertEqual(initial["glyphs-mcp"]?["serverUrl"] as? String, endpoint.absoluteString)
+
+            let newEndpoint = URL(string: "http://127.0.0.1:9771/mcp/")!
+            let updated = AntigravityConnector(home: home, endpoint: newEndpoint)
+            XCTAssertEqual(updated.connectionStatus(), .updateAvailable)
+            XCTAssertFalse(try updated.configureConnection())
+            XCTAssertEqual(updated.connectionStatus(), .configured)
+            XCTAssertEqual(try servers(for: updated)["glyphs-mcp"]?["serverUrl"] as? String, newEndpoint.absoluteString)
+            let backup = try XCTUnwrap(backups(for: updated).first)
+            XCTAssertEqual(try Data(contentsOf: backup), original)
+
+            XCTAssertFalse(try updated.removeConnection())
+            XCTAssertFalse(updated.hasOwnershipReceipt)
+            XCTAssertTrue(try servers(for: updated).isEmpty)
+            XCTAssertFalse(try updated.removeConnection())
+            XCTAssertEqual(updated.connectionStatus(), .missing)
+        }
+    }
+
+    func testManualAliasWithCustomHeadersRemainsByteIdenticalAcrossSetupAndRemoval() throws {
+        try withHome { home, connector in
+            let manual = #"{"extra":true,"mcpServers":{"unrelated":{"command":"other"},"glyphs-mcp-server":{"serverUrl":"http://localhost:9680/mcp","headers":{"X-Test":"keep"},"disabled":false}}}"#
+            try write(manual, to: connector.configURL)
+            XCTAssertEqual(connector.connectionStatus(), .configured)
+            XCTAssertTrue(try connector.configureConnection())
+            XCTAssertTrue(try connector.removeConnection())
+            let changedPort = AntigravityConnector(home: home, endpoint: URL(string: "http://127.0.0.1:9771/mcp/")!)
+            XCTAssertEqual(changedPort.connectionStatus(), .conflict)
+            XCTAssertThrowsError(try changedPort.configureConnection())
+            XCTAssertEqual(try Data(contentsOf: connector.configURL), Data(manual.utf8))
+            XCTAssertTrue(try backups(for: connector).isEmpty)
+            XCTAssertFalse(connector.hasOwnershipReceipt)
+        }
+    }
+
+    func testModifiedInstallerEntryIsPreserved() throws {
+        try withHome { home, connector in
+            try connector.configureConnection()
+            let modified = #"{"mcpServers":{"glyphs-mcp":{"serverUrl":"http://127.0.0.1:9680/mcp/","headers":{"X-Test":"local"}}}}"#
+            try write(modified, to: connector.configURL)
+            XCTAssertTrue(try connector.configureConnection())
+            XCTAssertTrue(try connector.removeConnection())
+            let changedPort = AntigravityConnector(home: home, endpoint: URL(string: "http://127.0.0.1:9771/mcp/")!)
+            XCTAssertThrowsError(try changedPort.configureConnection())
+            XCTAssertEqual(try Data(contentsOf: connector.configURL), Data(modified.utf8))
+        }
+    }
+
+    func testMalformedDisabledConflictingAndDuplicateEntriesArePreserved() throws {
+        try withHome { _, connector in
+            for contents in [
+                "{broken",
+                #"{"mcpServers":[]}"#,
+                #"{"mcpServers":{"glyphs-mcp":false}}"#,
+                #"{"mcpServers":{"glyphs-mcp":{"serverUrl":"http://127.0.0.1:9680/mcp/","disabled":true}}}"#,
+                #"{"mcpServers":{"glyphs-mcp":{"serverUrl":"http://127.0.0.1:9680/mcp/","url":"https://example.com/mcp"}}}"#,
+                #"{"mcpServers":{"glyphs-mcp":{"serverUrl":"http://127.0.0.1:9680/mcp/"},"custom":{"serverUrl":"http://localhost:9680/mcp"}}}"#
+            ] {
+                try write(contents, to: connector.configURL)
+                XCTAssertEqual(connector.connectionStatus(), .conflict, contents)
+                XCTAssertThrowsError(try connector.configureConnection(), contents)
+                XCTAssertEqual(try Data(contentsOf: connector.configURL), Data(contents.utf8))
+                XCTAssertFalse(connector.hasOwnershipReceipt)
+            }
+            XCTAssertTrue(try backups(for: connector).isEmpty)
+        }
+    }
+
+    func testLegacyRelativeSymlinkStaysInPlaceAcrossSharedWrites() throws {
+        try withHome { home, connector in
+            let legacy = home.appendingPathComponent(".gemini/antigravity/mcp_config.json")
+            try files.createDirectory(at: legacy.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let target = "../config/mcp_config.json"
+            try files.createSymbolicLink(atPath: legacy.path, withDestinationPath: target)
+
+            try connector.configureConnection()
+            XCTAssertEqual(try Data(contentsOf: legacy), try Data(contentsOf: connector.configURL))
+            try connector.removeConnection()
+            XCTAssertEqual(try files.destinationOfSymbolicLink(atPath: legacy.path), target)
+            XCTAssertEqual(try Data(contentsOf: legacy), try Data(contentsOf: connector.configURL))
+        }
+    }
+
+    func testSeparateLegacyFileAndRedirectedSharedFilesArePreserved() throws {
+        try withHome { home, connector in
+            let legacy = home.appendingPathComponent(".gemini/antigravity/mcp_config.json")
+            try write("{}", to: legacy)
+            XCTAssertThrowsError(try connector.configureConnection())
+            XCTAssertEqual(try Data(contentsOf: legacy), Data("{}".utf8))
+            XCTAssertFalse(files.fileExists(atPath: connector.configURL.path))
+
+            try files.removeItem(at: legacy)
+            let external = home.appendingPathComponent("external.json")
+            try write("{}", to: external)
+            try files.createDirectory(at: connector.configURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try files.createSymbolicLink(at: connector.configURL, withDestinationURL: external)
+            XCTAssertThrowsError(try connector.configureConnection())
+            XCTAssertEqual(try Data(contentsOf: external), Data("{}".utf8))
+        }
+    }
+
+    func testOwnedSkillsUpgradeAndRemovalPreserveModifiedAndLinkedCopies() throws {
+        try withHome { home, connector in
+            let source = home.appendingPathComponent("payload/skills")
+            let payload = InstallerPayload(payloadDir: source.deletingLastPathComponent(),
+                                           pluginBundle: home.appendingPathComponent("plugin"),
+                                           requirementsTxt: home.appendingPathComponent("requirements.txt"), skillsDir: source)
+            let manifest = #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-development","surface":"workspace"}]}"#
+            try write(manifest, to: source.appendingPathComponent("manifest.json"))
+            for name in ["glyphs", "glyphs-mcp-spacing", "glyphs-mcp-scripting", "glyphs-mcp-development"] {
+                try write("bundled old", to: source.appendingPathComponent(name + "/SKILL.md"))
+            }
+            let installed = connector.skillsURL
+            let external = home.appendingPathComponent("external/glyphs-mcp-scripting")
+            try write("external", to: external.appendingPathComponent("SKILL.md"))
+            try files.createDirectory(at: installed, withIntermediateDirectories: true)
+            let link = installed.appendingPathComponent("glyphs-mcp-scripting")
+            try files.createSymbolicLink(at: link, withDestinationURL: external)
+
+            XCTAssertEqual(connector.skillsStatus(payload: payload, includeDevelopmentSkills: false), .partial)
+            let result = try connector.installSkills(from: payload, includeDevelopmentSkills: false, log: { _ in })
+            XCTAssertEqual(result.entries.filter { $0.outcome == .installed }.map(\.name), ["glyphs", "glyphs-mcp-spacing"])
+            XCTAssertEqual(result.conflicts.map(\.name), ["glyphs-mcp-scripting"])
+            XCTAssertTrue(connector.hasOwnershipReceipt)
+            XCTAssertEqual(connector.skillsStatus(payload: payload, includeDevelopmentSkills: false), .available)
+            XCTAssertFalse(files.fileExists(atPath: home.appendingPathComponent(".claude").path))
+
+            let edited = installed.appendingPathComponent("glyphs-mcp-spacing/SKILL.md")
+            try write("user edit", to: edited)
+            try write("bundled new", to: source.appendingPathComponent("glyphs/SKILL.md"))
+            let upgrade = try connector.installSkills(from: payload, includeDevelopmentSkills: false, log: { _ in })
+            XCTAssertEqual(upgrade.conflicts.map(\.name), ["glyphs-mcp-scripting", "glyphs-mcp-spacing"])
+            let current = installed.appendingPathComponent("glyphs/SKILL.md")
+            XCTAssertEqual(try String(contentsOf: current, encoding: .utf8), "bundled new")
+            let removal = try connector.removeSkills(from: payload, log: { _ in })
+            XCTAssertEqual(removal.entries.filter { $0.outcome == .removed }.map(\.name), ["glyphs"])
+            XCTAssertFalse(files.fileExists(atPath: current.path))
+            XCTAssertEqual(try String(contentsOf: edited, encoding: .utf8), "user edit")
+            XCTAssertEqual(try String(contentsOf: link.appendingPathComponent("SKILL.md"), encoding: .utf8), "external")
+        }
+    }
+
+    func testSkillRetryKeepsOwnershipOfEarlierCompletedCopies() throws {
+        try withHome { home, connector in
+            let source = home.appendingPathComponent("payload/skills")
+            let payload = InstallerPayload(payloadDir: source.deletingLastPathComponent(),
+                                           pluginBundle: home.appendingPathComponent("plugin"),
+                                           requirementsTxt: home.appendingPathComponent("requirements.txt"), skillsDir: source)
+            let manifest = #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#
+            try write(manifest, to: source.appendingPathComponent("manifest.json"))
+            let glyphs = source.appendingPathComponent("glyphs/SKILL.md")
+            let spacing = source.appendingPathComponent("glyphs-mcp-spacing/SKILL.md")
+            try write("first revision", to: glyphs)
+            try files.createDirectory(at: spacing.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try files.createSymbolicLink(at: spacing, withDestinationURL: glyphs)
+
+            XCTAssertThrowsError(try connector.installSkills(from: payload, includeDevelopmentSkills: false, log: { _ in }))
+            XCTAssertTrue(connector.hasOwnershipReceipt)
+            XCTAssertEqual(connector.skillsStatus(payload: payload, includeDevelopmentSkills: false), .partial)
+
+            try files.removeItem(at: spacing)
+            try write("spacing skill", to: spacing)
+            try write("second revision", to: glyphs)
+            let result = try connector.installSkills(from: payload, includeDevelopmentSkills: false, log: { _ in })
+            XCTAssertTrue(result.conflicts.isEmpty)
+            XCTAssertEqual(try String(contentsOf: connector.skillsURL.appendingPathComponent("glyphs/SKILL.md"),
+                                      encoding: .utf8), "second revision")
+            XCTAssertEqual(connector.skillsStatus(payload: payload, includeDevelopmentSkills: false), .available)
+
+            // A link replacing an owned directory remains user-managed even when its contents match the receipt.
+            let installed = connector.skillsURL.appendingPathComponent("glyphs")
+            try files.removeItem(at: installed)
+            try files.createSymbolicLink(at: installed, withDestinationURL: glyphs.deletingLastPathComponent())
+            let removal = try connector.removeSkills(from: payload, log: { _ in })
+            XCTAssertEqual(removal.conflicts.map(\.name), ["glyphs"])
+            XCTAssertEqual(try files.destinationOfSymbolicLink(atPath: installed.path), glyphs.deletingLastPathComponent().path)
+            XCTAssertEqual(try String(contentsOf: glyphs, encoding: .utf8), "second revision")
+        }
+    }
+
+    private func withHome(_ body: (URL, AntigravityConnector) throws -> Void) throws {
+        let home = files.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try files.createDirectory(at: home, withIntermediateDirectories: false)
+        defer { try? files.removeItem(at: home) }
+        try body(home, AntigravityConnector(home: home, endpoint: endpoint))
+    }
+
+    private func write(_ text: String, to url: URL) throws {
+        try files.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try text.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func backups(for connector: AntigravityConnector) throws -> [URL] {
+        try files.contentsOfDirectory(at: connector.configURL.deletingLastPathComponent(), includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix("mcp_config.json.bak-") }
+    }
+
+    private func servers(for connector: AntigravityConnector) throws -> [String: [String: Any]] {
+        let root = try JSONSerialization.jsonObject(with: Data(contentsOf: connector.configURL)) as? [String: Any]
+        return try XCTUnwrap(root?["mcpServers"] as? [String: [String: Any]])
+    }
+}

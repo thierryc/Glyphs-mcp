@@ -368,7 +368,7 @@ public struct GlyphDiffService {
         headRevision: String?,
         afterRevision: String? = nil
     ) async throws -> GlyphDiffDocument {
-        guard change.isGlyphPackageGlyph else { throw ProjectError("Visual comparison is available for glyph files inside .glyphspackage sources.") }
+        guard change.isGlyphPackageGlyph else { throw ProjectError(localized: "Visual comparison is available for glyph files inside .glyphspackage sources.") }
         let afterLocation = try location(change.path)
         let beforeLocation = try location(change.originalPath ?? change.path)
         let runtime = try await ProjectFiles.perform {
@@ -395,7 +395,7 @@ public struct GlyphDiffService {
         let glyphs4 = applications.filter { $0.majorVersion == .v4 }
         let application = glyphs4.first(where: { $0.appURL.standardizedFileURL == installation.application?.standardizedFileURL })?.appURL
             ?? glyphs4.first?.appURL
-        guard let application else { throw ProjectError("Glyphs 4 is required for the visual glyph diff.") }
+        guard let application else { throw ProjectError(localized: "Glyphs 4 is required for the visual glyph diff.") }
 
         let temporary = fileManager.temporaryDirectory.appendingPathComponent("glyphs-git-diff-\(UUID().uuidString)", isDirectory: true)
         try fileManager.createDirectory(at: temporary, withIntermediateDirectories: true)
@@ -446,20 +446,18 @@ public struct GlyphDiffService {
         )
         guard result.exitCode == 0 else {
             if result.stderr.contains("No module named glyphs_mcp_sidecar.glyph_diff_worker") {
-                throw ProjectError(
-                    "Update the installed Glyphs MCP component to enable visual glyph diffs. " +
-                    "The text diff remains available."
-                )
+                throw ProjectError(localized: "Update the installed Glyphs MCP component to enable visual glyph diffs. The text diff remains available.")
             }
             let detail = result.stderr.split(whereSeparator: \.isNewline).last.map(String.init)
-            throw ProjectError(detail.map { "The Glyphs geometry reader could not start: \($0)" }
-                ?? "The Glyphs geometry reader could not start.")
+            if let detail { throw ProjectError(localized: "The Glyphs geometry reader could not start: \(detail)") }
+            throw ProjectError(localized: "The Glyphs geometry reader could not start.")
         }
         let response = try JSONDecoder().decode(WorkerResponse.self, from: Data(contentsOf: output))
         guard response.ok, let document = response.data,
               document.schemaVersion == GlyphDiffReaderContract.expected.schemaVersion,
               document.protocolAPIVersion == GlyphDiffReaderContract.expected.protocolAPIVersion else {
-            throw ProjectError(response.error ?? "The Glyphs geometry reader returned an unsupported result.")
+            if let error = response.error { throw ProjectError(error) }
+            throw ProjectError(localized: "The Glyphs geometry reader returned an unsupported result.")
         }
         return document.addingNotice(runtime.notice)
     }
@@ -469,17 +467,17 @@ public struct GlyphDiffService {
         let root = package.standardizedFileURL
         let rootAttributes = try manager.attributesOfItem(atPath: root.path)
         guard rootAttributes[.type] as? FileAttributeType == .typeDirectory else {
-            throw ProjectError("The glyph package is not a regular directory.")
+            throw ProjectError(localized: "The glyph package is not a regular directory.")
         }
         guard let enumerator = manager.enumerator(
             at: root,
             includingPropertiesForKeys: [.isSymbolicLinkKey],
             options: [.skipsHiddenFiles]
-        ) else { throw ProjectError("The glyph package could not be inspected safely.") }
+        ) else { throw ProjectError(localized: "The glyph package could not be inspected safely.") }
         while let entry = enumerator.nextObject() as? URL {
             if try entry.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true {
                 enumerator.skipDescendants()
-                throw ProjectError("Symbolic links are not allowed in a visual glyph comparison package.")
+                throw ProjectError(localized: "Symbolic links are not allowed in a visual glyph comparison package.")
             }
         }
     }
@@ -491,7 +489,7 @@ public struct GlyphDiffService {
               packageIndex + 2 == parts.count - 1,
               parts[packageIndex + 1] == "glyphs",
               parts.last?.hasSuffix(".glyph") == true else {
-            throw ProjectError("The selected file is not a glyph inside a .glyphspackage source.")
+            throw ProjectError(localized: "The selected file is not a glyph inside a .glyphspackage source.")
         }
         return .init(packagePath: parts[...packageIndex].joined(separator: "/"), glyphPath: parts.joined(separator: "/"))
     }
@@ -502,7 +500,7 @@ public struct GlyphDiffService {
         location: PackageLocation,
         temporary: URL
     ) async throws -> URL? {
-        guard let git = ReadOnlyGit().executable else { throw ProjectError("Git is unavailable.") }
+        guard let git = ReadOnlyGit().executable else { throw ProjectError(localized: "Git is unavailable.") }
         let archive = temporary.appendingPathComponent("before.tar")
         let extracted = temporary.appendingPathComponent("before", isDirectory: true)
         try fileManager.createDirectory(at: extracted, withIntermediateDirectories: true)
@@ -523,7 +521,7 @@ public struct GlyphDiffService {
             environment: ["PATH": "/usr/bin:/bin"],
             timeout: 30
         )
-        guard unpacked.exitCode == 0 else { throw ProjectError("Could not unpack the reference glyph package.") }
+        guard unpacked.exitCode == 0 else { throw ProjectError(localized: "Could not unpack the reference glyph package.") }
         let package = extracted.appendingPathComponent(location.packagePath, isDirectory: true)
         guard fileManager.fileExists(atPath: package.path) else { return nil }
         try Self.validateMaterializedPackage(package)

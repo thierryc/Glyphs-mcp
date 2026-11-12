@@ -1,7 +1,7 @@
 """Revision-bound dispatch for authorized native script jobs."""
 from glyphs_mcp_protocol import scripts
 from .bridge_client import BridgeClientError
-from .saved_script import unresolved
+from .saved_script import stopped_outcome, unresolved
 from glyphs_mcp_protocol.task_conflicts import CAPABILITY, conflicts, protection, describe
 
 
@@ -68,7 +68,13 @@ def run(service, job_id, workflow_id, error):
         # Only a confirmed preflight refusal can return to the queue. A lost
         # response keeps the native attempt protected and is never replayed.
         certain = isinstance(exc, BridgeClientError) and exc.details.get('execution') != 'uncertain'
-        service.jobs.update(job_id, status=('ready' if exc.code in {'document_busy', 'resource_pressure'} else 'failed') if certain else 'applying', error=service._error(exc).as_dict())
+        status = 'applying'
+        if certain:
+            # A cancelled dispatch never entered Run. Its native preview still
+            # belongs to this request and can be cancelled through the normal action.
+            status = ('ready' if exc.code in {'document_busy', 'resource_pressure'}
+                      or exc.details.get('execution') == 'cancelled' else 'failed')
+        service.jobs.update(job_id, status=status, error=service._error(exc).as_dict())
         raise service._error(exc) from exc
     return service._public(service.jobs.update(job_id, status='applying', bridgeOperation=operation))
 
@@ -78,7 +84,9 @@ def finish(service, job_id, error):
     if job.get('resultKind') != 'script' or job['status'] not in {'applied', 'failed', 'cancelled', 'completed'}:
         raise error('job_not_ready', 'script is not ready to finish')
     operation = service.bridge.finish_script(job_id)
-    return service._public(service.jobs.update(job_id, status='completed', bridgeOperation=operation))
+    outcome = stopped_outcome(job)
+    stopped = dict(stoppedStatus=job['status'], outcome=outcome) if outcome else {}
+    return service._public(service.jobs.update(job_id, status='completed', bridgeOperation=operation, **stopped))
 
 
 def acknowledge_lost(service, workflow, error):

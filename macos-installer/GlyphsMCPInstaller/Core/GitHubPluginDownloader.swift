@@ -62,10 +62,10 @@ public struct GitHubPluginDownloader {
 
 	public static func verifyChecksum(_ data: Data, manifestData: Data, assetName: String) throws {
 		guard !assetName.contains("/"), !assetName.contains("\\") else {
-			throw InstallerError.userFacing("Release asset name is unsafe.")
+			throw InstallerError.localized("Release asset name is unsafe.")
 		}
 		guard let manifest = String(data: manifestData, encoding: .utf8) else {
-			throw InstallerError.userFacing("Release checksum manifest is not UTF-8.")
+			throw InstallerError.localized("Release checksum manifest is not UTF-8.")
 		}
 		let matches = manifest
 			.split(whereSeparator: \.isNewline)
@@ -84,18 +84,18 @@ public struct GitHubPluginDownloader {
 			}
 		guard matches.count == 1, let expected = matches.first else {
 			if matches.isEmpty {
-				throw InstallerError.userFacing("Release checksum manifest does not list \(assetName).")
+				throw InstallerError.localized("Release checksum manifest does not list \(assetName).")
 			}
-			throw InstallerError.userFacing("Release checksum manifest contains duplicate entries for \(assetName).")
+			throw InstallerError.localized("Release checksum manifest contains duplicate entries for \(assetName).")
 		}
 		let hexCharacters = CharacterSet(charactersIn: "0123456789abcdef")
 		guard expected.count == 64,
 			  expected.unicodeScalars.allSatisfy({ hexCharacters.contains($0) }) else {
-			throw InstallerError.userFacing("Release checksum manifest contains an invalid SHA-256 for \(assetName).")
+			throw InstallerError.localized("Release checksum manifest contains an invalid SHA-256 for \(assetName).")
 		}
 		let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
 		guard actual == expected else {
-			throw InstallerError.userFacing("Downloaded installer checksum does not match the published manifest.")
+			throw InstallerError.localized("Downloaded installer checksum does not match the published manifest.")
 		}
 	}
 }
@@ -110,7 +110,7 @@ public struct InstallerArchiveVerifier {
 	public static let live = InstallerArchiveVerifier { extractedRoot, expectedVersion in
 		let app = extractedRoot.appendingPathComponent("GlyphsMCPInstaller.app", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: app.path) else {
-			throw InstallerError.userFacing("Signed installer archive does not contain GlyphsMCPInstaller.app.")
+			throw InstallerError.localized("Signed installer archive does not contain GlyphsMCPInstaller.app.")
 		}
 
 		_ = try run(
@@ -125,7 +125,7 @@ public struct InstallerArchiveVerifier {
 		)
 		guard appDetails.contains("Authority=\(PluginExecutableVerifier.expectedDeveloperIDAuthority)"),
 			  appDetails.contains("TeamIdentifier=\(PluginExecutableVerifier.expectedTeamIdentifier)") else {
-			throw InstallerError.userFacing("Installer archive is not signed by the expected Developer ID.")
+			throw InstallerError.localized("Installer archive is not signed by the expected Developer ID.")
 		}
 		_ = try run("/usr/bin/xcrun", ["stapler", "validate", app.path], subject: app)
 		_ = try run("/usr/sbin/spctl", ["--assess", "--type", "execute", "--verbose=2", app.path], subject: app)
@@ -133,11 +133,11 @@ public struct InstallerArchiveVerifier {
 		let appVersion = Bundle(url: app)?
 			.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
 		guard appVersion == expectedVersion else {
-			throw InstallerError.userFacing("Installer archive version does not match the published release.")
+			throw InstallerError.localized("Installer archive version does not match the published release.")
 		}
 
 		guard let appBundle = Bundle(url: app) else {
-			throw InstallerError.userFacing("Signed installer archive is not a readable app bundle.")
+			throw InstallerError.localized("Signed installer archive is not a readable app bundle.")
 		}
 		let releaseMajor = Int(expectedVersion.split(separator: ".").first ?? "")
 		let payload = try InstallerPayload.resolve(
@@ -147,11 +147,11 @@ public struct InstallerArchiveVerifier {
 		for version in GlyphsMajorVersion.allCases {
 			let target = payload.plugin(for: version)
 			if target.updatePolicy == .release, target.version.displayString != expectedVersion {
-				throw InstallerError.userFacing("\(version.displayName) payload version does not match the published release.")
+				throw InstallerError.localized("\(version.displayName) payload version does not match the published release.")
 			}
 			let signature = try PluginExecutableVerifier.live.verify(target.bundleURL)
 			guard signature.authority == PluginExecutableVerifier.expectedDeveloperIDAuthority else {
-				throw InstallerError.userFacing("\(version.displayName) payload is not signed by the expected Developer ID.")
+				throw InstallerError.localized("\(version.displayName) payload is not signed by the expected Developer ID.")
 			}
 		}
 		return payload
@@ -170,8 +170,7 @@ public struct InstallerArchiveVerifier {
 			process.waitUntilExit()
 			let output = String(data: data, encoding: .utf8) ?? ""
 			guard process.terminationStatus == 0 else {
-				throw InstallerError.userFacing(
-					"Release verification failed for \(subject.lastPathComponent): \(output.trimmingCharacters(in: .whitespacesAndNewlines))"
+				throw InstallerError.localized("Release verification failed for \(subject.lastPathComponent): \(output.trimmingCharacters(in: .whitespacesAndNewlines))"
 				)
 			}
 			return output
@@ -179,7 +178,7 @@ public struct InstallerArchiveVerifier {
 			if let installerError = error as? InstallerError {
 				throw installerError
 			}
-			throw InstallerError.userFacing("Could not verify \(subject.lastPathComponent): \(error.localizedDescription)")
+			throw InstallerError.localized("Could not verify \(subject.lastPathComponent): \(error.localizedDescription)")
 		}
 	}
 }

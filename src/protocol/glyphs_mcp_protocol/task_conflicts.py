@@ -8,6 +8,36 @@ from pathlib import PurePath
 
 CAPABILITY = 'tasks.document-recovery.v1'
 ACTIVE = {'preparing', 'cancelling', 'applying', 'rolling_back', 'discarding', 'accepting', 'saving'}
+STOPPED_SCRIPT = {'failed', 'cancelled'}
+
+
+def stopped_without_pending_writes(record, operation):
+    if (operation.get('status') not in STOPPED_SCRIPT or record.get('status') not in STOPPED_SCRIPT
+            or record.get('hasPendingWrites') or record.get('saveRequest') or record.get('restoreRequest')
+            or operation.get('nativeSave')):
+        return False
+    for failure in (record.get('error') or {}, operation.get('error') or {}):
+        details = failure.get('details') or {}
+        if (failure.get('code') in {'restoration_unverified', 'bridge_operation_lost'}
+                or details.get('writeAttempted') or details.get('execution') == 'uncertain' or details.get('cleanup')):
+            return False
+    return True
+
+
+def stopped_script_released(record, operation=None):
+    """Only explicit terminal native evidence can release a stopped script."""
+    missing = operation is None and record.get('nativeOperationMissing') is True
+    operation = operation if operation is not None else record.get('bridgeOperation') or record
+    if not stopped_without_pending_writes(record, operation):
+        return False
+    if missing:
+        return True  # Exact terminal operation confirmed absent by the live bridge.
+    if operation.get('scriptRequest'):
+        return (operation.get('scriptStage') == 'done' and 'cleanupSteps' not in operation
+                and operation.get('scriptSnapshot') is None)
+    recovery = (operation.get('scriptResult') or {}).get('recovery') or {}
+    return (operation.get('stoppedReleased') is True and operation.get('recoveryAvailable') is False
+            and recovery.get('available') is not True)
 
 
 def protection(record):
@@ -39,7 +69,8 @@ def protection(record):
                                 and operation.get('status') not in {'applied', 'failed', 'cancelled', 'completed'})
         reason = 'execution' if executing else 'operation'
         scope = 'session' if executing else 'document'
-    elif status == 'applied' or script and status in {'failed', 'cancelled'} and evidence.get('executed'):
+    elif status == 'applied' or (script and status in STOPPED_SCRIPT and evidence.get('executed')
+                                 and not stopped_script_released(record)):
         reason, wait = 'recovery', 'decision'
     elif status == 'ready' and record.get('resultKind') not in {'artifact', 'diagnostic'}:
         reason, wait = 'preview', 'decision'

@@ -476,6 +476,7 @@ public enum InstallerClientKind: Int, CaseIterable, Identifiable, Sendable {
 	case claudeCode
 	case claudeDesktop
 	case cursor
+	case antigravity
 
 	public var id: Int { rawValue }
 
@@ -485,6 +486,7 @@ public enum InstallerClientKind: Int, CaseIterable, Identifiable, Sendable {
 		case .claudeDesktop: return "Claude Desktop"
 		case .claudeCode: return "Claude Code"
 		case .cursor: return "Cursor"
+		case .antigravity: return "Antigravity"
 		}
 	}
 }
@@ -496,6 +498,7 @@ public extension InstallerClientKind {
         case .claudeCode: return URL(string: "https://code.claude.com/docs/en/setup")!
         case .claudeDesktop: return URL(string: "https://claude.ai/download")!
         case .cursor: return URL(string: "https://cursor.com/downloads")!
+        case .antigravity: return URL(string: "https://antigravity.google/download")!
         }
     }
 }
@@ -724,6 +727,7 @@ public enum InstallerStatusSnapshotBuilder {
 			.init(kind: .codex, isDetected: isCodexDetected(check: check)),
 			.init(kind: .claudeCode, isDetected: isClaudeCodeDetected(preflight: preflight, check: check)),
 			.init(kind: .claudeDesktop, isDetected: isClaudeDesktopDetected(check: check)),
+			.init(kind: .antigravity, isDetected: AntigravityConnector.isDetected(applicationURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier:))),
 			.init(kind: .cursor, isDetected: FileManager.default.fileExists(atPath: InstallerPaths.home.appendingPathComponent(".cursor").path)),
 		])
 
@@ -781,6 +785,9 @@ public enum InstallerStatusSnapshotBuilder {
 			return .init(label: "App", summary: itemLevel(title: "Claude app", check: check) == .ok ? "Installed" : "Not found", detail: path)
 		case .claudeCode:
 			return .init(label: "App", summary: "", detail: nil, isVisible: false)
+		case .antigravity:
+			let found = AntigravityConnector.isDetected(applicationURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier:))
+			return .init(label: "App", summary: found ? "Installed" : "Not found", detail: nil)
 		case .cursor:
 			let found = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.todesktop.230313mzl4w4u92") != nil
 			return .init(label: "App", summary: found ? "Installed" : "Not found", detail: nil)
@@ -797,7 +804,7 @@ public enum InstallerStatusSnapshotBuilder {
 		case .claudeCode:
 			let path = preflight.claudePath ?? itemDetails(title: "Claude Code CLI", check: check)
 			return .init(label: "CLI", summary: (preflight.claudePath != nil || itemLevel(title: "Claude Code CLI", check: check) == .ok) ? "Installed" : "Not found", detail: path)
-		case .cursor:
+		case .cursor, .antigravity:
 			return .init(label: "CLI", summary: "", detail: nil, isVisible: false)
 		}
 	}
@@ -813,6 +820,9 @@ public enum InstallerStatusSnapshotBuilder {
 		case .claudeCode:
 			let summary = itemDetails(title: "Claude Code MCP settings", check: check) ?? "Missing"
 			return .init(label: "Config", summary: summary, detail: InstallerPaths.claudeCodeConfig.path)
+		case .antigravity:
+			let connector = AntigravityConnector(endpoint: DesktopInstallation().endpoint)
+			return .init(label: "Config", summary: connector.connectionStatus().label, detail: connector.configURL.path)
 		case .cursor:
 			let installed = FileManager.default.fileExists(atPath: InstallerPaths.cursorPluginDir.path)
 			return .init(label: "Plugin", summary: installed ? "Configured" : "Missing", detail: InstallerPaths.cursorPluginDir.path)
@@ -840,6 +850,8 @@ public enum InstallerStatusSnapshotBuilder {
 			return "Claude Code uses ~/.claude.json."
 		case .cursor:
 			return "Cursor uses a managed local plug-in bundle. Reload Cursor after changes."
+		case .antigravity:
+			return "Antigravity App and IDE share the global MCP connection and Glyphs skills."
 		}
 	}
 

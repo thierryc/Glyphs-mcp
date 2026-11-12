@@ -16,12 +16,18 @@ final class InstallerViewModel: ObservableObject {
     @Published private(set) var connectorStates: [InstallerClientKind: SetupItemState] = [:]
     @Published private(set) var detectedClients: Set<InstallerClientKind> = []
     @Published private(set) var connectorInformation: [InstallerClientKind: String] = [:]
+    @Published private(set) var antigravityConnectionStatus: AntigravityConnector.ConnectionStatus = .missing
+    @Published private(set) var antigravitySkillsStatus: AntigravityConnector.SkillsStatus = .notChecked
+    @Published private(set) var antigravityHasOwnership = false
     @Published private(set) var connectorVersions: [InstallerClientKind: String] = [:]
     @Published var notice: ComponentNotice = .none
     @Published private(set) var log = ""
     @Published private(set) var busy = false
     @Published var includeDevelopmentSkills = UserDefaults.standard.bool(forKey: "includeGlyphsMCPDevelopmentSkills") {
-        didSet { UserDefaults.standard.set(includeDevelopmentSkills, forKey: "includeGlyphsMCPDevelopmentSkills") }
+        didSet {
+            UserDefaults.standard.set(includeDevelopmentSkills, forKey: "includeGlyphsMCPDevelopmentSkills")
+            refreshConnectorDetection()
+        }
     }
     @Published var supplementalSkillsBusy = false
     @Published private(set) var optionalStates: [String: OptionalToolState] = [:]
@@ -96,13 +102,17 @@ final class InstallerViewModel: ObservableObject {
     private var pythonCheckTask: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
 
-    var message: String { notice.text }
+    var message: String { AppLocalization.text(notice.text) }
     var projectVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown" }
     var versionLabel: String { DesktopIdentity.versionLabel }
     var application: GlyphsApplicationInfo? { GlyphsCopySelectionPolicy.selected(from: applications, preferredPath: selectedGlyphsPath) }
+    var visibleConnectors: [InstallerClientKind] {
+        InstallerClientKind.allCases.filter { $0 != .antigravity || detectedClients.contains($0) || antigravityHasOwnership }
+    }
+
     var allInstalled: Bool {
         DesktopComponent.ids.isSubset(of: installed)
-            && Set(InstallerClientKind.allCases).isSubset(of: installedConnectors)
+            && Set(SetupQueuePolicy.bulkConnectors(detected: detectedClients)).isSubset(of: installedConnectors)
     }
     var bulkActionTitle: String { allInstalled ? "Update All" : "Install All" }
     var canChangeComponents: Bool { !operationsBusy && refreshTask == nil && !checkingPython && application != nil && !running }
@@ -112,8 +122,8 @@ final class InstallerViewModel: ObservableObject {
     }
     var inspectorInstructions: String {
         let names = [("curve-inspector", "Curve Inspector"), ("reference-inspector", "Changes Against Reference")]
-            .filter { installed.contains($0.0) }.map(\.1).joined(separator: " and ")
-        return names.isEmpty ? "" : "In Glyphs’ View menu, enable " + names + "."
+            .filter { installed.contains($0.0) }.map(\.1).formatted(.list(type: .and))
+        return names.isEmpty ? "" : AppLocalization.format("In Glyphs’ View menu, enable %@.", names)
     }
 
     init() {
@@ -222,7 +232,7 @@ final class InstallerViewModel: ObservableObject {
             let names = DesktopComponent.all
                 .filter { installation.brokenDevelopmentLinkedComponents.contains($0.id) }
                 .map(\.title).joined(separator: ", ")
-            notice = .failure("Development links were found, but their build targets are missing: \(names). Rebuild the linked development payload, then refresh Setup.")
+            notice = .failure(AppLocalization.message("Development links were found, but their build targets are missing: \(names). Rebuild the linked development payload, then refresh Setup."))
         }
         let endpoint = DesktopInstallation().endpoint
         let effectiveCodex = await CodexEffectiveConnection.isConfigured(endpoint: endpoint)
@@ -289,7 +299,7 @@ final class InstallerViewModel: ObservableObject {
                 record("Requested Glyphs 4 to quit before setup changes.")
                 refreshRunning()
             } catch {
-                notice = .failure(error.localizedDescription)
+                notice = .failure(error.presentationDescription())
                 record("Could not quit Glyphs safely: \(error.localizedDescription)")
             }
         }
@@ -309,7 +319,7 @@ final class InstallerViewModel: ObservableObject {
                                 configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
             if let error {
                 Task { @MainActor in
-                    self?.notice = .failure("Open Window → Plugin Manager → Modules in Glyphs and choose Python. " + error.localizedDescription)
+                    self?.notice = .failure(AppLocalization.format("Open Window → Plugin Manager → Modules in Glyphs and choose Python. %@", error.presentationDescription()))
                 }
             }
         }
@@ -348,7 +358,7 @@ final class InstallerViewModel: ObservableObject {
                 self.stage("Checking Glyphs Python…")
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("--qualify-python-check-failure") {
-                    throw InstallerError.userFacing("Qualification: simulated Glyphs Python check failure.")
+                    throw InstallerError.localized("Qualification: simulated Glyphs Python check failure.")
                 }
                 #endif
                 self.diagnostic("python-check.helper-started", operationID: checkID,
@@ -382,9 +392,9 @@ final class InstallerViewModel: ObservableObject {
                 self.timed("Glyphs Python preflight", since: preflightStart)
             } catch {
                 guard !Task.isCancelled, self.pythonSession.accepts(checkToken) else { return }
-                self.pythonSession.finish(checkToken, state: .failed(error.localizedDescription, canSkip: payloadReady),
+                self.pythonSession.finish(checkToken, state: .failed(error.presentationDescription(), canSkip: payloadReady),
                                         detection: self.pythonDetection)
-                self.initializationError = error.localizedDescription
+                self.initializationError = error.presentationDescription()
                 self.diagnostic("python-check.failed", operationID: checkID,
                                 details: ["payloadReady": payloadReady, "error": error.localizedDescription,
                                           "elapsedSeconds": Date().timeIntervalSince(start)])
@@ -402,7 +412,9 @@ final class InstallerViewModel: ObservableObject {
     func installAll() {
         refreshRunning()
         guard canRunBulkAction else { return }
-        let plan = SetupQueuePolicy.bulkPlan(installedComponents: installed, installedConnectors: installedConnectors)
+        detectedClients = Set(InstallerClientKind.allCases.filter(detectsClient))
+        let plan = SetupQueuePolicy.bulkPlan(installedComponents: installed, installedConnectors: installedConnectors,
+                                            detectedConnectors: detectedClients)
         for item in plan {
             switch item {
             case .component(let id, let operation): componentStates[id] = .queued(operation)
@@ -410,7 +422,7 @@ final class InstallerViewModel: ObservableObject {
             }
         }
         busy = true
-        notice = .information("Preparing the setup queue…")
+        notice = .information(AppLocalization.message("Preparing the setup queue…"))
         record("Queued \(plan.count) v2 setup items.")
         task = Task { [weak self] in await self?.runBulkQueue(plan) }
     }
@@ -445,15 +457,17 @@ final class InstallerViewModel: ObservableObject {
         case .claudeCode: return "Restart Claude Code after setup changes. MCP settings and managed skills are included. The Glyphs MCP development skill is also available in Skills for creating scripts and plugins."
         case .claudeDesktop: return "Restart Claude Desktop after setup changes."
         case .cursor: return "Reload or restart Cursor to activate the local Glyphs MCP plug-in."
+        case .antigravity: return "Antigravity App and IDE share this MCP connection and global Glyphs skills."
         }
     }
 
-    func connectorLogoAsset(_ client: InstallerClientKind) -> String {
+    func connectorLogoAsset(_ client: InstallerClientKind) -> String? {
         switch client {
         case .codex: return "CodexLogo"
         case .claudeCode: return "ClaudeCodeLogo"
         case .claudeDesktop: return "ClaudeLogo"
         case .cursor: return "CursorLogo"
+        case .antigravity: return nil
         }
     }
 
@@ -474,26 +488,27 @@ final class InstallerViewModel: ObservableObject {
         defer { busy = false; refreshComponentUpdates() }
         do {
             refreshRunning()
-            guard !running else { throw InstallerError.userFacing("Quit Glyphs, then try again.") }
+            guard !running else { throw InstallerError.localized("Quit Glyphs, then try again.") }
             let componentItems = queue.compactMap { item -> (String, SetupOperation)? in
                 if case .component(let id, let operation) = item { return (id, operation) }
                 return nil
             }
             for (id, operation) in componentItems { componentStates[id] = .active(operation) }
-            notice = .information("Installing Glyphs components…")
+            notice = .information(AppLocalization.message("Installing Glyphs components…"))
             try await executeComponentTransaction(selected: DesktopComponent.ids)
             for (id, _) in componentItems { componentStates[id] = .installed }
             installed = DesktopComponent.ids
             record("Installed all bundled Glyphs 4 components atomically.")
         } catch {
-            let message = error.localizedDescription
+            let message = error.presentationDescription()
             for component in DesktopComponent.all {
                 let operation = componentStates[component.id]?.operation ?? .install
                 componentStates[component.id] = .failed(operation, message)
             }
-            for client in InstallerClientKind.allCases {
-                let operation = connectorStates[client]?.operation ?? .install
-                connectorStates[client] = .failed(operation, "Blocked because Glyphs MCP did not install successfully.")
+            for item in queue {
+                if case .connector(let client, let operation) = item {
+                    connectorStates[client] = .failed(operation, "Blocked because Glyphs MCP did not install successfully.")
+                }
             }
             notice = .failure(message)
             record("Component transaction failed: \(message)")
@@ -508,7 +523,7 @@ final class InstallerViewModel: ObservableObject {
         }
         for (client, operation) in connectorItems {
             connectorStates[client] = .active(operation)
-            notice = .information("Configuring \(client.displayName)…")
+            notice = .information(AppLocalization.message("Configuring \(client.displayName)…"))
             do {
                 let information = try await executeConnector(client, operation: operation)
                 connectorInformation[client] = information
@@ -519,7 +534,7 @@ final class InstallerViewModel: ObservableObject {
             } catch {
                 connectorFailures += 1
                 connectorInformation[client] = nil
-                connectorStates[client] = .failed(operation, error.localizedDescription)
+                connectorStates[client] = .failed(operation, error.presentationDescription())
                 record("\(client.displayName) failed: \(error.localizedDescription)")
             }
         }
@@ -531,12 +546,12 @@ final class InstallerViewModel: ObservableObject {
         refreshRunning()
         guard DesktopComponent.ids.contains(id), canChangeComponents else { return }
         guard operation == .remove || canInstallComponents else {
-            notice = .failure("Complete Glyphs Python setup and choose Check again before installing components.")
+            notice = .failure(AppLocalization.message("Complete Glyphs Python setup and choose Check again before installing components."))
             return
         }
         busy = true
         componentStates[id] = .active(operation)
-        notice = .information(operation.progressLabel.replacingOccurrences(of: "…", with: "") + " " + componentTitle(id) + "…")
+        notice = .information(AppLocalization.format(operation == .remove ? "Removing %@…" : operation == .update ? "Updating %@…" : "Installing %@…", componentTitle(id)))
         task = Task { [weak self] in
             guard let self else { return }
             defer { self.busy = false; self.refreshComponentUpdates() }
@@ -550,12 +565,12 @@ final class InstallerViewModel: ObservableObject {
                     self.componentStates[id] = .installed
                     self.installed.insert(id)
                 }
-                self.notice = .information("\(self.componentTitle(id)) \(operation == .remove ? "removed" : "installed").")
+                self.notice = .information(AppLocalization.format(operation == .remove ? "%@ removed." : "%@ installed.", self.componentTitle(id)))
                 self.record("\(operation.rawValue.capitalized) completed for \(self.componentTitle(id)).")
                 self.refreshPreservingOperationResults()
             } catch {
-                self.componentStates[id] = .failed(operation, error.localizedDescription)
-                self.notice = .failure(error.localizedDescription)
+                self.componentStates[id] = .failed(operation, error.presentationDescription())
+                self.notice = .failure(error.presentationDescription())
                 self.record("\(self.componentTitle(id)) failed: \(error.localizedDescription)")
             }
         }
@@ -569,7 +584,7 @@ final class InstallerViewModel: ObservableObject {
         }
         busy = true
         connectorStates[client] = .active(operation)
-        notice = .information("\(operation.progressLabel.replacingOccurrences(of: "…", with: "")) \(client.displayName)…")
+        notice = .information(AppLocalization.format(operation == .remove ? "Removing %@…" : operation == .update ? "Updating %@…" : "Installing %@…", client.displayName))
         task = Task { [weak self] in
             guard let self else { return }
             defer { self.busy = false }
@@ -579,12 +594,12 @@ final class InstallerViewModel: ObservableObject {
                 self.connectorStates[client] = operation == .remove ? .notInstalled : .installed
                 if operation == .remove { self.connectorVersions.removeValue(forKey: client) }
                 else { self.connectorVersions[client] = self.payload?.plugin(for: .v4).version.shortVersion ?? self.projectVersion }
-                self.notice = .information(information ?? "\(client.displayName) \(operation == .remove ? "removed" : "configured").")
+                self.notice = .information(information ?? AppLocalization.format(operation == .remove ? "%@ removed." : "%@ configured.", client.displayName))
                 self.record("\(operation.rawValue.capitalized) completed for \(client.displayName).")
             } catch {
                 self.connectorInformation[client] = nil
-                self.connectorStates[client] = .failed(operation, error.localizedDescription)
-                self.notice = .failure(error.localizedDescription)
+                self.connectorStates[client] = .failed(operation, error.presentationDescription())
+                self.notice = .failure(error.presentationDescription())
                 self.record("\(client.displayName) failed: \(error.localizedDescription)")
             }
         }
@@ -603,11 +618,11 @@ final class InstallerViewModel: ObservableObject {
             do {
                 let result = try await self.optionalCommand(action: "status")
                 let response = try JSONDecoder().decode(OptionalResponse.self, from: result.stdoutData)
-                guard response.ok, let states = response.data else { throw InstallerError.userFacing("Could not inspect optional tools.") }
+                guard response.ok, let states = response.data else { throw InstallerError.localized("Could not inspect optional tools.") }
                 self.optionalStates = Dictionary(uniqueKeysWithValues: states.map { ($0.id, $0) })
                 self.optionalDiscoveryError = nil
             } catch {
-                self.optionalDiscoveryError = error.localizedDescription
+                self.optionalDiscoveryError = error.presentationDescription()
                 self.record("Optional tool discovery: \(error.localizedDescription)")
             }
         }
@@ -631,7 +646,7 @@ final class InstallerViewModel: ObservableObject {
                 try await self.stopServiceBeforeQuit?()
                 _ = try await self.optionalCommand(action: action, tool: id)
                 self.record("Optional tool \(id): \(action) completed; native loading remains unverified.")
-            } catch { self.optionalErrors[id] = error.localizedDescription; self.record("Optional tool \(id): \(error.localizedDescription)") }
+            } catch { self.optionalErrors[id] = error.presentationDescription(); self.record("Optional tool \(id): \(error.localizedDescription)") }
             self.optionalOperation = nil
             self.optionalTask = nil
             self.refreshOptionalTools()
@@ -663,7 +678,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     private func executeComponentTransaction(selected: Set<String>, only: String? = nil) async throws {
-        guard let application else { throw InstallerError.userFacing("Glyphs 4 is required.") }
+        guard let application else { throw InstallerError.localized("Glyphs 4 is required.") }
         let payload = try await resolvePayload()
         let lean = payload.payloadDir.appendingPathComponent("Lean")
         #if arch(arm64)
@@ -694,7 +709,7 @@ final class InstallerViewModel: ObservableObject {
     }
 
     private func executeComponentRemoval(_ id: String) async throws {
-        guard let application else { throw InstallerError.userFacing("Glyphs 4 is required.") }
+        guard let application else { throw InstallerError.localized("Glyphs 4 is required.") }
         let payload = try await resolvePayload()
         let lean = payload.payloadDir.appendingPathComponent("Lean")
         #if arch(arm64)
@@ -736,6 +751,8 @@ final class InstallerViewModel: ObservableObject {
                     serverName: InstallerConstants.claudeDesktopServerName, endpoint: endpoint)
             case .cursor:
                 try makeCursorInstaller(payload, logger: logger).remove()
+            case .antigravity:
+                return try executeAntigravity(operation, payload: payload, endpoint: endpoint, logger: logger)
             }
             return nil
         }
@@ -753,8 +770,48 @@ final class InstallerViewModel: ObservableObject {
             try ClaudeDesktopConfigurator(endpointURL: endpoint, proxyCommand: proxy, log: logger).configure()
         case .cursor:
             try makeCursorInstaller(payload, logger: logger).installOrUpdate()
+        case .antigravity:
+            return try executeAntigravity(operation, payload: payload, endpoint: endpoint, logger: logger)
         }
         return nil
+    }
+
+    private func executeAntigravity(_ operation: SetupOperation, payload: InstallerPayload,
+                                    endpoint: URL, logger: @escaping (String) -> Void) throws -> String? {
+        let connector = AntigravityConnector(endpoint: endpoint)
+        defer { refreshAntigravityStatus() }
+
+        let connection = Result {
+            if operation == .remove { return try connector.removeConnection() }
+            return try connector.configureConnection()
+        }
+        let skills = Result {
+            if operation == .remove { return try connector.removeSkills(from: payload, log: logger) }
+            let result = try connector.installSkills(from: payload, includeDevelopmentSkills: includeDevelopmentSkills, log: logger)
+            guard connector.skillsStatus(payload: payload, includeDevelopmentSkills: includeDevelopmentSkills) == .available else {
+                let message = NSLocalizedString("Some global Glyphs skills are still missing. Review the existing skill folders and retry Setup.",
+                                                comment: "Antigravity incomplete skill installation")
+                throw InstallerError.userFacing([message, result.preservationInformation].compactMap { $0 }.joined(separator: "\n"))
+            }
+            return result
+        }
+
+        var failures: [String] = []
+        if case .failure(let error) = connection {
+            failures.append(AppLocalization.format("MCP configuration: %@", error.presentationDescription()))
+        }
+        if case .failure(let error) = skills {
+            failures.append(AppLocalization.format("Global skills: %@", error.presentationDescription()))
+        }
+        guard failures.isEmpty else { throw InstallerError.userFacing(failures.joined(separator: "\n")) }
+
+        let preservation = try skills.get().preservationInformation
+        if operation == .remove, try connection.get() {
+            let connectionPreserved = NSLocalizedString("Your existing MCP connection was kept in place.",
+                                                        comment: "Antigravity setup preserves a manual MCP connection")
+            return [connectionPreserved, preservation].compactMap { $0 }.joined(separator: "\n")
+        }
+        return preservation
     }
 
     private func resolvePayload(operationID: String? = nil) async throws -> InstallerPayload {
@@ -768,6 +825,7 @@ final class InstallerViewModel: ObservableObject {
             })
         }
         payload = resolved
+        refreshConnectorDetection()
         diagnostic("payload.resolved", operationID: operationID ?? UUID().uuidString,
                    details: ["elapsedSeconds": Date().timeIntervalSince(start), "path": resolved.payloadDir.path,
                              "scope": "caller wait; discovery is shared and cached"])
@@ -778,7 +836,7 @@ final class InstallerViewModel: ObservableObject {
         guard let source = payload.cursorPluginURL,
               let identity = payload.cursorPluginIdentity,
               let version = payload.cursorPluginVersion else {
-            throw InstallerError.userFacing("The installer payload does not contain the Cursor plug-in.")
+            throw InstallerError.localized("The installer payload does not contain the Cursor plug-in.")
         }
         return CursorPluginInstaller(source: source, expectedIdentity: identity, version: version, log: logger)
     }
@@ -800,6 +858,7 @@ final class InstallerViewModel: ObservableObject {
 
     private func refreshConnectorDetection(resetFailures: Bool = false) {
         detectedClients = Set(InstallerClientKind.allCases.filter(detectsClient))
+        refreshAntigravityStatus()
         for client in InstallerClientKind.allCases {
             let current = connectorStates[client]
             guard resetFailures || !Self.preservesDuringRefresh(current) else { continue }
@@ -813,6 +872,13 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
+    private func refreshAntigravityStatus() {
+        let connector = AntigravityConnector(endpoint: DesktopInstallation().endpoint)
+        antigravityConnectionStatus = connector.connectionStatus()
+        antigravitySkillsStatus = connector.skillsStatus(payload: payload, includeDevelopmentSkills: includeDevelopmentSkills)
+        antigravityHasOwnership = connector.hasOwnershipReceipt
+    }
+
     private func detectsClient(_ client: InstallerClientKind) -> Bool {
         switch client {
         case .codex:
@@ -824,6 +890,8 @@ final class InstallerViewModel: ObservableObject {
         case .claudeDesktop:
             return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anthropic.claudefordesktop") != nil
                 || fm.fileExists(atPath: InstallerPaths.claudeDesktopConfig.path)
+        case .antigravity:
+            return AntigravityConnector.isDetected(applicationURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier:))
         case .cursor:
             return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.todesktop.230313mzl4w4u92") != nil
                 || fm.fileExists(atPath: InstallerPaths.home.appendingPathComponent(".cursor").path)
@@ -848,6 +916,9 @@ final class InstallerViewModel: ObservableObject {
                   let server = servers[InstallerConstants.claudeDesktopServerName] as? [String: Any],
                   let args = server["args"] as? [String] else { return false }
             return args.contains(endpoint)
+        case .antigravity:
+            return (antigravityConnectionStatus == .configured || antigravityConnectionStatus == .updateAvailable)
+                && antigravitySkillsStatus == .available
         case .cursor:
             if let payload, let installer = try? makeCursorInstaller(payload, logger: { _ in }) {
                 if case .installed = installer.inspect() { return true }

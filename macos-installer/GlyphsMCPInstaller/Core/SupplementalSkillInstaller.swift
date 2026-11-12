@@ -106,6 +106,13 @@ public enum SkillCopyOperation: Equatable, Sendable {
 public struct SkillBatchResult: Sendable {
     public var completed: [String] = []
     public var failures: [String] = []
+    public private(set) var presentationFailures: [String] = []
+
+    fileprivate mutating func appendFailure(_ error: Error, path: String? = nil) {
+        let prefix = path.map { $0 + ": " } ?? ""
+        failures.append(prefix + error.localizedDescription)
+        presentationFailures.append(prefix + error.presentationDescription())
+    }
 }
 
 public struct SkillPackageVersion: Sendable {
@@ -125,18 +132,20 @@ public struct SkillPackageVersion: Sendable {
 public struct BundledSkillPackages: Sendable {
     public private(set) var versions: [String: SkillPackageVersion] = [:]
     public private(set) var failures: [String] = []
+    public private(set) var presentationFailures: [String] = []
 
     public init(skills: [CatalogSkill], directories: [URL]) {
         for skill in skills where skill.bundled {
             do {
                 guard let directory = directories.first(where: { $0.lastPathComponent == skill.name }) else {
-                    throw ProjectError("This skill is missing from the app’s verified payload.")
+                    throw ProjectError(localized: "This skill is missing from the app’s verified payload.")
                 }
                 let files = try ProjectFiles.read(directory)
                 _ = try SkillMetadata.validate(files, expectedName: skill.name, bundled: true)
                 versions[skill.id] = SkillPackageVersion(label: skill.version, files: files)
             } catch {
                 failures.append(skill.title + ": " + error.localizedDescription)
+                presentationFailures.append(skill.title + ": " + error.presentationDescription())
             }
         }
     }
@@ -228,7 +237,7 @@ public struct SupplementalSkillInstaller {
             }
             if let values = try? cursor.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey]),
                values.isSymbolicLink == true || values.isDirectory == false {
-                throw ProjectError("Choose a regular folder without symbolic-link ancestors: " + cursor.path)
+                throw ProjectError(localized: "Choose a regular folder without symbolic-link ancestors: \(cursor.path)")
             }
             cursor.deleteLastPathComponent()
         }
@@ -254,12 +263,12 @@ public struct SupplementalSkillInstaller {
     private static func receipts(_ root: URL) throws -> [String: SupplementalSkillReceipt] {
         let url = root.appendingPathComponent(ledgerName)
         guard exists(url) else { return [:] }
-        guard (try url.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true else { throw ProjectError("The skills receipt is a symbolic link.") }
+        guard (try url.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true else { throw ProjectError(localized: "The skills receipt is a symbolic link.") }
         let data = try Data(contentsOf: url)
-        guard data.count < 2_000_000 else { throw ProjectError("The skills receipt is too large.") }
+        guard data.count < 2_000_000 else { throw ProjectError(localized: "The skills receipt is too large.") }
         let receipts = try JSONDecoder().decode([String: SupplementalSkillReceipt].self, from: data)
         guard receipts.allSatisfy({ SkillMetadata.validName($0.key) && $0.value.skill.name == $0.key && SkillSource.isHash($0.value.contentSHA256) }) else {
-            throw ProjectError("Invalid skills ownership receipt.")
+            throw ProjectError(localized: "Invalid skills ownership receipt.")
         }
         return receipts
     }
@@ -302,14 +311,14 @@ public struct SupplementalSkillInstaller {
         if let project {
             do {
                 guard !isDefaultFolder(project) else {
-                    throw ProjectError("Use the default controls to manage skills in your home folder.")
+                    throw ProjectError(localized: "Use the default controls to manage skills in your home folder.")
                 }
                 try Self.regularAncestors(project)
                 guard try project.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
-                    throw ProjectError("Choose an existing project folder.")
+                    throw ProjectError(localized: "Choose an existing project folder.")
                 }
             } catch {
-                result.failures.append(error.localizedDescription)
+                result.appendFailure(error)
                 return result
             }
         }
@@ -320,7 +329,7 @@ public struct SupplementalSkillInstaller {
                       target.placement.agents.contains(where: { skill.compatibleClients.contains($0) }),
                       target.root == (project ?? home).appendingPathComponent(target.placement.rawValue, isDirectory: true),
                       target.status.state != .blocked else {
-                    throw ProjectError("Review the existing folder before continuing.")
+                    throw ProjectError(localized: "Review the existing folder before continuing.")
                 }
                 switch operation {
                 case .install, .reinstall, .update:
@@ -340,7 +349,7 @@ public struct SupplementalSkillInstaller {
                         reviewed: target, rememberRemoval: project == nil))
                 }
             } catch {
-                result.failures.append(target.status.path + ": " + error.localizedDescription)
+                result.appendFailure(error, path: target.status.path)
             }
         }
         return result
@@ -421,10 +430,10 @@ public struct SupplementalSkillInstaller {
     private func recoverLocked(_ root: URL) throws {
         let journalURL = root.appendingPathComponent(Self.journalName)
         guard Self.exists(journalURL) else { return }
-        guard (try journalURL.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true else { throw ProjectError("The skills transaction is a symbolic link.") }
+        guard (try journalURL.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true else { throw ProjectError(localized: "The skills transaction is a symbolic link.") }
         let journal = try JSONDecoder().decode(Journal.self, from: Data(contentsOf: journalURL))
         guard SkillMetadata.validName(journal.name), journal.newHash.map(SkillSource.isHash) ?? true, journal.oldHash.map(SkillSource.isHash) ?? true else {
-            throw ProjectError("Invalid skills recovery record.")
+            throw ProjectError(localized: "Invalid skills recovery record.")
         }
         let destination = root.appendingPathComponent(journal.name)
         let current = Self.exists(destination) ? try Self.identity(destination) : nil
@@ -435,7 +444,7 @@ public struct SupplementalSkillInstaller {
         }
         // Never replace content changed after an interrupted transaction.
         guard current == journal.newHash || current == journal.oldHash else {
-            throw ProjectError("Interrupted skills operation has edited content. Preserve it and review " + journalURL.path)
+            throw ProjectError(localized: "Interrupted skills operation has edited content. Preserve it and review \(journalURL.path)")
         }
         if current != journal.oldHash {
             if let backup = journal.backup, let oldHash = journal.oldHash {
@@ -448,7 +457,7 @@ public struct SupplementalSkillInstaller {
                 guard source.path.hasPrefix(backupRoot.path + "/"),
                       !source.pathComponents.contains(".."), !source.pathComponents.contains("."),
                       try Self.identity(source) == oldHash else {
-                    throw ProjectError("The skill recovery backup is invalid.")
+                    throw ProjectError(localized: "The skill recovery backup is invalid.")
                 }
                 let stage = root.appendingPathComponent(".skill-restore-" + UUID().uuidString)
                 try FileManager.default.copyItem(at: source, to: stage)
@@ -462,11 +471,11 @@ public struct SupplementalSkillInstaller {
     }
     private func cleanupStage(_ journal: Journal, root: URL) throws {
         guard let name = journal.stage else { return }
-        guard name.hasPrefix(".skill-"), !name.contains("/"), !name.contains("\\") else { throw ProjectError("Invalid skill recovery staging path.") }
+        guard name.hasPrefix(".skill-"), !name.contains("/"), !name.contains("\\") else { throw ProjectError(localized: "Invalid skill recovery staging path.") }
         let stage = root.appendingPathComponent(name)
         guard Self.exists(stage) else { return }
         let hash = try Self.identity(stage)
-        guard hash == journal.oldHash || hash == journal.newHash else { throw ProjectError("A recovery staging folder was edited and preserved: " + stage.path) }
+        guard hash == journal.oldHash || hash == journal.newHash else { throw ProjectError(localized: "A recovery staging folder was edited and preserved: \(stage.path)") }
         try FileManager.default.removeItem(at: stage)
     }
     public func install(_ skill: CatalogSkill, files: [ProjectFile], root: URL, project: URL? = nil, replace: Bool = false, replaceLink: Bool = false) throws -> String {
@@ -475,7 +484,7 @@ public struct SupplementalSkillInstaller {
 
     private func install(_ skill: CatalogSkill, files: [ProjectFile], root: URL, project: URL?,
                          replace: Bool, replaceLink: Bool, reviewed: SkillCopy?, packageVersion: String?) throws -> String {
-        guard canManage(skill, reviewed: reviewed) else { throw ProjectError("This bundled skill needs its verified app payload.") }
+        guard canManage(skill, reviewed: reviewed) else { throw ProjectError(localized: "This bundled skill needs its verified app payload.") }
         _ = try SkillMetadata.validate(files, expectedName: skill.name, bundled: skill.bundled)
         return try locked(root) {
             try recoverLocked(root)
@@ -484,10 +493,10 @@ public struct SupplementalSkillInstaller {
             let hash = Self.hash(files)
             let oldHash = Self.exists(destination) ? try Self.identity(destination) : nil
             let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
-            guard !linked || replace && replaceLink else { throw ProjectError("This is a linked skill. Confirm replacing the link with a managed copy; its original folder will be kept.") }
-            if let reviewed, reviewed.identity != oldHash { throw ProjectError("The skill changed. Review the current copy and try again.") }
+            guard !linked || replace && replaceLink else { throw ProjectError(localized: "This is a linked skill. Confirm replacing the link with a managed copy; its original folder will be kept.") }
+            if let reviewed, reviewed.identity != oldHash { throw ProjectError(localized: "The skill changed. Review the current copy and try again.") }
             let owned = !linked && owns(skill, receipts: previous, hash: oldHash, destination: destination, root: root)
-            guard oldHash == nil || owned || replace else { throw ProjectError("Existing skill is edited or unmanaged. Review it, then choose Replace with backup.") }
+            guard oldHash == nil || owned || replace else { throw ProjectError(localized: "Existing skill is edited or unmanaged. Review it, then choose Replace with backup.") }
             if reviewed == nil { try checkCollisions(skill, root: root, project: project) }
             let stage = root.appendingPathComponent(".skill-stage-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: false)
@@ -499,14 +508,14 @@ public struct SupplementalSkillInstaller {
                     try data.write(to: target, options: .withoutOverwriting)
                 } else { try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true) }
             }
-            guard try Self.identity(stage) == hash else { throw ProjectError("Staged skill verification failed.") }
+            guard try Self.identity(stage) == hash else { throw ProjectError(localized: "Staged skill verification failed.") }
             let backup = try oldHash.map { _ in try self.backup(destination, root: root) }
             var next = previous
             next[skill.name] = .init(skill: skill, contentSHA256: hash, packageVersion: packageVersion)
             let journal = Journal(name: skill.name, newHash: hash, oldHash: oldHash, backup: backup?.path, stage: stage.lastPathComponent, previous: previous, next: next)
             try JSONEncoder().encode(journal).write(to: root.appendingPathComponent(Self.journalName), options: .atomic)
             do {
-                guard (Self.exists(destination) ? try Self.identity(destination) : nil) == oldHash else { throw ProjectError("The skill changed during installation.") }
+                guard (Self.exists(destination) ? try Self.identity(destination) : nil) == oldHash else { throw ProjectError(localized: "The skill changed during installation.") }
                 try Self.exchange(stage: stage, destination: destination)
                 try Self.writeLedger(next, root: root)
                 try FileManager.default.removeItem(at: root.appendingPathComponent(Self.journalName))
@@ -523,7 +532,7 @@ public struct SupplementalSkillInstaller {
     private func remove(_ skill: CatalogSkill, root: URL, preserveExisting: Bool, reviewed: SkillCopy?,
                         rememberRemoval: Bool) throws -> String {
         guard SkillMetadata.validName(skill.name), canManage(skill, reviewed: reviewed) else {
-            throw ProjectError("This skill cannot be removed from this location.")
+            throw ProjectError(localized: "This skill cannot be removed from this location.")
         }
         return try locked(root) {
             try recoverLocked(root)
@@ -531,10 +540,10 @@ public struct SupplementalSkillInstaller {
             var next = try Self.receipts(root); let previous = next
             let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
             let oldHash = try Self.identity(destination)
-            if let reviewed, reviewed.identity != oldHash { throw ProjectError("The skill changed. Review the current copy and try again.") }
+            if let reviewed, reviewed.identity != oldHash { throw ProjectError(localized: "The skill changed. Review the current copy and try again.") }
             let owned = !linked && owns(skill, receipts: previous, hash: oldHash, destination: destination, root: root)
             guard owned || preserveExisting else {
-                throw ProjectError("The skill is modified or unmanaged and was preserved.")
+                throw ProjectError(localized: "The skill is modified or unmanaged and was preserved.")
             }
             let backup = try backup(destination, root: root)
             if rememberRemoval && skill.bundled {
@@ -547,8 +556,8 @@ public struct SupplementalSkillInstaller {
             let journal = Journal(name: skill.name, newHash: nil, oldHash: oldHash, backup: backup.path, stage: stage.lastPathComponent, previous: previous, next: next)
             try JSONEncoder().encode(journal).write(to: root.appendingPathComponent(Self.journalName), options: .atomic)
             do {
-                guard try Self.identity(destination) == oldHash else { throw ProjectError("The skill changed during removal.") }
-                guard renameatx_np(AT_FDCWD, destination.path, AT_FDCWD, stage.path, UInt32(RENAME_EXCL)) == 0 else { throw ProjectError("The skill could not be removed atomically.") }
+                guard try Self.identity(destination) == oldHash else { throw ProjectError(localized: "The skill changed during removal.") }
+                guard renameatx_np(AT_FDCWD, destination.path, AT_FDCWD, stage.path, UInt32(RENAME_EXCL)) == 0 else { throw ProjectError(localized: "The skill could not be removed atomically.") }
                 try Self.writeLedger(next, root: root)
                 try FileManager.default.removeItem(at: root.appendingPathComponent(Self.journalName))
             } catch { try recoverLocked(root); throw error }
@@ -571,7 +580,7 @@ public struct SupplementalSkillInstaller {
         let coordinates = ["source": source.path, "backup": target.path, "identity": try Self.identity(source)]
         try JSONEncoder().encode(coordinates).write(to: parent.appendingPathComponent("backup.json"), options: .atomic)
         try FileManager.default.copyItem(at: source, to: target)
-        guard try Self.identity(source) == Self.identity(target) else { throw ProjectError("Skill backup verification failed.") }
+        guard try Self.identity(source) == Self.identity(target) else { throw ProjectError(localized: "Skill backup verification failed.") }
         return target
     }
     private func checkCollisions(_ skill: CatalogSkill, root: URL, project: URL?) throws {
@@ -586,7 +595,7 @@ public struct SupplementalSkillInstaller {
             // Separate managed copies for different hosts/scopes are intentional.
             if let receipt = try Self.receipts(other)[skill.name], receipt.skill.id == skill.id,
                (try? Self.identity(destination)) == receipt.contentSHA256 { continue }
-            throw ProjectError("A skill with this name already exists at " + destination.path + ". Manage that copy before adding another.")
+            throw ProjectError(localized: "A skill with this name already exists at \(destination.path). Manage that copy before adding another.")
         }
     }
     private func locked<T>(_ root: URL, action: () throws -> T) throws -> T {
@@ -594,21 +603,24 @@ public struct SupplementalSkillInstaller {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let path = root.appendingPathComponent(".glyphs-mcp-catalog.lock").path
         let descriptor = open(path, O_CREAT | O_RDWR | O_NOFOLLOW, mode_t(0o600))
-        guard descriptor >= 0 else { throw ProjectError("Could not lock the skills folder.") }
+        guard descriptor >= 0 else { throw ProjectError(localized: "Could not lock the skills folder.") }
         defer { close(descriptor) }
-        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else { throw ProjectError("Another skills operation is using this folder.") }
+        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else { throw ProjectError(localized: "Another skills operation is using this folder.") }
         defer { flock(descriptor, LOCK_UN) }
         return try action()
     }
     private static func writeLedger(_ value: [String: SupplementalSkillReceipt], root: URL) throws {
         let path = root.appendingPathComponent(ledgerName)
         if exists(path) {
-            guard try path.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else { throw ProjectError("The skills receipt is a symbolic link.") }
+            guard try path.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else { throw ProjectError(localized: "The skills receipt is a symbolic link.") }
         }
         try JSONEncoder().encode(value).write(to: path, options: .atomic)
     }
     private static func exchange(stage: URL, destination: URL) throws {
         let flag = exists(destination) ? RENAME_SWAP : RENAME_EXCL
-        guard renameatx_np(AT_FDCWD, stage.path, AT_FDCWD, destination.path, UInt32(flag)) == 0 else { throw ProjectError("The skill could not be installed atomically: " + String(cString: strerror(errno))) }
+        guard renameatx_np(AT_FDCWD, stage.path, AT_FDCWD, destination.path, UInt32(flag)) == 0 else {
+            let reason = String(cString: strerror(errno))
+            throw ProjectError(localized: "The skill could not be installed atomically: \(reason)")
+        }
     }
 }

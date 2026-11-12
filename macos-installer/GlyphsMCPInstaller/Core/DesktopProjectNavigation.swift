@@ -104,16 +104,16 @@ public struct DesktopProjectNavigation: Equatable {
 
     /// Update the displayed name and reconnect a moved folder without moving files.
     public mutating func update(_ path: String, name: String, folder: URL) throws {
-        guard let index = recent.firstIndex(of: path) else { throw ProjectError("This project is no longer in the list.") }
+        guard let index = recent.firstIndex(of: path) else { throw ProjectError(localized: "This project is no longer in the list.") }
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { throw ProjectError("Enter a project name.") }
-        guard folder.isFileURL else { throw ProjectError("Choose a local project folder.") }
+        guard !name.isEmpty else { throw ProjectError(localized: "Enter a project name.") }
+        guard folder.isFileURL else { throw ProjectError(localized: "Choose a local project folder.") }
         let updated = folder.standardizedFileURL.path
         if updated != path {
-            guard !recent.contains(updated) else { throw ProjectError("That folder is already in My Project.") }
+            guard !recent.contains(updated) else { throw ProjectError(localized: "That folder is already in My Project.") }
             var directory: ObjCBool = false
             guard FileManager.default.fileExists(atPath: updated, isDirectory: &directory), directory.boolValue else {
-                throw ProjectError("Choose an existing project folder.")
+                throw ProjectError(localized: "Choose an existing project folder.")
             }
         }
         recent[index] = updated

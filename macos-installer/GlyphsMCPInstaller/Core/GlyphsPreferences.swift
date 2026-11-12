@@ -139,7 +139,7 @@ public struct Glyphs3UpdatePinManager: Sendable {
 		if FileManager.default.fileExists(atPath: receiptURL.path) || receiptValues?.isSymbolicLink == true {
 			let current = try readReceipt()
 			guard current.schemaVersion == 1, current.writtenValue == false else {
-				throw InstallerError.userFacing("The Glyphs 3 update pin receipt is not recognized and was preserved.")
+				throw InstallerError.localized("The Glyphs 3 update pin receipt is not recognized and was preserved.")
 			}
 			prior = current.previous
 		}
@@ -163,7 +163,7 @@ public struct Glyphs3UpdatePinManager: Sendable {
 		guard FileManager.default.fileExists(atPath: receiptURL.path) else { return }
 		let receipt = try readReceipt()
 		guard receipt.schemaVersion == 1, receipt.writtenValue == false else {
-			throw InstallerError.userFacing("The Glyphs 3 update pin receipt is not recognized and was preserved.")
+			throw InstallerError.localized("The Glyphs 3 update pin receipt is not recognized and was preserved.")
 		}
 		for key in Self.managedKeys {
 			guard store.read(key) == receipt.writtenValue, let previous = receipt.previous[key] else {
@@ -181,7 +181,7 @@ public struct Glyphs3UpdatePinManager: Sendable {
 	private func readReceipt() throws -> Receipt {
 		let values = try receiptURL.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
 		guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? 0) <= 64 * 1024 else {
-			throw InstallerError.userFacing("The Glyphs 3 update pin receipt is unsafe and was preserved.")
+			throw InstallerError.localized("The Glyphs 3 update pin receipt is unsafe and was preserved.")
 		}
 		return try JSONDecoder().decode(Receipt.self, from: Data(contentsOf: receiptURL))
 	}

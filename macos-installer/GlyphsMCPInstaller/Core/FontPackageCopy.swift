@@ -15,7 +15,7 @@ public enum FontSourceDiscovery {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey, .isPackageKey]
         guard let entries = manager.enumerator(at: root, includingPropertiesForKeys: Array(keys),
             options: [.skipsHiddenFiles], errorHandler: { _, error in failure = error; return false }) else {
-            throw ProjectError(NSLocalizedString("The font sources could not be read.", comment: ""))
+            throw ProjectError(localized: "The font sources could not be read.")
         }
         var sources: [ProjectFontSource] = []
         while let url = entries.nextObject() as? URL {
@@ -58,11 +58,11 @@ public actor FontPackageCopyService {
         guard !name.isEmpty, !name.hasPrefix("."), !name.contains("/"), !name.contains("\\"),
               !name.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains),
               name.hasSuffix(".glyphspackage"), name != ".glyphspackage" else {
-            throw ProjectError(NSLocalizedString("Enter a filename ending in .glyphspackage, without folders.", comment: ""))
+            throw ProjectError(localized: "Enter a filename ending in .glyphspackage, without folders.")
         }
         let destination = source.deletingLastPathComponent().appendingPathComponent(name)
         if (try? FileManager.default.attributesOfItem(atPath: destination.path)) != nil {
-            throw ProjectError(NSLocalizedString("That destination already exists. Choose another filename.", comment: ""))
+            throw ProjectError(localized: "That destination already exists. Choose another filename.")
         }
         return destination
     }
@@ -71,12 +71,12 @@ public actor FontPackageCopyService {
         let values = try source.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
         guard source.pathExtension.lowercased() == "glyphs", values.isRegularFile == true,
               values.isSymbolicLink != true else {
-            throw ProjectError(NSLocalizedString("Choose a regular .glyphs source file.", comment: ""))
+            throw ProjectError(localized: "Choose a regular .glyphs source file.")
         }
         let source = source.resolvingSymlinksInPath().standardizedFileURL
         let destination = try Self.destination(source: source, name: name)
         guard activeSources.insert(source.path).inserted else {
-            throw ProjectError(NSLocalizedString("A package copy is already running for this source.", comment: ""))
+            throw ProjectError(localized: "A package copy is already running for this source.")
         }
         defer { activeSources.remove(source.path) }
 
@@ -96,7 +96,7 @@ public actor FontPackageCopyService {
             let application = supported.first(where: { $0.appURL.standardizedFileURL == installation.application?.standardizedFileURL })?.appURL
                 ?? supported.first?.appURL
             guard let application else {
-                throw ProjectError(NSLocalizedString("Glyphs 4 is required to create a package copy.", comment: ""))
+                throw ProjectError(localized: "Glyphs 4 is required to create a package copy.")
             }
             return (runtime, application)
         }
@@ -135,6 +135,6 @@ public actor FontPackageCopyService {
             throw ProjectError(response.error ?? NSLocalizedString("The package copy could not be verified.", comment: ""))
         }
         if let executionError { throw executionError }
-        throw ProjectError(NSLocalizedString("The package copy worker returned no result. Rebuild or update Glyphs MCP.", comment: ""))
+        throw ProjectError(localized: "The package copy worker returned no result. Rebuild or update Glyphs MCP.")
     }
 }

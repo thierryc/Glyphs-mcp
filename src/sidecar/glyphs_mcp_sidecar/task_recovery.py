@@ -1,7 +1,8 @@
 """Narrow companion recovery facade over the existing workflow actions."""
 import hmac
 
-from .edit_workflow_state import action_token, offered_actions, action_support_text
+from .edit_workflow_state import action_token, offered_actions, action_support_text, remaining_work
+from .saved_script import stopped_outcome
 from .task_inventory import _state
 
 
@@ -16,7 +17,10 @@ def _choices(value):
                                if name == 'finish_edit' and value['request']['kind'] != 'checkpoint_restore' else
                                'Keep current changes in Glyphs without saving. Close this task and end its temporary recovery option.')
                 if value['state'] in {'failed', 'cancelled'}:
-                    consequence += ' Partial edits may remain; inspect the font before closing.'
+                    consequence = ('Close this task and release its reservation without saving the font.'
+                                   if 'restore_saved_script' not in offered else consequence)
+                    consequence += (' Partial edits may remain; inspect the font before closing.'
+                                    if stopped_outcome(job) == 'partial' else ' The intended result remains unverified.')
                 choices.append(dict(action=name, label='Close Without Saving', consequence=consequence, token=action_token(value, name)))
     if 'cancel' in offered:
         running_script = (not value.get('blockerId') and value['state'] == 'applying'
@@ -61,7 +65,7 @@ def options(service, workflow_id):
         message = problem or (receipt if closed else
             'Cancellation is still in progress. Changes already applied may remain; check again for the final outcome.' if pending else
             'The outcome is not confirmed. Check again or continue in your agent. This task cannot be closed safely here yet.' if not choices and value['state'] in {'interrupted', 'uncertain'} else
-            'No closing action is currently available. Work may still be running or require review in your agent.' if not choices else
+            (remaining_work(value, job) or 'No closing action is currently available.') if not choices else
             'Review the consequences before resolving this abandoned task.')
         document = value['document']
         return dict(workflowId=value['id'], revision=value['revision'], state=value['state'],

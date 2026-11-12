@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A06700000000000000000001 /* AntigravityConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A06700000000000000000002 /* AntigravityConnector.swift */; };
 		AA1111111111111111111111 /* GlyphsMCPInstallerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000001 /* GlyphsMCPInstallerApp.swift */; };
 		AA1111111111111111111112 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000002 /* ContentView.swift */; };
 		AA1111111111111111111113 /* InstallerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000003 /* InstallerViewModel.swift */; };
@@ -93,6 +94,8 @@
 		2E4AB5E4567465C177277EFC /* GlyphsCLIRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C4663A17A310C8D1622B9F /* GlyphsCLIRuntime.swift */; };
 		1DD3D44B878C6C5A040D637C /* FontPackageCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53B5304C9B752BD15D6E160 /* FontPackageCopyTests.swift */; };
 		527313415549594A34FF51E3 /* DesktopProjectConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC4AA0BA626074002FBE595 /* DesktopProjectConfiguration.swift */; };
+		D8A0531887E628EE931CB7B5 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226C68B954B8A04C85E47F0E; };
+		7532145B1B2250B2429575B6 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 9448A9C9388699BF7213A427; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,6 +145,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A06700000000000000000002 /* AntigravityConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntigravityConnector.swift; sourceTree = "<group>"; };
 		AA3000000000000000000001 /* GlyphsMCPInstallerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsMCPInstallerApp.swift; sourceTree = "<group>"; };
 		AA3000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA3000000000000000000003 /* InstallerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallerViewModel.swift; sourceTree = "<group>"; };
@@ -227,6 +231,16 @@
 		50C4663A17A310C8D1622B9F /* GlyphsCLIRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GlyphsCLIRuntime.swift"; sourceTree = "<group>"; };
 		C53B5304C9B752BD15D6E160 /* FontPackageCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FontPackageCopyTests.swift"; sourceTree = "<group>"; };
 		DEC4AA0BA626074002FBE595 /* DesktopProjectConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopProjectConfiguration.swift"; sourceTree = "<group>"; };
+		226C68B954B8A04C85E47F0E /* AppLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocalization.swift; sourceTree = "<group>"; };
+		F0FE2AD15B59E6902949A428 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "de"; path = "Resources/de.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
+		867288F7A69D0DB2CA506800 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es"; path = "Resources/es.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
+		3D9B7F81CE7EC3BAA076F7CD /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "Resources/pt-BR.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
+		7596EE781AC3AFB23B8EFEBE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "en"; path = "Resources/en.lproj/Localizable.stringsdict"; sourceTree = SOURCE_ROOT; };
+		05D6D6F8643671FE7BE2FBF2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "fr"; path = "Resources/fr.lproj/Localizable.stringsdict"; sourceTree = SOURCE_ROOT; };
+		954BF7926A094E1201C5A4F5 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "zh-Hans"; path = "Resources/zh-Hans.lproj/Localizable.stringsdict"; sourceTree = SOURCE_ROOT; };
+		25E66272B5F11A336151D7F8 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "de"; path = "Resources/de.lproj/Localizable.stringsdict"; sourceTree = SOURCE_ROOT; };
+		737E5E3FC47E294B9327669B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "es"; path = "Resources/es.lproj/Localizable.stringsdict"; sourceTree = SOURCE_ROOT; };
+		6286793DBA0C8EBC294557C5 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "pt-BR"; path = "Resources/pt-BR.lproj/Localizable.stringsdict"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -316,6 +330,7 @@
 				DE7000000000000000000003 /* Notices */,
 				BE7000000000000000000001 /* Beztrace */,
 				AA3000000000000000000025 /* Localizable.strings */,
+				9448A9C9388699BF7213A427 /* Localizable.stringsdict */,
 				AA0000000000000000000007 /* Starter */,
 			);
 			path = Resources;
@@ -392,6 +407,7 @@
 				F6545F2403F0978EBA9F9CD4 /* DesktopInstallation.swift */,
 				58B0069E64B8166545068655 /* DesktopActivity.swift */,
 				AA3000000000000000000009 /* FileIO.swift */,
+				226C68B954B8A04C85E47F0E /* AppLocalization.swift */,
 				AA3000000000000000000004 /* ProcessRunner.swift */,
 				AA3000000000000000000005 /* Preflight.swift */,
 				AA3000000000000000000016 /* GlyphsPreferences.swift */,
@@ -402,6 +418,7 @@
 				AA3000000000000000000018 /* PluginUpdate.swift */,
 				AA3000000000000000000019 /* GitHubPluginDownloader.swift */,
 				AA3000000000000000000006 /* Installers.swift */,
+				A06700000000000000000002 /* AntigravityConnector.swift */,
 				AA3000000000000000000007 /* ConfigPatchers.swift */,
 				AA3000000000000000000008 /* StarterProjectCreator.swift */,
 				AA3000000000000000000015 /* Check.swift */,
@@ -528,6 +545,9 @@
 				en,
 				fr,
 				"zh-Hans",
+				de,
+				es,
+				"pt-BR",
 				Base,
 			);
 			mainGroup = AA0000000000000000000002;
@@ -558,6 +578,7 @@
 				DE7000000000000000000004 /* Notices in Resources */,
 				BE7000000000000000000002 /* Beztrace in Resources */,
 				AA1111111111111111111130 /* Localizable.strings in Resources */,
+				7532145B1B2250B2429575B6 /* Localizable.stringsdict in Resources */,
 				AA1111111111111111111136 /* GlyphsMCPUpdater in Resources */,
 				F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */,
 			);
@@ -691,9 +712,11 @@
 				AA1111111111111111111127 /* PluginUpdate.swift in Sources */,
 				AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */,
 				AA1111111111111111111116 /* Installers.swift in Sources */,
+				A06700000000000000000001 /* AntigravityConnector.swift in Sources */,
 				AA1111111111111111111117 /* ConfigPatchers.swift in Sources */,
 				AA1111111111111111111118 /* StarterProjectCreator.swift in Sources */,
 				AA1111111111111111111119 /* FileIO.swift in Sources */,
+				D8A0531887E628EE931CB7B5 /* AppLocalization.swift in Sources */,
 				AA1111111111111111111125 /* Check.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -739,10 +762,14 @@
 				AA3000000000000000000022 /* en */,
 				AA3000000000000000000023 /* fr */,
 				AA3000000000000000000024 /* zh-Hans */,
+				3D9B7F81CE7EC3BAA076F7CD /* pt-BR */,
+				867288F7A69D0DB2CA506800 /* es */,
+				F0FE2AD15B59E6902949A428 /* de */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
+		9448A9C9388699BF7213A427 /* Localizable.stringsdict */ = {isa = PBXVariantGroup; children = (7596EE781AC3AFB23B8EFEBE /* en */, 05D6D6F8643671FE7BE2FBF2 /* fr */, 954BF7926A094E1201C5A4F5 /* zh-Hans */, 25E66272B5F11A336151D7F8 /* de */, 737E5E3FC47E294B9327669B /* es */, 6286793DBA0C8EBC294557C5 /* pt-BR */, ); name = Localizable.stringsdict; sourceTree = "<group>"; };
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -853,7 +880,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 75;
+				CURRENT_PROJECT_VERSION = 92;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -867,7 +894,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.7.1;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";
@@ -889,7 +916,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 75;
+				CURRENT_PROJECT_VERSION = 92;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -903,7 +930,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.7.1;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcp;
 				PRODUCT_NAME = "Glyphs MCP";

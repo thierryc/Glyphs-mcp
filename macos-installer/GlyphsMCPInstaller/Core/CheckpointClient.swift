@@ -14,19 +14,20 @@ public enum CheckpointClient {
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
         var data = Data()
         for try await byte in bytes {
-            guard data.count < 9 * 1024 * 1024 else { throw ProjectError("Checkpoint response exceeds the read limit.") }
+            guard data.count < 9 * 1024 * 1024 else { throw ProjectError(localized: "Checkpoint response exceeds the read limit.") }
             data.append(byte)
         }
-        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw ProjectError("Invalid checkpoint response.") }
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw ProjectError(localized: "Invalid checkpoint response.") }
         guard (response as? HTTPURLResponse)?.statusCode == 200, object["ok"] as? Bool == true, let result = object["data"] else {
             let error = object["error"] as? [String: Any]
-            throw ProjectError(error?["message"] as? String ?? "Update the MCP component to use font checkpoints.")
+            if let message = error?["message"] as? String { throw ProjectError(message) }
+            throw ProjectError(localized: "Update the MCP component to use font checkpoints.")
         }
         return result
     }
     public static func read(documentID: String, selector: [String: Any]) async throws -> [String: Any] {
         guard let rows = try await call(["action":"read", "document_id":documentID, "selector":selector]) as? [[String: Any]],
-              let value = rows.first?["checkpoint"] as? [String: Any] else { throw ProjectError("Invalid checkpoint read response.") }
+              let value = rows.first?["checkpoint"] as? [String: Any] else { throw ProjectError(localized: "Invalid checkpoint read response.") }
         return value
     }
 }
@@ -45,19 +46,20 @@ public struct FontCheckpoint: Identifiable, Equatable {
     public var title: String {
         let prefix = "Font checkpoint:"
         let text = summary.hasPrefix(prefix) ? String(summary.dropFirst(prefix.count)).trimmingCharacters(in: .whitespacesAndNewlines) : summary
-        return text.isEmpty ? "Untitled checkpoint" : text
+        return text.isEmpty ? AppLocalization.text("Untitled checkpoint") : text
     }
-    public var timeLabel: String { date?.formatted(date: .omitted, time: .shortened) ?? "Time unavailable" }
-    public var dateLabel: String { date?.formatted(date: .abbreviated, time: .shortened) ?? "Date unavailable" }
+    public var timeLabel: String { date?.formatted(date: .omitted, time: .shortened) ?? AppLocalization.text("Time unavailable") }
+    public var dateLabel: String { date?.formatted(date: .abbreviated, time: .shortened) ?? AppLocalization.text("Date unavailable") }
     public var helpText: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d, yyyy 'at' HH:mm:ss zzz"
-        return "\(summary)\n\(date.map { formatter.string(from: $0) } ?? "Date unavailable")\n\(revision)"
+        formatter.dateStyle = .full
+        formatter.timeStyle = .long
+        return "\(summary)\n\(date.map { formatter.string(from: $0) } ?? AppLocalization.text("Date unavailable"))\n\(revision)"
     }
     public func dayLabel(now: Date = Date(), calendar: Calendar = .current) -> String {
-        guard let date else { return "Date unavailable" }
-        if calendar.isDate(date, inSameDayAs: now) { return "Today" }
-        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) { return "Yesterday" }
+        guard let date else { return AppLocalization.text("Date unavailable") }
+        if calendar.isDate(date, inSameDayAs: now) { return AppLocalization.text("Today") }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) { return AppLocalization.text("Yesterday") }
         let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone
         formatter.dateStyle = .long
         return formatter.string(from: date)
@@ -165,7 +167,7 @@ public final class CheckpointHistoryStore: ObservableObject {
                 if !documentID.isEmpty { load(more: false) }
             } catch {
                 guard generation == request, !Task.isCancelled else { return }
-                self.error = error.localizedDescription; busy = false
+                self.error = error.presentationDescription(); busy = false
             }
         }
     }
@@ -183,7 +185,7 @@ public final class CheckpointHistoryStore: ObservableObject {
             do {
                 let response = try await call(["action": "read", "document_id": id, "selector": selector])
                 guard generation == request, !Task.isCancelled else { return }
-                guard let values = response as? [[String: Any]], let value = values.first?["checkpoint"] as? [String: Any] else { throw ProjectError("Invalid checkpoint history response.") }
+                guard let values = response as? [[String: Any]], let value = values.first?["checkpoint"] as? [String: Any] else { throw ProjectError(localized: "Invalid checkpoint history response.") }
                 let page = (value["checkpoints"] as? [[String: Any]] ?? []).compactMap(FontCheckpoint.init(dictionary:))
                 var seen = Set<String>()
                 rows = ((more ? rows : []) + page).filter { seen.insert($0.id).inserted }
@@ -191,7 +193,7 @@ public final class CheckpointHistoryStore: ObservableObject {
                 busy = false
             } catch {
                 guard generation == request, !Task.isCancelled else { return }
-                self.error = error.localizedDescription; busy = false
+                self.error = error.presentationDescription(); busy = false
             }
         }
     }

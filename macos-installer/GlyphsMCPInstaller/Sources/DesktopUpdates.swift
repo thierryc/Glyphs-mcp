@@ -18,7 +18,7 @@ final class DesktopUpdates: NSObject, ObservableObject, SPUUpdaterDelegate {
         controller.updater.automaticallyDownloadsUpdates = false
         observation = controller.updater.publisher(for: \.canCheckForUpdates)
             .receive(on: RunLoop.main).sink { [weak self] in self?.canCheck = $0 }
-        do { try controller.updater.start() } catch { message = error.localizedDescription }
+        do { try controller.updater.start() } catch { message = error.presentationDescription() }
     }
     var automaticChecks: Bool {
         get { controller.updater.automaticallyChecksForUpdates }
@@ -27,14 +27,14 @@ final class DesktopUpdates: NSObject, ObservableObject, SPUUpdaterDelegate {
     func check() { controller.checkForUpdates(nil) }
 
     func updater(_ updater: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
-        if installationBusy() { throw ProjectError("Finish the component installation before checking for an application update.") }
+        if installationBusy() { throw ProjectError(localized: "Finish the component installation before checking for an application update.") }
     }
     func updater(_ updater: SPUUpdater, shouldProceedWithUpdate updateItem: SUAppcastItem, updateCheck: SPUUpdateCheck) throws {
-        if installationBusy() { throw ProjectError("Finish the component installation before updating Glyphs MCP.") }
+        if installationBusy() { throw ProjectError(localized: "Finish the component installation before updating Glyphs MCP.") }
     }
-    func updater(_ updater: SPUUpdater, didAbortWithError error: Error) { message = error.localizedDescription }
+    func updater(_ updater: SPUUpdater, didAbortWithError error: Error) { message = error.presentationDescription() }
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
-        if let error { message = error.localizedDescription }
+        if let error { message = error.presentationDescription() }
         else { message = "" }
     }
 }

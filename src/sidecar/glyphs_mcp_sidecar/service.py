@@ -16,6 +16,7 @@ from glyphs_mcp_protocol import (
     validate_patch,
 )
 from glyphs_mcp_protocol.reads import READ_CAPABILITIES
+from glyphs_mcp_protocol.task_conflicts import stopped_script_released
 from glyphs_mcp_protocol import dimensions, scripts, health as health_contract
 
 from .checkpoint_git import CheckpointError
@@ -471,6 +472,8 @@ class SidecarService:
 
     def get_job(self, job_id: str, *, include_preview: bool = True) -> dict[str, Any]:
         job = self._job(job_id)
+        if old_session := saved_script.lost_stopped_session(job):
+            job = self._reconcile_lost_stopped_script(job, old_session)
         if job.get('resultKind') == 'checkpoint':
             from .checkpoints import reconcile_save
             return reconcile_save(self, job)
@@ -505,6 +508,12 @@ class SidecarService:
                 "completed": "completed",
             }.get(state, job["status"])
             operation_error = operation.get("error")
+            if not operation_error and mapped == job['status'] and mapped in {'failed', 'cancelled'}:
+                operation_error = job.get('error')
+            stopped = {}
+            if mapped == 'completed' and (outcome := saved_script.stopped_outcome(job)):
+                stopped = dict(stoppedStatus=job['status'], outcome=outcome)
+                operation_error = operation_error or job.get('error')
             if state == "accept_uncertain" and isinstance(job.get("saveRequest"), Mapping):
                 operation_error = dict(operation_error or {})
                 details = saving.observed_details(
@@ -521,10 +530,33 @@ class SidecarService:
                     job["id"], status=mapped, bridgeOperation=operation,
                     error=operation_error,
                     receipt=operation.get("receipt") or job.get("receipt"),
+                    **stopped,
                 )
                 if mapped in {"discarded", "cancelled", "accepted"} or mapped == "completed" and job.get("resultKind") == "mutation":
                     self.jobs.release_bulk_artifacts(job["id"])
         return self._public(job, include_preview=include_preview)
+
+    def _reconcile_lost_stopped_script(self, job, old_session):
+        try:
+            session = self.bridge.status().get('bridgeSessionId')
+        except BridgeClientError:
+            return job
+        if not session or session == old_session:
+            return job
+        try:
+            self.bridge.operation(job['id'])
+        except BridgeClientError as exc:
+            if exc.code != 'job_not_found':
+                return job
+        else:
+            return job
+        with self._lock:
+            current = self._job(job['id'])
+            if self.lifecycle.pending or current != job:
+                return current
+            operation = job['bridgeOperation']
+            outcome = 'unverified' if operation['scriptResult'].get('executionSucceeded') else 'partial'
+            return self.jobs.update(job['id'], status='completed', stoppedStatus=operation['status'], outcome=outcome)
 
     def _interrupt_missing_operation(self, job, error):
         if not isinstance(error, BridgeClientError) or error.code != "job_not_found":
@@ -534,6 +566,11 @@ class SidecarService:
             if current != job:
                 return current
             acknowledgement = job.get("bridgeOperation") or {}
+            if (not self.lifecycle.pending and job.get('resultKind') == 'script' and acknowledgement.get('jobId') == job['id']
+                    and acknowledgement.get('documentId') == job['document']['id']
+                    and stopped_script_released(dict(job, nativeOperationMissing=True))):
+                # Preserve the terminal observation, diagnostics and artifact uncertainty.
+                return self.jobs.update(job['id'], nativeOperationMissing=True)
             uncertain = ((job.get("error") or {}).get("details") or {}).get("execution") == "uncertain"
             accepting = job["status"] == "accepting"
             if accepting and not self.lifecycle.pending:

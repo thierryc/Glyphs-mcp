@@ -30,9 +30,9 @@ public actor SkillStore {
         return try SkillCatalog.decode(Data(contentsOf: path), allowImports: true).skills
     }
     public func remember(_ skill: CatalogSkill) throws {
-        guard skill.classification == .imported, !skill.bundled else { throw ProjectError("Only personal imports can be saved here.") }
+        guard skill.classification == .imported, !skill.bundled else { throw ProjectError(localized: "Only personal imports can be saved here.") }
         var entries = try imports()
-        guard !entries.contains(where: { $0.name == skill.name && $0.id != skill.id }) else { throw ProjectError("Another import has this skill name.") }
+        guard !entries.contains(where: { $0.name == skill.name && $0.id != skill.id }) else { throw ProjectError(localized: "Another import has this skill name.") }
         entries.removeAll { $0.id == skill.id }; entries.append(skill)
         let data = try JSONEncoder().encode(SkillCatalog(skills: entries))
         _ = try SkillCatalog.decode(data, allowImports: true)
@@ -40,13 +40,13 @@ public actor SkillStore {
     }
     public func files(_ skill: CatalogSkill, bundledRoot: URL? = nil) async throws -> [ProjectFile] {
         if skill.bundled {
-            guard let bundledRoot else { throw ProjectError("The matching bundled skills payload is unavailable.") }
+            guard let bundledRoot else { throw ProjectError(localized: "The matching bundled skills payload is unavailable.") }
             let files = try ProjectFiles.read(bundledRoot.appendingPathComponent(skill.name))
             _ = try SkillMetadata.validate(files, expectedName: skill.name, bundled: true)
             return files
         }
         guard let hash = skill.source.archiveSHA256, SkillSource.isHash(hash), let url = skill.source.archiveURL else {
-            throw ProjectError("The skill has no pinned archive and checksum.")
+            throw ProjectError(localized: "The skill has no pinned archive and checksum.")
         }
         let archive = try await archiveData(url: url, checksum: hash)
         return try await extract(archive) { folder in
@@ -62,18 +62,18 @@ public actor SkillStore {
     public func discover(repository: String, directory: String = ".", revision: String = "") async throws -> [CatalogSkill] {
         if directory != "." { try ProjectFiles.validateRelativePath(directory) }
         let proposed = SkillSource(repository: repository.trimmingCharacters(in: .whitespacesAndNewlines), directory: directory, revision: "")
-        guard let repositoryURL = proposed.repositoryURL else { throw ProjectError("Enter a public GitHub repository URL, with the directory and revision in their separate fields.") }
+        guard let repositoryURL = proposed.repositoryURL else { throw ProjectError(localized: "Enter a public GitHub repository URL, with the directory and revision in their separate fields.") }
         let path = repositoryURL.path
         let info = try await json(URL(string: "https://api.github.com/repos" + path)!)
-        guard info["private"] as? Bool == false else { throw ProjectError("Only public GitHub repositories are supported.") }
+        guard info["private"] as? Bool == false else { throw ProjectError(localized: "Only public GitHub repositories are supported.") }
         let ref = revision.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let defaultBranch = info["default_branch"] as? String, !defaultBranch.isEmpty else { throw ProjectError("The repository has no default branch.") }
+        guard let defaultBranch = info["default_branch"] as? String, !defaultBranch.isEmpty else { throw ProjectError(localized: "The repository has no default branch.") }
         let resolved = ref.isEmpty ? defaultBranch : ref
-        guard resolved.count <= 200, !resolved.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else { throw ProjectError("Invalid Git revision.") }
+        guard resolved.count <= 200, !resolved.contains(where: { $0.isNewline || $0.isASCII && $0.asciiValue! < 32 }) else { throw ProjectError(localized: "Invalid Git revision.") }
         var allowed = CharacterSet.urlPathAllowed; allowed.remove(charactersIn: "/?#%")
-        guard let encoded = resolved.addingPercentEncoding(withAllowedCharacters: allowed) else { throw ProjectError("Invalid Git revision.") }
+        guard let encoded = resolved.addingPercentEncoding(withAllowedCharacters: allowed) else { throw ProjectError(localized: "Invalid Git revision.") }
         let commit = try await json(URL(string: "https://api.github.com/repos" + path + "/commits/" + encoded)!)
-        guard let sha = commit["sha"] as? String, SkillSource.isCommit(sha) else { throw ProjectError("The Git revision could not be resolved.") }
+        guard let sha = commit["sha"] as? String, SkillSource.isCommit(sha) else { throw ProjectError(localized: "The Git revision could not be resolved.") }
         var pinned = SkillSource(repository: repositoryURL.absoluteString, directory: directory, revision: sha)
         let data = try await download(pinned.archiveURL!, maximumBytes: 20 * 1024 * 1024)
         _ = try TemplateArchive.validate(data)
@@ -84,7 +84,7 @@ public actor SkillStore {
             let scoped = directory == "." ? folder : folder.appendingPathComponent(directory)
             let files = try ProjectFiles.read(scoped)
             let skillPaths = files.filter { $0.path == "SKILL.md" || $0.path.hasSuffix("/SKILL.md") }.map(\.path)
-            guard !skillPaths.isEmpty, skillPaths.count <= 100 else { throw ProjectError("Choose a directory containing between one and 100 skills.") }
+            guard !skillPaths.isEmpty, skillPaths.count <= 100 else { throw ProjectError(localized: "Choose a directory containing between one and 100 skills.") }
             return try skillPaths.map { path in
                 let local = (path as NSString).deletingLastPathComponent
                 let prefix = local.isEmpty ? "" : local + "/"
@@ -110,7 +110,7 @@ public actor SkillStore {
             _ = try TemplateArchive.validate(data); return data
         }
         let data = try await download(url, maximumBytes: 20 * 1024 * 1024)
-        guard TemplateStore.checksum(data) == checksum else { throw ProjectError("The skill archive does not match its pinned checksum.") }
+        guard TemplateStore.checksum(data) == checksum else { throw ProjectError(localized: "The skill archive does not match its pinned checksum.") }
         _ = try TemplateArchive.validate(data)
         try data.write(to: cached, options: .atomic); return data
     }
@@ -124,7 +124,7 @@ public actor SkillStore {
         try data.write(to: zip)
         let output = temporary.appendingPathComponent("contents")
         let result = try await runner.runCapturing(executable: URL(fileURLWithPath: "/usr/bin/ditto"), args: ["-x", "-k", zip.path, output.path], timeout: 30)
-        guard result.exitCode == 0 else { throw ProjectError("The skill archive could not be expanded.") }
+        guard result.exitCode == 0 else { throw ProjectError(localized: "The skill archive could not be expanded.") }
         try Task.checkCancellation()
         return try read(output.appendingPathComponent(top))
     }
@@ -134,20 +134,20 @@ public actor SkillStore {
     }
     private func json(_ url: URL) async throws -> [String: Any] {
         let data = try await download(url, maximumBytes: 2_000_000)
-        guard let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw ProjectError("GitHub returned an invalid response.") }
+        guard let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw ProjectError(localized: "GitHub returned an invalid response.") }
         return value
     }
     private func download(_ url: URL, maximumBytes: Int) async throws -> Data {
         var request = URLRequest(url: url); request.timeoutInterval = 30
         request.setValue("Glyphs-MCP-Skills", forHTTPHeaderField: "User-Agent")
         let (bytes, response) = try await session.bytes(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ProjectError("The skill source is unavailable.") }
-        if http.statusCode == 403 || http.statusCode == 429 { throw ProjectError("GitHub access or rate limit reached. Try again later; cached skills remain available.") }
+        guard let http = response as? HTTPURLResponse else { throw ProjectError(localized: "The skill source is unavailable.") }
+        if http.statusCode == 403 || http.statusCode == 429 { throw ProjectError(localized: "GitHub access or rate limit reached. Try again later; cached skills remain available.") }
         guard http.statusCode == 200, response.url?.scheme == "https", response.url?.host == url.host,
-              response.expectedContentLength <= maximumBytes else { throw ProjectError("The skill source is unavailable or too large.") }
+              response.expectedContentLength <= maximumBytes else { throw ProjectError(localized: "The skill source is unavailable or too large.") }
         var data = Data()
         for try await byte in bytes {
-            guard data.count < maximumBytes else { throw ProjectError("The skill download is too large.") }
+            guard data.count < maximumBytes else { throw ProjectError(localized: "The skill download is too large.") }
             data.append(byte)
         }
         try Task.checkCancellation(); return data

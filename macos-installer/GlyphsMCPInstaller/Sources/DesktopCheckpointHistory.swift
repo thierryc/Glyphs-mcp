@@ -167,8 +167,8 @@ struct DesktopCheckpointHistory: View {
     }
 
     private func rowAccessibilityLabel(_ checkpoint: FontCheckpoint, latest: Bool, selected: Bool) -> String {
-        let status = latest ? "Latest checkpoint, " : selected ? "Selected reference, " : ""
-        return status + checkpoint.title + ", " + checkpoint.dateLabel
+        let key = latest ? "Latest checkpoint, %@, %@" : selected ? "Selected reference, %@, %@" : "%@, %@"
+        return AppLocalization.format(key, checkpoint.title, checkpoint.dateLabel)
     }
     private func open() {
         guard let project = model.selectedProject else { return }
@@ -229,7 +229,7 @@ struct DesktopCheckpointHistory: View {
         let urls = fonts.map { URL(fileURLWithPath: $0.path) }
         NSWorkspace.shared.open(urls, withApplicationAt: application.appURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
             Task { @MainActor in
-                if let error { openError = "Could not open the selected font\(fonts.count == 1 ? "" : "s"): \(error.localizedDescription)" }
+                if let error { openError = "Could not open the selected font\(fonts.count == 1 ? "" : "s"): \(error.presentationDescription())" }
                 openingPaths = []
                 guard error == nil else { return }
                 try? await Task.sleep(for: .seconds(1))
@@ -262,7 +262,7 @@ struct DesktopCheckpointDetails: View {
                     let value = try await CheckpointClient.read(documentID: context.documentID, selector: ["kind":"checkpoint_details", "selected":context.before])
                     guard !Task.isCancelled else { return }
                     details = String(decoding: try JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]), as: UTF8.self)
-                } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
+                } catch { if !Task.isCancelled { self.error = error.presentationDescription() } }
                 busy = false
             }
     }
@@ -294,10 +294,10 @@ struct DesktopCheckpointRestore: View {
             Text("Restoring replaces the open font’s content, including unsaved edits, and clears Undo history. It does not save. Git history and other files remain intact.")
             if let workflow {
                 Divider()
-                Text(workflow["message"] as? String ?? "Checking result…").textSelection(.enabled)
+                Text(workflow["message"] as? String ?? AppLocalization.text("Checking result…")).textSelection(.enabled)
                 ForEach(actions.indices, id: \.self) { index in
                     let action = actions[index]
-                    Button(action["label"] as? String ?? "Continue") { respond(action) }
+                    Button(action["label"] as? String ?? AppLocalization.text("Continue")) { respond(action) }
                         .disabled(busy || pending != nil || action["requiresDestination"] as? Bool == true)
                     if action["requiresDestination"] as? Bool == true {
                         Text("Use the offered manual save option to save in Glyphs.").font(.caption).foregroundStyle(.secondary)
@@ -348,14 +348,14 @@ struct DesktopCheckpointRestore: View {
         busy = true; error = ""; pending = body
         Task { @MainActor in
             do {
-                guard let value = try await CheckpointClient.call(body) as? [String: Any] else { throw ProjectError("Invalid restore response. Check the existing result.") }
+                guard let value = try await CheckpointClient.call(body) as? [String: Any] else { throw ProjectError(localized: "Invalid restore response. Check the existing result.") }
                 workflow = value; pending = nil
                 let state = value["state"] as? String
                 let job = value["job"] as? [String: Any]
                 if !refreshed && ["executed", "saved"].contains(state ?? "") && job?["outcome"] as? String != "unverified" {
                     refreshed = true; completed()
                 }
-            } catch { self.error = error.localizedDescription }
+            } catch { self.error = error.presentationDescription() }
             busy = false
         }
     }

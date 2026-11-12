@@ -18,7 +18,7 @@ from test_simple_v2_edit_workflow import env as typed_env
 @pytest.mark.performance
 def test_status_and_health_stay_responsive_when_request_workers_are_occupied(tmp_path, request):
     host, core, _, service = setup(tmp_path)
-    core.health.record('documents', available=True, fontCount=8, complete=True)
+    core.health.record('pressure', available=True, value='warning', subscriptionActive=True)
     service.status_cache.refresh()
     release, occupied = Event(), Event()
     samples = {'mcp': [], 'companion': []}

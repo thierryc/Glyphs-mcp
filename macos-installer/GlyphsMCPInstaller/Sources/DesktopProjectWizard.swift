@@ -104,7 +104,7 @@ struct DesktopProjectWizard: View {
             do {
                 let url = try await ProjectFiles.perform { try ProjectFiles.create(snapshot, in: location, name: projectName, endpoint: endpoint, initializeGit: initializeGit) }
                 model.addProject(url); dismiss()
-            } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
+            } catch { if !Task.isCancelled { self.error = error.presentationDescription() } }
             busy = false
         }
     }
@@ -117,7 +117,7 @@ struct DesktopProjectWizard: View {
                 let snapshot = try await model.files(for: template)
                 try Task.checkCancellation()
                 files = snapshot; filesLoaded = true; step = next
-            } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
+            } catch { if !Task.isCancelled { self.error = error.presentationDescription() } }
             busy = false
         }
     }
@@ -128,7 +128,7 @@ struct DesktopProjectWizard: View {
             do {
                 let url = try ProjectFiles.create(files, in: parent, name: name + " Template", endpoint: DesktopInstallation().endpoint)
                 model.rememberTemplate(url); NSWorkspace.shared.open(url)
-            } catch { self.error = error.localizedDescription }
+            } catch { self.error = error.presentationDescription() }
         }
     }
 }
@@ -153,7 +153,7 @@ private struct DesktopTemplateFileBrowser: View {
                 }.listStyle(.sidebar).accessibilityIdentifier("template-file-tree")
             }.frame(minWidth: 220, idealWidth: 280)
             VStack(alignment: .leading, spacing: 8) {
-                Text(selection ?? "File contents").font(.headline).textSelection(.enabled)
+                Text(selection ?? AppLocalization.text("File contents")).font(.headline).textSelection(.enabled)
                 fileContent.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }.padding(.leading, 12).frame(minWidth: 320, idealWidth: 540)
         }.frame(height: 400)
@@ -188,9 +188,9 @@ private struct DesktopTemplateFileBrowser: View {
             }
         } else if let path = selection {
             let empty = !files.contains { $0.path.hasPrefix(path + "/") }
-            Text(empty ? "Empty folder" : "Select a file in this folder to preview its contents.").foregroundStyle(.secondary)
+            Text(LocalizedStringKey(empty ? "Empty folder" : "Select a file in this folder to preview its contents.")).foregroundStyle(.secondary)
         } else {
-            Text(files.isEmpty ? "This template is empty." : "Select a file to preview its contents.").foregroundStyle(.secondary)
+            Text(LocalizedStringKey(files.isEmpty ? "This template is empty." : "Select a file to preview its contents.")).foregroundStyle(.secondary)
         }
     }
     private func selectInitialFile() {

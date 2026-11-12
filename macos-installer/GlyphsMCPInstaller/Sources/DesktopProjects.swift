@@ -92,14 +92,14 @@ final class DesktopProjectsModel: ObservableObject {
     }
     func revealTemplate(_ url: URL) {
         guard folderExists(url.path) else {
-            message = "Template folder not found: \(url.path). Add its new location using Add Local Template…."
+            message = AppLocalization.format("Template folder not found: %@. Add its new location using Add Local Template….", url.path)
             return
         }
         message = ""
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
     func openTemplateLink(_ url: URL) {
-        if !NSWorkspace.shared.open(url) { message = "Could not open \(url.absoluteString)." }
+        if !NSWorkspace.shared.open(url) { message = AppLocalization.format("Could not open %@.", url.absoluteString) }
     }
     func select(_ destination: DesktopDestination?) {
         let previous = selectedProject
@@ -114,15 +114,15 @@ final class DesktopProjectsModel: ObservableObject {
             let registry = try await (refresh ? store.refreshRegistry() : store.registry())
             try Task.checkCancellation()
             templates = registry.templates; message = ""
-        } catch { if !Task.isCancelled { message = error.localizedDescription } }
+        } catch { if !Task.isCancelled { message = error.presentationDescription() } }
     }
     func refreshTemplates() { Task { await loadTemplates(refresh: true) } }
     func create(_ template: DesktopTemplateChoice = .starter) { creation = DesktopProjectCreation(template: template) }
     func preview(_ template: DesktopTemplateChoice) { creation = DesktopProjectCreation(template: template, previewFirst: true) }
     func templateName(_ choice: DesktopTemplateChoice) -> String {
         switch choice {
-        case .starter: return "Font Project Starter"
-        case .registry(let id): return templates.first(where: { $0.id == id })?.name ?? "Project template"
+        case .starter: return AppLocalization.text("Font Project Starter")
+        case .registry(let id): return templates.first(where: { $0.id == id })?.name ?? AppLocalization.text("Project template")
         case .local(let path): return URL(fileURLWithPath: path).lastPathComponent
         }
     }
@@ -130,7 +130,7 @@ final class DesktopProjectsModel: ObservableObject {
         switch choice {
         case .starter: return ProjectFiles.starter(agents: StarterProjectCreator.builtinTemplate)
         case .registry(let id):
-            guard let template = templates.first(where: { $0.id == id }) else { throw ProjectError("Choose a template from the current catalog.") }
+            guard let template = templates.first(where: { $0.id == id }) else { throw ProjectError(localized: "Choose a template from the current catalog.") }
             return try await store.files(template)
         case .local(let path):
             return try await ProjectFiles.perform { try ProjectFiles.read(URL(fileURLWithPath: path)) }
@@ -218,7 +218,7 @@ final class DesktopProjectsModel: ObservableObject {
                 } else {
                     selectedChange = nil
                 }
-            } catch { if !Task.isCancelled, selectedProject == project { gitMessage = error.localizedDescription } }
+            } catch { if !Task.isCancelled, selectedProject == project { gitMessage = error.presentationDescription() } }
             if !Task.isCancelled, selectedProject == project { inspecting = false }
         }
     }
@@ -264,7 +264,7 @@ final class DesktopProjectsModel: ObservableObject {
                 if let first = changes.first { selectChange(first) }
             } catch {
                 guard !Task.isCancelled, comparisonGeneration == request, selectedProject == project else { return }
-                checkpointError = error.localizedDescription; loadingCheckpoint = false
+                checkpointError = error.presentationDescription(); loadingCheckpoint = false
             }
         }
     }
@@ -291,7 +291,7 @@ final class DesktopProjectsModel: ObservableObject {
                 loadingCheckpointPage = false
             } catch {
                 guard !Task.isCancelled, comparisonGeneration == request else { return }
-                checkpointPageError = error.localizedDescription; loadingCheckpointPage = false
+                checkpointPageError = error.presentationDescription(); loadingCheckpointPage = false
             }
         }
     }
@@ -325,7 +325,7 @@ final class DesktopProjectsModel: ObservableObject {
                     catch {
                         glyphValue = nil
                         if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
-                            glyphMessage = error.localizedDescription
+                            glyphMessage = error.presentationDescription()
                             glyphMode = .text
                         }
                     }
@@ -334,7 +334,7 @@ final class DesktopProjectsModel: ObservableObject {
                 glyphDiff = glyphValue
             } catch {
                 if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
-                    comparisonMessage = error.localizedDescription
+                    comparisonMessage = error.presentationDescription()
                 }
             }
             if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
@@ -362,7 +362,7 @@ final class DesktopProjectsModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled, selectedProject == project,
                       selectedChange?.path == change.path else { return }
-                glyphMessage = error.localizedDescription
+                glyphMessage = error.presentationDescription()
                 glyphMode = .text
             }
             if !Task.isCancelled, selectedProject == project, selectedChange?.path == change.path {
@@ -376,7 +376,7 @@ final class DesktopProjectsModel: ObservableObject {
         if let path = defaults.string(forKey: key), FileManager.default.fileExists(atPath: path) {
             NSWorkspace.shared.open([folder], withApplicationAt: URL(fileURLWithPath: path), configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
         } else {
-            let panel = NSOpenPanel(); panel.title = "Choose an application"; panel.allowedContentTypes = [.applicationBundle]
+            let panel = NSOpenPanel(); panel.title = AppLocalization.text("Choose an application"); panel.allowedContentTypes = [.applicationBundle]
             panel.directoryURL = URL(fileURLWithPath: "/Applications")
             panel.begin { [weak self] response in
                 if response == .OK, let app = panel.url {
@@ -387,7 +387,7 @@ final class DesktopProjectsModel: ObservableObject {
         }
     }
     static func folderPanel(_ title: String) -> NSOpenPanel {
-        let panel = NSOpenPanel(); panel.title = title; panel.canChooseDirectories = true; panel.canChooseFiles = false
+        let panel = NSOpenPanel(); panel.title = AppLocalization.text(title); panel.canChooseDirectories = true; panel.canChooseFiles = false
         panel.canCreateDirectories = true; return panel
     }
 }
@@ -440,8 +440,10 @@ struct DesktopProjectWorkspace: View {
             HStack(spacing: 10) {
                 Image(systemName: "folder.fill").font(.system(size: 26)).foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(model.navigation.name(for: path)).font(.title2.weight(.semibold))
-                        .lineLimit(1).truncationMode(.middle)
+                    if #unavailable(macOS 26.0) {
+                        Text(model.navigation.name(for: path)).font(.title2.weight(.semibold))
+                            .lineLimit(1).truncationMode(.middle)
+                    }
                     Text((path as NSString).abbreviatingWithTildeInPath)
                         .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
@@ -459,6 +461,8 @@ struct DesktopProjectWorkspace: View {
             }
             .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
             .help("More project actions").accessibilityLabel("More project actions")
-        }.padding(.horizontal, 20).padding(.vertical, 14)
+        }
+        .padding(.horizontal, DesktopDashboardLayout.pagePadding)
+        .padding(.vertical, 12)
     }
 }

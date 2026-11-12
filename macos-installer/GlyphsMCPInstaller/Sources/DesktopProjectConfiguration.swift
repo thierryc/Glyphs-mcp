@@ -7,7 +7,7 @@ struct DesktopProjectConfiguration: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: DesktopDashboardLayout.sectionSpacing) {
                 DesktopFontSources(model: model)
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Project").font(.headline)
@@ -40,8 +40,7 @@ struct DesktopProjectConfiguration: View {
                     }.modifier(DesktopCardSurface()).disabled(!model.folderExists(path))
                 }
             }
-            .frame(maxWidth: 850, alignment: .leading)
-            .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(DesktopDashboardPageLayout())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("project-config-view")

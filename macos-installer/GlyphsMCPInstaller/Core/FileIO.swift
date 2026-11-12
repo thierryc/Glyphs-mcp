@@ -2,10 +2,12 @@ import Foundation
 
 public enum InstallerError: LocalizedError {
 	case userFacing(String)
+	case localized(AppMessage)
 
 	public var errorDescription: String? {
 		switch self {
 		case .userFacing(let s): return s
+		case .localized(let message): return message.diagnostic
 		}
 	}
 }
@@ -49,7 +51,7 @@ public enum FileIO {
 		var s = text
 		if !s.hasSuffix("\n") { s += "\n" }
 		guard let data = s.data(using: .utf8) else {
-			throw InstallerError.userFacing("Failed to encode UTF-8 for \(url.path)")
+			throw InstallerError.localized("Failed to encode UTF-8 for \(url.path)")
 		}
 		try writeAtomically(data, to: url)
 	}
@@ -265,7 +267,7 @@ public struct InstallerPayload: @unchecked Sendable {
 			payloadDir = nil
 		}
 		guard let payloadDir else {
-			throw InstallerError.userFacing("Installer payload is missing. Rebuild the signed installer app.")
+			throw InstallerError.localized("Installer payload is missing. Rebuild the signed installer app.")
 		}
 		progress("Verifying setup files…")
 		return try resolve(
@@ -283,8 +285,7 @@ public struct InstallerPayload: @unchecked Sendable {
 			return try resolveManifestPayload(payloadDir: payloadDir)
 		}
 		guard allowVerifiedLegacyRelease else {
-			throw InstallerError.userFacing(
-				"Installer payload schema v2 manifest is missing. Legacy payloads are accepted only from a verified pre-v2 release."
+			throw InstallerError.localized("Installer payload schema v2 manifest is missing. Legacy payloads are accepted only from a verified pre-v2 release."
 			)
 		}
 		return try resolveLegacyPayload(payloadDir: payloadDir)
@@ -297,16 +298,16 @@ public struct InstallerPayload: @unchecked Sendable {
 		let runtimePolicy = plugin.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
 		let skills = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: plugin.path) else {
-			throw InstallerError.userFacing("Missing legacy payload plug-in bundle: \(plugin.path)")
+			throw InstallerError.localized("Missing legacy payload plug-in bundle: \(plugin.path)")
 		}
 		guard FileManager.default.fileExists(atPath: requirements.path) else {
-			throw InstallerError.userFacing("Missing payload requirements.txt: \(requirements.path)")
+			throw InstallerError.localized("Missing payload requirements.txt: \(requirements.path)")
 		}
 		guard FileManager.default.fileExists(atPath: runtimeProbe.path) else {
-			throw InstallerError.userFacing("Missing payload Python runtime probe: \(runtimeProbe.path)")
+			throw InstallerError.localized("Missing payload Python runtime probe: \(runtimeProbe.path)")
 		}
 		guard FileManager.default.fileExists(atPath: runtimePolicy.path) else {
-			throw InstallerError.userFacing("Missing payload Python runtime path policy: \(runtimePolicy.path)")
+			throw InstallerError.localized("Missing payload Python runtime path policy: \(runtimePolicy.path)")
 		}
 		return InstallerPayload(
 			payloadDir: payloadDir,
@@ -322,7 +323,7 @@ public struct InstallerPayload: @unchecked Sendable {
 		do {
 			manifest = try InstallerPayloadManifestResolver.resolve(payloadDir)
 		} catch {
-			throw InstallerError.userFacing("Installer payload manifest is malformed: \(error.localizedDescription)")
+			throw InstallerError.localized("Installer payload manifest is malformed: \(error.localizedDescription)")
 		}
 
 		var plugins: [GlyphsMajorVersion: TargetPlugin] = [:]
@@ -331,7 +332,7 @@ public struct InstallerPayload: @unchecked Sendable {
 			guard let actualVersion = PluginVersionReader.readPluginVersion(pluginBundle: target.bundleURL),
 				  actualVersion.shortVersion == target.pluginVersion,
 				  actualVersion.buildVersion == target.pluginVersion else {
-				throw InstallerError.userFacing("Installer payload version does not match \(version.displayName).")
+				throw InstallerError.localized("Installer payload version does not match \(version.displayName).")
 			}
 			let plugin = TargetPlugin(
 				glyphsVersion: version,
@@ -344,16 +345,16 @@ public struct InstallerPayload: @unchecked Sendable {
 				runtimeProbe: target.bundleURL.appendingPathComponent("Contents/Resources/runtime_probe.py")
 			)
 			guard manifest.schemaVersion >= 3 && version == .v4 || FileManager.default.fileExists(atPath: plugin.runtimeProbe.path) else {
-				throw InstallerError.userFacing("Installer payload runtime probe is missing for \(version.displayName).")
+				throw InstallerError.localized("Installer payload runtime probe is missing for \(version.displayName).")
 			}
 			let runtimePolicy = target.bundleURL.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
 			guard manifest.schemaVersion >= 3 && version == .v4 || FileManager.default.fileExists(atPath: runtimePolicy.path) else {
-				throw InstallerError.userFacing("Installer payload runtime path policy is missing for \(version.displayName).")
+				throw InstallerError.localized("Installer payload runtime path policy is missing for \(version.displayName).")
 			}
 			plugins[version] = plugin
 		}
 		guard plugins[.v4] != nil else {
-			throw InstallerError.userFacing("Installer payload is missing Glyphs 4.")
+			throw InstallerError.localized("Installer payload is missing Glyphs 4.")
 		}
 		return InstallerPayload(
 			payloadDir: payloadDir,
@@ -393,20 +394,20 @@ public struct InstallerPayload: @unchecked Sendable {
 			guard process.terminationStatus == 0 else {
 				let details = String(data: data, encoding: .utf8)?
 					.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-				throw InstallerError.userFacing("Could not extract the signed installer payload: \(details)")
+				throw InstallerError.localized("Could not extract the signed installer payload: \(details)")
 			}
 		} catch {
 			try? FileManager.default.removeItem(at: root)
 			if let installerError = error as? InstallerError {
 				throw installerError
 			}
-			throw InstallerError.userFacing("Could not extract the signed installer payload: \(error.localizedDescription)")
+			throw InstallerError.localized("Could not extract the signed installer payload: \(error.localizedDescription)")
 		}
 
 		let payload = root.appendingPathComponent("Payload", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: payload.path) else {
 			try? FileManager.default.removeItem(at: root)
-			throw InstallerError.userFacing("Signed installer payload archive does not contain Payload.")
+			throw InstallerError.localized("Signed installer payload archive does not contain Payload.")
 		}
 		extractedPayloads[archive.path] = payload
 		return payload

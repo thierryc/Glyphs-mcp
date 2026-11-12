@@ -37,7 +37,7 @@ struct InstallationView: View {
             }
             Button("Cancel", role: .cancel) { pendingRemoval = nil }
         } message: { target in
-            Text(target.message)
+            Text(LocalizedStringKey(target.message))
         }
         .onAppear { model.refreshOptionalTools() }
         .sheet(isPresented: $showingBeztraceSetup) {
@@ -50,7 +50,7 @@ struct InstallationView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Glyphs components and agent connections")
                     .font(.title3.weight(.semibold))
-                Text("Install the bundled v2 components, then configure every supported agent.")
+                Text("Install the bundled Glyphs components and configure agent connections.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
@@ -95,26 +95,29 @@ struct InstallationView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Connections").font(.title3.bold())
-                Text(section == .overview ? LocalizedStringKey("Install All configures every connection, even when its host app is not detected.") : LocalizedStringKey("Choose Install or Update for the agent you want to connect."))
+                Text(section == .overview ? LocalizedStringKey("Install All includes Antigravity when the App or IDE is installed.") : LocalizedStringKey("Choose Install or Update for the agent you want to connect."))
                     .font(.callout).foregroundStyle(.secondary)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Toggle("Include Glyphs MCP development skills", isOn: $model.includeDevelopmentSkills)
                     .toggleStyle(.checkbox)
                     .disabled(model.operationsBusy)
-                Text("Add skills for creating Glyphs scripts, plugins and releases to Codex and Claude Code during setup. Existing development skills are kept.")
+                Text("Add skills for creating Glyphs scripts, plugins and releases to Codex, Claude Code and Antigravity during setup. Existing development skills are kept.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             SetupCardGrid {
-                ForEach(InstallerClientKind.allCases) { client in
+                ForEach(model.visibleConnectors) { client in
                     ConnectorSetupCard(
                         information: model.connectorInformation[client],
                         client: client,
                         state: model.state(for: client),
                         detected: model.detectedClients.contains(client),
-                        version: model.connectorVersions[client],
+                        version: client == .antigravity ? nil : model.connectorVersions[client],
                         guidance: model.connectorGuidance(client),
                         logoAsset: model.connectorLogoAsset(client),
+                        antigravityConnection: client == .antigravity ? model.antigravityConnectionStatus : nil,
+                        antigravitySkills: client == .antigravity ? model.antigravitySkillsStatus : nil,
+                        canRemovePartial: client == .antigravity && model.antigravityHasOwnership,
                         disabled: model.operationsBusy,
                         install: { model.installConnector(client) },
                         update: { model.updateConnector(client) },
@@ -289,7 +292,10 @@ private struct ConnectorSetupCard: View {
     let detected: Bool
     let version: String?
     let guidance: String
-    let logoAsset: String
+    let logoAsset: String?
+    let antigravityConnection: AntigravityConnector.ConnectionStatus?
+    let antigravitySkills: AntigravityConnector.SkillsStatus?
+    let canRemovePartial: Bool
     let disabled: Bool
     let install: () -> Void
     let update: () -> Void
@@ -298,7 +304,7 @@ private struct ConnectorSetupCard: View {
 
     var body: some View {
         DesktopCatalogCard(previewHeight: 54, detailMinimumHeight: 48) {
-            Image(logoAsset)
+            (logoAsset.map { Image($0) } ?? Image(systemName: "sparkle"))
                 .resizable()
                 .scaledToFit()
                 .frame(width: 32, height: 32)
@@ -316,9 +322,19 @@ private struct ConnectorSetupCard: View {
                 if let version { Text("Managed version \(version)").font(.caption) }
             }
         } status: {
-            SetupStatus(state: state, information: information, installedTitle: "Configured")
+            VStack(alignment: .leading, spacing: 5) {
+                if let antigravityConnection, let antigravitySkills {
+                    LabeledContent("MCP configuration", value: NSLocalizedString(antigravityConnection.label, comment: "Antigravity MCP status"))
+                    LabeledContent("Global skills", value: NSLocalizedString(antigravitySkills.label, comment: "Antigravity skills status"))
+                }
+                if antigravityConnection == nil || state.isActive || state.failureMessage != nil || information != nil {
+                    SetupStatus(state: state, information: information, installedTitle: "Configured")
+                }
+            }
         } actions: {
-            SetupCardActions(state: state, disabled: disabled, install: install, update: update, remove: remove, retry: retry)
+            SetupCardActions(state: state, disabled: disabled, canInstall: client != .antigravity || detected,
+                             updateAvailable: antigravityConnection == .updateAvailable, canRemovePartial: canRemovePartial,
+                             install: install, update: update, remove: remove, retry: retry)
         } footer: {
             if !detected { DesktopTextLink("Download app", destination: client.downloadURL).font(.caption) }
         }
@@ -373,6 +389,7 @@ private struct SetupCardActions: View {
     let disabled: Bool
     var canInstall = true
     var updateAvailable = false
+    var canRemovePartial = false
     let install: () -> Void
     let update: () -> Void
     let remove: () -> Void
@@ -384,6 +401,7 @@ private struct SetupCardActions: View {
             case .notInstalled:
                 DesktopActionButton(title: "Install", symbol: "arrow.down.to.line", emphasis: .primary, action: install)
                     .disabled(disabled || !canInstall)
+                if canRemovePartial { DesktopActionButton(title: "Uninstall", action: remove).disabled(disabled) }
             case .installed:
                 DesktopActionButton(title: "Update", symbol: "arrow.clockwise",
                     emphasis: updateAvailable ? .primary : .secondary, action: update)
@@ -397,6 +415,9 @@ private struct SetupCardActions: View {
             case .failed(let operation, _):
                 DesktopActionButton(title: "Retry", symbol: "arrow.clockwise", emphasis: .primary, action: retry)
                     .disabled(disabled || (operation != .remove && !canInstall))
+                if canRemovePartial && operation != .remove {
+                    DesktopActionButton(title: "Uninstall", action: remove).disabled(disabled)
+                }
             case .queued(let operation), .active(let operation):
                 DesktopActionButton(title: operation == .remove ? "Uninstalling…" : operation.progressLabel, action: {})
                     .disabled(true)

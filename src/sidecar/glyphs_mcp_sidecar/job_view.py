@@ -1,6 +1,7 @@
 """Bounded public job evidence shared by tools and chat workflows."""
 from typing import Any, Mapping
 from .lifecycle import activity
+from .preview_cleanup import failed_dispatch_pending
 
 def public_job(job: Mapping[str, Any], *, include_preview: bool = True) -> dict[str, Any]:
     status = str(job["status"])
@@ -35,6 +36,14 @@ def public_job(job: Mapping[str, Any], *, include_preview: bool = True) -> dict[
         result['changeCount'] = None
         result['message'] = 'Whole-font historical reload. Keep or save separately; selective Undo is unavailable.'
     if job.get('resultKind') == 'script':
+        if failed_dispatch_pending(job):
+            result['previewReleasePending'] = True
+        if job.get('saveRequest') or job.get('restoreRequest'):
+            result['hasPendingWrites'] = True
+        if job.get('nativeOperationMissing'):
+            result['nativeOperationMissing'] = True
+        if job.get('stoppedStatus'):
+            result['stoppedStatus'] = job['stoppedStatus']
         evidence = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
         result['changeCount'] = None
         result['message'] = ('Script ready. Use the conversation Run action when execution is authorized.' if status == 'ready'

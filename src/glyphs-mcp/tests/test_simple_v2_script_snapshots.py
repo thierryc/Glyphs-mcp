@@ -14,6 +14,8 @@ from glyphs_mcp_bridge import saved_script, script_snapshot
 from glyphs_mcp_sidecar.service import SidecarService, ServiceError
 from glyphs_mcp_sidecar.bridge_client import BridgeClientError
 from glyphs_mcp_sidecar.jobs import JobStore
+from glyphs_mcp_sidecar.task_inventory import list_tasks
+from glyphs_mcp_protocol.task_conflicts import protection
 from test_simple_v2_edit_workflow import wait, choose
 
 
@@ -66,7 +68,11 @@ def native(tmp_path,monkeypatch):
         def review_script(self,request):return self.invoke(core.review_script,request)
         def reviewed_script(self,key):return saved_script.review_result(core,key,BridgeError)
         def run_script(self,request):return self.invoke(core.begin_script,request)
-        def operation(self,key):return core.operation(key)
+        def operation(self,key):
+            try:
+                return core.operation(key)
+            except BridgeError as exc:
+                raise BridgeClientError(exc.code,exc.message,exc.details) from exc
         def discard(self,key):return self.invoke(core.discard,key)
         def finish_script(self,key):return core.finish_script(key)
         def restore_saved_script(self,request):return self.invoke(lambda r:saved_script.restore(core,r,BridgeError),request)
@@ -96,6 +102,87 @@ def run(service,identity,source='font.glyphs["A"].width=620\nfont.features.appen
         if value['state'] in {'applied','failed'}:return value
         time.sleep(.01)
     raise AssertionError(value)
+
+
+@pytest.mark.parametrize('successful', [True, False])
+def test_stopped_script_without_recovery_finishes_with_original_outcome(native, successful):
+    _, core, bridge, service, add = native
+    font, identity = add()
+    value = run(service, identity)
+    operation = core._operations[value['jobId']]
+    operation.update(status='failed', error={'code': 'glyphs_busy', 'message': 'Queued Glyphs call cancelled'})
+    operation['scriptResult']['executionSucceeded'] = successful
+    script_snapshot.release(operation)
+    bridge.finish_script = lambda *_: pytest.fail('Closing history must never invoke Keep')
+    result = service.edit_workflows.get(value['id'])
+    item = list_tasks(service)['tasks'][0]
+    assert result['state'] == 'failed' and not result['actions'] and not result['remainingWork']
+    assert result['error']['message'] == 'Queued Glyphs call cancelled'
+    assert item['closed'] and item['taskStatus'] == 'finished' and not item['remainingWork']
+    assert item['outcome'] == ('unverified' if successful else 'partial')
+    assert not protection(operation) and not protection(service.jobs.get(value['jobId']))
+    assert font.glyphs['A'].width == 620 and font.parent.isDocumentEdited()
+    assert run(service, identity, source='print("next script")', key='next')['state'] == 'applied'
+
+
+@pytest.mark.parametrize('release', ['original_closed', 'native_record_missing'])
+def test_background_rechecks_stopped_script_and_preserves_diagnostics(native, release):
+    host, core, bridge, service, add = native
+    font, identity = add()
+    value = run(service, identity, source='font.glyphs["A"].width = 620\nraise RuntimeError("Stopped after editing")')
+    assert value['state'] == 'failed' and value['savedVersion']['available']
+    assert 'restore the pre-run font' in list_tasks(service)['tasks'][0]['remainingWork']
+    if release == 'original_closed':
+        host.fonts.clear()
+    else:
+        del core._operations[value['jobId']]
+    bridge.finish_script = lambda *_: pytest.fail('Background reconciliation must never invoke Keep')
+    service.edit_workflows.reconcile_stopped()
+    item = list_tasks(service)['tasks'][0]
+    assert item['closed'] and item['taskStatus'] == 'finished' and item['outcome'] == 'partial'
+    assert 'Stopped after editing' in item['message'] and item['remainingWork'] is None
+    assert service.edit_workflows.get(value['id'])['actions'] == []
+    assert font.glyphs['A'].width == 620 and font.parent.isDocumentEdited()
+
+
+def test_stopped_script_with_unverified_write_keeps_ownership(native):
+    _, core, _, service, add = native
+    _, identity = add()
+    value = run(service, identity)
+    operation = core._operations[value['jobId']]
+    script_snapshot.release(operation)
+    operation.update(status='failed', error={'code': 'restoration_unverified', 'message': 'Write unverified',
+                                              'details': {'writeAttempted': True}})
+    result = service.edit_workflows.get(value['id'])
+    item = list_tasks(service)['tasks'][0]
+    assert protection(operation)['reason'] == 'outcome_unknown'
+    assert not item['closed'] and item['taskStatus'] == 'needs_attention'
+    assert result['remainingWork'] == item['remainingWork'] == 'Check the existing result in Glyphs before trying again.'
+
+
+@pytest.mark.parametrize('restarted', [True, False])
+def test_lost_script_result_is_settled_only_after_confirmed_session_change(native, restarted):
+    _, core, _, service, add = native
+    font, identity = add()
+    value = run(service, identity)
+    recorded = service.edit_workflows.store.records[value['id']]
+    failure = {'code': 'glyphs_busy', 'message': 'Queued Glyphs call cancelled'}
+    service.edit_workflows._set(recorded, state='failed', error=failure)
+    del core._operations[value['jobId']]
+    assert service.get_job(value['jobId'])['status'] == 'interrupted'
+    service.edit_workflows.reconcile_stopped()
+    interrupted = service.edit_workflows.get(value['id'])
+    assert interrupted['state'] == 'interrupted' and interrupted['error'] == failure
+    assert interrupted['job']['error']['code'] == 'bridge_operation_lost'
+    if restarted:
+        core.bridge_session_id = 'replacement-session'
+    service.edit_workflows.reconcile_stopped()
+    item = list_tasks(service)['tasks'][0]
+    assert item['closed'] is restarted
+    if restarted:
+        assert item['taskStatus'] == 'finished' and item['outcome'] == 'unverified'
+        assert item['message'] == failure['message']
+    assert font.glyphs['A'].width == 620 and font.parent.isDocumentEdited()
 
 
 @pytest.mark.parametrize('dirty,pathless',[(True,True),(False,True),(True,False),(False,False)])

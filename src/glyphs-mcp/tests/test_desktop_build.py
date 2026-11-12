@@ -60,6 +60,7 @@ def bundle(tmp_path, monkeypatch):
         (catalog / (name + '.imageset')).mkdir(parents=True)
     monkeypatch.setattr(verifier, 'load', lambda root: {'version': '2.0.0', 'installerBuild': 43})
     monkeypatch.setattr(verifier, 'validate_embedded_payload', lambda app: {'schemaVersion': 4})
+    monkeypatch.setattr(verifier, 'verify_localizations', lambda app, root: {'locales': ['en', 'fr', 'zh-Hans', 'de', 'es', 'pt-BR']})
     monkeypatch.setattr(verifier, 'validate_embedded_beztrace', lambda app: {'version': '0.2.1'})
     monkeypatch.setattr(verifier.subprocess, 'check_output', lambda command: json.dumps([
         {'Name': 'GlyphsMCPMenu'}, {'Name': 'GitHubMark'}]).encode())
@@ -270,7 +271,7 @@ def test_diff_loading_states_explain_work_without_repeated_accessibility_announc
     assert 'try await Task.sleep(for: .seconds(1.8))' in source
     assert 'withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3))' in source
     assert '.accessibilityElement(children: .ignore)' in source
-    assert '.accessibilityLabel(accessibilityStatus)' in source
+    assert '.accessibilityLabel(LocalizedStringKey(accessibilityStatus))' in source
     assert "document.querySelectorAll('.fixed-position-label')" in source
     assert "Math.hypot(matrix.a, matrix.b)" in source
     assert "const inverse = 1 / (z * displayScale())" in source
@@ -284,10 +285,10 @@ def test_desktop_layout_minimums_keep_navigation_and_diff_controls_visible():
     delegate = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopAppDelegate.swift').read_text()
     git_workspace = (root / 'macos-installer/GlyphsMCPInstaller/Sources/DesktopGitWorkspace.swift').read_text()
     assert 'static let minimumWidth: CGFloat = 1_040' in content
-    assert 'static let sidebarMinimumWidth: CGFloat = 220' in content
+    assert 'static let sidebarMinimumWidth: CGFloat = 190' in content
     assert '.frame(maxWidth: .infinity, alignment: .leading)' in content
-    assert 'static let contentMaximumWidth: CGFloat = 850' in content
-    assert '.frame(maxWidth: DesktopSetupLayout.contentMaximumWidth, alignment: .leading)' in content
+    assert 'static let pageMaximumWidth: CGFloat = 850' in content
+    assert '.frame(maxWidth: DesktopDashboardLayout.pageMaximumWidth, alignment: .leading)' in content
     assert '.frame(maxWidth: .infinity, alignment: .center)' in content
     assert '.frame(maxWidth: .infinity, maxHeight: .infinity)' in content
     assert 'window.contentMinSize = NSSize(width: DesktopDashboardLayout.minimumWidth' in delegate

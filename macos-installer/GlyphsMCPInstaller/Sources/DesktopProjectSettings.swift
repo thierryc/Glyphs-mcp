@@ -72,13 +72,13 @@ struct DesktopProjectSettings: View {
 
     private func loadPolicy() {
         do { let value = try FontCheckpointPolicy.read(folder); configuration = value.data; checkpointEnabled = value.enabled; configurationLoaded = true }
-        catch { self.error = error.localizedDescription; configurationLoaded = false }
+        catch { self.error = error.presentationDescription(); configurationLoaded = false }
     }
     private func save() {
         do {
             if configurationLoaded { try FontCheckpointPolicy.write(folder, enabled: checkpointEnabled, expected: configuration) }
             try model.update(path, name: name, folder: folder); dismiss()
         }
-        catch { self.error = error.localizedDescription }
+        catch { self.error = error.presentationDescription() }
     }
 }

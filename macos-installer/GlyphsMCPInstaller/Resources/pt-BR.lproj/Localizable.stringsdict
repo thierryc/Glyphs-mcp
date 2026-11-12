@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>%lld days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%lld dias</string>
+			<key>other</key>
+			<string>%lld dias</string>
+			<key>one</key>
+			<string>%lld dia</string>
+		</dict>
+	</dict>
+	<key>%lld active tasks</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%lld tarefas ativas</string>
+			<key>other</key>
+			<string>%lld tarefas ativas</string>
+			<key>one</key>
+			<string>%lld tarefa ativa</string>
+		</dict>
+	</dict>
+	<key>Warn at %lld open fonts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>Avisar ao atingir %lld fontes abertas</string>
+			<key>other</key>
+			<string>Avisar ao atingir %lld fontes abertas</string>
+			<key>one</key>
+			<string>Avisar ao atingir %lld fonte aberta</string>
+		</dict>
+	</dict>
+	<key>%lld changed files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%lld arquivos alterados</string>
+			<key>other</key>
+			<string>%lld arquivos alterados</string>
+			<key>one</key>
+			<string>%lld arquivo alterado</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

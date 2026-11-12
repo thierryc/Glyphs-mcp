@@ -6,6 +6,7 @@ import time
 from threading import Event, RLock, Thread
 from . import saving, saved_script, workflow_queue
 from glyphs_mcp_protocol import scripts
+from glyphs_mcp_protocol.task_conflicts import STOPPED_SCRIPT, stopped_script_released
 
 from .edit_workflow_state import (
     ACTIVE, TERMINAL, WorkflowStore, action_token, offered_actions,
@@ -23,6 +24,7 @@ class EditWorkflows:
         self.lock, self.stopped = RLock(), Event()
         self.thread = None
         self.baseline_memos = {}  # Display-only, never persisted or used at dispatch.
+        self.stopped_cursor = ''
 
     def close(self):
         self.stopped.set()
@@ -50,6 +52,45 @@ class EditWorkflows:
         if value is None:
             raise self.error("workflow_not_found", "This workflow is unavailable; do not infer another font.")
         return value
+
+    def reconcile_stopped(self, limit=4):
+        """Recheck a bounded batch of stopped script reservations without replay."""
+        if not self.lock.acquire(blocking=False):
+            return
+        try:
+            if self.service.lifecycle.pending or self.service._cancellations:
+                return
+            candidates = {}
+            for job in self.service.jobs.select({'applied', 'interrupted'}, include_unresolved=True):
+                if job.get('resultKind') != 'script':
+                    continue
+                value = self.store.matching_job(job['id'])
+                if (job['status'] in STOPPED_SCRIPT or saved_script.lost_stopped_session(job)
+                        or job['status'] == 'applied' and value and value['state'] in STOPPED_SCRIPT) and (
+                        not value or not (value.get('blockerId') or value.get('saveRequest'))):
+                    candidates[job['id']] = value
+            with self.store.lock:
+                for value in self.store.records.values():
+                    observed = value.get('job') or {}
+                    if (value.get('jobId') and not (value.get('blockerId') or value.get('saveRequest'))
+                            and (value['state'] in STOPPED_SCRIPT and saved_script.unresolved(observed)
+                                 or value['state'] == 'interrupted' and stopped_script_released(observed))):
+                        # The canonical job may have settled just before an interrupted workflow write.
+                        candidates.setdefault(value['jobId'], value)
+            ordered = sorted(candidates, key=lambda identity: (identity <= self.stopped_cursor, identity))
+            for identity in ordered[:limit]:
+                self.stopped_cursor = identity
+                value = candidates[identity]
+                try:
+                    if value:
+                        self._advance(value, allow_apply=False)
+                        saved_script.refresh(self.service, value)
+                    else:
+                        self.service.get_job(identity)
+                except self.error:
+                    break  # Retry on another maintenance pass; retain the last evidence.
+        finally:
+            self.lock.release()
 
     def _set(self, value, **fields):
         # Publish native snapshot evidence with the completed state, so passive
@@ -234,7 +275,8 @@ class EditWorkflows:
             if not hasattr(self.service, '_task_scoped_recovery') or value.get('blockerId') and not scoped_recovery(self.service):
                 scoped_recovery(self.service, refresh=True)
             fast_ready = value['state'] in {'preparing', 'queued'}
-            reconcile_result = value['state'] == 'failed' and (value.get('job') or {}).get('status') in {'applied','accepting','accepted'}
+            reconcile_result = value['state'] == 'failed' and (value['request']['kind'] == 'python_script'
+                or (value.get('job') or {}).get('status') in {'applied', 'accepting', 'accepted'})
             if value.get('blockerId') or (value.get("jobId") and (fast_ready or reconcile_result or saved_script.unresolved(value.get('job') or {}) or value["state"] in {"applied", "ready", "needs_review", "waiting_run", "uncertain"})):
                 self._guard(value, lambda: self._advance(value, allow_apply=False))
             if value["state"] in {"applied", "saved"}:
@@ -425,7 +467,8 @@ class EditWorkflows:
                         and owner['reason'] in {'recovery', 'preview'}):
                     owner.update(scope='session', reason='runtime_update', wait='decision')
             self._set(value, blocker=owner)
-            if independent or job["status"] in {"accepted", "discarded", "completed", "cancelled", "expired"} and not saved_script.unresolved(job):
+            if (independent or stopped_script_released(job) or
+                    job["status"] in {"accepted", "discarded", "completed", "cancelled", "expired"} and not saved_script.unresolved(job)):
                 restored = ((job.get('bridgeOperation') or {}).get('scriptResult') or {})
                 historical = (job.get('bridgeOperation') or {}).get('documentAfter')
                 same_document = blocking_document == value['document']['id']
@@ -515,7 +558,14 @@ class EditWorkflows:
                       "cancelling": "discarding"}.get(state, state)
             if value.get("cancelRequested") and state in {"cancelled", "discarded"}:
                 mapped = "cancelled"
-            self._set(value, state=mapped, error=job.get("error"), receipt=job.get("receipt") or value.get("receipt"))
+            error = job.get('error') or (value.get('error') if mapped == value['state'] and mapped in {'failed', 'cancelled'} else None)
+            previous_error = value.get('error') or {}
+            if (mapped == 'interrupted' and job.get('resultKind') == 'script'
+                    and (error or {}).get('code') == 'bridge_operation_lost'
+                    and previous_error and previous_error.get('code') != 'workflow_interrupted'):
+                # The job carries the missing-operation diagnostic separately.
+                error = previous_error
+            self._set(value, state=mapped, error=error, receipt=job.get("receipt") or value.get("receipt"))
 
     def _apply(self, value, approved_overwrites=None):
         self._set(value, dispatchAction="apply")

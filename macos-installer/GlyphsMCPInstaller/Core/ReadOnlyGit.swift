@@ -255,12 +255,12 @@ public struct ReadOnlyGit {
         while index < fields.count {
             let field = fields[index]
             index += 1
-            guard field.count >= 4 else { throw ProjectError("Git returned an invalid status record.") }
+            guard field.count >= 4 else { throw ProjectError(localized: "Git returned an invalid status record.") }
             let state = String(field.prefix(2))
             let path = String(field.dropFirst(3))
             var original: String?
             if state.contains("R") || state.contains("C") {
-                guard index < fields.count else { throw ProjectError("Git returned an incomplete renamed-file record.") }
+                guard index < fields.count else { throw ProjectError(localized: "Git returned an incomplete renamed-file record.") }
                 original = fields[index]
                 index += 1
             }
@@ -389,7 +389,7 @@ public struct ReadOnlyGit {
                 oldSize: oldSize, newSize: newSize
             )
         } catch {
-            if error.localizedDescription.localizedCaseInsensitiveContains("timed out") {
+            if error is ProcessTimeoutError {
                 return .unavailable(.timeout, oldSize: oldSize, newSize: newSize)
             }
             return .unavailable(.git(error.localizedDescription), oldSize: oldSize, newSize: newSize)
@@ -422,7 +422,7 @@ public struct ReadOnlyGit {
         let result = try await run(project, ["ls-tree", "-z", revision, "--", path])
         guard !result.stdoutData.isEmpty else { return nil }
         guard let tab = result.stdoutData.firstIndex(of: 0x09) else {
-            throw ProjectError("Git returned an invalid tree record.")
+            throw ProjectError(localized: "Git returned an invalid tree record.")
         }
         let header = String(decoding: result.stdoutData[..<tab], as: UTF8.self).split(separator: " ")
         guard header.count >= 3, header[1] == "blob" else { return nil }
@@ -443,7 +443,7 @@ public struct ReadOnlyGit {
     private func blobContent(_ project: URL, object: String) async throws -> GitFileContent {
         let sizeText = try await run(project, ["cat-file", "-s", object]).stdout
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let size = Int(sizeText) else { throw ProjectError("Git returned an invalid blob size.") }
+        guard let size = Int(sizeText) else { throw ProjectError(localized: "Git returned an invalid blob size.") }
         guard size <= GitFileComparison.maximumBytes else { return .oversized(size) }
         return classify(try await run(project, ["cat-file", "blob", object]).stdoutData)
     }
@@ -490,7 +490,7 @@ public struct ReadOnlyGit {
             do {
                 let attributes = try FileManager.default.attributesOfItem(atPath: current.path)
                 if attributes[.type] as? FileAttributeType == .typeSymbolicLink, index < parts.count - 1 {
-                    throw ProjectError("A symbolic link in the selected path escapes the repository boundary.")
+                    throw ProjectError(localized: "A symbolic link in the selected path escapes the repository boundary.")
                 }
             } catch let error as NSError where Self.isMissingFileError(error) {
                 if index < parts.count - 1 { return root.appendingPathComponent(path) }
@@ -516,7 +516,7 @@ public struct ReadOnlyGit {
         allowFailure: Bool = false,
         maximumStandardOutputBytes: Int? = nil
     ) async throws -> ProcessRunner.Result {
-        guard let executable else { throw ProjectError("Git is unavailable. Project creation and templates remain available.") }
+        guard let executable else { throw ProjectError(localized: "Git is unavailable. Project creation and templates remain available.") }
         let args = ["--no-optional-locks", "--no-pager", "--literal-pathspecs", "-c", "core.fsmonitor=false",
                     "-c", "core.untrackedCache=false", "-c", "core.hooksPath=/dev/null", "-c", "credential.helper=",
                     "-c", "diff.external=", "-C", project.path] + arguments
@@ -526,7 +526,7 @@ public struct ReadOnlyGit {
                           "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"], timeout: 10,
             maximumStandardOutputBytes: maximumStandardOutputBytes)
         guard result.exitCode == 0 || allowFailure else {
-            if result.stderr.contains("not a git repository") { throw ProjectError("This folder isn’t a Git repository.") }
+            if result.stderr.contains("not a git repository") { throw ProjectError(localized: "This folder isn’t a Git repository.") }
             throw ProjectError(String(result.stderr.prefix(1000)).trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return result

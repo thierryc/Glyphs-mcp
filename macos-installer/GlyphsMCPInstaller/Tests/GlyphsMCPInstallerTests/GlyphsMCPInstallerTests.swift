@@ -1827,8 +1827,8 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			try await runner.runStreaming(executable: exe, args: ["-c", "echo nope; exit 7"], onLine: { _ in })
 			XCTFail("Expected runStreaming to throw on nonzero exit.")
 		} catch {
-			guard let e = error as? InstallerError else {
-				return XCTFail("Expected InstallerError, got: \(type(of: error)) \(error)")
+			guard let e = error as? ProcessCommandError else {
+				return XCTFail("Expected typed process failure, got: \(type(of: error)) \(error)")
 			}
 			XCTAssertTrue(e.localizedDescription.contains("Command failed"), e.localizedDescription)
 		}
@@ -1847,8 +1847,8 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			)
 			XCTFail("Expected runStreaming to time out.")
 		} catch {
-			guard let installerError = error as? InstallerError else {
-				return XCTFail("Expected InstallerError, got: \(type(of: error)) \(error)")
+			guard let installerError = error as? ProcessTimeoutError else {
+				return XCTFail("Expected typed process failure, got: \(type(of: error)) \(error)")
 			}
 			XCTAssertTrue(installerError.localizedDescription.contains("timed out"), installerError.localizedDescription)
 			XCTAssertLessThan(Date().timeIntervalSince(startedAt), 2)
@@ -3613,15 +3613,15 @@ extension GlyphsMCPInstallerTests {
             servers[name] = entry; json["mcpServers"] = servers
             try JsonConfig.writeJSON(json, to: config)
             let before = try Data(contentsOf: config)
-            let receiptBefore = try Data(contentsOf: ClaudeConfigurationOwnership.receiptURL(for: config))
+            let receiptBefore = try Data(contentsOf: JSONConnectorOwnership.receiptURL(for: config))
             XCTAssertThrowsError(try remove())
             XCTAssertEqual(try Data(contentsOf: config), before)
-            XCTAssertEqual(try Data(contentsOf: ClaudeConfigurationOwnership.receiptURL(for: config)), receiptBefore)
+            XCTAssertEqual(try Data(contentsOf: JSONConnectorOwnership.receiptURL(for: config)), receiptBefore)
         }
         try JsonConfig.writeJSON([:], to: config)
         try installer.patchClaudeDesktopConfig(at: config)
         let before = try Data(contentsOf: config)
-        try FileManager.default.removeItem(at: ClaudeConfigurationOwnership.receiptURL(for: config))
+        try FileManager.default.removeItem(at: JSONConnectorOwnership.receiptURL(for: config))
         XCTAssertThrowsError(try remove())
         XCTAssertEqual(try Data(contentsOf: config), before)
     }
@@ -3653,7 +3653,7 @@ extension GlyphsMCPInstallerTests {
         let servers = result["mcpServers"] as! [String: Any]
         XCTAssertNil(servers[name])
         XCTAssertEqual(servers["other"] as? NSDictionary, other as NSDictionary)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: ClaudeConfigurationOwnership.receiptURL(for: config).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: JSONConnectorOwnership.receiptURL(for: config).path))
         // Removal remains idempotent when the entry is already absent.
         XCTAssertNoThrow(try ConnectorConfigurationRemover.removeClaude(client: .claudeDesktop, at: config, serverName: name, endpoint: endpoint))
     }

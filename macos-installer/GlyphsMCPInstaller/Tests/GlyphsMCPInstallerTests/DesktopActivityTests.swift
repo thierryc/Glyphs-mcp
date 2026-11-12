@@ -23,13 +23,45 @@ final class DesktopActivityTests: XCTestCase {
     func testHealthPolicyRoundTripValidationAndMissingDefault() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        XCTAssertEqual(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold, 8)
+        XCTAssertNil(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold)
         try DesktopGlyphsHealthPolicy(fontWarningThreshold: 12).write(under: root)
         XCTAssertEqual(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold, 12)
+        try DesktopGlyphsHealthPolicy().write(under: root)
+        XCTAssertNil(try DesktopGlyphsHealthPolicy.read(under: root).fontWarningThreshold)
+        try DesktopGlyphsHealthPolicy().write(under: root)
         XCTAssertThrowsError(try DesktopGlyphsHealthPolicy(fontWarningThreshold: 0).write(under: root))
         XCTAssertThrowsError(try DesktopGlyphsHealthPolicy(fontWarningThreshold: 129).write(under: root))
         try Data(#"{"version":99,"fontWarningThreshold":12}"#.utf8).write(to: DesktopGlyphsHealthPolicy.file(under: root))
         XCTAssertThrowsError(try DesktopGlyphsHealthPolicy.read(under: root))
+    }
+
+    func testSystemPressureAndGlyphsReadinessAreIndependent() throws {
+        let health = try JSONDecoder().decode(DesktopGlyphsHealth.self, from: Data(#"""
+        {
+            "version": 1, "available": true, "state": "caution",
+            "reasons": ["memory_pressure_warning"],
+            "signals": {
+                "pressure": {"available": true, "value": "warning"},
+                "dispatch": {"available": true, "ageSeconds": 18, "schedulingSeconds": 0.003},
+                "footprint": {"available": true, "bytes": 312475648, "growthBytes": 100, "growthWindowSeconds": 115}
+            }
+        }
+        """#.utf8))
+        XCTAssertEqual(health.readinessTitle, "Glyphs is responsive")
+        XCTAssertEqual(health.pressureTitle, "Mac memory pressure is elevated")
+        XCTAssertTrue(health.agentGuidance.hasPrefix("Continue routine edits."))
+        XCTAssertEqual(health.signals?["footprint"]?.growthWindowSeconds, 115)
+    }
+
+    func testGlyphsFootprintBandsScaleWithInstalledMemory() throws {
+        let gib: UInt64 = 1 << 30
+        let moderateOn32 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: Int64(3 * gib), installedMemory: 32 * gib))
+        let heavyOn16 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: Int64(3 * gib), installedMemory: 16 * gib))
+        let lightOn32 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: 709_900_000, installedMemory: 32 * gib))
+        XCTAssertEqual(moderateOn32.level, .moderate)
+        XCTAssertEqual(heavyOn16.level, .heavy)
+        XCTAssertEqual(lightOn32.level, .light)
+        XCTAssertNil(DesktopGlyphsFootprint(bytes: 1, installedMemory: 0))
     }
     private func job(_ id: String, _ phase: String, message: String? = nil) -> DesktopActivity {
         DesktopActivity(jobId: id, document: "Test", kind: "spacing", phase: phase,
@@ -299,10 +331,34 @@ final class DesktopTaskTests: XCTestCase {
         let unknown = try task(state: "unknown")
         XCTAssertEqual(unknown.taskGroup, "attention")
         XCTAssertNil(unknown.blockers)
+        XCTAssertNil(unknown.remainingWork)
         XCTAssertFalse(unknown.recoveryAvailable)
         XCTAssertEqual(unknown.taskActionLabel, "Check result…")
         XCTAssertEqual(try task(closed: true).taskGroup, "finished")
         XCTAssertEqual(try task(state: "running").taskGroup, "active")
+    }
+
+    func testUnverifiedOutcomeAndRemainingWorkAreIndependent() throws {
+        var payload: [String: Any] = ["id": "edit_export", "title": "Vector export", "documentName": "Icons",
+            "state": "unknown", "taskStatus": "needs_attention", "closed": false, "createdAt": 1, "updatedAt": 2,
+            "outcome": "unverified", "outcomeLabel": "Unverified", "blockedBy": [], "blocking": [],
+            "message": "Queued Glyphs call cancelled", "remainingWork": "Reconnect to Glyphs to check recovery."]
+        func decode() throws -> DesktopTask {
+            try JSONDecoder().decode(DesktopTask.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let attention = try decode()
+        XCTAssertEqual(attention.taskGroup, "attention")
+        XCTAssertEqual(attention.remainingWork, "Reconnect to Glyphs to check recovery.")
+        XCTAssertEqual(attention.outcomeLabel, "Unverified")
+
+        payload["taskStatus"] = "finished"
+        payload["closed"] = true
+        payload["remainingWork"] = NSNull()
+        let finished = try decode()
+        XCTAssertEqual(finished.taskGroup, "finished")
+        XCTAssertEqual(finished.rowStatusLabel, "Unverified")
+        XCTAssertEqual(finished.message, attention.message)
+        XCTAssertNil(finished.remainingWork)
     }
 
     func testArchiveIsAnOrphanInterruptedActionAndRetainsUnverifiedOutcome() throws {
@@ -367,9 +423,10 @@ final class DesktopTaskTests: XCTestCase {
             XCTAssertEqual(value.prompt(for: .review), value.copyRequest)
             let prompt = value.prompt(for: .closeTask)
             XCTAssertTrue(prompt.contains("task edit_a for Bryan: Run script"))
-            XCTAssertTrue(prompt.contains("Retrieve its current state and blockers"))
+            XCTAssertTrue(prompt.contains("Retrieve its current state, recorded outcome, and any work it blocks or depends on"))
+            XCTAssertTrue(prompt.contains("Explain what remains and who can act"))
             XCTAssertTrue(prompt.contains("If running, explain cancellation limits"))
-            XCTAssertTrue(prompt.contains("Show only currently available actions and wait for my choice"))
+            XCTAssertTrue(prompt.contains("Wait for my choice only if a decision is required"))
             XCTAssertTrue(prompt.contains("Do not rerun the script or automatically cancel, save, restore, or close"))
             XCTAssertNotEqual(prompt, value.copyRequest)
             XCTAssertFalse(value.closed)

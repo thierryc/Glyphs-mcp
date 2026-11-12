@@ -12,9 +12,9 @@ struct DesktopInitializationStatus: View {
                     HStack(spacing: 12) {
                         if installer.initializationStage != nil { ProgressView().controlSize(.small) }
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(installer.initializationError == nil ? "Preparing Glyphs MCP…" : "Setup check needs attention")
+                            Text(LocalizedStringKey(installer.initializationError == nil ? "Preparing Glyphs MCP…" : "Setup check needs attention"))
                                 .fontWeight(.semibold)
-                            Text(installer.initializationStage ?? "")
+                            Text(LocalizedStringKey(installer.initializationStage ?? ""))
                                 .font(.callout).textSelection(.enabled)
                             if installer.initializationStage != nil && context.date.timeIntervalSince(installer.initializationStartedAt) >= 5 {
                                 Text("This check is still running. You can continue browsing while it finishes.")

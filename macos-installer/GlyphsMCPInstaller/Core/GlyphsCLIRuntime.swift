@@ -53,10 +53,11 @@ public struct GlyphsCLIRuntime: Equatable, Sendable {
         } catch {
             failures.append("Installed reader: \(error.localizedDescription)")
         }
-        throw ProjectError(
-            (purpose == .glyphDiff ? "Visual preview components are out of sync. Rebuild or update Glyphs MCP. The text diff remains available. "
-             : NSLocalizedString("Package copy components are unavailable. Rebuild or update Glyphs MCP. ", comment: "")) + failures.joined(separator: " ")
-        )
+        let detail = failures.joined(separator: " ")
+        if purpose == .glyphDiff {
+            throw ProjectError(localized: "Visual preview components are out of sync. Rebuild or update Glyphs MCP. The text diff remains available. \(detail)")
+        }
+        throw ProjectError(localized: "Package copy components are unavailable. Rebuild or update Glyphs MCP. \(detail)")
     }
 
     private static func bundled(
@@ -73,7 +74,7 @@ public struct GlyphsCLIRuntime: Equatable, Sendable {
         guard (purpose != .glyphDiff || manifest.glyphDiffReader == .expected),
               let runtime = manifest.runtimes[architecture],
               runtime.path == "runtimes/\(architecture)", runtime.glyphsCLI == "bin/glyphs" else {
-            throw ProjectError("The reader contract or architecture is unsupported.")
+            throw ProjectError(localized: "The reader contract or architecture is unsupported.")
         }
         let candidate = GlyphsCLIRuntime(
             glyphsCLI: lean.appendingPathComponent(runtime.path).appendingPathComponent(runtime.glyphsCLI),
@@ -92,7 +93,7 @@ public struct GlyphsCLIRuntime: Equatable, Sendable {
         guard (purpose != .glyphDiff || installation.glyphDiffReader == .expected),
               let sidecarIdentity = installation.expectedSidecarIdentity,
               let runtimeIdentity = installation.expectedRuntimeIdentity else {
-            throw ProjectError("The installation receipt has no compatible reader contract.")
+            throw ProjectError(localized: "The installation receipt has no compatible reader contract.")
         }
         let sidecar = installation.root.appendingPathComponent("sidecar", isDirectory: true)
         let runtime = installation.root.appendingPathComponent("runtime", isDirectory: true)
@@ -101,7 +102,7 @@ public struct GlyphsCLIRuntime: Equatable, Sendable {
         try rejectSymbolicLink(runtime, fileManager: fileManager)
         guard try InstallerPayloadManifestResolver.treeIdentity(sidecar) == sidecarIdentity,
               try InstallerPayloadManifestResolver.treeIdentity(runtime) == runtimeIdentity else {
-            throw ProjectError("The installed sidecar or runtime does not match its receipt.")
+            throw ProjectError(localized: "The installed sidecar or runtime does not match its receipt.")
         }
         let candidate = GlyphsCLIRuntime(
             glyphsCLI: runtime.appendingPathComponent("bin/glyphs"),
@@ -116,7 +117,7 @@ public struct GlyphsCLIRuntime: Equatable, Sendable {
     private static func rejectSymbolicLink(_ url: URL, fileManager: FileManager) throws {
         let attributes = try fileManager.attributesOfItem(atPath: url.path)
         guard attributes[.type] as? FileAttributeType != .typeSymbolicLink else {
-            throw ProjectError("The visual reader path contains a symbolic link.")
+            throw ProjectError(localized: "The visual reader path contains a symbolic link.")
         }
     }
 
@@ -126,12 +127,12 @@ public struct GlyphsCLIRuntime: Equatable, Sendable {
             : ["glyphs_mcp_sidecar/package_copy.py", "glyphs_mcp_sidecar/package_copy_native.py", "glyphs_mcp_protocol/python_runtime.py"]
         let required = modules.map { runtime.sidecar.appendingPathComponent($0) }
         guard fileManager.isExecutableFile(atPath: runtime.glyphsCLI.path) else {
-            throw ProjectError("The Glyphs command-line runtime is unavailable.")
+            throw ProjectError(localized: "The Glyphs command-line runtime is unavailable.")
         }
         for file in required {
             let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
             guard values.isRegularFile == true, values.isSymbolicLink != true else {
-                throw ProjectError("The Glyphs command-line runtime contains a missing or unsafe module.")
+                throw ProjectError(localized: "The Glyphs command-line runtime contains a missing or unsafe module.")
             }
         }
     }

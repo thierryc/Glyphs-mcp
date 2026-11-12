@@ -58,8 +58,10 @@ def register_edit_workflow_tools(mcp, service):
             payload = {"ok": False, "error": exc.as_dict()}
             text = exc.message
             content = [TextContent(type="text", text=text)]
+        from glyphs_mcp_protocol.health import job_work
         from .health import feedback
-        feedback(service, payload)
+        scope = (payload.get('data') or {}).get('scope') or {}
+        feedback(service, payload, work=job_work(scope.get('kind')))
         if payload.get('health'):
             import json
             content.append(TextContent(type='text', text=payload['health']['text']))

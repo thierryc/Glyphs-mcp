@@ -6,7 +6,7 @@ public enum TemplateArchive {
         let bytes = [UInt8](data)
         func u16(_ i: Int) -> Int { i >= 0 && i + 2 <= bytes.count ? Int(bytes[i]) | Int(bytes[i+1]) << 8 : -1 }
         func u32(_ i: Int) -> Int { i >= 0 && i + 4 <= bytes.count ? u16(i) | u16(i+2) << 16 : -1 }
-        func fail() -> ProjectError { ProjectError("The template ZIP is unsafe, unsupported or incomplete.") }
+        func fail() -> ProjectError { ProjectError(localized: "The template ZIP is unsafe, unsupported or incomplete.") }
         func extraFields(_ start: Int, _ length: Int) throws {
             var offset = start
             guard start >= 0, start + length <= bytes.count else { throw fail() }
