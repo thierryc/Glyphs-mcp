@@ -1,0 +1,24 @@
+{
+  "scope": "Detached Glyphs 4.2 build 4203 arm64. Width preview and apply for 256 glyphs, with verified discard and saved source preservation after every run. Two fresh processes and 24 measured jobs per build. Pressure and dispatch evidence injected in the build 76 harness with a controlled monotonic clock.",
+  "mediansMs": {
+    "74": {
+      "prepareMs": 74.08539600146469,
+      "applyMs": 183.28525050310418,
+      "totalMs": 252.93408350262325,
+      "nativeMs": 50.008812508167466
+    },
+    "76": {
+      "prepareMs": 70.61943749795319,
+      "applyMs": 183.54954149981495,
+      "totalMs": 251.79095849671285,
+      "nativeMs": 52.42954248387832
+    }
+  },
+  "build76ChangePercent": {
+    "prepareMs": -4.678328915786556,
+    "applyMs": 0.1441965439037407,
+    "totalMs": -0.45194581532090883,
+    "nativeMs": 4.840606793683611
+  },
+  "pressureAndRecoveryPassed": true
+}

@@ -3,9 +3,9 @@
 Local build 93 adds Antigravity setup, three desktop languages, a Skills update
 view and active-task badges. See the [2.8.0 candidate notes](V2.8.0-RELEASE.md).
 
-**Stable · desktop build 91 · Glyphs 4.** [Download 2.7.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.7.0).
+**Stable · desktop build 91 · Glyphs 4.** [Download 2.7.0](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.7.0/Glyphs-MCP-2.7.0.dmg).
 The stable release includes the redesigned [Glyphs Health](docs/glyphs-health.md)
-card and Markdown reports in Setup and the menu bar.
+card and Markdown reports in Setup and the menu bar. [Release notes and qualification](V2.7.0-RELEASE.md)
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 

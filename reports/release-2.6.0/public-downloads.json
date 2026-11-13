@@ -1,0 +1,42 @@
+{
+  "tag": "v2.6.0",
+  "anonymous": true,
+  "assets": [
+    {
+      "name": "Glyphs-MCP-2.6.0.dmg",
+      "bytes": 161601486,
+      "sha256": "4006f0c1b68e576ef5e02eee437a2f4c851096397995f8d54ba3712cb779cb0e",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/Glyphs-MCP-2.6.0.dmg"
+    },
+    {
+      "name": "Glyphs-MCP-2.6.0.zip",
+      "bytes": 159384128,
+      "sha256": "607b96d68368624d05bd83cdf64b9ee40914b8856ebfa981621f013ff0027076",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/Glyphs-MCP-2.6.0.zip"
+    },
+    {
+      "name": "appcast.xml",
+      "bytes": 1349,
+      "sha256": "c9e3505bfcc1290983efa62e71d0b73a7e3c20085506ddba3bf7cf1c847f6f1e",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/appcast.xml"
+    },
+    {
+      "name": "Glyphs-MCP-latest.dmg",
+      "bytes": 161601486,
+      "sha256": "4006f0c1b68e576ef5e02eee437a2f4c851096397995f8d54ba3712cb779cb0e",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/Glyphs-MCP-latest.dmg"
+    },
+    {
+      "name": "Glyphs.MCP.zip",
+      "bytes": 159384128,
+      "sha256": "607b96d68368624d05bd83cdf64b9ee40914b8856ebfa981621f013ff0027076",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/Glyphs.MCP.zip"
+    },
+    {
+      "name": "SHA256SUMS",
+      "bytes": 421,
+      "sha256": "e80a1e517145fc1e4f81324c8c5fe35cbbb821efd3aeec599193a191e9fe0002",
+      "url": "https://github.com/thierryc/Glyphs-mcp/releases/download/v2.6.0/SHA256SUMS"
+    }
+  ]
+}

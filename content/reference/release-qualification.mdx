@@ -10,7 +10,7 @@ and the separate distribution checks. [2.8.0 candidate notes](https://github.com
 
 ## Published 2.7.0
 
-Stable **2.7.0/build 91** targets Glyphs 4 with 22 tools
+Stable **2.7.0/build 91** is available for Glyphs 4 with 22 tools
 and 14 managed skills. The full local gate passed 3,549 Python tests (3 skipped),
 346 desktop tests, deterministic payload comparison, documentation and offline
 startup of both private runtimes. The universal app, payload and DMG are signed,
@@ -22,12 +22,15 @@ signed build 76 → 91 Sparkle update and component migration passed in a macOS
 Live document access, cancelled quit and installer rollback passed in the
 `Glyphs-November` VM with Glyphs 4.1.1/build 4108. Cancelling quit kept unsaved
 edits and required **Start Server** to reconnect MCP. Detached native edit,
-cancellation and recovery checks passed on disposable fonts. [2.7.0 release notes](https://github.com/thierryc/Glyphs-mcp/blob/v2.7.0/V2.7.0-RELEASE.md)
+cancellation and recovery checks passed on disposable fonts. All six public
+release downloads matched before the signed stable feed advanced. Physical Intel
+execution is optional for 2.7.0 and remains unverified. [Release notes](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.7.0-RELEASE.md)
 
 ## Published 2.6.0
 
-Stable **2.6.0/build 76** adds Glyphs Health, Small and Petite Caps, and
-measured polygon fitting in Path Doctor. [2.6.0 release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0)
+Stable **2.6.0/build 76** is signed, notarized and published under `v2.6.0`. It provides 22 MCP tools and 14 managed skills for Glyphs 4. The full source gate passed 3,542 Python tests with three skips, 344 desktop tests, documentation and deterministic package checks.
+
+The exact signed build passed a clean install and a Sparkle upgrade from 2.5.1/build 74 on macOS 26.6.2 arm64, followed by component migration and a live Glyphs connection. A native fixture verified that stopped tasks can finish with an unverified outcome and retain unsaved edits. Signed runtime tests covered arm64 and x86_64 using Rosetta. All six anonymous downloads matched before the stable update feed advanced. [2.6.0 qualification](https://github.com/thierryc/Glyphs-mcp/blob/main/V2.6.0-RELEASE.md)
 
 ## Published 2.5.1
 
