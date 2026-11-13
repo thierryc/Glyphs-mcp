@@ -1,6 +1,17 @@
 # Changelog
 
-## 2.7.0 — Unreleased
+## 2.8.0 — local candidate, build 93
+
+- Set up Glyphs MCP and global skills for detected Antigravity App and IDE installations, with separate connection and skill status in Setup.
+- Add German, Spanish and Brazilian Portuguese to the desktop app. Complete French and Simplified Chinese coverage across menus, dialogs, error messages and accessibility labels.
+- Show available skill updates in the sidebar and add a **Review Skill Updates** filter. Verify staged managed updates, retain backups and record completed copies so a retry can resume after a failure.
+- Explain what **Dismiss This Reminder** does and where to find component updates afterward.
+- Count only Working and Waiting tasks in the Tasks badges. Preserve the last loaded task list on refresh failure and show **Server stopped** only when a failed connection is corroborated by the process check.
+- Expand Small and Petite Caps guidance for continuing, refining and auditing existing work, including per-master petite-cap heights and protection for manual corrections.
+
+See the [2.8.0 candidate release notes](V2.8.0-RELEASE.md).
+
+## 2.7.0 — stable release, build 91, 10 November 2026
 
 - Group health readings in Setup and copy them as Markdown from Setup or the macOS menu bar.
 - Narrow the desktop sidebar and add a Notes-style header with Liquid Glass controls and softer shadows on macOS 26.
@@ -10,7 +21,7 @@
 - Use green for light and moderate footprints, orange for heavy footprints, and red for critical pressure or severe response delays.
 - Reduce space around the Tasks list and show recorded task outcomes and remaining decisions. Release stopped-script reservations only after terminal bridge evidence confirms recovery is no longer pending.
 
-See the [2.7.0 candidate release notes](V2.7.0-RELEASE.md).
+See the [2.7.0 release notes](V2.7.0-RELEASE.md).
 
 ## 2.6.0 — stable release, build 76
 

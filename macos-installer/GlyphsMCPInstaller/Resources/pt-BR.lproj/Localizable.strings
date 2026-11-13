@@ -730,7 +730,7 @@
 "Showing the last observation." = "Exibindo a última observação.";
 "Load Earlier Tasks" = "Carregar tarefas anteriores";
 "Update Glyphs MCP to show Tasks." = "Atualize o Glyphs MCP para exibir as tarefas.";
-"Tasks are unavailable. Try again when the server is connected." = "As tarefas estão indisponíveis. Tente novamente quando o servidor estiver conectado.";
+"Could not refresh Tasks." = "Não foi possível atualizar as tarefas.";
 "Review this task in your agent." = "Revise esta tarefa no seu agente.";
 "Work is in progress in Glyphs." = "Há trabalho em andamento no Glyphs.";
 "The conversation could not be opened. Copy the request to continue in your agent." = "Não foi possível abrir a conversa. Copie a solicitação para continuar no seu agente.";

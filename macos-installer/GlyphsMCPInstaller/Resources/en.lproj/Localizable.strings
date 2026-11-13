@@ -732,7 +732,7 @@
 "Showing the last observation." = "Showing the last observation.";
 "Load Earlier Tasks" = "Load Earlier Tasks";
 "Update Glyphs MCP to show Tasks." = "Update Glyphs MCP to show Tasks.";
-"Tasks are unavailable. Try again when the server is connected." = "Tasks are unavailable. Try again when the server is connected.";
+"Could not refresh Tasks." = "Could not refresh Tasks.";
 "Review this task in your agent." = "Review this task in your agent.";
 "Work is in progress in Glyphs." = "Work is in progress in Glyphs.";
 "The conversation could not be opened. Copy the request to continue in your agent." = "The conversation could not be opened. Copy the request to continue in your agent.";

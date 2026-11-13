@@ -331,6 +331,13 @@ public enum DesktopDiagnostics {
         return "The MCP server could not report its activity. Try Refresh or open Troubleshooting."
     }
 
+    public static func taskRefreshFailure(_ error: Error, processRunning: Bool? = nil) -> String {
+        if processRunning == false, (error as? URLError)?.code == .cannotConnectToHost {
+            return NSLocalizedString("Server stopped", comment: "Confirmed server stop")
+        }
+        return NSLocalizedString("Could not refresh Tasks.", comment: "Task inventory refresh failure")
+    }
+
     public static func controlProgress(_ action: String?) -> String? {
         guard let action else { return nil }
         switch action {

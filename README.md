@@ -1,12 +1,11 @@
-# Glyphs MCP Desktop 2.7.0 candidate
+# Glyphs MCP Desktop 2.8.0 candidate
 
-Local build 91 redesigns the Glyphs Health card in Setup, adds Markdown report
-copying to Setup and the menu bar, and introduces a Notes-style macOS 26 header.
-See the [2.7.0 candidate notes](V2.7.0-RELEASE.md).
+Local build 93 adds Antigravity setup, three desktop languages, a Skills update
+view and active-task badges. See the [2.8.0 candidate notes](V2.8.0-RELEASE.md).
 
-**Stable · desktop build 76 · Glyphs 4.** [Download 2.6.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0).
-This release adds [Glyphs Health and workload protection](docs/glyphs-health.md),
-including passive status, automatic agent advisories and a soft font budget.
+**Stable · desktop build 91 · Glyphs 4.** [Download 2.7.0](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.7.0).
+The stable release includes the redesigned [Glyphs Health](docs/glyphs-health.md)
+card and Markdown reports in Setup and the menu bar.
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
@@ -22,7 +21,8 @@ multiple Glyphs 4 applications are detected.
 
 Open **Glyphs MCP.app** and use **Setup**. **Install All** reconciles Glyphs MCP,
 Curve Inspector and Reference Inspector, then configures Codex, Claude Code,
-Claude Desktop and Cursor. Bundled component cards also support independent install,
+Claude Desktop and Cursor. The 2.8.0 candidate also configures Antigravity when
+it detects the app or IDE. Bundled component cards also support independent install,
 update, removal and retry. Upgrades preserve ports, startup settings and
 unrelated agent configuration.
 
@@ -101,9 +101,9 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.7.0).
 
-Documentation sources: [v2 · 2.6.0](content/glyphs-mcp.md) and
+Documentation sources: [v2 · Glyphs 4](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
 The local site build has a version selector; existing v1 URLs stay at `/docs/`,
 and v2 is configured at `/docs/v2/`. Both are built together from `website/`.
@@ -113,7 +113,7 @@ the original beta guides and plans are preserved in the [v2.0.0 source tag](http
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The stable disk image is available from the [published release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.6.0).
+in [macos-installer/README.md](macos-installer/README.md). The stable disk image is available from the [published release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.7.0).
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 For the next development cycle, see [proposed priorities](docs/maintenance/next-evolution.md) and [Anotherplanet/AP.CX page updates](docs/maintenance/site-updates-2.0.4.md).

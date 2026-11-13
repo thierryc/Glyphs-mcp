@@ -233,12 +233,17 @@ final class DesktopModel: ObservableObject {
         } catch is CancellationError {
         } catch {
             guard !Task.isCancelled, !controlling else { return }
-            tasksStale = tasksObservedAt != nil
-            tasksNotice = NSLocalizedString("Tasks are unavailable. Try again when the server is connected.", comment: "Task inventory error")
             stale = true
-            if let observed = try? await serviceAction("status"), let data = observed["data"] as? [String: Any] {
-                serviceRunning = data["processRunning"] as? Bool ?? data["running"] as? Bool
-            } else { serviceRunning = nil }
+            let previousTasksObservation = tasksObservedAt
+            let observed = try? await serviceAction("status")
+            guard !Task.isCancelled, !controlling else { return }
+            let data = observed?["data"] as? [String: Any]
+            let processRunning = data?["processRunning"] as? Bool
+            serviceRunning = processRunning ?? (data?["running"] as? Bool)
+            if tasksObservedAt == previousTasksObservation {
+                tasksStale = tasksObservedAt != nil
+                tasksNotice = DesktopDiagnostics.taskRefreshFailure(error, processRunning: processRunning)
+            }
             let message = DesktopDiagnostics.statusFailure(error, running: serviceRunning)
             if serviceRunning == false { notice = "" }
             else if notice != message { notice = message; remember(message) }
@@ -280,8 +285,9 @@ final class DesktopModel: ObservableObject {
             tasksObservedAt = Date(timeIntervalSince1970: page.observedAt)
             tasksStale = false; tasksNotice = nil
         } catch {
+            guard root == installation.root, !controlling, !Task.isCancelled else { return }
             tasksStale = tasksObservedAt != nil
-            tasksNotice = NSLocalizedString("Tasks are unavailable. Try again when the server is connected.", comment: "Task inventory error")
+            tasksNotice = DesktopDiagnostics.taskRefreshFailure(error)
         }
     }
 

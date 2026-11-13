@@ -743,7 +743,7 @@
 "Showing the last observation." = "正在显示上次观察到的状态。";
 "Load Earlier Tasks" = "加载更早的任务";
 "Update Glyphs MCP to show Tasks." = "请更新 Glyphs MCP 以显示任务。";
-"Tasks are unavailable. Try again when the server is connected." = "任务不可用。请在服务器连接后重试。";
+"Could not refresh Tasks." = "无法刷新任务。";
 "Review this task in your agent." = "请在代理中查看此任务。";
 "Work is in progress in Glyphs." = "Glyphs 中的操作正在进行。";
 "The conversation could not be opened. Copy the request to continue in your agent." = "无法打开对话。请复制请求并在代理中继续。";

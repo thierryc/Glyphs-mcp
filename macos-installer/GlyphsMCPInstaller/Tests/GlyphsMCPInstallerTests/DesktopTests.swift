@@ -163,6 +163,17 @@ final class DesktopTests: XCTestCase {
         XCTAssertTrue(result.data.bridge.reachable)
     }
 
+    func testTaskRefreshOnlyReportsStoppedWithConnectionAndProcessEvidence() {
+        let connectionFailure = URLError(.cannotConnectToHost)
+        XCTAssertEqual(DesktopDiagnostics.taskRefreshFailure(connectionFailure, processRunning: false), "Server stopped")
+        XCTAssertEqual(DesktopDiagnostics.taskRefreshFailure(connectionFailure, processRunning: true), "Could not refresh Tasks.")
+        XCTAssertEqual(DesktopDiagnostics.taskRefreshFailure(connectionFailure), "Could not refresh Tasks.")
+
+        for code in [URLError.timedOut, .badServerResponse, .cannotParseResponse] {
+            XCTAssertEqual(DesktopDiagnostics.taskRefreshFailure(URLError(code), processRunning: false), "Could not refresh Tasks.")
+        }
+    }
+
     func testStatusTimeoutDoesNotClaimAWorkingServiceHasStopped() {
         let timeout = URLError(.timedOut)
         let running = DesktopDiagnostics.statusFailure(timeout, running: true)
