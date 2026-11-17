@@ -84,9 +84,10 @@ struct InstallationView: View {
                         retry: { model.retryComponent(component.id) }
                     )
                 }
-                OptionalToolSetupCard(id: "beztrace-glyphs", title: "Beztrace", symbol: "pencil.and.outline",
-                    detail: "Trace images and match master outlines.") { showingBeztraceSetup = true }
-
+            }
+            Text("Optional plugins").font(.title3.bold())
+            SetupCardGrid {
+                BeztraceSetupCard { showingBeztraceSetup = true }
             }
         }
     }
@@ -128,73 +129,6 @@ struct InstallationView: View {
                 }
             }
         }
-    }
-}
-
-private struct BeztraceSetupCard: View {
-    let showSetup: () -> Void
-    private let companion = ExternalGlyphsCompanion.beztrace
-
-    var body: some View {
-        DesktopCatalogCard {
-            Image(systemName: "pencil.and.outline")
-                .font(.system(size: 36)).foregroundStyle(Color.accentColor)
-        } title: {
-            Text(companion.title).font(.headline)
-        } detail: {
-            Text(LocalizedStringKey(companion.detail))
-        } status: {
-            Label(LocalizedStringKey(companion.availability), systemImage: "hammer")
-                .font(.caption.weight(.medium)).foregroundStyle(.secondary)
-        } actions: {
-            HStack {
-                Button("Setup details…", action: showSetup)
-                    .accessibilityLabel("Beztrace setup details")
-                Spacer()
-            }
-        } footer: {
-            DesktopTextLink("Documentation", destination: companion.documentation).font(.caption)
-                .accessibilityLabel("Beztrace documentation")
-        }
-    }
-}
-
-private struct BeztraceSetupView: View {
-    @Environment(\.dismiss) private var dismiss
-    private let companion = ExternalGlyphsCompanion.beztrace
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text("Beztrace for Glyphs").font(.title2.bold())
-                Spacer()
-                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
-            }
-            Text(LocalizedStringKey(companion.versionLabel)).foregroundStyle(.secondary)
-            Text(LocalizedStringKey(companion.detail))
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Requirements").font(.headline)
-                Text(LocalizedStringKey(companion.requirements))
-                DesktopTextLink("Engine release history", destination: companion.engineRelease)
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Plugin availability").font(.headline)
-                Text("Managed setup installs signed companion 0.2.0 build 25 and engine 0.2.1. Available on Apple Silicon with macOS 26.6.2 or later. Install All excludes Beztrace.")
-                DesktopTextLink("Read plugin setup and verification", destination: companion.documentation)
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Separate installations").font(.headline)
-                Text("Setup does not replace a separate plugin, development link or modified installation. Keep using it, or back it up and remove it yourself before choosing managed installation. Shared engines and user settings are preserved.")
-                Text("Using Beztrace").font(.headline)
-                Text("Open Path → Beztrace… or Beztrace Match Masters…. In Additional actions… → Choose engine…, select ~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace. Repeat when reopening the panel; build 25 does not retain this choice.")
-                Text("Choose a mode, update the preview, then Apply to Layer or Apply to Masters. The plugin works independently of the MCP server and never saves the font.")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .font(.callout)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(24)
-        .frame(width: 540)
     }
 }
 

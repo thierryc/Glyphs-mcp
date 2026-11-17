@@ -605,9 +605,9 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
-    private struct OptionalResponse: Decodable {
+    private struct OptionalResponse<Value: Decodable>: Decodable {
         let ok: Bool
-        let data: [OptionalToolState]?
+        let data: Value?
     }
 
     func refreshOptionalTools() {
@@ -617,7 +617,7 @@ final class InstallerViewModel: ObservableObject {
             defer { self.optionalTask = nil }
             do {
                 let result = try await self.optionalCommand(action: "status")
-                let response = try JSONDecoder().decode(OptionalResponse.self, from: result.stdoutData)
+                let response = try JSONDecoder().decode(OptionalResponse<[OptionalToolState]>.self, from: result.stdoutData)
                 guard response.ok, let states = response.data else { throw InstallerError.localized("Could not inspect optional tools.") }
                 self.optionalStates = Dictionary(uniqueKeysWithValues: states.map { ($0.id, $0) })
                 self.optionalDiscoveryError = nil
@@ -631,12 +631,27 @@ final class InstallerViewModel: ObservableObject {
     func canChangeOptionalTool(_ id: String) -> Bool {
         !operationsBusy && !checkingPython && optionalTask == nil &&
         optionalStates[id]?.protectedInstallation != true &&
-        (id != "beztrace-glyphs" || (application != nil && !running && canInstallComponents))
+        (id != ExternalGlyphsCompanion.beztrace.id || (application != nil && !running))
+    }
+
+    var glyphsSupportsBeztrace: Bool {
+        guard let app = application, let build = Bundle(url: app.appURL)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+              let number = Int(build) else { return false }
+        return number >= ExternalGlyphsCompanion.beztrace.minimumGlyphsBuild
+    }
+
+    func beztraceNeedsRestart(_ state: OptionalToolState) -> Bool {
+        guard let installedAt = state.installedAt else { return false }
+        return runningGlyphs4Applications.contains { app in
+            app.launchDate.map { $0.timeIntervalSince1970 < installedAt } == true
+        }
     }
 
     func changeOptionalTool(_ id: String, action: String) {
+        refreshRunning()
         guard canChangeOptionalTool(id) else { return }
         if action != "remove" && optionalStates[id]?.available != true { return }
+        if id == ExternalGlyphsCompanion.beztrace.id && action != "remove" && (!glyphsSupportsBeztrace || !pythonReady) { return }
         optionalOperation = id
         optionalErrors[id] = nil
         optionalTask = Task { [weak self] in
@@ -644,12 +659,24 @@ final class InstallerViewModel: ObservableObject {
             do {
                 // The existing control handshake refuses active/unresolved jobs.
                 try await self.stopServiceBeforeQuit?()
-                _ = try await self.optionalCommand(action: action, tool: id)
+                if id == ExternalGlyphsCompanion.beztrace.id {
+                    self.refreshRunning()
+                    guard !self.running else { throw InstallerError.localized("Close Glyphs to continue Beztrace setup.") }
+                }
+                let result = try await self.optionalCommand(action: action, tool: id)
+                let response = try JSONDecoder().decode(OptionalResponse<OptionalToolState>.self, from: result.stdoutData)
+                guard response.ok, let state = response.data, state.id == id else {
+                    throw InstallerError.localized("Could not inspect optional tools.")
+                }
+                self.optionalStates[id] = state
                 self.record("Optional tool \(id): \(action) completed; native loading remains unverified.")
-            } catch { self.optionalErrors[id] = error.presentationDescription(); self.record("Optional tool \(id): \(error.localizedDescription)") }
+            } catch {
+                self.optionalErrors[id] = error.presentationDescription()
+                self.record("Optional tool \(id): \(error.localizedDescription)")
+            }
             self.optionalOperation = nil
             self.optionalTask = nil
-            self.refreshOptionalTools()
+            if self.optionalErrors[id] != nil { self.refreshOptionalTools() }
         }
     }
 
@@ -665,8 +692,9 @@ final class InstallerViewModel: ObservableObject {
         let catalog = payload.payloadDir.appendingPathComponent("Installer/optional-tools.json")
         var arguments = ["-I", "-B", helper.path, "--catalog", catalog.path, "--action", action]
         if let tool { arguments += ["--tool", tool] }
-        if tool == "beztrace-glyphs", let resources = Bundle.main.resourceURL {
-            arguments += ["--engine", resources.appendingPathComponent("Beztrace/beztrace-0.2.1").path]
+        let companion = ExternalGlyphsCompanion.beztrace
+        if tool == companion.id, let resources = Bundle.main.resourceURL {
+            arguments += ["--engine", resources.appendingPathComponent("Beztrace/beztrace-\(companion.engineVersion)").path]
         }
         let result = try await runner.runCapturing(executable: python, args: arguments, timeout: 600, maximumStandardOutputBytes: 1024 * 1024)
         guard result.exitCode == 0 else {

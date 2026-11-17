@@ -26,10 +26,12 @@ signing and acceptance evidence retains its original build scope. See
 limitation and Rosetta-only Intel coverage. Prior 2.1.0 assets remain available.
 The native installer keeps installation on **Setup**. It offers Glyphs MCP,
 Curve Inspector and Reference Inspector plus Codex, Claude Code, Claude Desktop
-and Cursor connections. **Install All** reconciles every item; each card also
-supports independent install, update, removal and retry. Setup also lists the
-optional managed Beztrace card. Managed Beztrace setup is qualified on Apple Silicon with macOS 26.6.2 or later;
-Diffenator is deferred beyond 2.3.0 and is not offered in Setup. Beztrace is excluded from Install All. One serialized queue
+and Cursor connections. **Install All** reconciles these components and connections.
+Each card also supports independent install, update, removal and retry.
+Under **Companion Plugins → Optional plugins**, **Set up Beztrace…** installs
+the plugin and its engine together. Reopen Glyphs and choose **Path → Beztrace…**
+to start tracing. Managed Beztrace setup supports Apple silicon on macOS 26.6.2
+or later. One serialized queue
 runs an atomic component transaction before configuring connectors. Existing
 authentication and unrelated client configuration are preserved.
 Existing modified or unowned skills are kept in place and reported as

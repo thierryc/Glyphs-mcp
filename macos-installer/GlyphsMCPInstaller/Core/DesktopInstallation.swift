@@ -222,20 +222,17 @@ public struct ExternalGlyphsCompanion: Identifiable {
     public let id: String
     public let title: String
     public let detail: String
-    public let versionLabel: String
-    public let availability: String
-    public let requirements: String
+    public let engineVersion: String
+    public let minimumGlyphsBuild: Int
     public let documentation: URL
     public let engineRelease: URL
 
     public static let beztrace = ExternalGlyphsCompanion(
         id: "beztrace-glyphs", title: "Beztrace",
-        detail: "Trace images and match master outlines in Glyphs.",
-        versionLabel: "Bundled engine 0.2.1 · Companion 0.2.0 build 25",
-        availability: "Qualified companion · Build 25 · Apple Silicon",
-        requirements: "Managed setup: Apple Silicon and macOS 26.6.2 or later. Requires Glyphs 4.1 (build 4107 or later) and Python 3.9 or later in Glyphs. The app includes the beztrace 0.2.1 stable engine. Native companion testing covers Glyphs 4.2 build 4202.",
-        documentation: URL(string: "https://github.com/thierryc/beztrace/blob/217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054/Companions/Glyphs/README.md")!,
-        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases/tag/v0.2.1")!
+        detail: "Trace images into editable outlines and match outlines across font masters.",
+        engineVersion: "0.2.2", minimumGlyphsBuild: 4107,
+        documentation: URL(string: "https://thierryc.github.io/Glyphs-mcp/docs/v2/workflows/beztrace")!,
+        engineRelease: URL(string: "https://github.com/thierryc/beztrace/releases/tag/v0.2.2")!
     )
 }
 

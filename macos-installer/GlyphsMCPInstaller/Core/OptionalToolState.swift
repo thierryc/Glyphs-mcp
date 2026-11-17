@@ -10,6 +10,15 @@ public struct OptionalToolState: Decodable, Identifiable {
     public let version: String?
     public let build: String?
     public let loadedVerified: Bool?
+    public let updateAvailable: Bool?
+    public let installedAt: Double?
+    public let engineStatus: EngineStatus?
+
+    public enum EngineStatus: String, Decodable {
+        case managed, custom, manual, repair
+        case invalidSettings = "invalid_settings"
+        case missingCustom = "missing_custom"
+    }
 
     public var protectedInstallation: Bool {
         state == "unmanaged" || state == "development_link" || state == "conflict"

@@ -26,7 +26,7 @@ it detects the app or IDE. Bundled component cards also support independent inst
 update, removal and retry. Upgrades preserve ports, startup settings and
 unrelated agent configuration.
 
-Setup offers **Beztrace** engine 0.2.1 and companion 0.2.0/build 25 for Apple Silicon on macOS 26.6.2 or later. Choose the engine manually in Beztrace; independent installations, engines and settings are protected. Beztrace stays outside Install All. See [Beztrace setup](content/workflows/beztrace.mdx).
+Under **Companion Plugins → Optional plugins**, choose **Set up Beztrace…** to install the plugin and its engine together. Reopen Glyphs and choose **Path → Beztrace…** to start tracing. Managed setup supports Apple silicon on macOS 26.6.2 or later. See [Install and use Beztrace](content/workflows/beztrace.mdx).
 
 Diffenator is deferred to a future release and removed from Setup. No Diffenator runtime is distributed in 2.3.0.
 

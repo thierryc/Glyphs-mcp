@@ -1,0 +1,218 @@
+{
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "artifacts": [
+    {
+      "notarized": true,
+      "path": "beztrace-0.2.2-macos-universal.zip",
+      "sha256": "d606d95a70afb17496ce136056a8677a23e7d0f36bfed20c9803d2a455d91c14",
+      "signed": true,
+      "size": 4006880
+    },
+    {
+      "notarized": true,
+      "path": "beztrace-0.2.2.pkg",
+      "sha256": "085ff3ac1906a5fc154bdd247573bf673fcbc2dae2dbfcce2605c7a85a0f092c",
+      "signed": true,
+      "size": 3891160
+    }
+  ],
+  "executionEvidence": {
+    "arm64": "native tested",
+    "nativeIntel": "untested; owner-waived, qualification deferred until hardware is available",
+    "x86_64": "Rosetta tested"
+  },
+  "historicalEvidence": {
+    "priorRelease": "v0.2.1",
+    "scope": "Unchanged engine robustness and viability evidence retains its original version and source; not rerun or relabeled"
+  },
+  "installedQualification": {
+    "architecture": "arm64",
+    "binarySHA256": "90a5f11cc5743d5b9cb4422720583357eb3bd59503eac80f56a3670ba8222073",
+    "gatekeeperEnabled": true,
+    "os": "14.6.1",
+    "ownedRemoval": true,
+    "pairExamples": 3,
+    "receiptSHA256": "f67218580456addd17c63d10e24d499fc087a9911f2f2548be7d726622a28bdd",
+    "reinstall": true,
+    "rollbackTo021": true,
+    "standaloneJSONSVG": true,
+    "stapledInstallerValid": true,
+    "status": "pass"
+  },
+  "localChecks": {
+    "addressSanitizer": "pass",
+    "commands": 27,
+    "companionTests": 188,
+    "intentionalSkipsPerArchitecture": 2,
+    "pairArm64Rosetta": "byte-identical",
+    "pairJobs": 18,
+    "sourceReceiptSHA256": "ec86114adc263bf869fd7e927d1294b891d82aee94efd00bcb8f23fbb984d6f5",
+    "swiftTestsPerArchitecture": 194
+  },
+  "minimumMacOS": "13.0",
+  "performance": {
+    "initialUnderLoadRun": "signed-performance.json retained; failed timing gate; repeated after VM paused",
+    "qualifiedRun": "signed-performance-quiescent.json",
+    "rows": [
+      {
+        "coreMedianRatio": 0.2403372076433121,
+        "coreP95Ratio": 0.23633926380368098,
+        "id": "glyph-upper-r-generated",
+        "peakRSSBytes": 29949952,
+        "processP95Ms": 395.646584
+      },
+      {
+        "coreMedianRatio": 0.2698049422980432,
+        "coreP95Ratio": 0.39883381424446585,
+        "id": "glyph-upper-o",
+        "peakRSSBytes": 23904256,
+        "processP95Ms": 425.181
+      },
+      {
+        "coreMedianRatio": 0.2830990002602134,
+        "coreP95Ratio": 0.4054862470345539,
+        "id": "glyph-8",
+        "peakRSSBytes": 27754496,
+        "processP95Ms": 794.583583
+      },
+      {
+        "coreMedianRatio": 0.21835688576898532,
+        "coreP95Ratio": 0.21972059968847352,
+        "id": "glyph-upper-s-generated",
+        "peakRSSBytes": 29540352,
+        "processP95Ms": 715.71025
+      },
+      {
+        "coreMedianRatio": 0.20372822222222223,
+        "coreP95Ratio": 0.20179640441661173,
+        "id": "symbol-heart",
+        "peakRSSBytes": 25100288,
+        "processP95Ms": 623.276666
+      }
+    ],
+    "rustBaselineRevision": "23073ca08ecdac61ad0e838bfae49a590bc2c7cc",
+    "status": "pass"
+  },
+  "product": "beztrace",
+  "qualificationStage": "Completed before publication; remote and anonymous asset verification recorded separately",
+  "qualifiedRuntime": true,
+  "schemaVersion": 1,
+  "smoothing": {
+    "cases": [
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "kink-mild-0.5-hybrid-swift-greedy",
+        "outcome": "refused",
+        "requestSHA256": "76e33905111529a4c29dcaa49c48f1a61268399182fbcbb3b9e08a1a905427c7",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "kink-mild-1.0-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "5ce2e387c5a9964e375a583a0e4b05985db53453173e61ce3328177409029346",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "kink-mild-2.0-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "ca0cd1a2aa5e44c012856ea9b6b0cffee00c2dd245579d9f41307872e8e85e24",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "kink-strong-0.5-hybrid-swift-greedy",
+        "outcome": "refused",
+        "requestSHA256": "e14eaefd3f6692746f2c9dd8353cb97c87073b8fa19f411972d73a40b2ebea7f",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "kink-strong-1.0-hybrid-swift-greedy",
+        "outcome": "refused",
+        "requestSHA256": "026601c74b5c99386c0f9e7c37e255d597228ee71c24d9f3cfd0123d9f245989",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "kink-strong-2.0-hybrid-swift-greedy",
+        "outcome": "refused",
+        "requestSHA256": "2a13324b9fd716862f4015dfee228d5c921e1aacd88582042fcf008e1186e7fe",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "pair-R-0.5-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "d8b21f22d95265dd65a061af9c7419efe60f934dcd85812d212263fe54cf37e7",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "pair-R-1.0-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "0bae76358e74b327832d6ff402d5a3bcf9343c82ade2b8ea37c304249b7db16a",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "pair-R-2.0-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "e40ab5493088c436061be4964fe0e4b100ccd1062f7859874fde4385b2de9734",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "pair-Y-0.5-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "96435133d83d6ea5a6153fedadb8040bb701d59a1fb70be0d95a13eb2463e248",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "pair-Y-1.0-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "6319aa24ad9429a15e4e3d4c033d6801be079de90410ab4198f83b41c02cdca7",
+        "status": "pass"
+      },
+      {
+        "architecturesByteIdentical": true,
+        "geometryAndReportMatch021": true,
+        "id": "pair-Y-2.0-hybrid-swift-greedy",
+        "outcome": "accepted",
+        "requestSHA256": "0017a86d85e39d88a6c56d8e33ca1c6f96dd2eed25644f1c3be4efdd0c83fcda",
+        "status": "pass"
+      }
+    ],
+    "engineSHA256": "90a5f11cc5743d5b9cb4422720583357eb3bd59503eac80f56a3670ba8222073",
+    "nativeIntel": "untested; owner-waived",
+    "onlyNormalizedField": "engineVersion: 0.2.2 -> 0.2.1 for prior-release comparison",
+    "sourceRevision": "64c9c47456b0bd671f1e129f75dbc9da8b602a6f",
+    "status": "pass",
+    "version": "0.2.2",
+    "x86_64": "Rosetta"
+  },
+  "sourceBinding": {
+    "onlyEngineChange": "0.2.1 to 0.2.2 version identity",
+    "productionSwiftFiles": 67,
+    "receiptSHA256": "daf72efaed1741093bbae0cda56004d0aba15f3f8200738b306644e1641198a4"
+  },
+  "sourceClean": true,
+  "sourceRevision": "64c9c47456b0bd671f1e129f75dbc9da8b602a6f",
+  "version": "0.2.2"
+}

@@ -1,6 +1,19 @@
 # Changelog
 
-## Engine 0.2.1 / companion 0.2.0 — preparation, not yet published
+## Engine 0.2.2 / companion 0.2.1 build 26 — preparation
+
+- Retain macOS 13+ universal arm64/x86_64 engine and companion distributions.
+- Add persistent companion engine selection using the shared v1 settings file;
+  explicit user selection takes priority over managed selection and defaults.
+- Preserve managed/unknown settings when selecting an engine; refuse malformed,
+  oversized, symlinked or concurrently changed configuration. Never install,
+  update or replace an executable during selection.
+- Add exact engine 0.2.2 compatibility and correct the companion About identity.
+- Keep tracing, matching, fitting, smoothing and neutral contracts unchanged.
+- Defer native Intel qualification under the owner's 2026-10-20 instruction;
+  retain universal inspection, arm64 and separate x86_64/Rosetta checks.
+
+## Engine 0.2.1 / companion 0.2.0 — 2026-10-18
 
 - Retain standalone matching of two images, image to reference, and two outlines.
 - Add independently verified Levien-first fitting with refined least-squares fallback.
@@ -10,8 +23,15 @@
   growth, explicit correspondence, native HOI opt-in and hint-preserving application.
 - Retain schema v1 and pathDataVersion 2; add exact engine 0.2.0/0.2.1 compatibility in
   companion build 25 while retaining earlier supported engine versions.
-- Stage local universal packages; clean-source/native acceptance, signed and
-  notarized distribution, installation and publication remain separate gates.
+- Normalize native getter-backed metadata and preserve custom hint userData
+  through Apply and recovery on Glyphs 4.2.
+- Reproduce both unsigned universal archives from clean frozen source; pass all
+  27 local source checks and installed native acceptance on Apple Silicon / Glyphs
+  4.2 build 4202, including Undo/Redo, fresh-file exchange and 603 compiled
+  interpolation checks. The same 12 smoothing jobs retain geometry and bounds.
+- Publish the separately signed/notarized universal engine and companion after
+  signed installation/lifecycle and exact native UI Undo/Redo verification.
+  Native Intel remains untested and explicitly owner-waived for these versions.
 
 ## 0.2.0 — 2026-10-12
 
@@ -95,5 +115,3 @@ First standalone release.
 
 Glyphs.app and Glyphs MCP integration are deliberately not included. They are
 future consumers of the neutral JSON contract.
-
-Native qualification correction (build 25): evaluate native metadata getters, preserve custom hint user data across native copies and recovery, and prepare detached hint copies before attachment. Native hinted Undo remains under qualification.

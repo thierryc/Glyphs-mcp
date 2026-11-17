@@ -1,52 +1,65 @@
 ---
-title: Beztrace companion setup
+title: Install and use Beztrace in Glyphs
 ---
 
-## Current engine and companion
+Beztrace turns images into editable outlines and matches outlines across font
+masters. Glyphs MCP installs the Glyphs plugin and connects it to the included
+tracing engine in one setup flow. After reopening Glyphs, the plugin uses that
+engine automatically.
 
-The 2.3.0 source catalog pins [Beztrace engine 0.2.1](https://github.com/thierryc/beztrace/releases/tag/v0.2.1)
-and the independent [Glyphs companion 0.2.0/build 25](https://github.com/thierryc/beztrace/releases/tag/glyphs-v0.2.0).
-Both are universal, Developer ID-signed and Apple-notarized upstream releases.
-The app bundles engine 0.2.1; the optional companion is downloaded with its pinned
-archive checksum and file inventory. Previously built apps retain their bundled catalog.
+## Install Beztrace
 
-**Setup → Companion Plugins → Beztrace** offers Install, Update, Uninstall and
-Retry. **Install All excludes Beztrace**. The managed catalog remains limited to
-Apple Silicon with macOS 26.6.2 or later. The companion requires Glyphs 4.1/build
-4107 or later and Glyphs Python 3.9 or later; upstream native qualification covers
-Glyphs 4.2/build 4202 on Apple Silicon. Native Intel execution remains untested.
+1. In **Glyphs MCP**, select **Companion Plugins** in the sidebar. Under **Optional
+   plugins**, find **Beztrace** and choose **Set up Beztrace…**.
+2. Follow the prompts for Glyphs Python and close Glyphs if it is open. Save any
+   open fonts when Glyphs prompts you.
+3. Choose **Install Beztrace**, then **Open Glyphs** when setup finishes.
 
-Build 25 uses manual engine selection. It does not implement the persistent
-`engine-settings-v1.json` handoff supplied by the older MCP build-16 overlay.
-Setup provisions engine 0.2.1 in a versioned user Application Support directory,
-leaves previous engines and settings intact, and does not modify the published
-companion bundle. Removal preserves shared engines and user settings. Existing
-independent installations, modified plugins and development links are preserved.
+Beztrace is a separate choice from **Install All**. Managed setup requires an
+Apple silicon Mac with macOS 26.6.2 or later, Glyphs 4.1 (build 4107 or later),
+and Glyphs Python 3.9 or later. Beztrace runs inside Glyphs independently of the
+MCP server.
 
-## Set up the matching pair
+## Trace your first image
 
-1. Close Glyphs before using managed Install or Update. Save your work before
-   closing; reopen Glyphs after installation to load the companion.
-2. Open **Path → Beztrace…** or **Path → Beztrace Match Masters…**. Both open the
-   four-mode dialog. In **Additional actions… → Choose engine…**, select:
+1. Open a glyph in Edit view and choose **Path → Beztrace…**.
+2. Select an image and click **Update Preview**. Adjust the settings and inspect
+   the outline.
+3. Click **Apply to Layer** when you want to add the outline to the glyph.
+   Preview leaves the font untouched. Apply updates the open font, which you
+   can save in Glyphs when ready.
 
-   `~/Library/Application Support/beztrace/engines/0.2.1/bin/beztrace`
+For master matching, choose **Path → Beztrace Match Masters…**. See the
+[Beztrace guide](https://github.com/thierryc/beztrace/blob/3294e200d18c502b4d3b36d1ec48e3a6809ea1e4/Companions/Glyphs/README.md)
+for the four available modes and their inputs.
 
-   Repeat engine selection when reopening the panel. The companion otherwise
-   defaults to `/Library/Application Support/beztrace/bin/beztrace`, which may be
-   an older independent installation. Verify engine **0.2.1** before using the
-   new matching and smoothing behavior.
-3. Choose Single image, Images → masters, Image → path, or Paths → masters.
-   Supply the images or master outlines required by the selected mode and adjust
-   the sidebar settings. Click **Update Preview**, inspect the result, then
-   **Apply to Layer** or **Apply to Masters**. Preview preparation makes no font
-   edits; applying does not save the font.
-4. Verify the result and native Undo/Redo on a disposable font before production
-   work. Native recovery is separate from MCP typed-job rollback.
+## Updates and existing installations
 
-The plugin works independently of the MCP server. Refer to the
-[pinned build-25 guide](https://github.com/thierryc/beztrace/blob/217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054/Companions/Glyphs/README.md)
-and [upstream qualification receipt](https://github.com/thierryc/beztrace/releases/download/glyphs-v0.2.0/qualification.json)
-for the tested scope, node/hint preservation and smoothing limits. This catalog
-update does not establish new native font-workflow qualification or update an
-already installed MCP app.
+- **Update Beztrace…** upgrades a Glyphs MCP-managed copy and connects it to the
+  new included engine. This also updates managed copies that previously
+  required manual engine selection.
+- **Check existing setup…** appears when Glyphs MCP finds a separately installed,
+  modified, or development copy. Check the **Path** menu in Glyphs to use it.
+  Keep a backup outside the Plugins folder if you choose to remove it yourself
+  before switching to the Glyphs MCP-managed copy.
+- **Remove Beztrace…** removes a managed plugin and its managed engine setting.
+  Engine files and personal choices are kept.
+
+The current catalog pairs the signed
+[Beztrace plugin 0.2.2, build 27](https://github.com/thierryc/beztrace/releases/tag/glyphs-v0.2.2)
+with the signed [Beztrace engine 0.2.2](https://github.com/thierryc/beztrace/releases/tag/v0.2.2).
+Each desktop release uses the catalog that shipped with it.
+
+## Troubleshoot engine settings
+
+A previously saved custom engine takes priority over the included one. If that
+engine is missing, restore it or use **Additional actions… → Choose engine…**
+in Beztrace to pick a working engine. To return to the managed default, close
+Glyphs, back up
+`~/Library/Application Support/beztrace/engine-settings-v1.json`,
+and remove the `userEngine` entry while keeping the rest of the JSON. Reopen
+Glyphs and try a preview again.
+
+If the settings file is unreadable, close Glyphs and move it aside as a backup.
+Then choose **Repair Beztrace** from the Beztrace setup sheet to recreate the
+managed setting.

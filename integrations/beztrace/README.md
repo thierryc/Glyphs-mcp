@@ -1,10 +1,19 @@
-# Historical persistent Beztrace engine handoff — build 16
+# Beztrace managed installation
 
-The current catalog uses the unmodified upstream companion **0.2.0/build 25**
-with engine **0.2.1**. Its manifest and qualification receipt are preserved in
-`upstream-build25-manifest.json` and `upstream-build25-qualification.json`. Build 25
-requires manual engine selection; this historical overlay is not applied to it.
-See [current setup](../../content/workflows/beztrace.mdx).
+The catalog pairs the published, unmodified companion **0.2.2/build 27** with
+the bundled published engine **0.2.2**. The installer verifies the companion's
+download and writes its managed engine selection in the same transaction as
+the plugin and engine. The companion reads that selection on each new panel
+and gives any explicit user choice priority.
+
+The [build-27 manifest](upstream-build27-manifest.json) and
+[upstream qualification](upstream-build27-qualification.json) bind the companion
+to its signed release archive. The engine's independent source, archive, and
+qualification are recorded alongside the embedded engine. Managed availability
+remains Apple silicon on macOS 26.6.2 or later. See the
+[current setup guide](../../content/workflows/beztrace.mdx).
+
+## Historical persistent engine handoff, build 16
 
 This overlay targets companion source dbd7a696afda9a215c8e8a4aa42315cd799116f9
 (build 15). SOURCE.json binds its original files. It changes no separate checkout,

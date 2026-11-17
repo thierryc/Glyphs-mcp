@@ -1,5 +1,5 @@
 {
-  "version": "0.2.1",
+  "version": "0.2.2",
   "architectures": [
     "arm64",
     "x86_64"
@@ -7,24 +7,24 @@
   "minimumMacOS": "13.0",
   "schemaVersion": 1,
   "pathDataVersion": 2,
-  "sourceRevision": "217dcc0aad50a4c4a6b7e8c65e6bacc0931e2054",
+  "sourceRevision": "64c9c47456b0bd671f1e129f75dbc9da8b602a6f",
   "sourceTreeDirty": false,
   "developerIDSigning": "upstream-developer-id",
   "notarization": "upstream-accepted",
   "upstreamRelease": {
-    "releaseURL": "https://github.com/thierryc/beztrace/releases/tag/v0.2.1",
-    "archiveURL": "https://github.com/thierryc/beztrace/releases/download/v0.2.1/beztrace-0.2.1-macos-universal.zip",
-    "archiveSHA256": "d4514513aa0da6b39991234fc9caeb9c0bf717dc8b3bcc0c9fd08c87df2b7776",
-    "manifestSHA256": "440d707b8ca7c3b30378a3eb56044b6443046910cc5e59b1bd9b9ff29bbf56b2",
-    "executableSHA256": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9",
-    "qualificationSHA256": "84a5df9e4dbd8dbc328677109629cd947e29456a67716bd3a6dbba1d7ed18508"
+    "releaseURL": "https://github.com/thierryc/beztrace/releases/tag/v0.2.2",
+    "archiveURL": "https://github.com/thierryc/beztrace/releases/download/v0.2.2/beztrace-0.2.2-macos-universal.zip",
+    "archiveSHA256": "d606d95a70afb17496ce136056a8677a23e7d0f36bfed20c9803d2a455d91c14",
+    "manifestSHA256": "cf4259b0a71f463051e6bca8d1ec342563c5ddea6e35fa2edea591a39c578236",
+    "executableSHA256": "90a5f11cc5743d5b9cb4422720583357eb3bd59503eac80f56a3670ba8222073",
+    "qualificationSHA256": "40fdff8887fd91bbb58d56ea4af5b263b5473d478284f91fcb0bee03160b4615"
   },
   "files": {
-    "bin/beztrace": "19901234ed46caba842d41b08080d06f4175fb5287f280c732b2207cd5ce06a9",
-    "share/CHANGELOG.md": "2be812b0952f602b832eae6bac48f5622b8be34bdcb50fbb71e7744caa2d4f59",
+    "bin/beztrace": "90a5f11cc5743d5b9cb4422720583357eb3bd59503eac80f56a3670ba8222073",
+    "share/CHANGELOG.md": "e8e8b206ef97470608f109cda3bcbcf209b0a9cf7ff8cda8a56f244fdaaa8875",
     "share/LICENSE-APACHE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
     "share/LICENSE-MIT": "59089b8a33e7baa1dfd38901bc3dd25bc32d5550a1f47c8081d743beb0c799bb",
-    "share/README.md": "0d9d62007652f5723923ff733330fbe0f2267d079b6213ca458fd3d92b16ec21",
+    "share/README.md": "0f2f13403232abff09ee1c3b62fcc6ef5305449d85855ce622ac153e58fc1fbe",
     "share/THIRD_PARTY_NOTICES": "739edf36c8911a22c3a6bc90960b8c0068319b34a517d68791ba8c427d48ee64",
     "share/joint-smoothing-request-v1.schema.json": "10b29a1be06a725e208e7fb154443b7fbfbd8cc40513c996611fbe88654fe15d",
     "share/joint-smoothing-result-v1.schema.json": "8b9771bf2f3c718120cc7980b57541b8f9fb99def98daa1d45463e06dd8a42a9",
@@ -38,11 +38,11 @@
     "share/raster-match-request-v1.schema.json": "9b349de0e460ca5638973fc7dc1846030cd2a5205aff63831aa36c11a9d6f8bd",
     "share/raster-plan-v1.schema.json": "5e21db54c5084d0f56e2f6d81795eb7ae7d8829babb0bd8961ade1bcfaeca895",
     "share/release-manifest-v1.schema.json": "a3838cf90031e5681be1506b3cd140daaa247d2b2507f64f09dcce1dfe0cfec0",
-    "share/sbom-binary.spdx.json": "756366852837526eaa4075f8a1c901411fdd6a52e69e638611a8633be7cfd0f3",
-    "share/sbom-source.spdx.json": "9b230bf744778d4f6412980fa768fc8de3f2b9c52ea3442187eaa40abb0c858b",
+    "share/sbom-binary.spdx.json": "c889cda66da56c45ab33552e89f190924e62b08028049a8b313294ef4c40f0c6",
+    "share/sbom-source.spdx.json": "d4e2ac30a34f6329cdd008a25a4a9706389ce00a7f26867b0ccb83f6d8080cfe",
     "share/trace-result-v1.schema.json": "b05b8cea12a25287ffb388ac813c2cc29b1982aa5aeb5a7281ea9f6a79d331be",
-    "upstream-SHA256SUMS": "04c85fc2f37ddee77182293138e1ef086dff2a1e4a367faf174dd5efd6934b2c",
-    "upstream-qualification.json": "84a5df9e4dbd8dbc328677109629cd947e29456a67716bd3a6dbba1d7ed18508",
-    "upstream-release-manifest.json": "440d707b8ca7c3b30378a3eb56044b6443046910cc5e59b1bd9b9ff29bbf56b2"
+    "upstream-SHA256SUMS": "86f0e553645ae0d10e2157e88afd5b944a6da3d4f9cddfc45eff988d1f7c9b49",
+    "upstream-qualification.json": "40fdff8887fd91bbb58d56ea4af5b263b5473d478284f91fcb0bee03160b4615",
+    "upstream-release-manifest.json": "cf4259b0a71f463051e6bca8d1ec342563c5ddea6e35fa2edea591a39c578236"
   }
 }

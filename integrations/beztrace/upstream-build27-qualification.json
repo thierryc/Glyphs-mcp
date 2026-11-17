@@ -1,0 +1,183 @@
+{
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "artifact": {
+    "format": "zip",
+    "notarization": {
+      "status": "accepted-verified"
+    },
+    "path": "beztrace-glyphs-0.2.2-build27-signed-macos-universal.zip",
+    "sha256": "376b7a2f424f12d5d6b015712085f18d9836b5e84510c5e3b72e82bf702fae1c",
+    "signing": {
+      "status": "developer-id-verified",
+      "teamIdentifier": "N9U29A4T8J"
+    },
+    "size": 204265
+  },
+  "build": 27,
+  "excludedTrials": [
+    "The harness checked font count before asynchronous document close completed; a separate native event-loop check confirmed zero open fonts. Native Apply/Undo/Redo and save/reopen assertions had already passed."
+  ],
+  "layout": {
+    "allFourModes": true,
+    "basicAndExpandedSettings": true,
+    "installedGlyphsLayout": {
+      "build": 27,
+      "glyphsBuild": 4202,
+      "loadedPlugin": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Beztrace.glyphsPlugin/Contents/Resources/plugin.py",
+      "minimumInset": 8,
+      "python": "3.14.6 (v3.14.6:c63aec69bd5, Jun 10 2026, 08:07:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "rows": [
+        {
+          "clipWidth": 216.0,
+          "expanded": false,
+          "scroller": "overlay"
+        },
+        {
+          "clipWidth": 216.0,
+          "expanded": true,
+          "scroller": "overlay"
+        },
+        {
+          "clipWidth": 216.0,
+          "expanded": false,
+          "scroller": "legacy"
+        },
+        {
+          "clipWidth": 199.0,
+          "expanded": true,
+          "scroller": "legacy"
+        }
+      ],
+      "status": "pass",
+      "version": "0.2.2"
+    },
+    "isolatedLayoutCases": 16,
+    "nativeAppKitChecks": 23,
+    "overlayAndLegacyScrollbars": true,
+    "selectedBorderVisuallyComplete": true
+  },
+  "lifecycle": {
+    "finalPayloadSHA256": "d58a0386bc0b62cd1f51db13ef9947e760d95ff2c8a77a6ea6eb53c83932c8f4",
+    "ownedBuild26VerifiedAndPreserved": true,
+    "reinstalledNativeDialog": true,
+    "removedMenuAndModuleAbsent": true,
+    "rollbackNativeDialog": true,
+    "sharedEngineUnchanged": true,
+    "signedUpdate": true,
+    "status": "pass",
+    "taskMacroArchived": true
+  },
+  "limits": [
+    "Native Intel is untested, owner-waived until hardware is available; x86_64 execution is Rosetta evidence.",
+    "Native runtime scope: Glyphs4.2/build4202, official Python3.14.6, macOS26.7.1 arm64.",
+    "Glyphs file writer omits custom hint userData; live Apply/Undo/Redo preserves it.",
+    "Native HOI remains disabled and unqualified on build4202.",
+    "Glyphs MCP managed installer/catalog support is separate; independent or modified installations must be preserved."
+  ],
+  "localChecks": {
+    "addressSanitizer": true,
+    "companionTests": 188,
+    "intentionalSkipsPerArchitecture": 2,
+    "sourceCommands": 27,
+    "sourceReceiptSHA256": "d60fdb4bc60017e1e731fd7ba2c9dc0c472b97af89d6503bb5e6fea8d1496e46",
+    "status": "pass",
+    "swiftTestsPerArchitecture": 194
+  },
+  "minimumMacOS": "13.0",
+  "nativeAppleSilicon": true,
+  "nativeIntelOwnerWaived": true,
+  "nativeIntelTested": false,
+  "nativeSignedUI": {
+    "actualNativeUIApply": true,
+    "architecture": "arm64",
+    "focusBorderVisuallyComplete": true,
+    "glyphsBuild": 4202,
+    "macOS": "26.7.1",
+    "maximumStorageDeviation": 0.00042494923809499596,
+    "nodeStructureAndOnCurvesExact": true,
+    "python": "3.14.6 (v3.14.6:c63aec69bd5, Jun 10 2026, 08:07:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+    "redoExact": true,
+    "referenceExact": true,
+    "saveReopen": true,
+    "scope": "Only owned disposable QA font; custom hint userData save omission remains documented",
+    "sourceRevision": "3294e200d18c502b4d3b36d1ec48e3a6809ea1e4",
+    "status": "pass",
+    "undoExact": true,
+    "widthsAndLiveHintsExact": true
+  },
+  "nativeTestedBuilds": [
+    4202
+  ],
+  "notarization": {
+    "id": "e5a60738-d7c6-47a3-ab7d-d5ca6e96d741",
+    "message": "Processing complete",
+    "status": "Accepted"
+  },
+  "priorEvidence": {
+    "companion": "glyphs-v0.2.1",
+    "engine": "Existing signed/notarized engine v0.2.2 unchanged; no replacement artifacts",
+    "scope": "Geometry, image IO, staging, hints, recovery, engine-selection, contracts and transport modules are byte-identical. Earlier performance, variable export, neutral exchange and broader native receipts remain historical rather than relabeled."
+  },
+  "product": "beztrace-glyphs",
+  "qualificationStage": "Completed before publication; anonymous asset verification recorded separately",
+  "qualifiedRuntime": true,
+  "schemaVersion": 1,
+  "signedSourceBinding": {
+    "changedSigningFiles": [
+      "Contents/_CodeSignature/CodeResources",
+      "Contents/MacOS/plugin",
+      "Contents/Resources/sbom.spdx.json"
+    ],
+    "installedPayloadExact": true,
+    "pythonAndResourcesUnchanged": true,
+    "sourceRevision": "3294e200d18c502b4d3b36d1ec48e3a6809ea1e4",
+    "status": "pass",
+    "taskMacroArchived": true,
+    "temporarySettingsAbsentAsBefore": true
+  },
+  "sourceBinding": {
+    "changedCompanionModules": [
+      "matching_ui.py",
+      "ui.py"
+    ],
+    "engineProductionUnchanged": true,
+    "paddingSourceSHA256": "228269ac63853403a70c0eb625276ec3cc6324070ba44c112ab68e70ffad2ec4",
+    "sourceRevision": "3294e200d18c502b4d3b36d1ec48e3a6809ea1e4",
+    "unchangedCompanionModules": [
+      "__init__.py",
+      "adapter.py",
+      "api.py",
+      "canvas.py",
+      "contract.py",
+      "drawing.py",
+      "engine.py",
+      "engine_settings.py",
+      "hoi.py",
+      "hoi_geometry.py",
+      "image_io.py",
+      "inspector.py",
+      "matching.py",
+      "matching_contract.py",
+      "matching_hints.py",
+      "matching_native.py",
+      "matching_panel_state.py",
+      "matching_preview.py",
+      "matching_raster.py",
+      "native.py",
+      "placement.py",
+      "preview.py",
+      "session.py",
+      "settings.py"
+    ]
+  },
+  "sourceClean": true,
+  "sourceRevision": "3294e200d18c502b4d3b36d1ec48e3a6809ea1e4",
+  "unsignedReproducibility": {
+    "archiveSHA256": "301e840fe76fc681aa63f8ea295394c01e7256660fbe72e167bd1ea82d248cd9",
+    "status": "pass"
+  },
+  "version": "0.2.2"
+}

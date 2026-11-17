@@ -164,6 +164,7 @@ def beztrace_upgrade(tmp_path, monkeypatch):
         managedEngine=str(old_engine))))
     engine = tmp_path / 'engine'; (engine / 'bin').mkdir(parents=True)
     (engine / 'bin/beztrace').write_bytes(b'new engine')
+    (engine / 'bin/beztrace').chmod(0o755)
     (engine / 'integration-manifest.json').write_text(json.dumps(dict(
         version='0.2.1', files={'bin/beztrace': installer.checksum(engine / 'bin/beztrace')})))
     monkeypatch.setattr(installer.urllib.request, 'urlopen', lambda *a, **kw: io.BytesIO(archive.read_bytes()))
@@ -219,6 +220,59 @@ def test_beztrace_upgrade_refuses_invalid_engine_without_replacing_plugin(beztra
     assert tools.read_receipt('beztrace-glyphs') == before
     assert installer._identity(tools.target('beztrace-glyphs', before)) == before['identity']
     assert config.read_bytes() == settings
+
+
+@pytest.mark.parametrize('existing', ['fresh', 'legacy', 'custom'])
+def test_beztrace_persistent_install_provisions_engine_and_preserves_explicit_choice(beztrace_upgrade, existing):
+    tools, engine, config, old_engine = beztrace_upgrade
+    tool = 'beztrace-glyphs'
+    release = tools.catalog['tools'][tool]['releases']['arm64']
+    release['engineConfiguration'] = 'engine-settings-v1'
+    plugin = tools.target(tool, release)
+    if existing == 'fresh':
+        tools.receipt_path(tool).unlink()
+        import shutil
+        shutil.rmtree(plugin)
+        config.unlink()
+    elif existing == 'legacy':
+        config.write_text(json.dumps(dict(schemaVersion=1, managedEngine=str(old_engine), extra='preserve')))
+    else:
+        old_engine.chmod(0o755)
+        config.write_text(json.dumps(dict(schemaVersion=1, userEngine=str(old_engine), extra='preserve')))
+    state = tools.install(tool, engine)
+    _, target, _ = tools.engine_paths()
+    settings = json.loads(config.read_text())
+    assert state['state'] == 'installed'
+    assert state['installedAt'] > 0
+    assert state['updateAvailable'] is False
+    assert state['engineStatus'] == ('custom' if existing == 'custom' else 'managed')
+    assert settings['managedEngine'] == str(target / 'bin/beztrace')
+    if existing != 'fresh':
+        assert settings['extra'] == 'preserve'
+    module = engine_module()
+    assert module.selected_engine('/system/beztrace', tools.home) == (
+        str(old_engine) if existing == 'custom' else settings['managedEngine'])
+    if existing != 'custom':
+        config.write_text(json.dumps({key: value for key, value in settings.items() if key != 'managedEngine'}))
+        assert tools.status(tool)['engineStatus'] == 'repair'
+        tools.install(tool, engine)
+        assert tools.status(tool)['engineStatus'] == 'managed'
+    tools.remove(tool)
+    assert json.loads(config.read_text()) == {key: value for key, value in settings.items() if key != 'managedEngine'}
+    assert target.exists()
+
+
+@pytest.mark.parametrize('content', [b'"invalid"', b'{"schemaVersion": true}', b'{"schemaVersion":1,"userEngine":"relative"}', b' ' * 16385])
+def test_beztrace_persistent_install_preserves_invalid_settings(beztrace_upgrade, content):
+    tools, engine, config, _ = beztrace_upgrade
+    tool = 'beztrace-glyphs'
+    tools.catalog['tools'][tool]['releases']['arm64']['engineConfiguration'] = 'engine-settings-v1'
+    config.write_bytes(content)
+    before = tools.read_receipt(tool)
+    with pytest.raises(ValueError, match='Beztrace engine'):
+        tools.install(tool, engine)
+    assert tools.read_receipt(tool) == before
+    assert config.read_bytes() == content
 
 
 def engine_module():

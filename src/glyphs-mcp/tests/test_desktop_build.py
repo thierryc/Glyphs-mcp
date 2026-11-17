@@ -459,5 +459,5 @@ def test_diffenator_is_deferred_from_230_setup_and_distribution():
     assert catalog['status'] == 'deferred'
     assert not catalog.get('releases')
     view = (root / 'macos-installer/GlyphsMCPInstaller/Sources/InstallationView.swift').read_text()
-    assert 'OptionalToolSetupCard(id: "diffenator"' not in view
-    assert 'OptionalToolSetupCard(id: "beztrace-glyphs"' in view
+    assert 'diffenator' not in view.lower()
+    assert 'BeztraceSetupCard {' in view
