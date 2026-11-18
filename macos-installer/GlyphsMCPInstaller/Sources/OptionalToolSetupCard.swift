@@ -40,6 +40,7 @@ struct BeztraceSetupCard: View {
     private var active: Bool { installer.optionalOperation == companion.id }
     private var pairInstalled: Bool {
         guard let state, state.installed, !state.protectedInstallation, !installer.beztraceNeedsRestart(state) else { return false }
+        if state.engineConflictPath != nil && state.engineStatus != .custom { return false }
         return state.engineStatus == .managed || state.engineStatus == .custom
     }
 
@@ -48,6 +49,7 @@ struct BeztraceSetupCard: View {
         if installer.optionalErrors[companion.id] != nil || installer.optionalDiscoveryError != nil { return "Beztrace needs attention" }
         guard let state else { return "Checking Beztrace…" }
         if state.protectedInstallation { return "Existing Beztrace found" }
+        if state.engineConflictPath != nil && (!pairInstalled || state.updateAvailable == true) { return "Beztrace setup needs attention" }
         if state.updateAvailable == true { return "Beztrace update available" }
         if installer.beztraceNeedsRestart(state) { return "Reopen Glyphs to use Beztrace" }
         if pairInstalled { return installer.running ? "Installed" : "Open Glyphs to use Beztrace" }
@@ -57,6 +59,7 @@ struct BeztraceSetupCard: View {
 
     private var actionTitle: String {
         if state?.protectedInstallation == true { return "Check existing setup…" }
+        if state?.engineConflictPath != nil && (!pairInstalled || state?.updateAvailable == true) { return "Check existing setup…" }
         if state?.updateAvailable == true { return "Update Beztrace…" }
         if pairInstalled { return installer.running ? "Beztrace quick start…" : "Open Glyphs" }
         return "Set up Beztrace…"
@@ -132,6 +135,12 @@ struct BeztraceSetupView: View {
                     .disabled(installer.application == nil)
             } else if state.available == false && !state.installed {
                 Text(LocalizedStringKey(state.availabilityMessage ?? "Beztrace is unavailable on this Mac."))
+            } else if let path = state.engineConflictPath, state.engineStatus != .custom || state.updateAvailable == true {
+                Text("Move this engine folder to a backup location, then check again to continue Beztrace setup.")
+                Text(path).font(.caption.monospaced()).textSelection(.enabled)
+                DesktopActionButton(title: "Check again", action: installer.refreshOptionalTools)
+                    .disabled(installer.operationsBusy)
+                if state.installed { removeButton }
             } else if state.updateAvailable == true || !state.installed || state.engineStatus == .repair {
                 installStep(state)
             } else if state.engineStatus == .invalidSettings || state.engineStatus == .missingCustom || state.engineStatus == .manual {

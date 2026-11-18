@@ -1,0 +1,6 @@
+interface:
+  display_name: "Glyphs Switching Shapes"
+  short_description: "Configure and verify glyph shape switches in Glyphs 4"
+  default_prompt: "Use $glyphs-mcp-switching-shapes to inspect my font, resolve the switch boundaries, and verify the intended drawings in the requested exports."
+policy:
+  allow_implicit_invocation: true

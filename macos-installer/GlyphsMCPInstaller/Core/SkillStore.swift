@@ -97,7 +97,7 @@ public actor SkillStore {
                 let owner = String(repositoryURL.path.split(separator: "/")[0])
                 return CatalogSkill(id: "import:" + pathID(repositoryURL.path + "/" + skillSource.directory), name: metadata.name,
                     description: metadata.description, author: owner, license: "Not verified; review the source license",
-                    classification: .imported, source: skillSource, compatibleClients: SkillClient.allCases,
+                    classification: .imported, source: skillSource, compatibleClients: SkillClient.allCases.filter { $0 != .antigravity },
                     requirements: ["Client compatibility and dependencies are unverified. Review the complete skill before installing."],
                     displayName: try SkillMetadata.displayName(in: package))
             }

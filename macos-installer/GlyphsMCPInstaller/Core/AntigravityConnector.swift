@@ -19,7 +19,7 @@ public struct AntigravityConnector {
     }
 
     public enum SkillsStatus: Equatable {
-        case notChecked, missing, partial, available, conflict
+        case notChecked, missing, partial, available, updateAvailable, conflict
 
         public var label: String {
             switch self {
@@ -27,6 +27,7 @@ public struct AntigravityConnector {
             case .missing: return "Missing"
             case .partial: return "Partially installed"
             case .available: return "Available"
+            case .updateAvailable: return "Update available"
             case .conflict: return "Needs review"
             }
         }
@@ -45,7 +46,7 @@ public struct AntigravityConnector {
     }
 
     public var configURL: URL { home.appendingPathComponent(".gemini/config/mcp_config.json") }
-    public var skillsURL: URL { home.appendingPathComponent(".gemini/config/skills", isDirectory: true) }
+    public var skillsURL: URL { home.appendingPathComponent(SkillPlacement.antigravity.rawValue, isDirectory: true) }
     private var legacyConfigURL: URL { home.appendingPathComponent(".gemini/antigravity/mcp_config.json") }
 
     public func connectionStatus() -> ConnectionStatus {
@@ -114,15 +115,37 @@ public struct AntigravityConnector {
             try validateSkillsLocation()
             guard try attributesIfPresent(skillsURL) != nil else { return .missing }
             guard let sources = payload?.managedSkillDirectories(), !sources.isEmpty else { return .notChecked }
-            let expected = sources.map(\.lastPathComponent).filter {
-                includeDevelopmentSkills || !AgentSkillBundleInstaller.developmentSkillNames.contains($0)
+            let receipts: [String: String]
+            if try attributesIfPresent(skillReceiptURL) != nil {
+                receipts = try JSONDecoder().decode([String: String].self, from: Data(contentsOf: skillReceiptURL))
+            } else {
+                receipts = [:]
             }
-            let available = expected.filter { name in
-                let descriptor = skillsURL.appendingPathComponent(name).appendingPathComponent("SKILL.md")
-                return FileManager.default.isReadableFile(atPath: descriptor.path)
+            let direct = SupplementalSkillInstaller(home: home)
+            var available = 0
+            var missing = false
+            var updateAvailable = false
+            for source in sources {
+                let name = source.lastPathComponent
+                if !includeDevelopmentSkills && AgentSkillBundleInstaller.developmentSkillNames.contains(name) { continue }
+                if try direct.hasDirectChoice(name, root: skillsURL) { continue }
+                let destination = skillsURL.appendingPathComponent(name)
+                let descriptor = destination.appendingPathComponent("SKILL.md")
+                guard FileManager.default.isReadableFile(atPath: descriptor.path) else {
+                    missing = true
+                    continue
+                }
+                available += 1
+                if let owned = receipts[name],
+                   (try? attributesIfPresent(destination)?[.type] as? FileAttributeType) == .typeDirectory,
+                   (try? InstallerPayloadManifestResolver.treeIdentity(destination)) == owned,
+                   let bundled = try? InstallerPayloadManifestResolver.treeIdentity(source),
+                   bundled != owned {
+                    updateAvailable = true
+                }
             }
-            if available.isEmpty { return .missing }
-            return available.count == expected.count ? .available : .partial
+            if missing { return available == 0 ? .missing : .partial }
+            return updateAvailable ? .updateAvailable : .available
         } catch {
             return .conflict
         }

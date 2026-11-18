@@ -80,6 +80,37 @@ final class SkillCatalogTests: XCTestCase {
         XCTAssertTrue(scan().updateIDs.isEmpty)
     }
 
+    func testAntigravitySetupCopyAppearsInOverviewAndCanUpdateIndividually() throws {
+        let entry = canonicalSkill(bundled: true)
+        let connector = AntigravityConnector(home: temporary)
+        let source = try writeBundled(entry, "Original")
+        let skillsDir = source.deletingLastPathComponent()
+        let manifest = #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs-mcp-path-doctor","surface":"glyphs-mcp-v2"}]}"#
+        try Data(manifest.utf8).write(to: skillsDir.appendingPathComponent("manifest.json"))
+        let payload = InstallerPayload(payloadDir: temporary, pluginBundle: temporary.appendingPathComponent("plugin"),
+                                       requirementsTxt: temporary.appendingPathComponent("requirements.txt"), skillsDir: skillsDir)
+        let service = SupplementalSkillInstaller(home: temporary, bundledNames: [entry.name])
+        try connector.installSkills(from: payload, includeDevelopmentSkills: true, log: { _ in })
+        let outdated = try XCTUnwrap(service.scopeStatus(entry).managedCopies(for: .antigravity).first)
+        XCTAssertEqual(outdated.root, connector.skillsURL)
+        XCTAssertEqual(outdated.status.state, .installed)
+        XCTAssertFalse(service.scopeStatus(entry, project: temporary.appendingPathComponent("project")).agents.contains(.antigravity))
+        XCTAssertFalse(service.scopeStatus(skill()).agents.contains(.antigravity))
+
+        _ = try writeBundled(entry, "Updated")
+        let packages = BundledSkillPackages(skills: [entry], directories: [source]).versions
+        func overview() -> SkillOverview {
+            SkillOverview(skills: [entry], installer: service, packages: packages, projectRoots: [:])
+        }
+        XCTAssertEqual(overview().updateIDs, [entry.id])
+        let target = try XCTUnwrap(overview().global[entry.id]?.editableCopies.first)
+        XCTAssertEqual(target.status.state, .updateAvailable)
+        XCTAssertTrue(service.apply(.update, to: [target], skill: entry, files: bundledFiles(entry, "Updated"),
+                                    package: packages[entry.id], forAgent: .antigravity).failures.isEmpty)
+        XCTAssertTrue(overview().updateIDs.isEmpty)
+        XCTAssertEqual(connector.skillsStatus(payload: payload, includeDevelopmentSkills: true), .available)
+    }
+
     func testBundledPackageFailureDoesNotHideOtherUpdatesOrClaimVerification() throws {
         let first = canonicalSkill(bundled: true)
         var missing = first

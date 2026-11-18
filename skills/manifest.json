@@ -46,6 +46,10 @@
       "surface": "glyphs-mcp-v2"
     },
     {
+      "name": "glyphs-mcp-switching-shapes",
+      "surface": "glyphs-mcp-v2"
+    },
+    {
       "name": "glyphs-mcp-hinting",
       "surface": "glyphs-mcp-v2"
     },

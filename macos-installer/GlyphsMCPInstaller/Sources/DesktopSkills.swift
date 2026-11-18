@@ -37,7 +37,7 @@ final class DesktopSkillsModel: ObservableObject {
     var filtered: [CatalogSkill] {
         skills.filter { skill in
             (search.isEmpty || (skill.title + " " + skill.name + " " + skill.description + " " + skill.author).localizedCaseInsensitiveContains(search)) &&
-            (client == nil || skill.compatibleClients.contains(client!)) &&
+            (client.map(skill.supports) ?? true) &&
             (category == "All" || category == "Included" && skill.bundled || category == "Additional" && !skill.bundled || category == "Installed" && isInstalled(skill) || category == "Updates" && hasUpdate(skill))
         }.sorted { ($0.bundled ? 0 : 1, $0.title) < ($1.bundled ? 0 : 1, $1.title) }
     }
@@ -127,7 +127,7 @@ final class DesktopSkillsModel: ObservableObject {
                           isDirectory.boolValue else {
                         return nil
                     }
-                    return (folder, placements.map { folder.appendingPathComponent($0.rawValue) })
+                    return (folder, placements.filter(\.supportsProjects).map { folder.appendingPathComponent($0.rawValue) })
                 })
                 let roots = placements.map { service.home.appendingPathComponent($0.rawValue) }
                     + projectRoots.values.flatMap { $0 }
@@ -231,6 +231,11 @@ final class DesktopSkillsModel: ObservableObject {
         case .remove: (setupOperation, title, success) = (.remove, "Uninstalling skill…", "Skill uninstalled.")
         }
         run(owner, title: title, skillID: skill.id, setupOperation: setupOperation) {
+            defer {
+                if targets?.contains(where: { $0.placement == .antigravity }) == true {
+                    owner.refreshConnectorDetection()
+                }
+            }
             let (result, count) = try await ProjectFiles.perform {
                 let destinations: [SkillCopy]
                 if let targets {

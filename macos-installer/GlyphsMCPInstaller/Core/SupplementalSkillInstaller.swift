@@ -23,14 +23,17 @@ public enum SkillPlacement: String, CaseIterable, Sendable {
     case claudeCode = ".claude/skills"
     case cursor = ".cursor/skills"
     case cursorPlugin = ".cursor/plugins/local/glyphs-mcp/skills"
+    case antigravity = ".gemini/config/skills"
 
-    public static let localAgents: [SkillClient] = [.codex, .claudeCode, .cursor]
+    public static let localAgents: [SkillClient] = [.codex, .claudeCode, .cursor, .antigravity]
+    public var supportsProjects: Bool { self != .cursorPlugin && self != .antigravity }
 
     public var agents: [SkillClient] {
         switch self {
         case .shared, .codex: return [.codex, .cursor]
         case .claudeCode: return [.claudeCode, .cursor]
         case .cursor, .cursorPlugin: return [.cursor]
+        case .antigravity: return [.antigravity]
         }
     }
 
@@ -40,6 +43,7 @@ public enum SkillPlacement: String, CaseIterable, Sendable {
         case .shared, .codex: primary = .codex
         case .claudeCode: primary = .claudeCode
         case .cursor, .cursorPlugin: primary = .cursor
+        case .antigravity: primary = .antigravity
         }
         return compatibleAgents.contains(primary) ? primary : agents.first(where: compatibleAgents.contains)
     }
@@ -48,6 +52,7 @@ public enum SkillPlacement: String, CaseIterable, Sendable {
         switch agent {
         case .codex: return .shared
         case .claudeCode: return .claudeCode
+        case .antigravity: return .antigravity
         default: return .cursor
         }
     }
@@ -283,9 +288,12 @@ public struct SupplementalSkillInstaller {
     public func scopeStatus(_ skill: CatalogSkill, project: URL? = nil, package: SkillPackageVersion? = nil) -> SkillScopeStatus {
         if let project, isDefaultFolder(project) { return .init(agents: [], copies: []) }
         let base = project ?? home
-        let agents = SkillPlacement.localAgents.filter { skill.compatibleClients.contains($0) }
+        let agents = SkillPlacement.localAgents.filter {
+            skill.supports($0) && (project == nil || $0 != .antigravity)
+        }
         let copies = SkillPlacement.allCases.compactMap { placement -> SkillCopy? in
-            if placement == .cursorPlugin && project != nil { return nil }
+            if project != nil && !placement.supportsProjects { return nil }
+            if placement == .antigravity && !skill.supports(.antigravity) { return nil }
             let root = base.appendingPathComponent(placement.rawValue, isDirectory: true)
             let destination = root.appendingPathComponent(skill.name)
             let fingerprint = try? Self.identity(destination)
@@ -326,7 +334,8 @@ public struct SupplementalSkillInstaller {
         for target in targets where visited.insert(target.id).inserted {
             do {
                 guard target.placement != .cursorPlugin,
-                      target.placement.agents.contains(where: { skill.compatibleClients.contains($0) }),
+                      project == nil || target.placement.supportsProjects,
+                      target.placement.agents.contains(where: skill.supports),
                       target.root == (project ?? home).appendingPathComponent(target.placement.rawValue, isDirectory: true),
                       target.status.state != .blocked else {
                     throw ProjectError(localized: "Review the existing folder before continuing.")
@@ -405,7 +414,7 @@ public struct SupplementalSkillInstaller {
     }
 
     private func legacyOwns(_ name: String, destination: URL, root: URL) -> Bool {
-        guard [SkillPlacement.codex, .claudeCode].contains(where: {
+        guard [SkillPlacement.codex, .claudeCode, .antigravity].contains(where: {
             root.path == home.appendingPathComponent($0.rawValue).path
         }) else { return false }
         let ledger = root.appendingPathComponent(".glyphs-mcp-skills.json")

@@ -560,7 +560,7 @@
 "Download app" = "Baixar app";
 "Manage optional Glyphs plugins. The bundled inspectors require the Glyphs MCP bridge." = "Gerencie plug-ins opcionais do Glyphs. Os inspetores incluídos precisam da ponte do Glyphs MCP.";
 "Configure each AI agent independently. Download the client application separately when needed." = "Configure cada agente de IA separadamente. Se necessário, baixe o app cliente à parte.";
-"Eleven included skills are managed with your agent connections. Browse Skills for their status and additional workflows." = "Onze habilidades incluídas são gerenciadas junto com suas conexões de agentes. Veja o status e outros fluxos de trabalho em Habilidades.";
+"Browse Skills to see the status of included skills and find additional workflows." = "Abra Habilidades para ver o status das habilidades incluídas e encontrar outros fluxos de trabalho.";
 "Import from GitHub…" = "Importar do GitHub…";
 "Contribute a Skill" = "Contribuir com uma habilidade";
 "Included workflows and additional skills for your AI agents. Skills guide the agent; MCP connections provide tools." = "Fluxos de trabalho incluídos e habilidades adicionais para seus agentes de IA. As habilidades orientam o agente, e as conexões MCP fornecem ferramentas.";
@@ -1551,6 +1551,7 @@
 "Install Python from the Modules tab in Glyphs’ Plugin Manager. Reopen Glyphs, then check again." = "Instale o Python na aba Módulos do Gerenciador de Plugins do Glyphs. Reabra o Glyphs e verifique novamente.";
 "The engine previously selected in Beztrace is missing. See troubleshooting to restore it or switch to the included engine." = "O motor selecionado anteriormente no Beztrace está ausente. Consulte a solução de problemas para restaurá-lo ou mudar para o motor incluído.";
 "Beztrace could not read its engine settings. See troubleshooting for recovery steps." = "O Beztrace não conseguiu ler as configurações do motor. Consulte a solução de problemas para recuperá-las.";
+"Move this engine folder to a backup location, then check again to continue Beztrace setup." = "Mova esta pasta do mecanismo para um local de backup e verifique novamente para continuar a configuração do Beztrace.";
 "This older Beztrace installation requires manual engine selection. Update Glyphs MCP to get a working plugin and engine pair." = "Esta versão antiga do Beztrace exige a escolha manual do motor. Atualize o Glyphs MCP para instalar o plugin com seu motor.";
 "Remove Beztrace…" = "Remover o Beztrace…";
 "Open a glyph in Edit view. Choose Path → Beztrace…, select an image and click Update Preview." = "Abra um glifo na visualização de edição. Escolha Caminho → Beztrace…, selecione uma imagem e clique em Atualizar prévia.";

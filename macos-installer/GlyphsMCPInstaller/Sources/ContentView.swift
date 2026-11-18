@@ -487,7 +487,7 @@ struct DesktopSetup: View {
                     Button("AI Agents") { navigate(.agents) }
                     Button("Skills") { navigate(.skills) }
                 }
-                Text("Eleven included skills are managed with your agent connections. Browse Skills for their status and additional workflows.")
+                Text("Browse Skills to see the status of included skills and find additional workflows.")
                     .font(.callout).foregroundStyle(.secondary)
                 InstallationView()
             }

@@ -1,7 +1,7 @@
 import Foundation
 
 public enum SkillClient: String, Codable, CaseIterable, Identifiable, Sendable {
-    case codex, cursor, claudeCode, chatgpt, claude
+    case codex, cursor, claudeCode, chatgpt, claude, antigravity
     public var id: String { rawValue }
     public var title: String {
         switch self {
@@ -10,6 +10,7 @@ public enum SkillClient: String, Codable, CaseIterable, Identifiable, Sendable {
         case .claudeCode: return "Claude Code"
         case .chatgpt: return "ChatGPT"
         case .claude: return "Claude"
+        case .antigravity: return "Antigravity"
         }
     }
 }
@@ -72,6 +73,10 @@ public struct CatalogSkill: Codable, Equatable, Identifiable, Sendable {
         self.requirements = requirements; self.bundled = bundled
     }
     public var title: String { displayName ?? name.replacingOccurrences(of: "-", with: " ").capitalized }
+    public func supports(_ client: SkillClient) -> Bool {
+        // Antigravity Setup distributes the built-in payload globally.
+        client == .antigravity ? bundled : compatibleClients.contains(client)
+    }
     public var feedbackURL: URL? {
         guard classification == .community, !bundled, let repository = source.repositoryURL,
               var url = URLComponents(url: repository.appendingPathComponent("issues/new"), resolvingAgainstBaseURL: false)

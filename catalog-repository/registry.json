@@ -278,6 +278,31 @@
       "displayName": "Glyphs OpenType Features"
     },
     {
+      "id": "builtin:glyphs-mcp-switching-shapes",
+      "name": "glyphs-mcp-switching-shapes",
+      "description": "Configure and verify glyph shape switches in Glyphs 4 with Glyphs MCP. Use for Alternate (bracket) layers, export-specific glyph replacement, and axis-conditional or contextual OpenType substitutions for a shape switch.",
+      "author": "Glyphs MCP contributors",
+      "license": "Apache-2.0",
+      "classification": "curated",
+      "source": {
+        "repository": "https://github.com/thierryc/Glyphs-mcp",
+        "directory": "skills/glyphs-mcp-switching-shapes",
+        "revision": "9f0afe1456fa5cf48607d3140b95f7a0db9f634f"
+      },
+      "compatibleClients": [
+        "codex",
+        "cursor",
+        "claudeCode",
+        "chatgpt",
+        "claude"
+      ],
+      "requirements": [
+        "Glyphs MCP v2 and Glyphs 4 for live font workflows. Hosted clients require separately configured access to the local bridge."
+      ],
+      "bundled": true,
+      "displayName": "Glyphs Switching Shapes"
+    },
+    {
       "id": "builtin:glyphs-mcp-hinting",
       "name": "glyphs-mcp-hinting",
       "description": "Inventory, diagnose and compare PostScript/CFF, CFF2 or TrueType font hinting with Glyphs MCP. Use for stems, alignment zones, manual versus automatic hints, and small-size rendering problems before scoped repairs.",

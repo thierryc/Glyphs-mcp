@@ -13,6 +13,7 @@ public struct OptionalToolState: Decodable, Identifiable {
     public let updateAvailable: Bool?
     public let installedAt: Double?
     public let engineStatus: EngineStatus?
+    public let engineConflictPath: String?
 
     public enum EngineStatus: String, Decodable {
         case managed, custom, manual, repair

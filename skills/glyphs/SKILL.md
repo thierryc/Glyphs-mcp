@@ -25,6 +25,7 @@ save/discard handling and resolves no pending jobs.
 
 ## Optional workflows
 
+- For Alternate layers, export-specific glyph swaps or axis-conditional shape changes, use [Glyphs Switching Shapes](../glyphs-mcp-switching-shapes/SKILL.md).
 - To derive Latin small or petite capitals from uppercase with a reviewed pilot, use [Small and Petite Caps](../glyphs-mcp-small-caps/SKILL.md).
 
 - For structural path diagnosis and profile-preserving seam repair, use [Path Doctor](../glyphs-mcp-path-doctor/SKILL.md).

@@ -573,7 +573,7 @@
 "Download app" = "下载应用";
 "Manage optional Glyphs plugins. The bundled inspectors require the Glyphs MCP bridge." = "管理可选的 Glyphs 插件。内置检查器需要 Glyphs MCP 桥接。";
 "Configure each AI agent independently. Download the client application separately when needed." = "独立配置每个 AI 智能体。需要时单独下载客户端应用。";
-"Eleven included skills are managed with your agent connections. Browse Skills for their status and additional workflows." = "随附的 11 项技能与智能体连接一起管理。在“技能”中查看状态并添加工作流程。";
+"Browse Skills to see the status of included skills and find additional workflows." = "打开“技能”以查看随附技能的状态，并查找更多工作流程。";
 "Import from GitHub…" = "从 GitHub 导入…";
 "Contribute a Skill" = "贡献技能";
 "Included workflows and additional skills for your AI agents. Skills guide the agent; MCP connections provide tools." = "AI 智能体的内置工作流程和附加技能。技能提供指导，MCP 连接提供工具。";
@@ -1565,6 +1565,7 @@
 "Install Python from the Modules tab in Glyphs’ Plugin Manager. Reopen Glyphs, then check again." = "在 Glyphs 的插件管理器中打开“模块”标签页并安装 Python。重新打开 Glyphs 后再检查一次。";
 "The engine previously selected in Beztrace is missing. See troubleshooting to restore it or switch to the included engine." = "找不到此前在 Beztrace 中选择的引擎。请参阅故障排查以恢复引擎或切换到随附的引擎。";
 "Beztrace could not read its engine settings. See troubleshooting for recovery steps." = "Beztrace 无法读取引擎设置。请参阅故障排查以了解恢复步骤。";
+"Move this engine folder to a backup location, then check again to continue Beztrace setup." = "将此引擎文件夹移至备份位置，然后重新检查以继续设置 Beztrace。";
 "This older Beztrace installation requires manual engine selection. Update Glyphs MCP to get a working plugin and engine pair." = "旧版 Beztrace 需要手动选择引擎。请更新 Glyphs MCP，以安装配套的插件和引擎。";
 "Remove Beztrace…" = "移除 Beztrace…";
 "Open a glyph in Edit view. Choose Path → Beztrace…, select an image and click Update Preview." = "在编辑视图中打开字形。选择“路径”→“Beztrace…”，选取图像并点击“更新预览”。";

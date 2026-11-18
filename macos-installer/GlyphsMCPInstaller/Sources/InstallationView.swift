@@ -267,7 +267,8 @@ private struct ConnectorSetupCard: View {
             }
         } actions: {
             SetupCardActions(state: state, disabled: disabled, canInstall: client != .antigravity || detected,
-                             updateAvailable: antigravityConnection == .updateAvailable, canRemovePartial: canRemovePartial,
+                             updateAvailable: antigravityConnection == .updateAvailable || antigravitySkills == .updateAvailable,
+                             canRemovePartial: canRemovePartial,
                              install: install, update: update, remove: remove, retry: retry)
         } footer: {
             if !detected { DesktopTextLink("Download app", destination: client.downloadURL).font(.caption) }

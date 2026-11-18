@@ -7,7 +7,7 @@ or signed-release identity from each other.
 
 The current source identity is product **2.8.0**, installer build **93**,
 stable channel. Its catalog contains twenty-one data/action tools plus
-the optional read-only `show_edit_workflow` display tool, with fourteen managed
+the optional read-only `show_edit_workflow` display tool, with fifteen managed
 skills. `list_tasks` is passive and does not execute or resolve workflows.
 Source inventory does not establish installed or published acceptance.
 See `V2.5.0-RELEASE.md` for the earlier qualification and publication status, and

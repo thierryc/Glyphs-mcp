@@ -693,7 +693,7 @@ final class InstallerViewModel: ObservableObject {
         var arguments = ["-I", "-B", helper.path, "--catalog", catalog.path, "--action", action]
         if let tool { arguments += ["--tool", tool] }
         let companion = ExternalGlyphsCompanion.beztrace
-        if tool == companion.id, let resources = Bundle.main.resourceURL {
+        if action == "status" || tool == companion.id, let resources = Bundle.main.resourceURL {
             arguments += ["--engine", resources.appendingPathComponent("Beztrace/beztrace-\(companion.engineVersion)").path]
         }
         let result = try await runner.runCapturing(executable: python, args: arguments, timeout: 600, maximumStandardOutputBytes: 1024 * 1024)
@@ -884,7 +884,7 @@ final class InstallerViewModel: ObservableObject {
         }
     }
 
-    private func refreshConnectorDetection(resetFailures: Bool = false) {
+    func refreshConnectorDetection(resetFailures: Bool = false) {
         detectedClients = Set(InstallerClientKind.allCases.filter(detectsClient))
         refreshAntigravityStatus()
         for client in InstallerClientKind.allCases {
@@ -946,7 +946,7 @@ final class InstallerViewModel: ObservableObject {
             return args.contains(endpoint)
         case .antigravity:
             return (antigravityConnectionStatus == .configured || antigravityConnectionStatus == .updateAvailable)
-                && antigravitySkillsStatus == .available
+                && (antigravitySkillsStatus == .available || antigravitySkillsStatus == .updateAvailable)
         case .cursor:
             if let payload, let installer = try? makeCursorInstaller(payload, logger: { _ in }) {
                 if case .installed = installer.inspect() { return true }

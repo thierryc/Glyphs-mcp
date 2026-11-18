@@ -215,7 +215,7 @@ def test_beztrace_upgrade_refuses_invalid_engine_without_replacing_plugin(beztra
     else:
         _, target, _ = tools.engine_paths()
         target.mkdir(parents=True); (target / 'user-file').write_text('preserve')
-    with pytest.raises(ValueError, match='Incompatible bundled engine|inventory differs|Unowned/modified engine'):
+    with pytest.raises(ValueError, match='Incompatible bundled engine|inventory differs|Move this folder to a backup location'):
         tools.install('beztrace-glyphs', engine)
     assert tools.read_receipt('beztrace-glyphs') == before
     assert installer._identity(tools.target('beztrace-glyphs', before)) == before['identity']
@@ -273,6 +273,88 @@ def test_beztrace_persistent_install_preserves_invalid_settings(beztrace_upgrade
         tools.install(tool, engine)
     assert tools.read_receipt(tool) == before
     assert config.read_bytes() == content
+
+
+@pytest.mark.parametrize('operation', ['create', 'update', 'remove', 'publish'])
+def test_beztrace_does_not_overwrite_concurrent_engine_selection(beztrace_upgrade, monkeypatch, operation):
+    tools, engine, config, old_engine = beztrace_upgrade
+    tool = 'beztrace-glyphs'
+    tools.catalog['tools'][tool]['releases']['arm64']['engineConfiguration'] = 'engine-settings-v1'
+    if operation == 'create':
+        config.unlink()
+    elif operation == 'remove':
+        tools.install(tool, engine)
+    before = tools.read_receipt(tool)
+    _, target, _ = tools.engine_paths()
+    engine_existed = target.exists()
+    selected = dict(schemaVersion=1, userEngine=str(old_engine), extra='new setting')
+    if operation == 'publish':
+        link = installer.os.link
+
+        def save_before_publish(staged, destination):
+            if destination == config:
+                config.write_text(json.dumps(selected))
+            return link(staged, destination)
+
+        monkeypatch.setattr(installer.os, 'link', save_before_publish)
+    else:
+        apply = installer.InstallationTransaction.apply
+
+        def save_during_staging(transaction):
+            config.write_text(json.dumps(selected))
+            return apply(transaction)
+
+        monkeypatch.setattr(installer.InstallationTransaction, 'apply', save_during_staging)
+    with pytest.raises(ValueError, match='Settings changed during setup'):
+        if operation == 'remove':
+            tools.remove(tool)
+        else:
+            tools.install(tool, engine)
+    assert json.loads(config.read_text()) == selected
+    assert tools.read_receipt(tool) == before
+    assert installer._identity(tools.target(tool, before)) == before['identity']
+    assert target.exists() == engine_existed
+
+
+def test_beztrace_repairs_missing_engine_files_and_preserves_local_changes(beztrace_upgrade):
+    tools, engine, config, _ = beztrace_upgrade
+    tool = 'beztrace-glyphs'
+    tools.catalog['tools'][tool]['releases']['arm64']['engineConfiguration'] = 'engine-settings-v1'
+    config.unlink()
+    tools.install(tool, engine)
+    _, target, receipt = tools.engine_paths()
+    executable = target / 'bin/beztrace'
+    executable.unlink()
+    state = tools.status(tool, engine)
+    assert state['engineStatus'] == 'repair'
+    assert 'engineConflictPath' not in state
+    assert tools.install(tool, engine)['engineStatus'] == 'managed'
+    assert engine_module().selected_engine('/system/beztrace', tools.home) == str(executable)
+
+    local = target / 'local-settings'
+    local.write_text('preserve')
+    executable.unlink()
+    assert tools.status(tool, engine)['engineConflictPath'] == str(target)
+    with pytest.raises(ValueError, match='Move this folder to a backup location'):
+        tools.install(tool, engine)
+    assert not executable.exists()
+    assert local.read_text() == 'preserve'
+
+    backup = target.with_name('backup')
+    target.rename(backup)
+    assert 'engineConflictPath' not in tools.status(tool, engine)
+    assert tools.install(tool, engine)['engineStatus'] == 'managed'
+    assert (backup / local.name).read_text() == 'preserve'
+
+    executable.unlink()
+    assert 'engineConflictPath' not in tools.remove(tool, engine)
+    assert tools.install(tool, engine)['engineStatus'] == 'managed'
+    tools.remove(tool)
+    receipt.unlink()
+    assert tools.status(tool, engine)['engineConflictPath'] == str(target)
+    with pytest.raises(ValueError, match='Move this folder to a backup location'):
+        tools.install(tool, engine)
+    assert executable.is_file()
 
 
 def engine_module():
