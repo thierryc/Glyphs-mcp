@@ -252,3 +252,80 @@ def test_background_worker_expires_without_opening_tasks(env):
         assert service.jobs.get(job['id'])['status'] == 'expired'
     finally:
         stop()
+
+
+@pytest.mark.parametrize(('state', 'code'), [('interrupted', 'workflow_interrupted'), ('uncertain', 'glyphs_busy')])
+def test_accepted_interruption_closes_only_workflow_and_preserves_evidence(env, state, code):
+    from glyphs_mcp_sidecar.edit_workflow_state import WorkflowStore
+    service, bridge, worker, source = env
+    job = aged_job(service, status='accepted')
+    value = aged_workflow(service, job, state=state)
+    failure = dict(code=code, message='Original diagnostic')
+    service.edit_workflows.store.update(value, error=failure, scriptRunAuthorized=False)
+    service.edit_workflows.store = WorkflowStore(service.jobs.root)
+    value = service.edit_workflows.store.records[value['id']]
+    assert service.edit_workflows.get(value['id'])['state'] == state
+    assert expiry.expire(service) == 1
+    assert value['state'] == 'expired' and value['error'] == failure
+    assert value['expiration']['previousJobStatus'] == 'accepted'
+    assert service.jobs.get(job['id']) == job
+    assert not worker.calls and not bridge.applies and source.read_text() == '600'
+
+
+@pytest.mark.parametrize('guard', ['saveRequest', 'pendingAction', 'blockerId', 'queuedAction', 'native_recovery', 'native_active', 'other_error'])
+def test_accepted_interruption_waits_for_positive_release(env, guard):
+    service, bridge, *_ = env
+    job = aged_job(service, status='accepted')
+    value = aged_workflow(service, job, state='uncertain')
+    fields = dict(error={'code': 'glyphs_busy'}, scriptRunAuthorized=False)
+    if guard.startswith('native'):
+        bridge.operation = lambda _: {'status': 'applied' if guard == 'native_active' else 'accepted', 'recoveryAvailable': True}
+    elif guard == 'other_error':
+        fields['error'] = dict(code='unverified_write')
+    else:
+        fields[guard] = {'saveId': 'save'} if guard == 'saveRequest' else 'pending'
+    service.edit_workflows.store.update(value, **fields)
+    assert expiry.expire(service) == 0 and value['state'] == 'uncertain'
+
+
+def test_expiration_batch_reaches_jobs_behind_unreleased_native_operations(env):
+    service, bridge, *_ = env
+    jobs = sorted((aged_job(service) for _ in range(5)), key=lambda job: job['id'])
+    original = bridge.operation
+    bridge.operation = lambda key: original(key) if key == jobs[-1]['id'] else {'status': 'applied'}
+    assert [expiry.expire(service, limit=2) for _ in range(3)] == [0, 0, 1]
+
+
+@pytest.mark.parametrize(('embedded', 'baseline', 'state', 'code'), [
+    ('applied', True, 'interrupted', 'workflow_interrupted'),
+    ('applying', False, 'uncertain', 'glyphs_busy')])
+@pytest.mark.parametrize('contradiction', [None, 'receipt', 'snapshot', 'native_save'])
+def test_historical_save_and_released_snapshot_require_exact_proof(
+        env, embedded, baseline, state, code, contradiction):
+    from glyphs_mcp_sidecar.edit_workflow_state import WorkflowStore
+    service, bridge, *_ = env
+    job = aged_job(service, status='accepted', kind='python_script')
+    identity = job['id']
+    request = dict(jobId=identity, saveId=identity, documentId=job['document']['id'])
+    receipt = dict(request, nativeSaveSucceeded=True, verification='native_and_source_hash', sourceHashAfter='sha256:fixture')
+    recovery = dict(kind='memory_snapshot', snapshotId='snapshot', bridgeSessionId='session', available=False)
+    operation = dict(jobId=identity, status='accepted', recoveryAvailable=False, receipt=receipt,
+                     scriptResult=dict(executed=True, recovery=recovery))
+    job.update(bridgeOperation=operation, saveRequest=request, receipt=receipt)
+    if contradiction == 'receipt':
+        job['saveRequest'] = dict(request, saveId='another')
+    service.jobs._write(job)
+    value = aged_workflow(service, job, state=state)
+    snapshot = dict(recovery, available=True, snapshotId='other' if contradiction == 'snapshot' else 'snapshot')
+    service.edit_workflows.store.update(value, job=dict(id=identity, status=embedded),
+        savedVersion=snapshot if baseline or contradiction == 'snapshot' else None,
+        error=dict(code=code), scriptRunAuthorized=False)
+    if contradiction == 'native_save':
+        bridge.save_operation = lambda _: dict(status='saving')
+    service.edit_workflows.store = WorkflowStore(service.jobs.root, jobs=service.jobs)
+    value = service.edit_workflows.store.records[value['id']]
+    bridge.complete_accept = lambda *args, **kwargs: pytest.fail('Replayed accept')
+    assert service.edit_workflows.get(value['id'])['state'] == state
+    assert expiry.expire(service) == (1 if contradiction is None else 0)
+    assert value['state'] == ('expired' if contradiction is None else state)
+    assert value['error']['code'] == code and service.jobs.get(identity) == job

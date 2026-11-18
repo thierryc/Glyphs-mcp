@@ -20,7 +20,7 @@ STALE = {"document_not_clean", "stale_document", "stale_source", "source_unavail
 class EditWorkflows:
     def __init__(self, service, error_type):
         self.service, self.error = service, error_type
-        self.store = WorkflowStore(service.jobs.root)
+        self.store = WorkflowStore(service.jobs.root, jobs=service.jobs)
         self.lock, self.stopped = RLock(), Event()
         self.thread = None
         self.baseline_memos = {}  # Display-only, never persisted or used at dispatch.
@@ -495,7 +495,11 @@ class EditWorkflows:
             return
         if not value.get("jobId"):
             return
-        job = self.service.get_job(value["jobId"])
+        from .task_expiration import accepted_interruption
+        if value['state'] in {'interrupted', 'uncertain'} and accepted_interruption(value, self.service._job(value['jobId'])):
+            # Reads cannot confirm this workflow outcome or replay native accept.
+            return
+        job = self.service.get_job(value['jobId'])
         self._set(value, job=job)
         failure = job.get('error') or {}
         if (value['state'] == 'preparing' and job['status'] == 'failed'

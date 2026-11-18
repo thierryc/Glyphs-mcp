@@ -157,8 +157,9 @@ same installer state and operation gates. Optional skills use their own hash
 receipts, advisory destination locks, atomic folder replacement and recovery
 journals; they do not change the managed twelve-skill bundle or MCP interface.
 
-The skill details sheet has independent Install / Update and Remove controls for
-each compatible local agent. Personal discovery includes the shared
+Skill cards update a single eligible installation directly or let the user
+choose among multiple locations. The detail sheet groups installations under
+**On this Mac** and **In projects**. Personal discovery includes the shared
 `.agents/skills` folder and older `.codex/skills` and `.cursor/skills` locations;
 actions use the detected location. Project discovery stays within that project.
 Existing or edited regular copies require confirmation and a verified backup

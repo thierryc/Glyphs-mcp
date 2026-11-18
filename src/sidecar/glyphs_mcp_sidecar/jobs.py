@@ -22,6 +22,7 @@ class JobStore:
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
         self._lock = RLock()
         self._index = {}
+        self.inventory_generation = 0
         self._statuses = defaultdict(set)
         self._documents = defaultdict(set)
         self._unresolved = set()
@@ -40,6 +41,11 @@ class JobStore:
     def records(self) -> list[dict[str, Any]]:
         with self._lock:
             return copy.deepcopy(list(reversed(self._index.values())))
+
+    def inventory_records(self):
+        """Read-only snapshot for the internal projector. Writes replace indexed rows."""
+        with self._lock:
+            return self._index.copy()
 
     def select(self, statuses, *, document_id=None, include_unresolved=False):
         """Copy only selected evidence; unresolved script failures are never terminal work."""
@@ -173,6 +179,9 @@ class JobStore:
         )
         temporary.chmod(0o600)
         temporary.replace(path)
+        if name == "task-archive.json":
+            with self._lock:
+                self.inventory_generation += 1
         return path
 
     def read_json(self, job_id: str, name: str) -> Any:
@@ -192,6 +201,9 @@ class JobStore:
                     pass  # Another completion read already released this directory.
             else:
                 item.unlink(missing_ok=True)
+                if item.name == "task-archive.json":
+                    with self._lock:
+                        self.inventory_generation += 1
 
     def _write(self, value: Mapping[str, Any]) -> None:
         with self._lock:
@@ -199,6 +211,7 @@ class JobStore:
             self._remember(copy.deepcopy(dict(value)))
 
     def _remember(self, value):
+        self.inventory_generation += 1
         identity = value['id']
         previous = self._index.pop(identity, None)
         if previous is not None:

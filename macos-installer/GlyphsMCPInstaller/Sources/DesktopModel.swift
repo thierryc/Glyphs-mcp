@@ -39,6 +39,17 @@ final class DesktopModel: ObservableObject {
     private var taskIndex: [DesktopTaskReference] = []
     @Published private(set) var tasksNotice: String?
     @Published private(set) var taskHistoryNotice: String?
+    @Published private(set) var tasksHistoryPageNotice: String?
+    @Published private(set) var supportsAutomaticTaskHistory = false
+    private var taskRevision: String?
+    private var taskClosedCount = 0
+    private var loadedEarlierPages = false
+    private var completeTaskIndex = false
+    private var selectedTaskID: String?
+    private var taskGeneration = UUID()
+    private var taskRequests = DesktopTaskRequests()
+    private var pendingTaskClear = false
+    private var historySync: Task<Void, Never>?
     @Published private(set) var tasksStale = false
     @Published private(set) var tasksLoading = false
     @Published private(set) var tasksObservedAt: Date?
@@ -49,17 +60,35 @@ final class DesktopModel: ObservableObject {
     private lazy var taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: installation.root.path)
     var visibleTasks: [DesktopTask] { tasks.filter { taskHistoryState.isVisible($0) } }
     var activeTasks: [DesktopTask] { tasks.filter { $0.taskGroup == "active" && taskHistoryState.isVisible($0) } }
-    var canClearTaskHistory: Bool { taskIndex.contains { $0.closed && taskHistoryState.isVisible($0) } }
+    var canClearTaskHistory: Bool {
+        taskIndex.contains { $0.closed && taskHistoryState.isVisible($0) } ||
+            (!completeTaskIndex && taskClosedCount > taskHistoryState.clearedIDs.count)
+    }
     var hasClearedTaskHistory: Bool { !taskHistoryState.clearedIDs.isEmpty }
+    func setSelectedTaskID(_ id: String?) { selectedTaskID = id }
+    func selectedTask(id: String?) -> DesktopTask? { visibleTasks.first { $0.id == id } }
+    func taskIsAddressable(id: String) -> Bool {
+        taskIndex.contains { $0.id == id && taskHistoryState.isVisible($0) }
+    }
     func clearClosedTaskHistory() {
+        if completeTaskIndex {
+            applyTaskClear(taskIndex)
+        } else {
+            pendingTaskClear = true
+            Task { await refreshTasks() }
+        }
+    }
+    private func applyTaskClear(_ index: [DesktopTaskReference]) {
         objectWillChange.send()
-        taskHistoryState.clearClosed(taskIndex)
+        taskHistoryState.clearClosed(index)
         tasksNextCursor = nil
-        Task { await refreshTasks() }
+        startHistorySync()
     }
     func restoreTaskHistory() {
         objectWillChange.send()
         taskHistoryState.restore()
+        taskRevision = nil // Re-evaluate pagination, including locally hidden rows.
+        startHistorySync()
         Task { await refreshTasks() }
     }
     func isUnread(_ task: DesktopTask) -> Bool { taskReadState.isUnread(task) }
@@ -109,6 +138,7 @@ final class DesktopModel: ObservableObject {
     }
     deinit {
         sampler?.cancel()
+        historySync?.cancel()
         for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
     }
 
@@ -150,7 +180,6 @@ final class DesktopModel: ObservableObject {
     }
 
     private func updateSampler() {
-        guard !refreshing else { return }
         sampler?.cancel(); sampler = nil
         let regular = visibility.interval(busy: showsActivityDot)
         guard regular != nil || eventPending else { return }
@@ -167,31 +196,58 @@ final class DesktopModel: ObservableObject {
     }
 
     func refresh() async {
+        let current = DesktopInstallation()
+        updateInstallation(current)
+        if current.hasServer && !controlling {
+            Task { await refreshTasks() }
+            startHistorySync()
+        }
+        eventPending = false
+        lastAttempt = .now
+        updateSampler()
+        await refreshStatus(current)
+    }
+
+    private func updateInstallation(_ current: DesktopInstallation) {
+        guard current != installation else { return }
+        let changedRoot = current.root != installation.root
+        let changedServer = changedRoot || current.port != installation.port ||
+            current.hasServer != installation.hasServer || current.tokenURL != installation.tokenURL ||
+            current.expectedSidecarIdentity != installation.expectedSidecarIdentity
+        installation = current
+        guard changedServer else { return }
+        taskGeneration = UUID()
+        historySync?.cancel(); historySync = nil
+        pendingTaskClear = false; taskRequests = DesktopTaskRequests()
+        supportsAutomaticTaskHistory = false
+        loadedEarlierPages = false; completeTaskIndex = false; taskRevision = nil
+        tasksNextCursor = nil; taskHistoryNotice = nil; tasksHistoryPageNotice = nil
+        if changedRoot {
+            taskReadState = DesktopTaskReadState(defaults: .standard, namespace: current.root.path)
+            taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: current.root.path)
+            tasks = []; taskIndex = []; taskClosedCount = 0; selectedTaskID = nil
+            tasksObservedAt = nil; tasksNotice = nil; tasksStale = false
+            jobEvents?.stop(); jobEvents = nil; updateEventMonitor()
+        }
+    }
+
+    private func refreshStatus(_ current: DesktopInstallation) async {
         guard !refreshing else { return }
         // A control request can outlast the pending timer. Keep the monitor
         // scheduled while the shared control helper owns the service.
         guard !controlling else { updateSampler(); return }
-        sampler?.cancel(); sampler = nil
-        eventPending = false; lastAttempt = .now
+        let wasBusy = showsActivityDot
         refreshing = true
-        defer { refreshing = false; updateSampler() }
+        defer {
+            refreshing = false
+            if showsActivityDot != wasBusy { updateSampler() }
+        }
         glyphsRunning = NSWorkspace.shared.runningApplications.contains { app in
             guard GlyphsRunningProcessDetector.supportedBundleIdentifiers.contains(app.bundleIdentifier ?? ""),
                   let url = app.bundleURL else { return false }
             return !GlyphsCopySelectionPolicy.copies(from: GlyphsApplicationDetector.allApplications(candidates: [url])).isEmpty
         }
-        let current = DesktopInstallation()
-        if current != installation {
-            let changedRoot = current.root != installation.root
-            installation = current
-            if changedRoot {
-                taskReadState = DesktopTaskReadState(defaults: .standard, namespace: current.root.path)
-                taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: current.root.path)
-                tasks = []; taskIndex = []; tasksObservedAt = nil; tasksNextCursor = nil
-                tasksNotice = nil; tasksStale = false
-                jobEvents?.stop(); jobEvents = nil; updateEventMonitor()
-            }
-        }
+        let generation = taskGeneration
         guard current.hasServer else {
             status = nil; notice = ""; stale = false; serviceRunning = nil
             tasksStale = tasksObservedAt != nil
@@ -202,7 +258,7 @@ final class DesktopModel: ObservableObject {
             let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
             let request = DesktopStatusRequest.make(port: current.port, token: token)
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard !controlling, !Task.isCancelled else { return }
+            guard generation == taskGeneration, !controlling, !Task.isCancelled else { return }
             guard (response as? HTTPURLResponse)?.statusCode == 200 else {
                 let code = (response as? HTTPURLResponse)?.statusCode
                 remember("Activity request: HTTP \(code.map(String.init) ?? "unknown").")
@@ -221,7 +277,6 @@ final class DesktopModel: ObservableObject {
                 status = observed
             }
             lastObserved = Date(); stale = observed.statusObservation?.stale ?? false; serviceRunning = true
-            await refreshTasks()
             // Development links are mutable by design and use a lightweight
             // receipt without immutable payload fingerprints. Their explicit
             // Setup status is the trust signal; managed installs still require
@@ -232,18 +287,13 @@ final class DesktopModel: ObservableObject {
             ).map { AppLocalization.text($0) }.joined(separator: "\n")
         } catch is CancellationError {
         } catch {
-            guard !Task.isCancelled, !controlling else { return }
+            guard generation == taskGeneration, !Task.isCancelled, !controlling else { return }
             stale = true
-            let previousTasksObservation = tasksObservedAt
             let observed = try? await serviceAction("status")
-            guard !Task.isCancelled, !controlling else { return }
+            guard generation == taskGeneration, !Task.isCancelled, !controlling else { return }
             let data = observed?["data"] as? [String: Any]
             let processRunning = data?["processRunning"] as? Bool
             serviceRunning = processRunning ?? (data?["running"] as? Bool)
-            if tasksObservedAt == previousTasksObservation {
-                tasksStale = tasksObservedAt != nil
-                tasksNotice = DesktopDiagnostics.taskRefreshFailure(error, processRunning: processRunning)
-            }
             let message = DesktopDiagnostics.statusFailure(error, running: serviceRunning)
             if serviceRunning == false { notice = "" }
             else if notice != message { notice = message; remember(message) }
@@ -251,47 +301,125 @@ final class DesktopModel: ObservableObject {
     }
 
     func refreshTasks(loadMore: Bool = false) async {
-        guard !tasksLoading, installation.hasServer, !controlling else { return }
+        guard installation.hasServer, !controlling else { return }
         if loadMore && tasksNextCursor == nil { return }
+        taskRequests.enqueue(loadMore: loadMore)
+        guard !tasksLoading else { return }
         tasksLoading = true
         defer { tasksLoading = false }
-        let root = installation.root
-        do {
-            await syncTaskHistory(root: root)
-            guard root == installation.root, !controlling, !Task.isCancelled else { return }
-            let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
-            let cursor = loadMore ? tasksNextCursor ?? 0 : 0
-            var request = URLRequest(url: URL(string: "http://127.0.0.1:\(installation.port)/internal/tasks?cursor=\(cursor)")!)
-            request.timeoutInterval = 3
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard root == installation.root, !controlling, !Task.isCancelled else { return }
-            let code = (response as? HTTPURLResponse)?.statusCode
-            if code == 404 {
-                tasksNotice = NSLocalizedString("Update Glyphs MCP to show Tasks.", comment: "Older task inventory")
-                tasksStale = tasksObservedAt != nil
-                return
-            }
-            guard code == 200 else { throw URLError(.badServerResponse) }
-            struct Envelope: Decodable { let ok: Bool; let data: DesktopTaskPage? }
-            let envelope = try JSONDecoder().decode(Envelope.self, from: data)
-            guard envelope.ok, let page = envelope.data, page.version == 1 else { throw URLError(.cannotParseResponse) }
-            tasks = page.mergingHistory(tasks)
-            taskIndex = page.index ?? tasks.map(DesktopTaskReference.init)
-            taskReadState.observeIndex(taskIndex)
-            taskHistoryState.observeIndex(taskIndex, pruneMissing: page.index != nil)
-            tasksNextCursor = page.nextHistoryCursor(in: tasks, ignoring: taskHistoryState.clearedIDs)
-            tasksObservedAt = Date(timeIntervalSince1970: page.observedAt)
-            tasksStale = false; tasksNotice = nil
-        } catch {
-            guard root == installation.root, !controlling, !Task.isCancelled else { return }
-            tasksStale = tasksObservedAt != nil
-            tasksNotice = DesktopDiagnostics.taskRefreshFailure(error)
+        while !controlling && installation.hasServer, let request = taskRequests.takeNext() {
+            let pageRequest = request == .earlier
+            if pageRequest && tasksNextCursor == nil { continue }
+            let clear = pendingTaskClear
+            pendingTaskClear = false
+            await fetchTasks(loadMore: pageRequest, clear: clear)
         }
     }
 
-    private func syncTaskHistory(root: URL) async {
+    private func requestTaskPage(cursor: Int, revision: String?, includeIndex: Bool) async throws -> DesktopTaskPage {
+        let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        let request = DesktopTaskPage.request(port: installation.port, token: token, cursor: cursor,
+                                              revision: revision, includeIndex: includeIndex)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let code = (response as? HTTPURLResponse)?.statusCode
+        if code == 404 { throw TaskInventoryError.unsupported }
+        guard code == 200 else { throw URLError(.badServerResponse) }
+        struct Envelope: Decodable { let ok: Bool; let data: DesktopTaskPage? }
+        let envelope = try JSONDecoder().decode(Envelope.self, from: data)
+        guard envelope.ok, let page = envelope.data,
+              page.version == 1 || (page.version == 2 && page.revision != nil && page.closedCount != nil) else {
+            throw URLError(.cannotParseResponse)
+        }
+        return page
+    }
+
+    private enum TaskInventoryError: Error { case unsupported }
+    private func fetchTasks(loadMore: Bool, clear: Bool) async {
+        let generation = taskGeneration
+        let requestedRevision = taskRevision
+        func current() -> Bool { generation == taskGeneration && requestedRevision == taskRevision && !controlling && !Task.isCancelled }
+        do {
+            let cursor = loadMore ? tasksNextCursor ?? 0 : 0
+            var page = try await requestTaskPage(cursor: cursor, revision: clear ? nil : taskRevision, includeIndex: clear)
+            guard current() else { return }
+            if page.version == 2 && page.unchanged == true {
+                guard !clear, !loadMore, page.revision == taskRevision else { throw URLError(.cannotParseResponse) }
+                tasksObservedAt = Date(timeIntervalSince1970: page.observedAt)
+                tasksStale = false; tasksNotice = nil
+                return
+            }
+            let replaced = page.version == 2 && (page.reset == true || page.revision != taskRevision)
+            let pageIDs = Set(page.tasks.map(\.id))
+            let selectedMissing = selectedTaskID.map { !pageIDs.contains($0) } ?? false
+            if replaced && page.index == nil && (loadedEarlierPages || selectedMissing || hasClearedTaskHistory) {
+                // Only request the full ID/revision index when reconciling older or hidden rows.
+                page = try await requestTaskPage(cursor: 0, revision: nil, includeIndex: true)
+                guard current() else { return }
+            }
+            var rows = page.mergingHistory(replaced && page.index == nil ? [] : tasks)
+            if let index = page.index {
+                var previouslyLoaded = Set(tasks.map(\.id))
+                if let selectedTaskID { previouslyLoaded.insert(selectedTaskID) }
+                var loadedIDs = Set(rows.map(\.id))
+                // An earlier row's revision can change even if its ID and order stay the same.
+                // Re-read each affected page once before publishing the new generation.
+                for (offset, reference) in index.filter(\.closed).enumerated()
+                    where previouslyLoaded.contains(reference.id) && !loadedIDs.contains(reference.id) {
+                    let replacement = try await requestTaskPage(cursor: offset, revision: offset == 0 ? nil : page.revision,
+                                                                includeIndex: false)
+                    guard current() else { return }
+                    guard replacement.reset != true, replacement.revision == page.revision,
+                          replacement.index == nil || replacement.index == page.index,
+                          replacement.tasks.contains(where: { $0.id == reference.id }) else {
+                        throw URLError(.resourceUnavailable)
+                    }
+                    rows = replacement.mergingHistory(rows)
+                    loadedIDs.formUnion(replacement.tasks.map(\.id))
+                }
+            }
+            if clear && page.index == nil && page.nextCursor != nil { throw URLError(.cannotParseResponse) }
+            let retainedIndex = page.version == 2 && page.revision == taskRevision && completeTaskIndex ? taskIndex : nil
+            let fullIndex = page.index ?? retainedIndex
+            let index = fullIndex ?? rows.map(DesktopTaskReference.init)
+            completeTaskIndex = fullIndex != nil || (page.nextCursor == nil && cursor == 0) ||
+                (page.closedCount != nil && rows.filter(\.closed).count == page.closedCount)
+            taskClosedCount = page.closedCount ?? index.filter(\.closed).count
+            taskIndex = index
+            if loadMore && cursor > 0 && page.reset != true { loadedEarlierPages = true }
+            taskReadState.observeIndex(index, observedAt: Date(timeIntervalSince1970: page.observedAt))
+            taskHistoryState.observeIndex(index, pruneMissing: completeTaskIndex)
+            taskRevision = page.revision
+            supportsAutomaticTaskHistory = page.version == 2
+            tasks = rows
+            tasksNextCursor = page.nextHistoryCursor(in: rows, ignoring: taskHistoryState.clearedIDs, fullIndex: fullIndex)
+            if completeTaskIndex && !canClearTaskHistory { tasksNextCursor = nil }
+            if clear { applyTaskClear(index) }
+            tasksObservedAt = Date(timeIntervalSince1970: page.observedAt)
+            tasksStale = false; tasksNotice = nil
+            if loadMore || replaced || tasksNextCursor == nil { tasksHistoryPageNotice = nil }
+        } catch {
+            guard current() else { return }
+            if loadMore {
+                tasksHistoryPageNotice = NSLocalizedString("Could not load earlier tasks.", comment: "Task history page failure")
+            } else {
+                tasksStale = tasksObservedAt != nil
+                tasksNotice = error is TaskInventoryError
+                    ? NSLocalizedString("Update Glyphs MCP to show Tasks.", comment: "Older task inventory")
+                    : DesktopDiagnostics.taskRefreshFailure(error, processRunning: serviceRunning)
+            }
+        }
+    }
+
+    private func startHistorySync() {
+        guard historySync == nil, !taskHistoryState.pendingOperations.isEmpty, installation.hasServer, !controlling else { return }
+        let generation = taskGeneration
+        historySync = Task {
+            await syncTaskHistory(generation: generation)
+            if generation == taskGeneration { historySync = nil }
+        }
+    }
+
+    private func syncTaskHistory(generation: UUID) async {
         guard !taskHistoryState.pendingOperations.isEmpty else { taskHistoryNotice = nil; return }
         do {
             let token = try String(contentsOf: tokenURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -306,7 +434,7 @@ final class DesktopModel: ObservableObject {
                 struct Payload: Encodable { let action: String; let records: [DesktopTaskHistoryState.Record] }
                 request.httpBody = try JSONEncoder().encode(Payload(action: operation.action, records: operation.records))
                 let (data, response) = try await URLSession.shared.data(for: request)
-                guard root == installation.root, !controlling, !Task.isCancelled else { return }
+                guard generation == taskGeneration, !controlling, !Task.isCancelled else { return }
                 if (response as? HTTPURLResponse)?.statusCode == 404 {
                     taskHistoryNotice = NSLocalizedString("Update the sidecar to enable 30-day cleanup. History remains hidden.", comment: "History compatibility")
                     return
@@ -316,11 +444,16 @@ final class DesktopModel: ObservableObject {
                 guard (response as? HTTPURLResponse)?.statusCode == 200, envelope.ok, envelope.data?.version == 1 else {
                     throw URLError(.badServerResponse)
                 }
+                let oldHiddenIDs = taskHistoryState.clearedIDs
                 taskHistoryState.acknowledge(operation)
+                if oldHiddenIDs != taskHistoryState.clearedIDs {
+                    taskRevision = nil
+                    Task { await refreshTasks() }
+                }
             }
             taskHistoryNotice = taskHistoryState.pendingOperations.isEmpty ? nil : NSLocalizedString("History changes are waiting to sync.", comment: "History outbox")
         } catch {
-            guard root == installation.root else { return }
+            guard generation == taskGeneration else { return }
             taskHistoryNotice = NSLocalizedString("History changes are waiting to sync. The 30-day period starts when the server receives Clear.", comment: "History offline")
         }
     }
@@ -333,7 +466,7 @@ final class DesktopModel: ObservableObject {
         guard installation.hasServer, !controlling else {
             throw InstallerError.localized("Connect to the server before using Recovery Options.")
         }
-        let root = installation.root
+        let generation = taskGeneration
         let identityKey = task.workflowId == nil ? "job_id" : "workflow_id"
         var payload: [String: Any] = ["action": "options", identityKey: identity]
         if let choice, let revision {
@@ -348,7 +481,7 @@ final class DesktopModel: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard root == installation.root, !Task.isCancelled else { throw CancellationError() }
+        guard generation == taskGeneration, !Task.isCancelled else { throw CancellationError() }
         if (response as? HTTPURLResponse)?.statusCode == 404 {
             throw InstallerError.localized("Update the sidecar to use Recovery Options. You can still review this task in your agent.")
         }
@@ -396,7 +529,7 @@ final class DesktopModel: ObservableObject {
                 let data = result["data"] as? [String: Any]
                 serviceRunning = data?["processRunning"] as? Bool ?? data?["running"] as? Bool
                 if action == "stop" { stale = status != nil }
-                installation = DesktopInstallation()
+                updateInstallation(DesktopInstallation())
             } catch { notice = error.presentationDescription(); remember(notice); controlAction = nil; return }
             controlAction = nil
             if action != "stop" { await refresh() }

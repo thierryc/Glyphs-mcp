@@ -80,6 +80,57 @@ final class SkillCatalogTests: XCTestCase {
         XCTAssertTrue(scan().updateIDs.isEmpty)
     }
 
+    func testCardUpdatesCatalogRevisionWhenFilesAreIdentical() throws {
+        let installer = SupplementalSkillInstaller(home: temporary, bundledNames: [])
+        let original = skill(), latest = skill("c")
+        let contents = files()
+        let destination = installer.scopeStatus(original).missing(for: [.codex])
+        XCTAssertEqual(installer.apply(.install, to: destination, skill: original, files: contents).completed.count, 1)
+
+        let card = SkillUpdateLocation.eligible(in: installer.scopeStatus(latest))
+        XCTAssertEqual(card.count, 1)
+        let package = SkillPackageVersion(label: nil, files: contents)
+        let result = installer.update(latest, locations: card, files: contents, package: package)
+        XCTAssertTrue(result.failures.isEmpty)
+        XCTAssertEqual(result.completed.count, 1)
+        XCTAssertTrue(SkillUpdateLocation.eligible(in: installer.scopeStatus(latest)).isEmpty)
+        XCTAssertEqual(try installer.installed(in: XCTUnwrap(card.first).copy.root).first?.skill.source, latest.source)
+    }
+
+    func testCardUpdatesOnlyChosenCopiesAcrossScopesAndDeduplicatesSharedAgents() throws {
+        let entry = skill()
+        let service = SupplementalSkillInstaller(home: temporary, bundledNames: [])
+        let project = temporary.appendingPathComponent("project")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let newer = files("Updated")
+        let package = SkillPackageVersion(label: nil, files: newer)
+        func locations(_ folder: URL?) -> [SkillUpdateLocation] {
+            SkillUpdateLocation.eligible(in: service.scopeStatus(entry, project: folder, package: package), project: folder)
+        }
+        for folder: URL? in [nil, project] {
+            let scope = service.scopeStatus(entry, project: folder)
+            let targets = scope.missing(for: [.codex, .cursor, .claudeCode])
+            XCTAssertEqual(service.apply(.install, to: targets, skill: entry, files: files(), project: folder).completed.count, 2)
+        }
+        let shared = try XCTUnwrap(locations(nil).first { $0.copy.placement == .shared })
+        XCTAssertEqual(shared.title, SkillClient.codex.title)
+        XCTAssertEqual(service.update(entry, locations: [shared, shared], files: newer, package: package).completed.count, 1)
+        XCTAssertEqual(locations(nil).count, 1)
+        XCTAssertEqual(locations(project).count, 2)
+        let remaining = locations(nil) + locations(project)
+        let locallyEdited = try XCTUnwrap(remaining.first { $0.project == project })
+        let document = URL(fileURLWithPath: locallyEdited.id).appendingPathComponent("SKILL.md")
+        try files("Edited")[0].data!.write(to: document)
+        let partial = service.update(entry, locations: remaining, files: newer, package: package)
+        XCTAssertEqual(partial.completed.count, 2)
+        XCTAssertEqual(partial.failures.count, 1)
+        XCTAssertTrue(partial.failures[0].contains(locallyEdited.id))
+        XCTAssertTrue(partial.presentationFailures[0].contains(locallyEdited.title))
+        XCTAssertEqual(try Data(contentsOf: document), files("Edited")[0].data)
+        XCTAssertTrue(locations(nil).isEmpty)
+        XCTAssertTrue(locations(project).isEmpty)
+    }
+
     func testAntigravitySetupCopyAppearsInOverviewAndCanUpdateIndividually() throws {
         let entry = canonicalSkill(bundled: true)
         let connector = AntigravityConnector(home: temporary)
@@ -150,6 +201,7 @@ final class SkillCatalogTests: XCTestCase {
         let packages = [entry.id: SkillPackageVersion(label: nil, files: bundledFiles(entry, "Updated"))]
         let overview = SkillOverview(skills: [entry], installer: service, packages: packages, projectRoots: [:])
         XCTAssertTrue(overview.updateIDs.isEmpty)
+        XCTAssertTrue(SkillUpdateLocation.eligible(in: overview.global[entry.id]).isEmpty)
         XCTAssertEqual(Set(overview.global[entry.id]!.editableCopies.map { $0.status.state.rawValue }), ["modified", "linked"])
         XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: installed.status.path).appendingPathComponent("SKILL.md")),
                        bundledFiles(entry, "Manual correction")[0].data)

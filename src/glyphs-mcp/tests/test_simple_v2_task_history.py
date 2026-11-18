@@ -295,13 +295,18 @@ def test_transport_lifetime_starts_cleanup_and_stops_before_service_shutdown(tmp
     assert events == ['start', 'run', 'stop', 'close']
 
 
-def test_process_worker_runs_startup_and_periodic_cleanup_then_stops(typed_env, monkeypatch):
+@pytest.mark.parametrize('health_failure', [False, True])
+def test_process_worker_runs_startup_and_periodic_cleanup_then_stops(typed_env, monkeypatch, health_failure):
     service, *_ = typed_env
     called = Event(); again = Event(); calls = []
     def sweep(_):
         calls.append(1)
         (called if len(calls) == 1 else again).set()
     monkeypatch.setattr(task_history, 'cleanup', sweep)
+    if health_failure:
+        def offline():
+            raise OSError('Health observation unavailable')
+        monkeypatch.setattr(service.health_cleanup, 'run_once', offline)
     stop = task_history.start_cleanup(service, interval=.01)
     try: assert called.wait(2) and again.wait(2)
     finally: stop()
@@ -335,3 +340,105 @@ def test_loopback_history_route_auth_and_bounds(typed_env):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app, client=('192.168.0.2',1234)), base_url='http://local', headers={'Authorization':'Bearer fixture-token'}) as client:
             assert (await client.post('/internal/task-history', json=payload)).status_code == 403
     asyncio.run(check())
+
+
+def test_automatic_retention_uses_closure_and_resets_after_changed_evidence(typed_env):
+    service, *_ = typed_env
+    identity, job = closed(typed_env, workflow=False)
+    bound = job['updatedAt']
+    assert task_history.cleanup(service, now=bound+30*DAY-1) == 0
+    assert task_history.cleanup(service, now=bound+30*DAY) == 1
+    assert not list_tasks(service)['tasks'] and service.jobs.get(identity) == job
+    service.jobs.update(identity, summary='Additional evidence')
+    assert list_tasks(service)['tasks']
+    changed = bound+31*DAY
+    assert task_history.cleanup(service, now=changed) == 0
+    assert task_history.cleanup(service, now=changed+30*DAY-1) == 0
+    assert task_history.cleanup(service, now=changed+30*DAY) == 1
+
+
+def test_unproven_closure_observed_durably_even_with_unrelated_recovery(typed_env):
+    from glyphs_mcp_sidecar.edit_workflow_state import WorkflowStore
+    service, *_ = typed_env
+    identity, job = closed(typed_env)
+    # This closed legacy row has no trustworthy closing time. Creation alone
+    # cannot date closure. A different document still owns partial recovery.
+    value = service.edit_workflows.store.records[identity]
+    value.pop('updatedAt')
+    (service.edit_workflows.store.root / (identity+'.json')).write_text(json.dumps(value))
+    other = service.jobs.create({'id':'different'}, {'kind':'python_script'})
+    service.jobs.update(other['id'], status='failed', resultKind='script',
+                        bridgeOperation={'scriptResult': {'executed': True}})
+    now = job['updatedAt']+40*DAY
+    assert task_history.cleanup(service, now=now) == 0
+    service.edit_workflows.store = WorkflowStore(service.jobs.root)
+    assert task_history.cleanup(service, now=now+30*DAY-1) == 0
+    assert task_history.cleanup(service, now=now+30*DAY) == 1
+    assert [t['id'] for t in list_tasks(service)['tasks']] == [other['id']]
+
+
+def test_history_sweep_reaches_candidates_behind_native_owners(typed_env):
+    service, bridge, *_ = typed_env
+    jobs = sorted((closed(typed_env, workflow=False)[1] for _ in range(5)), key=lambda j: j['id'])
+    original = bridge.operation
+    bridge.operation = lambda key: original(key) if key == jobs[-1]['id'] else {'status': 'applied'}
+    now = max(job['updatedAt'] for job in jobs)+31*DAY
+    assert [task_history.cleanup(service, now=now, limit=2) for _ in range(3)] == [0, 0, 1]
+
+
+def test_overdue_history_schedules_short_sweeps_until_caught_up(typed_env):
+    service, *_ = typed_env
+    jobs = [closed(typed_env, workflow=False)[1] for _ in range(3)]
+    now = max(job['updatedAt'] for job in jobs) + 31*DAY
+    assert task_history.cleanup(service, now=now, limit=2) == 2
+    assert service._history_backlog
+    assert task_history.cleanup(service, now=now, limit=2) == 1
+    assert not service._history_backlog
+
+
+def test_reopened_workflow_is_visible_and_reclosure_gets_full_period(typed_env):
+    service, *_ = typed_env
+    identity, _ = closed(typed_env)
+    value = service.edit_workflows.store.records[identity]
+    now = value['updatedAt'] + 31*DAY
+    assert task_history.cleanup(service, now=now) == 1
+    service.edit_workflows._set(value, state='interrupted')
+    assert list_tasks(service)['tasks'][0]['closed'] is False
+    assert task_history.cleanup(service, now=now+DAY) == 0
+    service.edit_workflows._set(value, state='executed')
+    assert task_history.cleanup(service, now=now+2*DAY) == 0
+    assert task_history.cleanup(service, now=now+32*DAY-1) == 0
+    assert task_history.cleanup(service, now=now+32*DAY) == 1
+
+
+def test_late_dependency_prevents_presentation_expiry(typed_env):
+    service, bridge, *_ = typed_env
+    identity, job = closed(typed_env)
+    def owner(identity_checked):
+        assert identity_checked == job['id']
+        store = service.edit_workflows.store
+        waiter = store.create(job['document'], job['request'], job['request'], 'apply', 'dependent')
+        store.update(waiter, state='interrupted', blockingWorkflowId=identity)
+        raise BridgeClientError('job_not_found', 'Native operation missing')
+    bridge.operation = owner
+    assert task_history.cleanup(service, now=job['updatedAt']+31*DAY) == 0
+    assert identity in {t['id'] for t in list_tasks(service)['tasks']}
+
+
+def test_native_history_probe_allows_concurrent_inventory_reads(typed_env):
+    service, bridge, *_ = typed_env
+    _, job = closed(typed_env)
+    checking, resume = Event(), Event()
+    def native_read(_):
+        checking.set()
+        assert resume.wait(2)
+        raise BridgeClientError('job_not_found', 'Native operation missing')
+    bridge.operation = native_read
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        maintenance = pool.submit(task_history.cleanup, service, now=job['updatedAt']+31*DAY)
+        try:
+            assert checking.wait(2)
+            assert pool.submit(list_tasks, service).result(1)['tasks']
+        finally:
+            resume.set()
+        assert maintenance.result(2) == 1

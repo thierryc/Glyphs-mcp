@@ -66,5 +66,21 @@
 			<string>%lld archivo modificado</string>
 		</dict>
 	</dict>
+	<key>%lld skills have updates</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%lld habilidades tienen actualizaciones</string>
+			<key>one</key>
+			<string>%lld habilidad tiene una actualización</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

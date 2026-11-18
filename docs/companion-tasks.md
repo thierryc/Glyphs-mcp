@@ -6,7 +6,7 @@ installation, server controls and health warnings. Task lists and history live
 in Tasks. The app menu, native menu-bar menu and Dock
 menu all use **Show Tasks** and open the same window.
 
-The sidebar badge counts unviewed tasks, not unresolved decisions. Opening a
+The sidebar badge counts active tasks, including work waiting to proceed automatically. Opening a
 task marks it read; opening Tasks does not mark all tasks read. Closed history
 present on first use starts read. Read markers are local to the installation;
 they do not modify workflow revisions, recovery, or agent authorization. Bold
@@ -22,28 +22,27 @@ to light and dark appearances and does not affect task state.
 
 ## Simple task states and independent work
 
-Rows show their creation date. Details show creation and last-activity times,
+Rows show the request, document, specific status or outcome, and last activity. Details show creation and last-activity times,
 plus the expiry time when applicable, using the user's local date/time format.
 
 **Settings → Tasks → Expire inactive tasks after** defaults to **1 day** and
 offers 1, 7, 30 or 90 days. The preference is shared with the sidecar and takes
-effect on its next maintenance pass without a restart. Background checks run
-about once per minute; opening Tasks does not perform maintenance.
+effect on its next maintenance pass without a restart. The sidecar checks for inactivity in the background; opening Tasks does not perform maintenance.
 
-An inactive request moves to **Finished → Expired** after that period once
+An inactive request moves to **History** with an **Expired** status after that period once
 Glyphs is connected and idle and its native operation/recovery is gone. A stale
 unapplied preview can be cancelled without changing the font. Work in progress
 and usable recovery are never expired by age. Expiry retains reports, errors,
 receipts and action history; an unknown or partial outcome stays unknown or
 partial. No Keep, Save, Undo or Restore choice is made automatically. Closed
-history continues to follow the separate existing clear/retention rules.
+history remains visible for 30 days from closure.
 
 Polling, queue progress and service startup do not renew old execution intent.
 An overdue queued request cannot run when Glyphs becomes available: it expires
 before admission, or its prepared result loses automatic execution permission
 while maintenance checks its owner. Explicit user interaction renews activity.
 
-Tasks has three sections: **Needs attention**, **Active**, and **Finished**.
+Open tasks appear under **Needs attention**, **Active**, or **Finished**. Closed tasks appear in **History**.
 Active contains **Working** and **Waiting** tasks. Waiting means another
 operation must finish automatically; a required decision belongs in Needs
 attention. Finished shows a separate outcome (including cancellation or failure).
@@ -106,8 +105,7 @@ interrupted for review, rather than replaying saved execution authorization.
 `GET /internal/tasks` share a passive projection. All unresolved tasks are
 included on every page; only closed history is paginated. Workflow and job
 entries are correlated by job identity. Unmatched jobs remain visible for
-diagnosis. An ID/creation/closed/evidence-revision index lets the companion count unread tasks
-without loading all history details. Neither endpoint polls native operations,
+diagnosis. The desktop requests version 2 for counts, a snapshot revision, and short conditional refreshes. A changed revision restarts pagination. Bulk operations can request an ID and evidence-revision index that includes unloaded rows. The default version 1 response still includes its index. Neither endpoint polls native operations,
 executes scripts, saves, closes tasks, or issues action tokens.
 
 The agent uses `get_edit_workflow(workflowId)` to retrieve current choices and
@@ -138,40 +136,29 @@ it copies the current intent. Copying prepares text and sends no message.
 History shows retained timestamps and outcomes, without inventing a past event
 stream. Closed tasks retain their history without offering a new close prompt.
 
-**Clear Closed History…**, below the task list, confirms before hiding all
+**Clear history…**, below the task list, confirms before hiding all
 currently closed entries, including unloaded history pages. Cleared entries no
 longer contribute to the unread badge or history pagination. Refreshing and
-reopening the app retain the choice; newly closed tasks remain visible. A
-cleared task that reopens is visible again. The native controls retain their
-existing style; the confirmation dialog explains the 30-day policy without
-repeating it below the controls. Synchronization and compatibility notices
-remain visible when action is needed.
+reopening the app retain the choice; newly closed tasks remain visible. A cleared task that reopens becomes visible again.
 
-### Thirty-day cleared-history retention
+### Automatic history clearing
 
-The companion persists clear dates and an ordered, bounded outbox alongside
-its existing local hidden IDs. `POST /internal/task-history` accepts authenticated
-loopback `clear` or `restore` requests for up to 100 exact task IDs, optionally
-bound to the inventory's `historyRevision` evidence digest. The full index
-includes that digest, so unloaded pages are covered without guessing revisions.
-No new public MCP tools or workflow schema changes are introduced.
+Closed tasks leave History automatically after 30 days. The sidecar uses
+recorded closure evidence when available. For an older task without a reliable
+date, the clock starts when the sidecar first verifies closure. Opening Tasks
+or refreshing the list does not start or advance either timer.
 
-The sidecar records the first accepted clear time; retries never extend it.
-Offline requests survive companion shutdown and sync on subsequent refreshes.
-The UI explains when synchronization is pending or an older sidecar needs an
-update. The 30-day period starts at server receipt, so an offline clear cannot
-cause an unexpectedly early deletion. Legacy hidden IDs receive a fresh grace
-period at adoption, with no inferred historical date.
-
-**History Options → Show Cleared History** cancels pending retention. Restoring
-then clearing again starts a new period. Within the local grace period, showing
-history is immediate even offline. Older cached entries wait for server
-acknowledgment. Expired history cannot be restored for the same evidence; its
-underlying diagnostics remain accessible by the original job/workflow ID.
+Manual clearing hides closed tasks immediately. The desktop queues clears and
+restores across restarts and sends them to the authenticated
+`POST /internal/task-history` endpoint in batches of up to 100 exact IDs and
+evidence revisions. **History Options → Show Cleared History** brings manually
+hidden rows back before cleanup. A restored row starts a fresh visibility
+period when the sidecar accepts the restore. A task with new evidence or
+renewed recovery appears again, even if its previous revision aged out.
 
 The process-lifetime sidecar worker checks at startup and hourly, independently
 of the companion. Inventory reads remain passive and never trigger cleanup.
-Cleanup holds workflow/dispatch/service/job-store locks, respects installation
+Cleanup revalidates the records under lock, respects installation
 reservations and active workers, and requires reachable Glyphs with explicit
 zero native activity. It rechecks closure, blockers, unresolved recovery, exact
 job/workflow evidence and native operation state. Missing or uncertain evidence
@@ -179,8 +166,7 @@ postpones cleanup. Reopening or changed evidence cancels the old retention entry
 and invalidates any expired exclusion marker.
 
 Only `jobs/task-history/ledger.json` is rewritten, under an interprocess file
-lock with atomic replacement. Each pending entry contains a history summary,
-evidence digest and clear time. After 30 elapsed days and successful checks,
+lock with atomic replacement. The ledger tracks manual clears, verified observations and their evidence revisions. After 30 elapsed days and successful checks,
 that summary is removed and replaced with an ID-keyed digest/expiry exclusion
 marker. This prevents old canonical records from repopulating Tasks history.
 A failed/interrupted write leaves the old ledger valid and is safe to retry.
@@ -307,8 +293,7 @@ the original conversation.
 
 ## Offline and compatibility
 
-Retain the last snapshot and unread count when disconnected, with an explicit
-stale indication. An older sidecar reports that an update is required rather
+Use **Refresh** (⌘R) to fetch Tasks independently of service status. On failure, the app keeps the last successful list, displays its update time, and offers **Retry**. A failure to load an earlier page can be retried in History. An older sidecar reports that an update is required rather
 than showing a falsely empty task list. Navigation and copying remain usable;
 the agent must fetch fresh lifecycle state before taking an action.
 

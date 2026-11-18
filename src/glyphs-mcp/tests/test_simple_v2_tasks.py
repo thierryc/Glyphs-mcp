@@ -158,6 +158,15 @@ def test_management_inventory_has_local_auth_and_no_mutation_route(inventory):
             headers = {'Authorization':'Bearer local-test-token'}
             result = await client.get('/internal/tasks',headers=headers)
             assert result.status_code == 200 and result.json()['data']['tasks'][0]['id'] == value['id']
+            assert result.json()['data']['version'] == 1 and 'index' in result.json()['data']
+            first = (await client.get('/internal/tasks?version=2', headers=headers)).json()['data']
+            assert first['version'] == 2 and first['openCount'] == 1 and 'index' not in first
+            params = dict(version=2, revision=first['revision'])
+            refresh = (await client.get('/internal/tasks', params=params, headers=headers)).json()['data']
+            assert refresh['unchanged'] and refresh['tasks'] == []
+            bulk = (await client.get('/internal/tasks', params=dict(params, includeIndex=1),
+                                     headers=headers)).json()['data']
+            assert bulk['index'][0]['id'] == value['id']
             assert (await client.post('/internal/tasks',headers=headers,json={'action':'save'})).status_code == 405
             assert (await client.post('/internal/task-origins',headers=headers,json={'workflowId':value['id'],'agent':'codex','conversationId':str(uuid4())})).status_code == 200
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app, client=('192.0.2.1',1234)),base_url='http://local') as client:
@@ -247,3 +256,89 @@ def test_corrupt_origin_falls_back_without_hiding_tasks(inventory, raw):
     path.parent.mkdir();path.write_text(raw)
     items=list_tasks(inventory)['tasks']
     assert len(items)==1 and items[0]['origin'] is None
+
+
+def test_revision_pages_restart_on_change_and_keep_bulk_index_explicit(inventory):
+    for _ in range(4):
+        task(inventory, state='saved', status='accepted', kind='width_delta')
+    first = list_tasks(inventory, version=2, limit=2)
+    assert (first['totalCount'], first['openCount'], first['closedCount']) == (4, 0, 4)
+    assert 'index' not in first and first['nextCursor'] == 2
+    revision = first['revision']
+    first['tasks'][0]['blockers'].append({'corrupt': True})
+    assert list_tasks(inventory, version=2, limit=2)['tasks'][0]['blockers'] == []
+    same = list_tasks(inventory, version=2, limit=2, revision=revision)
+    assert same['unchanged'] and same['tasks'] == []
+    page = list_tasks(inventory, version=2, cursor=2, limit=2, revision=revision)
+    assert not page['reset'] and page['nextCursor'] is None
+    assert not ({row['id'] for row in first['tasks']} & {row['id'] for row in page['tasks']})
+    bulk = list_tasks(inventory, version=2, limit=2, revision=revision, include_index=True)
+    assert bulk['index'] == list_tasks(inventory)['index']
+    value, job = task(inventory)
+    reset = list_tasks(inventory, version=2, cursor=2, limit=2, revision=revision)
+    assert reset['reset'] and reset['nextCursor'] == 2
+    assert [row['id'] for row in reset['tasks']] == [value['id']] + [row['id'] for row in first['tasks']]
+
+    register_origin(inventory, value['id'], 'codex', str(uuid4()))
+    origin = list_tasks(inventory, version=2, revision=reset['revision'])
+    assert not origin['unchanged'] and origin['tasks'][0]['origin']['agent'] == 'codex'
+    inventory.jobs.update(job['id'], error={'message': 'Updated evidence'})
+    updated = list_tasks(inventory, version=2, revision=origin['revision'])
+    assert updated['tasks'][0]['message'] == 'Updated evidence'
+
+
+def test_revision_changes_after_archive_or_history_visibility_change(inventory):
+    from glyphs_mcp_sidecar.task_archive import fingerprint
+    job = inventory.jobs.create({}, {'kind': 'font_compare'})
+    job = inventory.jobs.update(job['id'], status='interrupted')
+    initial = list_tasks(inventory, version=2)
+    inventory.jobs.write_json(job['id'], 'task-archive.json', dict(version=1, jobId=job['id'],
+        fingerprint=fingerprint(job), archivedAt=1234, outcome='unverified'))
+    archived = list_tasks(inventory, version=2, revision=initial['revision'])
+    row = archived['tasks'][0]
+    assert archived['openCount'] == 0 and row['state'] == 'archived'
+    path = inventory.jobs.root / 'task-history' / 'ledger.json'
+    path.parent.mkdir()
+    path.write_text(json.dumps(dict(version=1, entries={
+        job['id']: dict(phase='expired', revision=row['historyRevision'])})))
+    hidden = list_tasks(inventory, version=2, revision=archived['revision'])
+    assert not hidden['unchanged'] and hidden['totalCount'] == 0
+
+
+def test_first_page_with_four_thousand_workflows(inventory, monkeypatch):
+    from time import perf_counter
+
+    def full_copy():
+        pytest.fail('First page copied the complete job store')
+
+    monkeypatch.setattr(inventory.jobs, 'records', full_copy)
+    # Populate the same in-memory records used after startup. The timed section
+    # includes projection and JSON encoding, excluding fixture construction.
+    workflow, job = task(inventory, state='saved', status='accepted', kind='width_delta')
+    store = inventory.edit_workflows.store
+    for index in range(1, 4000):
+        state = 'saved'
+        if index <= 13:
+            state = 'interrupted'
+        elif index <= 15:
+            state = 'uncertain'
+        elif index == 16:
+            state = 'applied'
+        other_job = dict(deepcopy(job), id=f'job_{index:032x}', updatedAt=job['updatedAt'] + index,
+                         status='applied' if state == 'applied' else 'accepted')
+        other = dict(deepcopy(workflow), id=f'edit_{index:032x}', state=state, jobId=other_job['id'],
+                     job=deepcopy(other_job), updatedAt=other_job['updatedAt'])
+        store.records[other['id']] = other
+        store._remember(other)
+        inventory.jobs._remember(other_job)
+    timings = []
+    for _ in range(21):
+        start = perf_counter()
+        page = list_tasks(inventory, version=2)
+        payload = json.dumps(page)
+        timings.append(perf_counter() - start)
+    warm_p95 = sorted(timings[1:])[18]
+    print(f'4000 tasks, first page cold {timings[0]:.4f}s, warm p95 {warm_p95:.4f}s, {len(payload)} bytes')
+    assert (page['totalCount'], page['openCount'], page['closedCount']) == (4000, 16, 3984)
+    assert len(page['tasks']) == 66 and 'index' not in page
+    assert timings[0] < 3 and warm_p95 < 1

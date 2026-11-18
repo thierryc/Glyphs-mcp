@@ -32,7 +32,7 @@ def _ledger(service):
             path = root / 'ledger.json'
             if path.exists():
                 data = json.loads(path.read_text())
-                if not isinstance(data, dict) or data.get('version') != 1 or not isinstance(data.get('entries'), dict):
+                if not isinstance(data, dict) or data.get('version') != 1 or not isinstance(data.get('entries'), dict) or not isinstance(data.get('observed', {}), dict):
                     raise ValueError('Invalid history ledger; cleanup has been postponed.')
             else:
                 data = dict(version=1, entries={})
@@ -89,7 +89,10 @@ def change(service, action, records, *, now=None):
                 if action == 'restore':
                     # Expiration is permanent only for that exact evidence.
                     if isinstance(previous, dict) and previous.get('phase') != 'expired':
-                        del entries[identity]; changed = True
+                        del entries[identity]
+                        data.setdefault('observed', {})[identity] = dict(
+                            revision=previous.get('revision'), since=now)
+                        changed = True
                     continue
                 task = tasks.get(identity)
                 if (not task or not task['closed'] or task['blockedBy'] or task['blocking']
@@ -108,14 +111,25 @@ def _safe(service, task, jobs):
     if not task['closed'] or task['blocking'] or task['blockedBy']:
         return False
     job = jobs.get(task.get('jobId'))
-    if any(value.get('blockingWorkflowId') == task['id'] or
-           (task.get('jobId') and value.get('blockerId') == task['jobId'])
-           for value in service.edit_workflows.store.records.values()):
+    with service.edit_workflows.store.lock:
+        workflow = dict(service.edit_workflows.store.records.get(task.get('workflowId'), {}))
+    if (any(workflow.get(k) for k in ('blockerId', 'pendingAction', 'queuedAction', 'queuePredecessorId'))
+            or (workflow.get('savedVersion') or {}).get('available') or (job or {}).get('hasPendingWrites')):
         return False
+    for request in (workflow.get('saveRequest'), (job or {}).get('saveRequest')):
+        if request:
+            from .task_expiration import _native_released
+            try:
+                if not request.get('saveId') or not _native_released(service, request['saveId'], save=True):
+                    return False
+            except Exception:
+                return False
     if task.get('jobId') and job is None:
         return False
     if not job:
         return True
+    if job.get('restoreRequest') and job['status'] != 'discarded':
+        return False
     if unresolved(job) or job['status'] not in {'accepted', 'completed', 'discarded', 'cancelled', 'failed', 'interrupted', 'expired'}:
         return False
     if job['status'] == 'interrupted' and task['state'] != 'archived':
@@ -128,12 +142,20 @@ def _safe(service, task, jobs):
         return False
     # A failed/cancelled native result may still own partial-change recovery.
     from glyphs_mcp_protocol.task_conflicts import stopped_script_released
-    return isinstance(operation, dict) and (operation.get('status') in {'saved', 'accepted', 'completed', 'discarded'}
-        or job.get('resultKind') == 'script' and stopped_script_released(job, operation))
+    return (isinstance(operation, dict) and not operation.get('hasPendingWrites')
+        and not operation.get('recoveryAvailable')
+        and not ((operation.get('scriptResult') or {}).get('recovery') or {}).get('available')
+        and (operation.get('status') in {'saved', 'accepted', 'completed', 'discarded'}
+        or job.get('resultKind') == 'script' and stopped_script_released(job, operation)))
 
 
 def _fresh(service, task, jobs, revision):
     from .task_inventory import _history_revision, _origin
+    if (service.lifecycle.pending != 1 or service._cancellations or service.jobs.count(BUSY)
+            or any(value.get('queuePredecessorId') == task['id'] or value.get('blockingWorkflowId') == task['id']
+                   or (task.get('jobId') and task['jobId'] in (value.get('blockerId'), value.get('blockingJobId')))
+                   for value in service.edit_workflows.store.records.values())):
+        return False
     try:
         job = jobs.get(task.get('jobId'))
         if job and service.jobs.get(job['id']) != job:
@@ -148,50 +170,108 @@ def _fresh(service, task, jobs, revision):
         return False
 
 
-def cleanup(service, *, now=None):
-    """Drop expired summaries only after a fresh, idle, guarded snapshot."""
-    if not (service.jobs.root / 'task-history' / 'ledger.json').exists():
-        return 0
+def _closure_bound(service, task, job, now):
+    """Latest canonical evidence is a conservative upper bound on closure."""
+    with service.edit_workflows.store.lock:
+        workflow = dict(service.edit_workflows.store.records.get(task.get('workflowId'), {}))
+    values = []
+    for record in (workflow, job):
+        if record:
+            created, updated = record.get('createdAt'), record.get('updatedAt')
+            if (type(created) not in (float, int) or type(updated) not in (float, int)
+                    or not 0 < created <= updated):
+                return None
+            values.append(updated)
+    for record in (workflow, job):
+        if record and record.get('expiration'):
+            values.append(record['expiration'].get('expiredAt'))
+    if task['state'] == 'archived':
+        values.append(task.get('updatedAt'))
+    if task.get('origin'):
+        values.append(task['origin'].get('capturedAt'))
+    if values and all(type(t) in (int, float) and math.isfinite(t) and 0 < t <= now for t in values):
+        return max(values)
+    return None
+
+
+def cleanup(service, *, now=None, limit=100):
+    """Age closed summaries from durable closure evidence or verified observation."""
     now = time.time() if now is None else now
-    if not math.isfinite(now):
+    if type(now) not in (int, float) or not math.isfinite(now) or now <= 0:
         return 0
     from .task_inventory import _tasks
+    from .task_expiration import fair_batch
     workflows = service.edit_workflows
-    with workflows.lock, service._script_dispatch_lock, workflows.store.lock, service._lock, service.jobs._lock:
-        if (service.lifecycle.pending or service._cancellations or service.jobs.count(BUSY)
-                or service.jobs.select(set(), include_unresolved=True)):
-            return 0
-        try:
-            native = service.bridge.status()
-            if type(native.get('activeOperations')) is not int or native['activeOperations'] != 0:
+    with workflows.lock, service._script_dispatch_lock:
+        service._history_backlog = False
+        with workflows.store.lock, service._lock, service.jobs._lock:
+            if service.lifecycle.pending or service._cancellations or service.jobs.count(BUSY):
                 return 0
-        except Exception:
-            return 0
-        tasks = {task['id']: task for task in _tasks(service)}
-        jobs = {job['id']: job for job in service.jobs.records()}
+            tasks = {task['id']: task for task in _tasks(service)}
+            jobs = service.jobs.inventory_records()
         expired = 0
         with service.lifecycle.mutation(), _ledger(service) as (data, path):
+            entries = data['entries']
+            observed = data.setdefault('observed', {})
             changed = False
-            for identity, entry in list(data['entries'].items()):
-                if not isinstance(entry, dict):
+            candidates = []
+            for identity, task in tasks.items():
+                entry = entries.get(identity)
+                revision = task['historyRevision']
+                observation = observed.get(identity)
+                if entry is not None and not _matches(entry, task):
+                    del entries[identity]
+                    # Any later closure starts a fresh period. Keep this marker
+                    # even while the task is open and across process restarts.
+                    observed[identity] = dict(revision=None, since=now)
+                    changed = True
+                    entry = None
+                    observation = observed[identity]
+                if not task['closed'] or task['blockedBy'] or task['blocking']:
                     continue
-                task = tasks.get(identity)
-                # New evidence / reopening cancels retention; never auto-clear it.
-                if task and not _matches(entry, task):
-                    del data['entries'][identity]; changed = True
-                    continue
-                cleared = entry.get('clearedAt')
-                if (not task or entry.get('phase') != 'cleared' or type(cleared) not in (int, float)
-                        or not math.isfinite(cleared) or cleared < 0 or now - cleared < RETENTION_SECONDS
-                        or not _safe(service, task, jobs)):
-                    continue
-                # Native checks can take time. Recheck canonical evidence before
-                # committing, including writes from another sidecar process.
-                if not _fresh(service, task, jobs, entry['revision']):
-                    continue
-                # Minimal exclusion marker: no title, path, prompt, error or outcome.
-                data['entries'][identity] = dict(phase='expired', revision=entry['revision'], expiredAt=now)
-                changed = True; expired += 1
+                if entry is not None:
+                    if entry.get('phase') != 'cleared':
+                        continue
+                    since = entry.get('clearedAt')
+                    if type(since) not in (float, int) or not math.isfinite(since) or since <= 0:
+                        continue
+                elif observation is not None:
+                    if not isinstance(observation, dict):
+                        continue
+                    since = observation.get('since') if observation.get('revision') == revision else None
+                    if since is not None and (type(since) not in (int, float) or not math.isfinite(since) or since <= 0):
+                        continue
+                else:
+                    since = _closure_bound(service, task, jobs.get(task.get('jobId')), now)
+                if ((entry is None and observation is None) or since is None
+                        or now - since >= RETENTION_SECONDS):
+                    candidates.append((task, since))
+            if candidates:
+                try:
+                    native = service.bridge.status()
+                    idle = type(native.get('activeOperations')) is int and native['activeOperations'] == 0
+                except Exception:
+                    idle = False
+                if idle:
+                    checked = 0
+                    for task, since in fair_batch(service, '_history_cursor', candidates, lambda row: row[0]['id'], limit):
+                        identity, revision = task['id'], task['historyRevision']
+                        if not _safe(service, task, jobs):
+                            continue
+                        with workflows.store.lock, service._lock, service.jobs._lock:
+                            if not _fresh(service, task, jobs, revision):
+                                continue
+                        if since is None or now - since < RETENTION_SECONDS:
+                            observed[identity] = dict(revision=revision, since=now if since is None else since)
+                        else:
+                            entries[identity] = dict(phase='expired', revision=revision, expiredAt=now)
+                            observed.pop(identity, None)
+                            expired += 1
+                        changed = True
+                        checked += 1
+                    # Drain overdue work in bounded passes after a long shutdown.
+                    # A protected batch yields until the next regular sweep.
+                    service._history_backlog = len(candidates) > limit and checked > 0
             if changed:
                 _write(path, data)
         return expired
@@ -200,19 +280,23 @@ def cleanup(service, *, now=None):
 def start_cleanup(service, *, interval=3600):
     """Process lifetime worker, independent of the companion and MCP requests."""
     stopped = Event()
+    def attempt(operation, *args):
+        try:
+            operation(*args)
+        except Exception:
+            logging.getLogger(__name__).info('Task maintenance postponed: %s', operation.__name__)
+
     def run():
         from .task_expiration import expire
         next_history = 0
         while not stopped.is_set():
-            try:
-                service.edit_workflows.reconcile_stopped()
-                service.health_cleanup.run_once()
-                expire(service)
-                if time.monotonic() >= next_history:
-                    cleanup(service)
-                    next_history = time.monotonic() + interval
-            except Exception:
-                logging.getLogger(__name__).info('Task maintenance postponed; retained records were left intact.')
+            attempt(service.edit_workflows.reconcile_stopped)
+            attempt(service.health_cleanup.run_once)
+            attempt(expire, service)
+            if time.monotonic() >= next_history:
+                attempt(cleanup, service)
+                delay = min(15, interval) if getattr(service, '_history_backlog', False) else interval
+                next_history = time.monotonic() + delay
             if stopped.wait(min(interval, 15)):
                 break
     thread = Thread(target=run, name='glyphs-history-retention', daemon=True)

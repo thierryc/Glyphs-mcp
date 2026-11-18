@@ -396,16 +396,11 @@ struct DesktopTasksView: View {
         _promptIntent = State(initialValue: promptIntent)
         self.copyPrompt = copyPrompt
     }
-    private var task: DesktopTask? { desktop.visibleTasks.first { $0.id == selected } }
+    private var task: DesktopTask? { selected.flatMap { desktop.selectedTask(id: $0) } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let notice = desktop.tasksNotice {
-                Text(notice).font(.callout).foregroundStyle(.secondary)
-            }
-            if desktop.tasksStale, desktop.tasksObservedAt != nil {
-                Text("Showing the last observation.").font(.caption).foregroundStyle(.secondary)
-            }
+            refreshControls
             if desktop.tasks.isEmpty && !desktop.hasClearedTaskHistory {
                 if desktop.tasksNotice != nil {
                     ContentUnavailableView("Tasks Unavailable", systemImage: "exclamationmark.triangle")
@@ -418,7 +413,7 @@ struct DesktopTasksView: View {
                 HSplitView {
                     VStack(spacing: 0) {
                         List(selection: $selected) {
-                            let attention = desktop.visibleTasks.filter { $0.taskGroup == "attention" }
+                            let attention = desktop.visibleTasks.filter { !$0.closed && $0.taskGroup == "attention" }
                             if !attention.isEmpty {
                                 taskGroup("Needs attention", tasks: attention)
                             }
@@ -426,12 +421,22 @@ struct DesktopTasksView: View {
                             if !active.isEmpty {
                                 taskGroup("Active", tasks: active)
                             }
-                            let finished = desktop.visibleTasks.filter { $0.taskGroup == "finished" }
+                            let finished = desktop.visibleTasks.filter { !$0.closed && $0.taskGroup == "finished" }
                             if !finished.isEmpty {
                                 taskGroup("Finished", tasks: finished)
                             }
+                            let history = desktop.visibleTasks.filter(\.closed)
+                            if !history.isEmpty {
+                                taskGroup("History", tasks: history)
+                            }
+                            if let notice = desktop.tasksHistoryPageNotice {
+                                Text(notice).font(.callout).foregroundStyle(.secondary).selectionDisabled()
+                            }
                             if desktop.tasksNextCursor != nil {
-                                Button("Load Earlier Tasks") { Task { await desktop.refreshTasks(loadMore: true) } }
+                                Button(LocalizedStringKey(desktop.tasksHistoryPageNotice == nil ? "Load more" : "Retry")) {
+                                    Task { await desktop.refreshTasks(loadMore: true) }
+                                }
+                                    .accessibilityLabel(Text(LocalizedStringKey(desktop.tasksHistoryPageNotice == nil ? "Load Earlier Tasks" : "Retry loading history")))
                                     .disabled(desktop.tasksLoading)
                             }
                             if desktop.visibleTasks.isEmpty {
@@ -447,7 +452,7 @@ struct DesktopTasksView: View {
                         .frame(maxHeight: .infinity)
                         historyControls
                     }
-                    .frame(minWidth: 220, idealWidth: 270, maxWidth: 320, maxHeight: .infinity)
+                    .frame(minWidth: 220, idealWidth: 310, maxWidth: .infinity, maxHeight: .infinity)
                     ScrollView {
                         if let task {
                             details(task)
@@ -456,7 +461,8 @@ struct DesktopTasksView: View {
                                 .padding(.top, DesktopDashboardLayout.pageTopPadding)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
-                            ContentUnavailableView("Select a Task", systemImage: "list.bullet")
+                            ContentUnavailableView("Select a Task", systemImage: "list.bullet",
+                                description: Text("Choose a task to see its outcome and available actions."))
                                 .frame(maxWidth: .infinity, minHeight: 240)
                         }
                     }
@@ -469,32 +475,65 @@ struct DesktopTasksView: View {
         .padding(.leading, 16)
         .padding(.trailing, DesktopDashboardLayout.pagePadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear { desktop.setVisible("tasks", true) }
-        .onDisappear { desktop.setVisible("tasks", false) }
+        .onAppear {
+            desktop.setSelectedTaskID(selected)
+            desktop.setVisible("tasks", true)
+        }
+        .onDisappear {
+            desktop.setVisible("tasks", false)
+            desktop.setSelectedTaskID(nil)
+        }
         .onChange(of: selected) { _, _ in
+            desktop.setSelectedTaskID(selected)
             copied = false; linkFailed = false; historyExpanded = false; promptIntent = .review
             if let task { desktop.readTask(task) }
         }
         .onChange(of: desktop.visibleTasks) { _, _ in
-            if let selected, !desktop.visibleTasks.contains(where: { $0.id == selected }) { self.selected = nil }
+            if let selected, !desktop.taskIsAddressable(id: selected) { self.selected = nil }
             if let task { desktop.readTask(task) }
         }
         .confirmationDialog("Clear closed task history?", isPresented: $confirmingClearHistory, titleVisibility: .visible) {
             Button("Clear Closed History") { desktop.clearClosedTaskHistory() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Hide all currently closed tasks, including earlier pages. Cleared history is removed after 30 days. You can show it again before cleanup from History Options. Open tasks, recovery data, diagnostics, and Unverified outcomes are kept.")
+            Text("Hide closed tasks from every page. Use Show Cleared History to bring them back before automatic cleanup.")
         }
         .sheet(item: $recoveryTask) { task in
             DesktopTaskRecoveryView(task: task).environmentObject(desktop).desktopDesign()
         }
     }
 
+    private var refreshControls: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                if let notice = desktop.tasksNotice {
+                    Text(notice).font(.callout)
+                }
+                if let observed = desktop.tasksObservedAt {
+                    Text("Last updated \(observed.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            Spacer(minLength: 4)
+            Button {
+                Task { await desktop.refreshTasks() }
+            } label: {
+                Label(LocalizedStringKey(desktop.tasksNotice == nil ? "Refresh" : "Retry"), systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(DesktopSecondaryButtonStyle())
+            .keyboardShortcut("r", modifiers: .command)
+            .accessibilityLabel(Text(LocalizedStringKey(desktop.tasksNotice == nil ? "Refresh tasks" : "Retry refreshing tasks")))
+            .disabled(desktop.tasksLoading || !desktop.installation.hasServer)
+        }
+    }
+
     private var historyControls: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Button("Clear Closed History…") { confirmingClearHistory = true }
+                Button("Clear history…") { confirmingClearHistory = true }
                     .buttonStyle(DesktopSecondaryButtonStyle()).controlSize(.small)
+                    .accessibilityLabel(Text("Clear Closed History…"))
                     .disabled(!desktop.canClearTaskHistory)
                 Spacer(minLength: 0)
                 Menu {
@@ -508,6 +547,10 @@ struct DesktopTasksView: View {
             }
             if let notice = desktop.taskHistoryNotice {
                 Text(notice).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            if desktop.supportsAutomaticTaskHistory {
+                Text("Closed tasks are cleared automatically after 30 days.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
@@ -531,26 +574,22 @@ struct DesktopTasksView: View {
 
     private func row(_ task: DesktopTask) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(task.documentName).fontWeight(desktop.isUnread(task) ? .semibold : .medium)
+            Text(LocalizedStringKey(task.title)).fontWeight(desktop.isUnread(task) ? .semibold : .medium)
+                .lineLimit(2).help(task.title)
+            Text(task.documentName).font(.callout)
+                .foregroundStyle(selected == task.id ? .primary : .secondary)
                 .lineLimit(1).truncationMode(.middle)
-            Text(LocalizedStringKey(task.title)).font(.callout)
-                .foregroundStyle(selected == task.id ? .primary : .secondary).lineLimit(2)
-            HStack(spacing: 8) {
-                if let status = task.rowStatusLabel {
-                    if selected == task.id {
-                        Text(LocalizedStringKey(status))
-                    } else {
-                        Text(LocalizedStringKey(status))
-                            .foregroundStyle(task.taskGroup == "attention" ? Color.orange : Color.secondary)
-                    }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    rowStatus(task)
+                    Spacer(minLength: 4)
+                    activityDate(task)
+                }.fixedSize(horizontal: true, vertical: false)
+                VStack(alignment: .leading, spacing: 3) {
+                    rowStatus(task)
+                    activityDate(task)
                 }
-                Spacer(minLength: 4)
-                if let date = task.startedDate {
-                    Text(date, format: .dateTime.year().month(.abbreviated).day())
-                        .foregroundStyle(selected == task.id ? .primary : .secondary)
-                        .help(date.formatted(date: .complete, time: .shortened))
-                }
-            }.font(.caption).lineLimit(1)
+            }.font(.caption)
             if task.recoveryAvailable {
                 Label("Recovery available", systemImage: "arrow.uturn.backward")
                     .font(.caption).foregroundStyle(.secondary)
@@ -569,6 +608,22 @@ struct DesktopTasksView: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityValue(Text(LocalizedStringKey(desktop.isUnread(task) ? "Unread" : "Read")))
+    }
+
+    @ViewBuilder private func rowStatus(_ task: DesktopTask) -> some View {
+        if let status = task.rowStatusLabel {
+            Text(LocalizedStringKey(status))
+                .foregroundStyle(selected == task.id ? Color.primary : task.taskGroup == "attention" ? Color.orange : Color.secondary)
+        }
+    }
+
+    @ViewBuilder private func activityDate(_ task: DesktopTask) -> some View {
+        if let date = task.lastActivityDate {
+            Text(date, format: .dateTime.year().month(.abbreviated).day())
+                .foregroundStyle(selected == task.id ? .primary : .secondary)
+                .help(date.formatted(date: .complete, time: .shortened))
+                .accessibilityLabel(Text("Last activity \(date.formatted(date: .complete, time: .shortened))"))
+        }
     }
 
     private var usesSoftInactiveSelection: Bool {
@@ -820,7 +875,6 @@ private struct DesktopTaskPrompt: View {
             .pickerStyle(.segmented).labelsHidden().controlSize(.small)
             .fixedSize(horizontal: true, vertical: false)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel(Text("Prompt purpose"))
             Text(request)
                 .font(.system(.callout, design: .monospaced))
                 .lineSpacing(3).textSelection(.enabled)

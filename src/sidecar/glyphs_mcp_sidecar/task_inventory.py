@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import time
 from threading import RLock
+from uuid import uuid4
 
 from .edit_workflow_state import TERMINAL, action_support_text, remaining_work
 from .saved_script import stopped_outcome, unresolved
@@ -16,6 +17,7 @@ from .preview_cleanup import failed_dispatch_pending
 from glyphs_mcp_protocol.task_conflicts import protection, conflicts, describe, stopped_script_released
 
 _ORIGIN_LOCK = RLock()
+_PAGE_LOCK = RLock()
 
 RUNNING = {'starting', 'preparing', 'applying', 'saving', 'accepting', 'discarding', 'cancelling', 'resolving'}
 JOB_CLOSED = {'accepted', 'completed', 'discarded', 'cancelled', 'failed', 'interrupted', 'expired'}
@@ -106,32 +108,83 @@ def register_origin(service, workflow_id, agent, conversation_id):
         return value
 
 
-def list_tasks(service, cursor=0, limit=50):
-    if type(cursor) is not int or cursor < 0 or type(limit) is not int or not 1 <= limit <= 100:
-        raise ValueError('Invalid task page')
+def _file_version(path):
+    try:
+        info = path.stat()
+        return info.st_ino, info.st_mtime_ns, info.st_size
+    except FileNotFoundError:
+        return None
+
+
+def _inputs(service):
+    return (service.edit_workflows.store.inventory_generation, service.jobs.inventory_generation,
+            getattr(service, '_task_scoped_recovery', False), getattr(service, '_task_bridge_session', None),
+            _file_version(service.jobs.root / 'task-origins'),
+            _file_version(service.jobs.root / 'task-history' / 'ledger.json'))
+
+
+def _snapshot(service):
     from .task_history import visible_history
     ordered = visible_history(service, _tasks(service))
-    open_tasks = [task for task in ordered if not task['closed']]
-    closed_tasks = [task for task in ordered if task['closed']]
-    page = closed_tasks[cursor:cursor + limit]
-    return dict(version=1, observedAt=time.time(), tasks=open_tasks + page,
-                index=[{key: task[key] for key in ("id", "createdAt", "closed", "historyRevision")} for task in ordered],
-                nextCursor=cursor + len(page) if cursor + len(page) < len(closed_tasks) else None)
+    return (ordered, [task for task in ordered if not task['closed']],
+            [task for task in ordered if task['closed']])
+
+
+def list_tasks(service, cursor=0, limit=50, *, version=1, revision=None, include_index=False):
+    if (type(cursor) is not int or cursor < 0 or type(limit) is not int or not 1 <= limit <= 100
+            or version not in (1, 2)):
+        raise ValueError('Invalid task page')
+    if version == 2:
+        # One concurrent builder per generation. Capture the inputs before the
+        # snapshot so a concurrent mutation always invalidates the next read.
+        with _PAGE_LOCK:
+            inputs = _inputs(service)
+            cached = getattr(service, '_task_inventory_snapshot', None)
+            if cached is None or cached[0] != inputs:
+                cached = inputs, uuid4().hex, _snapshot(service)
+                service._task_inventory_snapshot = cached
+            _, current, (ordered, open_tasks, closed_tasks) = cached
+        reset = bool(cursor and revision and revision != current)
+        if reset:
+            cursor = 0
+        unchanged = cursor == 0 and revision == current and not include_index
+        result = dict(version=2, revision=current, unchanged=unchanged, reset=reset,
+                      totalCount=len(ordered), openCount=len(open_tasks), closedCount=len(closed_tasks))
+    else:
+        ordered, open_tasks, closed_tasks = _snapshot(service)
+        unchanged = False
+        result = dict(version=1)
+    end = cursor + limit
+    rows = [] if unchanged else open_tasks + closed_tasks[cursor:end]
+    result.update(observedAt=time.time(), tasks=deepcopy(rows) if version == 2 else rows,
+                  nextCursor=end if end < len(closed_tasks) else None)
+    if version == 1 or include_index:
+        result['index'] = [{key: task[key] for key in ('id', 'createdAt', 'closed', 'historyRevision')}
+                           for task in ordered]
+    return result
 
 
 def _tasks(service):
     """Complete passive snapshot, including retained history; never advances work."""
     coordinator = service.edit_workflows
+    # Workflow transitions mutate their records in place. Project while the
+    # store is locked. JobStore replaces each indexed job on write, so its
+    # detached mapping remains a stable read-only view across later writes.
     with getattr(coordinator.store, 'lock', coordinator.lock):
-        values = deepcopy(list(coordinator.store.records.values()))
-        jobs = {job['id']: job for job in service.jobs.records()}
-        origins = {value['id']: _origin(service, value['id']) for value in values}
-        from .script_service import execution_blockers, scoped_recovery
-        scoped = scoped_recovery(service)
-        bridge_session = getattr(service, '_task_bridge_session', None)
-        owners = [job for job in jobs.values() if protection(job)]
+        return _project_tasks(service, list(coordinator.store.records.values()), service.jobs.inventory_records())
+
+
+def _project_tasks(service, values, jobs):
+    origins = {path.stem: _origin(service, path.stem)
+               for path in (service.jobs.root / 'task-origins').glob('edit_*.json')}
+    from .script_service import execution_blockers, scoped_recovery
+    scoped = scoped_recovery(service)
+    bridge_session = getattr(service, '_task_bridge_session', None)
+    owners = [job for job in jobs.values() if protection(job)]
     tasks, owned = [], {value['saveRequest']['checkpointJobId'] for value in values
                         if (value.get('saveRequest') or {}).get('checkpointJobId')}
+    by_workflow = {value['id']: value for value in values}
+    referenced_jobs = {value.get(key) for value in values for key in ('jobId', 'blockerId', 'blockingJobId')}
     for value in values:
         job_id = value.get('jobId')
         job = jobs.get(job_id) or (value.get('job') if not value.get('blockerId') else None) or {}
@@ -139,7 +192,7 @@ def _tasks(service):
             owned.add(job_id)
         state, closed = _state(value, job, True)
         task = _project(value, job, state, closed, True, bridge_session=bridge_session)
-        task['origin'] = origins[value['id']]
+        task['origin'] = origins.get(value['id'])
         task['historyRevision'] = _history_revision(value, job, task['origin'])
         pending = (not closed and not unresolved(job) and value.get('state') in {
             'queued', 'starting', 'preparing', 'ready', 'waiting_run', 'failed', 'blocked_active', 'blocked_review', 'blocked_proposal'})
@@ -161,8 +214,8 @@ def _tasks(service):
                 if not scoped and owner['documentId'] != task['documentId'] and owner['reason'] in {'recovery', 'preview'}:
                     owner.update(scope='session', reason='runtime_update', wait='decision')
                 task['blockers'].append(dict(owner, message=describe(owner)))
-        predecessor = next((p for p in values if p['id'] == value.get('queuePredecessorId') and p['state'] != 'expired'), None)
-        if predecessor and not closed:
+        predecessor = by_workflow.get(value.get('queuePredecessorId'))
+        if predecessor and predecessor['state'] != 'expired' and not closed:
             from .workflow_queue import predecessor_blocker
             owner = predecessor_blocker(predecessor)
             if not owner.get('jobId') or not any(b.get('jobId') == owner['jobId'] for b in task['blockers']):
@@ -173,7 +226,7 @@ def _tasks(service):
             state, closed = _state(job, job, False)
             task = dict(_project(job, job, state, closed, False, bridge_session=bridge_session), origin=None, blockingJobIds=[], blockers=[])
             from .task_archive import marker, RECEIPT
-            archived = marker(service, job, values)
+            archived = marker(service, job, ()) if job['id'] not in referenced_jobs else None
             if archived:
                 task.update(state='archived', closed=True, outcome='unverified', supportText=RECEIPT,
                         updatedAt=archived['archivedAt'], remainingWork=None)
@@ -221,6 +274,11 @@ def _outcome(value, job, workflow):
     if state == 'expired':
         previous = (value.get('expiration') or {}).get('previousState')
         evidence = (job.get('bridgeOperation') or {}).get('scriptResult') or {}
+        if (job.get('outcome') == 'partial' or
+                ((job.get('error') or {}).get('details') or {}).get('recovery', {}).get('complete') is False):
+            return 'Partial changes may remain'
+        if job.get('outcome') == 'unverified':
+            return 'Unverified'
         if evidence.get('executed'):
             return 'Unverified' if evidence.get('executionSucceeded') else 'Partial changes may remain'
         return 'Outcome unknown' if previous in {'uncertain', 'interrupted', 'accept_uncertain'} else None

@@ -118,7 +118,9 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
         default: return "attention"
         }
     }
-    public var rowStatusLabel: String? { state == "expired" ? "Expired" : taskGroup == "finished" ? outcomeLabel ?? statusLabel : statusLabel }
+    public var rowStatusLabel: String? {
+        taskGroup == "finished" ? outcomeLabel ?? statusLabel : statusLabel
+    }
     public var recoveryAvailable: Bool { recoveryStatus == "available" }
     public var taskActionLabel: String {
         state == "unknown" || state == "interrupted" ? "Check result…" : "Task actions…"
@@ -149,18 +151,18 @@ public struct DesktopTask: Decodable, Equatable, Identifiable {
             case "working": return "Working"
             case "waiting": return "Waiting"
             case "finished": return "Finished"
-            default: return "Needs attention"
+            default: break
             }
         }
         switch state {
         case "running": return "Running"
-        case "needs_decision": return "Needs decision"
+        case "needs_decision": return "Awaiting your decision"
         case "blocked": return "Blocked"
         case "unknown": return "Outcome unknown"
         case "interrupted": return "Interrupted"
         case "archived": return "Unverified"
         case "failed": return "Failed"
-        default: return nil
+        default: return taskGroup == "attention" ? "Needs attention" : nil
         }
     }
     public func prompt(for intent: DesktopTaskPromptIntent) -> String {
@@ -216,22 +218,60 @@ public struct DesktopTaskPage: Decodable, Equatable {
     public let tasks: [DesktopTask]
     public let nextCursor: Int?
     public let index: [DesktopTaskReference]?
+    public let revision: String?
+    public let unchanged: Bool?
+    public let reset: Bool?
+    public let closedCount: Int?
+
+    public static func request(port: Int, token: String, cursor: Int,
+                               revision: String?, includeIndex: Bool) -> URLRequest {
+        var url = URLComponents(string: "http://127.0.0.1:\(port)/internal/tasks")!
+        var query = [URLQueryItem(name: "version", value: "2"), URLQueryItem(name: "cursor", value: String(cursor))]
+        if let revision { query.append(URLQueryItem(name: "revision", value: revision)) }
+        if includeIndex { query.append(URLQueryItem(name: "includeIndex", value: "1")) }
+        url.queryItems = query
+        var request = URLRequest(url: url.url!)
+        request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        return request
+    }
 
     public func mergingHistory(_ previous: [DesktopTask]) -> [DesktopTask] {
-        let identities = index.map { Set($0.map(\.id)) }
-        var merged = Dictionary(uniqueKeysWithValues: previous.filter {
-            $0.closed && (identities?.contains($0.id) ?? true)
+        let byID = index.map { Dictionary($0.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last }) }
+        var merged = Dictionary(uniqueKeysWithValues: previous.filter { task in
+            guard task.closed else { return false }
+            guard let byID else { return true }
+            guard let reference = byID[task.id], reference.closed else { return false }
+            return reference.historyRevision == task.historyRevision
         }.map { ($0.id, $0) })
         for task in tasks { merged[task.id] = task }
         return merged.values.sorted {
             $0.updatedAt == $1.updatedAt ? $0.id > $1.id : $0.updatedAt > $1.updatedAt
         }
     }
-    public func nextHistoryCursor(in loaded: [DesktopTask], ignoring clearedIDs: Set<String> = []) -> Int? {
-        guard let index else { return nextCursor }
+    public func nextHistoryCursor(in loaded: [DesktopTask], ignoring clearedIDs: Set<String> = [],
+                                  fullIndex: [DesktopTaskReference]? = nil) -> Int? {
+        guard let index = fullIndex ?? index else { return nextCursor }
         let closed = index.filter(\.closed), identities = Set(loaded.map(\.id))
         let prefix = closed.prefix { identities.contains($0.id) || clearedIDs.contains($0.id) }.count
         return prefix < closed.count ? prefix : nil
+    }
+}
+
+/// While a request is running, repeated observations represent a single follow-up.
+public struct DesktopTaskRequests {
+    public enum Request { case observation, earlier }
+    private var observation = false
+    private var earlier = false
+    public init() {}
+    public mutating func enqueue(loadMore: Bool) {
+        if loadMore { earlier = true } else { observation = true }
+    }
+    public mutating func takeNext() -> Request? {
+        if observation { observation = false; return .observation }
+        if earlier { earlier = false; return .earlier }
+        return nil
     }
 }
 
@@ -248,10 +288,12 @@ public struct DesktopTaskHistoryState {
     }
     private struct Retention: Codable {
         var clearedAt: [String: TimeInterval]
+        var revisions: [String: String]?
         var operations: [Operation]
     }
     public private(set) var clearedIDs: Set<String>
     public private(set) var clearedAt: [String: TimeInterval]
+    private var clearedRevisions: [String: String] = [:]
     public private(set) var pendingOperations: [Operation]
     private let defaults: UserDefaults
     private let key: String
@@ -262,6 +304,7 @@ public struct DesktopTaskHistoryState {
         if let data = defaults.data(forKey: key + ".retention.v2"),
            let retention = try? JSONDecoder().decode(Retention.self, from: data) {
             clearedAt = retention.clearedAt; pendingOperations = retention.operations
+            clearedRevisions = retention.revisions ?? [:]
         } else {
             // Legacy clears have no timestamp: start a fresh grace period.
             clearedAt = Dictionary(uniqueKeysWithValues: clearedIDs.map { ($0, now.timeIntervalSince1970) })
@@ -276,20 +319,36 @@ public struct DesktopTaskHistoryState {
         let fresh = index.filter { $0.closed && !clearedIDs.contains($0.id) }
         for task in fresh {
             clearedIDs.insert(task.id); clearedAt[task.id] = now.timeIntervalSince1970
+            clearedRevisions[task.id] = task.historyRevision
         }
         enqueue("clear", records: fresh.map { Record(id: $0.id, revision: $0.historyRevision) })
         persist()
     }
     public mutating func observeIndex(_ index: [DesktopTaskReference], pruneMissing: Bool = false) {
-        let reopened = Set(index.filter { !$0.closed }.map(\.id)).intersection(clearedIDs)
+        // A closed task can acquire a different outcome between two observations.
+        // Hide only the evidence that was cleared, including after an app restart.
+        var reopened = Set<String>()
+        var adoptedRevision = false
+        for ref in index where clearedIDs.contains(ref.id) {
+            if !ref.closed {
+                reopened.insert(ref.id)
+            } else if let revision = ref.historyRevision {
+                if let previous = clearedRevisions[ref.id] {
+                    if previous != revision { reopened.insert(ref.id) }
+                } else {
+                    clearedRevisions[ref.id] = revision
+                    adoptedRevision = true
+                }
+            }
+        }
         if !reopened.isEmpty {
             enqueue("restore", records: reopened.sorted().map { Record(id: $0, revision: nil) })
         }
         var removed = reopened
         if pruneMissing { removed.formUnion(clearedIDs.subtracting(index.map(\.id))) }
-        guard !removed.isEmpty else { return }
+        guard !removed.isEmpty || adoptedRevision else { return }
         clearedIDs.subtract(removed)
-        for id in removed { clearedAt.removeValue(forKey: id) }
+        for id in removed { clearedAt.removeValue(forKey: id); clearedRevisions.removeValue(forKey: id) }
         persist()
     }
     public mutating func restore(now: Date = Date()) {
@@ -299,7 +358,7 @@ public struct DesktopTaskHistoryState {
         // Older cached entries wait for the server to establish availability.
         let recent = clearedIDs.filter { now.timeIntervalSince1970 - (clearedAt[$0] ?? 0) < 30 * 86400 }
         clearedIDs.subtract(recent)
-        for id in recent { clearedAt.removeValue(forKey: id) }
+        for id in recent { clearedAt.removeValue(forKey: id); clearedRevisions.removeValue(forKey: id) }
         persist()
     }
     public mutating func acknowledge(_ operation: Operation) {
@@ -309,6 +368,7 @@ public struct DesktopTaskHistoryState {
             let recleared = Set(pendingOperations.filter { $0.action == "clear" }.flatMap { $0.records.map(\.id) })
             for record in operation.records where !recleared.contains(record.id) {
                 clearedIDs.remove(record.id); clearedAt.removeValue(forKey: record.id)
+                clearedRevisions.removeValue(forKey: record.id)
             }
         }
         persist()
@@ -322,7 +382,7 @@ public struct DesktopTaskHistoryState {
     }
     private func persist() {
         defaults.set(Array(clearedIDs).sorted(), forKey: key)
-        if let data = try? JSONEncoder().encode(Retention(clearedAt: clearedAt, operations: pendingOperations)) {
+        if let data = try? JSONEncoder().encode(Retention(clearedAt: clearedAt, revisions: clearedRevisions, operations: pendingOperations)) {
             defaults.set(data, forKey: key + ".retention.v2")
         }
     }
@@ -345,10 +405,10 @@ public struct DesktopTaskReadState {
         baseline = defaults.double(forKey: key + ".baseline")
     }
     public mutating func observe(_ tasks: [DesktopTask]) { observeIndex(tasks.map(DesktopTaskReference.init)) }
-    public mutating func observeIndex(_ tasks: [DesktopTaskReference]) {
+    public mutating func observeIndex(_ tasks: [DesktopTaskReference], observedAt: Date = Date()) {
         let previousSeen = seen, previousKnown = known, wasInitialized = initialized
         if !initialized {
-            baseline = Date().timeIntervalSince1970
+            baseline = observedAt.timeIntervalSince1970
             seen.formUnion(tasks.filter(\.closed).map(\.id))
             initialized = true
         }

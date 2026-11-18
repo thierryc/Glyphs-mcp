@@ -55,7 +55,9 @@ public final class DesktopJobEvents {
         let prefix = root.appendingPathComponent("jobs").path + "/"
         guard path.hasPrefix(prefix) else { return false }
         let parts = path.dropFirst(prefix.count).split(separator: "/")
-        if parts.count == 2 && parts[1] == "state.json" { return true }
+        if parts.count == 2 && parts[0].hasPrefix("job_") {
+            return parts[1] == "state.json" || parts[1] == "task-archive.json"
+        }
         return parts.count == 2 && ["edit-workflows", "task-origins", "task-history"].contains(String(parts[0])) && parts[1].hasSuffix(".json")
     }
 

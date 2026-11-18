@@ -642,7 +642,8 @@ final class DesktopLocalizationTests: XCTestCase {
         for language in languages {
             let bundle = try resources(language)
             let locale = Locale(identifier: language)
-            for key in ["%lld days", "%lld active tasks", "%lld changed files", "Warn at %lld open fonts"] {
+            for key in ["%lld days", "%lld active tasks", "%lld changed files", "Warn at %lld open fonts",
+                        "%lld skills have updates"] {
                 for count in [0, 1, 2, 21] {
                     let value = AppLocalization.count(key, count, bundle: bundle, locale: locale)
                     XCTAssertFalse(value.contains("%"), "\(language): \(value)")
@@ -652,6 +653,10 @@ final class DesktopLocalizationTests: XCTestCase {
         }
         XCTAssertEqual(AppLocalization.count("%lld days", 1, bundle: try resources("en")), "1 day")
         XCTAssertEqual(AppLocalization.count("%lld days", 2, bundle: try resources("en")), "2 days")
+        XCTAssertEqual(AppLocalization.count("%lld skills have updates", 1, bundle: try resources("de"),
+                                             locale: Locale(identifier: "de")), "Für 1 Skill ist ein Update verfügbar")
+        XCTAssertEqual(AppLocalization.count("%lld skills have updates", 2, bundle: try resources("de"),
+                                             locale: Locale(identifier: "de")), "Für 2 Skills sind Updates verfügbar")
     }
 
     func testLanguagePreferencesAndEnglishFallback() {

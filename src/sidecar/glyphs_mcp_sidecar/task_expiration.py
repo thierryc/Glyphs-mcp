@@ -58,6 +58,50 @@ def due(value, job=None, *, now=None, workflow=True, days=INACTIVITY_DAYS):
             and now - activity >= days * 86400)
 
 
+def fair_batch(service, name, items, key, limit):
+    """Remember the last attempted identity, including failed native checks."""
+    cursor = getattr(service, name, '')
+    ordered = sorted(items, key=lambda item: (key(item) <= cursor, key(item)))
+    for item in ordered[:max(0, limit)]:
+        setattr(service, name, key(item))
+        yield item
+
+
+def accepted_interruption(value, job):
+    if not job or job.get('status') != 'accepted':
+        return False
+    pair = value['state'], (value.get('error') or {}).get('code')
+    return pair in {('interrupted', 'workflow_interrupted'), ('uncertain', 'glyphs_busy')}
+
+
+def _stranded(value, job, values):
+    if not accepted_interruption(value, job):
+        return False
+    from .saving import valid_job_receipt
+    request, receipt = job.get('saveRequest'), job.get('receipt')
+    operation = job.get('bridgeOperation') or {}
+    recovery = (operation.get('scriptResult') or {}).get('recovery') or {}
+    if operation.get('recoveryAvailable') or recovery.get('available') or operation.get('hasPendingWrites'):
+        return False
+    if request and not (valid_job_receipt(job, receipt) and
+                        all(request.get(k) == receipt.get(k) for k in ('jobId', 'documentId', 'saveId')) and
+                        operation.get('status') == 'accepted' and operation.get('receipt') == receipt):
+        return False
+    baseline = value.get('savedVersion') or {}
+    if baseline.get('available'):
+        if not (request and operation.get('jobId') == job['id'] and operation.get('recoveryAvailable') is False
+                and recovery.get('available') is False and baseline.get('kind') == 'memory_snapshot'
+                and all(baseline.get(k) and baseline[k] == recovery.get(k) for k in ('snapshotId', 'bridgeSessionId'))):
+            return False
+    if (any(value.get(k) for k in ('blockerId', 'blockingWorkflowId', 'queuePredecessorId', 'pendingAction',
+                                   'queuedAction', 'saveRequest', 'cancelRequested', 'scriptRunAuthorized'))
+            or any(job.get(k) for k in ('restoreRequest', 'hasPendingWrites', 'previewReleasePending'))):
+        return False
+    return not any(other.get('blockingWorkflowId') == value['id']
+                   or job['id'] in (other.get('blockerId'), other.get('blockingJobId'))
+                   or other.get('queuePredecessorId') == value['id'] for other in values)
+
+
 def _native_released(service, identity, *, save=False, preview=False):
     try:
         operation = (service.bridge.save_operation(identity) if save else service.bridge.operation(identity))
@@ -65,6 +109,10 @@ def _native_released(service, identity, *, save=False, preview=False):
         if exc.code in {'job_not_found', 'save_not_found'}:
             return True
         raise
+    if isinstance(operation, dict) and (operation.get('recoveryAvailable') is True
+            or ((operation.get('scriptResult') or {}).get('recovery') or {}).get('available') is True
+            or operation.get('hasPendingWrites')):
+        return False
     if save and isinstance(operation, dict) and operation.get('status') == 'failed':
         return True
     if preview and isinstance(operation, dict):
@@ -86,6 +134,14 @@ def _released(service, value, job):
     if request:
         return bool(request.get('saveId')) and _native_released(service, request['saveId'], save=True)
     return True
+
+
+def _current_workflow(store, value):
+    path = store.root / (value['id'] + '.json')
+    try:
+        return store.records.get(value['id']) == value and json.loads(path.read_text()) == value
+    except (OSError, ValueError):
+        return False
 
 
 def _metadata(value, job, now, *, workflow, days):
@@ -116,17 +172,20 @@ def expire(service, *, now=None, limit=100):
         with workflows.store.lock, service._lock:
             if service.lifecycle.pending or service._cancellations or service.jobs.count(BUSY):
                 return 0
-            values = deepcopy(list(workflows.store.records.values()))
-            jobs = {j['id']: j for j in service.jobs.records()}
-        candidates = []
-        owned = {v['jobId'] for v in values if v.get('jobId')}
-        for value in values:
-            job = jobs.get(value.get('jobId'))
-            if value['state'] == 'queued' and value.get('cancelRequested'):
-                continue
-            if ((value['state'] in WAITING or unresolved(job or {})) and
-                    (not job or job['status'] in STOPPED) and due(value, job, now=now, days=days)):
-                candidates.append((value, job, True))
+            # Indexed job records are replaced on write. Take a private workflow
+            # copy only for candidates that will be revalidated after native I/O.
+            values = workflows.store.records.values()
+            jobs = service.jobs.inventory_records()
+            candidates = []
+            owned = {v['jobId'] for v in values if v.get('jobId')}
+            for value in values:
+                job = jobs.get(value.get('jobId'))
+                if value['state'] == 'queued' and value.get('cancelRequested'):
+                    continue
+                if ((value['state'] in WAITING or unresolved(job or {}))
+                        and due(value, job, now=now, days=days)
+                        and (not job or job['status'] in STOPPED or _stranded(value, job, values))):
+                    candidates.append((deepcopy(value), job, True))
         for job in jobs.values():
             if (job['id'] not in owned and job['status'] in {'interrupted', 'accept_uncertain', 'applied'}
                     and due(job, now=now, workflow=False, days=days)):
@@ -144,7 +203,7 @@ def expire(service, *, now=None, limit=100):
         with service.lifecycle.mutation():
             # Cancellation already revoked intent. Repair its native preview even
             # when the workflow is closed and no inactivity deadline is due.
-            for job in repairs[:limit]:
+            for job in fair_batch(service, '_repair_cursor', repairs, lambda j: j['id'], limit):
                 try:
                     with service._lock:
                         if service.jobs.get(job['id']) != job:
@@ -156,7 +215,7 @@ def expire(service, *, now=None, limit=100):
                     break
                 except Exception:
                     break  # Retry on the next maintenance pass, preserving evidence.
-            for value, job, workflow in candidates[:limit]:
+            for value, job, workflow in fair_batch(service, '_expiry_cursor', candidates, lambda row: row[0]['id'], limit):
                 try:
                     released = _released(service, value, job)
                 except Exception:
@@ -165,8 +224,9 @@ def expire(service, *, now=None, limit=100):
                     continue
                 with workflows.store.lock, service._lock, service.jobs._lock:
                     if (service.lifecycle.pending != 1 or service._cancellations or service.jobs.count(BUSY)
-                            or workflow and workflows._find(value['id']) != value
-                            or job and service.jobs.get(job['id']) != job):
+                            or workflow and not _current_workflow(workflows.store, value)
+                            or job and service.jobs.get(job['id']) != job
+                            or job and job['status'] == 'accepted' and not _stranded(value, job, workflows.store.records.values())):
                         continue
                     metadata = _metadata(value, job, now, workflow=workflow, days=days)
                     if job and job['status'] not in {'completed', 'accepted', 'discarded', 'expired'}:

@@ -30,7 +30,10 @@ def register_routes(mcp, service, token):
     @mcp.custom_route("/internal/tasks", methods=["GET"])
     async def tasks(request):
         from .task_inventory import list_tasks
-        return await respond(request, lambda: list_tasks(service, int(request.query_params.get('cursor', '0')), int(request.query_params.get('limit', '50'))))
+        params = request.query_params
+        return await respond(request, lambda: list_tasks(service, int(params.get('cursor', '0')),
+            int(params.get('limit', '50')), version=int(params.get('version', '1')),
+            revision=params.get('revision'), include_index=params.get('includeIndex') == '1'))
 
     @mcp.custom_route("/internal/task-origins", methods=["POST"])
     async def task_origin(request):

@@ -130,6 +130,7 @@ final class DesktopActivityTests: XCTestCase {
     func testFileEventFilterIgnoresArtifactsAndOtherApplications() {
         let root = URL(fileURLWithPath: "/managed/lean-v2")
         XCTAssertTrue(DesktopJobEvents.isRelevant(path: "/managed/lean-v2/jobs/job_1/state.json", root: root))
+        XCTAssertTrue(DesktopJobEvents.isRelevant(path: "/managed/lean-v2/jobs/job_1/task-archive.json", root: root))
         XCTAssertTrue(DesktopJobEvents.isRelevant(path: "/managed/lean-v2/installation.json", root: root))
         XCTAssertTrue(DesktopJobEvents.isRelevant(path: "/private/var/tmp/lean-v2/jobs/job_1/state.json", root: URL(fileURLWithPath: "/var/tmp/lean-v2")))
         for path in ["/managed/lean-v2/jobs/job_1/state.json.tmp", "/managed/lean-v2/jobs/job_1/source/a.glyph",
@@ -272,7 +273,7 @@ final class DesktopTaskTests: XCTestCase {
         XCTAssertEqual(task.startedDate, Date(timeIntervalSince1970: 1792239449))
         XCTAssertEqual(task.lastActivityDate, Date(timeIntervalSince1970: 1792256103))
         XCTAssertEqual(task.expirationDate, Date(timeIntervalSince1970: 1793200000))
-        XCTAssertEqual(task.rowStatusLabel, "Expired")
+        XCTAssertEqual(task.rowStatusLabel, "Outcome unknown")
         XCTAssertEqual(task.statusLabel, "Expired")
         XCTAssertEqual(task.outcomeLabel, "Outcome unknown")
         XCTAssertEqual(task.taskGroup, "finished")
@@ -305,7 +306,7 @@ final class DesktopTaskTests: XCTestCase {
 
     func testSimpleTaskGroupsAndRecoveryAreIndependentOfClosure() throws {
         for (status, group, label) in [("working", "active", "Working"), ("waiting", "active", "Waiting"),
-                                       ("needs_attention", "attention", "Needs attention"), ("finished", "finished", "Finished")] {
+                                       ("needs_attention", "attention", "Awaiting your decision"), ("finished", "finished", "Finished")] {
             let object: [String: Any] = ["id": "edit_a", "title": "Edit outlines", "documentName": "Font",
                 "state": "needs_decision", "taskStatus": status, "closed": false, "createdAt": 1, "updatedAt": 2,
                 "recoveryStatus": "available", "outcomeLabel": "Changes applied", "blockedBy": [], "blocking": []]
@@ -348,6 +349,10 @@ final class DesktopTaskTests: XCTestCase {
         }
         let attention = try decode()
         XCTAssertEqual(attention.taskGroup, "attention")
+        XCTAssertEqual(attention.rowStatusLabel, "Outcome unknown")
+        payload["state"] = "interrupted"
+        XCTAssertEqual(try decode().rowStatusLabel, "Interrupted")
+        payload["state"] = "unknown"
         XCTAssertEqual(attention.remainingWork, "Reconnect to Glyphs to check recovery.")
         XCTAssertEqual(attention.outcomeLabel, "Unverified")
 
@@ -478,6 +483,24 @@ final class DesktopTaskTests: XCTestCase {
         state.observe([resolved])
         XCTAssertTrue(state.isUnread(resolved))
     }
+    func testReadBaselineUsesFirstServerObservationAcrossPagesAndRelaunch() throws {
+        let suite = "tasks-baseline-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var state = DesktopTaskReadState(defaults: defaults, namespace: "fixture")
+        let first = Date(timeIntervalSince1970: 100)
+        state.observeIndex([], observedAt: first)
+        var relaunched = DesktopTaskReadState(defaults: defaults, namespace: "fixture")
+        func reference(_ id: String, created: Int) throws -> DesktopTaskReference {
+            let data = try JSONSerialization.data(withJSONObject: ["id": id, "closed": true, "createdAt": created])
+            return try JSONDecoder().decode(DesktopTaskReference.self, from: data)
+        }
+        let old = try reference("older-page", created: 99)
+        let new = try reference("closed-since-first-poll", created: 101)
+        relaunched.observeIndex([old, new], observedAt: first.addingTimeInterval(20))
+        XCTAssertFalse(relaunched.isUnread(old))
+        XCTAssertTrue(relaunched.isUnread(new))
+    }
     func testTasksVisibilityAndFileEventsWakeExistingMonitor() {
         var policy = DesktopMonitorPolicy()
         policy.dashboardVisible = true; policy.surfaces.insert("tasks")
@@ -491,7 +514,7 @@ final class DesktopTaskTests: XCTestCase {
     func testDefaultClosedStatusHasNoCompletedBadge() throws {
         XCTAssertNil(try task(closed: true, state: "closed").statusLabel)
         XCTAssertEqual(try task(state: "unknown").statusLabel, "Outcome unknown")
-        XCTAssertEqual(try task(state: "needs_decision").statusLabel, "Needs decision")
+        XCTAssertEqual(try task(state: "needs_decision").statusLabel, "Awaiting your decision")
     }
     func testClearHistoryPersistsOnlyClosedIdentitiesIncludingUnloadedPages() throws {
         let suite = "tasks-history-test-" + UUID().uuidString
@@ -548,6 +571,28 @@ final class DesktopTaskTests: XCTestCase {
 }
 
 extension DesktopTaskTests {
+    func testPreviouslyHiddenClosedOutcomeReappearsWhenItsEvidenceChanges() throws {
+        let suite = "task-revision-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        func reference(_ revision: String) throws -> DesktopTaskReference {
+            let data = try JSONSerialization.data(withJSONObject: [
+                "id": "closed", "createdAt": 1, "closed": true, "historyRevision": revision
+            ])
+            return try JSONDecoder().decode(DesktopTaskReference.self, from: data)
+        }
+        let original = try reference("first")
+        let changed = try reference("second")
+        var history = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        history.clearClosed([original])
+        history = DesktopTaskHistoryState(defaults: defaults, namespace: "fixture")
+        history.observeIndex([original])
+        XCTAssertFalse(history.isVisible(original))
+        history.observeIndex([changed])
+        XCTAssertTrue(history.isVisible(changed))
+        XCTAssertEqual(history.pendingOperations.last?.action, "restore")
+    }
+
     func testLegacyClearedHistoryGetsFreshGracePeriodAndPersistentOutbox() throws {
         let suite = "tasks-retention-test-" + UUID().uuidString
         let defaults = UserDefaults(suiteName: suite)!
@@ -624,6 +669,49 @@ extension DesktopTaskTests {
         let root = URL(fileURLWithPath: "/tmp/task-installation")
         XCTAssertTrue(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/task-history/ledger.json").path, root: root))
         XCTAssertFalse(DesktopJobEvents.isRelevant(path: root.appendingPathComponent("jobs/task-history/ledger.lock").path, root: root))
+    }
+
+    func testTaskPollAndHistoryRequestsCoalesceIndependently() {
+        var queue = DesktopTaskRequests()
+        queue.enqueue(loadMore: false)
+        XCTAssertEqual(queue.takeNext(), .observation)
+        for _ in 0..<8 {
+            queue.enqueue(loadMore: true)
+            queue.enqueue(loadMore: false)
+        }
+        XCTAssertEqual(queue.takeNext(), .observation)
+        XCTAssertEqual(queue.takeNext(), .earlier)
+        XCTAssertNil(queue.takeNext())
+    }
+
+    func testOrdinaryTaskPollOmitsIndexAndEscapesRevision() throws {
+        let request = DesktopTaskPage.request(port: 9876, token: "test-token", cursor: 50,
+                                              revision: "revision&other", includeIndex: false)
+        let components = try XCTUnwrap(URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.host, "127.0.0.1")
+        XCTAssertEqual(components.path, "/internal/tasks")
+        XCTAssertEqual(components.queryItems, [.init(name: "version", value: "2"), .init(name: "cursor", value: "50"),
+                                               .init(name: "revision", value: "revision&other")])
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
+        let clear = DesktopTaskPage.request(port: 9876, token: "", cursor: 0, revision: nil, includeIndex: true)
+        XCTAssertTrue(try XCTUnwrap(clear.url?.query).contains("includeIndex=1"))
+    }
+
+    func testRefreshDropsChangedAndRemovedHistoryAndKeepsUnchangedRows() throws {
+        func row(_ id: String, _ revision: String) -> [String: Any] {
+            ["id": id, "title": "Task", "documentName": "Font", "state": "closed", "closed": true,
+             "createdAt": 1, "updatedAt": 2, "blockedBy": [], "blocking": [], "historyRevision": revision]
+        }
+        let old = [row("replaced", "a"), row("removed", "a"), row("unchanged", "b"), row("invalidated", "a")]
+        let previous = try JSONDecoder().decode([DesktopTask].self, from: JSONSerialization.data(withJSONObject: old))
+        let index = [row("replaced", "c"), row("invalidated", "c"), row("unchanged", "b")]
+        let payload: [String: Any] = ["version": 2, "revision": "new", "closedCount": 3, "observedAt": 3,
+                                      "tasks": [index[0]], "index": index, "nextCursor": 1]
+        let page = try JSONDecoder().decode(DesktopTaskPage.self, from: JSONSerialization.data(withJSONObject: payload))
+        let rows = page.mergingHistory(previous)
+        XCTAssertEqual(Set(rows.map(\.id)), ["replaced", "unchanged"])
+        XCTAssertEqual(rows.first { $0.id == "replaced" }?.historyRevision, "c")
+        XCTAssertEqual(page.nextHistoryCursor(in: rows), 1)
     }
 
     func testRefreshRetainsLoadedHistoryAndDoesNotResetPagination() throws {

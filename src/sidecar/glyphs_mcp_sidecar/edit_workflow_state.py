@@ -12,6 +12,7 @@ from glyphs_mcp_protocol.task_conflicts import STOPPED_SCRIPT, stopped_script_re
 from .saved_script import stopped_outcome, unresolved
 from .activity_feedback import workflow_progress
 from .preview_cleanup import failed_dispatch_pending
+from .task_expiration import accepted_interruption
 
 TERMINAL = {"saved", "discarded", "cancelled", "no_changes", "failed", "executed", "expired"}
 ACTIVE = {"diagnosing", "queued", "preparing", "applying", "saving", "discarding", "blocked_active", "blocked_review", "blocked_proposal", "resolving", "uncertain"}
@@ -26,11 +27,12 @@ def _store_locked(method):
 
 
 class WorkflowStore:
-    def __init__(self, root):
+    def __init__(self, root, *, jobs=None):
         self.lock = RLock()
         self.next_queue_sequence = 1
         self.root = Path(root) / "edit-workflows"
         self.records = {}
+        self.inventory_generation = 0
         self._active, self._keys, self._jobs, self._peers = {}, {}, {}, {}
         self._memberships = {}
         if self.root.is_dir():
@@ -42,7 +44,15 @@ class WorkflowStore:
                     self.next_queue_sequence = max(self.next_queue_sequence, value.get("queueSequence", 0) + 1)
                     self.records[value["id"]] = value
                     self._remember(value)
-                    if value["state"] not in TERMINAL and value["state"] != "interrupted":
+                    job = value.get('job')
+                    if (jobs and value['state'] == 'uncertain' and value.get('jobId')
+                            and (value.get('error') or {}).get('code') == 'glyphs_busy'):
+                        try:
+                            job = jobs.get(value['jobId'])
+                        except KeyError:
+                            job = None
+                    if (value["state"] not in TERMINAL and value["state"] != "interrupted"
+                            and not accepted_interruption(value, job)):
                         value["resumeState"] = value["state"]
                         self.update(value, state="interrupted", scriptRunAuthorized=False,
                                     lastActivityAt=value.get('lastActivityAt', value.get('updatedAt', value['createdAt'])), error={
@@ -82,6 +92,7 @@ class WorkflowStore:
 
     @_store_locked
     def _remember(self, value):
+        self.inventory_generation += 1
         identity = value['id']
         active = (value['state'] in ACTIVE - {'uncertain'}
                   or value['state'] == 'ready' and value['mode'] == 'apply')

@@ -104,6 +104,25 @@ public struct SkillScopeStatus: Sendable {
     }
 }
 
+/// A reviewed physical copy keeps its owning project even when several agents discover it.
+public struct SkillUpdateLocation: Identifiable, Sendable {
+    public let copy: SkillCopy
+    public let project: URL?
+    public let title: String
+    public var id: String { copy.id }
+
+    public static func eligible(in scope: SkillScopeStatus?, project: URL? = nil) -> [Self] {
+        guard let scope else { return [] }
+        return scope.editableCopies.compactMap { copy in
+            guard copy.status.state == .updateAvailable,
+                  let agent = copy.placement.owner(in: scope.agents) else { return nil }
+            let title = project.map { AppLocalization.format("%@ in %@", agent.title, $0.lastPathComponent) }
+                ?? agent.title
+            return Self(copy: copy, project: project, title: title)
+        }
+    }
+}
+
 public enum SkillCopyOperation: Equatable, Sendable {
     case install, reinstall, update, remove
 }
@@ -112,6 +131,12 @@ public struct SkillBatchResult: Sendable {
     public var completed: [String] = []
     public var failures: [String] = []
     public private(set) var presentationFailures: [String] = []
+
+    fileprivate mutating func merge(_ batch: Self, location: SkillUpdateLocation) {
+        completed += batch.completed
+        failures += batch.failures
+        presentationFailures += batch.presentationFailures.map { location.title + " — " + $0 }
+    }
 
     fileprivate mutating func appendFailure(_ error: Error, path: String? = nil) {
         let prefix = path.map { $0 + ": " } ?? ""
@@ -312,6 +337,27 @@ public struct SupplementalSkillInstaller {
         return .init(agents: agents, copies: copies)
     }
 
+    public func update(_ skill: CatalogSkill, locations: [SkillUpdateLocation],
+                       files: [ProjectFile], package: SkillPackageVersion) -> SkillBatchResult {
+        var result = SkillBatchResult()
+        var seen = Set<String>()
+        let unique = locations.filter { seen.insert($0.id).inserted }
+        for (project, group) in Dictionary(grouping: unique, by: \.project) {
+            let scope = scopeStatus(skill, project: project, package: package)
+            let eligible = Set(SkillUpdateLocation.eligible(in: scope, project: project).map(\.id))
+            for location in group {
+                guard eligible.contains(location.id) else {
+                    result.appendFailure(ProjectError(localized: "The skill changed. Review the current copy and try again."),
+                                         path: location.title + " — " + location.id)
+                    continue
+                }
+                let batch = apply(.update, to: [location.copy], skill: skill, files: files, project: project, package: package)
+                result.merge(batch, location: location)
+            }
+        }
+        return result
+    }
+
     public func apply(_ operation: SkillCopyOperation, to targets: [SkillCopy], skill: CatalogSkill,
                       files: [ProjectFile], project: URL? = nil, replace: Bool = false,
                       package: SkillPackageVersion? = nil, forAgent agent: SkillClient? = nil) -> SkillBatchResult {
@@ -326,7 +372,11 @@ public struct SupplementalSkillInstaller {
                     throw ProjectError(localized: "Choose an existing project folder.")
                 }
             } catch {
-                result.appendFailure(error)
+                var paths = Set<String>()
+                for target in targets where paths.insert(target.id).inserted {
+                    result.appendFailure(error, path: target.id)
+                }
+                if targets.isEmpty { result.appendFailure(error, path: project.path) }
                 return result
             }
         }
@@ -400,8 +450,9 @@ public struct SupplementalSkillInstaller {
             guard receipt.removed != true, let hash, hash == receipt.contentSHA256 else {
                 return .init(state: .modified, path: path, matchesPackage: verified, availableVersion: package?.label)
             }
-            let current = package.map { $0.hash == hash }
-                ?? (skill.bundled || receipt.skill.source == skill.source)
+            // A new catalog pin can carry identical files. Keep offering the
+            // update until the managed receipt records the reviewed source.
+            let current = (skill.bundled || receipt.skill.source == skill.source) && verified != false
             let installedVersion = receipt.skill.version
             return .init(state: current ? .installed : .updateAvailable, path: path,
                          matchesPackage: verified, installedVersion: installedVersion, availableVersion: package?.label)
