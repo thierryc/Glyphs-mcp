@@ -1,0 +1,38 @@
+{
+  "tag": "v2.8.0",
+  "checkedAt": "2026-11-18T19:01:06.870372+00:00",
+  "sourceCommit": "76c0de5b09dea1b779cdf97b8f7e9f5409fb3118",
+  "guest": {
+    "architecture": "arm64",
+    "macOS": "26.6.2",
+    "glyphs": {
+      "identifier": "com.GeorgSeifert.Glyphs4",
+      "version": "4.1.1",
+      "build": "4108"
+    }
+  },
+  "signedArchiveSHA256": "8446979ce11536a7656cae5ccb2c6a14837b72bf1fc9859cb9ae5c9b3a7ae603",
+  "signedAppSHA256": "3bb1fac3aa72b6b5ca108371861fa2efb645b3cd3d81bf80019fbfa8c6d51c7f",
+  "baseline": {
+    "desktopBuild": 91,
+    "componentBuild": 91
+  },
+  "sparkle": {
+    "desktopBuild": 93,
+    "componentBuild": 91,
+    "receiptUnchanged": true
+  },
+  "migration": {
+    "desktopBuild": 93,
+    "componentBuild": 93,
+    "port": 9680,
+    "portPreserved": true,
+    "fixturePreserved": true,
+    "onboardingPreferencePreserved": true,
+    "bridgeCodeHash": "sha256:15bfdc3bc6703f2aca4cad1ceb7ed11881912c17702bc8dce90590f21d510659",
+    "sidecarCodeHash": "sha256:d153fd5989e6ab5461a94fee520768216d5c5c7fb0b9cc3fb9ed1621d320fbae",
+    "explicitServerStart": true,
+    "nativeDocumentListSucceeded": true,
+    "tools": 22
+  }
+}

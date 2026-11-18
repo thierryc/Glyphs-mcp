@@ -1,15 +1,17 @@
 # Changelog
 
-## 2.8.0 — local candidate, build 93
+## 2.8.0 — stable release, build 93, 18 November 2026
 
 - Set up Glyphs MCP and global skills for detected Antigravity App and IDE installations, with separate connection and skill status in Setup.
+- Install and repair the Beztrace plug-in and its included tracing engine together from Companion Plugins.
+- Include the Glyphs Switching Shapes skill for Alternate layers and export-specific substitutions.
 - Add German, Spanish and Brazilian Portuguese to the desktop app. Complete French and Simplified Chinese coverage across menus, dialogs, error messages and accessibility labels.
 - Show available skill updates in the sidebar and add a **Review Skill Updates** filter. Verify staged managed updates, retain backups and record completed copies so a retry can resume after a failure.
 - Explain what **Dismiss This Reminder** does and where to find component updates afterward.
 - Count only Working and Waiting tasks in the Tasks badges. Preserve the last loaded task list on refresh failure and show **Server stopped** only when a failed connection is corroborated by the process check.
 - Expand Small and Petite Caps guidance for continuing, refining and auditing existing work, including per-master petite-cap heights and protection for manual corrections.
 
-See the [2.8.0 candidate release notes](V2.8.0-RELEASE.md).
+See the [2.8.0 release notes](V2.8.0-RELEASE.md).
 
 ## 2.7.0 — stable release, build 91, 10 November 2026
 
