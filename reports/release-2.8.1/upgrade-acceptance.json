@@ -1,0 +1,39 @@
+{
+  "tag": "v2.8.1",
+  "checkedAt": "2026-11-19T01:26:54.535471+00:00",
+  "sourceCommit": "3dbf0f436075cfbcc8d30d496205e68bb45fd9b6",
+  "guest": {
+    "architecture": "arm64",
+    "macOS": "26.6.2",
+    "glyphs": {
+      "identifier": "com.GeorgSeifert.Glyphs4",
+      "version": "4.1.1",
+      "build": "4108"
+    }
+  },
+  "signedArchiveSHA256": "5cb11ab736600542574fd9ee714488a71664c2c19981a486e0b31e3bbf868712",
+  "signedAppSHA256": "dd5536b00c94da6f939eb19fb635545c0f44637c7fe6fa29294ec18fe0680a7f",
+  "baseline": {
+    "desktopBuild": 93,
+    "componentBuild": 93
+  },
+  "sparkle": {
+    "desktopBuild": 94,
+    "componentBuild": 93,
+    "receiptUnchanged": true
+  },
+  "migration": {
+    "desktopBuild": 94,
+    "componentBuild": 94,
+    "port": 9680,
+    "portPreserved": true,
+    "fixturePreserved": true,
+    "onboardingPreferencePreserved": true,
+    "bridgeCodeHash": "sha256:25ae4c11b87e0521e8c580dc577af1f82ba08d3e8999bac5e0a3fda73a3f46a0",
+    "sidecarCodeHash": "sha256:15a7a0a4cc8f375e0ceb73c53f5d6b19d6cce28fd40a24083dc37616619ab8b0",
+    "nativeDocumentListSucceeded": true,
+    "tools": 22,
+    "nativeOpenDocumentCount": 0,
+    "firstNativeDocumentRequest": "Timed out while the Glyphs trial dialog was open. Retried successfully after continuing the existing trial."
+  }
+}

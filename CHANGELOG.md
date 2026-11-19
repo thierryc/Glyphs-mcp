@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.8.1 — stable release, build 94, 18 November 2026
+
+- Update a skill from its card, or choose which agent and project copies to update.
+- Refresh Tasks with ⌘R. If the request fails, the list keeps the last successful result and its timestamp.
+- Inactive workflows move to History when the sidecar confirms that work and recovery have ended. Closed tasks leave History after 30 days. Job receipts and recovery evidence remain available.
+
+See the [2.8.1 release notes](V2.8.1-RELEASE.md).
+
 ## 2.8.0 — stable release, build 93, 18 November 2026
 
 - Set up Glyphs MCP and global skills for detected Antigravity App and IDE installations, with separate connection and skill status in Setup.

@@ -1,9 +1,9 @@
-# Glyphs MCP Desktop 2.8.0
+# Glyphs MCP Desktop 2.8.1
 
-Build 93 adds Antigravity setup, bundled Beztrace setup, three desktop
-languages, a Skills update view and active-task badges. [Release notes and qualification](V2.8.0-RELEASE.md)
+Build 94 lets you update individual skills from their cards. Tasks explains
+which work needs attention and clears closed history after 30 days. [Release notes and qualification](V2.8.1-RELEASE.md)
 
-**Stable · desktop build 93 · Glyphs 4.** [Download 2.8.0](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.8.0/Glyphs-MCP-2.8.0.dmg).
+**Stable · desktop build 94 · Glyphs 4.** [Download 2.8.1](https://github.com/thierryc/Glyphs-mcp/releases/download/v2.8.1/Glyphs-MCP-2.8.1.dmg).
 
 The [twenty-one data/action tools and optional card-display tool](content/reference/command-set.mdx) includes font creation, native source opening, UFO/OTF/TTF import, window activation and closing with explicit save/discard handling. The save-free Edit-tab opening and unsaved `duplicate_document` copies introduced in 2.0.3 remain available; update the bridge and sidecar together through Setup. `save_document` persists an explicitly identified font.
 
@@ -99,7 +99,7 @@ The v2 source targets Glyphs 4 only. Glyphs 3 remains available through the
 separate pinned v1.11.0 release and its existing dependency setup. The two
 documentation tracks describe these versions separately. V2 is available
 as a signed and notarized
-[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.8.0).
+[GitHub release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.8.1).
 
 Documentation sources: [v2 · Glyphs 4](content/glyphs-mcp.md) and
 [v1 · 1.11.0](website/versioned_docs/version-1.11.0/glyphs-mcp.md).
@@ -111,7 +111,7 @@ the original beta guides and plans are preserved in the [v2.0.0 source tag](http
 Compatibility repository guide: [Glyphs 3 / 1.11.0](legacy/glyphs3/README.md).
 
 For contributors, use [CODEX.md](CODEX.md) and the local packaging instructions
-in [macos-installer/README.md](macos-installer/README.md). The stable disk image is available from the [published release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.8.0).
+in [macos-installer/README.md](macos-installer/README.md). The stable disk image is available from the [published release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v2.8.1).
 Stable releases retain `Glyphs-MCP-latest.dmg`. The separate `lit/v2-beta` feed delivers the published stable update to existing beta installations.
 
 For the next development cycle, see [proposed priorities](docs/maintenance/next-evolution.md) and [Anotherplanet/AP.CX page updates](docs/maintenance/site-updates-2.0.4.md).
