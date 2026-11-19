@@ -729,6 +729,10 @@
 "Select a Task" = "Select a Task";
 "Tasks appear here when an agent works with Glyphs MCP." = "Tasks appear here when an agent works with Glyphs MCP.";
 "Task information is unavailable." = "Task information is unavailable.";
+"Glyphs 4 has quit" = "Glyphs 4 has quit";
+"Last footprint before quit" = "Last footprint before quit";
+"Last observed documents" = "Last observed documents";
+"No health sample is available." = "No health sample is available.";
 "Showing the last observation." = "Showing the last observation.";
 "Load Earlier Tasks" = "Load Earlier Tasks";
 "Update Glyphs MCP to show Tasks." = "Update Glyphs MCP to show Tasks.";

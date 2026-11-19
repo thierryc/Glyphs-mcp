@@ -740,6 +740,10 @@
 "Select a Task" = "选择任务";
 "Tasks appear here when an agent works with Glyphs MCP." = "代理使用 Glyphs MCP 时，任务会显示在此处。";
 "Task information is unavailable." = "任务信息不可用。";
+"Glyphs 4 has quit" = "Glyphs 4 已退出";
+"Last footprint before quit" = "退出前最后一次内存占用";
+"Last observed documents" = "上次观测到的文档";
+"No health sample is available." = "暂无健康状态采样数据。";
 "Showing the last observation." = "正在显示上次观察到的状态。";
 "Load Earlier Tasks" = "加载更早的任务";
 "Update Glyphs MCP to show Tasks." = "请更新 Glyphs MCP 以显示任务。";

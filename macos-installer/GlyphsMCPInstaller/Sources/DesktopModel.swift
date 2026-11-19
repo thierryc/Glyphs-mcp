@@ -13,8 +13,10 @@ final class DesktopModel: ObservableObject {
     @Published private(set) var controlAction: String?
     var controlling: Bool { controlAction != nil }
     var controlProgress: String? { DesktopDiagnostics.controlProgress(controlAction) }
+    private var lastGlyphsHealth: DesktopGlyphsHealth?
     var healthReport: DesktopGlyphsHealthReport {
-        DesktopGlyphsHealthReport(health: status?.health, stale: stale, checking: status?.bridge.checking == true)
+        DesktopGlyphsHealthReport(health: glyphsRunning ? status?.health : lastGlyphsHealth,
+                                 glyphsRunning: glyphsRunning, stale: stale, checking: status?.bridge.checking == true)
     }
     var statusSymbol: String { DesktopDiagnostics.statusSymbol(running: serviceRunning, stale: stale, status: status) }
     var statusColor: Color {
@@ -55,7 +57,14 @@ final class DesktopModel: ObservableObject {
     @Published private(set) var tasksObservedAt: Date?
     @Published private(set) var tasksNextCursor: Int?
     @Published private(set) var tasksRequested = false
-    @Published private(set) var glyphsRunning = false
+    @Published private(set) var glyphsRunning = DesktopModel.isGlyphsRunning()
+    private static func isGlyphsRunning() -> Bool {
+        NSWorkspace.shared.runningApplications.contains { app in
+            guard GlyphsRunningProcessDetector.supportedBundleIdentifiers.contains(app.bundleIdentifier ?? ""),
+                  let url = app.bundleURL else { return false }
+            return !GlyphsCopySelectionPolicy.copies(from: GlyphsApplicationDetector.allApplications(candidates: [url])).isEmpty
+        }
+    }
     private lazy var taskReadState = DesktopTaskReadState(defaults: .standard, namespace: installation.root.path)
     private lazy var taskHistoryState = DesktopTaskHistoryState(defaults: .standard, namespace: installation.root.path)
     var visibleTasks: [DesktopTask] { tasks.filter { taskHistoryState.isVisible($0) } }
@@ -216,6 +225,7 @@ final class DesktopModel: ObservableObject {
             current.expectedSidecarIdentity != installation.expectedSidecarIdentity
         installation = current
         guard changedServer else { return }
+        lastGlyphsHealth = nil
         taskGeneration = UUID()
         historySync?.cancel(); historySync = nil
         pendingTaskClear = false; taskRequests = DesktopTaskRequests()
@@ -242,11 +252,9 @@ final class DesktopModel: ObservableObject {
             refreshing = false
             if showsActivityDot != wasBusy { updateSampler() }
         }
-        glyphsRunning = NSWorkspace.shared.runningApplications.contains { app in
-            guard GlyphsRunningProcessDetector.supportedBundleIdentifiers.contains(app.bundleIdentifier ?? ""),
-                  let url = app.bundleURL else { return false }
-            return !GlyphsCopySelectionPolicy.copies(from: GlyphsApplicationDetector.allApplications(candidates: [url])).isEmpty
-        }
+        let running = Self.isGlyphsRunning()
+        if running && !glyphsRunning { lastGlyphsHealth = nil }
+        glyphsRunning = running
         let generation = taskGeneration
         guard current.hasServer else {
             status = nil; notice = ""; stale = false; serviceRunning = nil
@@ -269,6 +277,13 @@ final class DesktopModel: ObservableObject {
                 throw InstallerError.localized("The server could not report its current activity.")
             }
             let observed = try JSONDecoder().decode(DesktopServerStatus.self, from: JSONSerialization.data(withJSONObject: payload))
+            // A reachable sidecar can lose its bridge data as soon as Glyphs quits.
+            if let health = observed.health, health.version == 1, health.available == true {
+                let footprint = health.signals?["footprint"]
+                if lastGlyphsHealth == nil || (footprint?.available == true && footprint?.bytes != nil) {
+                    lastGlyphsHealth = health
+                }
+            }
             if observed != status {
                 let old = Dictionary(uniqueKeysWithValues: (status?.activity?.jobs ?? []).map { ($0.jobId, $0.phase) })
                 for job in observed.activity?.jobs ?? [] where old[job.jobId] != job.phase {

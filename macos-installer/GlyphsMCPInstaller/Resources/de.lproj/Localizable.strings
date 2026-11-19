@@ -727,6 +727,10 @@
 "Select a Task" = "Aufgabe auswählen";
 "Tasks appear here when an agent works with Glyphs MCP." = "Hier werden Aufgaben angezeigt, sobald ein Agent mit Glyphs MCP arbeitet.";
 "Task information is unavailable." = "Aufgabeninformationen sind nicht verfügbar.";
+"Glyphs 4 has quit" = "Glyphs 4 wurde beendet";
+"Last footprint before quit" = "Letzter Speicherbedarf vor dem Beenden";
+"Last observed documents" = "Zuletzt erfasste Dokumente";
+"No health sample is available." = "Es liegen keine Zustandsdaten vor.";
 "Showing the last observation." = "Zuletzt erfasster Stand.";
 "Load Earlier Tasks" = "Frühere Aufgaben laden";
 "Update Glyphs MCP to show Tasks." = "Aktualisieren Sie Glyphs MCP, um Aufgaben anzuzeigen.";

@@ -53,6 +53,32 @@ final class DesktopActivityTests: XCTestCase {
         XCTAssertEqual(health.signals?["footprint"]?.growthWindowSeconds, 115)
     }
 
+    func testQuitShowsHistoricalFootprintAndSuppressesGuidance() throws {
+        let health = try JSONDecoder().decode(DesktopGlyphsHealth.self, from: Data(#"""
+            {"version":1,"available":true,"state":"caution","reasons":["memory_pressure_warning"],
+             "signals":{"footprint":{"available":true,"bytes":2222645576,"observedAt":128}}}
+            """#.utf8))
+        for stale in [false, true] {
+            for checking in [false, true] {
+                let quit = DesktopGlyphsHealthReport(health: health, glyphsRunning: false, stale: stale, checking: checking)
+                XCTAssertEqual(quit.headline, "Glyphs 4 has quit")
+                XCTAssertEqual(quit.footprintTitle, "Last footprint before quit")
+                XCTAssertEqual(quit.availableHealth?.signals?["footprint"]?.bytes, 2_222_645_576)
+                XCTAssertEqual(quit.availableHealth?.signals?["footprint"]?.observedAt, 128)
+                XCTAssertNil(quit.agentGuidance)
+                XCTAssertTrue(quit.stale)
+            }
+        }
+        let empty = DesktopGlyphsHealthReport(health: nil, glyphsRunning: false, stale: false, checking: false)
+        XCTAssertEqual(empty.headline, "Glyphs 4 has quit")
+        XCTAssertNil(empty.availableHealth)
+        let live = DesktopGlyphsHealthReport(health: health, glyphsRunning: true, stale: false, checking: false)
+        XCTAssertEqual(live.footprintTitle, "Glyphs footprint")
+        XCTAssertEqual(live.agentGuidance, health.agentGuidance)
+        let disconnected = DesktopGlyphsHealthReport(health: health, glyphsRunning: true, stale: true, checking: false)
+        XCTAssertEqual(disconnected.headline, "Showing the last observation.")
+    }
+
     func testGlyphsFootprintBandsScaleWithInstalledMemory() throws {
         let gib: UInt64 = 1 << 30
         let moderateOn32 = try XCTUnwrap(DesktopGlyphsFootprint(bytes: Int64(3 * gib), installedMemory: 32 * gib))

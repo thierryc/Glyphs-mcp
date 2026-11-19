@@ -72,8 +72,8 @@ struct DesktopGlyphsHealthView: View {
                 }
             }
 
-            if let health = report.availableHealth {
-                Text(LocalizedStringKey(report.stale ? "Showing the last observation." : health.readinessTitle))
+            if report.glyphsRunning, let health = report.availableHealth {
+                Text(LocalizedStringKey(report.headline))
                     .font(.callout.weight(.semibold))
                 if let footprint = report.footprintIndicator {
                     healthIndicator(footprint.title, symbol: footprint.symbol, color: Color(nsColor: footprint.color))
@@ -92,8 +92,8 @@ struct DesktopGlyphsHealthView: View {
                     Text(LocalizedStringKey(DesktopGlyphsHealth.reasonLabel(reason)))
                         .font(.callout.weight(.semibold))
                 }
-                if !expanded, !report.stale {
-                    Text(LocalizedStringKey(health.agentGuidance))
+                if !expanded, let guidance = report.agentGuidance {
+                    Text(LocalizedStringKey(guidance))
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -103,7 +103,7 @@ struct DesktopGlyphsHealthView: View {
             if expanded {
                 Divider()
                 if let health = report.availableHealth {
-                    DesktopGlyphsHealthDetails(health: health)
+                    DesktopGlyphsHealthDetails(health: health, report: report)
                 } else {
                     Text(LocalizedStringKey(report.unavailableDetail)).foregroundStyle(.secondary)
                 }
@@ -124,16 +124,7 @@ struct DesktopGlyphsHealthView: View {
     }
 }
 
-struct DesktopGlyphsHealthReport {
-    let health: DesktopGlyphsHealth?
-    let stale: Bool
-    let checking: Bool
-
-    var availableHealth: DesktopGlyphsHealth? {
-        guard !checking, let health, health.available == true, health.version == 1 else { return nil }
-        return health
-    }
-
+extension DesktopGlyphsHealthReport {
     var pressureValue: String? {
         guard !stale, let pressure = availableHealth?.signals?["pressure"], pressure.available == true else { return nil }
         return pressure.value
@@ -163,6 +154,7 @@ struct DesktopGlyphsHealthReport {
     }
 
     var statusTitle: String {
+        if !glyphsRunning { return headline }
         if checking { return "Checking Glyphs" }
         if stale { return "Health observation stale" }
         guard let health = availableHealth else { return "Health unavailable" }
@@ -175,7 +167,8 @@ struct DesktopGlyphsHealthReport {
     }
 
     var unavailableDetail: String {
-        checking ? "Collecting health evidence…"
+        if !glyphsRunning { return "No health sample is available." }
+        return checking ? "Collecting health evidence…"
             : "Health protection is unavailable. Update bridge and sidecar together to enable it."
     }
 
@@ -198,16 +191,18 @@ struct DesktopGlyphsHealthReport {
             return lines.joined(separator: "\n")
         }
 
-        lines += ["- \(label(stale ? "Showing the last observation." : health.readinessTitle))",
-                  "- \(label(health.pressureTitle))"]
-        if health.state == "paused" { lines.append("- \(label("New heavy work paused"))") }
+        lines.append("- \(label(headline))")
+        if glyphsRunning {
+            lines.append("- \(label(health.pressureTitle))")
+            if health.state == "paused" { lines.append("- \(label("New heavy work paused"))") }
+            lines += additionalReasons.map { "- \(label(DesktopGlyphsHealth.reasonLabel($0)))" }
+        }
         if let pressure = health.signals?["pressure"], pressure.available == true, let time = pressure.observedAt {
             lines.append("- \(label("Last pressure report")): \(Date(timeIntervalSince1970: time).ISO8601Format())")
         }
-        lines += additionalReasons.map { "- \(label(DesktopGlyphsHealth.reasonLabel($0)))" }
 
         if let documents = health.signals?["documents"], documents.available == true {
-            lines += ["", "## \(label("Open documents"))", ""]
+            lines += ["", "## \(label(documentsTitle))", ""]
             if let time = documents.observedAt {
                 lines.append("- \(label("Checked at")): \(Date(timeIntervalSince1970: time).ISO8601Format())")
             }
@@ -221,7 +216,7 @@ struct DesktopGlyphsHealthReport {
             if let time = footprint.observedAt {
                 lines.append("- \(label("Sampled at")): \(Date(timeIntervalSince1970: time).ISO8601Format())")
             }
-            lines.append("- \(label("Glyphs footprint")): \(formatHealthMemory(bytes))")
+            lines.append("- \(label(footprintTitle)): \(formatHealthMemory(bytes))")
             if let share = formatHealthMemoryShare(bytes) {
                 lines.append("- \(label("Share of installed RAM")): \(share)")
             }
@@ -231,8 +226,8 @@ struct DesktopGlyphsHealthReport {
             }
             if footprint.stale == true { lines.append("- \(label("Memory observation is stale."))") }
         }
-        if !stale {
-            lines += ["", "## \(label("Agent guidance"))", "", label(health.agentGuidance), ""]
+        if let guidance = agentGuidance {
+            lines += ["", "## \(label("Agent guidance"))", "", label(guidance), ""]
         }
         return lines.joined(separator: "\n")
     }
@@ -267,6 +262,7 @@ private func healthGrowthLabel(_ footprint: DesktopGlyphsHealth.Signal) -> Strin
 
 private struct DesktopGlyphsHealthDetails: View {
     let health: DesktopGlyphsHealth
+    let report: DesktopGlyphsHealthReport
 
     var body: some View {
         let documents = health.signals?["documents"]
@@ -288,10 +284,12 @@ private struct DesktopGlyphsHealthDetails: View {
                 Text("Last pressure report \(Text(Date(timeIntervalSince1970: time), style: .relative)) ago")
                     .foregroundStyle(.secondary)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Agent guidance").fontWeight(.semibold)
-                    .accessibilityAddTraits(.isHeader)
-                Text(LocalizedStringKey(health.agentGuidance)).foregroundStyle(.secondary)
+            if let guidance = report.agentGuidance {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Agent guidance").fontWeight(.semibold)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(LocalizedStringKey(guidance)).foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -300,7 +298,7 @@ private struct DesktopGlyphsHealthDetails: View {
         let checked = documents.observedAt.map {
             Text("Checked \(Text(Date(timeIntervalSince1970: $0), style: .relative)) ago")
         }
-        return group("Open documents", observation: checked) {
+        return group(LocalizedStringKey(report.documentsTitle), observation: checked) {
             if let count = documents.fontCount {
                 metric("Open fonts", value: Text(count, format: .number))
             }
@@ -323,7 +321,7 @@ private struct DesktopGlyphsHealthDetails: View {
             Text("Sampled \(Text(Date(timeIntervalSince1970: $0), style: .relative)) ago")
         }
         return group("Glyphs memory", observation: sampled) {
-            metric("Glyphs footprint", value: Text(formatHealthMemory(bytes)))
+            metric(LocalizedStringKey(report.footprintTitle), value: Text(formatHealthMemory(bytes)))
             if let share = formatHealthMemoryShare(bytes) {
                 metric("Share of installed RAM", value: Text(share))
             }

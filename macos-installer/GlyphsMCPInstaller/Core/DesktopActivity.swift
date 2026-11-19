@@ -215,6 +215,31 @@ public struct DesktopGlyphsHealth: Decodable, Equatable {
     }
 }
 
+public struct DesktopGlyphsHealthReport {
+    public let glyphsRunning: Bool
+    public let stale: Bool
+    public let checking: Bool
+    public let availableHealth: DesktopGlyphsHealth?
+
+    public init(health: DesktopGlyphsHealth?, glyphsRunning: Bool, stale: Bool, checking: Bool) {
+        self.glyphsRunning = glyphsRunning
+        self.stale = stale || !glyphsRunning
+        self.checking = checking && glyphsRunning
+        availableHealth = !self.checking && health?.available == true && health?.version == 1 ? health : nil
+    }
+
+    public var headline: String {
+        if !glyphsRunning { return "Glyphs 4 has quit" }
+        if checking { return "Checking Glyphs" }
+        if stale { return availableHealth == nil ? "Health observation stale" : "Showing the last observation." }
+        return availableHealth?.readinessTitle ?? "Health unavailable"
+    }
+
+    public var footprintTitle: String { glyphsRunning ? "Glyphs footprint" : "Last footprint before quit" }
+    public var documentsTitle: String { glyphsRunning ? "Open documents" : "Last observed documents" }
+    public var agentGuidance: String? { stale ? nil : availableHealth?.agentGuidance }
+}
+
 public struct DesktopGlyphsFootprint {
     public enum Level: Equatable {
         case light, moderate, heavy
