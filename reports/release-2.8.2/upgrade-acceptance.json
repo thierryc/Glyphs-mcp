@@ -1,0 +1,12 @@
+{
+  "tag": "v2.8.2",
+  "checkedAt": "2026-11-19T16:32:30.970954+00:00",
+  "baselineBuild": 94,
+  "updatedBuild": 95,
+  "method": "Sparkle 2.9.6 CLI, isolated app copy and signed loopback feed",
+  "baselineAppSHA256": "dd5536b00c94da6f939eb19fb635545c0f44637c7fe6fa29294ec18fe0680a7f",
+  "signedArchiveSHA256": "52aefaedc77fde6b7defe8b5a79d979c5c930d77551694e3d7c26691483fd8bd",
+  "updatedAppSHA256": "10ddd21961765dfa0bf59e1a13bd93d951560b45e4cb2ec37438cce4bb8304e8",
+  "archiveDownloaded": true,
+  "exactAppVerified": true
+}

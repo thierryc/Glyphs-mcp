@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.8.2 — stable release, build 95, 19 November 2026
+
+- When Glyphs 4 quits, the health panel identifies the last footprint before quit and its sample time. Editing guidance disappears from the panel and the copied Markdown report.
+
+See the [2.8.2 release notes](V2.8.2-RELEASE.md).
+
 ## 2.8.1 — stable release, build 94, 18 November 2026
 
 - Update a skill from its card, or choose which agent and project copies to update.
