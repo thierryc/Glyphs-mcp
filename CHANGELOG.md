@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.9.0 (unreleased, build 96)
+## 2.9.0 — stable release, build 96, 20 November 2026
 
 - Added a post-update wizard for verified Glyphs components and managed agent skills, with a manual Setup option. Newly shipped optional items, including catalog skills, require opt-in.
 - Added separate quit, install, progress, and retry steps. **Save and quit Glyphs** uses Glyphs’ native save-and-quit command for open fonts.
