@@ -111,8 +111,7 @@ public enum ComponentUpdatePolicy {
                 // A partial or mixed receipt is not evidence of an available update.
                 let sidecarRelease = installedSidecar["release"] as? [String: Any] ?? [:]
                 let version = installedBridge["version"] as? String
-                guard version == receipt["version"] as? String,
-                      version == sidecarRelease["version"] as? String else {
+                guard version == sidecarRelease["version"] as? String else {
                     result[component.id] = .unableToVerify; continue
                 }
                 result[component.id] = compare(installedVersion: version,
@@ -149,24 +148,39 @@ public enum ComponentUpdatePolicy {
     }
 }
 
-public enum ComponentUpdateReminder {
-    public static let dismissalTitle = "Dismiss This Reminder"
-    public static let dismissalExplanation = "This reminder appears once per app version and build for this installation. Dismissing it does not schedule another reminder; available updates remain in Setup."
-    public static func title(needsServerUpdate: Bool) -> String {
-        needsServerUpdate ? "A new version of the MCP server in Glyphs is available." : "Updates for your Glyphs plugins are available."
-    }
-    public static func message(needsServerUpdate: Bool) -> String {
-        needsServerUpdate ? "The desktop app has been updated, but the server used by Glyphs still needs updating.\n\nOpen Setup, then click Update on the Glyphs MCP card to get the latest features and fixes. You may need to quit and reopen Glyphs." : "Open Setup, then click Update on the highlighted plugin cards to get the latest features and fixes.\n\nYou may need to quit and reopen Glyphs."
-    }
-    public static func key(version: String, build: String, root: URL) -> String {
-        "componentUpdateReminder." + version + "." + build + "." + root.standardizedFileURL.path
-    }
-    public static func shouldPresent(statuses: [String: ComponentUpdateStatus], alreadyShown: Bool,
-                                     interactive: Bool, busy: Bool, otherDialog: Bool) -> Bool {
-        !alreadyShown && interactive && !busy && !otherDialog && statuses.contains {
-            DesktopComponent.ids.contains($0.key) && $0.value.needsUpdate
+public enum PostUpdateOffer {
+    public static let migrationBuild = 95
+    private static let lastBuildKey = "postUpdate.lastDesktopBuild"
+    private static let pendingKey = "postUpdate.pendingBuilds"
+
+    /// Retain the original baseline across a second upgrade before the first
+    /// interactive launch. A downgrade never consumes a newer pending offer.
+    public static func register(build: Int, returningUser: Bool, defaults: UserDefaults) -> Int? {
+        guard build > 0 else { return nil }
+        let last = defaults.integer(forKey: lastBuildKey)
+        let pending = defaults.array(forKey: pendingKey) as? [Int] ?? []
+        if build > last {
+            defaults.set(build, forKey: lastBuildKey)
+            let baseline = pending.first ?? (last > 0 ? last : migrationBuild)
+            if build > migrationBuild && (last > 0 || returningUser) {
+                defaults.set([baseline, build], forKey: pendingKey)
+                return baseline
+            }
         }
+        return pending.count == 2 && pending[1] == build ? pending[0] : nil
     }
+
+    public static func consume(build: Int, defaults: UserDefaults) {
+        let pending = defaults.array(forKey: pendingKey) as? [Int]
+        if pending?.last == build { defaults.removeObject(forKey: pendingKey) }
+    }
+}
+
+public struct PostUpdateAddition: Decodable, Equatable, Sendable {
+    public enum Kind: String, Decodable, Hashable, Sendable { case component, managedSkill, catalogSkill }
+    public let kind: Kind
+    public let id: String
+    public let introducedBuild: Int
 }
 
 public enum DesktopIdentity {

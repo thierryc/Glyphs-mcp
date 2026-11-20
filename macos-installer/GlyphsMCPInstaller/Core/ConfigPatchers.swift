@@ -354,6 +354,70 @@ public struct AgentSkillBundleInstaller {
 		self.log = log
 	}
 
+    public struct ReviewedChange: Equatable, Sendable {
+        public let name: String
+        public let installedIdentity: String?
+        public let sourceIdentity: String
+    }
+
+    public func reviewedChanges(from payload: InstallerPayload, to root: URL, newNames: Set<String>,
+                                includeDevelopmentSkills: Bool) throws -> [ReviewedChange] {
+        try SupplementalSkillInstaller.regularAncestors(root)
+        let ownership = try reviewedOwnership(in: root)
+        let direct = SupplementalSkillInstaller()
+        let directRoots = root == InstallerPaths.codexSkillsDir
+            ? [root, InstallerPaths.home.appendingPathComponent(SkillPlacement.shared.rawValue)]
+            : [root]
+        return try payload.managedSkillDirectories().compactMap { source in
+            let name = source.lastPathComponent
+            guard includeDevelopmentSkills || !Self.developmentSkillNames.contains(name),
+                  try !directRoots.contains(where: { try direct.hasDirectChoice(name, root: $0) }) else { return nil }
+            let destination = root.appendingPathComponent(name)
+            let current = managedSkillIdentity(at: destination)
+            if let owned = ownership[name], current == owned {
+                let incoming = try InstallerPayloadManifestResolver.treeIdentity(source)
+                return incoming == owned ? nil : ReviewedChange(name: name, installedIdentity: owned, sourceIdentity: incoming)
+            }
+            guard newNames.contains(name), ownership[name] == nil, !itemExists(at: destination),
+                  (try? FileManager.default.destinationOfSymbolicLink(atPath: destination.path)) == nil else { return nil }
+            return ReviewedChange(name: name, installedIdentity: nil,
+                                  sourceIdentity: try InstallerPayloadManifestResolver.treeIdentity(source))
+        }
+    }
+
+    public func apply(_ change: ReviewedChange, from payload: InstallerPayload, to root: URL,
+                      includeDevelopmentSkills: Bool) throws {
+        let installer = SupplementalSkillInstaller()
+        try installer.withDestinationLock(root) {
+            var ownership = try reviewedOwnership(in: root)
+            let destination = root.appendingPathComponent(change.name)
+            if ownership[change.name] == change.sourceIdentity,
+               managedSkillIdentity(at: destination) == change.sourceIdentity { return }
+            let eligible = try reviewedChanges(from: payload, to: root,
+                                               newNames: change.installedIdentity == nil ? [change.name] : [],
+                                               includeDevelopmentSkills: includeDevelopmentSkills)
+            guard eligible.contains(change),
+                  let source = payload.managedSkillDirectories().first(where: { $0.lastPathComponent == change.name }) else {
+                throw InstallerError.localized("The skill changed since the update was reviewed. Open Setup to check it.")
+            }
+            ownership[change.name] = change.sourceIdentity
+            try replaceManagedSkill(from: source, to: destination,
+                                    replacing: change.installedIdentity != nil,
+                                    sourceIdentity: change.sourceIdentity, receipt: JSONEncoder().encode(ownership),
+                                    ownershipURL: root.appendingPathComponent(".glyphs-mcp-skills.json"))
+            log("Installed reviewed skill \(change.name) in \(root.path)")
+        }
+    }
+
+    private func reviewedOwnership(in root: URL) throws -> [String: String] {
+        let receipt = root.appendingPathComponent(".glyphs-mcp-skills.json")
+        guard (try? FileManager.default.destinationOfSymbolicLink(atPath: receipt.path)) == nil else {
+            throw InstallerError.localized("The skills ownership receipt needs review in Setup.")
+        }
+        guard itemExists(at: receipt) else { return [:] }
+        return try JSONDecoder().decode([String: String].self, from: Data(contentsOf: receipt))
+    }
+
 	@discardableResult
 	public func installCodexSkills(payload: InstallerPayload, overwriteExisting: Bool, includeDevelopmentSkills: Bool = true) throws -> SkillInstallationResult {
 		try installManagedSkills(from: payload, to: InstallerPaths.codexSkillsDir, clientName: "Codex", overwriteExisting: overwriteExisting, includeDevelopmentSkills: includeDevelopmentSkills)
@@ -689,6 +753,18 @@ public struct CursorPluginInstaller {
             return .conflict("The installer-owned Cursor plug-in was modified and has been preserved.")
         }
         return .installed(version: receipt.version)
+    }
+
+    public func reviewedUpdateIdentity() -> String? {
+        guard case .installed(let installedVersion) = inspect(),
+              installedVersion.compare(version, options: .numeric) != .orderedDescending,
+              let receipt = readReceipt(), receipt.identity != expectedIdentity else { return nil }
+        return receipt.identity
+    }
+
+    public func isCurrentManagedPlugin() -> Bool {
+        guard case .installed = inspect() else { return false }
+        return readReceipt()?.identity == expectedIdentity
     }
 
     @discardableResult

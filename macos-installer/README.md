@@ -137,6 +137,22 @@ The actual Glyphs acceptance gate additionally requires an unlocked Mac and a
 disposable font. Record baseline and loaded timings independently; 200 ms is
 a diagnostic threshold, never an automatic rejection.
 
+## Post-update wizard
+
+Add genuinely new release items to `Resources/SkillsCatalog/update-additions.json`
+inside the Xcode project. Each entry has a `kind` (`component`, `managedSkill`,
+or `catalogSkill`), its existing component ID, managed skill directory name,
+or catalog ID, and the numeric desktop `introducedBuild`. Keep entries while
+they are shipped so users who skip a build can still choose them. For catalog
+skills, add the pinned entry to the bundled registry before declaring it here.
+The wizard offers these additions unchecked and shows the destinations it will use.
+
+Before shipping, exercise both quit choices with a signed candidate and
+disposable Glyphs 4 fonts. Include multiple edited fonts, an untitled font,
+cancelled Save As, denied Automation permission, a running font task, and stable
+and beta copies open together. Check for saved changes and confirm that
+installation waits for every affected process to exit.
+
 ## Skills catalog development
 
 The desktop views share their visual components in `Sources/ModernStyle.swift`.

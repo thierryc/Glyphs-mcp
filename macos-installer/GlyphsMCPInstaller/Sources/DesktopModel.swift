@@ -524,15 +524,31 @@ final class DesktopModel: ObservableObject {
         return object
     }
 
-    func stopForInstallation() async throws {
+    private static let postUpdateServicePausedKey = "postUpdate.restorePausedService"
+
+    func stopForInstallation(restoreAfterUpdate: Bool = false) async throws {
         guard !controlling else { throw InstallerError.localized("A service control is already in progress.") }
         await refresh()
         guard installation.hasServer, serviceRunning != false else { return }
         guard canControl else { throw InstallerError.userFacing(!stale && status?.isBusy == true ? "Wait for the current font task to finish before closing Glyphs." : "The MCP server could not be stopped safely. Open Glyphs and finish any pending dialogs, then Refresh Setup. If it still fails, check the troubleshooting logs before changing components.") }
         controlAction = "stop"
         defer { controlAction = nil }
+        if restoreAfterUpdate {
+            UserDefaults.standard.set(true, forKey: Self.postUpdateServicePausedKey)
+        }
         _ = try await serviceAction("stop")
         serviceRunning = false; stale = status != nil
+    }
+
+    func restoreServiceAfterPostUpdate() async throws {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: Self.postUpdateServicePausedKey) else { return }
+        guard !controlling else { throw InstallerError.localized("A service control is already in progress.") }
+        controlAction = "start"
+        defer { controlAction = nil }
+        let state = try await serviceAction("start")
+        serviceRunning = state["processRunning"] as? Bool ?? state["running"] as? Bool
+        defaults.removeObject(forKey: Self.postUpdateServicePausedKey)
     }
 
     func control(_ action: String, value: String? = nil) {

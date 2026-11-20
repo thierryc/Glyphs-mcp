@@ -553,7 +553,9 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn('stapler staple "$plugin"', notarize)
         self.assertIn('stapler validate "$plugin"', notarize)
         self.assertIn("stapled_payload_archive", notarize)
-        self.assertIn('codesign --sign "$identity" --timestamp --options runtime "$app"', notarize)
+        for script, target in ((build, '$out_dir/$product.app'), (notarize, '$app')):
+            self.assertIn(f'--options runtime --entitlements "$repo_root/macos-installer/GlyphsMCPInstaller/GlyphsMCP.entitlements" "{target}"', script)
+            self.assertIn("com.apple.security.automation.apple-events", script)
         self.assertLess(notarize.index("stapler staple"), notarize.rindex("ditto -c -k --keepParent"))
 
         release_workflows = []

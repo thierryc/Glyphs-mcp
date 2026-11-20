@@ -531,6 +531,12 @@ struct DesktopSkillsView: View {
         model.inspect(skill)
     }
 
+    private func revealPostUpdateSkill() {
+        guard !model.busy, let skill = installer.postUpdateSkillToReveal else { return }
+        installer.postUpdateSkillToReveal = nil
+        open(skill)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesktopDashboardLayout.sectionSpacing) {
@@ -608,7 +614,10 @@ struct DesktopSkillsView: View {
         .task {
             model.prepareProjects(projects)
             if model.skills.isEmpty { model.load() } else { model.rescan() }
+            revealPostUpdateSkill()
         }
+        .onChange(of: installer.postUpdateSkillToReveal) { _, _ in revealPostUpdateSkill() }
+        .onChange(of: model.busy) { _, busy in if !busy { revealPostUpdateSkill() } }
         .sheet(isPresented: $showingImport, onDismiss: {
             if let skill = model.pendingInspection {
                 model.pendingInspection = nil

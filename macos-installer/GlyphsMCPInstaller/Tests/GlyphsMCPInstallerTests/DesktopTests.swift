@@ -33,19 +33,6 @@ final class DesktopTests: XCTestCase {
         XCTAssertNotEqual(first, try ComponentUpdatePolicy.stableContentIdentity(bundle, nativeCodeHashes: ["arm64:code", "x86_64:code"]))
     }
 
-    func testComponentReminderExplainsTheServerUpdateAndNamesTheCorrectCard() {
-        XCTAssertEqual(ComponentUpdateReminder.dismissalTitle, "Dismiss This Reminder")
-        XCTAssertTrue(ComponentUpdateReminder.dismissalExplanation.contains("once per app version and build"))
-        XCTAssertTrue(ComponentUpdateReminder.dismissalExplanation.contains("does not schedule another reminder"))
-        XCTAssertTrue(ComponentUpdateReminder.dismissalExplanation.contains("available updates remain in Setup"))
-        XCTAssertEqual(ComponentUpdateReminder.title(needsServerUpdate: true), "A new version of the MCP server in Glyphs is available.")
-        XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("click Update on the Glyphs MCP card"))
-        XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: true).contains("\n\n"))
-        XCTAssertEqual(ComponentUpdateReminder.title(needsServerUpdate: false), "Updates for your Glyphs plugins are available.")
-        XCTAssertFalse(ComponentUpdateReminder.message(needsServerUpdate: false).contains("server"))
-        XCTAssertTrue(ComponentUpdateReminder.message(needsServerUpdate: false).contains("highlighted plugin cards"))
-    }
-
     func testComponentUpdateComparisonRequiresVerifiedIndependentIdentities() {
         let old = "sha256:" + String(repeating: "a", count: 64)
         let new = "sha256:" + String(repeating: "b", count: 64)
@@ -101,6 +88,9 @@ final class DesktopTests: XCTestCase {
         // A failed/cancelled update leaves the original receipt and indication intact.
         XCTAssertEqual(try discover(), pending)
         receipt["version"] = "2.2.0"
+        // A scoped companion update advances the desktop receipt, while the
+        // old bridge and sidecar still agree with each other.
+        XCTAssertEqual(try discover()["mcp"], .updateAvailable)
         receipt["bridge"] = ["version": "2.2.0", "identity": new, "release": ["installerBuild": 67]]
         receipt["sidecar"] = ["identity": new, "release": ["version": "2.2.0"]]
         XCTAssertEqual(try discover()["mcp"], .current)
@@ -119,29 +109,27 @@ final class DesktopTests: XCTestCase {
         XCTAssertFalse(unknown.values.contains(where: \.needsUpdate))
     }
 
-    func testComponentReminderIsOncePerAppBuildAndInstallationAndDefersWithoutConsumption() {
-        let statuses: [String: ComponentUpdateStatus] = ["mcp": .updateAvailable]
-        XCTAssertTrue(ComponentUpdateReminder.shouldPresent(statuses: statuses, alreadyShown: false,
-            interactive: true, busy: false, otherDialog: false))
-        for conditions in [(true, true, false, false), (false, false, false, false),
-                           (false, true, true, false), (false, true, false, true)] {
-            XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: statuses, alreadyShown: conditions.0,
-                interactive: conditions.1, busy: conditions.2, otherDialog: conditions.3))
-        }
-        for state in [ComponentUpdateStatus.current, .newerInstalled, .unableToVerify, .developmentLinked] {
-            XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: ["mcp": state], alreadyShown: false,
-                interactive: true, busy: false, otherDialog: false))
-        }
-        let root = URL(fileURLWithPath: "/fixture/installation")
-        let key = ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root)
-        XCTAssertEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root))
-        XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "68", root: root))
-        XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.3.0", build: "67", root: root))
-        XCTAssertNotEqual(key, ComponentUpdateReminder.key(version: "2.2.0", build: "67", root: root.appendingPathComponent("other")))
-        // Dismissing this reminder does not clear the card's Update available status.
-        XCTAssertTrue(statuses["mcp"]!.needsUpdate)
-        XCTAssertFalse(ComponentUpdateReminder.shouldPresent(statuses: ["beztrace-glyphs": .updateAvailable],
-            alreadyShown: false, interactive: true, busy: false, otherDialog: false))
+    func testPostUpdateOfferTracksARealUpgradeAndCanBeConsumedOnce() {
+        let suite = "post-update-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertNil(PostUpdateOffer.register(build: 96, returningUser: false, defaults: defaults))
+        XCTAssertNil(PostUpdateOffer.register(build: 96, returningUser: true, defaults: defaults))
+        XCTAssertEqual(PostUpdateOffer.register(build: 97, returningUser: true, defaults: defaults), 96)
+        XCTAssertNil(PostUpdateOffer.register(build: 96, returningUser: true, defaults: defaults))
+        XCTAssertEqual(PostUpdateOffer.register(build: 98, returningUser: true, defaults: defaults), 96)
+        PostUpdateOffer.consume(build: 97, defaults: defaults)
+        XCTAssertEqual(PostUpdateOffer.register(build: 98, returningUser: true, defaults: defaults), 96)
+        PostUpdateOffer.consume(build: 98, defaults: defaults)
+        XCTAssertNil(PostUpdateOffer.register(build: 98, returningUser: true, defaults: defaults))
+    }
+
+    func testPostUpdateOfferMigratesReturningUsers() {
+        let suite = "post-update-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(PostUpdateOffer.register(build: 96, returningUser: true, defaults: defaults), 95)
+        XCTAssertEqual(PostUpdateOffer.register(build: 96, returningUser: true, defaults: defaults), 95)
     }
 
     func testStatusRequestPreservesLegacyDeadlineAndDecodesHealthyResponse() async throws {

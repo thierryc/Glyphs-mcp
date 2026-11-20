@@ -310,6 +310,10 @@ public struct SupplementalSkillInstaller {
         try Self.receipts(root)[name]?.skill.id == "builtin:" + name
     }
 
+    public func wasRemoved(_ skill: CatalogSkill, from root: URL) throws -> Bool {
+        try Self.receipts(root)[skill.name]?.removed == true
+    }
+
     public func scopeStatus(_ skill: CatalogSkill, project: URL? = nil, package: SkillPackageVersion? = nil) -> SkillScopeStatus {
         if let project, isDefaultFolder(project) { return .init(agents: [], copies: []) }
         let base = project ?? home
@@ -485,7 +489,7 @@ public struct SupplementalSkillInstaller {
 
     public func recover(root: URL) throws {
         guard Self.exists(root.appendingPathComponent(Self.journalName)) else { return }
-        try locked(root) { try recoverLocked(root) }
+        try withDestinationLock(root) { try recoverLocked(root) }
     }
     private func recoverLocked(_ root: URL) throws {
         let journalURL = root.appendingPathComponent(Self.journalName)
@@ -542,11 +546,22 @@ public struct SupplementalSkillInstaller {
         try install(skill, files: files, root: root, project: project, replace: replace, replaceLink: replaceLink, reviewed: nil, packageVersion: nil)
     }
 
+    public func installReviewedAddition(_ skill: CatalogSkill, files: [ProjectFile], target: SkillCopy) throws {
+        guard !skill.bundled, skill.classification != .imported, target.status.state == .notInstalled,
+              target.placement != .cursorPlugin, target.placement.agents.contains(where: skill.supports),
+              target.root == home.appendingPathComponent(target.placement.rawValue, isDirectory: true) else {
+            throw InstallerError.localized("The skill changed since the update was reviewed. Open Setup to check it.")
+        }
+        _ = try install(skill, files: files, root: target.root, project: nil, replace: false, replaceLink: false,
+                        reviewed: target, packageVersion: skill.version, reviewedAddition: true)
+    }
+
     private func install(_ skill: CatalogSkill, files: [ProjectFile], root: URL, project: URL?,
-                         replace: Bool, replaceLink: Bool, reviewed: SkillCopy?, packageVersion: String?) throws -> String {
+                         replace: Bool, replaceLink: Bool, reviewed: SkillCopy?, packageVersion: String?,
+                         reviewedAddition: Bool = false) throws -> String {
         guard canManage(skill, reviewed: reviewed) else { throw ProjectError(localized: "This bundled skill needs its verified app payload.") }
         _ = try SkillMetadata.validate(files, expectedName: skill.name, bundled: skill.bundled)
-        return try locked(root) {
+        return try withDestinationLock(root) {
             try recoverLocked(root)
             let destination = root.appendingPathComponent(skill.name)
             let previous = try Self.receipts(root)
@@ -554,10 +569,17 @@ public struct SupplementalSkillInstaller {
             let oldHash = Self.exists(destination) ? try Self.identity(destination) : nil
             let linked = (try? destination.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
             guard !linked || replace && replaceLink else { throw ProjectError(localized: "This is a linked skill. Confirm replacing the link with a managed copy; its original folder will be kept.") }
-            if let reviewed, reviewed.identity != oldHash { throw ProjectError(localized: "The skill changed. Review the current copy and try again.") }
             let owned = !linked && owns(skill, receipts: previous, hash: oldHash, destination: destination, root: root)
+            if reviewedAddition {
+                guard previous[skill.name]?.removed != true else {
+                    throw InstallerError.localized("This skill was removed since review. Open Skills to review it.")
+                }
+                // A previous attempt may have installed this approved copy.
+                if owned && oldHash == hash { return destination.path }
+            }
+            if let reviewed, reviewed.identity != oldHash { throw ProjectError(localized: "The skill changed. Review the current copy and try again.") }
             guard oldHash == nil || owned || replace else { throw ProjectError(localized: "Existing skill is edited or unmanaged. Review it, then choose Replace with backup.") }
-            if reviewed == nil { try checkCollisions(skill, root: root, project: project) }
+            if reviewed == nil || reviewedAddition { try checkCollisions(skill, root: root, project: project) }
             let stage = root.appendingPathComponent(".skill-stage-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: false)
             defer { try? FileManager.default.removeItem(at: stage) }
@@ -594,7 +616,7 @@ public struct SupplementalSkillInstaller {
         guard SkillMetadata.validName(skill.name), canManage(skill, reviewed: reviewed) else {
             throw ProjectError(localized: "This skill cannot be removed from this location.")
         }
-        return try locked(root) {
+        return try withDestinationLock(root) {
             try recoverLocked(root)
             let destination = root.appendingPathComponent(skill.name)
             var next = try Self.receipts(root); let previous = next
@@ -606,7 +628,7 @@ public struct SupplementalSkillInstaller {
                 throw ProjectError(localized: "The skill is modified or unmanaged and was preserved.")
             }
             let backup = try backup(destination, root: root)
-            if rememberRemoval && skill.bundled {
+            if rememberRemoval && skill.classification != .imported {
                 next[skill.name] = .init(skill: skill, contentSHA256: oldHash, removed: true)
             } else {
                 next.removeValue(forKey: skill.name)
@@ -658,7 +680,7 @@ public struct SupplementalSkillInstaller {
             throw ProjectError(localized: "A skill with this name already exists at \(destination.path). Manage that copy before adding another.")
         }
     }
-    private func locked<T>(_ root: URL, action: () throws -> T) throws -> T {
+    func withDestinationLock<T>(_ root: URL, action: () throws -> T) throws -> T {
         try Self.regularAncestors(root)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let path = root.appendingPathComponent(".glyphs-mcp-catalog.lock").path

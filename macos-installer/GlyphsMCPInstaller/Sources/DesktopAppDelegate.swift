@@ -28,6 +28,14 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     private var activityObservation: AnyCancellable?
     private var componentUpdateObservation: AnyCancellable?
     private var componentDialogObservers: [NSObjectProtocol] = []
+    private var postUpdateBaseline: Int?
+    private var postUpdateItems: [PostUpdateItem]?
+    private var discoveringPostUpdate = false
+    private var postUpdateDiscoveryFailed = false
+    private var postUpdateSheet: NSWindow?
+    private var desktopBuild: Int {
+        Int(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") ?? 0
+    }
     private var menuImages: [Bool: NSImage] = [:]
     private weak var activityDot: DesktopActivityDot?
 
@@ -44,12 +52,15 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
                 })
         }
         installer.stopServiceBeforeQuit = { [weak self] in try await self?.desktop.stopForInstallation() }
+        installer.pauseServiceForPostUpdate = { [weak self] in try await self?.desktop.stopForInstallation(restoreAfterUpdate: true) }
+        installer.restoreServiceAfterPostUpdate = { [weak self] in try await self?.desktop.restoreServiceAfterPostUpdate() }
         installer.showTroubleshootingLogs = { [weak self] in self?.showTroubleshootingLogs() }
         updateMenuBar()
         taskObservation = desktop.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async {
                 self?.updateTaskMenuBadge()
                 self?.updateStatusMenu()
+                self?.presentComponentUpdateReminder()
             }
         }
         taskMenuTracking = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification,
@@ -66,12 +77,24 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
         desktop.onWelcome = { [weak self] in self?.showWelcome() }
         let event = NSAppleEventManager.shared().currentAppleEvent
         let login = event?.paramDescriptor(forKeyword: AEKeyword(keyAEPropData))?.enumCodeValue == OSType(keyAELaunchedAsLogInItem)
+        let defaults = UserDefaults.standard
+        let olderInstallation = desktop.installation.version.map {
+            $0.compare(installer.projectVersion, options: .numeric) == .orderedAscending
+        } ?? false
+        postUpdateBaseline = PostUpdateOffer.register(build: desktopBuild,
+            returningUser: defaults.bool(forKey: DesktopLaunchPolicy.welcomeCompletedKey) || olderInstallation,
+            defaults: defaults)
         if DesktopLaunchPolicy.showsWelcome(loginLaunch: login, defaults: .standard) {
             initialWelcome = true
             showWelcome()
         } else if DesktopLaunchPolicy.showsDashboard(loginLaunch: login) { showDashboard() }
         // Discovery begins after presentation, never in the delegate's initializer.
         Task { @MainActor [weak self] in self?.installer.refresh(resetFailures: true) }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do { try await desktop.restoreServiceAfterPostUpdate() }
+            catch { installer.notice = .failure(error.presentationDescription()) }
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -171,30 +194,50 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegat
     }
 
     private func presentComponentUpdateReminder() {
-        let interactive = !initialWelcome && NSApp.isActive && dashboard?.isVisible == true
-            && dashboard?.isMiniaturized == false && welcome?.isVisible != true
-        let otherDialog = NSApp.modalWindow != nil || NSApp.windows.contains { $0.attachedSheet != nil }
-        let key = installer.componentUpdateReminderKey
-        guard ComponentUpdateReminder.shouldPresent(statuses: installer.componentUpdates,
-            alreadyShown: UserDefaults.standard.bool(forKey: key), interactive: interactive,
-            busy: installer.operationsBusy, otherDialog: otherDialog), let dashboard else { return }
-        let alert = NSAlert()
-        let needsServerUpdate = installer.componentUpdates["mcp"] == .updateAvailable
-        alert.alertStyle = .informational
-        alert.messageText = NSLocalizedString(ComponentUpdateReminder.title(needsServerUpdate: needsServerUpdate), comment: "Component update reminder headline")
-        alert.informativeText = NSLocalizedString(ComponentUpdateReminder.message(needsServerUpdate: needsServerUpdate), comment: "Component update reminder guidance")
-            + "\n\n" + NSLocalizedString(ComponentUpdateReminder.dismissalExplanation, comment: "Once-per-build reminder behavior")
-        // Give the update and dismissal guidance room while retaining native alert behavior.
-        alert.accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 0))
-        alert.addButton(withTitle: NSLocalizedString("Open Setup", comment: "Component update reminder action"))
-        alert.addButton(withTitle: NSLocalizedString(ComponentUpdateReminder.dismissalTitle, comment: "Component update reminder action"))
-        alert.beginSheetModal(for: dashboard) { [weak self] response in
-            if response == .alertFirstButtonReturn {
-                self?.desktop.requestSetup()
-                self?.showDashboard()
+        guard !postUpdateDiscoveryFailed, let baseline = postUpdateBaseline, let dashboard, dashboard.isKeyWindow,
+              !initialWelcome, welcome?.isVisible != true, NSApp.isActive,
+              !installer.operationsBusy, installer.postUpdateDiscoveryReady, !desktop.controlling,
+              postUpdateSheet == nil, NSApp.modalWindow == nil,
+              !NSApp.windows.contains(where: { $0.attachedSheet != nil }) else { return }
+        if let items = postUpdateItems {
+            PostUpdateOffer.consume(build: desktopBuild, defaults: .standard)
+            postUpdateBaseline = nil
+            postUpdateItems = nil
+            guard !items.isEmpty else { return }
+            let sheet = NSWindow(contentRect: NSRect(origin: .zero, size: DesktopPostUpdateWizard.size),
+                                 styleMask: [.titled], backing: .buffered, defer: false)
+            sheet.titleVisibility = .hidden
+            sheet.isReleasedWhenClosed = false
+            sheet.contentViewController = NSHostingController(rootView: DesktopPostUpdateWizard(
+                installer: installer, items: items, finish: { [weak self, weak sheet] showSetup in
+                    guard let self, let sheet else { return }
+                    dashboard.endSheet(sheet)
+                    if showSetup { desktop.requestSetup() }
+                    Task {
+                        do { try await self.desktop.restoreServiceAfterPostUpdate() }
+                        catch { self.installer.notice = .failure(error.presentationDescription()) }
+                    }
+                }).desktopDesign())
+            postUpdateSheet = sheet
+            dashboard.beginSheet(sheet) { [weak self] _ in
+                self?.postUpdateSheet = nil
+            }
+        } else if !discoveringPostUpdate {
+            discoveringPostUpdate = true
+            let build = desktopBuild
+            Task { [weak self] in
+                guard let self else { return }
+                do {
+                    postUpdateItems = try await installer.discoverPostUpdate(after: baseline, through: build)
+                    discoveringPostUpdate = false
+                    presentComponentUpdateReminder()
+                } catch {
+                    discoveringPostUpdate = false
+                    postUpdateDiscoveryFailed = true
+                    NSLog("Could not check post-update changes: %@", error.localizedDescription)
+                }
             }
         }
-        UserDefaults.standard.set(true, forKey: key)
     }
 
     private func recordFirstPresentation(_ name: String) {

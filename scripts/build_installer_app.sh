@@ -128,7 +128,7 @@ echo "Embedded immutable signed payload archive: $payload_archive"
 
 echo "Signing exported app from a clean signature slot…"
 /usr/bin/codesign --remove-signature "$out_dir/$product.app" 2>/dev/null || true
-/usr/bin/codesign --sign "$identity" --timestamp --options runtime "$out_dir/$product.app"
+/usr/bin/codesign --sign "$identity" --timestamp --options runtime --entitlements "$repo_root/macos-installer/GlyphsMCPInstaller/GlyphsMCP.entitlements" "$out_dir/$product.app"
 
 # codesign can satisfy an immediate verification from the signing cache. Give
 # securityd time to evict that entry so this gate exercises durable validation,
@@ -137,6 +137,10 @@ sleep 15
 
 echo "Verifying exported app signature…"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$out_dir/$product.app"
+for arch in arm64 x86_64; do
+  /usr/bin/codesign -d --arch "$arch" --entitlements - --xml "$out_dir/$product.app" | \
+    "$python_bin" -c 'import plistlib, sys; sys.exit(0 if plistlib.loads(sys.stdin.buffer.read()).get("com.apple.security.automation.apple-events") is True else "error: signed app lacks Apple Events entitlement")'
+done
 /usr/bin/codesign --verify --strict --verbose=2 "$updater_helper"
 
 signature_details="$(/usr/bin/codesign -d --verbose=4 "$out_dir/$product.app" 2>&1)"

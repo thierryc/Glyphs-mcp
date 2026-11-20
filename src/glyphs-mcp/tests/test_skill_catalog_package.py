@@ -13,7 +13,8 @@ checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker
 def copy_catalog_fixture(destination):
     files = ['catalog-repository/registry.json', 'skills/manifest.json',
              'plugins/glyphs-mcp/.codex-plugin/plugin.json',
-             'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json']
+             'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/registry.json',
+             'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/update-additions.json']
     files += [f'macos-installer/GlyphsMCPInstaller/Resources/{language}.lproj/Localizable.strings'
               for language in checker.LOCALES]
     for skill in json.loads((ROOT/'skills/manifest.json').read_text())['managedSkills']:
@@ -26,6 +27,19 @@ def copy_catalog_fixture(destination):
 
 def test_packaged_catalog_matches_core_skills_and_languages():
     assert checker.check()['bundledSkills'] == 15
+
+
+def test_update_addition_must_name_a_shipped_skill_and_new_build(tmp_path):
+    copy_catalog_fixture(tmp_path)
+    path = tmp_path/'macos-installer/GlyphsMCPInstaller/Resources/SkillsCatalog/update-additions.json'
+    item = {'kind': 'catalogSkill', 'id': 'thierryc/dekink-native', 'introducedBuild': 96}
+    path.write_text(json.dumps([item]))
+    checker.check(tmp_path)
+    for invalid in ({**item, 'id': 'removed-skill'}, {**item, 'introducedBuild': 95},
+                    {**item, 'kind': 'managedSkill'}):
+        path.write_text(json.dumps([invalid]))
+        with pytest.raises(ValueError, match='Invalid post-update addition'):
+            checker.check(tmp_path)
 
 
 def test_catalog_titles_allow_internal_and_but_preserve_capitalized_names():

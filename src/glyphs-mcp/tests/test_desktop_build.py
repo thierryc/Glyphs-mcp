@@ -55,6 +55,8 @@ def bundle(tmp_path, monkeypatch):
     embedded = app / 'Contents/Resources/SkillsCatalog/registry.json'
     embedded.parent.mkdir(parents=True)
     embedded.write_bytes(offline.read_bytes())
+    offline.with_name('update-additions.json').write_text('[]')
+    embedded.with_name('update-additions.json').write_text('[]')
     catalog = tmp_path / 'macos-installer/GlyphsMCPInstaller/Resources/Assets.xcassets'
     for name in ['GlyphsMCPMenu', 'GitHubMark']:
         (catalog / (name + '.imageset')).mkdir(parents=True)
@@ -424,14 +426,15 @@ def test_process_check_ignores_other_installed_and_qa_apps(tmp_path, monkeypatch
     builder.require_stopped(app)
 
 
-def test_rejects_missing_or_changed_offline_skills_catalog(bundle):
+@pytest.mark.parametrize('name', ['registry.json', 'update-additions.json'])
+def test_rejects_missing_or_changed_offline_skills_catalog(bundle, name):
     app, root = bundle
-    snapshot = app / 'Contents/Resources/SkillsCatalog/registry.json'
+    snapshot = app / 'Contents/Resources/SkillsCatalog' / name
     snapshot.write_text('invalid')
-    with pytest.raises(ValueError, match='offline skills catalog'):
+    with pytest.raises(ValueError, match='skills catalog resource: ' + name):
         verifier.verify(app, root)
     snapshot.unlink()
-    with pytest.raises(ValueError, match='offline skills catalog'):
+    with pytest.raises(ValueError, match='skills catalog resource: ' + name):
         verifier.verify(app, root)
 
 

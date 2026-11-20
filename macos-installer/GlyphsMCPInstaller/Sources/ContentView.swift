@@ -124,6 +124,9 @@ struct ContentView: View {
         .onAppear { handleSetupRequest(); handleTasksRequest() }
         .onChange(of: desktop.tasksRequested) { _, _ in handleTasksRequest() }
         .onChange(of: desktop.setupRequested) { _, _ in handleSetupRequest() }
+        .onChange(of: installer.postUpdateSkillToReveal) { _, skill in
+            if skill != nil { projects.select(.skills) }
+        }
         .onChange(of: projects.navigation.skillProjects) { _, _ in
             skills.prepareProjects(projects)
             skills.rescan()

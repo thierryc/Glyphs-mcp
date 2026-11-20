@@ -22,6 +22,8 @@
 	<string>AppIcon</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Glyphs MCP asks Glyphs 4 to save open documents and quit when you choose Save and Quit during an update.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>LSUIElement</key>

@@ -258,6 +258,54 @@ def test_failed_upgrade_restores_agent_receipt_components_and_unrelated_files(tm
     assert (root/'installation.json').read_bytes() == receipt
 
 
+def test_reviewed_update_respects_selection_and_refuses_a_changed_destination(tmp_path, monkeypatch):
+    import install_simple_v2 as installer
+    from build_simple_v2 import _identity
+    monkeypatch.setattr(installer, 'require_closed_font_processes', lambda _: None)
+    output, home, app = fixture_install(tmp_path)
+    first = install(output, home, Path(sys.executable), app, ['curve-inspector'])
+    plugins = home/'Library/Application Support/Glyphs 4/Plugins'
+    curve = plugins/'Glyphs Curve Inspector.glyphsReporter'
+    reference = plugins/'Glyphs Reference Inspector.glyphsReporter'
+    bridge = plugins/'Glyphs MCP Bridge.glyphsPlugin'
+    agent = Path(first['launchAgent'])
+    bridge_identity, agent_data = _identity(bridge), agent.read_bytes()
+    restarted = []
+    monkeypatch.setattr(installer, 'service_controller', lambda *_: SimpleNamespace(
+        agent=agent, exclusive=nullcontext, status=lambda: {'loaded': True, 'processRunning': False}))
+    monkeypatch.setattr(installer, 'stop_for_install', lambda *_: None)
+    monkeypatch.setattr(installer, 'restart_agent', lambda *_: restarted.append(True))
+    reviewed = {'curve-inspector': _identity(curve)}
+    manifest_path = output/'manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    incoming = next(item for item in manifest['companions'] if item['id'] == 'curve-inspector')
+    bundled_curve = output/incoming['bundle']
+    (bundled_curve/'new-feature').write_text('new version')
+    incoming['identity'] = _identity(bundled_curve)
+    manifest_path.write_text(json.dumps(manifest))
+    updated = install(output, home, Path(sys.executable), app, ['curve-inspector'], mcp=False,
+                      only_components=reviewed, reviewed_components=reviewed, start=True)
+    assert set(updated['components']) == {'mcp', 'curve-inspector'}
+    assert _identity(bridge) == bridge_identity and agent.read_bytes() == agent_data
+    assert restarted == []
+    assert not reference.exists()
+    assert (curve/'new-feature').read_text() == 'new version'
+    assert install(output, home, Path(sys.executable), app, ['curve-inspector'], mcp=False,
+                   only_components=reviewed, reviewed_components=reviewed) == updated
+
+    (curve/'user-edit').write_text('keep')
+    with pytest.raises(ValueError, match='no longer matches the reviewed installation'):
+        install(output, home, Path(sys.executable), app, ['curve-inspector'], mcp=False,
+                only_components=reviewed, reviewed_components=reviewed)
+    assert (curve/'user-edit').read_text() == 'keep'
+
+    reference.symlink_to(curve, target_is_directory=True)
+    with pytest.raises(ValueError, match='appeared since review'):
+        install(output, home, Path(sys.executable), app, ['reference-inspector'], mcp=False,
+                only_components=['reference-inspector'], reviewed_components={'reference-inspector': 'absent'})
+    assert reference.is_symlink()
+
+
 def test_interrupted_upgrade_recovers_receipt_before_choosing_components(tmp_path):
     import json
     from installation_transaction import InstallationTransaction

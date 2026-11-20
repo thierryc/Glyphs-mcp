@@ -444,6 +444,28 @@ final class SkillCatalogTests: XCTestCase {
         XCTAssertTrue(retried.failures.isEmpty)
     }
 
+    func testReviewedCatalogAdditionRechecksItsExactDestinationAndRemoval() throws {
+        let service = SupplementalSkillInstaller(home: temporary)
+        let item = skill()
+        let targets = service.scopeStatus(item).missing(for: [.codex, .claudeCode])
+        let shared = try XCTUnwrap(targets.first { $0.placement == .shared })
+        let claude = try XCTUnwrap(targets.first { $0.placement == .claudeCode })
+        try service.installReviewedAddition(item, files: files(), target: shared)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: claude.status.path))
+        try service.installReviewedAddition(item, files: files(), target: shared)
+
+        let unowned = URL(fileURLWithPath: claude.status.path).appendingPathComponent("SKILL.md")
+        try FileManager.default.createDirectory(at: unowned.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try XCTUnwrap(files("User content").first?.data).write(to: unowned)
+        XCTAssertThrowsError(try service.installReviewedAddition(item, files: files(), target: claude))
+        XCTAssertEqual(try Data(contentsOf: unowned), files("User content").first?.data)
+
+        let installed = try XCTUnwrap(service.scopeStatus(item).installed(for: .codex).first)
+        XCTAssertTrue(service.apply(.remove, to: [installed], skill: item, files: []).failures.isEmpty)
+        XCTAssertThrowsError(try service.installReviewedAddition(item, files: files(), target: shared))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: shared.status.path))
+    }
+
     func testBundledLegacyRemovalSurvivesSetupAndExplicitReinstall() throws {
         let item = canonicalSkill(bundled: true)
         let package = [ProjectFile(path: "SKILL.md", data: Data(

@@ -1633,3 +1633,55 @@
 "Could not load earlier tasks." = "无法加载更早的任务。";
 "Clear history…" = "清除历史记录…";
 "Load more" = "加载更多";
+
+/* Glyphs 4 quit requests during an update. */
+"A new copy of Glyphs 4 opened. Review the running copies before continuing." = "又打开了一个 Glyphs 4 实例。请先确认正在运行的实例，再继续操作。";
+"The quit request was cancelled in Glyphs 4." = "退出请求已在 Glyphs 4 中取消。";
+"Allow Glyphs MCP to control Glyphs 4 in System Settings → Privacy & Security → Automation, or save and quit Glyphs 4 yourself." = "请在“系统设置 → 隐私与安全性 → 自动化”中允许 Glyphs MCP 控制 Glyphs 4，或自行存储文稿并退出 Glyphs 4。";
+"Glyphs 4 is still open. Check for a save dialog and finish quitting before continuing." = "Glyphs 4 仍在运行。请检查是否有等待处理的存储对话框，退出 Glyphs 4 后再继续。";
+"Glyphs 4 could not complete the quit request (error %ld). Save your work and quit Glyphs 4 before continuing." = "Glyphs 4 未能完成退出请求（错误 %ld）。请先存储文稿并退出 Glyphs 4，再继续操作。";
+
+/* Post-update wizard */
+"Finish updating Glyphs MCP" = "完成 Glyphs MCP 更新";
+"Review your updates" = "查看更新";
+"Save your open fonts" = "保存打开的字体";
+"Waiting for Glyphs to close" = "正在等待 Glyphs 退出";
+"Installing updates…" = "正在安装更新…";
+"Update complete" = "更新完成";
+"Some changes need attention" = "部分更改需要处理";
+"Review updates and choose whether to install new tools and skills." = "查看更新，并选择是否安装新工具和技能。";
+"Glyphs 4 is open" = "Glyphs 4 已打开";
+"Glyphs 4 is closed" = "Glyphs 4 已关闭";
+"New tools and skills" = "新工具和技能";
+"View in Skills" = "在“技能”中查看";
+"Close all copies of Glyphs 4 to update its plugins. Glyphs handles any save dialogs." = "更新插件前，请退出所有 Glyphs 4 实例。保存对话框会在 Glyphs 中显示。";
+"If Glyphs shows a save dialog, finish it there." = "如果 Glyphs 显示保存对话框，请在其中完成保存。";
+"Your selected changes are installed. Reload your AI apps to use updated skills." = "所选更改已安装。重新加载 AI 应用即可使用更新后的技能。";
+"Let the wizard do everything for me" = "让向导为我完成更新";
+"Do it manually in Setup" = "在“设置”中手动更新";
+"Do it manually in Setup now" = "现在前往“设置”手动更新";
+"Save and quit Glyphs" = "保存并退出 Glyphs";
+"Reopen Glyphs" = "重新打开 Glyphs";
+"Retry remaining" = "重试未完成的项目";
+"Install everything" = "安装全部";
+"Install updates" = "安装更新";
+"Install selected" = "安装所选项目";
+"Complete the Glyphs Python check in Setup, then try the update again." = "请在“设置”中完成 Glyphs Python 检查，然后重试更新。";
+"Glyphs MCP for Cursor" = "适用于 Cursor 的 Glyphs MCP";
+"Catalog skill by %@. Choose a location in Skills." = "目录技能，作者：%@。请在“技能”中选择安装位置。";
+"Catalog skill by %@\n%@" = "目录技能，作者：%@\n%@";
+"Finish the current Setup operation and try again." = "请完成当前设置操作后重试。";
+"Close Glyphs 4 and complete the Python check before installing." = "安装前请退出 Glyphs 4 并完成 Python 检查。";
+"This agent connection changed. Open Setup to review it." = "此智能体连接已更改。请在“设置”中查看。";
+"The Cursor plugin changed. Open Setup to review it." = "Cursor 插件已更改。请在“设置”中查看。";
+"This skill was removed since review. Open Skills to review it." = "此技能在审核后已被移除。请在“技能”中查看。";
+"The skill changed since the update was reviewed. Open Setup to check it." = "查看更新后，此技能已发生更改。请在“设置”中检查。";
+"The skills ownership receipt needs review in Setup." = "请在“设置”中检查技能归属记录。";
+"Includes new skills (%@)." = "包含新技能（%@）。";
+"Skip additions" = "跳过新增项目";
+"Save and quit Glyphs saves changes in all open fonts." = "“保存并退出 Glyphs”会保存所有打开字体中的更改。";
+"Quit Glyphs to continue" = "退出 Glyphs 后继续";
+"Ready to install" = "可以安装了";
+"Save your open fonts before installing." = "请在安装前保存打开的字体。";
+"Choose what else to install." = "选择要额外安装的项目。";
+"Catalog skill for %@" = "适用于 %@ 的目录技能";

@@ -1,0 +1,48 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "comment": "Permission to send the explicitly chosen save-and-quit event to Glyphs 4.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn Sie während eines Updates „Sichern und beenden“ wählen, fordert Glyphs MCP Glyphs 4 auf, offene Dokumente zu sichern und sich zu beenden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glyphs MCP asks Glyphs 4 to save open documents and quit when you choose Save and Quit during an update."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glyphs MCP pide a Glyphs 4 que guarde los documentos abiertos y se cierre cuando eliges guardar y salir durante una actualización."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glyphs MCP demande à Glyphs 4 d’enregistrer les documents ouverts et de quitter lorsque vous choisissez d’enregistrer et de quitter pendant une mise à jour."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Glyphs MCP pede ao Glyphs 4 que salve os documentos abertos e encerre quando você escolhe salvar e sair durante uma atualização."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当你在更新期间选择存储并退出时，Glyphs MCP 会请求 Glyphs 4 存储打开的文稿并退出。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

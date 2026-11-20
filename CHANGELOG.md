@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.9.0 (unreleased, build 96)
+
+- Added a post-update wizard for verified Glyphs components and managed agent skills, with a manual Setup option. Newly shipped optional items, including catalog skills, require opt-in.
+- Added separate quit, install, progress, and retry steps. **Save and quit Glyphs** uses Glyphs’ native save-and-quit command for open fonts.
+
+See the [2.9.0 release notes](V2.9.0-RELEASE.md).
+
 ## 2.8.2 — stable release, build 95, 19 November 2026
 
 - When Glyphs 4 quits, the health panel identifies the last footprint before quit and its sample time. Editing guidance disappears from the panel and the copied Markdown report.

@@ -24,6 +24,18 @@ def check(root=ROOT):
     ids = [entry['id'] for entry in catalog['skills']]
     if len(ids) != len(set(ids)):
         raise ValueError('Duplicate catalog IDs')
+    additions = json.loads(snapshot.with_name('update-additions.json').read_text())
+    valid_additions = {
+        'component': {'mcp', 'curve-inspector', 'reference-inspector'},
+        'managedSkill': names,
+        'catalogSkill': {entry['id'] for entry in catalog['skills'] if not entry['bundled']},
+    }
+    seen = set()
+    for addition in additions:
+        kind, item_id, build = addition['kind'], addition['id'], addition['introducedBuild']
+        if item_id not in valid_additions.get(kind, ()) or type(build) is not int or build <= 95 or (kind, item_id) in seen:
+            raise ValueError('Invalid post-update addition: ' + repr(addition))
+        seen.add((kind, item_id))
     bundled_license = json.loads((root/'plugins/glyphs-mcp/.codex-plugin/plugin.json').read_text())['license']
     for entry in catalog['skills']:
         if not re.fullmatch(r'[a-f0-9]{40}', entry['source']['revision']):

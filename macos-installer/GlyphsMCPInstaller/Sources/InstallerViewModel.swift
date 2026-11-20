@@ -9,10 +9,8 @@ final class InstallerViewModel: ObservableObject {
     @Published private(set) var componentStates: [String: SetupItemState] = [:]
     @Published private(set) var componentUpdates: [String: ComponentUpdateStatus] = [:]
     private var componentUpdateTask: Task<Void, Never>?
-    var componentUpdateReminderKey: String {
-        ComponentUpdateReminder.key(version: projectVersion,
-            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown", root: root)
-    }
+    @Published var postUpdateSkillToReveal: CatalogSkill?
+    var postUpdateDiscoveryReady: Bool { refreshTask == nil && initializationStage == nil }
     @Published private(set) var connectorStates: [InstallerClientKind: SetupItemState] = [:]
     @Published private(set) var detectedClients: Set<InstallerClientKind> = []
     @Published private(set) var connectorInformation: [InstallerClientKind: String] = [:]
@@ -53,6 +51,8 @@ final class InstallerViewModel: ObservableObject {
     var canInstallComponents: Bool { pythonCheck.allowsInstallation }
 
     var stopServiceBeforeQuit: (() async throws -> Void)?
+    var pauseServiceForPostUpdate: (() async throws -> Void)?
+    var restoreServiceAfterPostUpdate: (() async throws -> Void)?
     var showTroubleshootingLogs: (() -> Void)?
 
     private let runner = ProcessRunner()
@@ -143,7 +143,7 @@ final class InstallerViewModel: ObservableObject {
         ])
     }
 
-    private static var processArchitecture: String {
+    private nonisolated static var processArchitecture: String {
         #if arch(arm64)
         return "arm64"
         #else
@@ -705,9 +705,11 @@ final class InstallerViewModel: ObservableObject {
         return result
     }
 
-    private func executeComponentTransaction(selected: Set<String>, only: String? = nil) async throws {
+    private func executeComponentTransaction(selected: Set<String>, only: String? = nil,
+                                             reviewed: [String: String] = [:]) async throws {
         guard let application else { throw InstallerError.localized("Glyphs 4 is required.") }
-        let payload = try await resolvePayload()
+        let payload: InstallerPayload
+        if let resolved = self.payload { payload = resolved } else { payload = try await resolvePayload() }
         let lean = payload.payloadDir.appendingPathComponent("Lean")
         #if arch(arm64)
         let architecture = "arm64"
@@ -721,6 +723,9 @@ final class InstallerViewModel: ObservableObject {
         if !selected.contains("mcp") { args.append("--no-mcp") }
         for id in selected.sorted() where id != "mcp" { args += ["--companion", id] }
         if let only { args += ["--only", only] }
+        for (id, expected) in reviewed.sorted(by: { $0.key < $1.key }) {
+            args += ["--only", id, "--expect-component", "\(id)=\(expected)"]
+        }
         let operationID = UUID().uuidString
         args += ["--diagnostic-id", operationID]
         diagnostic("installation.requested", operationID: operationID,
@@ -1021,6 +1026,268 @@ final class InstallerViewModel: ObservableObject {
         switch state {
         case .queued, .active, .failed: return true
         case .notInstalled, .installed, .developmentLinked: return false
+        }
+    }
+}
+
+extension InstallerViewModel {
+    func discoverPostUpdate(after baseline: Int, through build: Int) async throws -> [PostUpdateItem] {
+        let payload = try await resolvePayload()
+        let catalogURL = Bundle.main.url(forResource: "registry", withExtension: "json", subdirectory: "SkillsCatalog")
+        let additionsURL = Bundle.main.url(forResource: "update-additions", withExtension: "json", subdirectory: "SkillsCatalog")
+        let hasGlyphs = application != nil
+        let configured = installedConnectors.union(antigravityConnectionStatus == .configured ? [.antigravity] : [])
+        let development = includeDevelopmentSkills
+        let cursor = try? makeCursorInstaller(payload, logger: { _ in })
+        return try await Task.detached(priority: .utility) {
+            guard let catalogURL, let additionsURL else {
+                throw InstallerError.localized("The bundled skills catalog is missing.")
+            }
+            let catalog = try SkillCatalog.decode(Data(contentsOf: catalogURL))
+            let additions = try JSONDecoder().decode([PostUpdateAddition].self, from: Data(contentsOf: additionsURL))
+                .filter { $0.introducedBuild > baseline && $0.introducedBuild <= build }
+            let installation = DesktopInstallation()
+            let lean = payload.payloadDir.appendingPathComponent("Lean", isDirectory: true)
+            var items: [PostUpdateItem] = []
+            if hasGlyphs {
+                items += Self.postUpdateComponents(installation: installation, lean: lean,
+                    newIDs: Set(additions.filter { $0.kind == .component }.map(\.id)))
+            }
+            let managedNames = Set(additions.filter { $0.kind == .managedSkill }.map(\.id))
+            let manager = AgentSkillBundleInstaller(log: { _ in })
+            for (client, root) in Self.managedSkillRoots where configured.contains(client) {
+                let changes = (try? manager.reviewedChanges(from: payload, to: root, newNames: managedNames,
+                                                            includeDevelopmentSkills: development)) ?? []
+                for change in changes {
+                    let title = catalog.skills.first { $0.bundled && $0.name == change.name }?.title ?? change.name
+                    items.append(.init(id: "managed:\(client.rawValue):\(change.name)", title: title,
+                        detail: AppLocalization.text(client.displayName), optional: change.installedIdentity == nil,
+                        change: .managedSkill(change, client, root)))
+                }
+            }
+            if let expected = cursor?.reviewedUpdateIdentity() {
+                let cursorAdditions = managedNames.sorted().filter { name in
+                    guard let cursor else { return false }
+                    let relative = "skills/\(name)/SKILL.md"
+                    return FileManager.default.fileExists(atPath: cursor.source.appendingPathComponent(relative).path)
+                        && !FileManager.default.fileExists(atPath: cursor.destination.appendingPathComponent(relative).path)
+                }.map { name in catalog.skills.first { $0.name == name }?.title ?? name }
+                let detail = cursorAdditions.isEmpty ? nil
+                    : AppLocalization.format("Includes new skills (%@).", cursorAdditions.formatted(.list(type: .and)))
+                items.append(.init(id: "cursor", title: AppLocalization.text("Glyphs MCP for Cursor"), detail: detail,
+                                   optional: !cursorAdditions.isEmpty, change: .cursor(expected: expected)))
+            }
+            let catalogIDs = Set(additions.filter { $0.kind == .catalogSkill }.map(\.id))
+            items += Self.postUpdateCatalogItems(catalog.skills.filter { !$0.bundled && catalogIDs.contains($0.id) },
+                                                 configured: configured)
+            return items
+        }.value
+    }
+
+    private nonisolated static var managedSkillRoots: [(InstallerClientKind, URL)] {
+        [(.codex, InstallerPaths.codexSkillsDir), (.claudeCode, InstallerPaths.claudeCodeSkillsDir),
+         (.antigravity, AntigravityConnector().skillsURL)]
+    }
+
+    private nonisolated static func postUpdateComponents(installation: DesktopInstallation, lean: URL,
+                                                          newIDs: Set<String>) -> [PostUpdateItem] {
+        let root = installation.root
+        let receiptURL = root.appendingPathComponent("installation.json")
+        let plugins = root.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Glyphs 4/Plugins")
+        guard (try? SupplementalSkillInstaller.regularAncestors(root)) != nil,
+              (try? SupplementalSkillInstaller.regularAncestors(plugins)) != nil,
+              (try? FileManager.default.destinationOfSymbolicLink(atPath: receiptURL.path)) == nil else { return [] }
+        let receipt = (try? Data(contentsOf: receiptURL)).flatMap {
+            (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any]
+        } ?? [:]
+        let statuses = ComponentUpdatePolicy.discover(installation: installation, lean: lean, architecture: processArchitecture)
+        let owned = receipt["installed"] as? [[String: String]] ?? []
+        func matchesReceipt(_ path: URL) -> String? {
+            guard (try? SupplementalSkillInstaller.regularAncestors(path)) != nil,
+                  let expected = owned.first(where: { $0["path"] == path.path })?["identity"],
+                  (try? InstallerPayloadManifestResolver.treeIdentity(path)) == expected else { return nil }
+            return expected
+        }
+        var items = DesktopComponent.all.compactMap { component -> PostUpdateItem? in
+            let path = plugins.appendingPathComponent(component.bundle)
+            let expected: String
+            if statuses[component.id] == .updateAvailable, let identity = matchesReceipt(path) {
+                if component.id == "mcp", matchesReceipt(root.appendingPathComponent("sidecar")) == nil { return nil }
+                expected = identity
+            } else if newIDs.contains(component.id), !installation.components.contains(component.id),
+                      !FileManager.default.fileExists(atPath: path.path),
+                      (try? FileManager.default.destinationOfSymbolicLink(atPath: path.path)) == nil {
+                expected = "absent"
+            } else { return nil }
+            return .init(id: component.id, title: AppLocalization.text(component.title), detail: nil,
+                         optional: expected == "absent", change: .component(id: component.id, expected: expected))
+        }
+        let dependents: Set<String> = ["mcp", "reference-inspector"]
+        if !dependents.isDisjoint(with: items.map(\.id)), !dependents.isDisjoint(with: installation.components) {
+            let manifestURL = lean.appendingPathComponent("manifest.json")
+            let manifest = (try? Data(contentsOf: manifestURL)).flatMap {
+                (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any]
+            }
+            let runtime = (manifest?["runtimes"] as? [String: [String: Any]])?[processArchitecture]
+            let installedRuntime = matchesReceipt(root.appendingPathComponent("runtime"))
+            var compatible = Set(items.filter { !$0.optional }.map(\.id))
+            if statuses["reference-inspector"] == .current,
+               let reference = DesktopComponent.all.first(where: { $0.id == "reference-inspector" }),
+               matchesReceipt(plugins.appendingPathComponent(reference.bundle)) != nil {
+                compatible.insert(reference.id)
+            }
+            if installedRuntime == nil ||
+                (installedRuntime != runtime?["identity"] as? String &&
+                 !installation.components.intersection(dependents).isSubset(of: compatible)) {
+                items.removeAll { dependents.contains($0.id) }
+            }
+        }
+        return items
+    }
+
+    private nonisolated static func postUpdateCatalogItems(_ skills: [CatalogSkill],
+                                                           configured: Set<InstallerClientKind>) -> [PostUpdateItem] {
+        let service = SupplementalSkillInstaller()
+        let localAgents: [(InstallerClientKind, SkillClient)] = [(.codex, .codex), (.claudeCode, .claudeCode), (.cursor, .cursor)]
+        let activeAgents = localAgents.compactMap { configured.contains($0.0) ? $0.1 : nil }
+        return skills.compactMap { skill in
+            let scope = service.scopeStatus(skill)
+            guard !scope.copies.contains(where: { $0.status.state != .notInstalled }),
+                  scope.copies.allSatisfy({ (try? service.wasRemoved(skill, from: $0.root)) == false }) else { return nil }
+            let targets = scope.missing(for: activeAgents).filter {
+                (try? SupplementalSkillInstaller.regularAncestors($0.root)) != nil
+            }
+            let agents = Set(targets.flatMap { $0.placement.agents })
+            let destinations = scope.agents.filter(agents.contains).map { AppLocalization.text($0.title) }
+            let detail = targets.isEmpty
+                ? AppLocalization.format("Catalog skill by %@. Choose a location in Skills.", skill.author)
+                : AppLocalization.format("Catalog skill for %@", destinations.formatted(.list(type: .and)))
+            return .init(id: "catalog:\(skill.id)", title: skill.title, detail: detail, optional: true,
+                         change: .catalogSkill(skill, targets))
+        }
+    }
+
+    func preparePostUpdatePython() async -> Bool {
+        guard !operationsBusy, application != nil else { return false }
+        if !canInstallComponents {
+            checkGlyphsPython()
+            await pythonCheckTask?.value
+        }
+        return canInstallComponents
+    }
+
+    func quitGlyphsForPostUpdate(confirmedPIDs: Set<pid_t>, save: Bool) async throws -> Bool {
+        guard !operationsBusy else { throw InstallerError.localized("Finish the current Setup operation and try again.") }
+        guard !GlyphsRuntime.runningGlyphs4PIDs().isEmpty else { return false }
+        busy = true
+        defer { busy = false; refreshRunning() }
+        do {
+            try await pauseServiceForPostUpdate?()
+            try await GlyphsRuntime.quitGlyphs4(confirmedPIDs: confirmedPIDs, saveChanges: save)
+        } catch {
+            do { try await restoreServiceAfterPostUpdate?() }
+            catch let restoreError {
+                throw InstallerError.userFacing([error.presentationDescription(), restoreError.presentationDescription()].joined(separator: "\n"))
+            }
+            throw error
+        }
+        // The user may spend time choosing additions before starting installation.
+        try await restoreServiceAfterPostUpdate?()
+        return true
+    }
+
+    func installPostUpdate(_ items: [PostUpdateItem], restoreServer: Bool) async -> PostUpdateResult {
+        var result = PostUpdateResult()
+        guard !operationsBusy else {
+            result.fail(items, message: AppLocalization.text("Finish the current Setup operation and try again."))
+            result.serverNeedsRestore = restoreServer
+            return result
+        }
+        busy = true
+        defer {
+            busy = false
+            refresh()
+        }
+        do {
+            if !items.isEmpty { try await applyPostUpdate(items, result: &result) }
+        } catch {
+            result.fail(items, message: error.presentationDescription())
+        }
+        do { try await restoreServiceAfterPostUpdate?() }
+        catch {
+            result.errors.append(error.presentationDescription())
+            result.serverNeedsRestore = true
+        }
+        notice = result.errors.isEmpty
+            ? .information(AppLocalization.text("Update complete"))
+            : .failure(AppLocalization.text("Some changes need attention"))
+        return result
+    }
+
+    private func applyPostUpdate(_ items: [PostUpdateItem], result: inout PostUpdateResult) async throws {
+        let payload = try await resolvePayload()
+        let components = items.filter(\.requiresClosedGlyphs)
+        if !components.isEmpty {
+            let expected = Dictionary(uniqueKeysWithValues: components.compactMap { item -> (String, String)? in
+                if case .component(let id, let expected) = item.change { return (id, expected) }
+                return nil
+            })
+            notice = .information(AppLocalization.text("Installing Glyphs components…"))
+            do {
+                guard canInstallComponents, GlyphsRuntime.runningGlyphs4PIDs().isEmpty else {
+                    throw InstallerError.localized("Close Glyphs 4 and complete the Python check before installing.")
+                }
+                try await executeComponentTransaction(selected: Set(expected.keys), reviewed: expected)
+                installed = DesktopInstallation().components
+            } catch {
+                result.fail(components, message: error.presentationDescription())
+            }
+        }
+        let store = SkillStore()
+        let includeDevelopmentSkills = self.includeDevelopmentSkills
+        for item in items where !item.requiresClosedGlyphs {
+            notice = .information(AppLocalization.format("Installing %@…", item.title))
+            do {
+                switch item.change {
+                case .component: break
+                case .managedSkill(let change, let client, let root):
+                    refreshConnectorDetection()
+                    guard installedConnectors.contains(client) || client == .antigravity && antigravityConnectionStatus == .configured else {
+                        throw InstallerError.localized("This agent connection changed. Open Setup to review it.")
+                    }
+                    try await Task.detached(priority: .utility) {
+                        try AgentSkillBundleInstaller(log: { _ in }).apply(change, from: payload, to: root,
+                                                                          includeDevelopmentSkills: includeDevelopmentSkills)
+                    }.value
+                case .cursor(let expected):
+                    let updater = try makeCursorInstaller(payload, logger: { _ in })
+                    try await ProjectFiles.perform {
+                        if updater.isCurrentManagedPlugin() { return }
+                        guard updater.reviewedUpdateIdentity() == expected else {
+                            throw InstallerError.localized("The Cursor plugin changed. Open Setup to review it.")
+                        }
+                        _ = try updater.installOrUpdate()
+                    }
+                case .catalogSkill(let skill, let targets):
+                    let files = try await store.files(skill)
+                    let failures = try await ProjectFiles.perform {
+                        let service = SupplementalSkillInstaller()
+                        return targets.compactMap { target -> String? in
+                            do {
+                                try service.installReviewedAddition(skill, files: files, target: target)
+                                return nil
+                            } catch {
+                                return "\((target.status.path as NSString).abbreviatingWithTildeInPath)\n\(error.presentationDescription())"
+                            }
+                        }
+                    }
+                    if !failures.isEmpty {
+                        throw InstallerError.userFacing(failures.joined(separator: "\n"))
+                    }
+                }
+            } catch {
+                result.fail([item], message: error.presentationDescription())
+            }
         }
     }
 }

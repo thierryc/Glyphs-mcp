@@ -1632,3 +1632,55 @@
 "Could not load earlier tasks." = "Impossible de charger les tâches plus anciennes.";
 "Clear history…" = "Effacer l’historique…";
 "Load more" = "Charger la suite";
+
+/* Glyphs 4 quit requests during an update. */
+"A new copy of Glyphs 4 opened. Review the running copies before continuing." = "Une nouvelle instance de Glyphs 4 s’est ouverte. Vérifiez les instances en cours avant de continuer.";
+"The quit request was cancelled in Glyphs 4." = "La demande de fermeture a été annulée dans Glyphs 4.";
+"Allow Glyphs MCP to control Glyphs 4 in System Settings → Privacy & Security → Automation, or save and quit Glyphs 4 yourself." = "Autorisez Glyphs MCP à contrôler Glyphs 4 dans Réglages Système → Confidentialité et sécurité → Automatisation, ou enregistrez vos documents et quittez Glyphs 4 vous-même.";
+"Glyphs 4 is still open. Check for a save dialog and finish quitting before continuing." = "Glyphs 4 est toujours ouvert. Vérifiez si une fenêtre d’enregistrement est en attente et quittez Glyphs 4 avant de continuer.";
+"Glyphs 4 could not complete the quit request (error %ld). Save your work and quit Glyphs 4 before continuing." = "Glyphs 4 n’a pas pu quitter (erreur %ld). Enregistrez votre travail et quittez Glyphs 4 avant de continuer.";
+
+/* Post-update wizard */
+"Finish updating Glyphs MCP" = "Terminer la mise à jour de Glyphs MCP";
+"Review your updates" = "Vérifier les mises à jour";
+"Save your open fonts" = "Enregistrer les polices ouvertes";
+"Waiting for Glyphs to close" = "Fermeture de Glyphs en attente";
+"Installing updates…" = "Installation des mises à jour…";
+"Update complete" = "Mise à jour terminée";
+"Some changes need attention" = "Certaines modifications nécessitent votre attention";
+"Review updates and choose whether to install new tools and skills." = "Vérifiez les mises à jour et choisissez les nouveaux outils et compétences à installer.";
+"Glyphs 4 is open" = "Glyphs 4 est ouvert";
+"Glyphs 4 is closed" = "Glyphs 4 est fermé";
+"New tools and skills" = "Nouveaux outils et compétences";
+"View in Skills" = "Voir dans Compétences";
+"Close all copies of Glyphs 4 to update its plugins. Glyphs handles any save dialogs." = "Fermez toutes les instances de Glyphs 4 pour mettre à jour ses modules. Les fenêtres d’enregistrement s’affichent dans Glyphs.";
+"If Glyphs shows a save dialog, finish it there." = "Si une fenêtre d’enregistrement apparaît, terminez dans Glyphs.";
+"Your selected changes are installed. Reload your AI apps to use updated skills." = "Les modifications sélectionnées sont installées. Rechargez vos applications d’IA pour utiliser les compétences mises à jour.";
+"Let the wizard do everything for me" = "Utiliser l’assistant";
+"Do it manually in Setup" = "Mettre à jour manuellement dans Configuration";
+"Do it manually in Setup now" = "Passer à la configuration manuelle";
+"Save and quit Glyphs" = "Enregistrer et quitter Glyphs";
+"Reopen Glyphs" = "Rouvrir Glyphs";
+"Retry remaining" = "Réessayer les opérations restantes";
+"Install everything" = "Tout installer";
+"Install updates" = "Installer les mises à jour";
+"Install selected" = "Installer la sélection";
+"Complete the Glyphs Python check in Setup, then try the update again." = "Terminez la vérification de Python pour Glyphs dans Configuration, puis réessayez.";
+"Glyphs MCP for Cursor" = "Glyphs MCP pour Cursor";
+"Catalog skill by %@. Choose a location in Skills." = "Compétence du catalogue par %@. Choisissez un emplacement dans Compétences.";
+"Catalog skill by %@\n%@" = "Compétence du catalogue par %@\n%@";
+"Finish the current Setup operation and try again." = "Terminez l’opération de configuration en cours, puis réessayez.";
+"Close Glyphs 4 and complete the Python check before installing." = "Fermez Glyphs 4 et terminez la vérification de Python avant l’installation.";
+"This agent connection changed. Open Setup to review it." = "Cette connexion a changé. Ouvrez Configuration pour la vérifier.";
+"The Cursor plugin changed. Open Setup to review it." = "Le module Cursor a changé. Ouvrez Configuration pour le vérifier.";
+"This skill was removed since review. Open Skills to review it." = "Cette compétence a été supprimée depuis la vérification. Ouvrez Compétences pour la consulter.";
+"The skill changed since the update was reviewed. Open Setup to check it." = "La compétence a changé depuis la vérification de la mise à jour. Ouvrez Configuration pour la consulter.";
+"The skills ownership receipt needs review in Setup." = "Vérifiez le registre des compétences installées dans Configuration.";
+"Includes new skills (%@)." = "Inclut de nouvelles compétences (%@).";
+"Skip additions" = "Ignorer les nouveautés";
+"Save and quit Glyphs saves changes in all open fonts." = "Enregistrer et quitter Glyphs enregistre les modifications de toutes les polices ouvertes.";
+"Quit Glyphs to continue" = "Quitter Glyphs pour continuer";
+"Ready to install" = "Prêt à installer";
+"Save your open fonts before installing." = "Enregistrez les polices ouvertes avant l’installation.";
+"Choose what else to install." = "Choisissez les éléments supplémentaires à installer.";
+"Catalog skill for %@" = "Compétence du catalogue pour %@";

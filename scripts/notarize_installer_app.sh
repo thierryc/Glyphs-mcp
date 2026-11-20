@@ -75,9 +75,13 @@ stapled_payload_archive="$notary_tmp/Payload.gmcparchive"
 /bin/mv "$stapled_payload_archive" "$payload_archive"
 echo "Re-signing installer app with stapled plug-in payload…"
 /usr/bin/codesign --remove-signature "$app" 2>/dev/null || true
-/usr/bin/codesign --sign "$identity" --timestamp --options runtime "$app"
+/usr/bin/codesign --sign "$identity" --timestamp --options runtime --entitlements "$repo_root/macos-installer/GlyphsMCPInstaller/GlyphsMCP.entitlements" "$app"
 sleep 15
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+for arch in arm64 x86_64; do
+  /usr/bin/codesign -d --arch "$arch" --entitlements - --xml "$app" | \
+    "$python_bin" -c 'import plistlib, sys; sys.exit(0 if plistlib.loads(sys.stdin.buffer.read()).get("com.apple.security.automation.apple-events") is True else "error: signed app lacks Apple Events entitlement")'
+done
 updater_helper="$app/Contents/Resources/GlyphsMCPUpdater"
 if [[ ! -f "$updater_helper" || -L "$updater_helper" ]]; then
   echo "error: signed updater helper is missing from the installer app" >&2

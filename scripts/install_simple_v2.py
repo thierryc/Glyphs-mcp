@@ -155,7 +155,7 @@ def stop_for_install(controller, application):
 
 
 def install(build, home, python, application, companions=(), *, mcp=True, remove_components=(),
-            only_components=(), start=False):
+            only_components=(), start=False, reviewed_components=None):
     build, home = Path(build).resolve(), Path(home).expanduser().resolve()
     application = Path(application).resolve()
     app_info = plistlib.loads((application/'Contents/Info.plist').read_bytes())
@@ -177,6 +177,9 @@ def install(build, home, python, application, companions=(), *, mcp=True, remove
     only = set(only_components)
     if (requested | removed | only) - set(COMPONENTS) or requested & removed:
         raise ValueError('Unknown or conflicting component selection')
+    if reviewed_components is not None and (not only or requested != only
+                                            or set(reviewed_components) != only or removed):
+        raise ValueError('Reviewed components must match the requested replacements')
     support = home/'Library/Application Support'
     root, plugins = support/'Glyphs MCP/lean-v2', support/'Glyphs 4/Plugins'
     # Verify every shipped component before touching the installation.
@@ -186,6 +189,10 @@ def install(build, home, python, application, companions=(), *, mcp=True, remove
     checks += [(build/item['path'], item['identity']) for item in manifest.get('runtimes', {}).values()]
     for source, identity in checks:
         if _identity(source) != identity: raise ValueError('Build identity mismatch: '+source.name)
+    if reviewed_components is not None:
+        for path in (root, root.parent, plugins, plugins.parent):
+            if path.is_symlink():
+                raise ValueError('A linked installation needs review in Setup.')
     root.mkdir(parents=True, exist_ok=True)
     with (root/'.install.lock').open('a') as lock, ExitStack() as controls:
         try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -205,7 +212,12 @@ def install(build, home, python, application, companions=(), *, mcp=True, remove
         # Recover the receipt before deriving upgrade choices from it.
         recovered = InstallationTransaction.recover(root, allowed)
         previous_agent = home/'Library/LaunchAgents'/(LABEL+'.plist')
-        if previous_agent.is_file() and any(item.get('serviceWasStopped') or any(entry['started'] for entry in item['entries']) and item.get('launchAgentWasLoaded') for item in recovered):
+        if previous_agent.is_file() and any(
+            item.get('launchAgentWasRunning', True)
+            and (item.get('serviceWasStopped')
+                 or item.get('launchAgentWasLoaded') and any(entry['started'] for entry in item['entries']))
+            for item in recovered
+        ):
             restart_agent(previous_agent, os.getuid())
         existing = installed_components(root, plugins)
         selected = (existing | requested) - removed
@@ -222,24 +234,92 @@ def install(build, home, python, application, companions=(), *, mcp=True, remove
         python = (root/'runtime'/runtime['python'] if runtime else Path(python).absolute() if python else None) if needs_runtime else None
         if needs_runtime and (python is None or not runtime and not python.is_file()):
             raise ValueError('The bundled Python runtime is missing')
+        bundles = {'mcp': manifest['bridge'], **available}
         sources = []
+        if reviewed_components is not None:
+            require_closed_font_processes(application)
+            current = verify_reviewed_components(root, plugins, expected, existing, reviewed_components,
+                                                runtime, bundles, manifest['sidecar']['identity'])
+            replaced -= current
+            if not replaced:
+                return json.loads((root/'installation.json').read_text())
         if needs_runtime and runtime and replaced & {'mcp', 'reference-inspector'}:
-            sources.append((build/runtime['path'], root/'runtime', runtime['identity']))
+            runtime_path = root/'runtime'
+            if reviewed_components is None or not runtime_path.is_dir() or _identity(runtime_path) != runtime['identity']:
+                sources.append((build/runtime['path'], runtime_path, runtime['identity']))
         if 'mcp' in replaced:
             sources.append((build/'sidecar', root/'sidecar', manifest['sidecar']['identity']))
-        bundles = {'mcp': manifest['bridge'], **available}
         sources.extend((build/bundles[name]['bundle'], plugins/bundles[name]['bundle'], bundles[name]['identity'])
                        for name in COMPONENTS if name in replaced)
         return _replace(build, home, root, plugins, application, manifest, selected, removed, replaced,
-                        sources, python, runtime, start, controller)
+                        sources, python, runtime, start, controller, reviewed=reviewed_components is not None)
+
+
+def verify_reviewed_components(root, plugins, names, existing, reviewed, runtime, bundles, bundled_sidecar):
+    receipt_path = root/'installation.json'
+    for target in (root, root.parent, plugins, plugins.parent, receipt_path):
+        if target.is_symlink():
+            raise ValueError('A linked installation needs review in Setup.')
+    receipt = json.loads(receipt_path.read_text()) if receipt_path.is_file() else {}
+    owned = {item['path']: item['identity'] for item in receipt.get('installed', [])}
+
+    def matches(path, expected):
+        return (bool(expected) and owned.get(str(path)) == expected and path.is_dir()
+                and not path.is_symlink() and not any(item.is_symlink() for item in path.rglob('*'))
+                and _identity(path) == expected)
+
+    def verify(path, expected):
+        if not matches(path, expected):
+            raise ValueError(f'{path.name} no longer matches the reviewed installation. Open Setup to review it.')
+
+    dependents = {'mcp', 'reference-inspector'}
+    runtime_current = not runtime or not reviewed.keys() & dependents or matches(root/'runtime', runtime['identity'])
+    current = set()
+    for component, identity in reviewed.items():
+        path = plugins/names[component]
+        if (component in existing and matches(path, bundles[component]['identity'])
+                and (component not in dependents or runtime_current)
+                and (component != 'mcp' or matches(root/'sidecar', bundled_sidecar))):
+            current.add(component)
+            continue
+        if identity == 'absent':
+            if component in existing or path.exists() or path.is_symlink():
+                raise ValueError(f'{path.name} appeared since review. Open Setup to check it.')
+        else:
+            if component not in existing:
+                raise ValueError(f'{path.name} is no longer installed. Open Setup to check it.')
+            verify(path, identity)
+        if component == 'mcp':
+            sidecar = root/'sidecar'
+            if identity != 'absent':
+                verify(sidecar, (receipt.get('sidecar') or {}).get('identity'))
+            elif sidecar.exists() or sidecar.is_symlink():
+                raise ValueError('An existing MCP server needs review in Setup.')
+
+    if runtime and reviewed.keys() & dependents:
+        path = root/'runtime'
+        identity = (receipt.get('runtime') or {}).get('identity')
+        if (not runtime_current or identity != runtime['identity']) and (path.exists() or path.is_symlink() or existing & dependents):
+            verify(path, identity)
+        if identity != runtime['identity']:
+            installed_companions = {item['id']: item for item in receipt.get('companions', [])}
+            for dependent in (existing & dependents) - reviewed.keys():
+                installed = installed_companions.get(dependent)
+                if dependent == 'mcp' or not installed or installed['version'] != bundles[dependent]['version']:
+                    raise ValueError('The shared runtime is used by another installed component. Review its update in Setup.')
+                verify(plugins/names[dependent], installed.get('identity'))
+    return current
 
 
 def _replace(build, home, root, plugins, application, manifest, selected, removed, replaced,
-             sources, python, runtime, start, controller):
+                sources, python, runtime, start, controller, *, reviewed=False):
     agent = home/'Library/LaunchAgents'/(LABEL+'.plist')
     receipt_path = root/'installation.json'
+    if reviewed and (agent.is_symlink() or agent.parent.is_symlink()):
+        raise ValueError('A linked MCP launch agent needs review in Setup.')
     removals = [plugins/name for name in ('Glyphs MCP Bridge.glyphsPalette', 'Glyphs MCP.glyphsPlugin')
-                if ('mcp' in selected or 'mcp' in removed) and ((plugins/name).exists() or (plugins/name).is_symlink())]
+                if not reviewed and ('mcp' in selected or 'mcp' in removed)
+                and ((plugins/name).exists() or (plugins/name).is_symlink())]
     # Only replace the known MCP plugin, never a different same-named bundle.
     for target in removals:
         info = target/'Contents/Info.plist'
@@ -262,7 +342,7 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
         temporary = Path(tmp)
         changes = [(source, target) for source, target, _ in sources]
         changes.extend((None, target) for target in removals)
-        if 'mcp' in selected:
+        if 'mcp' in selected and (not reviewed or 'mcp' in replaced):
             logs.mkdir(parents=True, exist_ok=True)
             settings.update(Label=LABEL, ProgramArguments=[str(python), str(root/'sidecar/run.py'),
                 '--transport','http','--port',str(port),'--glyphs-app',str(application)],
@@ -291,8 +371,17 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
         result['componentDetails'] = {name: (
             {**manifest.get('components', {}).get(name, {}), 'version': manifest.get('projectVersion', '2.0.0'),
              'identity': bundles[name]['identity']} if name in replaced or name not in prior_details
-            else prior_details[name]) for name in selected}
-        runtime_changed = bool(replaced & {'mcp','reference-inspector'})
+            else prior_details[name]) for name in selected if not reviewed or name in replaced or name in prior_details}
+        runtime_changed = str(root/'runtime') in replaced_targets if reviewed else bool(replaced & {'mcp','reference-inspector'})
+        if reviewed:
+            if 'mcp' in selected and 'mcp' not in replaced:
+                for key in ('bridgeVersion', 'application'):
+                    if key in previous:
+                        result[key] = previous[key]
+            if not runtime_changed and old_agent and 'mcp' not in replaced:
+                for key in ('python', 'glyphsCLI'):
+                    if key in previous:
+                        result[key] = previous[key]
         result['runtime'] = ({**runtime, 'architecture':platform.machine(), 'installedPath':str(root/'runtime')}
             if runtime and selected & {'mcp','reference-inspector'} and runtime_changed
             else previous.get('runtime') if selected & {'mcp','reference-inspector'} else None)
@@ -303,7 +392,8 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
         previous_companions = {item.get('id'): item for item in previous.get('companions', [])}
         result['companions'] = [(item if item['id'] in replaced or item['id'] not in previous_companions
                                  else previous_companions[item['id']])
-                                for item in manifest['companions'] if item['id'] in selected]
+                                for item in manifest['companions'] if item['id'] in selected
+                                and (not reviewed or item['id'] in replaced or item['id'] in previous_companions)]
         staged_receipt = temporary/'installation.json'
         staged_receipt.write_text(json.dumps(result,indent=2)+'\n')
         changes.append((staged_receipt, receipt_path))
@@ -313,7 +403,12 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
         Path(transaction.data['entries'][-1]['stage']).write_text(json.dumps(result,indent=2)+'\n')
         # Startup is a post-install choice. Every replacement first stops an
         # existing service through the shared idle guard, including removals.
-        agent_was_loaded = controller.status()['loaded'] if agent.exists() else False
+        service = controller.status() if agent.exists() else {}
+        agent_was_loaded = service.get('loaded', False)
+        restore_running_agent = agent_was_loaded
+        if reviewed:
+            restore_running_agent = agent_was_loaded and service.get('processRunning', False)
+            transaction.data['launchAgentWasRunning'] = restore_running_agent
         transaction.data['launchAgentWasLoaded'] = agent_was_loaded
         write_json(transaction.journal, transaction.data)
         if agent_was_loaded:
@@ -330,14 +425,22 @@ def _replace(build, home, root, plugins, application, manifest, selected, remove
                 if _identity(target) != identity: raise RuntimeError('Installed identity mismatch: '+str(target))
             if runtime and selected & {'mcp','reference-inspector'}:
                 subprocess.run([str(python), '-I', '-B', '-c', 'import fastmcp, glyphs_cli'], check=True,capture_output=True,timeout=30)
-            if start and 'mcp' in selected and (agent_was_loaded or old_agent is None): restart_agent(agent, os.getuid())
+            if start and 'mcp' in selected and (restore_running_agent or old_agent is None):
+                restart_agent(agent, os.getuid())
         try:
             def stop_replacement():
                 if agent.exists() and controller.status()['loaded']:
                     stop_for_install(controller, application)
+            if reviewed:
+                try:
+                    require_closed_font_processes(application)
+                except BaseException:
+                    transaction.rollback()
+                    shutil.rmtree(transaction.stage)
+                    raise
             transaction.apply(verify, before_rollback=stop_replacement)
         except BaseException:
-            if transaction.data['state'] == 'restored' and agent_was_loaded and old_agent and agent.exists():
+            if transaction.data['state'] == 'restored' and restore_running_agent and old_agent and agent.exists():
                 restart_agent(agent, os.getuid())
             raise
     return result
@@ -439,12 +542,21 @@ def main():
     parser.add_argument('--remove',action='append',default=[],choices=COMPONENTS)
     parser.add_argument('--only',action='append',default=[],choices=COMPONENTS,
                         help='Replace only these selected components; preserve other installed bundles.')
+    parser.add_argument('--expect-component', action='append', default=[], metavar='COMPONENT=IDENTITY',
+                        help='Require the reviewed identity or an absent destination under the installation lock.')
     parser.add_argument('--start',action='store_true')
     parser.add_argument('--preflight-only',action='store_true')
     parser.add_argument('--skip-python-check',action='store_true',
                         help='Install without verifying Glyphs scripting Python; retain all installation checks.')
     parser.add_argument('--diagnostic-id', help='Correlate setup evidence with a desktop operation.')
     args=parser.parse_args()
+    reviewed = {}
+    for entry in args.expect_component:
+        component, _, identity = entry.partition('=')
+        if (component not in COMPONENTS or component in reviewed
+                or not re.fullmatch(r'absent|sha256:[a-f0-9]{64}', identity)):
+            parser.error('Invalid reviewed component identity')
+        reviewed[component] = identity
     diagnostics=SetupDiagnostics(args.diagnostic_id)
     diagnostics.emit('setup.requested', preflightOnly=args.preflight_only,
                      skipPythonCheckRequested=args.skip_python_check,
@@ -462,7 +574,7 @@ def main():
             print('Glyphs Python check skipped at the user’s request. Scripting readiness remains unverified.',file=sys.stderr)
         result=install(args.build,args.home,args.python,args.glyphs_app,args.companion,
                        mcp=not args.no_mcp,remove_components=args.remove,
-                       only_components=args.only,start=args.start)
+                       only_components=args.only,start=args.start,reviewed_components=reviewed or None)
         diagnostics.emit("installation.completed", components=result.get("components"), version=result.get("version"))
         print(json.dumps(result,sort_keys=True))
     except Exception as error:

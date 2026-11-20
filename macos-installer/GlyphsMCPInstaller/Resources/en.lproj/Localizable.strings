@@ -1624,3 +1624,55 @@
 "Could not load earlier tasks." = "Could not load earlier tasks.";
 "Clear history…" = "Clear history…";
 "Load more" = "Load more";
+
+/* Glyphs 4 quit requests during an update. */
+"A new copy of Glyphs 4 opened. Review the running copies before continuing." = "A new copy of Glyphs 4 opened. Review the running copies before continuing.";
+"The quit request was cancelled in Glyphs 4." = "The quit request was cancelled in Glyphs 4.";
+"Allow Glyphs MCP to control Glyphs 4 in System Settings → Privacy & Security → Automation, or save and quit Glyphs 4 yourself." = "Allow Glyphs MCP to control Glyphs 4 in System Settings → Privacy & Security → Automation, or save and quit Glyphs 4 yourself.";
+"Glyphs 4 is still open. Check for a save dialog and finish quitting before continuing." = "Glyphs 4 is still open. Check for a save dialog and finish quitting before continuing.";
+"Glyphs 4 could not complete the quit request (error %ld). Save your work and quit Glyphs 4 before continuing." = "Glyphs 4 could not complete the quit request (error %ld). Save your work and quit Glyphs 4 before continuing.";
+
+/* Post-update wizard */
+"Finish updating Glyphs MCP" = "Finish updating Glyphs MCP";
+"Review your updates" = "Review your updates";
+"Save your open fonts" = "Save your open fonts";
+"Waiting for Glyphs to close" = "Waiting for Glyphs to close";
+"Installing updates…" = "Installing updates…";
+"Update complete" = "Update complete";
+"Some changes need attention" = "Some changes need attention";
+"Review updates and choose whether to install new tools and skills." = "Review updates and choose whether to install new tools and skills.";
+"Glyphs 4 is open" = "Glyphs 4 is open";
+"Glyphs 4 is closed" = "Glyphs 4 is closed";
+"New tools and skills" = "New tools and skills";
+"View in Skills" = "View in Skills";
+"Close all copies of Glyphs 4 to update its plugins. Glyphs handles any save dialogs." = "Close all copies of Glyphs 4 to update its plugins. Glyphs handles any save dialogs.";
+"If Glyphs shows a save dialog, finish it there." = "If Glyphs shows a save dialog, finish it there.";
+"Your selected changes are installed. Reload your AI apps to use updated skills." = "Your selected changes are installed. Reload your AI apps to use updated skills.";
+"Let the wizard do everything for me" = "Let the wizard do everything for me";
+"Do it manually in Setup" = "Do it manually in Setup";
+"Do it manually in Setup now" = "Do it manually in Setup now";
+"Save and quit Glyphs" = "Save and quit Glyphs";
+"Reopen Glyphs" = "Reopen Glyphs";
+"Retry remaining" = "Retry remaining";
+"Install everything" = "Install everything";
+"Install updates" = "Install updates";
+"Install selected" = "Install selected";
+"Complete the Glyphs Python check in Setup, then try the update again." = "Complete the Glyphs Python check in Setup, then try the update again.";
+"Glyphs MCP for Cursor" = "Glyphs MCP for Cursor";
+"Catalog skill by %@. Choose a location in Skills." = "Catalog skill by %@. Choose a location in Skills.";
+"Catalog skill by %@\n%@" = "Catalog skill by %@\n%@";
+"Finish the current Setup operation and try again." = "Finish the current Setup operation and try again.";
+"Close Glyphs 4 and complete the Python check before installing." = "Close Glyphs 4 and complete the Python check before installing.";
+"This agent connection changed. Open Setup to review it." = "This agent connection changed. Open Setup to review it.";
+"The Cursor plugin changed. Open Setup to review it." = "The Cursor plugin changed. Open Setup to review it.";
+"This skill was removed since review. Open Skills to review it." = "This skill was removed since review. Open Skills to review it.";
+"The skill changed since the update was reviewed. Open Setup to check it." = "The skill changed since the update was reviewed. Open Setup to check it.";
+"The skills ownership receipt needs review in Setup." = "The skills ownership receipt needs review in Setup.";
+"Includes new skills (%@)." = "Includes new skills (%@).";
+"Skip additions" = "Skip additions";
+"Save and quit Glyphs saves changes in all open fonts." = "Save and quit Glyphs saves changes in all open fonts.";
+"Quit Glyphs to continue" = "Quit Glyphs to continue";
+"Ready to install" = "Ready to install";
+"Save your open fonts before installing." = "Save your open fonts before installing.";
+"Choose what else to install." = "Choose what else to install.";
+"Catalog skill for %@" = "Catalog skill for %@";
